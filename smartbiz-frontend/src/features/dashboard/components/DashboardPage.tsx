@@ -1,14 +1,28 @@
 import { useAppSelector } from '@store/hooks';
+import {
+    IndianRupee,
+    Package,
+    TrendingUp,
+    Clock,
+    ShoppingCart,
+    CreditCard,
+    FileText,
+    BarChart3,
+    HardDrive,
+    AlertTriangle,
+    ArrowUpRight,
+    ArrowDownRight,
+} from 'lucide-react';
 import './DashboardPage.css';
 
 const DashboardPage = () => {
     const { user } = useAppSelector((state) => state.auth);
 
     const stats = [
-        { icon: '💰', label: 'Total Sales', value: '₹12,45,000', change: '+12.5%', positive: true },
-        { icon: '📦', label: 'Total Purchases', value: '₹8,32,000', change: '+8.2%', positive: true },
-        { icon: '📊', label: 'Net Profit', value: '₹4,13,000', change: '+15.3%', positive: true },
-        { icon: '⏳', label: 'Outstanding', value: '₹2,18,000', change: '-5.1%', positive: false },
+        { icon: IndianRupee, label: 'Total Sales', value: '₹12,45,000', change: '+12.5%', positive: true },
+        { icon: Package, label: 'Total Purchases', value: '₹8,32,000', change: '+8.2%', positive: true },
+        { icon: TrendingUp, label: 'Net Profit', value: '₹4,13,000', change: '+15.3%', positive: true },
+        { icon: Clock, label: 'Outstanding', value: '₹2,18,000', change: '-5.1%', positive: false },
     ];
 
     const recentTransactions = [
@@ -25,12 +39,21 @@ const DashboardPage = () => {
         { name: 'Product C', current: 8, reorder: 20, unit: 'kg' },
     ];
 
+    const quickActions = [
+        { icon: ShoppingCart, label: 'New Sale', color: 'from-emerald-500 to-green-600' },
+        { icon: Package, label: 'New Purchase', color: 'from-blue-500 to-indigo-600' },
+        { icon: CreditCard, label: 'Receive Payment', color: 'from-purple-500 to-violet-600' },
+        { icon: FileText, label: 'Journal Entry', color: 'from-amber-500 to-orange-600' },
+        { icon: BarChart3, label: 'View Reports', color: 'from-pink-500 to-rose-600' },
+        { icon: HardDrive, label: 'Backup Data', color: 'from-cyan-500 to-teal-600' },
+    ];
+
     return (
         <div className="dashboard-page animate-fade-in">
             {/* Welcome Section */}
             <div className="dashboard-welcome">
                 <h1 className="dashboard-welcome__title">
-                    Welcome back, <span className="gradient-text">{user?.firstName || 'User'}</span>! 👋
+                    Welcome back, <span className="gradient-text">{user?.firstName || 'User'}</span>!
                 </h1>
                 <p className="dashboard-welcome__subtitle">
                     Here's what's happening with your business today.
@@ -39,27 +62,44 @@ const DashboardPage = () => {
 
             {/* Stats Cards */}
             <div className="dashboard-stats">
-                {stats.map((stat) => (
-                    <div key={stat.label} className="stat-card glassmorphism">
-                        <div className="stat-card__icon">{stat.icon}</div>
-                        <div className="stat-card__content">
-                            <span className="stat-card__label">{stat.label}</span>
-                            <span className="stat-card__value">{stat.value}</span>
-                            <span className={`stat-card__change ${stat.positive ? 'positive' : 'negative'}`}>
-                                {stat.change}
-                            </span>
+                {stats.map((stat, index) => {
+                    const IconComponent = stat.icon;
+                    return (
+                        <div
+                            key={stat.label}
+                            className="stat-card glassmorphism group"
+                            style={{ animationDelay: `${index * 100}ms` }}
+                        >
+                            <div className="stat-card__icon-wrapper">
+                                <IconComponent className="stat-card__icon" size={24} />
+                            </div>
+                            <div className="stat-card__content">
+                                <span className="stat-card__label">{stat.label}</span>
+                                <span className="stat-card__value">{stat.value}</span>
+                                <span className={`stat-card__change ${stat.positive ? 'positive' : 'negative'}`}>
+                                    {stat.positive ? (
+                                        <ArrowUpRight size={14} />
+                                    ) : (
+                                        <ArrowDownRight size={14} />
+                                    )}
+                                    {stat.change}
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {/* Main Content Grid */}
             <div className="dashboard-grid">
                 {/* Recent Transactions */}
-                <div className="dashboard-card glassmorphism">
+                <div className="dashboard-card glassmorphism animate-slide-in">
                     <div className="dashboard-card__header">
                         <h2 className="dashboard-card__title">Recent Transactions</h2>
-                        <button className="dashboard-card__action">View All</button>
+                        <button className="dashboard-card__action group">
+                            View All
+                            <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </button>
                     </div>
                     <div className="dashboard-card__content">
                         <table className="transactions-table">
@@ -73,8 +113,12 @@ const DashboardPage = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {recentTransactions.map((txn) => (
-                                    <tr key={txn.id}>
+                                {recentTransactions.map((txn, index) => (
+                                    <tr
+                                        key={txn.id}
+                                        className="animate-fade-in"
+                                        style={{ animationDelay: `${index * 50}ms` }}
+                                    >
                                         <td className="txn-id">{txn.id}</td>
                                         <td>
                                             <span className={`txn-badge txn-badge--${txn.type.toLowerCase()}`}>
@@ -92,15 +136,25 @@ const DashboardPage = () => {
                 </div>
 
                 {/* Low Stock Alert */}
-                <div className="dashboard-card glassmorphism">
+                <div className="dashboard-card glassmorphism animate-slide-in" style={{ animationDelay: '100ms' }}>
                     <div className="dashboard-card__header">
-                        <h2 className="dashboard-card__title">⚠️ Low Stock Alerts</h2>
-                        <button className="dashboard-card__action">View Inventory</button>
+                        <h2 className="dashboard-card__title flex items-center gap-2">
+                            <AlertTriangle className="text-warning" size={18} />
+                            Low Stock Alerts
+                        </h2>
+                        <button className="dashboard-card__action group">
+                            View Inventory
+                            <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </button>
                     </div>
                     <div className="dashboard-card__content">
                         <div className="stock-alerts">
-                            {lowStockItems.map((item) => (
-                                <div key={item.name} className="stock-alert-item">
+                            {lowStockItems.map((item, index) => (
+                                <div
+                                    key={item.name}
+                                    className="stock-alert-item"
+                                    style={{ animationDelay: `${index * 100}ms` }}
+                                >
                                     <div className="stock-alert-item__info">
                                         <span className="stock-alert-item__name">{item.name}</span>
                                         <span className="stock-alert-item__detail">
@@ -125,36 +179,27 @@ const DashboardPage = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="dashboard-card glassmorphism">
+                <div className="dashboard-card glassmorphism animate-slide-in" style={{ animationDelay: '200ms' }}>
                     <div className="dashboard-card__header">
                         <h2 className="dashboard-card__title">Quick Actions</h2>
                     </div>
                     <div className="dashboard-card__content">
                         <div className="quick-actions">
-                            <button className="quick-action-btn">
-                                <span className="quick-action-btn__icon">🛒</span>
-                                <span>New Sale</span>
-                            </button>
-                            <button className="quick-action-btn">
-                                <span className="quick-action-btn__icon">📦</span>
-                                <span>New Purchase</span>
-                            </button>
-                            <button className="quick-action-btn">
-                                <span className="quick-action-btn__icon">💳</span>
-                                <span>Receive Payment</span>
-                            </button>
-                            <button className="quick-action-btn">
-                                <span className="quick-action-btn__icon">📝</span>
-                                <span>Journal Entry</span>
-                            </button>
-                            <button className="quick-action-btn">
-                                <span className="quick-action-btn__icon">📊</span>
-                                <span>View Reports</span>
-                            </button>
-                            <button className="quick-action-btn">
-                                <span className="quick-action-btn__icon">💾</span>
-                                <span>Backup Data</span>
-                            </button>
+                            {quickActions.map((action, index) => {
+                                const IconComponent = action.icon;
+                                return (
+                                    <button
+                                        key={action.label}
+                                        className="quick-action-btn group"
+                                        style={{ animationDelay: `${index * 50}ms` }}
+                                    >
+                                        <span className={`quick-action-btn__icon bg-gradient-to-br ${action.color}`}>
+                                            <IconComponent size={20} className="text-white" />
+                                        </span>
+                                        <span className="quick-action-btn__label">{action.label}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

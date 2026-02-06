@@ -28,7 +28,7 @@ const AuthLayout = () => {
                 </div>
 
                 <footer className="auth-layout__footer">
-                    <p>© 2026 SmartBiz ERP. All rights reserved.</p>
+                    <p>&copy; 2026 LedgerPro. All rights reserved.</p>
                 </footer>
             </div>
         </div>
