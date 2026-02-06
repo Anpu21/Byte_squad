@@ -1,7 +1,7 @@
 {
-  "name": "smartbiz-backend",
+  "name": "ledgerpro-backend",
   "version": "1.0.0",
-  "description": "SmartBiz ERP Backend - Offline-first accounting and inventory management",
+  "description": "LedgerPro Backend - Offline-first accounting and inventory management",
   "main": "dist/main.js",
   "scripts": {
     "prebuild": "rimraf dist",
