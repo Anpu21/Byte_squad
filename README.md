@@ -1,113 +1,74 @@
-# SmartBiz ERP
+# LedgerPro
 
-A modern, offline-first desktop ERP application for SMEs with double-entry accounting, inventory management, barcode billing, and multi-branch support.
+LedgerPro is a modern, offline-first Desktop Accounting System built with Electron, React, and NestJS.
 
-##  Features
+## Features
 
-### Accounting
--  Double-entry bookkeeping with strict debit=credit validation
--  Chart of Accounts with hierarchical ledger groups  
--  Multi-voucher support (Journal, Payment, Receipt, Sales, Purchase)
--  Immutable posted vouchers with audit trail
--  Real-time ledger balance updates
+- **Offline-First**: Runs locally on your machine with SQLite
+- **Modern UI**: Beautiful, responsive interface with Dark Mode
+- **Secure**: Local data encryption and automatic backups
+- **Production Ready**: Built with industry-standard tech stack
+- **Cross-Platform**: Windows, macOS, and Linux support
 
-### Reporting
--  Trial Balance
--  Profit & Loss Statement  
--  Balance Sheet
--  Day Book
+## Tech Stack
 
-### Inventory
--  Item master with categories
--  Stock movement tracking
--  Barcode scanning support
--  Multiple valuation methods (FIFO, LIFO, Average)
+- **Frontend**: Electron, React, TypeScript, Tailwind CSS
+- **Backend**: NestJS, TypeORM, SQLite (Local), PostgreSQL (Cloud Sync)
+- **DevOps**: Docker, GitHub Actions
 
-### Security
--  JWT authentication with refresh tokens
--  Role-based access control (RBAC)
--  AES-256 encrypted backups
--  Password hashing with bcrypt
+## Prerequisites
 
-## 🛠️ Tech Stack
-
-### Backend (NestJS)
-- TypeScript, NestJS, TypeORM
-- SQLite (offline) / PostgreSQL (cloud backup)
-- Passport.js for authentication
-
-### Frontend (Electron + React)
-- TypeScript, React 18, Vite
-- Redux Toolkit for state management
-- HashRouter for Electron compatibility
-- Modern CSS with glassmorphism design
-
-##  Installation
-
-### Prerequisites
 - Node.js 20+
-- npm or yarn
+- Docker & Docker Compose (optional)
 
-### Backend Setup
+## Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/yourusername/ledgerpro.git
+cd ledgerpro
+```
+
+### 2. Setup Backend
+
 ```bash
 cd smartbiz-backend
 npm install
-cp .env.example .env
-npm run dev
+npm run start:dev
 ```
 
-### Frontend Setup
+### 3. Setup Frontend
+
 ```bash
 cd smartbiz-frontend
 npm install
-npm run electron:dev
+npm run dev:electron
 ```
 
-### Build Windows Executable
+## Building for Production
+
+To build the Windows installer (.exe):
+
 ```bash
 cd smartbiz-frontend
 npm run build
-# Output: smartbiz-frontend/release/SmartBiz ERP.exe
+# Output: smartbiz-frontend/release/LedgerPro.exe
 ```
 
-##  Project Structure
+## Project Structure
 
 ```
-Byte_squad/
-├── smartbiz-backend/
-│   ├── src/
-│   │   ├── config/          # App & database config
-│   │   ├── database/        # TypeORM setup, entities
-│   │   ├── common/          # Guards, filters, decorators
-│   │   └── modules/
-│   │       ├── auth/        # JWT authentication
-│   │       ├── users/       # User management
-│   │       ├── companies/   # Multi-company support
-│   │       ├── ledgers/     # Chart of accounts
-│   │       ├── vouchers/    # Accounting engine
-│   │       ├── inventory/   # Stock management
-│   │       ├── payments/    # Payment tracking
-│   │       ├── reports/     # Financial reports
-│   │       └── backup/      # Encrypted backup/restore
-│   └── test/
-├── smartbiz-frontend/
-│   ├── electron/            # Electron main/preload
-│   └── src/
-│       ├── app/             # Entry point, global CSS
-│       ├── features/        # Feature-based modules
-│       │   ├── auth/
-│       │   └── dashboard/
-│       ├── shared/          # Shared components, constants
-│       ├── store/           # Redux store
-│       └── routes/          # App routing
-└── docker-compose.yml
+ledgerpro/
+├── smartbiz-backend/       # NestJS Backend API
+│   ├── src/                # Source code
+│   ├── test/               # E2E Tests
+│   └── Dockerfile
+│
+├── smartbiz-frontend/      # Electron + React App
+│   ├── electron/           # Main process code
+│   ├── src/                # React UI code
+│   └── package.json
+│
+└── docker-compose.yml      # Docker coordination
 ```
-
-##  Default Credentials
-
-```
-Username: admin
-Password: password123
-```
-
-## License
