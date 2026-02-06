@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -22,7 +22,7 @@ WORKDIR /app
 
 # Copy package files and install production dependencies only
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
@@ -33,7 +33,7 @@ RUN mkdir -p /app/data /app/backups
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV DB_PATH=/app/data/smartbiz.db
+ENV DB_PATH=/app/data/ledgerpro.db
 
 # Expose port
 EXPOSE 3000

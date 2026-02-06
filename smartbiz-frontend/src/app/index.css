@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   /* Color Palette - Modern Dark Theme */
   --color-bg-primary: #0f0f1a;

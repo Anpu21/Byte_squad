@@ -6,7 +6,7 @@ export default registerAs('app', () => ({
 
     // JWT Configuration
     jwt: {
-        secret: process.env.JWT_SECRET || 'smartbiz-super-secret-key-change-in-production',
+        secret: process.env.JWT_SECRET || 'ledgerpro-super-secret-key-change-in-production',
         expiresIn: process.env.JWT_EXPIRY || '24h',
         refreshExpiresIn: process.env.JWT_REFRESH_EXPIRY || '7d',
     },
@@ -19,7 +19,7 @@ export default registerAs('app', () => ({
 
     // Application settings
     settings: {
-        companyName: process.env.COMPANY_NAME || 'SmartBiz ERP',
+        companyName: process.env.COMPANY_NAME || 'LedgerPro',
         defaultCurrency: process.env.DEFAULT_CURRENCY || 'INR',
         decimalPlaces: parseInt(process.env.DECIMAL_PLACES, 10) || 2,
     },
