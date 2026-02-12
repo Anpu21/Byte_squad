@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
@@ -12,7 +13,7 @@ async function bootstrap() {
   });
 
   // Log every request
-  app.use((req: any, res: any, next: any) => {
+  app.use((req: Request, _res: Response, next: NextFunction) => {
     console.log(`[Request] ${req.method} ${req.url}`);
     next();
   });
@@ -34,4 +35,4 @@ async function bootstrap() {
   console.log(`🚀 Server running on http://localhost:${port}`);
 }
 
-bootstrap();
+void bootstrap();
