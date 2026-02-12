@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { loginUser, LoginCredentials, LoginResponse } from './authApi';
+import { AxiosError } from 'axios';
 
 /** Auth state shape */
 interface AuthState {
@@ -10,7 +11,7 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-    user: JSON.parse(localStorage.getItem('user') || 'null'),
+    user: JSON.parse(localStorage.getItem('user') || 'null') as AuthState['user'],
     token: localStorage.getItem('token'),
     isLoading: false,
     error: null,
@@ -28,8 +29,9 @@ export const loginAsync = createAsyncThunk<LoginResponse, LoginCredentials, { re
             localStorage.setItem('token', data.access_token);
             localStorage.setItem('user', JSON.stringify(data.user));
             return data;
-        } catch (err: any) {
-            const message = err.response?.data?.message || 'Login failed. Please try again.';
+        } catch (err: unknown) {
+            const axiosErr = err as AxiosError<{ message?: string }>;
+            const message = axiosErr.response?.data?.message || 'Login failed. Please try again.';
             return rejectWithValue(message);
         }
     },
