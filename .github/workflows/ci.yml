@@ -1,0 +1,185 @@
+# ──────────────────────────────────────────────────────────
+# LedgerPro CI/CD Pipeline
+# ──────────────────────────────────────────────────────────
+# Trigger: push / PR to main
+# Jobs:
+#   1. test-backend   — lint + unit tests + e2e tests
+#   2. test-frontend  — lint + unit tests
+#   3. build-package  — build both apps + package .exe + upload artifact
+#   4. docker         — build & push Docker image (main branch only)
+# ──────────────────────────────────────────────────────────
+
+name: LedgerPro CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  # ───────────── Job 1: Backend Tests ─────────────
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm test -- --coverage
+        env:
+          JWT_SECRET: test_secret
+          DB_TYPE: better-sqlite3
+          DB_DATABASE: ":memory:"
+
+      - name: Run e2e tests
+        run: npm run test:e2e
+        env:
+          JWT_SECRET: test_secret
+          DB_TYPE: better-sqlite3
+          DB_DATABASE: ":memory:"
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
+          retention-days: 7
+
+  # ───────────── Job 2: Frontend Tests ─────────────
+  test-frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test -- --coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+          retention-days: 7
+
+  # ───────────── Job 3: Build & Package ─────────────
+  build-and-package:
+    name: Build & Package Electron
+    needs: [test-backend, test-frontend]
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # ── Build Backend ──
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+
+      # ── Build Frontend + Electron ──
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build renderer (Vite)
+        working-directory: frontend
+        run: npm run build:renderer
+
+      - name: Package Electron app (.exe)
+        working-directory: frontend
+        run: npx electron-builder --win --x64
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Upload Artifacts ──
+      - name: Upload LedgerPro .exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: LedgerPro-Windows-Installer
+          path: frontend/release/**/*.exe
+          retention-days: 30
+
+      - name: Upload backend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist
+          retention-days: 30
+
+  # ───────────── Job 4: Docker Build & Push ─────────────
+  docker:
+    name: Docker Build & Push
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/ledgerpro-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/ledgerpro-backend:${{ github.sha }}
