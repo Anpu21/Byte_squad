@@ -20,6 +20,7 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
             inject: [ConfigService],
             useFactory: (config: ConfigService) => ({
                 secret: config.get<string>('JWT_SECRET') || 'bytesquad_jwt_secret_2024',
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 signOptions: { expiresIn: (config.get<string>('JWT_EXPIRES_IN') || '24h') as any },
             }),
         }),
