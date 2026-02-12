@@ -3,6 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException, ConflictException } from '@nestjs/common';
 import { Repository } from 'typeorm';
+// Mock bcrypt module
+jest.mock('bcrypt', () => ({
+    compare: jest.fn(),
+    hash: jest.fn(),
+}));
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { User } from './entities/user.entity';
@@ -59,9 +64,7 @@ describe('AuthService', () => {
     describe('validateUser', () => {
         it('should return user when credentials are valid', async () => {
             userRepo.findOne.mockResolvedValue(mockUser);
-            jest
-                .spyOn(bcrypt, 'compare')
-                .mockReturnValue(Promise.resolve(true) as never);
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
             const result = await service.validateUser('admin', 'password');
 
@@ -81,9 +84,7 @@ describe('AuthService', () => {
 
         it('should throw UnauthorizedException when password is invalid', async () => {
             userRepo.findOne.mockResolvedValue(mockUser);
-            jest
-                .spyOn(bcrypt, 'compare')
-                .mockReturnValue(Promise.resolve(false) as never);
+            (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
             await expect(service.validateUser('admin', 'wrong')).rejects.toThrow(
                 UnauthorizedException,
@@ -96,9 +97,7 @@ describe('AuthService', () => {
     describe('login', () => {
         it('should return access_token and user on valid credentials', async () => {
             userRepo.findOne.mockResolvedValue(mockUser);
-            jest
-                .spyOn(bcrypt, 'compare')
-                .mockReturnValue(Promise.resolve(true) as never);
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
             const result = await service.login({
                 username: 'admin',
@@ -134,9 +133,7 @@ describe('AuthService', () => {
     describe('register', () => {
         it('should create and return a new user', async () => {
             userRepo.findOne.mockResolvedValue(null);
-            jest
-                .spyOn(bcrypt, 'hash')
-                .mockReturnValue(Promise.resolve('hashed-pw') as never);
+            (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-pw');
             userRepo.create.mockReturnValue({
                 ...mockUser,
                 password: 'hashed-pw',
