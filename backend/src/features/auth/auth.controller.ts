@@ -15,6 +15,11 @@ import { Roles } from './decorators/roles.decorator.js';
 import { Role } from '../../shared/enums/role.enum.js';
 import { API_ROUTES } from '../../shared/routes.js';
 
+/** Typed request with JWT user payload */
+interface AuthenticatedRequest {
+    user: { id: string; username: string; role: Role };
+}
+
 /**
  * Authentication controller.
  * Routes are derived from the shared API_ROUTES constants.
@@ -49,7 +54,8 @@ export class AuthController {
      */
     @Get('profile')
     @UseGuards(JwtAuthGuard)
-    async getProfile(@Request() req: any) {
+    async getProfile(@Request() req: AuthenticatedRequest) {
         return this.authService.getProfile(req.user.id);
     }
 }
+
