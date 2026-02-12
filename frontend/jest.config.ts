@@ -5,7 +5,7 @@ const config: Config = {
     testEnvironment: 'jest-environment-jsdom',
 
     // Run setup file after jest is initialized
-    setupFilesAfterSetup: ['<rootDir>/src/setupTests.ts'],
+    setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
 
     // Transform TypeScript/TSX files with ts-jest
     transform: {
