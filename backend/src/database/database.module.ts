@@ -15,12 +15,15 @@ import path from 'node:path';
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (config: ConfigService) => ({
-                type: (config.get<string>('DB_TYPE') || 'better-sqlite3') as any,
-                database: path.join(process.cwd(), config.get<string>('DB_DATABASE') || 'data.sqlite'),
-                autoLoadEntities: true,
-                synchronize: true, // Disable in production — use migrations instead
-            }),
+            useFactory: (config: ConfigService) => {
+                const dbType = config.get<string>('DB_TYPE') || 'better-sqlite3';
+                return {
+                    type: dbType as 'better-sqlite3',
+                    database: path.join(process.cwd(), config.get<string>('DB_DATABASE') || 'data.sqlite'),
+                    autoLoadEntities: true,
+                    synchronize: true, // Disable in production — use migrations instead
+                };
+            },
         }),
     ],
 })
