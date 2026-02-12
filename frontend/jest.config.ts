@@ -14,10 +14,12 @@ const config: Config = {
             {
                 tsconfig: 'tsconfig.json',
                 // Use ESM-compatible output
-                useESM: false,
+                // Use ESM-compatible output
+                useESM: true,
             },
         ],
     },
+    extensionsToTreatAsEsm: ['.ts', '.tsx'],
 
     // Map @/ alias to src/ (mirrors tsconfig paths)
     moduleNameMapper: {
