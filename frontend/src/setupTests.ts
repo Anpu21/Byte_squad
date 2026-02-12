@@ -4,6 +4,10 @@
  */
 import '@testing-library/jest-dom';
 
+import { TextEncoder, TextDecoder } from 'util';
+
+Object.assign(global, { TextEncoder, TextDecoder });
+
 // Mock localStorage for tests (Electron/jsdom may not have it)
 const localStorageMock = (() => {
     let store: Record<string, string> = {};
