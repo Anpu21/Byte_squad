@@ -4,7 +4,7 @@
 
 ---
 
-## 🏗️ Tech Stack
+##  Tech Stack
 
 | Layer      | Technology                                |
 |------------|-------------------------------------------|
@@ -13,7 +13,7 @@
 | Database   | SQLite (local, `better-sqlite3`), PostgreSQL (future sync) |
 | Desktop    | Electron                                  |
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 Byte_squad/
@@ -66,7 +66,7 @@ Byte_squad/
 └── README.md
 ```
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 - **Node.js** v18+
@@ -88,16 +88,16 @@ npm install
 npm run dev       # Starts Vite dev server on http://localhost:5173
 ```
 
-## 🔐 Default Credentials
+##  Default Credentials
 
 | Field    | Value      |
 |----------|------------|
 | Username | `admin`    |
 | Password | `admin123` |
 
-> ⚠️ **Change these credentials immediately in production.**
+>  **Change these credentials immediately in production.**
 
-## 👥 User Roles
+##  User Roles
 
 | Role       | Permissions                    |
 |------------|--------------------------------|
@@ -107,7 +107,7 @@ npm run dev       # Starts Vite dev server on http://localhost:5173
 
 Only **Admin** users can create new user accounts via `POST /api/auth/register`.
 
-## 🔌 API Endpoints
+##  API Endpoints
 
 | Method | Endpoint              | Auth      | Description             |
 |--------|-----------------------|-----------|-------------------------|
@@ -115,11 +115,11 @@ Only **Admin** users can create new user accounts via `POST /api/auth/register`.
 | POST   | `/api/auth/register`  | Admin     | Create a new user       |
 | GET    | `/api/auth/profile`   | Protected | Get current user profile|
 
-## 🗄️ Database
+##  Database
 
 - **Local:** SQLite (`data.sqlite` created automatically in `backend/`)
 - **Future:** PostgreSQL — entity definitions use PostgreSQL-compatible column types. To switch, update `type` and `database` in `database.module.ts`.
 
-## 📝 License
+##  License
 
 UNLICENSED – Byte Squad
