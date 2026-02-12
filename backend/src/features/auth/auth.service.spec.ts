@@ -13,7 +13,7 @@ import { Role } from '../../shared/enums/role.enum';
 const mockUser: User = {
     id: 'uuid-1234',
     username: 'admin',
-    password: '$2b$10$hashedpassword', // bcrypt hash placeholder
+    password: '$2b$10$hashedpassword',
     role: Role.ADMIN,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -59,25 +59,31 @@ describe('AuthService', () => {
     describe('validateUser', () => {
         it('should return user when credentials are valid', async () => {
             userRepo.findOne.mockResolvedValue(mockUser);
-            jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+            jest
+                .spyOn(bcrypt, 'compare')
+                .mockReturnValue(Promise.resolve(true) as never);
 
             const result = await service.validateUser('admin', 'password');
 
             expect(result).toEqual(mockUser);
-            expect(userRepo.findOne).toHaveBeenCalledWith({ where: { username: 'admin' } });
+            expect(userRepo.findOne).toHaveBeenCalledWith({
+                where: { username: 'admin' },
+            });
         });
 
         it('should throw UnauthorizedException when user is not found', async () => {
             userRepo.findOne.mockResolvedValue(null);
 
-            await expect(service.validateUser('ghost', 'password')).rejects.toThrow(
-                UnauthorizedException,
-            );
+            await expect(
+                service.validateUser('ghost', 'password'),
+            ).rejects.toThrow(UnauthorizedException);
         });
 
         it('should throw UnauthorizedException when password is invalid', async () => {
             userRepo.findOne.mockResolvedValue(mockUser);
-            jest.spyOn(bcrypt, 'compare').mockImplementation(async () => false);
+            jest
+                .spyOn(bcrypt, 'compare')
+                .mockReturnValue(Promise.resolve(false) as never);
 
             await expect(service.validateUser('admin', 'wrong')).rejects.toThrow(
                 UnauthorizedException,
@@ -90,13 +96,22 @@ describe('AuthService', () => {
     describe('login', () => {
         it('should return access_token and user on valid credentials', async () => {
             userRepo.findOne.mockResolvedValue(mockUser);
-            jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+            jest
+                .spyOn(bcrypt, 'compare')
+                .mockReturnValue(Promise.resolve(true) as never);
 
-            const result = await service.login({ username: 'admin', password: 'password' });
+            const result = await service.login({
+                username: 'admin',
+                password: 'password',
+            });
 
             expect(result).toEqual({
                 access_token: 'mock-jwt-token',
-                user: { id: mockUser.id, username: mockUser.username, role: mockUser.role },
+                user: {
+                    id: mockUser.id,
+                    username: mockUser.username,
+                    role: mockUser.role,
+                },
             });
             expect(jwtService.sign).toHaveBeenCalledWith({
                 sub: mockUser.id,
@@ -118,9 +133,14 @@ describe('AuthService', () => {
 
     describe('register', () => {
         it('should create and return a new user', async () => {
-            userRepo.findOne.mockResolvedValue(null); // no duplicate
-            jest.spyOn(bcrypt, 'hash').mockImplementation(async () => 'hashed-pw');
-            userRepo.create.mockReturnValue({ ...mockUser, password: 'hashed-pw' } as User);
+            userRepo.findOne.mockResolvedValue(null);
+            jest
+                .spyOn(bcrypt, 'hash')
+                .mockReturnValue(Promise.resolve('hashed-pw') as never);
+            userRepo.create.mockReturnValue({
+                ...mockUser,
+                password: 'hashed-pw',
+            } as User);
             userRepo.save.mockResolvedValue({ ...mockUser, password: 'hashed-pw' });
 
             const result = await service.register({
@@ -142,7 +162,11 @@ describe('AuthService', () => {
             userRepo.findOne.mockResolvedValue(mockUser);
 
             await expect(
-                service.register({ username: 'admin', password: 'pw', role: Role.ADMIN }),
+                service.register({
+                    username: 'admin',
+                    password: 'pw',
+                    role: Role.ADMIN,
+                }),
             ).rejects.toThrow(ConflictException);
         });
     });
