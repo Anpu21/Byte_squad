@@ -1,15 +1,25 @@
 import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, type PreloadedState } from '@reduxjs/toolkit';
 import authReducer from '@/features/auth/authSlice';
 import ProtectedRoute from '@/components/ProtectedRoute';
+
+/** Shape of the root Redux state used in tests */
+interface RootState {
+    auth: {
+        user: { id: string; username: string; role: string } | null;
+        token: string | null;
+        isLoading: boolean;
+        error: string | null;
+    };
+}
 
 /**
  * Helper — renders the component with Redux Provider and Router.
  */
 function renderWithProviders(
-    preloadedState: any,
+    preloadedState: PreloadedState<RootState>,
     children: React.ReactElement = <div>Protected Content</div>,
 ) {
     const store = configureStore({
