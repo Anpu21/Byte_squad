@@ -3,7 +3,7 @@ import { loginUser, LoginCredentials, LoginResponse } from './authApi';
 import { AxiosError } from 'axios';
 
 /** Auth state shape */
-interface AuthState {
+export interface AuthState {
     user: LoginResponse['user'] | null;
     token: string | null;
     isLoading: boolean;
