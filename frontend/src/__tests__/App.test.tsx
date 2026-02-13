@@ -1,19 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { configureStore, type PreloadedState } from '@reduxjs/toolkit';
+import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '@/features/auth/authSlice';
+import type { RootState } from '@/store';
 import App from '@/App';
-
-/** Shape of the root Redux state used in tests */
-interface RootState {
-    auth: {
-        user: { id: string; username: string; role: string } | null;
-        token: string | null;
-        isLoading: boolean;
-        error: string | null;
-    };
-}
 
 /**
  * Helper — creates a Redux store with optional preloaded auth state.
@@ -23,7 +14,7 @@ function renderWithProviders(
     {
         preloadedState = {},
         route = '/',
-    }: { preloadedState?: PreloadedState<RootState>; route?: string } = {},
+    }: { preloadedState?: Partial<RootState>; route?: string } = {},
 ) {
     const store = configureStore({
         reducer: { auth: authReducer },
