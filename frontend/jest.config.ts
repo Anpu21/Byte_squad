@@ -12,7 +12,7 @@ const config: Config = {
         '^.+\\.tsx?$': [
             'ts-jest',
             {
-                tsconfig: 'tsconfig.json',
+                tsconfig: 'tsconfig.jest.json',
                 // Use ESM-compatible output
                 // Use ESM-compatible output
                 useESM: true,
