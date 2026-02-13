@@ -17,7 +17,7 @@ function renderWithProviders(
     }: { preloadedState?: Partial<RootState>; route?: string } = {},
 ) {
     const store = configureStore({
-        reducer: { auth: authReducer },
+        reducer: { auth: authReducer as any },
         preloadedState,
     });
 
