@@ -1,9 +1,9 @@
 import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Role } from '../../../shared/enums/role.enum.js';
 
@@ -13,21 +13,21 @@ import { Role } from '../../../shared/enums/role.enum.js';
  */
 @Entity('users')
 export class User {
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
-    @Column({ type: 'varchar', length: 100, unique: true })
-    username!: string;
+  @Column({ type: 'varchar', length: 100, unique: true })
+  username!: string;
 
-    @Column({ type: 'varchar', length: 255 })
-    password!: string;
+  @Column({ type: 'varchar', length: 255 })
+  password!: string;
 
-    @Column({ type: 'varchar', default: Role.CASHIER })
-    role!: Role;
+  @Column({ type: 'varchar', default: Role.CASHIER })
+  role!: Role;
 
-    @CreateDateColumn()
-    createdAt!: Date;
+  @CreateDateColumn()
+  createdAt!: Date;
 
-    @UpdateDateColumn()
-    updatedAt!: Date;
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

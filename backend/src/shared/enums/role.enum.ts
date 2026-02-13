@@ -3,7 +3,7 @@
  * Used as a TypeScript enum for backend type safety.
  */
 export enum Role {
-    ADMIN = 'admin',
-    ACCOUNTANT = 'accountant',
-    CASHIER = 'cashier',
+  ADMIN = 'admin',
+  ACCOUNTANT = 'accountant',
+  CASHIER = 'cashier',
 }
