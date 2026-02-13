@@ -12,4 +12,4 @@ import { AuthModule } from './features/auth/auth.module.js';
   controllers: [],
   providers: [],
 })
-export class AppModule { }
+export class AppModule {}
