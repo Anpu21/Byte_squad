@@ -2,6 +2,12 @@
   "name": "frontend",
   "private": true,
   "version": "0.0.0",
+  "description": "LedgerPro Desktop Application",
+  "author": "Byte Squad",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anpu21/Byte_squad.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
