@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
-import authReducer from '@/features/auth/authSlice';
+import { configureStore, Reducer, UnknownAction } from '@reduxjs/toolkit';
+import authReducer, { AuthState } from '@/features/auth/authSlice';
 import type { RootState } from '@/store';
 import App from '@/App';
 
@@ -17,7 +17,7 @@ function renderWithProviders(
     }: { preloadedState?: Partial<RootState>; route?: string } = {},
 ) {
     const store = configureStore({
-        reducer: { auth: authReducer as any },
+        reducer: { auth: authReducer as Reducer<AuthState | undefined, UnknownAction> },
         preloadedState,
     });
 
