@@ -3,4 +3,4 @@ import { AuthGuard } from '@nestjs/passport';
 
 /** Guard that requires a valid JWT in the Authorization header. */
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') { }
+export class JwtAuthGuard extends AuthGuard('jwt') {}

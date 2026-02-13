@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,97 +16,97 @@ import { RegisterDto } from './dto/register.dto.js';
  */
 @Injectable()
 export class AuthService {
-    constructor(
-        @InjectRepository(User)
-        private readonly userRepository: Repository<User>,
-        private readonly jwtService: JwtService,
-    ) { }
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    private readonly jwtService: JwtService,
+  ) {}
 
-    /**
-     * Validates user credentials against the database.
-     */
-    async validateUser(username: string, password: string): Promise<User> {
-        const user = await this.userRepository.findOne({ where: { username } });
+  /**
+   * Validates user credentials against the database.
+   */
+  async validateUser(username: string, password: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { username } });
 
-        if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-
-        if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-
-        return user;
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    /**
-     * Authenticates a user and returns a signed JWT.
-     */
-    async login(loginDto: LoginDto) {
-        const user = await this.validateUser(loginDto.username, loginDto.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
-        const payload = {
-            sub: user.id,
-            username: user.username,
-            role: user.role,
-        };
-
-        return {
-            access_token: this.jwtService.sign(payload),
-            user: {
-                id: user.id,
-                username: user.username,
-                role: user.role,
-            },
-        };
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    /**
-     * Registers a new user. Only accessible by Admins (enforced at controller level).
-     */
-    async register(registerDto: RegisterDto) {
-        const existingUser = await this.userRepository.findOne({
-            where: { username: registerDto.username },
-        });
+    return user;
+  }
 
-        if (existingUser) {
-            throw new ConflictException('Username already exists');
-        }
+  /**
+   * Authenticates a user and returns a signed JWT.
+   */
+  async login(loginDto: LoginDto) {
+    const user = await this.validateUser(loginDto.username, loginDto.password);
 
-        const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      role: user.role,
+    };
 
-        const user = this.userRepository.create({
-            username: registerDto.username,
-            password: hashedPassword,
-            role: registerDto.role,
-        });
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+      },
+    };
+  }
 
-        const savedUser = await this.userRepository.save(user);
+  /**
+   * Registers a new user. Only accessible by Admins (enforced at controller level).
+   */
+  async register(registerDto: RegisterDto) {
+    const existingUser = await this.userRepository.findOne({
+      where: { username: registerDto.username },
+    });
 
-        return {
-            id: savedUser.id,
-            username: savedUser.username,
-            role: savedUser.role,
-        };
+    if (existingUser) {
+      throw new ConflictException('Username already exists');
     }
 
-    /**
-     * Retrieves a user profile by ID (excludes password).
-     */
-    async getProfile(userId: string) {
-        const user = await this.userRepository.findOne({ where: { id: userId } });
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-        if (!user) {
-            throw new UnauthorizedException('User not found');
-        }
+    const user = this.userRepository.create({
+      username: registerDto.username,
+      password: hashedPassword,
+      role: registerDto.role,
+    });
 
-        return {
-            id: user.id,
-            username: user.username,
-            role: user.role,
-            createdAt: user.createdAt,
-        };
+    const savedUser = await this.userRepository.save(user);
+
+    return {
+      id: savedUser.id,
+      username: savedUser.username,
+      role: savedUser.role,
+    };
+  }
+
+  /**
+   * Retrieves a user profile by ID (excludes password).
+   */
+  async getProfile(userId: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
+
+    return {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      createdAt: user.createdAt,
+    };
+  }
 }
