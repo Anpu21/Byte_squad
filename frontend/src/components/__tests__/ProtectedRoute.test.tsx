@@ -14,7 +14,7 @@ function renderWithProviders(
     children: React.ReactElement = <div>Protected Content</div>,
 ) {
     const store = configureStore({
-        reducer: { auth: authReducer },
+        reducer: { auth: authReducer as any },
         preloadedState,
     });
 
