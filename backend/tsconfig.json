@@ -16,10 +16,22 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": true,
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@/modules/*": [
+        "src/modules/*"
+      ],
+      "@/common/*": [
+        "src/common/*"
+      ],
+      "@/config/*": [
+        "src/config/*"
+      ],
+      "@shared/*": [
+        "../shared/*"
+      ]
+    }
   }
 }
