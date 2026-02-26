@@ -5,9 +5,9 @@ import {
     ManyToOne,
     JoinColumn,
 } from 'typeorm';
-import { DiscountType } from '../../../../../shared/constants/enums.js';
-import { Transaction } from './transaction.entity.js';
-import { Product } from '../../products/entities/product.entity.js';
+import { DiscountType } from '@/common/enums/discount.enum';
+import { Transaction } from '@pos/entities/transaction.entity';
+import { Product } from '@products/entities/product.entity';
 
 @Entity('transaction_items')
 export class TransactionItem {

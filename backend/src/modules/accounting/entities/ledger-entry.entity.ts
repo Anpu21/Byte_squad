@@ -6,8 +6,8 @@ import {
     JoinColumn,
     CreateDateColumn,
 } from 'typeorm';
-import { LedgerEntryType } from '../../../../../shared/constants/enums.js';
-import { Branch } from '../../branches/entities/branch.entity.js';
+import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
+import { Branch } from '@branches/entities/branch.entity';
 
 @Entity('ledger_entries')
 export class LedgerEntry {

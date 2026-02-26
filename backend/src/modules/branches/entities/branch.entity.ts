@@ -6,9 +6,9 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity.js';
-import { Inventory } from '../../inventory/entities/inventory.entity.js';
-import { Transaction } from '../../pos/entities/transaction.entity.js';
+import { User } from '@users/entities/user.entity';
+import { Inventory } from '@inventory/entities/inventory.entity';
+import { Transaction } from '@pos/entities/transaction.entity';
 
 @Entity('branches')
 export class Branch {
