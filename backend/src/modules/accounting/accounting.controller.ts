@@ -1,29 +1,30 @@
+import { Roles } from '@/common/decorators/roles.decorator';
+import { UserRole } from '@/common/enums/user-roles.enums';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { APP_ROUTES } from '@/common/routes/app.routes';
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
-import { AccountingService } from './accounting.service.js';
-import { CreateExpenseDto } from './dto/create-expense.dto.js';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import { UserRole } from '../../../../shared/constants/enums.js';
-import { BACKEND_ROUTES } from '../../../../shared/routes/backend-routes.js';
-import { LedgerEntry } from './entities/ledger-entry.entity.js';
-import { Expense } from './entities/expense.entity.js';
+import { AccountingService } from '@accounting/accounting.service';
+import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { Expense } from '@accounting/entities/expense.entity';
+import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 
-@Controller(BACKEND_ROUTES.ACCOUNTING.BASE)
+
+@Controller(APP_ROUTES.ACCOUNTING.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ACCOUNTANT, UserRole.ADMIN)
 export class AccountingController {
     constructor(private readonly accountingService: AccountingService) { }
 
-    @Get(BACKEND_ROUTES.ACCOUNTING.LEDGER)
+    @Get(APP_ROUTES.ACCOUNTING.LEDGER)
     getLedger(
         @CurrentUser('branchId') branchId: string,
     ): Promise<LedgerEntry[]> {
         return this.accountingService.getLedgerEntries(branchId);
     }
 
-    @Post(BACKEND_ROUTES.ACCOUNTING.EXPENSES)
+    @Post(APP_ROUTES.ACCOUNTING.EXPENSES)
     createExpense(
         @Body() createExpenseDto: CreateExpenseDto,
         @CurrentUser('id') userId: string,
@@ -31,7 +32,7 @@ export class AccountingController {
         return this.accountingService.createExpense(createExpenseDto, userId);
     }
 
-    @Get(BACKEND_ROUTES.ACCOUNTING.EXPENSES)
+    @Get(APP_ROUTES.ACCOUNTING.EXPENSES)
     getExpenses(
         @CurrentUser('branchId') branchId: string,
     ): Promise<Expense[]> {

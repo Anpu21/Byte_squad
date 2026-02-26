@@ -7,14 +7,13 @@ import {
     JoinColumn,
     CreateDateColumn,
 } from 'typeorm';
-import {
-    TransactionType,
-    DiscountType,
-    PaymentMethod,
-} from '../../../../../shared/constants/enums.js';
-import { Branch } from '../../branches/entities/branch.entity.js';
-import { User } from '../../users/entities/user.entity.js';
-import { TransactionItem } from './transaction-item.entity.js';
+
+import { Branch } from '@branches/entities/branch.entity';
+import { User } from '@users/entities/user.entity';
+import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { TransactionType } from '@/common/enums/transaction.enum';
+import { DiscountType } from '@/common/enums/discount.enum';
+import { PaymentMethod } from '@/common/enums/payment-method';
 
 @Entity('transactions')
 export class Transaction {
