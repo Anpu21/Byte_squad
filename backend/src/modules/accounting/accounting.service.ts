@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LedgerEntry } from './entities/ledger-entry.entity.js';
-import { Expense } from './entities/expense.entity.js';
-import { CreateExpenseDto } from './dto/create-expense.dto.js';
+import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+import { Expense } from '@accounting/entities/expense.entity';
+import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
 
 @Injectable()
 export class AccountingService {
