@@ -6,8 +6,8 @@ import {
     JoinColumn,
     CreateDateColumn,
 } from 'typeorm';
-import { Branch } from '../../branches/entities/branch.entity.js';
-import { User } from '../../users/entities/user.entity.js';
+import { Branch } from '@branches/entities/branch.entity';
+import { User } from '@users/entities/user.entity';
 
 @Entity('expenses')
 export class Expense {

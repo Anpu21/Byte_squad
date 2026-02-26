@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, Repository } from 'typeorm';
-import { Inventory } from './entities/inventory.entity.js';
-import { UpdateStockDto } from './dto/update-stock.dto.js';
+import { Inventory } from '@inventory/entities/inventory.entity';
+import { UpdateStockDto } from '@inventory/dto/update-stock.dto';
 
 @Injectable()
 export class InventoryService {

@@ -7,8 +7,8 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
 } from 'typeorm';
-import { UserRole } from '../../../../../shared/constants/enums.js';
-import { Branch } from '../../branches/entities/branch.entity.js';
+import { UserRole } from '@common/enums/user-roles.enums';
+import { Branch } from '@branches/entities/branch.entity';
 
 @Entity('users')
 export class User {
