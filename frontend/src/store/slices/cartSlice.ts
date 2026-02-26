@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { DiscountType } from '@shared/constants/enums';
+import { DiscountType } from '@/constants/enums';
 import { generateId } from '@/lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
