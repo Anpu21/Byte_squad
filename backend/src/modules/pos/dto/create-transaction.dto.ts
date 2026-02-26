@@ -10,11 +10,9 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import {
-    DiscountType,
-    PaymentMethod,
-    TransactionType,
-} from '../../../../../shared/constants/enums.js';
+import {DiscountType} from '@common/enums/discount.enum';
+import { TransactionType } from '@/common/enums/transaction.enum';
+import { PaymentMethod } from '@/common/enums/payment-method';
 
 export class TransactionItemDto {
     @IsUUID()

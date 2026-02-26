@@ -1,21 +1,21 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
-import { PosService } from './pos.service.js';
-import { CreateTransactionDto } from './dto/create-transaction.dto.js';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import { UserRole } from '../../../../shared/constants/enums.js';
-import { BACKEND_ROUTES } from '../../../../shared/routes/backend-routes.js';
-import { Transaction } from './entities/transaction.entity.js';
+import { PosService } from '@pos/pos.service.js';
+import { CreateTransactionDto } from '@pos/dto/create-transaction.dto';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
+import { Roles } from '@common/decorators/roles.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { UserRole } from '@common/enums/user-roles.enums';
+import { APP_ROUTES} from '@common/routes/app.routes';
+import { Transaction } from '@pos/entities/transaction.entity';
 
-@Controller(BACKEND_ROUTES.POS.BASE)
+@Controller(APP_ROUTES.POS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER)
 export class PosController {
     constructor(private readonly posService: PosService) { }
 
-    @Post(BACKEND_ROUTES.POS.TRANSACTIONS)
+    @Post(APP_ROUTES.POS.TRANSACTIONS)
     create(
         @Body() createTransactionDto: CreateTransactionDto,
         @CurrentUser('id') cashierId: string,
@@ -28,12 +28,12 @@ export class PosController {
         );
     }
 
-    @Get(BACKEND_ROUTES.POS.TRANSACTIONS)
+    @Get(APP_ROUTES.POS.TRANSACTIONS)
     findAll(@CurrentUser('branchId') branchId: string): Promise<Transaction[]> {
         return this.posService.findAll(branchId);
     }
 
-    @Get(BACKEND_ROUTES.POS.TRANSACTION_BY_ID)
+    @Get(APP_ROUTES.POS.TRANSACTION_BY_ID)
     findOne(@Param('id') id: string): Promise<Transaction | null> {
         return this.posService.findById(id);
     }
