@@ -1,0 +1,59 @@
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  LedgerPro — Frontend CI                                  ║
+# ║  Lint → Type-check → Build                                ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+name: Frontend CI
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "frontend/**"
+  pull_request:
+    branches: [dev]
+    paths:
+      - "frontend/**"
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint · Typecheck · Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cache node_modules
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: frontend-deps-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            frontend-deps-${{ runner.os }}-
+
+      - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
