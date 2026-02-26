@@ -5,10 +5,10 @@ import {
     ManyToOne,
     JoinColumn,
     UpdateDateColumn,
-    Unique,
-} from 'typeorm';
-import { Product } from '../../products/entities/product.entity.js';
-import { Branch } from '../../branches/entities/branch.entity.js';
+    Unique,}
+     from 'typeorm';
+import { Product } from '@products/entities/product.entity';
+import { Branch } from '@branches/entities/branch.entity';
 
 @Entity('inventory')
 @Unique(['productId', 'branchId'])
