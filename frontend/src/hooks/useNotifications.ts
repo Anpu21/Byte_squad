@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState } from 'react';
-import type { INotification } from '@shared/interfaces/index';
+import type { INotification } from '@/types/index';
 import api from '@/services/api';
 
 interface UseNotificationsReturn {

@@ -1,6 +1,6 @@
 /**
- * LedgerPro — Shared Enums
- * Used by both frontend and backend.
+ * LedgerPro — Enums
+ * Shared between frontend components.
  */
 
 export enum UserRole {

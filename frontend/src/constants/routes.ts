@@ -1,6 +1,6 @@
 /**
  * LedgerPro — Frontend Route Paths
- * Used ONLY by React Router. Never import this in backend code.
+ * Used by React Router for navigation.
  */
 
 export const FRONTEND_ROUTES = {

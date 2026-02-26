@@ -1,8 +1,8 @@
 import { type ReactNode, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
-import { FRONTEND_ROUTES } from '@shared/routes/frontend-routes';
-import { UserRole } from '@shared/constants/enums';
+import { FRONTEND_ROUTES } from '@/constants/routes';
+import { UserRole } from '@/constants/enums';
 
 interface DashboardLayoutProps {
     children: ReactNode;
