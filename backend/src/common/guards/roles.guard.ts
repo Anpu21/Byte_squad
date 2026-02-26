@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '../../../../shared/constants/enums.js';
-import { ROLES_KEY } from '../decorators/roles.decorator.js';
+import { UserRole } from '@common/enums/user-roles.enums';
+import { ROLES_KEY } from '@common/decorators/roles.decorator';
 
 interface UserPayload {
     id: string;

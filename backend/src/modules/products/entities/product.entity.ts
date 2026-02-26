@@ -6,8 +6,8 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
 } from 'typeorm';
-import { Inventory } from '../../inventory/entities/inventory.entity.js';
-import { TransactionItem } from '../../pos/entities/transaction-item.entity.js';
+import { Inventory } from '@inventory/entities/inventory.entity';
+import { TransactionItem } from '@pos/entities/transaction-item.entity';
 
 @Entity('products')
 export class Product {

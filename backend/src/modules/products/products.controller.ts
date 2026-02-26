@@ -7,16 +7,16 @@ import {
     Delete,
     UseGuards,
 } from '@nestjs/common';
-import { ProductsService } from './products.service.js';
-import { CreateProductDto } from './dto/create-product.dto.js';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { UserRole } from '../../../../shared/constants/enums.js';
-import { BACKEND_ROUTES } from '../../../../shared/routes/backend-routes.js';
-import { Product } from './entities/product.entity.js';
+import { ProductsService } from '@products/products.service';
+import { CreateProductDto } from '@products/dto/create-product.dto';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
+import { Roles } from '@common/decorators/roles.decorator';
+import { UserRole } from '@common/enums/user-roles.enums';
+import { APP_ROUTES } from '@common/routes/app.routes';
+import { Product } from '@products/entities/product.entity';
 
-@Controller(BACKEND_ROUTES.PRODUCTS.BASE)
+@Controller(APP_ROUTES.PRODUCTS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProductsController {
     constructor(private readonly productsService: ProductsService) { }
@@ -32,17 +32,17 @@ export class ProductsController {
         return this.productsService.findAll();
     }
 
-    @Get(BACKEND_ROUTES.PRODUCTS.BY_ID)
+    @Get(APP_ROUTES.PRODUCTS.BY_ID)
     findOne(@Param('id') id: string): Promise<Product | null> {
         return this.productsService.findById(id);
     }
 
-    @Get(BACKEND_ROUTES.PRODUCTS.BY_BARCODE)
+    @Get(APP_ROUTES.PRODUCTS.BY_BARCODE)
     findByBarcode(@Param('barcode') barcode: string): Promise<Product | null> {
         return this.productsService.findByBarcode(barcode);
     }
 
-    @Delete(BACKEND_ROUTES.PRODUCTS.BY_ID)
+    @Delete(APP_ROUTES.PRODUCTS.BY_ID)
     @Roles(UserRole.ADMIN, UserRole.MANAGER)
     remove(@Param('id') id: string): Promise<void> {
         return this.productsService.remove(id);

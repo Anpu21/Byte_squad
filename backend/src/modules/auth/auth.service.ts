@@ -1,9 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { UsersService } from '../users/users.service.js';
-import { LoginDto } from './dto/login.dto.js';
-import { UserRole } from '../../../../shared/constants/enums.js';
+import { UsersService } from '@users/users.service';
+import { LoginDto } from '@auth/dto/login.dto';
+import { UserRole } from '@common/enums/user-roles.enums';
 
 interface JwtPayload {
     sub: string;
