@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { IUser, IAuthResponse } from '@shared/interfaces/index';
+import type { IUser, IAuthResponse } from '@/types/index';
 import api from '@/services/api';
 
 interface AuthState {
