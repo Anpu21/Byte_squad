@@ -8,17 +8,17 @@ import {
     Delete,
     UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service.js';
-import { CreateUserDto } from './dto/create-user.dto.js';
-import { UpdateUserDto } from './dto/update-user.dto.js';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { UserRole } from '../../../../shared/constants/enums.js';
-import { BACKEND_ROUTES } from '../../../../shared/routes/backend-routes.js';
-import { User } from './entities/user.entity.js';
+import { UsersService } from '@users/users.service';
+import { CreateUserDto } from '@users/dto/create-user.dto';
+import { UpdateUserDto } from '@users/dto/update-user.dto';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
+import { Roles } from '@common/decorators/roles.decorator';
+import { UserRole } from '@common/enums/user-roles.enums';
+import { APP_ROUTES } from '@common/routes/app.routes';
+import { User } from '@users/entities/user.entity';
 
-@Controller(BACKEND_ROUTES.USERS.BASE)
+@Controller(APP_ROUTES.USERS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
@@ -35,12 +35,12 @@ export class UsersController {
         return this.usersService.findAll();
     }
 
-    @Get(BACKEND_ROUTES.USERS.BY_ID)
+    @Get(APP_ROUTES.USERS.BY_ID)
     findOne(@Param('id') id: string): Promise<User | null> {
         return this.usersService.findById(id);
     }
 
-    @Patch(BACKEND_ROUTES.USERS.BY_ID)
+    @Patch(APP_ROUTES.USERS.BY_ID)
     @Roles(UserRole.ADMIN)
     update(
         @Param('id') id: string,
@@ -49,7 +49,7 @@ export class UsersController {
         return this.usersService.update(id, updateUserDto);
     }
 
-    @Delete(BACKEND_ROUTES.USERS.BY_ID)
+    @Delete(APP_ROUTES.USERS.BY_ID)
     @Roles(UserRole.ADMIN)
     remove(@Param('id') id: string): Promise<void> {
         return this.usersService.remove(id);
