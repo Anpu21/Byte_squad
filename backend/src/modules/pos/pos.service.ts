@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Transaction } from './entities/transaction.entity.js';
-import { CreateTransactionDto } from './dto/create-transaction.dto.js';
+import { Transaction } from '@pos/entities/transaction.entity.js';
+import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
 
 @Injectable()
 export class PosService {

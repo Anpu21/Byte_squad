@@ -6,8 +6,8 @@ import {
     JoinColumn,
     CreateDateColumn,
 } from 'typeorm';
-import { NotificationType } from '../../../../../shared/constants/enums.js';
-import { User } from '../../users/entities/user.entity.js';
+import { NotificationType } from '@common/enums/notification.enum';
+import { User } from '@users/entities/user.entity';
 
 @Entity('notifications')
 export class Notification {

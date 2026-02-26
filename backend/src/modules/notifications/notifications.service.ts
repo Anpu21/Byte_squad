@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification } from './entities/notification.entity.js';
-import { NotificationType } from '../../../../shared/constants/enums.js';
+import { Notification } from '@notifications/entities/notification.entity';
+import { NotificationType } from '@common/enums/notification.enum';
 
 interface CreateNotificationPayload {
     userId: string;

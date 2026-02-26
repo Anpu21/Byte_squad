@@ -1,17 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
-import { getDatabaseConfig } from './config/database.config.js';
-import { AuthModule } from './modules/auth/auth.module.js';
-import { UsersModule } from './modules/users/users.module.js';
-import { BranchesModule } from './modules/branches/branches.module.js';
-import { ProductsModule } from './modules/products/products.module.js';
-import { InventoryModule } from './modules/inventory/inventory.module.js';
-import { PosModule } from './modules/pos/pos.module.js';
-import { AccountingModule } from './modules/accounting/accounting.module.js';
-import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { getDatabaseConfig } from '@common/config/database.config';
+import { AuthModule } from '@auth/auth.module';
+import { UsersModule } from '@users/users.module';
+import { BranchesModule } from '@branches/branches.module';
+import { ProductsModule } from '@products/products.module';
+import { InventoryModule } from '@inventory/inventory.module';
+import { PosModule } from '@pos/pos.module';
+import { AccountingModule } from '@accounting/accounting.module';
+import { NotificationsModule } from '@notifications/notifications.module';
 
 @Module({
   imports: [
@@ -29,8 +27,6 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     PosModule,
     AccountingModule,
     NotificationsModule,
-  ],
-  controllers: [AppController],
-  providers: [AppService],
+  ]
 })
 export class AppModule { }
