@@ -5,10 +5,10 @@ import { APP_ROUTES } from '@common/routes/app.routes';
 
 @Controller(APP_ROUTES.AUTH.BASE)
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
-    @Post(APP_ROUTES.AUTH.LOGIN)
-    login(@Body() loginDto: LoginDto) {
-        return this.authService.login(loginDto);
-    }
+  @Post(APP_ROUTES.AUTH.LOGIN)
+  login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
+  }
 }

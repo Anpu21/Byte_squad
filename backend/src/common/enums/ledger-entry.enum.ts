@@ -1,5 +1,4 @@
 export enum LedgerEntryType {
-    CREDIT = 'credit',
-    DEBIT = 'debit',
+  CREDIT = 'credit',
+  DEBIT = 'debit',
 }
-

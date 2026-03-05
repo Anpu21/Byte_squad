@@ -37,8 +37,20 @@ export function useNotifications(): UseNotificationsReturn {
     }, []);
 
     useEffect(() => {
-        void fetchNotifications();
-    }, [fetchNotifications]);
+        let active = true;
+        api.get<{ data: INotification[] }>('/notifications')
+            .then((response) => {
+                if (active) {
+                    setNotifications(response.data.data);
+                }
+            })
+            .catch(() => {
+                // Silently fail — notifications are non-critical
+            });
+        return () => {
+            active = false;
+        };
+    }, []);
 
     const unreadCount = notifications.filter((n) => !n.isRead).length;
 
