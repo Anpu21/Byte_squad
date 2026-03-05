@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { IApiResponse } from '@shared/interfaces/index';
+import type { IApiResponse } from '@/types/index';
 
 const api = axios.create({
     baseURL: '/api/v1',
