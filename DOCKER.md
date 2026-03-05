@@ -1,4 +1,4 @@
-# 🐳 LedgerPro — Docker Guide
+# LedgerPro — Docker Guide
 
 ## Quick Start (Development)
 
@@ -143,7 +143,7 @@ docker run -d -p 3000:3000 \
 |---|---|---|
 | `NODE_ENV` | `development` | `production` |
 | `CORS_ORIGIN` | `http://localhost:5173` | `https://your-domain.com` |
-| `DB_SYNC` | `true` | `false` (⚠️ NEVER true in prod) |
+| `DB_SYNC` | `true` | `false` ( NEVER true in prod) |
 | `DB_LOGGING` | `true` | `false` |
 | `JWT_SECRET` | dev placeholder | strong random string |
 | `VITE_API_URL` | `http://localhost:3000/api/v1` | `https://api.your-domain.com/api/v1` |
