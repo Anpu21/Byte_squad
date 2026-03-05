@@ -6,9 +6,9 @@ import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Transaction, TransactionItem])],
-    controllers: [PosController],
-    providers: [PosService],
-    exports: [PosService],
+  imports: [TypeOrmModule.forFeature([Transaction, TransactionItem])],
+  controllers: [PosController],
+  providers: [PosService],
+  exports: [PosService],
 })
-export class PosModule { }
+export class PosModule {}
