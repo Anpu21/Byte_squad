@@ -1,0 +1,52 @@
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  LedgerPro — Development Docker Compose                  ║
+# ║  Usage: docker compose up                                 ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+services:
+  # ── Frontend (Vite + React) ──────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    container_name: ledgerpro-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount source for hot-reload
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+      # Prevent host node_modules from overriding container's
+      - /app/node_modules
+    env_file:
+      - .env.development
+    depends_on:
+      - backend
+    networks:
+      - ledgerpro-network
+
+  # ── Backend (NestJS) ─────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      target: development
+    container_name: ledgerpro-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source for hot-reload
+      - ./backend/src:/app/src
+      - ./backend/tsconfig-paths-bootstrap.js:/app/tsconfig-paths-bootstrap.js
+      # Prevent host node_modules from overriding container's
+      - /app/node_modules
+    env_file:
+      - .env.development
+    networks:
+      - ledgerpro-network
+
+# ── Network ──────────────────────────────────────────────
+networks:
+  ledgerpro-network:
+    driver: bridge
