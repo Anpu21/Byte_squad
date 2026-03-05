@@ -27,6 +27,6 @@ import { NotificationsModule } from '@notifications/notifications.module';
     PosModule,
     AccountingModule,
     NotificationsModule,
-  ]
+  ],
 })
-export class AppModule { }
+export class AppModule {}
