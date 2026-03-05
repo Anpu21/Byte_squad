@@ -1,5 +1,5 @@
 export enum NotificationType {
-    LOW_STOCK = 'low_stock',
-    SYSTEM = 'system',
-    ALERT = 'alert',
+  LOW_STOCK = 'low_stock',
+  SYSTEM = 'system',
+  ALERT = 'alert',
 }
