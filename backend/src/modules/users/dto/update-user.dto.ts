@@ -1,28 +1,28 @@
 import { IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
-import { UserRole } from '../../../../../shared/constants/enums.js';
+import { UserRole } from '@common/enums/user-roles.enums';
 
 export class UpdateUserDto {
-    @IsEmail()
-    @IsOptional()
-    email?: string;
+  @IsEmail()
+  @IsOptional()
+  email?: string;
 
-    @IsString()
-    @IsOptional()
-    firstName?: string;
+  @IsString()
+  @IsOptional()
+  firstName?: string;
 
-    @IsString()
-    @IsOptional()
-    lastName?: string;
+  @IsString()
+  @IsOptional()
+  lastName?: string;
 
-    @IsEnum(UserRole)
-    @IsOptional()
-    role?: UserRole;
+  @IsEnum(UserRole)
+  @IsOptional()
+  role?: UserRole;
 
-    @IsUUID()
-    @IsOptional()
-    branchId?: string;
+  @IsUUID()
+  @IsOptional()
+  branchId?: string;
 
-    @IsString()
-    @IsOptional()
-    avatarUrl?: string;
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
 }

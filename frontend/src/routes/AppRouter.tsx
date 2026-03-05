@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { FRONTEND_ROUTES } from '@shared/routes/frontend-routes';
+import { FRONTEND_ROUTES } from '@/constants/routes';
 import AuthLayout from '@/layouts/AuthLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import LoginPage from '@/pages/auth/LoginPage';

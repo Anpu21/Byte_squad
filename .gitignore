@@ -1,0 +1,6 @@
+# Environment variable files (contain secrets)
+.env
+.env.development
+.env.production
+.env.local
+.env.*.local
