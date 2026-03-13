@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
@@ -22,10 +23,11 @@ export default function LoginPage() {
             console.error('Login failed:', error);
             // Assuming the API returns an error message in response.data.message
             
-            const err = error as any;
-            const message = err.response?.data?.message || 'Invalid email or password';
-            toast.error(message);
-            
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                toast.error(String(error.response.data.message));
+            } else {
+                toast.error('Invalid email or password');
+            }
         }
     };
 
