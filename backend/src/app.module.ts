@@ -10,6 +10,9 @@ import { InventoryModule } from '@inventory/inventory.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
+import { User } from '@users/entities/user.entity';
+import { Branch } from '@branches/entities/branch.entity';
+import { AdminSeedService } from '@common/seeds/admin-seed.service';
 
 @Module({
   imports: [
@@ -19,6 +22,7 @@ import { NotificationsModule } from '@notifications/notifications.module';
       inject: [ConfigService],
       useFactory: getDatabaseConfig,
     }),
+    TypeOrmModule.forFeature([User, Branch]),
     AuthModule,
     UsersModule,
     BranchesModule,
@@ -27,6 +31,7 @@ import { NotificationsModule } from '@notifications/notifications.module';
     PosModule,
     AccountingModule,
     NotificationsModule,
-  ]
+  ],
+  providers: [AdminSeedService],
 })
-export class AppModule { }
+export class AppModule {}
