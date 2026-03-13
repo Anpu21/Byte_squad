@@ -19,11 +19,16 @@
 
 The application automatically seeds a default admin user on first startup.
 
-| Field    | Value                 |
-|----------|-----------------------|
-| Email    | `admin@ledgerpro.com` |
-| Password | `Admin@123`           |
-| Role     | `admin`               |
+| Field | Default Value | Env Override |
+|-------|---------------|--------------|
+| Email | `admin@ledgerpro.com` | `SEED_ADMIN_EMAIL` |
+| Password | `Admin@123` | `SEED_ADMIN_PASSWORD` |
+| First Name | `System` | `SEED_ADMIN_FIRST_NAME` |
+| Last Name | `Admin` | `SEED_ADMIN_LAST_NAME` |
+| Role | `admin` | — |
+| Branch Name | `Main Branch` | `SEED_ADMIN_BRANCH_NAME` |
+| Branch Address | `Head Office` | `SEED_ADMIN_BRANCH_ADDRESS` |
+| Branch Phone | `+94000000000` | `SEED_ADMIN_BRANCH_PHONE` |
 
 > ⚠️ **Change the default password after your first login.** These credentials are for development/initial setup only.
 
@@ -67,6 +72,13 @@ Key variables in `.env.development`:
 | `DB_SYNC`       | Auto-sync schema (dev only)          | `true`                   |
 | `JWT_SECRET`    | JWT signing secret                   | `dev-secret-change-me…`  |
 | `JWT_EXPIRES_IN`| Token lifetime in seconds            | `86400` (24 h)           |
+| `SEED_ADMIN_EMAIL` | Default seeded admin email        | `admin@ledgerpro.com`    |
+| `SEED_ADMIN_PASSWORD` | Default seeded admin password  | `Admin@123`              |
+| `SEED_ADMIN_FIRST_NAME` | Default seeded admin first name | `System`               |
+| `SEED_ADMIN_LAST_NAME` | Default seeded admin last name | `Admin`                 |
+| `SEED_ADMIN_BRANCH_NAME` | Default seeded branch name    | `Main Branch`           |
+| `SEED_ADMIN_BRANCH_ADDRESS` | Default seeded branch address | `Head Office`         |
+| `SEED_ADMIN_BRANCH_PHONE` | Default seeded branch phone | `+94000000000`           |
 
 ### 3a. Run with Docker (Recommended)
 

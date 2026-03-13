@@ -1,16 +1,34 @@
 import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import axios from 'axios';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    
+    const { login, isLoading } = useAuth();
+    const navigate = useNavigate();
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-        // TODO: integrate with auth API
-        setTimeout(() => setIsLoading(false), 1500);
+        
+        try {
+            await login(email, password);
+            toast.success('Successfully logged in!');
+            navigate('/dashboard');
+        } catch (error) {
+            console.error('Login failed:', error);
+            // Assuming the API returns an error message in response.data.message
+            
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                toast.error(String(error.response.data.message));
+            } else {
+                toast.error('Invalid email or password');
+            }
+        }
     };
 
     return (
