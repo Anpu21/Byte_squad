@@ -87,14 +87,15 @@ export class AuthService {
           isVerified: user.isVerified,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      this.logger.error(
-        `Login error for ${loginDto.email}: ${error.message}`,
-        error.stack,
-      );
+
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+
+      this.logger.error(`Login error for ${loginDto.email}: ${message}`, stack);
       throw error;
     }
   }
