@@ -1,33 +1,36 @@
 import { useState, type FormEvent } from 'react';
+import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import axios from 'axios';
-import { useAuth } from '@/hooks/useAuth';
+import { loginThunk } from '@/store/slices/authSlice';
+import type { AppDispatch } from '@/store';
 
 export default function LoginPage() {
+    const dispatch = useDispatch<AppDispatch>();
+    const navigate = useNavigate();
+    
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    
-    const { login, isLoading } = useAuth();
-    const navigate = useNavigate();
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
         
         try {
-            await login(email, password);
-            toast.success('Successfully logged in!');
-            navigate('/dashboard');
-        } catch (error) {
-            console.error('Login failed:', error);
-            // Assuming the API returns an error message in response.data.message
+            const resultAction = await dispatch(loginThunk({ email, password }));
             
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(String(error.response.data.message));
+            if (loginThunk.fulfilled.match(resultAction)) {
+                toast.success('Successfully logged in!');
+                navigate('/dashboard');
             } else {
-                toast.error('Invalid email or password');
+                toast.error(resultAction.payload as string || 'Failed to login');
             }
+        } catch {
+            toast.error('An unexpected error occurred');
+        } finally {
+            setIsLoading(false);
         }
     };
 
