@@ -10,15 +10,24 @@ import { InventoryModule } from '@inventory/inventory.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
+import { User } from '@users/entities/user.entity';
+import { Branch } from '@branches/entities/branch.entity';
+import { AdminSeedService } from '@common/seeds/admin-seed.service';
+
+import appConfig from '@common/config/app.config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [appConfig],
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: getDatabaseConfig,
     }),
+    TypeOrmModule.forFeature([User, Branch]),
     AuthModule,
     UsersModule,
     BranchesModule,
@@ -28,5 +37,6 @@ import { NotificationsModule } from '@notifications/notifications.module';
     AccountingModule,
     NotificationsModule,
   ],
+  providers: [AdminSeedService],
 })
 export class AppModule {}
