@@ -1,10 +1,10 @@
-# 📒 LedgerPro — Business Accounting Software
-
+# LedgerPro  
+<sub>Business Accounting Software<sub>
 > A modern, full-stack point-of-sale and accounting platform built for multi-branch businesses.
 
 ---
 
-## ⚡ Tech Stack
+## Tech  Stack
 
 | Layer     | Technology                                           |
 |-----------|------------------------------------------------------|
@@ -15,7 +15,7 @@
 
 ---
 
-## 🔑 Default Admin Account
+## Default Admin Account
 
 The application automatically seeds a default admin user on first startup.
 
@@ -30,11 +30,11 @@ The application automatically seeds a default admin user on first startup.
 | Branch Address | `Head Office` | `SEED_ADMIN_BRANCH_ADDRESS` |
 | Branch Phone | `+94000000000` | `SEED_ADMIN_BRANCH_PHONE` |
 
-> ⚠️ **Change the default password after your first login.** These credentials are for development/initial setup only.
+> **Change the default password after your first login.** These credentials are for development/initial setup only.
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -93,8 +93,8 @@ docker compose up --build
 
 The admin seed runs automatically on startup — check the logs for:
 ```
-🌱 Seeding default admin account...
-✅ Default admin user created: admin@ledgerpro.com
+Seeding default admin account...
+Default admin user created: admin@ledgerpro.com
 ```
 
 ### 3b. Run Locally (Without Docker)
@@ -122,7 +122,7 @@ npm run seed:admin
 
 ---
 
-## 🔐 Login
+## Login
 
 **Endpoint:** `POST /api/v1/auth/login`
 
@@ -152,7 +152,7 @@ npm run seed:admin
 
 ---
 
-## 🗂️ Project Structure
+##  Project Structure
 
 ```
 Byte_squad/
@@ -192,7 +192,7 @@ Byte_squad/
 
 ---
 
-## 📡 API Routes Overview
+##  API Routes Overview
 
 | Module         | Route                        | Methods             |
 |----------------|------------------------------|---------------------|
@@ -213,7 +213,7 @@ Byte_squad/
 
 ---
 
-## 👥 User Roles
+##  User Roles
 
 | Role         | Description                              |
 |--------------|------------------------------------------|
@@ -224,16 +224,5 @@ Byte_squad/
 
 ---
 
-## 🤝 Contributing
+## License
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit your changes: `git commit -m 'feat: add my feature'`
-4. Push to the branch: `git push origin feature/my-feature`
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is **UNLICENSED** — private use only.
