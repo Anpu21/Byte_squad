@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import AuthLayout from '@/layouts/AuthLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
@@ -12,7 +12,7 @@ import LedgerPage from '@/pages/accounting/LedgerPage';
 import ExpensesPage from '@/pages/accounting/ExpensesPage';
 import UserManagementPage from '@/pages/users/UserManagementPage';
 import ProfilePage from '@/pages/users/ProfilePage';
-
+import NotFoundPage from '@/pages/NotFoundPage';
 export default function AppRouter() {
     return (
         <BrowserRouter>
@@ -110,7 +110,7 @@ export default function AppRouter() {
                 />
 
                 {/* Catch-all redirect */}
-                <Route path="*" element={<Navigate to={FRONTEND_ROUTES.LOGIN} replace />} />
+                <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </BrowserRouter>
     );
