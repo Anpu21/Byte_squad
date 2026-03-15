@@ -1,16 +1,37 @@
 import { useState, type FormEvent } from 'react';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { loginThunk } from '@/store/slices/authSlice';
+import type { AppDispatch } from '@/store';
 
 export default function LoginPage() {
+    const dispatch = useDispatch<AppDispatch>();
+    const navigate = useNavigate();
+    
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        // TODO: integrate with auth API
-        setTimeout(() => setIsLoading(false), 1500);
+        
+        try {
+            const resultAction = await dispatch(loginThunk({ email, password }));
+            
+            if (loginThunk.fulfilled.match(resultAction)) {
+                toast.success('Successfully logged in!');
+                navigate('/dashboard');
+            } else {
+                toast.error(resultAction.payload as string || 'Failed to login');
+            }
+        } catch {
+            toast.error('An unexpected error occurred');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
