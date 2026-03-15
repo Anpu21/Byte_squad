@@ -14,9 +14,14 @@ import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
 
+import appConfig from '@common/config/app.config';
+
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [appConfig],
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
