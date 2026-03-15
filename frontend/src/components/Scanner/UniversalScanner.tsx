@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-// 1. Change the import to ONLY use @zxing/browser
 import { BrowserMultiFormatReader } from '@zxing/browser';
 
 interface UniversalScannerProps {
@@ -17,7 +16,8 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
         const codeReader = new BrowserMultiFormatReader();
         let isMounted = true;
 
-        codeReader.decodeFromVideoDevice(null, videoRef.current, (result, err) => {
+        // FIXED: Passing `undefined` instead of `null` to satisfy TypeScript
+        codeReader.decodeFromVideoDevice(undefined, videoRef.current, (result, err) => {
             if (!isMounted) return;
 
             if (result) {
@@ -30,8 +30,6 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
             }
 
             if (err) {
-                // 2. Use err.name instead of importing and checking instanceof NotFoundException
-                // This bypasses the TS module resolution issue completely.
                 if (err.name !== 'NotFoundException') {
                     console.error('Barcode scanning error:', err);
                 }
@@ -42,7 +40,6 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
 
         return () => {
             isMounted = false;
-            // Modern cleanup for @zxing/browser
             const stream = videoRef.current?.srcObject as MediaStream;
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
@@ -96,8 +93,8 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
                 <video 
                     ref={videoRef} 
                     className="absolute inset-0 w-full h-full object-cover opacity-80"
-                    muted // Good practice for mobile browsers to allow autoplay
-                    playsInline // Critical for iOS Safari
+                    muted 
+                    playsInline 
                 />
 
                 <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
