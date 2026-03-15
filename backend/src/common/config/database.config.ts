@@ -14,3 +14,4 @@ export const getDatabaseConfig = (
   synchronize: configService.get<boolean>('DB_SYNC', false),
   logging: configService.get<boolean>('DB_LOGGING', false),
 });
+
