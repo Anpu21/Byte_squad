@@ -90,6 +90,13 @@ export class AdminSeedService implements OnModuleInit {
     });
 
     if (existing) {
+      // Fix: ensure seeded admin is never stuck in first-login state
+      if (existing.isFirstLogin) {
+        await this.userRepository.update(existing.id, { isFirstLogin: false });
+        this.logger.log(
+          `Admin user "${defaults.adminEmail}" — fixed isFirstLogin flag.`,
+        );
+      }
       this.logger.log(
         `Admin user "${defaults.adminEmail}" already exists — skipped.`,
       );
@@ -106,7 +113,7 @@ export class AdminSeedService implements OnModuleInit {
       lastName: defaults.adminLastName,
       role: UserRole.ADMIN,
       branchId,
-      isFirstLogin: true,
+      isFirstLogin: false,
       isVerified: true,
     });
 

@@ -179,6 +179,34 @@ export interface IPaginatedResponse<T> {
     totalPages: number;
 }
 
+// ─── Cashier Dashboard ──────────────────────────────────────────────────────
+
+export interface IDailyBreakdown {
+    date: string;
+    totalSales: number;
+    transactionCount: number;
+}
+
+export interface ICashierDashboard {
+    today: {
+        totalSales: number;
+        transactionCount: number;
+        averageSale: number;
+    };
+    week: {
+        totalSales: number;
+        transactionCount: number;
+    };
+    dailyBreakdown: IDailyBreakdown[];
+    recentTransactions: ITransaction[];
+}
+
+// ─── User Profile ───────────────────────────────────────────────────────────
+
+export interface IUserProfile extends IUser {
+    branch?: IBranch;
+}
+
 // ─── Frontend-specific Types ─────────────────────────────────────────────────
 
 export interface SidebarNavItem {
