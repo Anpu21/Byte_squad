@@ -12,7 +12,7 @@ export default function LedgerPage() {
     // Helper to format currency
     const formatCurrency = (amount: number | null) => {
         if (amount === null) return '-';
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+        return new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(amount);
     };
 
     return (
