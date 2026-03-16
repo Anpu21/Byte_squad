@@ -7,9 +7,11 @@ export const FRONTEND_ROUTES = {
     // Auth
     LOGIN: '/login',
     OTP_VERIFICATION: '/verify-otp',
+    CHANGE_PASSWORD: '/change-password',
 
     // Dashboard
     DASHBOARD: '/dashboard',
+    CASHIER_DASHBOARD: '/cashier-dashboard',
 
     // Inventory
     INVENTORY: '/inventory',
