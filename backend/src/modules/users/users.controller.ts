@@ -7,13 +7,20 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from '@users/users.service';
 import { CreateUserDto } from '@users/dto/create-user.dto';
 import { UpdateUserDto } from '@users/dto/update-user.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { APP_ROUTES } from '@common/routes/app.routes';
 import { User } from '@users/entities/user.entity';
@@ -22,6 +29,40 @@ import { User } from '@users/entities/user.entity';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  // ── Profile endpoints (all authenticated users) ──────────
+
+  @Get(APP_ROUTES.USERS.PROFILE)
+  getProfile(@CurrentUser('id') userId: string): Promise<User | null> {
+    return this.usersService.findById(userId);
+  }
+
+  @Patch(APP_ROUTES.USERS.PROFILE)
+  updateProfile(
+    @CurrentUser('id') userId: string,
+    @Body() body: { firstName?: string; lastName?: string },
+  ): Promise<User | null> {
+    return this.usersService.updateProfile(userId, body);
+  }
+
+  @Post(APP_ROUTES.USERS.PROFILE_AVATAR)
+  @UseInterceptors(FileInterceptor('avatar'))
+  async uploadAvatar(
+    @CurrentUser('id') userId: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }), // 2MB
+          new FileTypeValidator({ fileType: /^image\/(jpeg|png|webp|gif)$/ }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ): Promise<User | null> {
+    return this.usersService.updateAvatar(userId, file);
+  }
+
+  // ── Admin CRUD endpoints ─────────────────────────────────
 
   @Post()
   @Roles(UserRole.ADMIN)
@@ -53,5 +94,11 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string): Promise<void> {
     return this.usersService.remove(id);
+  }
+
+  @Post(APP_ROUTES.USERS.RESEND_CREDENTIALS)
+  @Roles(UserRole.ADMIN)
+  resendCredentials(@Param('id') id: string): Promise<void> {
+    return this.usersService.resendCredentials(id);
   }
 }

@@ -72,11 +72,11 @@ export default function ProductFormPage() {
                                     Cost Price
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium">$</span>
-                                    <input 
-                                        type="number" 
-                                        className="w-full h-11 pl-8 pr-4 bg-[#0a0a0a] border border-white/10 rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 tabular-nums" 
-                                        placeholder="0.00" 
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium">Rs</span>
+                                    <input
+                                        type="number"
+                                        className="w-full h-11 pl-10 pr-4 bg-[#0a0a0a] border border-white/10 rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 tabular-nums"
+                                        placeholder="0.00"
                                     />
                                 </div>
                                 <p className="text-[11px] text-slate-500 mt-2">Your internal purchase cost.</p>
@@ -87,11 +87,11 @@ export default function ProductFormPage() {
                                     Selling Price
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium">$</span>
-                                    <input 
-                                        type="number" 
-                                        className="w-full h-11 pl-8 pr-4 bg-[#0a0a0a] border border-white/10 rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 tabular-nums" 
-                                        placeholder="0.00" 
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium">Rs</span>
+                                    <input
+                                        type="number"
+                                        className="w-full h-11 pl-10 pr-4 bg-[#0a0a0a] border border-white/10 rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 tabular-nums"
+                                        placeholder="0.00"
                                     />
                                 </div>
                                 <p className="text-[11px] text-slate-500 mt-2">Customer facing price.</p>
