@@ -8,12 +8,21 @@ import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { APP_ROUTES } from '@common/routes/app.routes';
 import { Transaction } from '@pos/entities/transaction.entity';
+import type { CashierDashboardData } from '@pos/pos.service';
 
 @Controller(APP_ROUTES.POS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER)
 export class PosController {
   constructor(private readonly posService: PosService) {}
+
+  @Get(APP_ROUTES.POS.MY_DASHBOARD)
+  getCashierDashboard(
+    @CurrentUser('id') cashierId: string,
+    @CurrentUser('branchId') branchId: string,
+  ): Promise<CashierDashboardData> {
+    return this.posService.getCashierDashboard(cashierId, branchId);
+  }
 
   @Post(APP_ROUTES.POS.TRANSACTIONS)
   create(
