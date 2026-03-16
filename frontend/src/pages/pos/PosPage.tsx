@@ -81,15 +81,15 @@ export default function PosPage() {
                     <div className="space-y-3 mb-6">
                         <div className="flex justify-between text-sm text-slate-400 font-medium">
                             <span>Subtotal</span>
-                            <span className="text-slate-200 tabular-nums">$0.00</span>
+                            <span className="text-slate-200 tabular-nums">Rs 0.00</span>
                         </div>
                         <div className="flex justify-between text-sm text-slate-400 font-medium">
                             <span>Tax (Calculated at checkout)</span>
-                            <span className="text-slate-200 tabular-nums">$0.00</span>
+                            <span className="text-slate-200 tabular-nums">Rs 0.00</span>
                         </div>
                         <div className="pt-3 mt-3 border-t border-dashed border-white/10 flex justify-between items-end">
                             <span className="text-sm font-medium text-slate-300">Total</span>
-                            <span className="text-3xl font-bold text-white tabular-nums tracking-tight leading-none">$0.00</span>
+                            <span className="text-3xl font-bold text-white tabular-nums tracking-tight leading-none">Rs 0.00</span>
                         </div>
                     </div>
 

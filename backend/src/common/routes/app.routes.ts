@@ -18,7 +18,9 @@ export const APP_ROUTES = {
   USERS: {
     BASE: `${API_PREFIX}/users`,
     PROFILE: 'profile',
+    PROFILE_AVATAR: 'profile/avatar',
     BY_ID: ':id',
+    RESEND_CREDENTIALS: ':id/resend-credentials',
   },
 
   // Branches
@@ -48,6 +50,8 @@ export const APP_ROUTES = {
     TRANSACTIONS: 'transactions',
     TRANSACTION_BY_ID: 'transactions/:id',
     DAILY_REPORT: 'daily-report',
+    MY_DASHBOARD: 'my-dashboard',
+    ADMIN_DASHBOARD: 'admin-dashboard',
   },
 
   // Accounting

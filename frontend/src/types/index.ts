@@ -179,6 +179,66 @@ export interface IPaginatedResponse<T> {
     totalPages: number;
 }
 
+// ─── Cashier Dashboard ──────────────────────────────────────────────────────
+
+export interface IDailyBreakdown {
+    date: string;
+    totalSales: number;
+    transactionCount: number;
+}
+
+export interface ITopProduct {
+    productId: string;
+    productName: string;
+    totalQuantity: number;
+    totalRevenue: number;
+}
+
+export interface IAdminDashboard {
+    today: {
+        totalSales: number;
+        transactionCount: number;
+        averageSale: number;
+    };
+    week: {
+        totalSales: number;
+        transactionCount: number;
+    };
+    month: {
+        totalRevenue: number;
+        transactionCount: number;
+    };
+    stats: {
+        activeProducts: number;
+        lowStockItems: number;
+        totalUsers: number;
+        totalBranches: number;
+    };
+    dailyBreakdown: IDailyBreakdown[];
+    topProducts: ITopProduct[];
+    recentTransactions: ITransaction[];
+}
+
+export interface ICashierDashboard {
+    today: {
+        totalSales: number;
+        transactionCount: number;
+        averageSale: number;
+    };
+    week: {
+        totalSales: number;
+        transactionCount: number;
+    };
+    dailyBreakdown: IDailyBreakdown[];
+    recentTransactions: ITransaction[];
+}
+
+// ─── User Profile ───────────────────────────────────────────────────────────
+
+export interface IUserProfile extends IUser {
+    branch?: IBranch;
+}
+
 // ─── Frontend-specific Types ─────────────────────────────────────────────────
 
 export interface SidebarNavItem {
