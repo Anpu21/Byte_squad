@@ -79,16 +79,12 @@ export class UsersService {
       });
 
     // Return user without passwordHash
-    const { passwordHash: _, ...userWithoutPassword } = savedUser;
-    return userWithoutPassword as User;
+    return this.stripPassword(savedUser);
   }
 
   async findAll(): Promise<User[]> {
     const users = await this.userRepository.find({ relations: ['branch'] });
-    return users.map((user) => {
-      const { passwordHash: _, ...rest } = user;
-      return rest as User;
-    });
+    return users.map((user) => this.stripPassword(user));
   }
 
   async findById(id: string): Promise<User | null> {
@@ -97,8 +93,7 @@ export class UsersService {
       relations: ['branch'],
     });
     if (!user) return null;
-    const { passwordHash: _, ...rest } = user;
-    return rest as User;
+    return this.stripPassword(user);
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -150,10 +145,7 @@ export class UsersService {
     return this.findById(id);
   }
 
-  async update(
-    id: string,
-    updateUserDto: UpdateUserDto,
-  ): Promise<User | null> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User | null> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -204,6 +196,12 @@ export class UsersService {
     );
 
     this.logger.log(`Credentials resent for user: ${user.email}`);
+  }
+
+  private stripPassword(user: User): User {
+    const result = { ...user };
+    delete (result as Partial<User>).passwordHash;
+    return result;
   }
 
   private generateTempPassword(): string {
