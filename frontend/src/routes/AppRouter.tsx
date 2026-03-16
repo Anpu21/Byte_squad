@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import AuthLayout from '@/layouts/AuthLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
+import ProtectedRoute from '@/routes/ProtectedRoute';
+import PublicRoute from '@/routes/PublicRoute';
 import LoginPage from '@/pages/auth/LoginPage';
 import OtpVerificationPage from '@/pages/auth/OtpVerificationPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
@@ -12,105 +14,124 @@ import LedgerPage from '@/pages/accounting/LedgerPage';
 import ExpensesPage from '@/pages/accounting/ExpensesPage';
 import UserManagementPage from '@/pages/users/UserManagementPage';
 import ProfilePage from '@/pages/users/ProfilePage';
-
+import NotFoundPage from '@/pages/NotFoundPage';
 export default function AppRouter() {
     return (
         <BrowserRouter>
             <Routes>
-                {/* Auth routes */}
+                {/* Root redirect */}
+                <Route path="/" element={<Navigate to={FRONTEND_ROUTES.DASHBOARD} replace />} />
+
+                {/* Auth routes — redirect to dashboard if already logged in */}
                 <Route
                     path={FRONTEND_ROUTES.LOGIN}
                     element={
-                        <AuthLayout>
-                            <LoginPage />
-                        </AuthLayout>
+                        <PublicRoute>
+                            <AuthLayout>
+                                <LoginPage />
+                            </AuthLayout>
+                        </PublicRoute>
                     }
                 />
                 <Route
                     path={FRONTEND_ROUTES.OTP_VERIFICATION}
                     element={
-                        <AuthLayout>
-                            <OtpVerificationPage />
-                        </AuthLayout>
+                        <PublicRoute>
+                            <AuthLayout>
+                                <OtpVerificationPage />
+                            </AuthLayout>
+                        </PublicRoute>
                     }
                 />
 
-                {/* Dashboard routes */}
+                {/* Protected routes — redirect to login if not authenticated */}
                 <Route
                     path={FRONTEND_ROUTES.DASHBOARD}
                     element={
-                        <DashboardLayout>
-                            <DashboardPage />
-                        </DashboardLayout>
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <DashboardPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
                     }
                 />
 
-                {/* Inventory routes */}
                 <Route
                     path={FRONTEND_ROUTES.INVENTORY}
                     element={
-                        <DashboardLayout>
-                            <InventoryListPage />
-                        </DashboardLayout>
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <InventoryListPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
                     }
                 />
                 <Route
                     path={FRONTEND_ROUTES.INVENTORY_ADD}
                     element={
-                        <DashboardLayout>
-                            <ProductFormPage />
-                        </DashboardLayout>
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <ProductFormPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
                     }
                 />
 
-                {/* POS route */}
                 <Route
                     path={FRONTEND_ROUTES.POS}
                     element={
-                        <DashboardLayout>
-                            <PosPage />
-                        </DashboardLayout>
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <PosPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
                     }
                 />
 
-                {/* Accounting routes */}
                 <Route
                     path={FRONTEND_ROUTES.LEDGER}
                     element={
-                        <DashboardLayout>
-                            <LedgerPage />
-                        </DashboardLayout>
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <LedgerPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
                     }
                 />
                 <Route
                     path={FRONTEND_ROUTES.EXPENSES}
                     element={
-                        <DashboardLayout>
-                            <ExpensesPage />
-                        </DashboardLayout>
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <ExpensesPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
                     }
                 />
 
-                {/* User routes */}
                 <Route
                     path={FRONTEND_ROUTES.USER_MANAGEMENT}
                     element={
-                        <DashboardLayout>
-                            <UserManagementPage />
-                        </DashboardLayout>
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <UserManagementPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
                     }
                 />
                 <Route
                     path={FRONTEND_ROUTES.PROFILE}
                     element={
-                        <DashboardLayout>
-                            <ProfilePage />
-                        </DashboardLayout>
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <ProfilePage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
                     }
                 />
 
-                {/* Catch-all redirect */}
-                <Route path="*" element={<Navigate to={FRONTEND_ROUTES.LOGIN} replace />} />
+                {/* Catch-all */}
+                <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </BrowserRouter>
     );

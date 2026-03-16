@@ -11,10 +11,22 @@ interface AuthState {
     error: string | null;
 }
 
+function getStoredUser(): IUser | null {
+    try {
+        const json = localStorage.getItem('ledgerpro_user');
+        return json ? (JSON.parse(json) as IUser) : null;
+    } catch {
+        return null;
+    }
+}
+
+const storedToken = localStorage.getItem('ledgerpro_token');
+const storedUser = getStoredUser();
+
 const initialState: AuthState = {
-    user: null,
-    token: localStorage.getItem('ledgerpro_token') || null,
-    isAuthenticated: !!localStorage.getItem('ledgerpro_token'),
+    user: storedUser,
+    token: storedToken,
+    isAuthenticated: !!storedToken && !!storedUser,
     isLoading: false,
     error: null,
 };
@@ -27,6 +39,7 @@ export const loginThunk = createAsyncThunk<
     try {
         const data = await authService.login(credentials);
         localStorage.setItem('ledgerpro_token', data.accessToken);
+        localStorage.setItem('ledgerpro_user', JSON.stringify(data.user));
         return data;
     } catch (error: unknown) {
         if (axios.isAxiosError(error)) {
@@ -48,6 +61,7 @@ const authSlice = createSlice({
             state.isAuthenticated = false;
             state.error = null;
             localStorage.removeItem('ledgerpro_token');
+            localStorage.removeItem('ledgerpro_user');
         },
         clearError: (state) => {
             state.error = null;
