@@ -2,12 +2,45 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Transaction } from '@pos/entities/transaction.entity.js';
+import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
 
 export interface DailyBreakdown {
   date: string;
   totalSales: number;
   transactionCount: number;
+}
+
+export interface TopProduct {
+  productId: string;
+  productName: string;
+  totalQuantity: number;
+  totalRevenue: number;
+}
+
+export interface AdminDashboardData {
+  today: {
+    totalSales: number;
+    transactionCount: number;
+    averageSale: number;
+  };
+  week: {
+    totalSales: number;
+    transactionCount: number;
+  };
+  month: {
+    totalRevenue: number;
+    transactionCount: number;
+  };
+  stats: {
+    activeProducts: number;
+    lowStockItems: number;
+    totalUsers: number;
+    totalBranches: number;
+  };
+  dailyBreakdown: DailyBreakdown[];
+  topProducts: TopProduct[];
+  recentTransactions: Transaction[];
 }
 
 export interface CashierDashboardData {
@@ -29,6 +62,8 @@ export class PosService {
   constructor(
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
+    @InjectRepository(TransactionItem)
+    private readonly transactionItemRepository: Repository<TransactionItem>,
   ) {}
 
   async createTransaction(
@@ -168,6 +203,141 @@ export class PosService {
         transactionCount: weekTransactions.length,
       },
       dailyBreakdown,
+      recentTransactions,
+    };
+  }
+
+  async getAdminDashboard(): Promise<AdminDashboardData> {
+    const now = new Date();
+
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - 6);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Today's sales (all branches)
+    const todayTxns = await this.transactionRepository.find({
+      where: { createdAt: MoreThanOrEqual(todayStart) },
+    });
+    const todaySales = todayTxns.reduce((s, t) => s + Number(t.total), 0);
+    const todayCount = todayTxns.length;
+    const todayAvg = todayCount > 0 ? todaySales / todayCount : 0;
+
+    // This week
+    const weekTxns = await this.transactionRepository.find({
+      where: { createdAt: MoreThanOrEqual(weekStart) },
+    });
+    const weekSales = weekTxns.reduce((s, t) => s + Number(t.total), 0);
+
+    // This month
+    const monthTxns = await this.transactionRepository.find({
+      where: { createdAt: MoreThanOrEqual(monthStart) },
+    });
+    const monthRevenue = monthTxns.reduce((s, t) => s + Number(t.total), 0);
+
+    // Daily breakdown (last 7 days)
+    const dailyMap = new Map<string, { totalSales: number; count: number }>();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      dailyMap.set(d.toISOString().split('T')[0], { totalSales: 0, count: 0 });
+    }
+    for (const t of weekTxns) {
+      const key = new Date(t.createdAt).toISOString().split('T')[0];
+      const entry = dailyMap.get(key);
+      if (entry) {
+        entry.totalSales += Number(t.total);
+        entry.count += 1;
+      }
+    }
+    const dailyBreakdown: DailyBreakdown[] = [];
+    for (const [date, data] of dailyMap) {
+      dailyBreakdown.push({
+        date,
+        totalSales: Math.round(data.totalSales * 100) / 100,
+        transactionCount: data.count,
+      });
+    }
+
+    // Top selling products (from transaction items in last 30 days)
+    const topProductsRaw = await this.transactionItemRepository
+      .createQueryBuilder('ti')
+      .select('ti.product_id', 'productId')
+      .addSelect('p.name', 'productName')
+      .addSelect('SUM(ti.quantity)', 'totalQuantity')
+      .addSelect('SUM(ti.line_total)', 'totalRevenue')
+      .innerJoin('ti.product', 'p')
+      .innerJoin('ti.transaction', 't')
+      .where('t.created_at >= :monthStart', { monthStart })
+      .groupBy('ti.product_id')
+      .addGroupBy('p.name')
+      .orderBy('SUM(ti.line_total)', 'DESC')
+      .limit(5)
+      .getRawMany();
+
+    const topProducts: TopProduct[] = topProductsRaw.map((r) => ({
+      productId: r.productId,
+      productName: r.productName,
+      totalQuantity: Number(r.totalQuantity),
+      totalRevenue: Math.round(Number(r.totalRevenue) * 100) / 100,
+    }));
+
+    // Recent transactions (all branches)
+    const recentTransactions = await this.transactionRepository.find({
+      relations: ['items', 'cashier'],
+      order: { createdAt: 'DESC' },
+      take: 10,
+    });
+
+    // Counts — use raw queries for efficiency
+    const activeProducts = await this.transactionItemRepository.manager
+      .query(
+        `SELECT COUNT(*) as count FROM products WHERE is_active = true`,
+      )
+      .then((r) => Number(r[0].count));
+
+    const lowStockItems = await this.transactionItemRepository.manager
+      .query(
+        `SELECT COUNT(*) as count FROM inventory WHERE quantity <= low_stock_threshold`,
+      )
+      .then((r) => Number(r[0].count));
+
+    const totalUsers = await this.transactionItemRepository.manager
+      .query(`SELECT COUNT(*) as count FROM users`)
+      .then((r) => Number(r[0].count));
+
+    const totalBranches = await this.transactionItemRepository.manager
+      .query(
+        `SELECT COUNT(*) as count FROM branches WHERE is_active = true`,
+      )
+      .then((r) => Number(r[0].count));
+
+    return {
+      today: {
+        totalSales: Math.round(todaySales * 100) / 100,
+        transactionCount: todayCount,
+        averageSale: Math.round(todayAvg * 100) / 100,
+      },
+      week: {
+        totalSales: Math.round(weekSales * 100) / 100,
+        transactionCount: weekTxns.length,
+      },
+      month: {
+        totalRevenue: Math.round(monthRevenue * 100) / 100,
+        transactionCount: monthTxns.length,
+      },
+      stats: {
+        activeProducts,
+        lowStockItems,
+        totalUsers,
+        totalBranches,
+      },
+      dailyBreakdown,
+      topProducts,
       recentTransactions,
     };
   }
