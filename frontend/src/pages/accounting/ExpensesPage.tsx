@@ -21,7 +21,7 @@ export default function ExpensesPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
                 <div className="bg-[#111111] border border-white/10 rounded-2xl p-5">
                     <p className="text-[13px] font-medium text-slate-400 mb-1">This Month</p>
-                    <p className="text-2xl font-bold text-white tracking-tight">$0.00</p>
+                    <p className="text-2xl font-bold text-white tracking-tight">Rs 0.00</p>
                 </div>
                 <div className="bg-[#111111] border border-white/10 rounded-2xl p-5">
                     <p className="text-[13px] font-medium text-slate-400 mb-1">Pending Approval</p>
