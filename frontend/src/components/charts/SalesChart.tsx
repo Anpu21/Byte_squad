@@ -35,8 +35,8 @@ const CustomTooltip = ({ active, payload, label } : CustomTooltipProps) => {
                 </p>
                 <p className="text-sm font-bold text-white tabular-nums">
                     {new Intl.NumberFormat('en-US', { 
-                        style: 'currency', 
-                        currency: 'USD',
+                        style: 'currency',
+                        currency: 'LKR',
                         maximumFractionDigits: 0
                     }).format(payload[0].value)}
                 </p>
@@ -81,7 +81,7 @@ export default function SalesChart() {
                         axisLine={false} 
                         tickLine={false} 
                         tick={{ fill: '#64748b', fontSize: 11, fontWeight: 500 }}
-                        tickFormatter={(value) => `$${value}`}
+                        tickFormatter={(value) => `Rs ${value}`}
                         dx={-10}
                     />
 
