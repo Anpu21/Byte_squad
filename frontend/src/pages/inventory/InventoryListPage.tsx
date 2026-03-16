@@ -10,7 +10,7 @@ export default function InventoryListPage() {
 
     // Helper to format currency
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+        return new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(amount);
     };
 
     // Helper for monochrome status badges
