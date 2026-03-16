@@ -7,11 +7,16 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const location = useLocation();
 
     if (!isAuthenticated) {
         return <Navigate to={FRONTEND_ROUTES.LOGIN} state={{ from: location }} replace />;
+    }
+
+    // Redirect first-login users to change password page
+    if (user?.isFirstLogin && location.pathname !== FRONTEND_ROUTES.CHANGE_PASSWORD) {
+        return <Navigate to={FRONTEND_ROUTES.CHANGE_PASSWORD} replace />;
     }
 
     return <>{children}</>;
