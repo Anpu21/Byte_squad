@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import type { ICashierDashboard, ITransaction } from '@/types';
 
 function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    return new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(amount);
 }
 
 function formatDay(dateStr: string) {
@@ -129,7 +129,7 @@ export default function CashierDashboardPage() {
                                     fontSize={11}
                                     tickLine={false}
                                     axisLine={false}
-                                    tickFormatter={(v: number) => `$${v}`}
+                                    tickFormatter={(v: number) => `Rs ${v}`}
                                 />
                                 <Tooltip
                                     contentStyle={{
