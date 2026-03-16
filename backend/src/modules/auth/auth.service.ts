@@ -116,10 +116,7 @@ export class AuthService {
       const message = error instanceof Error ? error.message : String(error);
       const stack = error instanceof Error ? error.stack : undefined;
 
-      this.logger.error(
-        `Login error for ${loginDto.email}: ${message}`,
-        stack,
-      );
+      this.logger.error(`Login error for ${loginDto.email}: ${message}`, stack);
       throw error;
     }
   }

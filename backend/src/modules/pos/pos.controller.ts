@@ -8,7 +8,10 @@ import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { APP_ROUTES } from '@common/routes/app.routes';
 import { Transaction } from '@pos/entities/transaction.entity';
-import type { CashierDashboardData, AdminDashboardData } from '@pos/pos.service';
+import type {
+  CashierDashboardData,
+  AdminDashboardData,
+} from '@pos/pos.service';
 
 @Controller(APP_ROUTES.POS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
