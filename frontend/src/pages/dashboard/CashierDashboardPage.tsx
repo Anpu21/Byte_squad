@@ -138,8 +138,8 @@ export default function CashierDashboardPage() {
                                         borderRadius: '8px',
                                         fontSize: '13px',
                                     }}
-                                    labelFormatter={(v: string) => formatDay(v)}
-                                    formatter={(value: number) => [formatCurrency(value), 'Sales']}
+                                    labelFormatter={(label) => formatDay(String(label))}
+                                    formatter={(value) => [formatCurrency(Number(value ?? 0)), 'Sales']}
                                 />
                                 <Bar dataKey="totalSales" fill="rgba(255,255,255,0.8)" radius={[4, 4, 0, 0]} />
                             </BarChart>

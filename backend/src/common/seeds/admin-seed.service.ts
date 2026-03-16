@@ -72,7 +72,7 @@ export class AdminSeedService implements OnModuleInit {
     );
 
     // 2. Users
-    const admin = await this.ensureUser({
+    await this.ensureUser({
       email: defaults.adminEmail,
       password: defaults.adminPassword,
       firstName: defaults.adminFirstName,
@@ -81,7 +81,7 @@ export class AdminSeedService implements OnModuleInit {
       branchId: mainBranch.id,
     });
 
-    const manager = await this.ensureUser({
+    await this.ensureUser({
       email: 'manager@ledgerpro.com',
       password: 'Manager@123',
       firstName: 'Sarah',
@@ -125,16 +125,8 @@ export class AdminSeedService implements OnModuleInit {
     await this.ensureInventory(products, downtownBranch.id);
 
     // 5. Transactions (dummy sales data for last 7 days)
-    await this.ensureTransactions(
-      cashier1,
-      mainBranch.id,
-      products,
-    );
-    await this.ensureTransactions(
-      cashier2,
-      downtownBranch.id,
-      products,
-    );
+    await this.ensureTransactions(cashier1, mainBranch.id, products);
+    await this.ensureTransactions(cashier2, downtownBranch.id, products);
 
     // 6. Ledger entries & expenses
     await this.ensureLedgerAndExpenses(
@@ -214,21 +206,126 @@ export class AdminSeedService implements OnModuleInit {
     }
 
     const productData = [
-      { name: 'Wireless Mouse', barcode: 'PRD-001', category: 'Electronics', costPrice: 8.50, sellingPrice: 14.99, description: 'Ergonomic wireless mouse' },
-      { name: 'USB-C Hub', barcode: 'PRD-002', category: 'Electronics', costPrice: 15.00, sellingPrice: 29.99, description: '7-in-1 USB-C hub' },
-      { name: 'Mechanical Keyboard', barcode: 'PRD-003', category: 'Electronics', costPrice: 35.00, sellingPrice: 69.99, description: 'RGB mechanical keyboard' },
-      { name: 'Monitor Stand', barcode: 'PRD-004', category: 'Furniture', costPrice: 12.00, sellingPrice: 24.99, description: 'Adjustable monitor stand' },
-      { name: 'Desk Lamp', barcode: 'PRD-005', category: 'Furniture', costPrice: 10.00, sellingPrice: 19.99, description: 'LED desk lamp' },
-      { name: 'Webcam HD', barcode: 'PRD-006', category: 'Electronics', costPrice: 18.00, sellingPrice: 39.99, description: '1080p HD webcam' },
-      { name: 'Headphones', barcode: 'PRD-007', category: 'Electronics', costPrice: 22.00, sellingPrice: 49.99, description: 'Noise-cancelling headphones' },
-      { name: 'Notebook A5', barcode: 'PRD-008', category: 'Stationery', costPrice: 1.50, sellingPrice: 4.99, description: 'A5 lined notebook' },
-      { name: 'Pen Pack (10)', barcode: 'PRD-009', category: 'Stationery', costPrice: 2.00, sellingPrice: 6.99, description: 'Pack of 10 ballpoint pens' },
-      { name: 'Cable Organizer', barcode: 'PRD-010', category: 'Accessories', costPrice: 3.00, sellingPrice: 9.99, description: 'Silicone cable organizer' },
-      { name: 'Mouse Pad XL', barcode: 'PRD-011', category: 'Accessories', costPrice: 5.00, sellingPrice: 12.99, description: 'Extra large mouse pad' },
-      { name: 'Phone Holder', barcode: 'PRD-012', category: 'Accessories', costPrice: 4.00, sellingPrice: 11.99, description: 'Adjustable phone holder' },
-      { name: 'USB Flash Drive 64GB', barcode: 'PRD-013', category: 'Electronics', costPrice: 6.00, sellingPrice: 14.99, description: '64GB USB 3.0 flash drive' },
-      { name: 'Laptop Sleeve 15"', barcode: 'PRD-014', category: 'Accessories', costPrice: 8.00, sellingPrice: 19.99, description: '15-inch laptop sleeve' },
-      { name: 'Screen Cleaner Kit', barcode: 'PRD-015', category: 'Accessories', costPrice: 3.50, sellingPrice: 8.99, description: 'Screen cleaning spray + cloth' },
+      {
+        name: 'Wireless Mouse',
+        barcode: 'PRD-001',
+        category: 'Electronics',
+        costPrice: 8.5,
+        sellingPrice: 14.99,
+        description: 'Ergonomic wireless mouse',
+      },
+      {
+        name: 'USB-C Hub',
+        barcode: 'PRD-002',
+        category: 'Electronics',
+        costPrice: 15.0,
+        sellingPrice: 29.99,
+        description: '7-in-1 USB-C hub',
+      },
+      {
+        name: 'Mechanical Keyboard',
+        barcode: 'PRD-003',
+        category: 'Electronics',
+        costPrice: 35.0,
+        sellingPrice: 69.99,
+        description: 'RGB mechanical keyboard',
+      },
+      {
+        name: 'Monitor Stand',
+        barcode: 'PRD-004',
+        category: 'Furniture',
+        costPrice: 12.0,
+        sellingPrice: 24.99,
+        description: 'Adjustable monitor stand',
+      },
+      {
+        name: 'Desk Lamp',
+        barcode: 'PRD-005',
+        category: 'Furniture',
+        costPrice: 10.0,
+        sellingPrice: 19.99,
+        description: 'LED desk lamp',
+      },
+      {
+        name: 'Webcam HD',
+        barcode: 'PRD-006',
+        category: 'Electronics',
+        costPrice: 18.0,
+        sellingPrice: 39.99,
+        description: '1080p HD webcam',
+      },
+      {
+        name: 'Headphones',
+        barcode: 'PRD-007',
+        category: 'Electronics',
+        costPrice: 22.0,
+        sellingPrice: 49.99,
+        description: 'Noise-cancelling headphones',
+      },
+      {
+        name: 'Notebook A5',
+        barcode: 'PRD-008',
+        category: 'Stationery',
+        costPrice: 1.5,
+        sellingPrice: 4.99,
+        description: 'A5 lined notebook',
+      },
+      {
+        name: 'Pen Pack (10)',
+        barcode: 'PRD-009',
+        category: 'Stationery',
+        costPrice: 2.0,
+        sellingPrice: 6.99,
+        description: 'Pack of 10 ballpoint pens',
+      },
+      {
+        name: 'Cable Organizer',
+        barcode: 'PRD-010',
+        category: 'Accessories',
+        costPrice: 3.0,
+        sellingPrice: 9.99,
+        description: 'Silicone cable organizer',
+      },
+      {
+        name: 'Mouse Pad XL',
+        barcode: 'PRD-011',
+        category: 'Accessories',
+        costPrice: 5.0,
+        sellingPrice: 12.99,
+        description: 'Extra large mouse pad',
+      },
+      {
+        name: 'Phone Holder',
+        barcode: 'PRD-012',
+        category: 'Accessories',
+        costPrice: 4.0,
+        sellingPrice: 11.99,
+        description: 'Adjustable phone holder',
+      },
+      {
+        name: 'USB Flash Drive 64GB',
+        barcode: 'PRD-013',
+        category: 'Electronics',
+        costPrice: 6.0,
+        sellingPrice: 14.99,
+        description: '64GB USB 3.0 flash drive',
+      },
+      {
+        name: 'Laptop Sleeve 15"',
+        barcode: 'PRD-014',
+        category: 'Accessories',
+        costPrice: 8.0,
+        sellingPrice: 19.99,
+        description: '15-inch laptop sleeve',
+      },
+      {
+        name: 'Screen Cleaner Kit',
+        barcode: 'PRD-015',
+        category: 'Accessories',
+        costPrice: 3.5,
+        sellingPrice: 8.99,
+        description: 'Screen cleaning spray + cloth',
+      },
     ];
 
     const products: Product[] = [];
@@ -285,7 +382,11 @@ export class AdminSeedService implements OnModuleInit {
     });
     if (existingCount > 0) return;
 
-    const paymentMethods = [PaymentMethod.CASH, PaymentMethod.CARD, PaymentMethod.MOBILE];
+    const paymentMethods = [
+      PaymentMethod.CASH,
+      PaymentMethod.CARD,
+      PaymentMethod.MOBILE,
+    ];
     const now = new Date();
 
     // Create transactions for the last 7 days
@@ -356,9 +457,7 @@ export class AdminSeedService implements OnModuleInit {
       }
     }
 
-    this.logger.log(
-      `Transactions seeded for cashier ${cashier.email}.`,
-    );
+    this.logger.log(`Transactions seeded for cashier ${cashier.email}.`);
   }
 
   // ── Ledger & Expenses ──────────────────────────────────
@@ -375,14 +474,62 @@ export class AdminSeedService implements OnModuleInit {
 
     // Ledger entries
     const ledgerData = [
-      { branchId: mainBranchId, entryType: LedgerEntryType.CREDIT, amount: 4500.00, description: 'Daily sales revenue', referenceNumber: 'LED-001' },
-      { branchId: mainBranchId, entryType: LedgerEntryType.DEBIT, amount: 1200.00, description: 'Inventory restock payment', referenceNumber: 'LED-002' },
-      { branchId: mainBranchId, entryType: LedgerEntryType.CREDIT, amount: 3800.00, description: 'Weekly sales deposit', referenceNumber: 'LED-003' },
-      { branchId: mainBranchId, entryType: LedgerEntryType.DEBIT, amount: 850.00, description: 'Office supplies purchase', referenceNumber: 'LED-004' },
-      { branchId: downtownBranchId, entryType: LedgerEntryType.CREDIT, amount: 3200.00, description: 'Daily sales revenue', referenceNumber: 'LED-005' },
-      { branchId: downtownBranchId, entryType: LedgerEntryType.DEBIT, amount: 500.00, description: 'Utility bill payment', referenceNumber: 'LED-006' },
-      { branchId: mainBranchId, entryType: LedgerEntryType.CREDIT, amount: 5600.00, description: 'Card payment settlement', referenceNumber: 'LED-007' },
-      { branchId: downtownBranchId, entryType: LedgerEntryType.CREDIT, amount: 2900.00, description: 'Mobile payment settlement', referenceNumber: 'LED-008' },
+      {
+        branchId: mainBranchId,
+        entryType: LedgerEntryType.CREDIT,
+        amount: 4500.0,
+        description: 'Daily sales revenue',
+        referenceNumber: 'LED-001',
+      },
+      {
+        branchId: mainBranchId,
+        entryType: LedgerEntryType.DEBIT,
+        amount: 1200.0,
+        description: 'Inventory restock payment',
+        referenceNumber: 'LED-002',
+      },
+      {
+        branchId: mainBranchId,
+        entryType: LedgerEntryType.CREDIT,
+        amount: 3800.0,
+        description: 'Weekly sales deposit',
+        referenceNumber: 'LED-003',
+      },
+      {
+        branchId: mainBranchId,
+        entryType: LedgerEntryType.DEBIT,
+        amount: 850.0,
+        description: 'Office supplies purchase',
+        referenceNumber: 'LED-004',
+      },
+      {
+        branchId: downtownBranchId,
+        entryType: LedgerEntryType.CREDIT,
+        amount: 3200.0,
+        description: 'Daily sales revenue',
+        referenceNumber: 'LED-005',
+      },
+      {
+        branchId: downtownBranchId,
+        entryType: LedgerEntryType.DEBIT,
+        amount: 500.0,
+        description: 'Utility bill payment',
+        referenceNumber: 'LED-006',
+      },
+      {
+        branchId: mainBranchId,
+        entryType: LedgerEntryType.CREDIT,
+        amount: 5600.0,
+        description: 'Card payment settlement',
+        referenceNumber: 'LED-007',
+      },
+      {
+        branchId: downtownBranchId,
+        entryType: LedgerEntryType.CREDIT,
+        amount: 2900.0,
+        description: 'Mobile payment settlement',
+        referenceNumber: 'LED-008',
+      },
     ];
 
     for (const entry of ledgerData) {
@@ -391,11 +538,46 @@ export class AdminSeedService implements OnModuleInit {
 
     // Expenses
     const expenseData = [
-      { branchId: mainBranchId, createdBy: accountantId, category: 'Rent', amount: 2500.00, description: 'Monthly office rent', expenseDate: new Date(now.getFullYear(), now.getMonth(), 1) },
-      { branchId: mainBranchId, createdBy: accountantId, category: 'Utilities', amount: 350.00, description: 'Electricity bill', expenseDate: new Date(now.getFullYear(), now.getMonth(), 5) },
-      { branchId: mainBranchId, createdBy: accountantId, category: 'Supplies', amount: 180.00, description: 'Cleaning supplies', expenseDate: new Date(now.getFullYear(), now.getMonth(), 8) },
-      { branchId: downtownBranchId, createdBy: accountantId, category: 'Rent', amount: 1800.00, description: 'Monthly shop rent', expenseDate: new Date(now.getFullYear(), now.getMonth(), 1) },
-      { branchId: downtownBranchId, createdBy: accountantId, category: 'Marketing', amount: 450.00, description: 'Social media ads', expenseDate: new Date(now.getFullYear(), now.getMonth(), 10) },
+      {
+        branchId: mainBranchId,
+        createdBy: accountantId,
+        category: 'Rent',
+        amount: 2500.0,
+        description: 'Monthly office rent',
+        expenseDate: new Date(now.getFullYear(), now.getMonth(), 1),
+      },
+      {
+        branchId: mainBranchId,
+        createdBy: accountantId,
+        category: 'Utilities',
+        amount: 350.0,
+        description: 'Electricity bill',
+        expenseDate: new Date(now.getFullYear(), now.getMonth(), 5),
+      },
+      {
+        branchId: mainBranchId,
+        createdBy: accountantId,
+        category: 'Supplies',
+        amount: 180.0,
+        description: 'Cleaning supplies',
+        expenseDate: new Date(now.getFullYear(), now.getMonth(), 8),
+      },
+      {
+        branchId: downtownBranchId,
+        createdBy: accountantId,
+        category: 'Rent',
+        amount: 1800.0,
+        description: 'Monthly shop rent',
+        expenseDate: new Date(now.getFullYear(), now.getMonth(), 1),
+      },
+      {
+        branchId: downtownBranchId,
+        createdBy: accountantId,
+        category: 'Marketing',
+        amount: 450.0,
+        description: 'Social media ads',
+        expenseDate: new Date(now.getFullYear(), now.getMonth(), 10),
+      },
     ];
 
     for (const exp of expenseData) {
@@ -417,13 +599,22 @@ export class AdminSeedService implements OnModuleInit {
 
   private getSeedDefaults(): SeedDefaults {
     return {
-      adminEmail: this.getConfigValue('SEED_ADMIN_EMAIL', 'admin@ledgerpro.com'),
+      adminEmail: this.getConfigValue(
+        'SEED_ADMIN_EMAIL',
+        'admin@ledgerpro.com',
+      ),
       adminPassword: this.getConfigValue('SEED_ADMIN_PASSWORD', 'Admin@123'),
       adminFirstName: this.getConfigValue('SEED_ADMIN_FIRST_NAME', 'System'),
       adminLastName: this.getConfigValue('SEED_ADMIN_LAST_NAME', 'Admin'),
       branchName: this.getConfigValue('SEED_ADMIN_BRANCH_NAME', 'Main Branch'),
-      branchAddress: this.getConfigValue('SEED_ADMIN_BRANCH_ADDRESS', 'Head Office'),
-      branchPhone: this.getConfigValue('SEED_ADMIN_BRANCH_PHONE', '+94000000000'),
+      branchAddress: this.getConfigValue(
+        'SEED_ADMIN_BRANCH_ADDRESS',
+        'Head Office',
+      ),
+      branchPhone: this.getConfigValue(
+        'SEED_ADMIN_BRANCH_PHONE',
+        '+94000000000',
+      ),
     };
   }
 

@@ -277,7 +277,12 @@ export class PosService {
       .addGroupBy('p.name')
       .orderBy('SUM(ti.line_total)', 'DESC')
       .limit(5)
-      .getRawMany();
+      .getRawMany<{
+        productId: string;
+        productName: string;
+        totalQuantity: string;
+        totalRevenue: string;
+      }>();
 
     const topProducts: TopProduct[] = topProductsRaw.map((r) => ({
       productId: r.productId,
@@ -295,26 +300,26 @@ export class PosService {
 
     // Counts — use raw queries for efficiency
     const activeProducts = await this.transactionItemRepository.manager
-      .query(
-        `SELECT COUNT(*) as count FROM products WHERE is_active = true`,
-      )
-      .then((r) => Number(r[0].count));
+      .query<
+        { count: string }[]
+      >(`SELECT COUNT(*) as count FROM products WHERE is_active = true`)
+      .then((r: { count: string }[]) => Number(r[0].count));
 
     const lowStockItems = await this.transactionItemRepository.manager
-      .query(
-        `SELECT COUNT(*) as count FROM inventory WHERE quantity <= low_stock_threshold`,
-      )
-      .then((r) => Number(r[0].count));
+      .query<
+        { count: string }[]
+      >(`SELECT COUNT(*) as count FROM inventory WHERE quantity <= low_stock_threshold`)
+      .then((r: { count: string }[]) => Number(r[0].count));
 
     const totalUsers = await this.transactionItemRepository.manager
-      .query(`SELECT COUNT(*) as count FROM users`)
-      .then((r) => Number(r[0].count));
+      .query<{ count: string }[]>(`SELECT COUNT(*) as count FROM users`)
+      .then((r: { count: string }[]) => Number(r[0].count));
 
     const totalBranches = await this.transactionItemRepository.manager
-      .query(
-        `SELECT COUNT(*) as count FROM branches WHERE is_active = true`,
-      )
-      .then((r) => Number(r[0].count));
+      .query<
+        { count: string }[]
+      >(`SELECT COUNT(*) as count FROM branches WHERE is_active = true`)
+      .then((r: { count: string }[]) => Number(r[0].count));
 
     return {
       today: {
