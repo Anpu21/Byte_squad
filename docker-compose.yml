@@ -43,8 +43,35 @@ services:
       - /app/node_modules
     env_file:
       - .env.development
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - ledgerpro-network
+
+  # ── PostgreSQL (Dev only) ───────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: ledgerpro-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ledgerpro
+      POSTGRES_PASSWORD: ledgerpro_dev
+      POSTGRES_DB: ledgerpro_dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledgerpro -d ledgerpro_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ledgerpro-network
+
+# ── Volumes ──────────────────────────────────────────────
+volumes:
+  pgdata:
 
 # ── Network ──────────────────────────────────────────────
 networks:
