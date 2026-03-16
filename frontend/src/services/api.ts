@@ -1,5 +1,7 @@
 import axios from 'axios';
 import type { IApiResponse } from '@/types/index';
+import { store } from '@/store';
+import { logout } from '@/store/slices/authSlice';
 
 const api = axios.create({
     baseURL: '/api/v1',
@@ -25,8 +27,7 @@ api.interceptors.response.use(
     (response) => response,
     (error: unknown) => {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
-            localStorage.removeItem('ledgerpro_token');
-            window.location.href = '/login';
+            store.dispatch(logout());
         }
         return Promise.reject(error);
     },
