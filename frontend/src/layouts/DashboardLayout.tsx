@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { FRONTEND_ROUTES } from '@/constants/routes';
@@ -65,6 +65,12 @@ const NAV_ITEMS: NavItem[] = [
         roles: [UserRole.ADMIN],
         icon: <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
     },
+    {
+        label: 'Notifications',
+        path: FRONTEND_ROUTES.NOTIFICATIONS,
+        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER, UserRole.ACCOUNTANT],
+        icon: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>
+    },
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -72,6 +78,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const { unreadCount } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const location = useLocation();
+    const navigate = useNavigate();
 
     const filteredNavItems = NAV_ITEMS.filter((item) =>
         user ? item.roles.includes(user.role as UserRole) : false,
@@ -122,7 +129,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     {item.icon}
                                 </svg>
-                                {sidebarOpen && <span>{item.label}</span>}
+                                {sidebarOpen && <span className="flex-1">{item.label}</span>}
+                                {sidebarOpen && item.path === FRONTEND_ROUTES.NOTIFICATIONS && unreadCount > 0 && (
+                                    <span className="ml-auto text-[11px] font-bold bg-white text-slate-900 rounded-full w-5 h-5 flex items-center justify-center">
+                                        {unreadCount}
+                                    </span>
+                                )}
                             </a>
                         )
                     })}
@@ -176,7 +188,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
                     <div className="flex items-center gap-2">
                         {/* Notifications bell */}
-                        <button className="relative p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                        <button onClick={() => navigate(FRONTEND_ROUTES.NOTIFICATIONS)} className="relative p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
