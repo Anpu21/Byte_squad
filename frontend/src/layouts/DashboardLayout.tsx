@@ -55,6 +55,12 @@ const NAV_ITEMS: NavItem[] = [
         icon: <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
     },
     {
+        label: 'Profit & Loss',
+        path: FRONTEND_ROUTES.PROFIT_LOSS,
+        roles: [UserRole.ADMIN, UserRole.ACCOUNTANT],
+        icon: <><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></>
+    },
+    {
         label: 'Users',
         path: FRONTEND_ROUTES.USER_MANAGEMENT,
         roles: [UserRole.ADMIN],
