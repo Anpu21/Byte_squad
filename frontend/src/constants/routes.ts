@@ -24,6 +24,7 @@ export const FRONTEND_ROUTES = {
     // Accounting
     LEDGER: '/accounting/ledger',
     EXPENSES: '/accounting/expenses',
+    PROFIT_LOSS: '/accounting/profit-loss',
 
     // Users
     USER_MANAGEMENT: '/users',

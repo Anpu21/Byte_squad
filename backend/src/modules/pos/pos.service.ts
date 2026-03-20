@@ -4,6 +4,8 @@ import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Transaction } from '@pos/entities/transaction.entity.js';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
+import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 
 export interface DailyBreakdown {
   date: string;
@@ -64,6 +66,8 @@ export class PosService {
     private readonly transactionRepository: Repository<Transaction>,
     @InjectRepository(TransactionItem)
     private readonly transactionItemRepository: Repository<TransactionItem>,
+    @InjectRepository(LedgerEntry)
+    private readonly ledgerRepository: Repository<LedgerEntry>,
   ) {}
 
   async createTransaction(
@@ -94,7 +98,22 @@ export class PosService {
       })),
     });
 
-    return this.transactionRepository.save(transaction);
+    const saved = await this.transactionRepository.save(transaction);
+
+    // Create a CREDIT ledger entry for this sale
+    if (Number(saved.total) > 0) {
+      const ledgerEntry = this.ledgerRepository.create({
+        branchId: saved.branchId,
+        entryType: LedgerEntryType.CREDIT,
+        amount: saved.total,
+        description: `POS Sale — ${saved.transactionNumber}`,
+        referenceNumber: saved.transactionNumber,
+        transactionId: saved.id,
+      });
+      await this.ledgerRepository.save(ledgerEntry);
+    }
+
+    return saved;
   }
 
   async findAll(branchId: string): Promise<Transaction[]> {
