@@ -16,6 +16,7 @@ import ProductFormPage from '@/pages/inventory/ProductFormPage';
 import PosPage from '@/pages/pos/PosPage';
 import LedgerPage from '@/pages/accounting/LedgerPage';
 import ExpensesPage from '@/pages/accounting/ExpensesPage';
+import ProfitLossPage from '@/pages/accounting/ProfitLossPage';
 import UserManagementPage from '@/pages/users/UserManagementPage';
 import ProfilePage from '@/pages/users/ProfilePage';
 import NotificationsPage from '@/pages/notifications/NotificationsPage';
@@ -156,6 +157,16 @@ export default function AppRouter() {
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <ExpensesPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.PROFIT_LOSS}
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <ProfitLossPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

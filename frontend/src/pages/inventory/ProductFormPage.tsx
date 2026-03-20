@@ -76,11 +76,10 @@ export default function ProductFormPage() {
     }, []);
 
     // Load product data for edit mode
-    useEffect(() => {
-        if (!productId) return;
+    const loadProduct = useCallback((id: string) => {
         setIsLoadingProduct(true);
         inventoryService
-            .getProductById(productId)
+            .getProductById(id)
             .then((product) => {
                 setName(product.name);
                 setBarcode(product.barcode);
@@ -93,7 +92,11 @@ export default function ProductFormPage() {
                 setErrors({ general: 'Failed to load product' });
             })
             .finally(() => setIsLoadingProduct(false));
-    }, [productId]);
+    }, []);
+
+    useEffect(() => {
+        if (productId) loadProduct(productId);
+    }, [productId, loadProduct]);
 
     const validate = (): boolean => {
         const newErrors: FormErrors = {};
