@@ -16,6 +16,8 @@ import { TransactionType } from '@common/enums/transaction.enum';
 import { DiscountType } from '@common/enums/discount.enum';
 import { PaymentMethod } from '@common/enums/payment-method';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
+import { Notification } from '@notifications/entities/notification.entity';
+import { NotificationType } from '@common/enums/notification.enum';
 
 interface SeedDefaults {
   adminEmail: string;
@@ -48,6 +50,8 @@ export class AdminSeedService implements OnModuleInit {
     private readonly ledgerRepository: Repository<LedgerEntry>,
     @InjectRepository(Expense)
     private readonly expenseRepository: Repository<Expense>,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
     private readonly configService: ConfigService,
   ) {}
 
@@ -72,7 +76,7 @@ export class AdminSeedService implements OnModuleInit {
     );
 
     // 2. Users
-    await this.ensureUser({
+    const admin = await this.ensureUser({
       email: defaults.adminEmail,
       password: defaults.adminPassword,
       firstName: defaults.adminFirstName,
@@ -134,6 +138,9 @@ export class AdminSeedService implements OnModuleInit {
       downtownBranch.id,
       accountant.id,
     );
+
+    // 7. Notifications
+    await this.ensureNotifications([admin, cashier1, cashier2, accountant]);
 
     this.logger.log('Database seed completed.');
   }
@@ -585,6 +592,134 @@ export class AdminSeedService implements OnModuleInit {
     }
 
     this.logger.log('Ledger entries and expenses seeded.');
+  }
+
+  // ── Notifications ─────────────────────────────────────
+
+  private async ensureNotifications(users: User[]): Promise<void> {
+    const existingCount = await this.notificationRepository.count();
+    if (existingCount > 0) return;
+
+    const now = new Date();
+
+    const notificationData: {
+      userId: string;
+      title: string;
+      message: string;
+      type: NotificationType;
+      isRead: boolean;
+      hoursAgo: number;
+    // users: [admin, cashier1, cashier2, accountant]
+    }[] = [
+      // Admin notifications
+      {
+        userId: users[0].id,
+        title: 'Low Stock Alert',
+        message: 'Wireless Mouse stock is below threshold (5 remaining)',
+        type: NotificationType.LOW_STOCK,
+        isRead: false,
+        hoursAgo: 1,
+      },
+      {
+        userId: users[0].id,
+        title: 'New User Created',
+        message: 'Cashier account cashier2@ledgerpro.com has been created',
+        type: NotificationType.SYSTEM,
+        isRead: true,
+        hoursAgo: 12,
+      },
+      {
+        userId: users[0].id,
+        title: 'Low Stock Alert',
+        message: 'Notebook A5 stock is critically low (3 remaining)',
+        type: NotificationType.LOW_STOCK,
+        isRead: false,
+        hoursAgo: 3,
+      },
+      {
+        userId: users[0].id,
+        title: 'System Update',
+        message: 'LedgerPro has been updated to version 2.1.0',
+        type: NotificationType.SYSTEM,
+        isRead: true,
+        hoursAgo: 24,
+      },
+      {
+        userId: users[0].id,
+        title: 'Daily Report Ready',
+        message: 'Your daily sales report for yesterday is now available',
+        type: NotificationType.SYSTEM,
+        isRead: false,
+        hoursAgo: 6,
+      },
+      // Cashier 1 notifications
+      {
+        userId: users[1].id,
+        title: 'Low Stock Alert',
+        message: 'USB-C Hub stock is below threshold (8 remaining)',
+        type: NotificationType.LOW_STOCK,
+        isRead: false,
+        hoursAgo: 2,
+      },
+      {
+        userId: users[1].id,
+        title: 'Security Alert',
+        message: 'New login detected from a different device',
+        type: NotificationType.ALERT,
+        isRead: false,
+        hoursAgo: 5,
+      },
+      // Cashier 2 notifications
+      {
+        userId: users[2].id,
+        title: 'Daily Report Ready',
+        message: 'Your daily sales report for yesterday is now available',
+        type: NotificationType.SYSTEM,
+        isRead: false,
+        hoursAgo: 8,
+      },
+      // Accountant notifications
+      {
+        userId: users[3].id,
+        title: 'Expense Approved',
+        message: 'Monthly office rent expense has been approved',
+        type: NotificationType.SYSTEM,
+        isRead: true,
+        hoursAgo: 48,
+      },
+      {
+        userId: users[3].id,
+        title: 'Low Stock Alert',
+        message: 'Pen Pack (10) stock is below threshold (7 remaining)',
+        type: NotificationType.LOW_STOCK,
+        isRead: false,
+        hoursAgo: 4,
+      },
+    ];
+
+    for (const n of notificationData) {
+      const createdAt = new Date(now);
+      createdAt.setHours(createdAt.getHours() - n.hoursAgo);
+
+      const notification = this.notificationRepository.create({
+        userId: n.userId,
+        title: n.title,
+        message: n.message,
+        type: n.type,
+        isRead: n.isRead,
+      });
+
+      const saved = await this.notificationRepository.save(notification);
+
+      await this.notificationRepository
+        .createQueryBuilder()
+        .update(Notification)
+        .set({ createdAt })
+        .where('id = :id', { id: saved.id })
+        .execute();
+    }
+
+    this.logger.log('Notifications seeded.');
   }
 
   // ── Helpers ────────────────────────────────────────────
