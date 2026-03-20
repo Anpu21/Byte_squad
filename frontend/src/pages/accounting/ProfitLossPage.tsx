@@ -128,7 +128,7 @@ export default function ProfitLossPage() {
                             <div className="px-6 py-4 flex items-center justify-between bg-white/[0.02]">
                                 <span className="text-sm font-bold text-white">Gross Profit</span>
                                 <div className="text-right">
-                                    <span className={`text-sm font-bold tabular-nums ${data.grossProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    <span className="text-sm font-bold tabular-nums text-white">
                                         {formatCurrency(data.grossProfit)}
                                     </span>
                                     <span className="text-[11px] text-slate-500 ml-2">({formatPercent(data.grossMargin)})</span>
@@ -151,7 +151,7 @@ export default function ProfitLossPage() {
                             <div className="px-6 py-5 flex items-center justify-between bg-white/[0.04]">
                                 <span className="text-base font-bold text-white">Net Profit</span>
                                 <div className="text-right">
-                                    <span className={`text-base font-bold tabular-nums ${data.netProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    <span className="text-base font-bold tabular-nums text-white">
                                         {formatCurrency(data.netProfit)}
                                     </span>
                                     <span className="text-xs text-slate-500 ml-2">({formatPercent(data.netMargin)})</span>
@@ -175,10 +175,7 @@ function SummaryCard({ label, value, sub, positive, highlight }: {
     return (
         <div className={`bg-[#111111] border rounded-2xl p-5 ${highlight ? 'border-white/20' : 'border-white/10'}`}>
             <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">{label}</p>
-            <p className={`text-xl font-bold tabular-nums ${
-                positive === undefined ? 'text-white' :
-                positive ? 'text-green-400' : 'text-red-400'
-            }`}>{value}</p>
+            <p className="text-xl font-bold tabular-nums text-white">{value}</p>
             <p className="text-[11px] text-slate-500 mt-1">{sub}</p>
         </div>
     );

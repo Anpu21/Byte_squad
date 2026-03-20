@@ -59,6 +59,7 @@ export const APP_ROUTES = {
   ACCOUNTING: {
     BASE: `${API_PREFIX}/accounting`,
     LEDGER: 'ledger',
+    LEDGER_SUMMARY: 'ledger/summary',
     EXPENSES: 'expenses',
     EXPENSE_BY_ID: 'expenses/:id',
     PROFIT_LOSS: 'profit-loss',
