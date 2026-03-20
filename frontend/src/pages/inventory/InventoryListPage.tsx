@@ -94,7 +94,8 @@ export default function InventoryListPage() {
                                 <th className="px-6 py-4 font-semibold whitespace-nowrap">Status</th>
                                 <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">Stock</th>
                                 <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">Price</th>
-                                <th className="px-6 py-4 font-semibold text-center"></th> {/* Actions */}
+                                {/* Actions */}
+                                <th className="px-6 py-4 font-semibold text-center"></th>
                             </tr>
                         </thead>
                         <tbody className="text-sm">
