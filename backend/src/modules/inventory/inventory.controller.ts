@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { InventoryService } from '@inventory/inventory.service';
 import { CreateInventoryDto } from '@inventory/dto/create-inventory.dto';
 import { UpdateStockDto } from '@inventory/dto/update-stock.dto';
