@@ -609,7 +609,7 @@ export class AdminSeedService implements OnModuleInit {
       type: NotificationType;
       isRead: boolean;
       hoursAgo: number;
-    // users: [admin, cashier1, cashier2, accountant]
+      // users: [admin, cashier1, cashier2, accountant]
     }[] = [
       // Admin notifications
       {

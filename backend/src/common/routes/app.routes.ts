@@ -32,6 +32,7 @@ export const APP_ROUTES = {
   // Products
   PRODUCTS: {
     BASE: `${API_PREFIX}/products`,
+    CATEGORIES: 'categories',
     BY_ID: ':id',
     BY_BARCODE: 'barcode/:barcode',
   },
