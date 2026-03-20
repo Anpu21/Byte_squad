@@ -29,7 +29,10 @@ export class ProductsService {
     return this.productRepository.findOne({ where: { barcode } });
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto): Promise<Product> {
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+  ): Promise<Product> {
     const product = await this.productRepository.findOne({ where: { id } });
     if (!product) {
       throw new NotFoundException(`Product with ID "${id}" not found`);
