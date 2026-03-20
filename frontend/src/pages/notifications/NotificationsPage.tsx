@@ -1,101 +1,205 @@
+import { useState } from 'react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationType } from '@/constants/enums';
 import type { INotification } from '@/types/index';
+import {
+    timeAgo,
+    typeIcon,
+    typeLabel,
+    typeBadgeColor,
+    groupByDate,
+} from '@/components/notifications/notificationUtils';
 
-function timeAgo(dateStr: string): string {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+type FilterTab = 'all' | 'unread' | NotificationType;
+
+const FILTER_TABS: { key: FilterTab; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'unread', label: 'Unread' },
+    { key: NotificationType.LOW_STOCK, label: 'Low Stock' },
+    { key: NotificationType.SYSTEM, label: 'System' },
+    { key: NotificationType.ALERT, label: 'Alert' },
+];
+
+function getFilteredNotifications(
+    notifications: INotification[],
+    filter: FilterTab,
+): INotification[] {
+    switch (filter) {
+        case 'all':
+            return notifications;
+        case 'unread':
+            return notifications.filter((n) => !n.isRead);
+        default:
+            return notifications.filter((n) => n.type === filter);
+    }
 }
 
-function typeIcon(type: NotificationType) {
-    switch (type) {
-        case NotificationType.LOW_STOCK:
-            return (
-                <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                        <line x1="12" y1="9" x2="12" y2="13" />
-                        <line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                </div>
-            );
-        case NotificationType.ALERT:
-            return (
-                <div className="w-9 h-9 rounded-lg bg-rose-500/10 flex items-center justify-center flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                </div>
-            );
-        default:
-            return (
-                <div className="w-9 h-9 rounded-lg bg-sky-500/10 flex items-center justify-center flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="16" x2="12" y2="12" />
-                        <line x1="12" y1="8" x2="12.01" y2="8" />
-                    </svg>
-                </div>
-            );
-    }
+function getFilterCount(
+    notifications: INotification[],
+    filter: FilterTab,
+): number {
+    return getFilteredNotifications(notifications, filter).length;
 }
 
 function NotificationItem({
     notification,
+    isExpanded,
+    onToggle,
     onMarkAsRead,
 }: {
     notification: INotification;
+    isExpanded: boolean;
+    onToggle: () => void;
     onMarkAsRead: (id: string) => void;
 }) {
+    const handleClick = () => {
+        if (!notification.isRead) {
+            onMarkAsRead(notification.id);
+        }
+        onToggle();
+    };
+
     return (
         <div
-            className={`flex items-start gap-4 px-6 py-4 border-b border-white/5 transition-colors ${
-                notification.isRead
-                    ? 'opacity-60'
-                    : 'bg-white/[0.02]'
+            className={`border-b border-white/5 transition-colors ${
+                notification.isRead ? 'opacity-60' : 'bg-white/[0.02]'
             }`}
         >
-            {typeIcon(notification.type)}
+            <button
+                onClick={handleClick}
+                className="flex items-start gap-4 px-6 py-4 w-full text-left hover:bg-white/[0.03] transition-colors"
+            >
+                {typeIcon(notification.type)}
 
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <p className={`text-sm font-medium ${notification.isRead ? 'text-slate-400' : 'text-slate-200'}`}>
-                        {notification.title}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                        <p
+                            className={`text-sm font-medium ${
+                                notification.isRead
+                                    ? 'text-slate-400'
+                                    : 'text-slate-200'
+                            }`}
+                        >
+                            {notification.title}
+                        </p>
+                        {!notification.isRead && (
+                            <span className="w-2 h-2 rounded-full bg-white flex-shrink-0" />
+                        )}
+                    </div>
+                    <p className="text-[13px] text-slate-500 mt-0.5 leading-relaxed truncate">
+                        {notification.message}
                     </p>
-                    {!notification.isRead && (
-                        <span className="w-2 h-2 rounded-full bg-white flex-shrink-0" />
-                    )}
                 </div>
-                <p className="text-[13px] text-slate-500 mt-0.5 leading-relaxed">
-                    {notification.message}
-                </p>
-                <p className="text-[11px] text-slate-600 mt-1.5 font-medium">
-                    {timeAgo(notification.createdAt)}
-                </p>
-            </div>
 
-            {!notification.isRead && (
-                <button
-                    onClick={() => onMarkAsRead(notification.id)}
-                    className="text-[11px] text-slate-500 hover:text-white font-medium px-2.5 py-1 rounded-md hover:bg-white/5 transition-colors flex-shrink-0 mt-0.5"
+                <span className="text-[11px] text-slate-600 font-medium flex-shrink-0 mt-0.5">
+                    {timeAgo(notification.createdAt)}
+                </span>
+
+                <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={`text-slate-600 flex-shrink-0 mt-1 transition-transform duration-200 ${
+                        isExpanded ? 'rotate-180' : ''
+                    }`}
                 >
-                    Mark read
-                </button>
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </button>
+
+            {isExpanded && (
+                <div className="px-6 pb-5 pl-[4.75rem] animate-in fade-in slide-in-from-top-1 duration-200">
+                    <p className="text-[13px] text-slate-400 leading-relaxed">
+                        {notification.message}
+                    </p>
+                    <div className="flex items-center gap-3 mt-3">
+                        <span
+                            className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${typeBadgeColor(
+                                notification.type,
+                            )}`}
+                        >
+                            {typeLabel(notification.type)}
+                        </span>
+                        <span className="text-[11px] text-slate-600">
+                            {new Date(notification.createdAt).toLocaleString(
+                                'en-US',
+                                {
+                                    weekday: 'short',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                },
+                            )}
+                        </span>
+                    </div>
+                </div>
             )}
         </div>
     );
 }
 
+function EmptyState({ filter }: { filter: FilterTab }) {
+    const messages: Record<string, { title: string; subtitle: string }> = {
+        all: {
+            title: 'No notifications yet',
+            subtitle: "You're all set — nothing to see here.",
+        },
+        unread: {
+            title: 'All caught up',
+            subtitle: 'You have no unread notifications.',
+        },
+        [NotificationType.LOW_STOCK]: {
+            title: 'No low stock alerts',
+            subtitle: 'All inventory levels are healthy.',
+        },
+        [NotificationType.SYSTEM]: {
+            title: 'No system notifications',
+            subtitle: 'No system messages at this time.',
+        },
+        [NotificationType.ALERT]: {
+            title: 'No alerts',
+            subtitle: 'Everything is running smoothly.',
+        },
+    };
+
+    const msg = messages[filter] ?? messages.all;
+
+    return (
+        <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+            <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mb-4 opacity-40"
+            >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <p className="text-sm font-medium">{msg.title}</p>
+            <p className="text-xs text-slate-600 mt-1">{msg.subtitle}</p>
+        </div>
+    );
+}
+
 export default function NotificationsPage() {
-    const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+    const { notifications, unreadCount, markAsRead, markAllAsRead } =
+        useNotifications();
+    const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+
+    const filtered = getFilteredNotifications(notifications, activeFilter);
+    const groups = groupByDate(filtered);
 
     return (
         <div className="animate-in fade-in duration-300">
@@ -122,23 +226,67 @@ export default function NotificationsPage() {
                 )}
             </div>
 
+            {/* Filter tabs */}
+            <div className="flex items-center gap-1 mb-4 p-1 bg-white/[0.03] rounded-xl border border-white/5 w-fit">
+                {FILTER_TABS.map((tab) => {
+                    const count = getFilterCount(notifications, tab.key);
+                    const isActive = activeFilter === tab.key;
+                    return (
+                        <button
+                            key={tab.key}
+                            onClick={() => {
+                                setActiveFilter(tab.key);
+                                setExpandedId(null);
+                            }}
+                            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
+                                isActive
+                                    ? 'bg-white text-slate-900 shadow-sm'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                            }`}
+                        >
+                            {tab.label}
+                            <span
+                                className={`text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full ${
+                                    isActive
+                                        ? 'bg-slate-900/10 text-slate-700'
+                                        : 'bg-white/5 text-slate-500'
+                                }`}
+                            >
+                                {count}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+
             {/* Notifications list */}
             <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
-                {notifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-slate-500">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-4 opacity-40">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                        </svg>
-                        <p className="text-sm font-medium">No notifications yet</p>
-                    </div>
+                {filtered.length === 0 ? (
+                    <EmptyState filter={activeFilter} />
                 ) : (
-                    notifications.map((n) => (
-                        <NotificationItem
-                            key={n.id}
-                            notification={n}
-                            onMarkAsRead={markAsRead}
-                        />
+                    groups.map((group) => (
+                        <div key={group.label}>
+                            <div className="px-6 py-2.5 bg-white/[0.02] border-b border-white/5">
+                                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                    {group.label}
+                                </p>
+                            </div>
+                            {group.notifications.map((n) => (
+                                <NotificationItem
+                                    key={n.id}
+                                    notification={n}
+                                    isExpanded={expandedId === n.id}
+                                    onToggle={() =>
+                                        setExpandedId(
+                                            expandedId === n.id
+                                                ? null
+                                                : n.id,
+                                        )
+                                    }
+                                    onMarkAsRead={markAsRead}
+                                />
+                            ))}
+                        </div>
                     ))
                 )}
             </div>
