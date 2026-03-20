@@ -26,18 +26,21 @@ export default function LedgerPage() {
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
     const [debouncedSearch, setDebouncedSearch] = useState('');
 
+    const applyDebouncedSearch = useCallback((value: string) => {
+        setDebouncedSearch(value);
+        setPage(1);
+    }, []);
+
     useEffect(() => {
         clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => {
-            setDebouncedSearch(search);
-            setPage(1);
-        }, 300);
+        debounceRef.current = setTimeout(() => applyDebouncedSearch(search), 300);
         return () => clearTimeout(debounceRef.current);
-    }, [search]);
+    }, [search, applyDebouncedSearch]);
 
     // Handle time period preset changes
-    const handleTimePeriodChange = (period: string) => {
+    const handleTimePeriodChange = useCallback((period: string) => {
         setTimePeriod(period);
+        setPage(1);
         const now = new Date();
         if (period === 'this_month') {
             setStartDate(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]);
@@ -52,52 +55,49 @@ export default function LedgerPage() {
             setStartDate('');
             setEndDate('');
         }
-    };
+    }, []);
 
     // Handle account type filter (maps to entry type or description-based search)
-    const handleAccountTypeChange = (type: string) => {
+    const handleAccountTypeChange = useCallback((type: string) => {
         setAccountType(type);
+        setPage(1);
         if (type === 'all') {
             setEntryType('all');
         } else if (type === 'assets' || type === 'equity') {
-            // Assets & Equity = credits (revenue, sales)
             setEntryType('credit');
         } else if (type === 'liabilities') {
-            // Liabilities = debits (expenses, payments)
             setEntryType('debit');
         }
-    };
-
-    // Reset page on filter change
-    useEffect(() => {
-        setPage(1);
-    }, [entryType, accountType, startDate, endDate]);
+    }, []);
 
     // Fetch entries
-    const fetchEntries = useCallback(() => {
-        setIsLoading(true);
-        setError(null);
-        accountingService
-            .getLedgerEntries({
-                entryType: entryType !== 'all' ? entryType : undefined,
-                startDate: startDate || undefined,
-                endDate: endDate || undefined,
-                search: debouncedSearch || undefined,
-                page,
-                limit,
-            })
-            .then((data) => {
-                setEntries(data.items ?? []);
-                setTotal(data.total ?? 0);
-                setTotalPages(data.totalPages ?? 1);
-            })
-            .catch(() => setError('Failed to load ledger entries'))
-            .finally(() => setIsLoading(false));
-    }, [entryType, startDate, endDate, debouncedSearch, page]);
-
     useEffect(() => {
-        fetchEntries();
-    }, [fetchEntries]);
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const data = await accountingService.getLedgerEntries({
+                    entryType: entryType !== 'all' ? entryType : undefined,
+                    startDate: startDate || undefined,
+                    endDate: endDate || undefined,
+                    search: debouncedSearch || undefined,
+                    page,
+                    limit,
+                });
+                if (!cancelled) {
+                    setEntries(data.items ?? []);
+                    setTotal(data.total ?? 0);
+                    setTotalPages(data.totalPages ?? 1);
+                    setError(null);
+                }
+            } catch {
+                if (!cancelled) setError('Failed to load ledger entries');
+            } finally {
+                if (!cancelled) setIsLoading(false);
+            }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, [entryType, startDate, endDate, debouncedSearch, page]);
 
     // Fetch summary once
     useEffect(() => {
