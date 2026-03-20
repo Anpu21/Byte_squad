@@ -17,13 +17,19 @@ export default function ProfitLossPage() {
     const [endDate, setEndDate] = useState(today);
 
     useEffect(() => {
-        setIsLoading(true);
-        setError(null);
-        accountingService
-            .getProfitLoss(startDate, endDate)
-            .then(setData)
-            .catch(() => setError('Failed to load profit & loss data'))
-            .finally(() => setIsLoading(false));
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const result = await accountingService.getProfitLoss(startDate, endDate);
+                if (!cancelled) { setData(result); setError(null); }
+            } catch {
+                if (!cancelled) setError('Failed to load profit & loss data');
+            } finally {
+                if (!cancelled) setIsLoading(false);
+            }
+        };
+        load();
+        return () => { cancelled = true; };
     }, [startDate, endDate]);
 
     const formatCurrency = (amount: number) =>
@@ -87,7 +93,6 @@ export default function ProfitLossPage() {
                             label="Gross Profit"
                             value={formatCurrency(data.grossProfit)}
                             sub={`${formatPercent(data.grossMargin)} margin`}
-                            positive={data.grossProfit >= 0}
                         />
                         <SummaryCard
                             label="Total Expenses"
@@ -98,7 +103,6 @@ export default function ProfitLossPage() {
                             label="Net Profit"
                             value={formatCurrency(data.netProfit)}
                             sub={`${formatPercent(data.netMargin)} margin`}
-                            positive={data.netProfit >= 0}
                             highlight
                         />
                     </div>
@@ -165,11 +169,10 @@ export default function ProfitLossPage() {
     );
 }
 
-function SummaryCard({ label, value, sub, positive, highlight }: {
+function SummaryCard({ label, value, sub, highlight }: {
     label: string;
     value: string;
     sub: string;
-    positive?: boolean;
     highlight?: boolean;
 }) {
     return (

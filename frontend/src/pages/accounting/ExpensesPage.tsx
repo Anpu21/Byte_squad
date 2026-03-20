@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { accountingService } from '@/services/accounting.service';
 import type { IExpense, ICreateExpensePayload } from '@/services/accounting.service';
@@ -24,7 +24,7 @@ export default function ExpensesPage() {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [filterCategory, setFilterCategory] = useState('');
 
-    const fetchExpenses = () => {
+    const fetchExpenses = useCallback(() => {
         setIsLoading(true);
         setError(null);
         accountingService
@@ -32,10 +32,21 @@ export default function ExpensesPage() {
             .then(setExpenses)
             .catch(() => setError('Failed to load expenses'))
             .finally(() => setIsLoading(false));
-    };
+    }, []);
 
     useEffect(() => {
-        fetchExpenses();
+        const load = async () => {
+            try {
+                const data = await accountingService.getExpenses();
+                setExpenses(data);
+                setError(null);
+            } catch {
+                setError('Failed to load expenses');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        load();
     }, []);
 
     const filtered = useMemo(
@@ -44,17 +55,17 @@ export default function ExpensesPage() {
     );
 
     // Stats
-    const now = new Date();
-    const thisMonthTotal = useMemo(
-        () =>
-            expenses
-                .filter((e) => {
-                    const d = new Date(e.expenseDate);
-                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-                })
-                .reduce((sum, e) => sum + Number(e.amount), 0),
-        [expenses],
-    );
+    const thisMonthTotal = useMemo(() => {
+        const now = new Date();
+        const month = now.getMonth();
+        const year = now.getFullYear();
+        return expenses
+            .filter((e) => {
+                const d = new Date(e.expenseDate);
+                return d.getMonth() === month && d.getFullYear() === year;
+            })
+            .reduce((sum, e) => sum + Number(e.amount), 0);
+    }, [expenses]);
 
     const categories = useMemo(
         () => [...new Set(expenses.map((e) => e.category))].sort(),
