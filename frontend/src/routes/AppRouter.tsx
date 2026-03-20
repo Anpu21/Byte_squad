@@ -18,6 +18,7 @@ import LedgerPage from '@/pages/accounting/LedgerPage';
 import ExpensesPage from '@/pages/accounting/ExpensesPage';
 import UserManagementPage from '@/pages/users/UserManagementPage';
 import ProfilePage from '@/pages/users/ProfilePage';
+import NotificationsPage from '@/pages/notifications/NotificationsPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function SmartRedirect() {
@@ -156,6 +157,16 @@ export default function AppRouter() {
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <UserManagementPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.NOTIFICATIONS}
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <NotificationsPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

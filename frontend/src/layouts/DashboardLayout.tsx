@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { UserRole } from '@/constants/enums';
+import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -65,6 +66,12 @@ const NAV_ITEMS: NavItem[] = [
         roles: [UserRole.ADMIN],
         icon: <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
     },
+    {
+        label: 'Notifications',
+        path: FRONTEND_ROUTES.NOTIFICATIONS,
+        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER, UserRole.ACCOUNTANT],
+        icon: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>
+    },
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -122,7 +129,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     {item.icon}
                                 </svg>
-                                {sidebarOpen && <span>{item.label}</span>}
+                                {sidebarOpen && <span className="flex-1">{item.label}</span>}
+                                {sidebarOpen && item.path === FRONTEND_ROUTES.NOTIFICATIONS && unreadCount > 0 && (
+                                    <span className="ml-auto text-[11px] font-bold bg-white text-slate-900 rounded-full w-5 h-5 flex items-center justify-center">
+                                        {unreadCount}
+                                    </span>
+                                )}
                             </a>
                         )
                     })}
@@ -175,16 +187,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </button>
 
                     <div className="flex items-center gap-2">
-                        {/* Notifications bell */}
-                        <button className="relative p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                            </svg>
-                            {unreadCount > 0 && (
-                                <span className="absolute top-1 right-1 w-2 h-2 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-                            )}
-                        </button>
+                        {/* Notifications dropdown */}
+                        <NotificationDropdown />
 
                         <div className="w-px h-6 bg-white/10 mx-2" />
 
