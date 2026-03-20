@@ -57,12 +57,30 @@ export default function PosPage() {
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(amount);
 
-    // USB Barcode scanner detection
-    useScanDetection({
-        onScan: (barcode) => handleBarcodeScan(barcode),
-        minLength: 4,
-        enabled: !showPaymentModal && !showCameraScanner,
-    });
+    const addToCart = useCallback((product: IProduct) => {
+        const qty = pendingQty ?? 1;
+        setCart((prev) => {
+            const existing = prev.find((item) => item.product.id === product.id && !item.isCustom);
+            if (existing) {
+                return prev.map((item) =>
+                    item.product.id === product.id && !item.isCustom
+                        ? { ...item, quantity: item.quantity + qty, lineTotal: (item.quantity + qty) * item.unitPrice }
+                        : item,
+                );
+            }
+            return [...prev, {
+                product,
+                quantity: qty,
+                unitPrice: Number(product.sellingPrice),
+                lineTotal: qty * Number(product.sellingPrice),
+            }];
+        });
+        setPendingQty(null);
+        setPadMode('idle');
+        setPadValue('');
+        setSearch('');
+        setSearchResults([]);
+    }, [pendingQty]);
 
     const handleBarcodeScan = useCallback(async (barcode: string) => {
         setScanStatus('Scanning...');
@@ -74,7 +92,14 @@ export default function PosPage() {
             setScanStatus(`Product not found: ${barcode}`);
         }
         setTimeout(() => setScanStatus(null), 2000);
-    }, []);
+    }, [addToCart]);
+
+    // USB Barcode scanner detection
+    useScanDetection({
+        onScan: (barcode) => handleBarcodeScan(barcode),
+        minLength: 4,
+        enabled: !showPaymentModal && !showCameraScanner,
+    });
 
     // Search with debounce
     useEffect(() => {
@@ -115,31 +140,6 @@ export default function PosPage() {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [cart.length, showPaymentModal, padMode]);
-
-    const addToCart = useCallback((product: IProduct) => {
-        const qty = pendingQty ?? 1;
-        setCart((prev) => {
-            const existing = prev.find((item) => item.product.id === product.id && !item.isCustom);
-            if (existing) {
-                return prev.map((item) =>
-                    item.product.id === product.id && !item.isCustom
-                        ? { ...item, quantity: item.quantity + qty, lineTotal: (item.quantity + qty) * item.unitPrice }
-                        : item,
-                );
-            }
-            return [...prev, {
-                product,
-                quantity: qty,
-                unitPrice: Number(product.sellingPrice),
-                lineTotal: qty * Number(product.sellingPrice),
-            }];
-        });
-        setPendingQty(null);
-        setPadMode('idle');
-        setPadValue('');
-        setSearch('');
-        setSearchResults([]);
-    }, [pendingQty]);
 
     const addCustomItem = () => {
         const price = parseFloat(padValue);
