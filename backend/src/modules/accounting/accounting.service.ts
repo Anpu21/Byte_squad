@@ -2,10 +2,26 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { Expense } from '@accounting/entities/expense.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
+
+export interface PaginatedLedger {
+  items: LedgerEntry[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface LedgerSummary {
+  totalCredits: number;
+  totalDebits: number;
+  netBalance: number;
+  entryCount: number;
+}
 
 export interface ProfitLossData {
   period: { startDate: string; endDate: string };
@@ -43,11 +59,91 @@ export class AccountingService {
     private readonly transactionItemRepository: Repository<TransactionItem>,
   ) {}
 
-  async getLedgerEntries(branchId: string): Promise<LedgerEntry[]> {
-    return this.ledgerRepository.find({
-      where: { branchId },
-      order: { createdAt: 'DESC' },
-    });
+  async getLedgerEntries(
+    branchId: string,
+    options?: {
+      entryType?: string;
+      startDate?: string;
+      endDate?: string;
+      search?: string;
+      page?: number;
+      limit?: number;
+    },
+  ): Promise<PaginatedLedger> {
+    const page = options?.page ?? 1;
+    const limit = options?.limit ?? 20;
+
+    const qb = this.ledgerRepository
+      .createQueryBuilder('le')
+      .where('le.branch_id = :branchId', { branchId });
+
+    if (options?.entryType && options.entryType !== 'all') {
+      qb.andWhere('le.entry_type = :entryType', { entryType: options.entryType });
+    }
+
+    if (options?.startDate) {
+      const start = new Date(options.startDate);
+      start.setHours(0, 0, 0, 0);
+      qb.andWhere('le.created_at >= :start', { start });
+    }
+
+    if (options?.endDate) {
+      const end = new Date(options.endDate);
+      end.setHours(23, 59, 59, 999);
+      qb.andWhere('le.created_at <= :end', { end });
+    }
+
+    if (options?.search) {
+      qb.andWhere(
+        '(le.description ILIKE :search OR le.reference_number ILIKE :search)',
+        { search: `%${options.search}%` },
+      );
+    }
+
+    qb.orderBy('le.created_at', 'DESC');
+
+    const [items, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getLedgerSummary(branchId: string): Promise<LedgerSummary> {
+    const result = await this.ledgerRepository
+      .createQueryBuilder('le')
+      .select(
+        `SUM(CASE WHEN le.entry_type = 'credit' THEN le.amount ELSE 0 END)`,
+        'totalCredits',
+      )
+      .addSelect(
+        `SUM(CASE WHEN le.entry_type = 'debit' THEN le.amount ELSE 0 END)`,
+        'totalDebits',
+      )
+      .addSelect('COUNT(*)', 'entryCount')
+      .where('le.branch_id = :branchId', { branchId })
+      .getRawOne<{
+        totalCredits: string | null;
+        totalDebits: string | null;
+        entryCount: string;
+      }>();
+
+    const totalCredits = Number(result?.totalCredits ?? 0);
+    const totalDebits = Number(result?.totalDebits ?? 0);
+
+    return {
+      totalCredits: Math.round(totalCredits * 100) / 100,
+      totalDebits: Math.round(totalDebits * 100) / 100,
+      netBalance: Math.round((totalCredits - totalDebits) * 100) / 100,
+      entryCount: Number(result?.entryCount ?? 0),
+    };
   }
 
   async createExpense(
@@ -58,10 +154,25 @@ export class AccountingService {
       ...dto,
       createdBy,
     });
-    return this.expenseRepository.save(expense);
+    const saved = await this.expenseRepository.save(expense);
+
+    // Create a DEBIT ledger entry for this expense
+    const ledgerEntry = this.ledgerRepository.create({
+      branchId: saved.branchId,
+      entryType: LedgerEntryType.DEBIT,
+      amount: saved.amount,
+      description: `Expense: ${saved.category} — ${saved.description}`,
+      referenceNumber: `EXP-${saved.id.substring(0, 8).toUpperCase()}`,
+    });
+    await this.ledgerRepository.save(ledgerEntry);
+
+    return saved;
   }
 
   async deleteExpense(id: string): Promise<void> {
+    // Also delete any associated ledger entry
+    const refPrefix = `EXP-${id.substring(0, 8).toUpperCase()}`;
+    await this.ledgerRepository.delete({ referenceNumber: refPrefix });
     await this.expenseRepository.delete(id);
   }
 

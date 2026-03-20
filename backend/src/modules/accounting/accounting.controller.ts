@@ -8,7 +8,6 @@ import { AccountingService } from '@accounting/accounting.service';
 import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Expense } from '@accounting/entities/expense.entity';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 
 @Controller(APP_ROUTES.ACCOUNTING.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -16,9 +15,30 @@ import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 export class AccountingController {
   constructor(private readonly accountingService: AccountingService) {}
 
+  // IMPORTANT: ledger/summary must come BEFORE ledger (static before dynamic)
+  @Get(APP_ROUTES.ACCOUNTING.LEDGER_SUMMARY)
+  getLedgerSummary(@CurrentUser('branchId') branchId: string) {
+    return this.accountingService.getLedgerSummary(branchId);
+  }
+
   @Get(APP_ROUTES.ACCOUNTING.LEDGER)
-  getLedger(@CurrentUser('branchId') branchId: string): Promise<LedgerEntry[]> {
-    return this.accountingService.getLedgerEntries(branchId);
+  getLedger(
+    @CurrentUser('branchId') branchId: string,
+    @Query('entryType') entryType?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.accountingService.getLedgerEntries(branchId, {
+      entryType,
+      startDate,
+      endDate,
+      search,
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+    });
   }
 
   @Post(APP_ROUTES.ACCOUNTING.EXPENSES)
