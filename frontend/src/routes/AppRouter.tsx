@@ -118,6 +118,16 @@ export default function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path={FRONTEND_ROUTES.INVENTORY_EDIT}
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <ProductFormPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
 
                 <Route
                     path={FRONTEND_ROUTES.POS}

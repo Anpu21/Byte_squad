@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Delete,
@@ -9,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ProductsService } from '@products/products.service';
 import { CreateProductDto } from '@products/dto/create-product.dto';
+import { UpdateProductDto } from '@products/dto/update-product.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -32,6 +34,11 @@ export class ProductsController {
     return this.productsService.findAll();
   }
 
+  @Get(APP_ROUTES.PRODUCTS.CATEGORIES)
+  getCategories(): Promise<string[]> {
+    return this.productsService.getCategories();
+  }
+
   @Get(APP_ROUTES.PRODUCTS.BY_ID)
   findOne(@Param('id') id: string): Promise<Product | null> {
     return this.productsService.findById(id);
@@ -40,6 +47,15 @@ export class ProductsController {
   @Get(APP_ROUTES.PRODUCTS.BY_BARCODE)
   findByBarcode(@Param('barcode') barcode: string): Promise<Product | null> {
     return this.productsService.findByBarcode(barcode);
+  }
+
+  @Patch(APP_ROUTES.PRODUCTS.BY_ID)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+  ): Promise<Product> {
+    return this.productsService.update(id, updateProductDto);
   }
 
   @Delete(APP_ROUTES.PRODUCTS.BY_ID)

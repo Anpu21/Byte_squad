@@ -1,5 +1,6 @@
-import { Controller, Get, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { InventoryService } from '@inventory/inventory.service';
+import { CreateInventoryDto } from '@inventory/dto/create-inventory.dto';
 import { UpdateStockDto } from '@inventory/dto/update-stock.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -13,9 +14,28 @@ import { Inventory } from '@inventory/entities/inventory.entity';
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
+  @Post()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  create(@Body() createInventoryDto: CreateInventoryDto) {
+    return this.inventoryService.create(createInventoryDto);
+  }
+
   @Get(APP_ROUTES.INVENTORY.BY_BRANCH)
-  findByBranch(@Param('branchId') branchId: string): Promise<Inventory[]> {
-    return this.inventoryService.findByBranch(branchId);
+  findByBranch(
+    @Param('branchId') branchId: string,
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('stockStatus') stockStatus?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.inventoryService.findByBranch(branchId, {
+      search,
+      category,
+      stockStatus,
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 10,
+    });
   }
 
   @Get(APP_ROUTES.INVENTORY.LOW_STOCK)
