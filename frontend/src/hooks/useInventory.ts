@@ -18,7 +18,7 @@ export function useInventory() {
   const [stockStatus, setStockStatus] = useState('');
   const [page, setPage] = useState(1);
 
-  const debounceTimer = useRef<ReturnType<typeof setTimeout>>();
+  const debounceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Debounce search
