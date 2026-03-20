@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 
 export interface JwtConfig {
   secret: string;
-  expiresIn: number;
+  expiresIn: string;
 }
 
 export const getJwtConfig = (configService: ConfigService): JwtConfig => ({
@@ -10,5 +10,5 @@ export const getJwtConfig = (configService: ConfigService): JwtConfig => ({
     'JWT_SECRET',
     'ledgerpro-dev-secret-change-me',
   ),
-  expiresIn: configService.get<number>('JWT_EXPIRES_IN', 86400),
+  expiresIn: configService.get<string>('JWT_EXPIRES_IN', '1d'),
 });
