@@ -163,7 +163,7 @@ export default function ProductFormPage() {
 
     if (isLoadingProduct) {
         return (
-            <div className="max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="mb-8">
                     <div className="h-4 w-32 bg-white/10 rounded animate-pulse mb-4" />
                     <div className="h-8 w-64 bg-white/10 rounded animate-pulse mb-2" />
@@ -181,7 +181,7 @@ export default function ProductFormPage() {
     }
 
     return (
-        <div className="max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header & Back Navigation */}
             <div className="mb-8">
                 <button
