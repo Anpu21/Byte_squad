@@ -2,24 +2,35 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/user.service';
 import { UserRole } from '@/constants/enums';
+import { useAuth } from '@/hooks/useAuth';
 import type { IUser, IBranch, IUserCreatePayload } from '@/types';
 import toast from 'react-hot-toast';
 
 function CreateUserModal({
     branches,
+    currentUserRole,
+    currentUserBranchId,
     onClose,
     onCreated,
 }: {
     branches: IBranch[];
+    currentUserRole: UserRole;
+    currentUserBranchId: string;
     onClose: () => void;
     onCreated: () => void;
 }) {
+    // Admins can only create non-admin staff within their own branch.
+    const isAdmin = currentUserRole === UserRole.ADMIN;
+    const defaultBranchId = isAdmin
+        ? currentUserBranchId
+        : branches[0]?.id || '';
+
     const [form, setForm] = useState<IUserCreatePayload>({
         email: '',
         firstName: '',
         lastName: '',
         role: UserRole.CASHIER,
-        branchId: branches[0]?.id || '',
+        branchId: defaultBranchId,
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -105,7 +116,9 @@ function CreateUserModal({
                                 <option value={UserRole.CASHIER}>Cashier</option>
                                 <option value={UserRole.ACCOUNTANT}>Accountant</option>
                                 <option value={UserRole.MANAGER}>Manager</option>
-                                <option value={UserRole.ADMIN}>Admin</option>
+                                {!isAdmin && (
+                                    <option value={UserRole.ADMIN}>Admin</option>
+                                )}
                             </select>
                         </div>
                         <div>
@@ -113,7 +126,8 @@ function CreateUserModal({
                             <select
                                 value={form.branchId}
                                 onChange={(e) => setForm({ ...form, branchId: e.target.value })}
-                                className="w-full h-9 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg px-3 outline-none focus:border-white/30 cursor-pointer"
+                                disabled={isAdmin}
+                                className="w-full h-9 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg px-3 outline-none focus:border-white/30 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 {branches.map((branch) => (
                                     <option key={branch.id} value={branch.id}>{branch.name}</option>
@@ -152,6 +166,7 @@ function CreateUserModal({
 
 export default function UserManagementPage() {
     const queryClient = useQueryClient();
+    const { user: currentUser } = useAuth();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -396,9 +411,11 @@ export default function UserManagementPage() {
             </div>
 
             {/* Create User Modal */}
-            {showCreateModal && branches.length > 0 && (
+            {showCreateModal && branches.length > 0 && currentUser && (
                 <CreateUserModal
                     branches={branches}
+                    currentUserRole={currentUser.role as UserRole}
+                    currentUserBranchId={currentUser.branchId}
                     onClose={() => setShowCreateModal(false)}
                     onCreated={() => queryClient.invalidateQueries({ queryKey: ['users'] })}
                 />
