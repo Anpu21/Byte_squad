@@ -14,7 +14,7 @@ import {
   FileTypeValidator,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UsersService } from '@users/users.service';
+import { UsersService, Actor } from '@users/users.service';
 import { CreateUserDto } from '@users/dto/create-user.dto';
 import { UpdateUserDto } from '@users/dto/update-user.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -65,40 +65,60 @@ export class UsersController {
   // ── Admin CRUD endpoints ─────────────────────────────────
 
   @Post()
-  @Roles(UserRole.ADMIN)
-  create(@Body() createUserDto: CreateUserDto): Promise<User> {
-    return this.usersService.create(createUserDto);
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  create(
+    @Body() createUserDto: CreateUserDto,
+    @CurrentUser() actor: Actor,
+  ): Promise<User> {
+    return this.usersService.create(createUserDto, actor);
   }
 
   @Get()
-  @Roles(UserRole.ADMIN)
-  findAll(): Promise<User[]> {
-    return this.usersService.findAll();
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  findAll(@CurrentUser() actor: Actor): Promise<User[]> {
+    return this.usersService.findAll(actor);
   }
 
   @Get(APP_ROUTES.USERS.BY_ID)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   findOne(@Param('id') id: string): Promise<User | null> {
     return this.usersService.findById(id);
   }
 
   @Patch(APP_ROUTES.USERS.BY_ID)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
+    @CurrentUser() actor: Actor,
   ): Promise<User | null> {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.update(id, updateUserDto, actor);
   }
 
   @Delete(APP_ROUTES.USERS.BY_ID)
-  @Roles(UserRole.ADMIN)
-  remove(@Param('id') id: string): Promise<void> {
-    return this.usersService.remove(id);
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  remove(
+    @Param('id') id: string,
+    @CurrentUser() actor: Actor,
+  ): Promise<void> {
+    return this.usersService.remove(id, actor);
   }
 
   @Post(APP_ROUTES.USERS.RESEND_CREDENTIALS)
-  @Roles(UserRole.ADMIN)
-  resendCredentials(@Param('id') id: string): Promise<void> {
-    return this.usersService.resendCredentials(id);
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  resendCredentials(
+    @Param('id') id: string,
+    @CurrentUser() actor: Actor,
+  ): Promise<void> {
+    return this.usersService.resendCredentials(id, actor);
+  }
+
+  @Post(APP_ROUTES.USERS.RESET_PASSWORD)
+  @Roles(UserRole.SUPER_ADMIN)
+  resetPassword(
+    @Param('id') id: string,
+    @CurrentUser() actor: Actor,
+  ): Promise<void> {
+    return this.usersService.resendCredentials(id, actor);
   }
 }
