@@ -12,10 +12,14 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    host: true,
+    port: Number(process.env.VITE_PORT) || 5173,
+    hmr: {
+      clientPort: Number(process.env.FRONTEND_PORT) || 5000,
+    },
     proxy: {
       '/api': {
-        target: process.env.BACKEND_API_URL || 'http://localhost:3000',
+        target: process.env.BACKEND_API_URL || 'http://backend:3000',
         changeOrigin: true,
       },
     },
