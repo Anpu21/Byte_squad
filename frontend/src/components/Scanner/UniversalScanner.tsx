@@ -5,6 +5,14 @@ interface UniversalScannerProps {
     onScanSuccess?: (text: string) => void;
 }
 
+interface IScanResult {
+    getText: () => string;
+}
+
+interface IScanError extends Error {
+    name: string;
+}
+
 export default function UniversalScanner({ onScanSuccess }: UniversalScannerProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [lastResult, setLastResult] = useState<string | null>(null);
@@ -17,7 +25,7 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
         let isMounted = true;
 
         // FIXED: Passing `undefined` instead of `null` to satisfy TypeScript
-        codeReader.decodeFromVideoDevice(undefined, videoRef.current, (result, err) => {
+        codeReader.decodeFromVideoDevice(undefined, videoRef.current, (result: IScanResult | null | undefined, err: IScanError | null | undefined) => {
             if (!isMounted) return;
 
             if (result) {
@@ -34,7 +42,7 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
                     console.error('Barcode scanning error:', err);
                 }
             }
-        }).catch((err) => {
+        }).catch((err: Error) => {
             console.error('Camera initialization failed:', err);
         });
 

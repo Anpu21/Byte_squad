@@ -203,8 +203,8 @@ export default function BranchComparisonPage() {
                                             border: '1px solid rgba(255,255,255,0.1)',
                                             borderRadius: 8,
                                         }}
-                                        formatter={(value: number) =>
-                                            formatCurrency(value)
+                                        formatter={(value: number | undefined) =>
+                                            formatCurrency(value || 0)
                                         }
                                     />
                                     <Legend wrapperStyle={{ fontSize: 12 }} />
