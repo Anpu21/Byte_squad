@@ -32,6 +32,9 @@ function SmartRedirect() {
             return <Navigate to={FRONTEND_ROUTES.CASHIER_DASHBOARD} replace />;
         case UserRole.ACCOUNTANT:
             return <Navigate to={FRONTEND_ROUTES.LEDGER} replace />;
+        case UserRole.SUPER_ADMIN:
+            // TODO (phase 2): replace with dedicated super-admin overview page
+            return <Navigate to={FRONTEND_ROUTES.DASHBOARD} replace />;
         default:
             return <Navigate to={FRONTEND_ROUTES.DASHBOARD} replace />;
     }

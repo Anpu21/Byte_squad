@@ -52,6 +52,9 @@ export class User {
   @Column({ type: 'boolean', name: 'is_verified', default: false })
   isVerified!: boolean;
 
+  @Column({ type: 'timestamp', name: 'last_login_at', nullable: true })
+  lastLoginAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
