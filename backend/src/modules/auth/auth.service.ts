@@ -92,6 +92,8 @@ export class AuthService {
       const accessToken = await this.jwtService.signAsync(payload);
       this.logger.debug(`JWT generated successfully`);
 
+      await this.usersService.touchLastLogin(user.id);
+
       return {
         accessToken,
         user: {
