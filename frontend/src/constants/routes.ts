@@ -33,6 +33,11 @@ export const FRONTEND_ROUTES = {
     // Branches
     BRANCHES: '/branches',
 
+    // Super Admin
+    SUPER_ADMIN_DASHBOARD: '/super-admin/dashboard',
+    BRANCH_MANAGEMENT: '/super-admin/branches',
+    ADMIN_MANAGEMENT: '/super-admin/admins',
+
     // Notifications
     NOTIFICATIONS: '/notifications',
 } as const;
