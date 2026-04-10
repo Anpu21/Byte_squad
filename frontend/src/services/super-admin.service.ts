@@ -4,11 +4,14 @@ import type {
     IOverviewResponse,
     IBranchWithMeta,
     IAdminWithBranch,
+    IUserWithBranch,
     IBranch,
     IBranchCreatePayload,
     IBranchUpdatePayload,
     IUser,
     IUserCreatePayload,
+    IBranchComparisonRequest,
+    IBranchComparisonResponse,
 } from '@/types';
 
 export const superAdminService = {
@@ -29,6 +32,23 @@ export const superAdminService = {
     listAdmins: async (): Promise<IAdminWithBranch[]> => {
         const response = await api.get<IApiResponse<IAdminWithBranch[]>>(
             '/super-admin/admins',
+        );
+        return response.data.data;
+    },
+
+    listAllUsers: async (): Promise<IUserWithBranch[]> => {
+        const response = await api.get<IApiResponse<IUserWithBranch[]>>(
+            '/super-admin/users',
+        );
+        return response.data.data;
+    },
+
+    compareBranches: async (
+        payload: IBranchComparisonRequest,
+    ): Promise<IBranchComparisonResponse> => {
+        const response = await api.post<IApiResponse<IBranchComparisonResponse>>(
+            '/super-admin/comparison',
+            payload,
         );
         return response.data.data;
     },

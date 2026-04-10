@@ -80,6 +80,8 @@ export const APP_ROUTES = {
     OVERVIEW: 'overview',
     BRANCHES: 'branches',
     ADMINS: 'admins',
+    COMPARISON: 'comparison',
+    USERS: 'users',
   },
 } as const;
 
