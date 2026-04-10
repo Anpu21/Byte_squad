@@ -48,6 +48,118 @@ export interface IBranch {
     updatedAt: string;
 }
 
+export interface IBranchCreatePayload {
+    name: string;
+    address: string;
+    phone?: string;
+}
+
+export interface IBranchUpdatePayload {
+    name?: string;
+    address?: string;
+    phone?: string;
+    isActive?: boolean;
+}
+
+// ─── Super Admin ─────────────────────────────────────────────────────────────
+
+export interface IBranchWithMeta extends IBranch {
+    adminName: string | null;
+    adminEmail: string | null;
+    staffCount: number;
+}
+
+export interface IAdminWithBranch {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    branchId: string;
+    branchName: string | null;
+    isVerified: boolean;
+    lastLoginAt: string | null;
+    createdAt: string;
+}
+
+export interface IBranchPerformance {
+    branchId: string;
+    branchName: string;
+    isActive: boolean;
+    todaySales: number;
+    todayTransactions: number;
+    staffCount: number;
+    activeProducts: number;
+    lowStockItems: number;
+    adminName: string | null;
+}
+
+export interface IOverviewSummary {
+    totalRevenueToday: number;
+    totalTransactionsToday: number;
+    activeBranches: number;
+    inactiveBranches: number;
+    totalStaff: number;
+}
+
+export interface IOverviewAlert {
+    type: 'no_admin' | 'no_transactions' | 'critical_low_stock' | 'inactive_branch';
+    branchId: string;
+    branchName: string;
+    message: string;
+}
+
+export interface IOverviewResponse {
+    summary: IOverviewSummary;
+    branches: IBranchPerformance[];
+    alerts: IOverviewAlert[];
+}
+
+export interface IUserWithBranch {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    branchId: string;
+    branchName: string | null;
+    isVerified: boolean;
+    lastLoginAt: string | null;
+    createdAt: string;
+}
+
+export interface IComparisonTopProduct {
+    productId: string;
+    productName: string;
+    quantity: number;
+    revenue: number;
+}
+
+export interface IBranchComparisonEntry {
+    branchId: string;
+    branchName: string;
+    revenue: number;
+    expenses: number;
+    expenseRatio: number;
+    transactionCount: number;
+    avgTransactionValue: number;
+    staffCount: number;
+    revenuePerStaff: number;
+    topProducts: IComparisonTopProduct[];
+}
+
+export interface IBranchComparisonResponse {
+    startDate: string;
+    endDate: string;
+    branches: IBranchComparisonEntry[];
+}
+
+export interface IBranchComparisonRequest {
+    branchIds: string[];
+    startDate: string;
+    endDate: string;
+}
+
 // ─── Product ─────────────────────────────────────────────────────────────────
 
 export interface IProduct {
@@ -177,6 +289,66 @@ export interface IPaginatedResponse<T> {
     page: number;
     limit: number;
     totalPages: number;
+}
+
+// ─── Cashier Dashboard ──────────────────────────────────────────────────────
+
+export interface IDailyBreakdown {
+    date: string;
+    totalSales: number;
+    transactionCount: number;
+}
+
+export interface ITopProduct {
+    productId: string;
+    productName: string;
+    totalQuantity: number;
+    totalRevenue: number;
+}
+
+export interface IAdminDashboard {
+    today: {
+        totalSales: number;
+        transactionCount: number;
+        averageSale: number;
+    };
+    week: {
+        totalSales: number;
+        transactionCount: number;
+    };
+    month: {
+        totalRevenue: number;
+        transactionCount: number;
+    };
+    stats: {
+        activeProducts: number;
+        lowStockItems: number;
+        totalUsers: number;
+        totalBranches: number;
+    };
+    dailyBreakdown: IDailyBreakdown[];
+    topProducts: ITopProduct[];
+    recentTransactions: ITransaction[];
+}
+
+export interface ICashierDashboard {
+    today: {
+        totalSales: number;
+        transactionCount: number;
+        averageSale: number;
+    };
+    week: {
+        totalSales: number;
+        transactionCount: number;
+    };
+    dailyBreakdown: IDailyBreakdown[];
+    recentTransactions: ITransaction[];
+}
+
+// ─── User Profile ───────────────────────────────────────────────────────────
+
+export interface IUserProfile extends IUser {
+    branch?: IBranch;
 }
 
 // ─── Frontend-specific Types ─────────────────────────────────────────────────
