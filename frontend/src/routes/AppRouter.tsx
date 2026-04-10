@@ -23,6 +23,8 @@ import NotificationsPage from '@/pages/notifications/NotificationsPage';
 import SuperAdminOverviewPage from '@/pages/super-admin/OverviewPage';
 import BranchManagementPage from '@/pages/super-admin/BranchManagementPage';
 import AdminManagementPage from '@/pages/super-admin/AdminManagementPage';
+import BranchComparisonPage from '@/pages/super-admin/BranchComparisonPage';
+import AllUsersPage from '@/pages/super-admin/AllUsersPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function SmartRedirect() {
@@ -235,6 +237,26 @@ export default function AppRouter() {
                         <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
                             <DashboardLayout>
                                 <AdminManagementPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.BRANCH_COMPARISON}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                            <DashboardLayout>
+                                <BranchComparisonPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.ALL_USERS}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                            <DashboardLayout>
+                                <AllUsersPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

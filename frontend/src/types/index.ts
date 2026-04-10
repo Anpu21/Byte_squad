@@ -115,6 +115,51 @@ export interface IOverviewResponse {
     alerts: IOverviewAlert[];
 }
 
+export interface IUserWithBranch {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    branchId: string;
+    branchName: string | null;
+    isVerified: boolean;
+    lastLoginAt: string | null;
+    createdAt: string;
+}
+
+export interface IComparisonTopProduct {
+    productId: string;
+    productName: string;
+    quantity: number;
+    revenue: number;
+}
+
+export interface IBranchComparisonEntry {
+    branchId: string;
+    branchName: string;
+    revenue: number;
+    expenses: number;
+    expenseRatio: number;
+    transactionCount: number;
+    avgTransactionValue: number;
+    staffCount: number;
+    revenuePerStaff: number;
+    topProducts: IComparisonTopProduct[];
+}
+
+export interface IBranchComparisonResponse {
+    startDate: string;
+    endDate: string;
+    branches: IBranchComparisonEntry[];
+}
+
+export interface IBranchComparisonRequest {
+    branchIds: string[];
+    startDate: string;
+    endDate: string;
+}
+
 // ─── Product ─────────────────────────────────────────────────────────────────
 
 export interface IProduct {
