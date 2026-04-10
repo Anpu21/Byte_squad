@@ -25,6 +25,7 @@ import BranchManagementPage from '@/pages/super-admin/BranchManagementPage';
 import AdminManagementPage from '@/pages/super-admin/AdminManagementPage';
 import BranchComparisonPage from '@/pages/super-admin/BranchComparisonPage';
 import AllUsersPage from '@/pages/super-admin/AllUsersPage';
+import BranchPerformancePage from '@/pages/branches/BranchPerformancePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function SmartRedirect() {
@@ -205,6 +206,20 @@ export default function AppRouter() {
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <ProfilePage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* My Branch — admin/manager single-branch performance */}
+                <Route
+                    path={FRONTEND_ROUTES.BRANCHES}
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={[UserRole.ADMIN, UserRole.MANAGER]}
+                        >
+                            <DashboardLayout>
+                                <BranchPerformancePage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

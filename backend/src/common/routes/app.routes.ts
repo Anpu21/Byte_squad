@@ -29,6 +29,7 @@ export const APP_ROUTES = {
     BASE: `${API_PREFIX}/branches`,
     BY_ID: ':id',
     TOGGLE_ACTIVE: ':id/toggle-active',
+    MY_PERFORMANCE: 'my-performance',
   },
 
   // Products
