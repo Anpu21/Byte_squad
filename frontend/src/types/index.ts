@@ -48,6 +48,118 @@ export interface IBranch {
     updatedAt: string;
 }
 
+export interface IBranchCreatePayload {
+    name: string;
+    address: string;
+    phone?: string;
+}
+
+export interface IBranchUpdatePayload {
+    name?: string;
+    address?: string;
+    phone?: string;
+    isActive?: boolean;
+}
+
+// ─── Super Admin ─────────────────────────────────────────────────────────────
+
+export interface IBranchWithMeta extends IBranch {
+    adminName: string | null;
+    adminEmail: string | null;
+    staffCount: number;
+}
+
+export interface IAdminWithBranch {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    branchId: string;
+    branchName: string | null;
+    isVerified: boolean;
+    lastLoginAt: string | null;
+    createdAt: string;
+}
+
+export interface IBranchPerformance {
+    branchId: string;
+    branchName: string;
+    isActive: boolean;
+    todaySales: number;
+    todayTransactions: number;
+    staffCount: number;
+    activeProducts: number;
+    lowStockItems: number;
+    adminName: string | null;
+}
+
+export interface IOverviewSummary {
+    totalRevenueToday: number;
+    totalTransactionsToday: number;
+    activeBranches: number;
+    inactiveBranches: number;
+    totalStaff: number;
+}
+
+export interface IOverviewAlert {
+    type: 'no_admin' | 'no_transactions' | 'critical_low_stock' | 'inactive_branch';
+    branchId: string;
+    branchName: string;
+    message: string;
+}
+
+export interface IOverviewResponse {
+    summary: IOverviewSummary;
+    branches: IBranchPerformance[];
+    alerts: IOverviewAlert[];
+}
+
+export interface IUserWithBranch {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    branchId: string;
+    branchName: string | null;
+    isVerified: boolean;
+    lastLoginAt: string | null;
+    createdAt: string;
+}
+
+export interface IComparisonTopProduct {
+    productId: string;
+    productName: string;
+    quantity: number;
+    revenue: number;
+}
+
+export interface IBranchComparisonEntry {
+    branchId: string;
+    branchName: string;
+    revenue: number;
+    expenses: number;
+    expenseRatio: number;
+    transactionCount: number;
+    avgTransactionValue: number;
+    staffCount: number;
+    revenuePerStaff: number;
+    topProducts: IComparisonTopProduct[];
+}
+
+export interface IBranchComparisonResponse {
+    startDate: string;
+    endDate: string;
+    branches: IBranchComparisonEntry[];
+}
+
+export interface IBranchComparisonRequest {
+    branchIds: string[];
+    startDate: string;
+    endDate: string;
+}
+
 // ─── Product ─────────────────────────────────────────────────────────────────
 
 export interface IProduct {
