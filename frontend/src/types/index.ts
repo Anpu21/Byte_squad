@@ -160,6 +160,99 @@ export interface IBranchComparisonRequest {
     endDate: string;
 }
 
+// ─── My Branch Performance (Admin/Manager) ──────────────────────────────────
+
+export interface IMyBranchInfo {
+    id: string;
+    name: string;
+    address: string;
+    phone: string;
+    isActive: boolean;
+    createdAt: string;
+}
+
+export interface IMyBranchAdmin {
+    name: string;
+    email: string;
+}
+
+export interface IMyBranchTodayKpis {
+    sales: number;
+    transactions: number;
+    avgTransaction: number;
+}
+
+export interface IMyBranchDailyPoint {
+    date: string;
+    sales: number;
+    transactions: number;
+}
+
+export interface IMyBranchWeekKpis {
+    sales: number;
+    transactions: number;
+    dailyBreakdown: IMyBranchDailyPoint[];
+}
+
+export interface IMyBranchMonthKpis {
+    revenue: number;
+    expenses: number;
+    netProfit: number;
+    transactions: number;
+}
+
+export interface IMyBranchStaff {
+    total: number;
+    byRole: {
+        admin: number;
+        manager: number;
+        accountant: number;
+        cashier: number;
+    };
+}
+
+export interface IMyBranchInventory {
+    totalProducts: number;
+    activeProducts: number;
+    lowStockItems: number;
+    outOfStock: number;
+}
+
+export interface IMyBranchTopProduct {
+    productId: string;
+    name: string;
+    quantity: number;
+    revenue: number;
+}
+
+export interface IMyBranchLowStockItem {
+    productId: string;
+    name: string;
+    quantity: number;
+    threshold: number;
+}
+
+export interface IMyBranchRecentTransaction {
+    id: string;
+    transactionNumber: string;
+    total: number;
+    cashierName: string;
+    createdAt: string;
+}
+
+export interface IMyBranchPerformance {
+    branch: IMyBranchInfo;
+    admin: IMyBranchAdmin | null;
+    today: IMyBranchTodayKpis;
+    week: IMyBranchWeekKpis;
+    month: IMyBranchMonthKpis;
+    staff: IMyBranchStaff;
+    inventory: IMyBranchInventory;
+    topProducts: IMyBranchTopProduct[];
+    lowStockList: IMyBranchLowStockItem[];
+    recentTransactions: IMyBranchRecentTransaction[];
+}
+
 // ─── Product ─────────────────────────────────────────────────────────────────
 
 export interface IProduct {
