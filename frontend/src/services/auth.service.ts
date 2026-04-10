@@ -6,4 +6,12 @@ export const authService = {
         const response = await api.post<IApiResponse<IAuthResponse>>('/auth/login', credentials);
         return response.data.data;
     },
+
+    changePassword: async (currentPassword: string, newPassword: string): Promise<{ message: string }> => {
+        const response = await api.post<IApiResponse<{ message: string }>>('/auth/change-password', {
+            currentPassword,
+            newPassword,
+        });
+        return response.data.data;
+    },
 };
