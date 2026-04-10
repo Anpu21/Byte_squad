@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { UserRole } from '@/constants/enums';
+import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -17,6 +18,38 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+    // ── Super Admin ──────────────────────────────────────────
+    {
+        label: 'Dashboard',
+        path: FRONTEND_ROUTES.SUPER_ADMIN_DASHBOARD,
+        roles: [UserRole.SUPER_ADMIN],
+        icon: <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    },
+    {
+        label: 'Branches',
+        path: FRONTEND_ROUTES.BRANCH_MANAGEMENT,
+        roles: [UserRole.SUPER_ADMIN],
+        icon: <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
+    },
+    {
+        label: 'Admins',
+        path: FRONTEND_ROUTES.ADMIN_MANAGEMENT,
+        roles: [UserRole.SUPER_ADMIN],
+        icon: <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    },
+    {
+        label: 'Comparison',
+        path: FRONTEND_ROUTES.BRANCH_COMPARISON,
+        roles: [UserRole.SUPER_ADMIN],
+        icon: <><path d="M3 3v18h18" /><path d="M7 16V9" /><path d="M12 16V5" /><path d="M17 16v-4" /></>
+    },
+    {
+        label: 'All Users',
+        path: FRONTEND_ROUTES.ALL_USERS,
+        roles: [UserRole.SUPER_ADMIN],
+        icon: <><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><circle cx="17" cy="9" r="3" /><path d="M21 21v-1a3 3 0 0 0-3-3h-1" /></>
+    },
+    // ── Other roles ──────────────────────────────────────────
     {
         label: 'Dashboard',
         path: FRONTEND_ROUTES.DASHBOARD,
@@ -54,6 +87,12 @@ const NAV_ITEMS: NavItem[] = [
         icon: <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
     },
     {
+        label: 'Profit & Loss',
+        path: FRONTEND_ROUTES.PROFIT_LOSS,
+        roles: [UserRole.ADMIN, UserRole.ACCOUNTANT],
+        icon: <><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></>
+    },
+    {
         label: 'Users',
         path: FRONTEND_ROUTES.USER_MANAGEMENT,
         roles: [UserRole.ADMIN],
@@ -64,6 +103,12 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.BRANCHES,
         roles: [UserRole.ADMIN],
         icon: <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
+    },
+    {
+        label: 'Notifications',
+        path: FRONTEND_ROUTES.NOTIFICATIONS,
+        roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER, UserRole.ACCOUNTANT],
+        icon: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>
     },
 ];
 
@@ -122,7 +167,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     {item.icon}
                                 </svg>
-                                {sidebarOpen && <span>{item.label}</span>}
+                                {sidebarOpen && <span className="flex-1">{item.label}</span>}
+                                {sidebarOpen && item.path === FRONTEND_ROUTES.NOTIFICATIONS && unreadCount > 0 && (
+                                    <span className="ml-auto text-[11px] font-bold bg-white text-slate-900 rounded-full w-5 h-5 flex items-center justify-center">
+                                        {unreadCount}
+                                    </span>
+                                )}
                             </a>
                         )
                     })}
@@ -175,16 +225,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </button>
 
                     <div className="flex items-center gap-2">
-                        {/* Notifications bell */}
-                        <button className="relative p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                            </svg>
-                            {unreadCount > 0 && (
-                                <span className="absolute top-1 right-1 w-2 h-2 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-                            )}
-                        </button>
+                        {/* Notifications dropdown */}
+                        <NotificationDropdown />
 
                         <div className="w-px h-6 bg-white/10 mx-2" />
 

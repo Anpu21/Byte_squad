@@ -16,8 +16,15 @@ import ProductFormPage from '@/pages/inventory/ProductFormPage';
 import PosPage from '@/pages/pos/PosPage';
 import LedgerPage from '@/pages/accounting/LedgerPage';
 import ExpensesPage from '@/pages/accounting/ExpensesPage';
+import ProfitLossPage from '@/pages/accounting/ProfitLossPage';
 import UserManagementPage from '@/pages/users/UserManagementPage';
 import ProfilePage from '@/pages/users/ProfilePage';
+import NotificationsPage from '@/pages/notifications/NotificationsPage';
+import SuperAdminOverviewPage from '@/pages/super-admin/OverviewPage';
+import BranchManagementPage from '@/pages/super-admin/BranchManagementPage';
+import AdminManagementPage from '@/pages/super-admin/AdminManagementPage';
+import BranchComparisonPage from '@/pages/super-admin/BranchComparisonPage';
+import AllUsersPage from '@/pages/super-admin/AllUsersPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function SmartRedirect() {
@@ -30,6 +37,8 @@ function SmartRedirect() {
             return <Navigate to={FRONTEND_ROUTES.CASHIER_DASHBOARD} replace />;
         case UserRole.ACCOUNTANT:
             return <Navigate to={FRONTEND_ROUTES.LEDGER} replace />;
+        case UserRole.SUPER_ADMIN:
+            return <Navigate to={FRONTEND_ROUTES.SUPER_ADMIN_DASHBOARD} replace />;
         default:
             return <Navigate to={FRONTEND_ROUTES.DASHBOARD} replace />;
     }
@@ -117,6 +126,16 @@ export default function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path={FRONTEND_ROUTES.INVENTORY_EDIT}
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <ProductFormPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
 
                 <Route
                     path={FRONTEND_ROUTES.POS}
@@ -149,6 +168,16 @@ export default function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path={FRONTEND_ROUTES.PROFIT_LOSS}
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <ProfitLossPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
 
                 <Route
                     path={FRONTEND_ROUTES.USER_MANAGEMENT}
@@ -161,11 +190,73 @@ export default function AppRouter() {
                     }
                 />
                 <Route
+                    path={FRONTEND_ROUTES.NOTIFICATIONS}
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <NotificationsPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path={FRONTEND_ROUTES.PROFILE}
                     element={
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <ProfilePage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Super Admin routes */}
+                <Route
+                    path={FRONTEND_ROUTES.SUPER_ADMIN_DASHBOARD}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                            <DashboardLayout>
+                                <SuperAdminOverviewPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.BRANCH_MANAGEMENT}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                            <DashboardLayout>
+                                <BranchManagementPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.ADMIN_MANAGEMENT}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                            <DashboardLayout>
+                                <AdminManagementPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.BRANCH_COMPARISON}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                            <DashboardLayout>
+                                <BranchComparisonPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.ALL_USERS}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                            <DashboardLayout>
+                                <AllUsersPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

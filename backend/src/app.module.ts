@@ -10,6 +10,7 @@ import { InventoryModule } from '@inventory/inventory.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
+import { SuperAdminModule } from '@super-admin/super-admin.module';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
@@ -18,6 +19,7 @@ import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
+import { Notification } from '@notifications/entities/notification.entity';
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
 
 import appConfig from '@common/config/app.config';
@@ -42,6 +44,7 @@ import appConfig from '@common/config/app.config';
       TransactionItem,
       LedgerEntry,
       Expense,
+      Notification,
     ]),
     AuthModule,
     UsersModule,
@@ -51,6 +54,7 @@ import appConfig from '@common/config/app.config';
     PosModule,
     AccountingModule,
     NotificationsModule,
+    SuperAdminModule,
   ],
   providers: [AdminSeedService],
 })

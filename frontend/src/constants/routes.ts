@@ -24,6 +24,7 @@ export const FRONTEND_ROUTES = {
     // Accounting
     LEDGER: '/accounting/ledger',
     EXPENSES: '/accounting/expenses',
+    PROFIT_LOSS: '/accounting/profit-loss',
 
     // Users
     USER_MANAGEMENT: '/users',
@@ -31,6 +32,13 @@ export const FRONTEND_ROUTES = {
 
     // Branches
     BRANCHES: '/branches',
+
+    // Super Admin
+    SUPER_ADMIN_DASHBOARD: '/super-admin/dashboard',
+    BRANCH_MANAGEMENT: '/super-admin/branches',
+    ADMIN_MANAGEMENT: '/super-admin/admins',
+    BRANCH_COMPARISON: '/super-admin/comparison',
+    ALL_USERS: '/super-admin/users',
 
     // Notifications
     NOTIFICATIONS: '/notifications',
