@@ -73,6 +73,14 @@ export const APP_ROUTES = {
     MARK_READ: ':id/read',
     MARK_ALL_READ: 'read-all',
   },
+
+  // Super Admin
+  SUPER_ADMIN: {
+    BASE: `${API_PREFIX}/super-admin`,
+    OVERVIEW: 'overview',
+    BRANCHES: 'branches',
+    ADMINS: 'admins',
+  },
 } as const;
 
 export type APP_ROUTES_TYPE = keyof typeof APP_ROUTES;

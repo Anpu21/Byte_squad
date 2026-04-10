@@ -20,6 +20,9 @@ import ProfitLossPage from '@/pages/accounting/ProfitLossPage';
 import UserManagementPage from '@/pages/users/UserManagementPage';
 import ProfilePage from '@/pages/users/ProfilePage';
 import NotificationsPage from '@/pages/notifications/NotificationsPage';
+import SuperAdminOverviewPage from '@/pages/super-admin/OverviewPage';
+import BranchManagementPage from '@/pages/super-admin/BranchManagementPage';
+import AdminManagementPage from '@/pages/super-admin/AdminManagementPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function SmartRedirect() {
@@ -33,8 +36,7 @@ function SmartRedirect() {
         case UserRole.ACCOUNTANT:
             return <Navigate to={FRONTEND_ROUTES.LEDGER} replace />;
         case UserRole.SUPER_ADMIN:
-            // TODO (phase 2): replace with dedicated super-admin overview page
-            return <Navigate to={FRONTEND_ROUTES.DASHBOARD} replace />;
+            return <Navigate to={FRONTEND_ROUTES.SUPER_ADMIN_DASHBOARD} replace />;
         default:
             return <Navigate to={FRONTEND_ROUTES.DASHBOARD} replace />;
     }
@@ -201,6 +203,38 @@ export default function AppRouter() {
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <ProfilePage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Super Admin routes */}
+                <Route
+                    path={FRONTEND_ROUTES.SUPER_ADMIN_DASHBOARD}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                            <DashboardLayout>
+                                <SuperAdminOverviewPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.BRANCH_MANAGEMENT}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                            <DashboardLayout>
+                                <BranchManagementPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.ADMIN_MANAGEMENT}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                            <DashboardLayout>
+                                <AdminManagementPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

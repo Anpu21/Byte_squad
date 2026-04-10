@@ -14,7 +14,8 @@ import {
   FileTypeValidator,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UsersService, Actor } from '@users/users.service';
+import { UsersService } from '@users/users.service';
+import type { Actor } from '@users/users.service';
 import { CreateUserDto } from '@users/dto/create-user.dto';
 import { UpdateUserDto } from '@users/dto/update-user.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';

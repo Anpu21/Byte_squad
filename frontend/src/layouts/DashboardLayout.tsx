@@ -18,6 +18,26 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+    // ── Super Admin ──────────────────────────────────────────
+    {
+        label: 'Dashboard',
+        path: FRONTEND_ROUTES.SUPER_ADMIN_DASHBOARD,
+        roles: [UserRole.SUPER_ADMIN],
+        icon: <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    },
+    {
+        label: 'Branches',
+        path: FRONTEND_ROUTES.BRANCH_MANAGEMENT,
+        roles: [UserRole.SUPER_ADMIN],
+        icon: <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
+    },
+    {
+        label: 'Admins',
+        path: FRONTEND_ROUTES.ADMIN_MANAGEMENT,
+        roles: [UserRole.SUPER_ADMIN],
+        icon: <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    },
+    // ── Other roles ──────────────────────────────────────────
     {
         label: 'Dashboard',
         path: FRONTEND_ROUTES.DASHBOARD,
@@ -75,7 +95,7 @@ const NAV_ITEMS: NavItem[] = [
     {
         label: 'Notifications',
         path: FRONTEND_ROUTES.NOTIFICATIONS,
-        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER, UserRole.ACCOUNTANT],
+        roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER, UserRole.ACCOUNTANT],
         icon: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>
     },
 ];
