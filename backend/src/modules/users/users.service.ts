@@ -1,6 +1,7 @@
 import {
   Injectable,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
   Logger,
 } from '@nestjs/common';
@@ -12,7 +13,20 @@ import * as crypto from 'crypto';
 import { User } from '@users/entities/user.entity';
 import { CreateUserDto } from '@users/dto/create-user.dto';
 import { UpdateUserDto } from '@users/dto/update-user.dto';
+import { UserRole } from '@common/enums/user-roles.enums';
 import { EmailService } from '../email/email.service';
+
+export interface Actor {
+  id: string;
+  role: UserRole;
+  branchId: string;
+}
+
+const STAFF_ROLES: UserRole[] = [
+  UserRole.MANAGER,
+  UserRole.ACCOUNTANT,
+  UserRole.CASHIER,
+];
 
 @Injectable()
 export class UsersService {
@@ -25,7 +39,13 @@ export class UsersService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto, actor: Actor): Promise<User> {
+    // Admins always create within their own branch — ignore any client override
+    if (actor.role === UserRole.ADMIN) {
+      createUserDto.branchId = actor.branchId;
+    }
+    this.assertCanCreate(actor, createUserDto);
+
     // Check if email already exists
     const existingUser = await this.userRepository.findOne({
       where: { email: createUserDto.email },
@@ -82,8 +102,15 @@ export class UsersService {
     return this.stripPassword(savedUser);
   }
 
-  async findAll(): Promise<User[]> {
-    const users = await this.userRepository.find({ relations: ['branch'] });
+  async findAll(actor: Actor): Promise<User[]> {
+    const where =
+      actor.role === UserRole.SUPER_ADMIN
+        ? {}
+        : { branchId: actor.branchId };
+    const users = await this.userRepository.find({
+      where,
+      relations: ['branch'],
+    });
     return users.map((user) => this.stripPassword(user));
   }
 
@@ -111,6 +138,10 @@ export class UsersService {
       isVerified: true,
       otpExpiresAt: null,
     });
+  }
+
+  async touchLastLogin(id: string): Promise<void> {
+    await this.userRepository.update(id, { lastLoginAt: new Date() });
   }
 
   async updateProfile(
@@ -145,28 +176,49 @@ export class UsersService {
     return this.findById(id);
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User | null> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    actor: Actor,
+  ): Promise<User | null> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    this.assertCanManage(actor, user);
+
+    if (updateUserDto.role !== undefined) {
+      this.assertRoleAssignable(actor, updateUserDto.role);
+    }
+    if (
+      updateUserDto.branchId !== undefined &&
+      actor.role !== UserRole.SUPER_ADMIN &&
+      updateUserDto.branchId !== actor.branchId
+    ) {
+      throw new ForbiddenException(
+        'You cannot move users to a different branch',
+      );
+    }
+
     await this.userRepository.update(id, updateUserDto);
     return this.findById(id);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, actor: Actor): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    this.assertCanManage(actor, user);
     await this.userRepository.delete(id);
   }
 
-  async resendCredentials(id: string): Promise<void> {
+  async resendCredentials(id: string, actor: Actor): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    this.assertCanManage(actor, user);
 
     // Generate new temp password
     const tempPassword = this.generateTempPassword();
@@ -196,6 +248,56 @@ export class UsersService {
     );
 
     this.logger.log(`Credentials resent for user: ${user.email}`);
+  }
+
+  private assertCanCreate(actor: Actor, dto: CreateUserDto): void {
+    this.assertRoleAssignable(actor, dto.role);
+    if (
+      actor.role === UserRole.ADMIN &&
+      dto.branchId !== actor.branchId
+    ) {
+      throw new ForbiddenException(
+        'Admins can only create users within their own branch',
+      );
+    }
+  }
+
+  private assertCanManage(actor: Actor, target: User): void {
+    if (actor.role === UserRole.SUPER_ADMIN) return;
+    if (actor.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Not allowed to manage users');
+    }
+    if (target.branchId !== actor.branchId) {
+      throw new ForbiddenException(
+        'Admins can only manage users within their own branch',
+      );
+    }
+    if (
+      target.role === UserRole.ADMIN ||
+      target.role === UserRole.SUPER_ADMIN
+    ) {
+      throw new ForbiddenException('Admins cannot manage admin accounts');
+    }
+  }
+
+  private assertRoleAssignable(actor: Actor, role: UserRole): void {
+    if (actor.role === UserRole.SUPER_ADMIN) {
+      if (role === UserRole.SUPER_ADMIN) {
+        throw new ForbiddenException(
+          'SUPER_ADMIN accounts cannot be created via this endpoint',
+        );
+      }
+      return;
+    }
+    if (actor.role === UserRole.ADMIN) {
+      if (!STAFF_ROLES.includes(role)) {
+        throw new ForbiddenException(
+          'Admins can only create manager, accountant, or cashier accounts',
+        );
+      }
+      return;
+    }
+    throw new ForbiddenException('Not allowed to create users');
   }
 
   private stripPassword(user: User): User {

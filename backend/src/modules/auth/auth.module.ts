@@ -20,7 +20,7 @@ import { UsersModule } from '@users/users.module';
           'ledgerpro-dev-secret-change-me',
         ),
         signOptions: {
-          expiresIn: configService.get<number>('JWT_EXPIRES_IN', 86400),
+          expiresIn: configService.get('JWT_EXPIRES_IN', '1d'),
         },
       }),
     }),

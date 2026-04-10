@@ -38,9 +38,10 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
             console.error('Camera initialization failed:', err);
         });
 
+        const videoEl = videoRef.current;
         return () => {
             isMounted = false;
-            const stream = videoRef.current?.srcObject as MediaStream;
+            const stream = videoEl?.srcObject as MediaStream;
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
             }

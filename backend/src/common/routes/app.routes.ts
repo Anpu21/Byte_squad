@@ -21,17 +21,20 @@ export const APP_ROUTES = {
     PROFILE_AVATAR: 'profile/avatar',
     BY_ID: ':id',
     RESEND_CREDENTIALS: ':id/resend-credentials',
+    RESET_PASSWORD: ':id/reset-password',
   },
 
   // Branches
   BRANCHES: {
     BASE: `${API_PREFIX}/branches`,
     BY_ID: ':id',
+    TOGGLE_ACTIVE: ':id/toggle-active',
   },
 
   // Products
   PRODUCTS: {
     BASE: `${API_PREFIX}/products`,
+    CATEGORIES: 'categories',
     BY_ID: ':id',
     BY_BARCODE: 'barcode/:barcode',
   },
@@ -58,6 +61,7 @@ export const APP_ROUTES = {
   ACCOUNTING: {
     BASE: `${API_PREFIX}/accounting`,
     LEDGER: 'ledger',
+    LEDGER_SUMMARY: 'ledger/summary',
     EXPENSES: 'expenses',
     EXPENSE_BY_ID: 'expenses/:id',
     PROFIT_LOSS: 'profit-loss',
@@ -68,6 +72,16 @@ export const APP_ROUTES = {
     BASE: `${API_PREFIX}/notifications`,
     MARK_READ: ':id/read',
     MARK_ALL_READ: 'read-all',
+  },
+
+  // Super Admin
+  SUPER_ADMIN: {
+    BASE: `${API_PREFIX}/super-admin`,
+    OVERVIEW: 'overview',
+    BRANCHES: 'branches',
+    ADMINS: 'admins',
+    COMPARISON: 'comparison',
+    USERS: 'users',
   },
 } as const;
 

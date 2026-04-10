@@ -1,68 +1,72 @@
-# ╔═══════════════════════════════════════════════════════════╗
-# ║  LedgerPro — Development Docker Compose                  ║
-# ║  Usage: docker compose up                                 ║
-# ╚═══════════════════════════════════════════════════════════╝
-
 services:
-  # ── Frontend (Vite + React) ──────────────────────────────
   frontend:
     build:
       context: ./frontend
       target: development
     container_name: ledgerpro-frontend
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5000}:5173"
     volumes:
-      # Mount source for hot-reload
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
       - ./frontend/index.html:/app/index.html
       - ./frontend/vite.config.ts:/app/vite.config.ts
-      # Prevent host node_modules from overriding container's
       - /app/node_modules
     env_file:
-      - .env.development
+      - .env
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
     depends_on:
       - backend
     networks:
       - ledgerpro-network
 
-  # ── Backend (NestJS) ─────────────────────────────────────
   backend:
     build:
       context: ./backend
       target: development
     container_name: ledgerpro-backend
     ports:
-      - "3000:3000"
+      - "${BACKEND_PORT:-3001}:3000"
     volumes:
-      # Mount source for hot-reload
       - ./backend/src:/app/src
       - ./backend/tsconfig-paths-bootstrap.js:/app/tsconfig-paths-bootstrap.js
-      # Prevent host node_modules from overriding container's
       - /app/node_modules
     env_file:
-      - .env.development
+      - .env
+    environment:
+      - PORT=${PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_SYNC=${DB_SYNC}
+      - DB_LOGGING=${DB_LOGGING}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - CORS_ORIGIN=${CORS_ORIGIN}
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - ledgerpro-network
 
-  # ── PostgreSQL (Dev only) ───────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: ledgerpro-postgres
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     environment:
-      POSTGRES_USER: ledgerpro
-      POSTGRES_PASSWORD: ledgerpro_dev
-      POSTGRES_DB: ledgerpro_dev
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ledgerpro -d ledgerpro_dev"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -73,7 +77,7 @@ services:
 volumes:
   pgdata:
 
-# ── Network ──────────────────────────────────────────────
+# ── Networks ─────────────────────────────────────────────
 networks:
   ledgerpro-network:
     driver: bridge
