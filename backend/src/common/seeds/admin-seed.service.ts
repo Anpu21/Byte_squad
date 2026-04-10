@@ -76,6 +76,15 @@ export class AdminSeedService implements OnModuleInit {
     );
 
     // 2. Users
+    await this.ensureUser({
+      email: 'superadmin@ledgerpro.com',
+      password: 'Super@123',
+      firstName: 'Super',
+      lastName: 'Admin',
+      role: UserRole.SUPER_ADMIN,
+      branchId: mainBranch.id,
+    });
+
     const admin = await this.ensureUser({
       email: defaults.adminEmail,
       password: defaults.adminPassword,
@@ -83,6 +92,15 @@ export class AdminSeedService implements OnModuleInit {
       lastName: defaults.adminLastName,
       role: UserRole.ADMIN,
       branchId: mainBranch.id,
+    });
+
+    await this.ensureUser({
+      email: 'admin2@ledgerpro.com',
+      password: 'Admin@123',
+      firstName: 'Downtown',
+      lastName: 'Admin',
+      role: UserRole.ADMIN,
+      branchId: downtownBranch.id,
     });
 
     await this.ensureUser({
