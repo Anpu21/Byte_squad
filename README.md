@@ -8,12 +8,12 @@
 
 ## Tech Stack
 
-| Layer    | Technology                                                        |
-|----------|-------------------------------------------------------------------|
+| Layer    | Technology                                                                                    |
+| -------- | --------------------------------------------------------------------------------------------- |
 | Frontend | React 19 · Vite · TypeScript · Tailwind CSS · Redux Toolkit · TanStack React Query · Recharts |
-| Backend  | NestJS 11 · TypeORM · Passport JWT · bcrypt · Nodemailer         |
-| Database | PostgreSQL 16                                                     |
-| DevOps   | Docker Compose · GitHub Actions                                   |
+| Backend  | NestJS 11 · TypeORM · Passport JWT · bcrypt · Nodemailer                                      |
+| Database | PostgreSQL 16                                                                                 |
+| DevOps   | Docker Compose · GitHub Actions                                                               |
 
 ---
 
@@ -56,24 +56,24 @@ cp .env.development .env.development.local   # optional override
 
 Key variables:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Backend server port | `3000` |
-| `CORS_ORIGIN` | Allowed frontend origin | `http://localhost:5173` |
-| `DB_HOST` | PostgreSQL host | `postgres` (Docker) |
-| `DB_PORT` | PostgreSQL port | `5432` |
-| `DB_USERNAME` | Database user | `ledgerpro` |
-| `DB_PASSWORD` | Database password | `ledgerpro_dev` |
-| `DB_NAME` | Database name | `ledgerpro_dev` |
-| `DB_SYNC` | Auto-sync schema (dev only) | `true` |
-| `JWT_SECRET` | JWT signing secret | `dev-secret-change-me…` |
-| `JWT_EXPIRES_IN` | Token lifetime (seconds) | `86400` (24h) |
-| `MAIL_HOST` | SMTP host | `smtp.gmail.com` |
-| `MAIL_PORT` | SMTP port | `587` |
-| `MAIL_USERNAME` | SMTP username | — |
-| `MAIL_PASSWORD` | SMTP app password | — |
-| `MAIL_FROM` | Sender email address | — |
-| `TEMP_PASSWORD_EXPIRES_HOURS` | Temp password validity | `48` |
+| Variable                      | Description                 | Default                 |
+| ----------------------------- | --------------------------- | ----------------------- |
+| `PORT`                        | Backend server port         | `3000`                  |
+| `CORS_ORIGIN`                 | Allowed frontend origin     | `http://localhost:5173` |
+| `DB_HOST`                     | PostgreSQL host             | `postgres` (Docker)     |
+| `DB_PORT`                     | PostgreSQL port             | `5432`                  |
+| `DB_USERNAME`                 | Database user               | `ledgerpro`             |
+| `DB_PASSWORD`                 | Database password           | `ledgerpro_dev`         |
+| `DB_NAME`                     | Database name               | `ledgerpro_dev`         |
+| `DB_SYNC`                     | Auto-sync schema (dev only) | `true`                  |
+| `JWT_SECRET`                  | JWT signing secret          | `dev-secret-change-me…` |
+| `JWT_EXPIRES_IN`              | Token lifetime (seconds)    | `86400` (24h)           |
+| `MAIL_HOST`                   | SMTP host                   | `smtp.gmail.com`        |
+| `MAIL_PORT`                   | SMTP port                   | `587`                   |
+| `MAIL_USERNAME`               | SMTP username               | —                       |
+| `MAIL_PASSWORD`               | SMTP app password           | —                       |
+| `MAIL_FROM`                   | Sender email address        | —                       |
+| `TEMP_PASSWORD_EXPIRES_HOURS` | Temp password validity      | `48`                    |
 
 ### 3a. Run with Docker (Recommended)
 
@@ -81,11 +81,11 @@ Key variables:
 docker compose up --build
 ```
 
-| Service  | URL                    |
-|----------|------------------------|
-| Frontend | http://localhost:5173  |
-| Backend  | http://localhost:3000  |
-| Postgres | localhost:5432         |
+| Service  | URL                   |
+| -------- | --------------------- |
+| Frontend | http://localhost:5173 |
+| Backend  | http://localhost:3000 |
+| Postgres | localhost:5432        |
 
 On first startup the seed service automatically creates branches, users, products, inventory, transactions, and financial data.
 
@@ -109,13 +109,13 @@ npm run dev
 
 All seeded users have `isFirstLogin: false` and `isVerified: true` — ready to use immediately.
 
-| Role | Email | Password | Branch |
-|------|-------|----------|--------|
-| Admin | `admin@ledgerpro.com` | `Admin@123` | Main Branch |
-| Manager | `manager@ledgerpro.com` | `Manager@123` | Main Branch |
-| Accountant | `accountant@ledgerpro.com` | `Account@123` | Main Branch |
-| Cashier | `cashier@ledgerpro.com` | `Cashier@123` | Main Branch |
-| Cashier 2 | `cashier2@ledgerpro.com` | `Cashier@123` | Downtown Branch |
+| Role       | Email                      | Password      | Branch          |
+| ---------- | -------------------------- | ------------- | --------------- |
+| Admin      | `admin@ledgerpro.com`      | `Admin@123`   | Main Branch     |
+| Manager    | `manager@ledgerpro.com`    | `Manager@123` | Main Branch     |
+| Accountant | `accountant@ledgerpro.com` | `Account@123` | Main Branch     |
+| Cashier    | `cashier@ledgerpro.com`    | `Cashier@123` | Main Branch     |
+| Cashier 2  | `cashier2@ledgerpro.com`   | `Cashier@123` | Downtown Branch |
 
 > **These credentials are for development only.** Change passwords before deploying to production.
 
@@ -125,15 +125,15 @@ All seeded users have `isFirstLogin: false` and `isVerified: true` — ready to 
 
 On `docker compose up`, the seed service creates:
 
-| Data | Count |
-|------|-------|
-| Branches | 2 (Main Branch, Downtown Branch) |
-| Users | 5 (all roles) |
-| Products | 15 (Electronics, Furniture, Stationery, Accessories) |
-| Inventory | 30 (each product in each branch) |
-| Transactions | ~7 days of history per cashier (3-8 txns/day) |
-| Ledger Entries | 8 |
-| Expenses | 5 |
+| Data           | Count                                                |
+| -------------- | ---------------------------------------------------- |
+| Branches       | 2 (Main Branch, Downtown Branch)                     |
+| Users          | 5 (all roles)                                        |
+| Products       | 15 (Electronics, Furniture, Stationery, Accessories) |
+| Inventory      | 30 (each product in each branch)                     |
+| Transactions   | ~7 days of history per cashier (3-8 txns/day)        |
+| Ledger Entries | 8                                                    |
+| Expenses       | 5                                                    |
 
 Seeding is **idempotent** — existing records are not duplicated on restart.
 
@@ -141,14 +141,15 @@ Seeding is **idempotent** — existing records are not duplicated on restart.
 
 ## User Roles
 
-| Role | Access |
-|------|--------|
-| `admin` | Full system access — manage users, branches, products, view all dashboards |
-| `manager` | Branch-level management, admin dashboard access |
-| `accountant` | Financial reports, ledger, expenses |
-| `cashier` | POS transactions, personal sales dashboard |
+| Role         | Access                                                                     |
+| ------------ | -------------------------------------------------------------------------- |
+| `admin`      | Full system access — manage users, branches, products, view all dashboards |
+| `manager`    | Branch-level management, admin dashboard access                            |
+| `accountant` | Financial reports, ledger, expenses                                        |
+| `cashier`    | POS transactions, personal sales dashboard                                 |
 
 Each role has a **role-based home page**:
+
 - Admin / Manager → Admin Dashboard
 - Accountant → Ledger
 - Cashier → Cashier Dashboard
@@ -157,37 +158,37 @@ Each role has a **role-based home page**:
 
 ## API Routes
 
-| Module | Route | Methods | Auth |
-|--------|-------|---------|------|
-| **Auth** | `/api/v1/auth/login` | POST | Public |
-| | `/api/v1/auth/verify-otp` | POST | Public |
-| | `/api/v1/auth/change-password` | POST | JWT |
-| | `/api/v1/auth/refresh` | POST | JWT |
-| **Users** | `/api/v1/users` | GET, POST | Admin |
-| | `/api/v1/users/profile` | GET, PATCH | JWT |
-| | `/api/v1/users/profile/avatar` | POST | JWT |
-| | `/api/v1/users/:id` | GET, PATCH, DELETE | Admin |
-| | `/api/v1/users/:id/resend-credentials` | POST | Admin |
-| **Branches** | `/api/v1/branches` | GET, POST | Admin |
-| | `/api/v1/branches/:id` | GET, PATCH, DELETE | Admin |
-| **Products** | `/api/v1/products` | GET, POST | Admin/Manager |
-| | `/api/v1/products/:id` | GET, PATCH, DELETE | Admin/Manager |
-| | `/api/v1/products/barcode/:barcode` | GET | All |
-| **Inventory** | `/api/v1/inventory` | GET | All |
-| | `/api/v1/inventory/branch/:branchId` | GET | All |
-| | `/api/v1/inventory/low-stock` | GET | All |
-| | `/api/v1/inventory/:id/stock` | PATCH | Admin/Manager |
-| **POS** | `/api/v1/pos/transactions` | GET, POST | Cashier/Admin/Manager |
-| | `/api/v1/pos/transactions/:id` | GET | Cashier/Admin/Manager |
-| | `/api/v1/pos/my-dashboard` | GET | Cashier/Admin/Manager |
-| | `/api/v1/pos/admin-dashboard` | GET | Admin/Manager |
-| **Accounting** | `/api/v1/accounting/ledger` | GET, POST | Accountant/Admin |
-| | `/api/v1/accounting/expenses` | GET, POST | Accountant/Admin |
-| | `/api/v1/accounting/expenses/:id` | GET, PATCH, DELETE | Accountant/Admin |
-| | `/api/v1/accounting/profit-loss` | GET | Accountant/Admin |
-| **Notifications** | `/api/v1/notifications` | GET | JWT |
-| | `/api/v1/notifications/:id/read` | PATCH | JWT |
-| | `/api/v1/notifications/read-all` | PATCH | JWT |
+| Module            | Route                                  | Methods            | Auth                  |
+| ----------------- | -------------------------------------- | ------------------ | --------------------- |
+| **Auth**          | `/api/v1/auth/login`                   | POST               | Public                |
+|                   | `/api/v1/auth/verify-otp`              | POST               | Public                |
+|                   | `/api/v1/auth/change-password`         | POST               | JWT                   |
+|                   | `/api/v1/auth/refresh`                 | POST               | JWT                   |
+| **Users**         | `/api/v1/users`                        | GET, POST          | Admin                 |
+|                   | `/api/v1/users/profile`                | GET, PATCH         | JWT                   |
+|                   | `/api/v1/users/profile/avatar`         | POST               | JWT                   |
+|                   | `/api/v1/users/:id`                    | GET, PATCH, DELETE | Admin                 |
+|                   | `/api/v1/users/:id/resend-credentials` | POST               | Admin                 |
+| **Branches**      | `/api/v1/branches`                     | GET, POST          | Admin                 |
+|                   | `/api/v1/branches/:id`                 | GET, PATCH, DELETE | Admin                 |
+| **Products**      | `/api/v1/products`                     | GET, POST          | Admin/Manager         |
+|                   | `/api/v1/products/:id`                 | GET, PATCH, DELETE | Admin/Manager         |
+|                   | `/api/v1/products/barcode/:barcode`    | GET                | All                   |
+| **Inventory**     | `/api/v1/inventory`                    | GET                | All                   |
+|                   | `/api/v1/inventory/branch/:branchId`   | GET                | All                   |
+|                   | `/api/v1/inventory/low-stock`          | GET                | All                   |
+|                   | `/api/v1/inventory/:id/stock`          | PATCH              | Admin/Manager         |
+| **POS**           | `/api/v1/pos/transactions`             | GET, POST          | Cashier/Admin/Manager |
+|                   | `/api/v1/pos/transactions/:id`         | GET                | Cashier/Admin/Manager |
+|                   | `/api/v1/pos/my-dashboard`             | GET                | Cashier/Admin/Manager |
+|                   | `/api/v1/pos/admin-dashboard`          | GET                | Admin/Manager         |
+| **Accounting**    | `/api/v1/accounting/ledger`            | GET, POST          | Accountant/Admin      |
+|                   | `/api/v1/accounting/expenses`          | GET, POST          | Accountant/Admin      |
+|                   | `/api/v1/accounting/expenses/:id`      | GET, PATCH, DELETE | Accountant/Admin      |
+|                   | `/api/v1/accounting/profit-loss`       | GET                | Accountant/Admin      |
+| **Notifications** | `/api/v1/notifications`                | GET                | JWT                   |
+|                   | `/api/v1/notifications/:id/read`       | PATCH              | JWT                   |
+|                   | `/api/v1/notifications/read-all`       | PATCH              | JWT                   |
 
 ---
 
