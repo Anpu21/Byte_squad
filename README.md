@@ -150,7 +150,7 @@ Seeding is **idempotent** — existing records are not duplicated on restart.
 
 Each role has a **role-based home page**:
 
-- Admin / Manager → Admin Dashboard
+- Super Admin / Admin / Manager → Admin Dashboard
 - Accountant → Ledger
 - Cashier → Cashier Dashboard
 
