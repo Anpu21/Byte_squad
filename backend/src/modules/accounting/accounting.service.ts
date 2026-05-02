@@ -78,7 +78,9 @@ export class AccountingService {
       .where('le.branch_id = :branchId', { branchId });
 
     if (options?.entryType && options.entryType !== 'all') {
-      qb.andWhere('le.entry_type = :entryType', { entryType: options.entryType });
+      qb.andWhere('le.entry_type = :entryType', {
+        entryType: options.entryType,
+      });
     }
 
     if (options?.startDate) {

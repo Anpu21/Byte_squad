@@ -20,6 +20,7 @@ export const FRONTEND_ROUTES = {
 
     // POS
     POS: '/pos',
+    TRANSACTIONS: '/transactions',
 
     // Accounting
     LEDGER: '/accounting/ledger',

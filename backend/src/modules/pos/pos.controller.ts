@@ -11,6 +11,7 @@ import { Transaction } from '@pos/entities/transaction.entity';
 import type {
   CashierDashboardData,
   AdminDashboardData,
+  CashierTransactionsSummary,
 } from '@pos/pos.service';
 
 @Controller(APP_ROUTES.POS.BASE)
@@ -31,6 +32,17 @@ export class PosController {
     @CurrentUser('branchId') branchId: string,
   ): Promise<CashierDashboardData> {
     return this.posService.getCashierDashboard(cashierId, branchId);
+  }
+
+  @Get(APP_ROUTES.POS.MY_TRANSACTIONS)
+  @Roles(UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER)
+  getMyTransactions(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('branchId') branchId: string,
+    @CurrentUser('role') role: UserRole,
+  ): Promise<CashierTransactionsSummary> {
+    const cashierId = role === UserRole.CASHIER ? userId : null;
+    return this.posService.getTransactionsSummary(branchId, cashierId);
   }
 
   @Post(APP_ROUTES.POS.TRANSACTIONS)

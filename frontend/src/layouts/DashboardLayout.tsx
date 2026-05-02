@@ -69,6 +69,12 @@ const NAV_ITEMS: NavItem[] = [
         icon: <path d="M2 17h20M12 22V2M4 7h16" />
     },
     {
+        label: 'Transactions',
+        path: FRONTEND_ROUTES.TRANSACTIONS,
+        roles: [UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER],
+        icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M9 13h6" /><path d="M9 17h6" /></>
+    },
+    {
         label: 'Inventory',
         path: FRONTEND_ROUTES.INVENTORY,
         roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT],
