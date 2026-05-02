@@ -141,7 +141,7 @@ export default function AppRouter() {
                 <Route
                     path={FRONTEND_ROUTES.POS}
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={[UserRole.CASHIER]}>
                             <DashboardLayout>
                                 <PosPage />
                             </DashboardLayout>

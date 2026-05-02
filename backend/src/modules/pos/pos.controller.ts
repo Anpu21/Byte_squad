@@ -15,7 +15,7 @@ import type {
 
 @Controller(APP_ROUTES.POS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER)
+@Roles(UserRole.CASHIER)
 export class PosController {
   constructor(private readonly posService: PosService) {}
 

@@ -65,7 +65,7 @@ const NAV_ITEMS: NavItem[] = [
     {
         label: 'POS',
         path: FRONTEND_ROUTES.POS,
-        roles: [UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER],
+        roles: [UserRole.CASHIER],
         icon: <path d="M2 17h20M12 22V2M4 7h16" />
     },
     {
