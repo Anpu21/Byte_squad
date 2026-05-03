@@ -104,9 +104,7 @@ export class UsersService {
 
   async findAll(actor: Actor): Promise<User[]> {
     const where =
-      actor.role === UserRole.SUPER_ADMIN
-        ? {}
-        : { branchId: actor.branchId };
+      actor.role === UserRole.SUPER_ADMIN ? {} : { branchId: actor.branchId };
     const users = await this.userRepository.find({
       where,
       relations: ['branch'],
@@ -252,10 +250,7 @@ export class UsersService {
 
   private assertCanCreate(actor: Actor, dto: CreateUserDto): void {
     this.assertRoleAssignable(actor, dto.role);
-    if (
-      actor.role === UserRole.ADMIN &&
-      dto.branchId !== actor.branchId
-    ) {
+    if (actor.role === UserRole.ADMIN && dto.branchId !== actor.branchId) {
       throw new ForbiddenException(
         'Admins can only create users within their own branch',
       );

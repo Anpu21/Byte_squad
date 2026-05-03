@@ -98,10 +98,7 @@ export class UsersController {
 
   @Delete(APP_ROUTES.USERS.BY_ID)
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
-  remove(
-    @Param('id') id: string,
-    @CurrentUser() actor: Actor,
-  ): Promise<void> {
+  remove(@Param('id') id: string, @CurrentUser() actor: Actor): Promise<void> {
     return this.usersService.remove(id, actor);
   }
 

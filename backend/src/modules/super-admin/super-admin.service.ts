@@ -270,40 +270,35 @@ export class SuperAdminService {
     todayStart: Date,
     todayEnd: Date,
   ): Promise<BranchPerformance> {
-    const [
-      salesAgg,
-      staffCount,
-      activeProducts,
-      lowStockItems,
-      adminUser,
-    ] = await Promise.all([
-      this.transactionRepo
-        .createQueryBuilder('txn')
-        .select('COALESCE(SUM(txn.total), 0)', 'total')
-        .addSelect('COUNT(txn.id)', 'count')
-        .where('txn.branch_id = :branchId', { branchId: branch.id })
-        .andWhere('txn.type = :type', { type: TransactionType.SALE })
-        .andWhere('txn.created_at BETWEEN :start AND :end', {
-          start: todayStart,
-          end: todayEnd,
-        })
-        .getRawOne<{ total: string; count: string }>(),
-      this.userRepo.count({ where: { branchId: branch.id } }),
-      this.inventoryRepo
-        .createQueryBuilder('inv')
-        .where('inv.branch_id = :branchId', { branchId: branch.id })
-        .andWhere('inv.quantity > 0')
-        .getCount(),
-      this.inventoryRepo
-        .createQueryBuilder('inv')
-        .where('inv.branch_id = :branchId', { branchId: branch.id })
-        .andWhere('inv.quantity <= inv.low_stock_threshold')
-        .getCount(),
-      this.userRepo.findOne({
-        where: { branchId: branch.id, role: UserRole.ADMIN },
-        order: { createdAt: 'ASC' },
-      }),
-    ]);
+    const [salesAgg, staffCount, activeProducts, lowStockItems, adminUser] =
+      await Promise.all([
+        this.transactionRepo
+          .createQueryBuilder('txn')
+          .select('COALESCE(SUM(txn.total), 0)', 'total')
+          .addSelect('COUNT(txn.id)', 'count')
+          .where('txn.branch_id = :branchId', { branchId: branch.id })
+          .andWhere('txn.type = :type', { type: TransactionType.SALE })
+          .andWhere('txn.created_at BETWEEN :start AND :end', {
+            start: todayStart,
+            end: todayEnd,
+          })
+          .getRawOne<{ total: string; count: string }>(),
+        this.userRepo.count({ where: { branchId: branch.id } }),
+        this.inventoryRepo
+          .createQueryBuilder('inv')
+          .where('inv.branch_id = :branchId', { branchId: branch.id })
+          .andWhere('inv.quantity > 0')
+          .getCount(),
+        this.inventoryRepo
+          .createQueryBuilder('inv')
+          .where('inv.branch_id = :branchId', { branchId: branch.id })
+          .andWhere('inv.quantity <= inv.low_stock_threshold')
+          .getCount(),
+        this.userRepo.findOne({
+          where: { branchId: branch.id, role: UserRole.ADMIN },
+          order: { createdAt: 'ASC' },
+        }),
+      ]);
 
     return {
       branchId: branch.id,
