@@ -55,6 +55,7 @@ export const APP_ROUTES = {
     TRANSACTION_BY_ID: 'transactions/:id',
     DAILY_REPORT: 'daily-report',
     MY_DASHBOARD: 'my-dashboard',
+    MY_TRANSACTIONS: 'my-transactions',
     ADMIN_DASHBOARD: 'admin-dashboard',
   },
 

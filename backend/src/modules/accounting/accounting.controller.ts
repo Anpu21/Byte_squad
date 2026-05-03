@@ -3,7 +3,16 @@ import { UserRole } from '@/common/enums/user-roles.enums';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { APP_ROUTES } from '@/common/routes/app.routes';
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AccountingService } from '@accounting/accounting.service';
 import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
@@ -68,7 +77,10 @@ export class AccountingController {
     // Default to current month
     const now = new Date();
     const start =
-      startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      startDate ||
+      new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString()
+        .split('T')[0];
     const end = endDate || now.toISOString().split('T')[0];
     return this.accountingService.getProfitLoss(branchId, start, end);
   }

@@ -1,9 +1,4 @@
-import {
-  ArrayMinSize,
-  IsArray,
-  IsDateString,
-  IsUUID,
-} from 'class-validator';
+import { ArrayMinSize, IsArray, IsDateString, IsUUID } from 'class-validator';
 
 export class BranchComparisonDto {
   @IsArray()

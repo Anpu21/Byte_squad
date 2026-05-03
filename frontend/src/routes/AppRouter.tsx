@@ -14,6 +14,7 @@ import CashierDashboardPage from '@/pages/dashboard/CashierDashboardPage';
 import InventoryListPage from '@/pages/inventory/InventoryListPage';
 import ProductFormPage from '@/pages/inventory/ProductFormPage';
 import PosPage from '@/pages/pos/PosPage';
+import TransactionsPage from '@/pages/pos/TransactionsPage';
 import LedgerPage from '@/pages/accounting/LedgerPage';
 import ExpensesPage from '@/pages/accounting/ExpensesPage';
 import ProfitLossPage from '@/pages/accounting/ProfitLossPage';
@@ -141,9 +142,22 @@ export default function AppRouter() {
                 <Route
                     path={FRONTEND_ROUTES.POS}
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={[UserRole.CASHIER]}>
                             <DashboardLayout>
                                 <PosPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={FRONTEND_ROUTES.TRANSACTIONS}
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={[UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER]}
+                        >
+                            <DashboardLayout>
+                                <TransactionsPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

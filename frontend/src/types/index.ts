@@ -438,6 +438,30 @@ export interface ICashierDashboard {
     recentTransactions: ITransaction[];
 }
 
+// ─── Cashier Transactions Summary ───────────────────────────────────────────
+
+export interface ICashierPeriodStats {
+    totalSales: number;
+    transactionCount: number;
+}
+
+export interface ICashierTransactionRow {
+    id: string;
+    transactionNumber: string;
+    total: number;
+    itemCount: number;
+    cashierName: string;
+    createdAt: string;
+}
+
+export interface ICashierTransactionsSummary {
+    scope: 'cashier' | 'branch';
+    today: ICashierPeriodStats;
+    month: ICashierPeriodStats;
+    year: ICashierPeriodStats;
+    recentTransactions: ICashierTransactionRow[];
+}
+
 // ─── User Profile ───────────────────────────────────────────────────────────
 
 export interface IUserProfile extends IUser {
