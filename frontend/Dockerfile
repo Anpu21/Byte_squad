@@ -3,9 +3,12 @@ FROM node:22-alpine AS development
 
 WORKDIR /app
 
+# Enable pnpm via corepack (ships with Node 22)
+RUN corepack enable
+
 # Install dependencies first (Docker layer caching)
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -14,7 +17,7 @@ COPY . .
 EXPOSE 5173
 
 # Start Vite dev server with host binding for Docker
-CMD ["npx", "vite", "--host", "0.0.0.0"]
+CMD ["pnpm", "exec", "vite", "--host", "0.0.0.0"]
 
 
 # ---- Stage 2: Build ----
@@ -22,8 +25,10 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
@@ -33,7 +38,7 @@ ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
 
 # Build the application
-RUN npm run build
+RUN pnpm run build
 
 
 # ---- Stage 3: Production ----

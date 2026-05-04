@@ -79,12 +79,6 @@ const NAV_ITEMS: NavItem[] = [
         icon: <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
     },
     {
-        label: 'Branch Management',
-        path: FRONTEND_ROUTES.BRANCH_MANAGEMENT,
-        roles: [UserRole.MANAGER],
-        icon: <><path d="M3 21h18" /><path d="M5 21V7l8-4v18" /><path d="M19 21V11l-6-4" /><path d="M9 9h.01" /><path d="M9 13h.01" /><path d="M9 17h.01" /></>
-    },
-    {
         label: 'Branches',
         path: FRONTEND_ROUTES.BRANCHES_HUB,
         roles: [UserRole.ADMIN],

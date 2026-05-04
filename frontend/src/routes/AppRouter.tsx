@@ -241,13 +241,11 @@ export default function AppRouter() {
                     }
                 />
 
-                {/* Branch Management — manager (and admin) CRUD across all branches */}
+                {/* Branch Management — admin-only CRUD (also embedded in the Branches Hub) */}
                 <Route
                     path={FRONTEND_ROUTES.BRANCH_MANAGEMENT}
                     element={
-                        <ProtectedRoute
-                            allowedRoles={[UserRole.ADMIN, UserRole.MANAGER]}
-                        >
+                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                             <DashboardLayout>
                                 <BranchManagementPage />
                             </DashboardLayout>
