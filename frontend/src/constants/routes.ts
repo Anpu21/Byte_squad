@@ -43,6 +43,7 @@ export const FRONTEND_ROUTES = {
 
     // Notifications
     NOTIFICATIONS: '/notifications',
+    NOTIFICATION_DETAIL: '/notifications/:id',
 } as const;
 
 export type FrontendRoute = (typeof FRONTEND_ROUTES)[keyof typeof FRONTEND_ROUTES];

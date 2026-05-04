@@ -72,6 +72,7 @@ export const APP_ROUTES = {
   // Notifications
   NOTIFICATIONS: {
     BASE: `${API_PREFIX}/notifications`,
+    BY_ID: ':id',
     MARK_READ: ':id/read',
     MARK_ALL_READ: 'read-all',
   },

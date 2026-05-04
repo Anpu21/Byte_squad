@@ -31,6 +31,15 @@ export class NotificationsService {
     });
   }
 
+  async findOneByUser(
+    id: string,
+    userId: string,
+  ): Promise<Notification | null> {
+    return this.notificationRepository.findOne({
+      where: { id, userId },
+    });
+  }
+
   async markAsRead(id: string): Promise<void> {
     await this.notificationRepository.update(id, { isRead: true });
   }

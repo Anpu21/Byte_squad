@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationType } from '@/constants/enums';
+import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { INotification } from '@/types/index';
 import {
     timeAgo,
@@ -46,11 +48,13 @@ function NotificationItem({
     isExpanded,
     onToggle,
     onMarkAsRead,
+    onOpen,
 }: {
     notification: INotification;
     isExpanded: boolean;
     onToggle: () => void;
     onMarkAsRead: (id: string) => void;
+    onOpen: (id: string) => void;
 }) {
     const handleClick = () => {
         if (!notification.isRead) {
@@ -117,7 +121,7 @@ function NotificationItem({
                     <p className="text-[13px] text-slate-400 leading-relaxed">
                         {notification.message}
                     </p>
-                    <div className="flex items-center gap-3 mt-3">
+                    <div className="flex flex-wrap items-center gap-3 mt-3">
                         <span
                             className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${typeBadgeColor(
                                 notification.type,
@@ -137,6 +141,28 @@ function NotificationItem({
                                 },
                             )}
                         </span>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onOpen(notification.id);
+                            }}
+                            className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-300 hover:text-white px-2.5 py-1 rounded-md border border-white/10 hover:bg-white/5 transition-colors"
+                        >
+                            View full details
+                            <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             )}
@@ -195,11 +221,18 @@ function EmptyState({ filter }: { filter: FilterTab }) {
 export default function NotificationsPage() {
     const { notifications, unreadCount, markAsRead, markAllAsRead } =
         useNotifications();
+    const navigate = useNavigate();
     const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
     const filtered = getFilteredNotifications(notifications, activeFilter);
     const groups = groupByDate(filtered);
+
+    const openDetail = (id: string) => {
+        navigate(
+            FRONTEND_ROUTES.NOTIFICATION_DETAIL.replace(':id', id),
+        );
+    };
 
     return (
         <div className="animate-in fade-in duration-300">
@@ -284,6 +317,7 @@ export default function NotificationsPage() {
                                         )
                                     }
                                     onMarkAsRead={markAsRead}
+                                    onOpen={openDetail}
                                 />
                             ))}
                         </div>

@@ -21,6 +21,7 @@ import ProfitLossPage from '@/pages/accounting/ProfitLossPage';
 import UserManagementPage from '@/pages/users/UserManagementPage';
 import ProfilePage from '@/pages/users/ProfilePage';
 import NotificationsPage from '@/pages/notifications/NotificationsPage';
+import NotificationDetailPage from '@/pages/notifications/NotificationDetailPage';
 import SuperAdminOverviewPage from '@/pages/super-admin/OverviewPage';
 import BranchManagementPage from '@/pages/super-admin/BranchManagementPage';
 import AdminManagementPage from '@/pages/super-admin/AdminManagementPage';
@@ -210,6 +211,16 @@ export default function AppRouter() {
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <NotificationsPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.NOTIFICATION_DETAIL}
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <NotificationDetailPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }
