@@ -1,12 +1,30 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { accountingService } from '@/services/accounting.service';
 import type { ILedgerEntry, ILedgerSummary } from '@/services/accounting.service';
+import { useAuth } from '@/hooks/useAuth';
+import { formatCurrency } from '@/lib/utils';
+import {
+    exportData,
+    type ExportColumn,
+    type ExportFormat,
+} from '@/lib/exportUtils';
+import ExportMenu from '@/components/common/ExportMenu';
+
+interface LedgerExportRow {
+    date: string;
+    description: string;
+    referenceNumber: string;
+    debit: number | null;
+    credit: number | null;
+}
 
 export default function LedgerPage() {
+    const { user } = useAuth();
     const [entries, setEntries] = useState<ILedgerEntry[]>([]);
     const [summary, setSummary] = useState<ILedgerSummary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Pagination
     const [page, setPage] = useState(1);
@@ -104,27 +122,96 @@ export default function LedgerPage() {
         accountingService.getLedgerSummary().then(setSummary).catch(() => {});
     }, []);
 
-    const formatCurrency = (amount: number) =>
-        new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(amount);
+    const formatPeriodLabel = (): string => {
+        if (!startDate && !endDate) return 'All Time';
+        const fmt = (s: string) =>
+            new Date(s).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+            });
+        if (startDate && endDate) return `${fmt(startDate)} – ${fmt(endDate)}`;
+        if (startDate) return `From ${fmt(startDate)}`;
+        return `Up to ${fmt(endDate)}`;
+    };
 
-    const handleExport = () => {
-        const headers = ['Date', 'Description', 'Reference', 'Type', 'Amount'];
-        const rows = entries.map((e) => [
-            new Date(e.createdAt).toLocaleDateString('en-GB'),
-            `"${e.description}"`,
-            e.referenceNumber,
-            e.entryType.toUpperCase(),
-            Number(e.amount).toFixed(2),
-        ]);
+    const handleExport = async (format: ExportFormat) => {
+        try {
+            setIsExporting(true);
+            const data = await accountingService.getLedgerEntries({
+                entryType: entryType !== 'all' ? entryType : undefined,
+                startDate: startDate || undefined,
+                endDate: endDate || undefined,
+                search: debouncedSearch || undefined,
+                page: 1,
+                limit: 10000,
+            });
+            const allEntries = data.items ?? [];
 
-        const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ledger-${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+            const exportRows: LedgerExportRow[] = allEntries.map((e) => ({
+                date: e.createdAt,
+                description: e.description,
+                referenceNumber: e.referenceNumber,
+                debit: e.entryType === 'debit' ? Number(e.amount) : null,
+                credit: e.entryType === 'credit' ? Number(e.amount) : null,
+            }));
+
+            const columns: ExportColumn<LedgerExportRow>[] = [
+                { header: 'Date', key: 'date', format: 'date' },
+                { header: 'Description', key: 'description' },
+                { header: 'Reference', key: 'referenceNumber' },
+                {
+                    header: 'Debit',
+                    key: 'debit',
+                    align: 'right',
+                    format: 'currency',
+                    footer: 'sum',
+                },
+                {
+                    header: 'Credit',
+                    key: 'credit',
+                    align: 'right',
+                    format: 'currency',
+                    footer: 'sum',
+                },
+            ];
+
+            const summaryItems = summary
+                ? [
+                      {
+                          label: 'Total Credits',
+                          value: formatCurrency(summary.totalCredits),
+                      },
+                      {
+                          label: 'Total Debits',
+                          value: formatCurrency(summary.totalDebits),
+                      },
+                      {
+                          label: 'Net Balance',
+                          value: formatCurrency(summary.netBalance),
+                      },
+                      {
+                          label: 'Total Entries',
+                          value: String(summary.entryCount),
+                      },
+                  ]
+                : undefined;
+
+            await exportData(format, exportRows, columns, {
+                title: 'General Ledger',
+                subtitle: formatPeriodLabel(),
+                filenameBase: 'ledger',
+                companyName: 'LedgerPro',
+                generatedBy: user
+                    ? `${user.firstName} ${user.lastName}`
+                    : undefined,
+                summary: summaryItems,
+            });
+        } catch {
+            setError('Failed to export ledger entries');
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const showFrom = total > 0 ? (page - 1) * limit + 1 : 0;
@@ -138,16 +225,11 @@ export default function LedgerPage() {
                     <h1 className="text-2xl font-bold text-white tracking-tight">General Ledger</h1>
                     <p className="text-sm text-slate-400 mt-1">View and manage all financial transactions</p>
                 </div>
-                <button
-                    onClick={handleExport}
-                    disabled={entries.length === 0}
-                    className="h-9 px-4 rounded-lg bg-transparent border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors flex items-center gap-2 self-start sm:self-auto disabled:opacity-50"
-                >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                    </svg>
-                    Export CSV
-                </button>
+                <ExportMenu
+                    onExport={handleExport}
+                    disabled={total === 0}
+                    isPreparing={isExporting}
+                />
             </div>
 
             {error && (
