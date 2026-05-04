@@ -35,9 +35,8 @@ export const FRONTEND_ROUTES = {
     BRANCHES: '/branches',
     BRANCH_MANAGEMENT: '/branches/manage',
 
-    // Admin (system-wide views)
-    OVERVIEW: '/overview',
-    BRANCH_COMPARISON: '/comparison',
+    // Admin Branches Hub (overview + manage + compare in tabs)
+    BRANCHES_HUB: '/admin/branches',
 
     // Notifications
     NOTIFICATIONS: '/notifications',

@@ -22,8 +22,7 @@ import UserManagementPage from '@/pages/users/UserManagementPage';
 import ProfilePage from '@/pages/users/ProfilePage';
 import NotificationsPage from '@/pages/notifications/NotificationsPage';
 import NotificationDetailPage from '@/pages/notifications/NotificationDetailPage';
-import OverviewPage from '@/pages/admin/OverviewPage';
-import BranchComparisonPage from '@/pages/admin/BranchComparisonPage';
+import BranchesHubPage from '@/pages/admin/BranchesHubPage';
 import BranchManagementPage from '@/pages/branches/BranchManagementPage';
 import BranchPerformancePage from '@/pages/branches/BranchPerformancePage';
 import NotFoundPage from '@/pages/NotFoundPage';
@@ -230,13 +229,11 @@ export default function AppRouter() {
                     }
                 />
 
-                {/* My Branch — admin/manager single-branch performance */}
+                {/* My Branch — manager single-branch performance */}
                 <Route
                     path={FRONTEND_ROUTES.BRANCHES}
                     element={
-                        <ProtectedRoute
-                            allowedRoles={[UserRole.ADMIN, UserRole.MANAGER]}
-                        >
+                        <ProtectedRoute allowedRoles={[UserRole.MANAGER]}>
                             <DashboardLayout>
                                 <BranchPerformancePage />
                             </DashboardLayout>
@@ -258,23 +255,13 @@ export default function AppRouter() {
                     }
                 />
 
-                {/* Admin-only system views */}
+                {/* Admin-only Branches Hub (overview + manage + compare tabs) */}
                 <Route
-                    path={FRONTEND_ROUTES.OVERVIEW}
+                    path={FRONTEND_ROUTES.BRANCHES_HUB}
                     element={
                         <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                             <DashboardLayout>
-                                <OverviewPage />
-                            </DashboardLayout>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path={FRONTEND_ROUTES.BRANCH_COMPARISON}
-                    element={
-                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                            <DashboardLayout>
-                                <BranchComparisonPage />
+                                <BranchesHubPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

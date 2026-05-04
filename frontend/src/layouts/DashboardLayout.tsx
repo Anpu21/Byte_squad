@@ -31,12 +31,6 @@ const NAV_ITEMS: NavItem[] = [
         icon: <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
     },
     {
-        label: 'Overview',
-        path: FRONTEND_ROUTES.OVERVIEW,
-        roles: [UserRole.ADMIN],
-        icon: <><path d="M3 3v18h18" /><path d="M7 12l3-3 4 4 5-5" /></>
-    },
-    {
         label: 'POS',
         path: FRONTEND_ROUTES.POS,
         roles: [UserRole.CASHIER],
@@ -81,20 +75,20 @@ const NAV_ITEMS: NavItem[] = [
     {
         label: 'My Branch',
         path: FRONTEND_ROUTES.BRANCHES,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        roles: [UserRole.MANAGER],
         icon: <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
     },
     {
         label: 'Branch Management',
         path: FRONTEND_ROUTES.BRANCH_MANAGEMENT,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        roles: [UserRole.MANAGER],
         icon: <><path d="M3 21h18" /><path d="M5 21V7l8-4v18" /><path d="M19 21V11l-6-4" /><path d="M9 9h.01" /><path d="M9 13h.01" /><path d="M9 17h.01" /></>
     },
     {
-        label: 'Comparison',
-        path: FRONTEND_ROUTES.BRANCH_COMPARISON,
+        label: 'Branches',
+        path: FRONTEND_ROUTES.BRANCHES_HUB,
         roles: [UserRole.ADMIN],
-        icon: <><path d="M3 3v18h18" /><path d="M7 16V9" /><path d="M12 16V5" /><path d="M17 16v-4" /></>
+        icon: <><path d="M3 21h18" /><path d="M5 21V7l8-4v18" /><path d="M19 21V11l-6-4" /><path d="M9 9h.01" /><path d="M9 13h.01" /><path d="M9 17h.01" /></>
     },
     {
         label: 'Notifications',

@@ -22,7 +22,11 @@ function alertTone(type: IOverviewAlert['type']): string {
     }
 }
 
-export default function OverviewPage() {
+interface OverviewPageProps {
+    embedded?: boolean;
+}
+
+export default function OverviewPage({ embedded = false }: OverviewPageProps = {}) {
     const { data, isLoading } = useQuery<IOverviewResponse>({
         queryKey: ['admin-overview'],
         queryFn: adminService.getOverview,
@@ -64,17 +68,18 @@ export default function OverviewPage() {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">
-                        System Overview
-                    </h1>
-                    <p className="text-sm text-slate-400 mt-1">
-                        All branches at a glance
-                    </p>
+            {!embedded && (
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 className="text-2xl font-bold text-white tracking-tight">
+                            System Overview
+                        </h1>
+                        <p className="text-sm text-slate-400 mt-1">
+                            All branches at a glance
+                        </p>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

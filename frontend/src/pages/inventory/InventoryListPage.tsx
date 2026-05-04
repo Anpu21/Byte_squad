@@ -12,6 +12,8 @@ import {
     type ExportFormat,
 } from '@/lib/exportUtils';
 import ExportMenu from '@/components/common/ExportMenu';
+import toast from 'react-hot-toast';
+import axios from 'axios';
 
 interface InventoryExportRow {
     productName: string;
@@ -72,10 +74,15 @@ export default function InventoryListPage() {
         setIsDeleting(true);
         try {
             await inventoryService.deleteProduct(deleteTarget.productId);
+            toast.success('Product deleted');
             setDeleteTarget(null);
             refetch();
-        } catch {
-            // Error handling could be added here
+        } catch (err) {
+            const message =
+                axios.isAxiosError(err) && err.response?.data?.message
+                    ? String(err.response.data.message)
+                    : 'Failed to delete product';
+            toast.error(message);
         } finally {
             setIsDeleting(false);
         }
@@ -175,7 +182,7 @@ export default function InventoryListPage() {
                 ],
             });
         } catch {
-            // Silently fail — owner sees no file produced
+            toast.error('Could not generate export — please try again');
         } finally {
             setIsExporting(false);
         }
