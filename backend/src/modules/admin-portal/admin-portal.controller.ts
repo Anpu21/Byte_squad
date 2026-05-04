@@ -1,50 +1,50 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { SuperAdminService } from '@super-admin/super-admin.service';
+import { AdminPortalService } from '@admin-portal/admin-portal.service';
 import type {
   OverviewResponse,
   BranchWithMeta,
   AdminWithBranch,
   UserWithBranch,
   BranchComparisonResponse,
-} from '@super-admin/super-admin.service';
-import { BranchComparisonDto } from '@super-admin/dto/branch-comparison.dto';
+} from '@admin-portal/admin-portal.service';
+import { BranchComparisonDto } from '@admin-portal/dto/branch-comparison.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { APP_ROUTES } from '@common/routes/app.routes';
 
-@Controller(APP_ROUTES.SUPER_ADMIN.BASE)
+@Controller(APP_ROUTES.ADMIN_PORTAL.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.SUPER_ADMIN)
-export class SuperAdminController {
-  constructor(private readonly superAdminService: SuperAdminService) {}
+@Roles(UserRole.ADMIN)
+export class AdminPortalController {
+  constructor(private readonly adminPortalService: AdminPortalService) {}
 
-  @Get(APP_ROUTES.SUPER_ADMIN.OVERVIEW)
+  @Get(APP_ROUTES.ADMIN_PORTAL.OVERVIEW)
   getOverview(): Promise<OverviewResponse> {
-    return this.superAdminService.getOverview();
+    return this.adminPortalService.getOverview();
   }
 
-  @Get(APP_ROUTES.SUPER_ADMIN.BRANCHES)
+  @Get(APP_ROUTES.ADMIN_PORTAL.BRANCHES)
   listBranches(): Promise<BranchWithMeta[]> {
-    return this.superAdminService.listBranchesWithMeta();
+    return this.adminPortalService.listBranchesWithMeta();
   }
 
-  @Get(APP_ROUTES.SUPER_ADMIN.ADMINS)
+  @Get(APP_ROUTES.ADMIN_PORTAL.ADMINS)
   listAdmins(): Promise<AdminWithBranch[]> {
-    return this.superAdminService.listAdmins();
+    return this.adminPortalService.listAdmins();
   }
 
-  @Get(APP_ROUTES.SUPER_ADMIN.USERS)
+  @Get(APP_ROUTES.ADMIN_PORTAL.USERS)
   listAllUsers(): Promise<UserWithBranch[]> {
-    return this.superAdminService.listAllUsers();
+    return this.adminPortalService.listAllUsers();
   }
 
-  @Post(APP_ROUTES.SUPER_ADMIN.COMPARISON)
+  @Post(APP_ROUTES.ADMIN_PORTAL.COMPARISON)
   compareBranches(
     @Body() dto: BranchComparisonDto,
   ): Promise<BranchComparisonResponse> {
-    return this.superAdminService.getBranchComparison(
+    return this.adminPortalService.getBranchComparison(
       dto.branchIds,
       new Date(dto.startDate),
       new Date(dto.endDate),

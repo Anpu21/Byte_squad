@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { superAdminService } from '@/services/super-admin.service';
+import { adminService } from '@/services/admin.service';
 import type {
     IBranchWithMeta,
     IBranchCreatePayload,
@@ -33,10 +33,10 @@ function BranchModal({
         try {
             if (isEdit && editing) {
                 const payload: IBranchUpdatePayload = { ...form };
-                await superAdminService.updateBranch(editing.id, payload);
+                await adminService.updateBranch(editing.id, payload);
                 toast.success('Branch updated');
             } else {
-                await superAdminService.createBranch(form);
+                await adminService.createBranch(form);
                 toast.success('Branch created');
             }
             onSaved();
@@ -132,17 +132,17 @@ export default function BranchManagementPage() {
     const [editing, setEditing] = useState<EditingBranch>(null);
 
     const { data: branches = [], isLoading } = useQuery({
-        queryKey: ['super-admin-branches'],
-        queryFn: superAdminService.listBranches,
+        queryKey: ['admin-branches'],
+        queryFn: adminService.listBranches,
     });
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: ['super-admin-branches'] });
-        queryClient.invalidateQueries({ queryKey: ['super-admin-overview'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-branches'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-overview'] });
     };
 
     const toggleMutation = useMutation({
-        mutationFn: superAdminService.toggleBranchActive,
+        mutationFn: adminService.toggleBranchActive,
         onSuccess: () => {
             invalidate();
             toast.success('Branch status updated');
@@ -151,7 +151,7 @@ export default function BranchManagementPage() {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: superAdminService.deleteBranch,
+        mutationFn: adminService.deleteBranch,
         onSuccess: () => {
             invalidate();
             toast.success('Branch deleted');

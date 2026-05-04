@@ -487,10 +487,6 @@ export default function BranchPerformancePage() {
                         {[
                             { label: 'Admin', count: staff.byRole.admin },
                             { label: 'Manager', count: staff.byRole.manager },
-                            {
-                                label: 'Accountant',
-                                count: staff.byRole.accountant,
-                            },
                             { label: 'Cashier', count: staff.byRole.cashier },
                         ].map((r) => (
                             <div

@@ -10,7 +10,7 @@ import {
     CartesianGrid,
     Legend,
 } from 'recharts';
-import { superAdminService } from '@/services/super-admin.service';
+import { adminService } from '@/services/admin.service';
 import { userService } from '@/services/user.service';
 import type { IBranchComparisonEntry } from '@/types';
 
@@ -65,8 +65,8 @@ export default function BranchComparisonPage() {
     };
 
     const { data: comparison, isLoading, isFetching } = useQuery({
-        queryKey: ['super-admin-comparison', submitted],
-        queryFn: () => superAdminService.compareBranches(submitted!),
+        queryKey: ['admin-comparison', submitted],
+        queryFn: () => adminService.compareBranches(submitted!),
         enabled: submitted !== null,
     });
 

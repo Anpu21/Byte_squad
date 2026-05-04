@@ -14,31 +14,31 @@ import type {
     IBranchComparisonResponse,
 } from '@/types';
 
-export const superAdminService = {
+export const adminService = {
     getOverview: async (): Promise<IOverviewResponse> => {
         const response = await api.get<IApiResponse<IOverviewResponse>>(
-            '/super-admin/overview',
+            '/admin/overview',
         );
         return response.data.data;
     },
 
     listBranches: async (): Promise<IBranchWithMeta[]> => {
         const response = await api.get<IApiResponse<IBranchWithMeta[]>>(
-            '/super-admin/branches',
+            '/admin/branches',
         );
         return response.data.data;
     },
 
     listAdmins: async (): Promise<IAdminWithBranch[]> => {
         const response = await api.get<IApiResponse<IAdminWithBranch[]>>(
-            '/super-admin/admins',
+            '/admin/admins',
         );
         return response.data.data;
     },
 
     listAllUsers: async (): Promise<IUserWithBranch[]> => {
         const response = await api.get<IApiResponse<IUserWithBranch[]>>(
-            '/super-admin/users',
+            '/admin/users',
         );
         return response.data.data;
     },
@@ -47,7 +47,7 @@ export const superAdminService = {
         payload: IBranchComparisonRequest,
     ): Promise<IBranchComparisonResponse> => {
         const response = await api.post<IApiResponse<IBranchComparisonResponse>>(
-            '/super-admin/comparison',
+            '/admin/comparison',
             payload,
         );
         return response.data.data;
@@ -85,14 +85,14 @@ export const superAdminService = {
         await api.delete(`/branches/${id}`);
     },
 
-    // ── Admin mutations (uses existing /users endpoints) ──────────────────
+    // ── User mutations (uses existing /users endpoints) ──────────────
 
-    createAdmin: async (payload: IUserCreatePayload): Promise<IUser> => {
+    createUser: async (payload: IUserCreatePayload): Promise<IUser> => {
         const response = await api.post<IApiResponse<IUser>>('/users', payload);
         return response.data.data;
     },
 
-    updateAdmin: async (
+    updateUser: async (
         id: string,
         payload: Partial<IUserCreatePayload>,
     ): Promise<IUser> => {
@@ -103,11 +103,11 @@ export const superAdminService = {
         return response.data.data;
     },
 
-    deleteAdmin: async (id: string): Promise<void> => {
+    deleteUser: async (id: string): Promise<void> => {
         await api.delete(`/users/${id}`);
     },
 
-    resetAdminPassword: async (id: string): Promise<void> => {
+    resetUserPassword: async (id: string): Promise<void> => {
         await api.post(`/users/${id}/reset-password`);
     },
 };

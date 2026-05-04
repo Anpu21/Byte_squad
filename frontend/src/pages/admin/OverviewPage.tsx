@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { superAdminService } from '@/services/super-admin.service';
+import { adminService } from '@/services/admin.service';
 import type { IOverviewResponse, IOverviewAlert } from '@/types';
 
 function formatCurrency(amount: number) {
@@ -22,10 +22,10 @@ function alertTone(type: IOverviewAlert['type']): string {
     }
 }
 
-export default function SuperAdminOverviewPage() {
+export default function OverviewPage() {
     const { data, isLoading } = useQuery<IOverviewResponse>({
-        queryKey: ['super-admin-overview'],
-        queryFn: superAdminService.getOverview,
+        queryKey: ['admin-overview'],
+        queryFn: adminService.getOverview,
         refetchInterval: 30000,
     });
 
@@ -68,7 +68,7 @@ export default function SuperAdminOverviewPage() {
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-white tracking-tight">
-                        Super Admin Dashboard
+                        System Overview
                     </h1>
                     <p className="text-sm text-slate-400 mt-1">
                         All branches at a glance
