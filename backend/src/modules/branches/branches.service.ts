@@ -56,7 +56,6 @@ export interface MyBranchStaff {
   byRole: {
     admin: number;
     manager: number;
-    accountant: number;
     cashier: number;
   };
 }
@@ -329,8 +328,6 @@ export class BranchesService {
       byRole: {
         admin: allStaff.filter((u) => u.role === UserRole.ADMIN).length,
         manager: allStaff.filter((u) => u.role === UserRole.MANAGER).length,
-        accountant: allStaff.filter((u) => u.role === UserRole.ACCOUNTANT)
-          .length,
         cashier: allStaff.filter((u) => u.role === UserRole.CASHIER).length,
       },
     };

@@ -26,7 +26,7 @@ export class BranchesController {
   constructor(private readonly branchesService: BranchesService) {}
 
   @Post()
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   create(@Body() createBranchDto: CreateBranchDto): Promise<Branch> {
     return this.branchesService.create(createBranchDto);
   }
@@ -52,7 +52,7 @@ export class BranchesController {
   }
 
   @Patch(APP_ROUTES.BRANCHES.BY_ID)
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   update(
     @Param('id') id: string,
     @Body() updateBranchDto: UpdateBranchDto,
@@ -61,13 +61,13 @@ export class BranchesController {
   }
 
   @Patch(APP_ROUTES.BRANCHES.TOGGLE_ACTIVE)
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   toggleActive(@Param('id') id: string): Promise<Branch> {
     return this.branchesService.toggleActive(id);
   }
 
   @Delete(APP_ROUTES.BRANCHES.BY_ID)
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string): Promise<void> {
     return this.branchesService.remove(id);
   }

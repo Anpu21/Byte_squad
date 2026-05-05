@@ -72,13 +72,14 @@ export const APP_ROUTES = {
   // Notifications
   NOTIFICATIONS: {
     BASE: `${API_PREFIX}/notifications`,
+    BY_ID: ':id',
     MARK_READ: ':id/read',
     MARK_ALL_READ: 'read-all',
   },
 
-  // Super Admin
-  SUPER_ADMIN: {
-    BASE: `${API_PREFIX}/super-admin`,
+  // Admin Portal (system-wide endpoints — admin role only)
+  ADMIN_PORTAL: {
+    BASE: `${API_PREFIX}/admin`,
     OVERVIEW: 'overview',
     BRANCHES: 'branches',
     ADMINS: 'admins',

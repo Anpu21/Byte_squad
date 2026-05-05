@@ -21,11 +21,9 @@ import ProfitLossPage from '@/pages/accounting/ProfitLossPage';
 import UserManagementPage from '@/pages/users/UserManagementPage';
 import ProfilePage from '@/pages/users/ProfilePage';
 import NotificationsPage from '@/pages/notifications/NotificationsPage';
-import SuperAdminOverviewPage from '@/pages/super-admin/OverviewPage';
-import BranchManagementPage from '@/pages/super-admin/BranchManagementPage';
-import AdminManagementPage from '@/pages/super-admin/AdminManagementPage';
-import BranchComparisonPage from '@/pages/super-admin/BranchComparisonPage';
-import AllUsersPage from '@/pages/super-admin/AllUsersPage';
+import NotificationDetailPage from '@/pages/notifications/NotificationDetailPage';
+import BranchesHubPage from '@/pages/admin/BranchesHubPage';
+import BranchManagementPage from '@/pages/branches/BranchManagementPage';
 import BranchPerformancePage from '@/pages/branches/BranchPerformancePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
@@ -37,10 +35,6 @@ function SmartRedirect() {
     switch (user.role) {
         case UserRole.CASHIER:
             return <Navigate to={FRONTEND_ROUTES.CASHIER_DASHBOARD} replace />;
-        case UserRole.ACCOUNTANT:
-            return <Navigate to={FRONTEND_ROUTES.LEDGER} replace />;
-        case UserRole.SUPER_ADMIN:
-            return <Navigate to={FRONTEND_ROUTES.SUPER_ADMIN_DASHBOARD} replace />;
         default:
             return <Navigate to={FRONTEND_ROUTES.DASHBOARD} replace />;
     }
@@ -166,7 +160,7 @@ export default function AppRouter() {
                 <Route
                     path={FRONTEND_ROUTES.LEDGER}
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                             <DashboardLayout>
                                 <LedgerPage />
                             </DashboardLayout>
@@ -176,7 +170,7 @@ export default function AppRouter() {
                 <Route
                     path={FRONTEND_ROUTES.EXPENSES}
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                             <DashboardLayout>
                                 <ExpensesPage />
                             </DashboardLayout>
@@ -186,7 +180,7 @@ export default function AppRouter() {
                 <Route
                     path={FRONTEND_ROUTES.PROFIT_LOSS}
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                             <DashboardLayout>
                                 <ProfitLossPage />
                             </DashboardLayout>
@@ -197,7 +191,7 @@ export default function AppRouter() {
                 <Route
                     path={FRONTEND_ROUTES.USER_MANAGEMENT}
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                             <DashboardLayout>
                                 <UserManagementPage />
                             </DashboardLayout>
@@ -215,6 +209,16 @@ export default function AppRouter() {
                     }
                 />
                 <Route
+                    path={FRONTEND_ROUTES.NOTIFICATION_DETAIL}
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <NotificationDetailPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path={FRONTEND_ROUTES.PROFILE}
                     element={
                         <ProtectedRoute>
@@ -225,13 +229,11 @@ export default function AppRouter() {
                     }
                 />
 
-                {/* My Branch — admin/manager single-branch performance */}
+                {/* My Branch — manager single-branch performance */}
                 <Route
                     path={FRONTEND_ROUTES.BRANCHES}
                     element={
-                        <ProtectedRoute
-                            allowedRoles={[UserRole.ADMIN, UserRole.MANAGER]}
-                        >
+                        <ProtectedRoute allowedRoles={[UserRole.MANAGER]}>
                             <DashboardLayout>
                                 <BranchPerformancePage />
                             </DashboardLayout>
@@ -239,53 +241,25 @@ export default function AppRouter() {
                     }
                 />
 
-                {/* Super Admin routes */}
-                <Route
-                    path={FRONTEND_ROUTES.SUPER_ADMIN_DASHBOARD}
-                    element={
-                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
-                            <DashboardLayout>
-                                <SuperAdminOverviewPage />
-                            </DashboardLayout>
-                        </ProtectedRoute>
-                    }
-                />
+                {/* Branch Management — admin-only CRUD (also embedded in the Branches Hub) */}
                 <Route
                     path={FRONTEND_ROUTES.BRANCH_MANAGEMENT}
                     element={
-                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                             <DashboardLayout>
                                 <BranchManagementPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }
                 />
+
+                {/* Admin-only Branches Hub (overview + manage + compare tabs) */}
                 <Route
-                    path={FRONTEND_ROUTES.ADMIN_MANAGEMENT}
+                    path={FRONTEND_ROUTES.BRANCHES_HUB}
                     element={
-                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                             <DashboardLayout>
-                                <AdminManagementPage />
-                            </DashboardLayout>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path={FRONTEND_ROUTES.BRANCH_COMPARISON}
-                    element={
-                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
-                            <DashboardLayout>
-                                <BranchComparisonPage />
-                            </DashboardLayout>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path={FRONTEND_ROUTES.ALL_USERS}
-                    element={
-                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
-                            <DashboardLayout>
-                                <AllUsersPage />
+                                <BranchesHubPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

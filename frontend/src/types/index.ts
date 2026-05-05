@@ -206,7 +206,6 @@ export interface IMyBranchStaff {
     byRole: {
         admin: number;
         manager: number;
-        accountant: number;
         cashier: number;
     };
 }

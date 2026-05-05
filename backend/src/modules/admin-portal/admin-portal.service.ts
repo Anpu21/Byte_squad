@@ -113,7 +113,7 @@ export interface BranchComparisonResponse {
 }
 
 @Injectable()
-export class SuperAdminService {
+export class AdminPortalService {
   constructor(
     @InjectRepository(Branch)
     private readonly branchRepo: Repository<Branch>,
