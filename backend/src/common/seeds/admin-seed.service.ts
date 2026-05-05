@@ -18,6 +18,8 @@ import { PaymentMethod } from '@common/enums/payment-method';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { Notification } from '@notifications/entities/notification.entity';
 import { NotificationType } from '@common/enums/notification.enum';
+import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
+import { TransferStatus } from '@common/enums/transfer-status.enum';
 
 interface SeedDefaults {
   adminEmail: string;
@@ -28,6 +30,415 @@ interface SeedDefaults {
   branchAddress: string;
   branchPhone: string;
 }
+
+interface SupermarketProductSeed {
+  name: string;
+  barcode: string;
+  category: string;
+  costPrice: number;
+  sellingPrice: number;
+  description: string;
+}
+
+const SUPERMARKET_PRODUCTS: SupermarketProductSeed[] = [
+  // ── Beverages ───────────────────────────────────────────────────
+  {
+    name: 'Coca-Cola 1.5L',
+    barcode: 'BVG-001',
+    category: 'Beverages',
+    costPrice: 1.5,
+    sellingPrice: 2.49,
+    description: 'Classic Coca-Cola, 1.5 litre bottle',
+  },
+  {
+    name: 'Pepsi 1.5L',
+    barcode: 'BVG-002',
+    category: 'Beverages',
+    costPrice: 1.45,
+    sellingPrice: 2.39,
+    description: 'Pepsi cola, 1.5 litre bottle',
+  },
+  {
+    name: 'Sprite 1.5L',
+    barcode: 'BVG-003',
+    category: 'Beverages',
+    costPrice: 1.5,
+    sellingPrice: 2.49,
+    description: 'Sprite lemon-lime, 1.5 litre bottle',
+  },
+  {
+    name: 'Orange Juice 1L',
+    barcode: 'BVG-004',
+    category: 'Beverages',
+    costPrice: 2.2,
+    sellingPrice: 3.99,
+    description: '100% pure orange juice, 1 litre',
+  },
+  {
+    name: 'Bottled Water 1.5L',
+    barcode: 'BVG-005',
+    category: 'Beverages',
+    costPrice: 0.4,
+    sellingPrice: 0.99,
+    description: 'Spring water, 1.5 litre',
+  },
+  {
+    name: 'Tea Bags (100)',
+    barcode: 'BVG-006',
+    category: 'Beverages',
+    costPrice: 2.5,
+    sellingPrice: 4.49,
+    description: 'Black tea, 100 bags',
+  },
+  {
+    name: 'Instant Coffee 100g',
+    barcode: 'BVG-007',
+    category: 'Beverages',
+    costPrice: 3.0,
+    sellingPrice: 5.99,
+    description: 'Instant coffee jar, 100g',
+  },
+
+  // ── Dairy ───────────────────────────────────────────────────────
+  {
+    name: 'Whole Milk 1L',
+    barcode: 'DRY-001',
+    category: 'Dairy',
+    costPrice: 1.1,
+    sellingPrice: 1.79,
+    description: 'Fresh whole milk, 1 litre',
+  },
+  {
+    name: 'Low-Fat Milk 1L',
+    barcode: 'DRY-002',
+    category: 'Dairy',
+    costPrice: 1.1,
+    sellingPrice: 1.79,
+    description: 'Low-fat milk, 1 litre',
+  },
+  {
+    name: 'Plain Yogurt 250g',
+    barcode: 'DRY-003',
+    category: 'Dairy',
+    costPrice: 0.7,
+    sellingPrice: 1.29,
+    description: 'Plain yogurt, 250g cup',
+  },
+  {
+    name: 'Salted Butter 250g',
+    barcode: 'DRY-004',
+    category: 'Dairy',
+    costPrice: 1.8,
+    sellingPrice: 2.99,
+    description: 'Salted butter block, 250g',
+  },
+  {
+    name: 'Cheddar Cheese 200g',
+    barcode: 'DRY-005',
+    category: 'Dairy',
+    costPrice: 2.5,
+    sellingPrice: 4.49,
+    description: 'Cheddar cheese block, 200g',
+  },
+  {
+    name: 'Eggs (12)',
+    barcode: 'DRY-006',
+    category: 'Dairy',
+    costPrice: 2.0,
+    sellingPrice: 3.49,
+    description: 'Free-range eggs, dozen',
+  },
+
+  // ── Bakery ──────────────────────────────────────────────────────
+  {
+    name: 'White Bread Loaf',
+    barcode: 'BKY-001',
+    category: 'Bakery',
+    costPrice: 0.9,
+    sellingPrice: 1.79,
+    description: 'Fresh white bread loaf, 700g',
+  },
+  {
+    name: 'Brown Bread Loaf',
+    barcode: 'BKY-002',
+    category: 'Bakery',
+    costPrice: 1.0,
+    sellingPrice: 1.99,
+    description: 'Whole-wheat brown bread, 700g',
+  },
+  {
+    name: 'Burger Buns (6)',
+    barcode: 'BKY-003',
+    category: 'Bakery',
+    costPrice: 1.2,
+    sellingPrice: 2.49,
+    description: 'Soft burger buns, pack of 6',
+  },
+  {
+    name: 'Dinner Rolls (8)',
+    barcode: 'BKY-004',
+    category: 'Bakery',
+    costPrice: 1.1,
+    sellingPrice: 2.29,
+    description: 'Dinner rolls, pack of 8',
+  },
+
+  // ── Produce ─────────────────────────────────────────────────────
+  {
+    name: 'Apples 1kg',
+    barcode: 'PRD-001',
+    category: 'Produce',
+    costPrice: 1.5,
+    sellingPrice: 2.99,
+    description: 'Red apples, 1kg',
+  },
+  {
+    name: 'Bananas 1kg',
+    barcode: 'PRD-002',
+    category: 'Produce',
+    costPrice: 0.8,
+    sellingPrice: 1.49,
+    description: 'Cavendish bananas, 1kg',
+  },
+  {
+    name: 'Tomatoes 1kg',
+    barcode: 'PRD-003',
+    category: 'Produce',
+    costPrice: 1.2,
+    sellingPrice: 2.49,
+    description: 'Fresh tomatoes, 1kg',
+  },
+  {
+    name: 'Onions 1kg',
+    barcode: 'PRD-004',
+    category: 'Produce',
+    costPrice: 0.7,
+    sellingPrice: 1.49,
+    description: 'Yellow onions, 1kg',
+  },
+  {
+    name: 'Potatoes 2kg',
+    barcode: 'PRD-005',
+    category: 'Produce',
+    costPrice: 1.5,
+    sellingPrice: 2.99,
+    description: 'Potatoes, 2kg bag',
+  },
+  {
+    name: 'Carrots 1kg',
+    barcode: 'PRD-006',
+    category: 'Produce',
+    costPrice: 0.9,
+    sellingPrice: 1.79,
+    description: 'Fresh carrots, 1kg',
+  },
+
+  // ── Pantry ──────────────────────────────────────────────────────
+  {
+    name: 'Basmati Rice 5kg',
+    barcode: 'PNT-001',
+    category: 'Pantry',
+    costPrice: 6.0,
+    sellingPrice: 9.99,
+    description: 'Premium basmati rice, 5kg',
+  },
+  {
+    name: 'Sugar 1kg',
+    barcode: 'PNT-002',
+    category: 'Pantry',
+    costPrice: 0.9,
+    sellingPrice: 1.79,
+    description: 'White granulated sugar, 1kg',
+  },
+  {
+    name: 'Iodized Salt 1kg',
+    barcode: 'PNT-003',
+    category: 'Pantry',
+    costPrice: 0.4,
+    sellingPrice: 0.99,
+    description: 'Iodized table salt, 1kg',
+  },
+  {
+    name: 'All-Purpose Flour 2kg',
+    barcode: 'PNT-004',
+    category: 'Pantry',
+    costPrice: 1.8,
+    sellingPrice: 2.99,
+    description: 'All-purpose wheat flour, 2kg',
+  },
+  {
+    name: 'Spaghetti Pasta 500g',
+    barcode: 'PNT-005',
+    category: 'Pantry',
+    costPrice: 0.8,
+    sellingPrice: 1.79,
+    description: 'Spaghetti pasta, 500g',
+  },
+  {
+    name: 'Red Lentils 1kg',
+    barcode: 'PNT-006',
+    category: 'Pantry',
+    costPrice: 1.4,
+    sellingPrice: 2.49,
+    description: 'Red lentils, 1kg',
+  },
+  {
+    name: 'Sunflower Oil 1L',
+    barcode: 'PNT-007',
+    category: 'Pantry',
+    costPrice: 1.8,
+    sellingPrice: 2.99,
+    description: 'Sunflower vegetable oil, 1 litre',
+  },
+
+  // ── Snacks ──────────────────────────────────────────────────────
+  {
+    name: 'Potato Chips 150g',
+    barcode: 'SNK-001',
+    category: 'Snacks',
+    costPrice: 0.9,
+    sellingPrice: 1.99,
+    description: 'Salted potato chips, 150g',
+  },
+  {
+    name: 'Chocolate Cookies 200g',
+    barcode: 'SNK-002',
+    category: 'Snacks',
+    costPrice: 1.2,
+    sellingPrice: 2.49,
+    description: 'Chocolate chip cookies, 200g',
+  },
+  {
+    name: 'Milk Chocolate Bar 100g',
+    barcode: 'SNK-003',
+    category: 'Snacks',
+    costPrice: 0.8,
+    sellingPrice: 1.79,
+    description: 'Milk chocolate bar, 100g',
+  },
+  {
+    name: 'Salted Crackers 200g',
+    barcode: 'SNK-004',
+    category: 'Snacks',
+    costPrice: 0.9,
+    sellingPrice: 1.99,
+    description: 'Salted crackers, 200g',
+  },
+  {
+    name: 'Mixed Nuts 250g',
+    barcode: 'SNK-005',
+    category: 'Snacks',
+    costPrice: 2.5,
+    sellingPrice: 4.99,
+    description: 'Roasted mixed nuts, 250g',
+  },
+
+  // ── Frozen ──────────────────────────────────────────────────────
+  {
+    name: 'Frozen Chicken 1kg',
+    barcode: 'FRZ-001',
+    category: 'Frozen',
+    costPrice: 4.0,
+    sellingPrice: 6.99,
+    description: 'Frozen chicken pieces, 1kg',
+  },
+  {
+    name: 'Frozen Fish Fillet 500g',
+    barcode: 'FRZ-002',
+    category: 'Frozen',
+    costPrice: 3.5,
+    sellingPrice: 5.99,
+    description: 'Frozen white fish fillet, 500g',
+  },
+  {
+    name: 'Vanilla Ice Cream 1L',
+    barcode: 'FRZ-003',
+    category: 'Frozen',
+    costPrice: 2.5,
+    sellingPrice: 4.99,
+    description: 'Vanilla ice cream, 1 litre',
+  },
+
+  // ── Household ───────────────────────────────────────────────────
+  {
+    name: 'Dish Soap 500ml',
+    barcode: 'HSH-001',
+    category: 'Household',
+    costPrice: 1.1,
+    sellingPrice: 2.29,
+    description: 'Lemon dish soap, 500ml',
+  },
+  {
+    name: 'Laundry Detergent 1kg',
+    barcode: 'HSH-002',
+    category: 'Household',
+    costPrice: 2.8,
+    sellingPrice: 5.49,
+    description: 'Powder laundry detergent, 1kg',
+  },
+  {
+    name: 'Toilet Paper (12 rolls)',
+    barcode: 'HSH-003',
+    category: 'Household',
+    costPrice: 4.0,
+    sellingPrice: 7.99,
+    description: 'Toilet paper, 12-roll pack',
+  },
+  {
+    name: 'Floor Cleaner 1L',
+    barcode: 'HSH-004',
+    category: 'Household',
+    costPrice: 1.8,
+    sellingPrice: 3.49,
+    description: 'Multi-surface floor cleaner, 1 litre',
+  },
+
+  // ── Personal Care ───────────────────────────────────────────────
+  {
+    name: 'Shampoo 400ml',
+    barcode: 'PCR-001',
+    category: 'Personal Care',
+    costPrice: 2.5,
+    sellingPrice: 4.99,
+    description: 'Anti-dandruff shampoo, 400ml',
+  },
+  {
+    name: 'Bath Soap Bar',
+    barcode: 'PCR-002',
+    category: 'Personal Care',
+    costPrice: 0.5,
+    sellingPrice: 1.29,
+    description: 'Moisturising bath soap, 100g',
+  },
+  {
+    name: 'Toothpaste 100g',
+    barcode: 'PCR-003',
+    category: 'Personal Care',
+    costPrice: 1.2,
+    sellingPrice: 2.49,
+    description: 'Mint fluoride toothpaste, 100g',
+  },
+  {
+    name: 'Toothbrush',
+    barcode: 'PCR-004',
+    category: 'Personal Care',
+    costPrice: 0.4,
+    sellingPrice: 1.49,
+    description: 'Soft-bristle toothbrush',
+  },
+];
+
+const CATEGORY_THRESHOLDS: Record<string, number> = {
+  Beverages: 30,
+  Dairy: 30,
+  Bakery: 25,
+  Produce: 25,
+  Pantry: 20,
+  Snacks: 20,
+  Frozen: 15,
+  Household: 15,
+  'Personal Care': 12,
+};
 
 @Injectable()
 export class AdminSeedService implements OnModuleInit {
@@ -52,6 +463,8 @@ export class AdminSeedService implements OnModuleInit {
     private readonly expenseRepository: Repository<Expense>,
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
+    @InjectRepository(StockTransferRequest)
+    private readonly stockTransferRepository: Repository<StockTransferRequest>,
     private readonly configService: ConfigService,
   ) {}
 
@@ -60,10 +473,10 @@ export class AdminSeedService implements OnModuleInit {
   }
 
   async seed(): Promise<void> {
-    this.logger.log('Running database seed...');
+    this.logger.log('Running supermarket seed...');
     const defaults = this.getSeedDefaults();
 
-    // 1. Branches
+    // 1. Branches — three so the inter-branch transfer flow can be demoed end-to-end.
     const mainBranch = await this.ensureBranch(
       defaults.branchName,
       defaults.branchAddress,
@@ -74,8 +487,13 @@ export class AdminSeedService implements OnModuleInit {
       '45 Commerce Street, Downtown',
       '+94112345678',
     );
+    const suburbanBranch = await this.ensureBranch(
+      'Suburban Branch',
+      '88 Garden Avenue, Suburb',
+      '+94112987654',
+    );
 
-    // 2. Users
+    // 2. Users — admins, branch managers, cashiers
     const admin = await this.ensureUser({
       email: defaults.adminEmail,
       password: defaults.adminPassword,
@@ -94,13 +512,31 @@ export class AdminSeedService implements OnModuleInit {
       branchId: downtownBranch.id,
     });
 
-    await this.ensureUser({
+    const mainManager = await this.ensureUser({
+      email: 'manager.main@ledgerpro.com',
+      password: 'Manager@123',
+      firstName: 'John',
+      lastName: 'Smith',
+      role: UserRole.MANAGER,
+      branchId: mainBranch.id,
+    });
+
+    const downtownManager = await this.ensureUser({
       email: 'manager@ledgerpro.com',
       password: 'Manager@123',
       firstName: 'Sarah',
       lastName: 'Connor',
       role: UserRole.MANAGER,
       branchId: downtownBranch.id,
+    });
+
+    const suburbanManager = await this.ensureUser({
+      email: 'manager.suburban@ledgerpro.com',
+      password: 'Manager@123',
+      firstName: 'Mary',
+      lastName: 'Jones',
+      role: UserRole.MANAGER,
+      branchId: suburbanBranch.id,
     });
 
     const cashier1 = await this.ensureUser({
@@ -121,28 +557,53 @@ export class AdminSeedService implements OnModuleInit {
       branchId: downtownBranch.id,
     });
 
-    // 3. Products
+    await this.ensureUser({
+      email: 'cashier3@ledgerpro.com',
+      password: 'Cashier@123',
+      firstName: 'Liam',
+      lastName: 'Park',
+      role: UserRole.CASHIER,
+      branchId: suburbanBranch.id,
+    });
+
+    // 3. Products — supermarket catalogue (idempotent by barcode)
     const products = await this.ensureProducts();
 
-    // 4. Inventory
-    await this.ensureInventory(products, mainBranch.id);
-    await this.ensureInventory(products, downtownBranch.id);
+    // 4. Inventory — vary distribution per branch so low-stock and out-of-stock
+    //    states exist naturally for testing the transfer feature.
+    await this.ensureInventory(products, mainBranch.id, 'healthy');
+    await this.ensureInventory(products, downtownBranch.id, 'healthy');
+    await this.ensureInventory(products, suburbanBranch.id, 'short');
 
-    // 5. Transactions (dummy sales data for last 7 days)
+    // 5. Transactions — last 7 days of POS sales
     await this.ensureTransactions(cashier1, mainBranch.id, products);
     await this.ensureTransactions(cashier2, downtownBranch.id, products);
 
-    // 6. Ledger entries & expenses
+    // 6. Ledger entries & expenses — supermarket-themed
     await this.ensureLedgerAndExpenses(
       mainBranch.id,
       downtownBranch.id,
+      suburbanBranch.id,
       admin.id,
     );
 
     // 7. Notifications
     await this.ensureNotifications([admin, cashier1, cashier2]);
 
-    this.logger.log('Database seed completed.');
+    // 8. Stock transfer requests — five sample requests across all states so
+    //    every status pill is visible the first time you log in.
+    await this.ensureStockTransfers({
+      mainBranch,
+      downtownBranch,
+      suburbanBranch,
+      admin,
+      mainManager,
+      downtownManager,
+      suburbanManager,
+      products,
+    });
+
+    this.logger.log('Supermarket seed completed.');
   }
 
   // ── Branch ─────────────────────────────────────────────
@@ -177,7 +638,6 @@ export class AdminSeedService implements OnModuleInit {
     });
 
     if (user) {
-      // Fix first-login flag for seeded users
       if (user.isFirstLogin) {
         await this.userRepository.update(user.id, { isFirstLogin: false });
         user.isFirstLogin = false;
@@ -207,145 +667,23 @@ export class AdminSeedService implements OnModuleInit {
   // ── Products ───────────────────────────────────────────
 
   private async ensureProducts(): Promise<Product[]> {
-    const existingCount = await this.productRepository.count();
-    if (existingCount > 0) {
-      return this.productRepository.find();
-    }
-
-    const productData = [
-      {
-        name: 'Wireless Mouse',
-        barcode: 'PRD-001',
-        category: 'Electronics',
-        costPrice: 8.5,
-        sellingPrice: 14.99,
-        description: 'Ergonomic wireless mouse',
-      },
-      {
-        name: 'USB-C Hub',
-        barcode: 'PRD-002',
-        category: 'Electronics',
-        costPrice: 15.0,
-        sellingPrice: 29.99,
-        description: '7-in-1 USB-C hub',
-      },
-      {
-        name: 'Mechanical Keyboard',
-        barcode: 'PRD-003',
-        category: 'Electronics',
-        costPrice: 35.0,
-        sellingPrice: 69.99,
-        description: 'RGB mechanical keyboard',
-      },
-      {
-        name: 'Monitor Stand',
-        barcode: 'PRD-004',
-        category: 'Furniture',
-        costPrice: 12.0,
-        sellingPrice: 24.99,
-        description: 'Adjustable monitor stand',
-      },
-      {
-        name: 'Desk Lamp',
-        barcode: 'PRD-005',
-        category: 'Furniture',
-        costPrice: 10.0,
-        sellingPrice: 19.99,
-        description: 'LED desk lamp',
-      },
-      {
-        name: 'Webcam HD',
-        barcode: 'PRD-006',
-        category: 'Electronics',
-        costPrice: 18.0,
-        sellingPrice: 39.99,
-        description: '1080p HD webcam',
-      },
-      {
-        name: 'Headphones',
-        barcode: 'PRD-007',
-        category: 'Electronics',
-        costPrice: 22.0,
-        sellingPrice: 49.99,
-        description: 'Noise-cancelling headphones',
-      },
-      {
-        name: 'Notebook A5',
-        barcode: 'PRD-008',
-        category: 'Stationery',
-        costPrice: 1.5,
-        sellingPrice: 4.99,
-        description: 'A5 lined notebook',
-      },
-      {
-        name: 'Pen Pack (10)',
-        barcode: 'PRD-009',
-        category: 'Stationery',
-        costPrice: 2.0,
-        sellingPrice: 6.99,
-        description: 'Pack of 10 ballpoint pens',
-      },
-      {
-        name: 'Cable Organizer',
-        barcode: 'PRD-010',
-        category: 'Accessories',
-        costPrice: 3.0,
-        sellingPrice: 9.99,
-        description: 'Silicone cable organizer',
-      },
-      {
-        name: 'Mouse Pad XL',
-        barcode: 'PRD-011',
-        category: 'Accessories',
-        costPrice: 5.0,
-        sellingPrice: 12.99,
-        description: 'Extra large mouse pad',
-      },
-      {
-        name: 'Phone Holder',
-        barcode: 'PRD-012',
-        category: 'Accessories',
-        costPrice: 4.0,
-        sellingPrice: 11.99,
-        description: 'Adjustable phone holder',
-      },
-      {
-        name: 'USB Flash Drive 64GB',
-        barcode: 'PRD-013',
-        category: 'Electronics',
-        costPrice: 6.0,
-        sellingPrice: 14.99,
-        description: '64GB USB 3.0 flash drive',
-      },
-      {
-        name: 'Laptop Sleeve 15"',
-        barcode: 'PRD-014',
-        category: 'Accessories',
-        costPrice: 8.0,
-        sellingPrice: 19.99,
-        description: '15-inch laptop sleeve',
-      },
-      {
-        name: 'Screen Cleaner Kit',
-        barcode: 'PRD-015',
-        category: 'Accessories',
-        costPrice: 3.5,
-        sellingPrice: 8.99,
-        description: 'Screen cleaning spray + cloth',
-      },
-    ];
-
     const products: Product[] = [];
-    for (const p of productData) {
-      const product = await this.productRepository.save(
-        this.productRepository.create({
-          ...p,
-          isActive: true,
-        }),
-      );
+    let createdCount = 0;
+    for (const p of SUPERMARKET_PRODUCTS) {
+      let product = await this.productRepository.findOne({
+        where: { barcode: p.barcode },
+      });
+      if (!product) {
+        product = await this.productRepository.save(
+          this.productRepository.create({ ...p, isActive: true }),
+        );
+        createdCount++;
+      }
       products.push(product);
     }
-    this.logger.log(`${products.length} products created.`);
+    if (createdCount > 0) {
+      this.logger.log(`${createdCount} supermarket products created.`);
+    }
     return products;
   }
 
@@ -354,26 +692,51 @@ export class AdminSeedService implements OnModuleInit {
   private async ensureInventory(
     products: Product[],
     branchId: string,
+    profile: 'healthy' | 'short',
   ): Promise<void> {
+    let createdCount = 0;
     for (const product of products) {
       const existing = await this.inventoryRepository.findOne({
         where: { productId: product.id, branchId },
       });
-      if (!existing) {
-        const quantity = Math.floor(Math.random() * 150) + 10;
-        const lowThreshold = product.category === 'Stationery' ? 20 : 10;
-        await this.inventoryRepository.save(
-          this.inventoryRepository.create({
-            productId: product.id,
-            branchId,
-            quantity,
-            lowStockThreshold: lowThreshold,
-            lastRestockedAt: new Date(),
-          }),
-        );
-      }
+      if (existing) continue;
+
+      const threshold = CATEGORY_THRESHOLDS[product.category] ?? 15;
+      const quantity = this.generateQuantity(profile, threshold);
+      await this.inventoryRepository.save(
+        this.inventoryRepository.create({
+          productId: product.id,
+          branchId,
+          quantity,
+          lowStockThreshold: threshold,
+          lastRestockedAt: quantity > 0 ? new Date() : null,
+        }),
+      );
+      createdCount++;
     }
-    this.logger.log(`Inventory seeded for branch ${branchId}.`);
+    if (createdCount > 0) {
+      this.logger.log(
+        `Inventory seeded for branch ${branchId} (${profile}, ${createdCount} rows).`,
+      );
+    }
+  }
+
+  // Healthy branches stock most items above threshold; "short" branches
+  // (Suburban in this seed) intentionally have many low-stock and a few
+  // out-of-stock items so the transfer flow has a natural starting point.
+  private generateQuantity(
+    profile: 'healthy' | 'short',
+    threshold: number,
+  ): number {
+    const r = Math.random();
+    if (profile === 'short') {
+      if (r < 0.2) return 0;
+      if (r < 0.55) return Math.floor(Math.random() * threshold);
+      return Math.floor(Math.random() * 80) + threshold;
+    }
+    if (r < 0.05) return 0;
+    if (r < 0.18) return Math.floor(Math.random() * threshold);
+    return Math.floor(Math.random() * 150) + threshold;
   }
 
   // ── Transactions ───────────────────────────────────────
@@ -383,7 +746,6 @@ export class AdminSeedService implements OnModuleInit {
     branchId: string,
     products: Product[],
   ): Promise<void> {
-    // Check if transactions already exist for this cashier
     const existingCount = await this.transactionRepository.count({
       where: { cashierId: cashier.id },
     });
@@ -396,11 +758,8 @@ export class AdminSeedService implements OnModuleInit {
     ];
     const now = new Date();
 
-    // Create transactions for the last 7 days
     for (let daysAgo = 6; daysAgo >= 0; daysAgo--) {
-      // 3-8 transactions per day
       const txnCount = Math.floor(Math.random() * 6) + 3;
-
       for (let t = 0; t < txnCount; t++) {
         const txnDate = new Date(now);
         txnDate.setDate(txnDate.getDate() - daysAgo);
@@ -410,7 +769,6 @@ export class AdminSeedService implements OnModuleInit {
           Math.floor(Math.random() * 60),
         );
 
-        // 1-4 items per transaction
         const itemCount = Math.floor(Math.random() * 4) + 1;
         const selectedProducts = this.shuffleArray([...products]).slice(
           0,
@@ -419,7 +777,6 @@ export class AdminSeedService implements OnModuleInit {
 
         let subtotal = 0;
         const items: Partial<TransactionItem>[] = [];
-
         for (const prod of selectedProducts) {
           const qty = Math.floor(Math.random() * 3) + 1;
           const lineTotal = Number(prod.sellingPrice) * qty;
@@ -453,8 +810,6 @@ export class AdminSeedService implements OnModuleInit {
         });
 
         const saved = await this.transactionRepository.save(transaction);
-
-        // Manually set createdAt for historical data
         await this.transactionRepository
           .createQueryBuilder()
           .update(Transaction)
@@ -463,7 +818,6 @@ export class AdminSeedService implements OnModuleInit {
           .execute();
       }
     }
-
     this.logger.log(`Transactions seeded for cashier ${cashier.email}.`);
   }
 
@@ -472,6 +826,7 @@ export class AdminSeedService implements OnModuleInit {
   private async ensureLedgerAndExpenses(
     mainBranchId: string,
     downtownBranchId: string,
+    suburbanBranchId: string,
     adminId: string,
   ): Promise<void> {
     const ledgerCount = await this.ledgerRepository.count();
@@ -479,20 +834,19 @@ export class AdminSeedService implements OnModuleInit {
 
     const now = new Date();
 
-    // Ledger entries
     const ledgerData = [
       {
         branchId: mainBranchId,
         entryType: LedgerEntryType.CREDIT,
         amount: 4500.0,
-        description: 'Daily sales revenue',
+        description: 'Daily sales — fresh produce & dairy',
         referenceNumber: 'LED-001',
       },
       {
         branchId: mainBranchId,
         entryType: LedgerEntryType.DEBIT,
         amount: 1200.0,
-        description: 'Inventory restock payment',
+        description: 'Supplier payment — beverages restock',
         referenceNumber: 'LED-002',
       },
       {
@@ -506,14 +860,14 @@ export class AdminSeedService implements OnModuleInit {
         branchId: mainBranchId,
         entryType: LedgerEntryType.DEBIT,
         amount: 850.0,
-        description: 'Office supplies purchase',
+        description: 'Cold-chain refrigeration service',
         referenceNumber: 'LED-004',
       },
       {
         branchId: downtownBranchId,
         entryType: LedgerEntryType.CREDIT,
         amount: 3200.0,
-        description: 'Daily sales revenue',
+        description: 'Daily sales — pantry & household',
         referenceNumber: 'LED-005',
       },
       {
@@ -537,20 +891,32 @@ export class AdminSeedService implements OnModuleInit {
         description: 'Mobile payment settlement',
         referenceNumber: 'LED-008',
       },
+      {
+        branchId: suburbanBranchId,
+        entryType: LedgerEntryType.CREDIT,
+        amount: 1750.0,
+        description: 'Daily sales — opening week',
+        referenceNumber: 'LED-009',
+      },
+      {
+        branchId: suburbanBranchId,
+        entryType: LedgerEntryType.DEBIT,
+        amount: 950.0,
+        description: 'Initial stock purchase',
+        referenceNumber: 'LED-010',
+      },
     ];
-
     for (const entry of ledgerData) {
       await this.ledgerRepository.save(this.ledgerRepository.create(entry));
     }
 
-    // Expenses
     const expenseData = [
       {
         branchId: mainBranchId,
         createdBy: adminId,
         category: 'Rent',
         amount: 2500.0,
-        description: 'Monthly office rent',
+        description: 'Monthly storefront rent',
         expenseDate: new Date(now.getFullYear(), now.getMonth(), 1),
       },
       {
@@ -558,23 +924,31 @@ export class AdminSeedService implements OnModuleInit {
         createdBy: adminId,
         category: 'Utilities',
         amount: 350.0,
-        description: 'Electricity bill',
+        description: 'Electricity bill — refrigeration heavy',
         expenseDate: new Date(now.getFullYear(), now.getMonth(), 5),
+      },
+      {
+        branchId: mainBranchId,
+        createdBy: adminId,
+        category: 'Cold Chain',
+        amount: 480.0,
+        description: 'Refrigeration unit servicing',
+        expenseDate: new Date(now.getFullYear(), now.getMonth(), 8),
       },
       {
         branchId: mainBranchId,
         createdBy: adminId,
         category: 'Supplies',
         amount: 180.0,
-        description: 'Cleaning supplies',
-        expenseDate: new Date(now.getFullYear(), now.getMonth(), 8),
+        description: 'Cleaning supplies and PPE',
+        expenseDate: new Date(now.getFullYear(), now.getMonth(), 9),
       },
       {
         branchId: downtownBranchId,
         createdBy: adminId,
         category: 'Rent',
         amount: 1800.0,
-        description: 'Monthly shop rent',
+        description: 'Monthly storefront rent',
         expenseDate: new Date(now.getFullYear(), now.getMonth(), 1),
       },
       {
@@ -582,11 +956,34 @@ export class AdminSeedService implements OnModuleInit {
         createdBy: adminId,
         category: 'Marketing',
         amount: 450.0,
-        description: 'Social media ads',
+        description: 'Weekly flyer + social media ads',
         expenseDate: new Date(now.getFullYear(), now.getMonth(), 10),
       },
+      {
+        branchId: downtownBranchId,
+        createdBy: adminId,
+        category: 'Spoilage',
+        amount: 220.0,
+        description: 'Expired dairy and bakery write-off',
+        expenseDate: new Date(now.getFullYear(), now.getMonth(), 11),
+      },
+      {
+        branchId: suburbanBranchId,
+        createdBy: adminId,
+        category: 'Rent',
+        amount: 1600.0,
+        description: 'Monthly storefront rent',
+        expenseDate: new Date(now.getFullYear(), now.getMonth(), 1),
+      },
+      {
+        branchId: suburbanBranchId,
+        createdBy: adminId,
+        category: 'Equipment',
+        amount: 980.0,
+        description: 'Walk-in freezer purchase',
+        expenseDate: new Date(now.getFullYear(), now.getMonth(), 4),
+      },
     ];
-
     for (const exp of expenseData) {
       await this.expenseRepository.save(this.expenseRepository.create(exp));
     }
@@ -601,7 +998,6 @@ export class AdminSeedService implements OnModuleInit {
     if (existingCount > 0) return;
 
     const now = new Date();
-
     const notificationData: {
       userId: string;
       title: string;
@@ -609,32 +1005,41 @@ export class AdminSeedService implements OnModuleInit {
       type: NotificationType;
       isRead: boolean;
       hoursAgo: number;
-      // users: [admin, cashier1, cashier2]
     }[] = [
-      // Admin notifications
+      // Admin
       {
         userId: users[0].id,
         title: 'Low Stock Alert',
-        message: 'Wireless Mouse stock is below threshold (5 remaining)',
+        message:
+          'Whole Milk 1L is below threshold (8 remaining at Suburban Branch)',
         type: NotificationType.LOW_STOCK,
         isRead: false,
         hoursAgo: 1,
       },
       {
         userId: users[0].id,
-        title: 'New User Created',
-        message: 'Cashier account cashier2@ledgerpro.com has been created',
-        type: NotificationType.SYSTEM,
-        isRead: true,
-        hoursAgo: 12,
-      },
-      {
-        userId: users[0].id,
         title: 'Low Stock Alert',
-        message: 'Notebook A5 stock is critically low (3 remaining)',
+        message:
+          'White Bread Loaf is critically low (3 remaining at Suburban Branch)',
         type: NotificationType.LOW_STOCK,
         isRead: false,
         hoursAgo: 3,
+      },
+      {
+        userId: users[0].id,
+        title: 'New Transfer Request',
+        message: 'Downtown Branch requested 50 unit(s) of Coca-Cola 1.5L',
+        type: NotificationType.STOCK_TRANSFER,
+        isRead: false,
+        hoursAgo: 2,
+      },
+      {
+        userId: users[0].id,
+        title: 'New User Created',
+        message: 'Cashier account cashier3@ledgerpro.com has been created',
+        type: NotificationType.SYSTEM,
+        isRead: true,
+        hoursAgo: 12,
       },
       {
         userId: users[0].id,
@@ -652,11 +1057,11 @@ export class AdminSeedService implements OnModuleInit {
         isRead: false,
         hoursAgo: 6,
       },
-      // Cashier 1 notifications
+      // Cashier 1 (Main Branch)
       {
         userId: users[1].id,
         title: 'Low Stock Alert',
-        message: 'USB-C Hub stock is below threshold (8 remaining)',
+        message: 'Eggs (12) is below threshold at Main Branch',
         type: NotificationType.LOW_STOCK,
         isRead: false,
         hoursAgo: 2,
@@ -669,7 +1074,7 @@ export class AdminSeedService implements OnModuleInit {
         isRead: false,
         hoursAgo: 5,
       },
-      // Cashier 2 notifications
+      // Cashier 2 (Downtown)
       {
         userId: users[2].id,
         title: 'Daily Report Ready',
@@ -684,15 +1089,15 @@ export class AdminSeedService implements OnModuleInit {
       const createdAt = new Date(now);
       createdAt.setHours(createdAt.getHours() - n.hoursAgo);
 
-      const notification = this.notificationRepository.create({
-        userId: n.userId,
-        title: n.title,
-        message: n.message,
-        type: n.type,
-        isRead: n.isRead,
-      });
-
-      const saved = await this.notificationRepository.save(notification);
+      const saved = await this.notificationRepository.save(
+        this.notificationRepository.create({
+          userId: n.userId,
+          title: n.title,
+          message: n.message,
+          type: n.type,
+          isRead: n.isRead,
+        }),
+      );
 
       await this.notificationRepository
         .createQueryBuilder()
@@ -701,8 +1106,140 @@ export class AdminSeedService implements OnModuleInit {
         .where('id = :id', { id: saved.id })
         .execute();
     }
-
     this.logger.log('Notifications seeded.');
+  }
+
+  // ── Stock Transfers ────────────────────────────────────
+
+  private async ensureStockTransfers(ctx: {
+    mainBranch: Branch;
+    downtownBranch: Branch;
+    suburbanBranch: Branch;
+    admin: User;
+    mainManager: User;
+    downtownManager: User;
+    suburbanManager: User;
+    products: Product[];
+  }): Promise<void> {
+    const existingCount = await this.stockTransferRepository.count();
+    if (existingCount > 0) return;
+
+    const productByBarcode = new Map(ctx.products.map((p) => [p.barcode, p]));
+    const get = (barcode: string): Product | null =>
+      productByBarcode.get(barcode) ?? null;
+
+    const cola = get('BVG-001');
+    const milk = get('DRY-001');
+    const yogurt = get('DRY-003');
+    const bread = get('BKY-001');
+    const chips = get('SNK-001');
+    if (!cola || !milk || !yogurt || !bread || !chips) {
+      this.logger.warn(
+        'Stock transfer seed skipped — required products not found',
+      );
+      return;
+    }
+
+    const now = Date.now();
+    const hoursAgo = (n: number): Date => new Date(now - n * 3600_000);
+    const daysAgo = (n: number): Date => new Date(now - n * 86400_000);
+
+    const transfers: Partial<StockTransferRequest>[] = [
+      // 1) PENDING — Downtown manager wants 50 Coca-Cola, no source yet
+      {
+        productId: cola.id,
+        destinationBranchId: ctx.downtownBranch.id,
+        sourceBranchId: null,
+        requestedQuantity: 50,
+        approvedQuantity: null,
+        status: TransferStatus.PENDING,
+        requestReason: 'Weekend rush — main aisle is nearly empty',
+        requestedByUserId: ctx.downtownManager.id,
+      },
+      // 2) APPROVED — Suburban manager requested bread, admin approved with Main as source
+      {
+        productId: bread.id,
+        destinationBranchId: ctx.suburbanBranch.id,
+        sourceBranchId: ctx.mainBranch.id,
+        requestedQuantity: 30,
+        approvedQuantity: 30,
+        status: TransferStatus.APPROVED,
+        requestReason: 'Bakery delivery delayed by supplier',
+        requestedByUserId: ctx.suburbanManager.id,
+        reviewedByUserId: ctx.admin.id,
+        reviewedAt: hoursAgo(4),
+      },
+      // 3) IN_TRANSIT — Downtown requested milk, Main shipped, awaiting receipt
+      {
+        productId: milk.id,
+        destinationBranchId: ctx.downtownBranch.id,
+        sourceBranchId: ctx.mainBranch.id,
+        requestedQuantity: 100,
+        approvedQuantity: 100,
+        status: TransferStatus.IN_TRANSIT,
+        requestReason: 'Routine top-up before weekend',
+        requestedByUserId: ctx.downtownManager.id,
+        reviewedByUserId: ctx.admin.id,
+        reviewedAt: daysAgo(1),
+        shippedByUserId: ctx.mainManager.id,
+        shippedAt: hoursAgo(2),
+      },
+      // 4) COMPLETED — Yogurt transfer Suburban → Downtown, fully completed
+      {
+        productId: yogurt.id,
+        destinationBranchId: ctx.downtownBranch.id,
+        sourceBranchId: ctx.suburbanBranch.id,
+        requestedQuantity: 20,
+        approvedQuantity: 20,
+        status: TransferStatus.COMPLETED,
+        requestReason: 'Customer special order',
+        requestedByUserId: ctx.downtownManager.id,
+        reviewedByUserId: ctx.admin.id,
+        reviewedAt: daysAgo(3),
+        shippedByUserId: ctx.suburbanManager.id,
+        shippedAt: daysAgo(2),
+        receivedByUserId: ctx.downtownManager.id,
+        receivedAt: daysAgo(1),
+      },
+      // 5) REJECTED — Suburban requested 200 chips, admin rejected (not enough surplus)
+      {
+        productId: chips.id,
+        destinationBranchId: ctx.suburbanBranch.id,
+        sourceBranchId: null,
+        requestedQuantity: 200,
+        approvedQuantity: null,
+        status: TransferStatus.REJECTED,
+        requestReason: 'Anticipating snack promotion next week',
+        rejectionReason:
+          'No other branch has enough surplus — please order from supplier directly',
+        requestedByUserId: ctx.suburbanManager.id,
+        reviewedByUserId: ctx.admin.id,
+        reviewedAt: hoursAgo(8),
+      },
+    ];
+
+    const createdAtOffsets = [
+      hoursAgo(2),
+      hoursAgo(6),
+      daysAgo(1.5),
+      daysAgo(4),
+      hoursAgo(10),
+    ];
+
+    for (let i = 0; i < transfers.length; i++) {
+      const draft = transfers[i];
+      const saved = await this.stockTransferRepository.save(
+        this.stockTransferRepository.create(draft),
+      );
+      await this.stockTransferRepository
+        .createQueryBuilder()
+        .update(StockTransferRequest)
+        .set({ createdAt: createdAtOffsets[i] })
+        .where('id = :id', { id: saved.id })
+        .execute();
+    }
+
+    this.logger.log(`${transfers.length} sample stock transfers seeded.`);
   }
 
   // ── Helpers ────────────────────────────────────────────

@@ -73,6 +73,12 @@ const NAV_ITEMS: NavItem[] = [
         icon: <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
     },
     {
+        label: 'Transfers',
+        path: FRONTEND_ROUTES.TRANSFERS,
+        roles: [UserRole.MANAGER],
+        icon: <><path d="M7 16V4M3 8l4-4 4 4" /><path d="M17 8v12M21 16l-4 4-4-4" /></>
+    },
+    {
         label: 'My Branch',
         path: FRONTEND_ROUTES.BRANCHES,
         roles: [UserRole.MANAGER],
@@ -83,6 +89,12 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.BRANCHES_HUB,
         roles: [UserRole.ADMIN],
         icon: <><path d="M3 21h18" /><path d="M5 21V7l8-4v18" /><path d="M19 21V11l-6-4" /><path d="M9 9h.01" /><path d="M9 13h.01" /><path d="M9 17h.01" /></>
+    },
+    {
+        label: 'Transfers',
+        path: FRONTEND_ROUTES.ADMIN_TRANSFERS,
+        roles: [UserRole.ADMIN],
+        icon: <><path d="M7 16V4M3 8l4-4 4 4" /><path d="M17 8v12M21 16l-4 4-4-4" /></>
     },
     {
         label: 'Notifications',
