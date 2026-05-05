@@ -20,7 +20,7 @@ import { Expense } from '@accounting/entities/expense.entity';
 
 @Controller(APP_ROUTES.ACCOUNTING.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ACCOUNTANT, UserRole.ADMIN)
+@Roles(UserRole.ADMIN)
 export class AccountingController {
   constructor(private readonly accountingService: AccountingService) {}
 

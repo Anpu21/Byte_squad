@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SuperAdminController } from '@super-admin/super-admin.controller';
-import { SuperAdminService } from '@super-admin/super-admin.service';
+import { AdminPortalController } from '@admin-portal/admin-portal.controller';
+import { AdminPortalService } from '@admin-portal/admin-portal.service';
 import { Branch } from '@branches/entities/branch.entity';
 import { User } from '@users/entities/user.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
@@ -20,7 +20,7 @@ import { Expense } from '@accounting/entities/expense.entity';
       Expense,
     ]),
   ],
-  controllers: [SuperAdminController],
-  providers: [SuperAdminService],
+  controllers: [AdminPortalController],
+  providers: [AdminPortalService],
 })
-export class SuperAdminModule {}
+export class AdminPortalModule {}

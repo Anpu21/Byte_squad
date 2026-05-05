@@ -33,16 +33,14 @@ export const FRONTEND_ROUTES = {
 
     // Branches
     BRANCHES: '/branches',
+    BRANCH_MANAGEMENT: '/branches/manage',
 
-    // Super Admin
-    SUPER_ADMIN_DASHBOARD: '/super-admin/dashboard',
-    BRANCH_MANAGEMENT: '/super-admin/branches',
-    ADMIN_MANAGEMENT: '/super-admin/admins',
-    BRANCH_COMPARISON: '/super-admin/comparison',
-    ALL_USERS: '/super-admin/users',
+    // Admin Branches Hub (overview + manage + compare in tabs)
+    BRANCHES_HUB: '/admin/branches',
 
     // Notifications
     NOTIFICATIONS: '/notifications',
+    NOTIFICATION_DETAIL: '/notifications/:id',
 } as const;
 
 export type FrontendRoute = (typeof FRONTEND_ROUTES)[keyof typeof FRONTEND_ROUTES];

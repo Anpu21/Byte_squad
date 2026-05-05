@@ -10,7 +10,7 @@ import { InventoryModule } from '@inventory/inventory.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
-import { SuperAdminModule } from '@super-admin/super-admin.module';
+import { AdminPortalModule } from '@admin-portal/admin-portal.module';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
@@ -54,7 +54,7 @@ import appConfig from '@common/config/app.config';
     PosModule,
     AccountingModule,
     NotificationsModule,
-    SuperAdminModule,
+    AdminPortalModule,
   ],
   providers: [AdminSeedService],
 })

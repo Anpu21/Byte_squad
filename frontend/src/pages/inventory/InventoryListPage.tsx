@@ -2,11 +2,32 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useInventory } from '@/hooks/useInventory';
+import { useAuth } from '@/hooks/useAuth';
 import { inventoryService } from '@/services/inventory.service';
 import type { IInventoryItem } from '@/services/inventory.service';
+import { formatCurrency } from '@/lib/utils';
+import {
+    exportData,
+    type ExportColumn,
+    type ExportFormat,
+} from '@/lib/exportUtils';
+import ExportMenu from '@/components/common/ExportMenu';
+import toast from 'react-hot-toast';
+import axios from 'axios';
+
+interface InventoryExportRow {
+    productName: string;
+    barcode: string;
+    category: string;
+    quantity: number;
+    status: string;
+    costPrice: number;
+    sellingPrice: number;
+}
 
 export default function InventoryListPage() {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const {
         items,
         categories,
@@ -26,10 +47,7 @@ export default function InventoryListPage() {
 
     const [deleteTarget, setDeleteTarget] = useState<IInventoryItem | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(amount);
-    };
+    const [isExporting, setIsExporting] = useState(false);
 
     const getStockStatus = (item: IInventoryItem) => {
         if (item.quantity === 0) return 'Out of Stock';
@@ -56,38 +74,118 @@ export default function InventoryListPage() {
         setIsDeleting(true);
         try {
             await inventoryService.deleteProduct(deleteTarget.productId);
+            toast.success('Product deleted');
             setDeleteTarget(null);
             refetch();
-        } catch {
-            // Error handling could be added here
+        } catch (err) {
+            const message =
+                axios.isAxiosError(err) && err.response?.data?.message
+                    ? String(err.response.data.message)
+                    : 'Failed to delete product';
+            toast.error(message);
         } finally {
             setIsDeleting(false);
         }
     };
 
-    const handleExport = () => {
-        const headers = ['Product Name', 'Barcode', 'Category', 'Stock', 'Status', 'Cost Price', 'Selling Price'];
-        const rows = items.map((item) => [
-            item.product.name,
-            item.product.barcode,
-            item.product.category,
-            String(item.quantity),
-            getStockStatus(item),
-            String(item.product.costPrice),
-            String(item.product.sellingPrice),
-        ]);
+    const handleExport = async (format: ExportFormat) => {
+        if (!user?.branchId) return;
+        try {
+            setIsExporting(true);
+            const result = await inventoryService.getByBranch(user.branchId, {
+                search: search || undefined,
+                category: category || undefined,
+                stockStatus: stockStatus || undefined,
+                page: 1,
+                limit: 10000,
+            });
+            const allItems = result.items ?? [];
 
-        const csv = [headers, ...rows].map((row) =>
-            row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(',')
-        ).join('\n');
+            const exportRows: InventoryExportRow[] = allItems.map((item) => ({
+                productName: item.product.name,
+                barcode: item.product.barcode,
+                category: item.product.category,
+                quantity: item.quantity,
+                status: getStockStatus(item),
+                costPrice: Number(item.product.costPrice),
+                sellingPrice: Number(item.product.sellingPrice),
+            }));
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `inventory-export-${new Date().toISOString().split('T')[0]}.csv`;
-        link.click();
-        URL.revokeObjectURL(url);
+            const columns: ExportColumn<InventoryExportRow>[] = [
+                { header: 'Product Name', key: 'productName' },
+                { header: 'Barcode', key: 'barcode' },
+                { header: 'Category', key: 'category' },
+                { header: 'Stock', key: 'quantity', align: 'right' },
+                { header: 'Status', key: 'status' },
+                {
+                    header: 'Cost Price',
+                    key: 'costPrice',
+                    align: 'right',
+                    format: 'currency',
+                },
+                {
+                    header: 'Selling Price',
+                    key: 'sellingPrice',
+                    align: 'right',
+                    format: 'currency',
+                },
+            ];
+
+            const totalProducts = allItems.length;
+            const lowStock = allItems.filter(
+                (i) => i.quantity > 0 && i.quantity <= i.lowStockThreshold,
+            ).length;
+            const outOfStock = allItems.filter((i) => i.quantity === 0).length;
+            const totalStockValue = allItems.reduce(
+                (acc, i) =>
+                    acc + Number(i.quantity) * Number(i.product.costPrice),
+                0,
+            );
+
+            const filterParts: string[] = [];
+            if (category) filterParts.push(`Category: ${category}`);
+            if (stockStatus) {
+                const labels: Record<string, string> = {
+                    in_stock: 'In Stock',
+                    low_stock: 'Low Stock',
+                    out_of_stock: 'Out of Stock',
+                };
+                filterParts.push(
+                    `Status: ${labels[stockStatus] ?? stockStatus}`,
+                );
+            }
+            if (search) filterParts.push(`Search: "${search}"`);
+            const subtitle =
+                filterParts.length > 0
+                    ? filterParts.join('  ·  ')
+                    : 'All products';
+
+            await exportData(format, exportRows, columns, {
+                title: 'Inventory Report',
+                subtitle,
+                filenameBase: 'inventory',
+                companyName: 'LedgerPro',
+                generatedBy: user
+                    ? `${user.firstName} ${user.lastName}`
+                    : undefined,
+                summary: [
+                    {
+                        label: 'Total Products',
+                        value: String(totalProducts),
+                    },
+                    { label: 'Low Stock', value: String(lowStock) },
+                    { label: 'Out of Stock', value: String(outOfStock) },
+                    {
+                        label: 'Total Stock Value',
+                        value: formatCurrency(totalStockValue),
+                    },
+                ],
+            });
+        } catch {
+            toast.error('Could not generate export — please try again');
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const limit = 10;
@@ -120,15 +218,11 @@ export default function InventoryListPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleExport}
-                        className="h-9 px-4 rounded-lg bg-transparent border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors flex items-center gap-2"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                        </svg>
-                        Export
-                    </button>
+                    <ExportMenu
+                        onExport={handleExport}
+                        disabled={total === 0}
+                        isPreparing={isExporting}
+                    />
                     <button
                         onClick={() => navigate(FRONTEND_ROUTES.INVENTORY_ADD)}
                         className="h-9 px-4 rounded-lg bg-white text-slate-900 text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all flex items-center gap-2"

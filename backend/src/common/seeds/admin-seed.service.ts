@@ -76,15 +76,6 @@ export class AdminSeedService implements OnModuleInit {
     );
 
     // 2. Users
-    await this.ensureUser({
-      email: 'superadmin@ledgerpro.com',
-      password: 'Super@123',
-      firstName: 'Super',
-      lastName: 'Admin',
-      role: UserRole.SUPER_ADMIN,
-      branchId: mainBranch.id,
-    });
-
     const admin = await this.ensureUser({
       email: defaults.adminEmail,
       password: defaults.adminPassword,
@@ -110,15 +101,6 @@ export class AdminSeedService implements OnModuleInit {
       lastName: 'Connor',
       role: UserRole.MANAGER,
       branchId: downtownBranch.id,
-    });
-
-    const accountant = await this.ensureUser({
-      email: 'accountant@ledgerpro.com',
-      password: 'Account@123',
-      firstName: 'Mike',
-      lastName: 'Ross',
-      role: UserRole.ACCOUNTANT,
-      branchId: mainBranch.id,
     });
 
     const cashier1 = await this.ensureUser({
@@ -154,11 +136,11 @@ export class AdminSeedService implements OnModuleInit {
     await this.ensureLedgerAndExpenses(
       mainBranch.id,
       downtownBranch.id,
-      accountant.id,
+      admin.id,
     );
 
     // 7. Notifications
-    await this.ensureNotifications([admin, cashier1, cashier2, accountant]);
+    await this.ensureNotifications([admin, cashier1, cashier2]);
 
     this.logger.log('Database seed completed.');
   }
@@ -490,7 +472,7 @@ export class AdminSeedService implements OnModuleInit {
   private async ensureLedgerAndExpenses(
     mainBranchId: string,
     downtownBranchId: string,
-    accountantId: string,
+    adminId: string,
   ): Promise<void> {
     const ledgerCount = await this.ledgerRepository.count();
     if (ledgerCount > 0) return;
@@ -565,7 +547,7 @@ export class AdminSeedService implements OnModuleInit {
     const expenseData = [
       {
         branchId: mainBranchId,
-        createdBy: accountantId,
+        createdBy: adminId,
         category: 'Rent',
         amount: 2500.0,
         description: 'Monthly office rent',
@@ -573,7 +555,7 @@ export class AdminSeedService implements OnModuleInit {
       },
       {
         branchId: mainBranchId,
-        createdBy: accountantId,
+        createdBy: adminId,
         category: 'Utilities',
         amount: 350.0,
         description: 'Electricity bill',
@@ -581,7 +563,7 @@ export class AdminSeedService implements OnModuleInit {
       },
       {
         branchId: mainBranchId,
-        createdBy: accountantId,
+        createdBy: adminId,
         category: 'Supplies',
         amount: 180.0,
         description: 'Cleaning supplies',
@@ -589,7 +571,7 @@ export class AdminSeedService implements OnModuleInit {
       },
       {
         branchId: downtownBranchId,
-        createdBy: accountantId,
+        createdBy: adminId,
         category: 'Rent',
         amount: 1800.0,
         description: 'Monthly shop rent',
@@ -597,7 +579,7 @@ export class AdminSeedService implements OnModuleInit {
       },
       {
         branchId: downtownBranchId,
-        createdBy: accountantId,
+        createdBy: adminId,
         category: 'Marketing',
         amount: 450.0,
         description: 'Social media ads',
@@ -627,7 +609,7 @@ export class AdminSeedService implements OnModuleInit {
       type: NotificationType;
       isRead: boolean;
       hoursAgo: number;
-      // users: [admin, cashier1, cashier2, accountant]
+      // users: [admin, cashier1, cashier2]
     }[] = [
       // Admin notifications
       {
@@ -695,23 +677,6 @@ export class AdminSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         isRead: false,
         hoursAgo: 8,
-      },
-      // Accountant notifications
-      {
-        userId: users[3].id,
-        title: 'Expense Approved',
-        message: 'Monthly office rent expense has been approved',
-        type: NotificationType.SYSTEM,
-        isRead: true,
-        hoursAgo: 48,
-      },
-      {
-        userId: users[3].id,
-        title: 'Low Stock Alert',
-        message: 'Pen Pack (10) stock is below threshold (7 remaining)',
-        type: NotificationType.LOW_STOCK,
-        isRead: false,
-        hoursAgo: 4,
       },
     ];
 

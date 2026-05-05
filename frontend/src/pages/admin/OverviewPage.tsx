@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { superAdminService } from '@/services/super-admin.service';
+import { adminService } from '@/services/admin.service';
 import type { IOverviewResponse, IOverviewAlert } from '@/types';
 
 function formatCurrency(amount: number) {
@@ -22,10 +22,14 @@ function alertTone(type: IOverviewAlert['type']): string {
     }
 }
 
-export default function SuperAdminOverviewPage() {
+interface OverviewPageProps {
+    embedded?: boolean;
+}
+
+export default function OverviewPage({ embedded = false }: OverviewPageProps = {}) {
     const { data, isLoading } = useQuery<IOverviewResponse>({
-        queryKey: ['super-admin-overview'],
-        queryFn: superAdminService.getOverview,
+        queryKey: ['admin-overview'],
+        queryFn: adminService.getOverview,
         refetchInterval: 30000,
     });
 
@@ -64,17 +68,18 @@ export default function SuperAdminOverviewPage() {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">
-                        Super Admin Dashboard
-                    </h1>
-                    <p className="text-sm text-slate-400 mt-1">
-                        All branches at a glance
-                    </p>
+            {!embedded && (
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 className="text-2xl font-bold text-white tracking-tight">
+                            System Overview
+                        </h1>
+                        <p className="text-sm text-slate-400 mt-1">
+                            All branches at a glance
+                        </p>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

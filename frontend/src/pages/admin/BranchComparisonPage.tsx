@@ -10,7 +10,7 @@ import {
     CartesianGrid,
     Legend,
 } from 'recharts';
-import { superAdminService } from '@/services/super-admin.service';
+import { adminService } from '@/services/admin.service';
 import { userService } from '@/services/user.service';
 import type { IBranchComparisonEntry } from '@/types';
 
@@ -30,7 +30,13 @@ function toInputDate(d: Date): string {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-export default function BranchComparisonPage() {
+interface BranchComparisonPageProps {
+    embedded?: boolean;
+}
+
+export default function BranchComparisonPage({
+    embedded = false,
+}: BranchComparisonPageProps = {}) {
     const { data: branches = [] } = useQuery({
         queryKey: ['branches'],
         queryFn: userService.getBranches,
@@ -65,8 +71,8 @@ export default function BranchComparisonPage() {
     };
 
     const { data: comparison, isLoading, isFetching } = useQuery({
-        queryKey: ['super-admin-comparison', submitted],
-        queryFn: () => superAdminService.compareBranches(submitted!),
+        queryKey: ['admin-comparison', submitted],
+        queryFn: () => adminService.compareBranches(submitted!),
         enabled: submitted !== null,
     });
 
@@ -81,14 +87,16 @@ export default function BranchComparisonPage() {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8">
-            <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">
-                    Branch Comparison
-                </h1>
-                <p className="text-sm text-slate-400 mt-1">
-                    Side-by-side analytics for any branches over a date range
-                </p>
-            </div>
+            {!embedded && (
+                <div>
+                    <h1 className="text-2xl font-bold text-white tracking-tight">
+                        Branch Comparison
+                    </h1>
+                    <p className="text-sm text-slate-400 mt-1">
+                        Side-by-side analytics for any branches over a date range
+                    </p>
+                </div>
+            )}
 
             {/* Filters */}
             <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 space-y-5">
