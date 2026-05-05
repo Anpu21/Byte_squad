@@ -3,8 +3,11 @@ FROM node:22-alpine AS development
 
 WORKDIR /app
 
-# Enable pnpm via corepack (ships with Node 22)
-RUN corepack enable
+# Install pnpm globally — pinned to the version in package.json's packageManager field.
+# Using `npm install -g` instead of corepack because npm's HTTP retry behavior is
+# more resilient on flaky networks (corepack downloads the pnpm tarball directly
+# on first use, which fails hard when the container can't reach registry.npmjs.org).
+RUN npm install -g pnpm@10.33.2
 
 # Install dependencies first (Docker layer caching)
 COPY package.json pnpm-lock.yaml .npmrc ./
@@ -25,7 +28,7 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
-RUN corepack enable
+RUN npm install -g pnpm@10.33.2
 
 COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
