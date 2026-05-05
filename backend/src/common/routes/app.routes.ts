@@ -86,6 +86,20 @@ export const APP_ROUTES = {
     COMPARISON: 'comparison',
     USERS: 'users',
   },
+
+  // Stock Transfers (inter-branch stock movement)
+  STOCK_TRANSFERS: {
+    BASE: `${API_PREFIX}/stock-transfers`,
+    MY_REQUESTS: 'my-requests',
+    INCOMING: 'incoming',
+    BY_ID: ':id',
+    SOURCE_OPTIONS: ':id/source-options',
+    APPROVE: ':id/approve',
+    REJECT: ':id/reject',
+    CANCEL: ':id/cancel',
+    SHIP: ':id/ship',
+    RECEIVE: ':id/receive',
+  },
 } as const;
 
 export type APP_ROUTES_TYPE = keyof typeof APP_ROUTES;

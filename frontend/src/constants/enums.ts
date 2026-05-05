@@ -47,4 +47,14 @@ export enum NotificationType {
     LOW_STOCK = 'low_stock',
     SYSTEM = 'system',
     ALERT = 'alert',
+    STOCK_TRANSFER = 'stock_transfer',
+}
+
+export enum TransferStatus {
+    PENDING = 'pending',
+    APPROVED = 'approved',
+    REJECTED = 'rejected',
+    IN_TRANSIT = 'in_transit',
+    COMPLETED = 'completed',
+    CANCELLED = 'cancelled',
 }

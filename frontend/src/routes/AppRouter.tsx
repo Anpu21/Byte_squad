@@ -25,6 +25,10 @@ import NotificationDetailPage from '@/pages/notifications/NotificationDetailPage
 import BranchesHubPage from '@/pages/admin/BranchesHubPage';
 import BranchManagementPage from '@/pages/branches/BranchManagementPage';
 import BranchPerformancePage from '@/pages/branches/BranchPerformancePage';
+import TransferRequestsPage from '@/pages/transfers/TransferRequestsPage';
+import NewTransferRequestPage from '@/pages/transfers/NewTransferRequestPage';
+import TransferDetailPage from '@/pages/transfers/TransferDetailPage';
+import AdminTransfersPage from '@/pages/admin/AdminTransfersPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function SmartRedirect() {
@@ -260,6 +264,54 @@ export default function AppRouter() {
                         <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                             <DashboardLayout>
                                 <BranchesHubPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Stock Transfers — manager + admin */}
+                <Route
+                    path={FRONTEND_ROUTES.TRANSFERS}
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={[UserRole.ADMIN, UserRole.MANAGER]}
+                        >
+                            <DashboardLayout>
+                                <TransferRequestsPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.TRANSFERS_NEW}
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={[UserRole.ADMIN, UserRole.MANAGER]}
+                        >
+                            <DashboardLayout>
+                                <NewTransferRequestPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.TRANSFER_DETAIL}
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={[UserRole.ADMIN, UserRole.MANAGER]}
+                        >
+                            <DashboardLayout>
+                                <TransferDetailPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.ADMIN_TRANSFERS}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                            <DashboardLayout>
+                                <AdminTransfersPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

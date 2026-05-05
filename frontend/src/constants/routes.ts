@@ -41,6 +41,12 @@ export const FRONTEND_ROUTES = {
     // Notifications
     NOTIFICATIONS: '/notifications',
     NOTIFICATION_DETAIL: '/notifications/:id',
+
+    // Stock Transfers
+    TRANSFERS: '/transfers',
+    TRANSFERS_NEW: '/transfers/new',
+    TRANSFER_DETAIL: '/transfers/:id',
+    ADMIN_TRANSFERS: '/admin/transfers',
 } as const;
 
 export type FrontendRoute = (typeof FRONTEND_ROUTES)[keyof typeof FRONTEND_ROUTES];
