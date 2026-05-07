@@ -10,6 +10,8 @@ import LoginPage from '@/pages/auth/LoginPage';
 import SignupPage from '@/pages/auth/SignupPage';
 import OtpVerificationPage from '@/pages/auth/OtpVerificationPage';
 import ChangePasswordPage from '@/pages/auth/ChangePasswordPage';
+import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/auth/ResetPasswordPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import CashierDashboardPage from '@/pages/dashboard/CashierDashboardPage';
 import InventoryListPage from '@/pages/inventory/InventoryListPage';
@@ -101,6 +103,26 @@ export default function AppRouter() {
                         <PublicRoute>
                             <AuthLayout>
                                 <OtpVerificationPage />
+                            </AuthLayout>
+                        </PublicRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.FORGOT_PASSWORD}
+                    element={
+                        <PublicRoute>
+                            <AuthLayout>
+                                <ForgotPasswordPage />
+                            </AuthLayout>
+                        </PublicRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.RESET_PASSWORD}
+                    element={
+                        <PublicRoute>
+                            <AuthLayout>
+                                <ResetPasswordPage />
                             </AuthLayout>
                         </PublicRoute>
                     }

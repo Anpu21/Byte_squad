@@ -9,6 +9,8 @@ export const FRONTEND_ROUTES = {
     SIGNUP: '/signup',
     OTP_VERIFICATION: '/verify-otp',
     CHANGE_PASSWORD: '/change-password',
+    FORGOT_PASSWORD: '/forgot-password',
+    RESET_PASSWORD: '/reset-password',
 
     // Dashboard
     DASHBOARD: '/dashboard',

@@ -49,7 +49,8 @@ export default function CartDrawer() {
             <div
                 onClick={close}
                 aria-hidden={!isOpen}
-                className={`fixed inset-0 bg-black/50 z-30 transition-opacity ${
+                style={{ background: 'var(--overlay)' }}
+                className={`fixed inset-0 z-30 transition-opacity ${
                     isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
             />

@@ -63,7 +63,7 @@ export default function BranchPerformancePage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-[60vh]">
-                <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
             </div>
         );
     }

@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { isValidEmail } from '@/lib/utils';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import Logo from '@/components/ui/Logo';
 
 export default function LoginPage() {
@@ -67,16 +68,6 @@ export default function LoginPage() {
         }
     };
 
-    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEmail(e.target.value);
-        if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-    };
-
-    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setPassword(e.target.value);
-        if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
-    };
-
     return (
         <>
             <Logo size={36} />
@@ -88,36 +79,22 @@ export default function LoginPage() {
             </p>
 
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-                <div>
-                    <label
-                        htmlFor="login-email"
-                        className="block text-xs font-medium text-text-2 mb-1.5"
-                    >
-                        Email address
-                    </label>
-                    <div
-                        className={`flex items-center gap-2 h-[42px] px-3 bg-surface border rounded-md transition-colors ${
-                            errors.email
-                                ? 'border-danger'
-                                : 'border-border-strong focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/20'
-                        }`}
-                    >
-                        <Mail size={15} className="text-text-3 flex-shrink-0" />
-                        <input
-                            id="login-email"
-                            type="email"
-                            value={email}
-                            onChange={handleEmailChange}
-                            placeholder="you@company.com"
-                            className="flex-1 bg-transparent outline-none text-[13px] text-text-1 placeholder:text-text-3"
-                        />
-                    </div>
-                    {errors.email && (
-                        <p className="mt-1.5 text-xs text-danger font-medium">
-                            {errors.email}
-                        </p>
-                    )}
-                </div>
+                <Input
+                    id="login-email"
+                    label="Email address"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errors.email) {
+                            setErrors((prev) => ({ ...prev, email: undefined }));
+                        }
+                    }}
+                    placeholder="you@company.com"
+                    error={errors.email}
+                    leftIcon={<Mail size={15} />}
+                    sizeVariant="lg"
+                />
 
                 <div>
                     <div className="flex items-center justify-between mb-1.5">
@@ -129,41 +106,37 @@ export default function LoginPage() {
                         </label>
                         <button
                             type="button"
+                            onClick={() => navigate(FRONTEND_ROUTES.FORGOT_PASSWORD)}
                             className="text-xs font-medium text-primary hover:opacity-80 transition-opacity"
                         >
                             Forgot?
                         </button>
                     </div>
-                    <div
-                        className={`flex items-center gap-2 h-[42px] px-3 bg-surface border rounded-md transition-colors ${
-                            errors.password
-                                ? 'border-danger'
-                                : 'border-border-strong focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/20'
-                        }`}
-                    >
-                        <Lock size={15} className="text-text-3 flex-shrink-0" />
-                        <input
-                            id="login-password"
-                            type={showPassword ? 'text' : 'password'}
-                            value={password}
-                            onChange={handlePasswordChange}
-                            placeholder="Enter your password"
-                            className="flex-1 bg-transparent outline-none text-[13px] text-text-1 placeholder:text-text-3"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="text-text-3 hover:text-text-1 transition-colors"
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                    </div>
-                    {errors.password && (
-                        <p className="mt-1.5 text-xs text-danger font-medium">
-                            {errors.password}
-                        </p>
-                    )}
+                    <Input
+                        id="login-password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => {
+                            setPassword(e.target.value);
+                            if (errors.password) {
+                                setErrors((prev) => ({ ...prev, password: undefined }));
+                            }
+                        }}
+                        placeholder="Enter your password"
+                        error={errors.password}
+                        leftIcon={<Lock size={15} />}
+                        rightSlot={
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="text-text-3 hover:text-text-1 transition-colors"
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                            </button>
+                        }
+                        sizeVariant="lg"
+                    />
                 </div>
 
                 <label className="flex items-center gap-2 text-xs text-text-2 cursor-pointer">

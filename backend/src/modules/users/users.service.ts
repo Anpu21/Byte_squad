@@ -130,6 +130,7 @@ export class UsersService {
       passwordHash,
       isFirstLogin: false,
       isVerified: true,
+      otpCode: null,
       otpExpiresAt: null,
     });
   }

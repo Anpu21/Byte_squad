@@ -13,6 +13,8 @@ export const APP_ROUTES = {
     VERIFY_OTP: 'verify-otp',
     RESEND_OTP: 'resend-otp',
     CHANGE_PASSWORD: 'change-password',
+    FORGOT_PASSWORD: 'forgot-password',
+    RESET_PASSWORD: 'reset-password',
     REFRESH: 'refresh',
   },
 

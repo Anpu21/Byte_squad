@@ -1,7 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-    BarChart3,
     Bell,
     Boxes,
     Building2,
@@ -15,7 +14,6 @@ import {
     ScanLine,
     ScrollText,
     Search,
-    Settings,
     ShoppingCart,
     Truck,
     UserCog,
@@ -204,12 +202,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const { user, logout } = useAuth();
     const { unreadCount } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
     const location = useLocation();
     const navigate = useNavigate();
     const crumbs = useBreadcrumbs();
+    const isExpanded = sidebarOpen || mobileNavOpen;
 
     const filteredNavItems = NAV_ITEMS.filter((item) =>
         user ? item.roles.includes(user.role as UserRole) : false,
@@ -237,6 +237,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         return () => document.removeEventListener('mousedown', handler);
     }, [profileOpen]);
 
+    useEffect(() => {
+        setMobileNavOpen(false);
+    }, [location.pathname]);
+
     const handleLogout = () => {
         setProfileOpen(false);
         logout();
@@ -244,14 +248,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     return (
         <div className="min-h-screen flex bg-canvas text-text-1 font-sans">
+            {mobileNavOpen && (
+                <div
+                    className="md:hidden fixed inset-0 z-30"
+                    style={{ background: 'var(--overlay)' }}
+                    onClick={() => setMobileNavOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
             <aside
                 className={cn(
-                    'transition-[width] duration-200 bg-surface border-r border-border flex flex-col flex-shrink-0',
-                    sidebarOpen ? 'w-[240px]' : 'w-[68px]',
+                    'bg-surface border-r border-border flex flex-col flex-shrink-0 z-40',
+                    'fixed inset-y-0 left-0 w-[280px] transition-transform duration-200',
+                    mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
+                    'md:relative md:translate-x-0 md:transition-[width] md:w-auto',
+                    sidebarOpen ? 'md:w-[240px]' : 'md:w-[68px]',
                 )}
             >
                 <div className="h-16 flex items-center px-4 border-b border-border">
-                    {sidebarOpen ? (
+                    {isExpanded ? (
                         <Logo size={28} />
                     ) : (
                         <Logo size={28} label={false} />
@@ -264,7 +279,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         if (items.length === 0) return null;
                         return (
                             <div key={group} className="mb-2">
-                                {sidebarOpen && (
+                                {isExpanded && (
                                     <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-text-3 px-3 pt-3 pb-1.5">
                                         {group}
                                     </div>
@@ -276,13 +291,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                             <Link
                                                 key={`${item.path}-${item.label}`}
                                                 to={item.path}
-                                                title={!sidebarOpen ? item.label : undefined}
+                                                title={!isExpanded ? item.label : undefined}
                                                 className={cn(
                                                     'relative flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors',
                                                     isActive
                                                         ? 'bg-primary-soft text-primary-soft-text'
                                                         : 'text-text-2 hover:bg-surface-2 hover:text-text-1',
-                                                    !sidebarOpen && 'justify-center px-0',
+                                                    !isExpanded && 'justify-center px-0',
                                                 )}
                                             >
                                                 {isActive && (
@@ -292,7 +307,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                                     />
                                                 )}
                                                 <span className="flex-shrink-0">{item.icon}</span>
-                                                {sidebarOpen && (
+                                                {isExpanded && (
                                                     <>
                                                         <span className="flex-1 truncate">{item.label}</span>
                                                         {item.path === FRONTEND_ROUTES.NOTIFICATIONS &&
@@ -321,14 +336,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 location.pathname === FRONTEND_ROUTES.PROFILE
                                     ? 'bg-surface-2'
                                     : 'hover:bg-surface-2',
-                                !sidebarOpen && 'justify-center',
+                                !isExpanded && 'justify-center',
                             )}
                         >
                             <Avatar
                                 name={`${user.firstName} ${user.lastName}`}
                                 size={32}
                             />
-                            {sidebarOpen && (
+                            {isExpanded && (
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[13px] font-semibold text-text-1 truncate">
                                         {user.firstName} {user.lastName}
@@ -338,7 +353,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                     </p>
                                 </div>
                             )}
-                            {sidebarOpen && (
+                            {isExpanded && (
                                 <ChevronRight size={14} className="text-text-3" />
                             )}
                         </Link>
@@ -349,7 +364,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex-1 flex flex-col min-w-0">
                 <header className="h-14 border-b border-border bg-surface flex items-center px-4 gap-3 sticky top-0 z-20">
                     <button
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        onClick={() => {
+                            if (window.matchMedia('(max-width: 767px)').matches) {
+                                setMobileNavOpen((m) => !m);
+                            } else {
+                                setSidebarOpen((s) => !s);
+                            }
+                        }}
                         className="p-1.5 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors flex-shrink-0"
                         aria-label="Toggle sidebar"
                     >
@@ -431,18 +452,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                             className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors"
                                         >
                                             <UserCog size={14} /> Profile
-                                        </button>
-                                        <button
-                                            onClick={() => setProfileOpen(false)}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors"
-                                        >
-                                            <Settings size={14} /> Settings
-                                        </button>
-                                        <button
-                                            onClick={() => setProfileOpen(false)}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors"
-                                        >
-                                            <BarChart3 size={14} /> Activity
                                         </button>
                                         <div className="h-px bg-border" />
                                         <button
