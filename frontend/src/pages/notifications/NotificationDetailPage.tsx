@@ -33,17 +33,17 @@ function MetadataView({ metadata }: { metadata: Record<string, unknown> }) {
     if (entries.length === 0) return null;
 
     return (
-        <div className="mt-8 pt-6 border-t border-white/5">
-            <h2 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-3">
+        <div className="mt-8 pt-6 border-t border-border">
+            <h2 className="text-[11px] font-semibold text-text-3 uppercase tracking-wider mb-3">
                 Additional Details
             </h2>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                 {entries.map(([key, value]) => (
                     <div key={key} className="min-w-0">
-                        <dt className="text-[11px] text-slate-500 font-medium capitalize">
+                        <dt className="text-[11px] text-text-3 font-medium capitalize">
                             {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')}
                         </dt>
-                        <dd className="text-sm text-slate-300 mt-0.5 break-words">
+                        <dd className="text-sm text-text-1 mt-0.5 break-words">
                             {typeof value === 'object' && value !== null
                                 ? JSON.stringify(value, null, 2)
                                 : String(value)}
@@ -105,7 +105,7 @@ export default function NotificationDetailPage() {
             {/* Back link */}
             <button
                 onClick={() => navigate(FRONTEND_ROUTES.NOTIFICATIONS)}
-                className="flex items-center gap-2 text-[13px] font-medium text-slate-400 hover:text-white mb-6 transition-colors"
+                className="flex items-center gap-2 text-[13px] font-medium text-text-2 hover:text-text-1 mb-6 transition-colors"
             >
                 <svg
                     width="16"
@@ -124,25 +124,25 @@ export default function NotificationDetailPage() {
             </button>
 
             {state.status === 'loading' && (
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-10">
+                <div className="bg-surface border border-border rounded-md p-10">
                     <div className="flex items-center gap-4 animate-pulse">
-                        <div className="w-12 h-12 rounded-xl bg-white/5" />
+                        <div className="w-12 h-12 rounded-xl bg-surface-2" />
                         <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-white/5 rounded w-2/3" />
-                            <div className="h-3 bg-white/5 rounded w-1/3" />
+                            <div className="h-4 bg-surface-2 rounded w-2/3" />
+                            <div className="h-3 bg-surface-2 rounded w-1/3" />
                         </div>
                     </div>
                     <div className="mt-8 space-y-3 animate-pulse">
-                        <div className="h-3 bg-white/5 rounded w-full" />
-                        <div className="h-3 bg-white/5 rounded w-11/12" />
-                        <div className="h-3 bg-white/5 rounded w-9/12" />
+                        <div className="h-3 bg-surface-2 rounded w-full" />
+                        <div className="h-3 bg-surface-2 rounded w-11/12" />
+                        <div className="h-3 bg-surface-2 rounded w-9/12" />
                     </div>
                 </div>
             )}
 
             {state.status === 'not_found' && (
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-10 text-center">
-                    <div className="w-12 h-12 mx-auto rounded-xl bg-white/5 flex items-center justify-center mb-4">
+                <div className="bg-surface border border-border rounded-md p-10 text-center">
+                    <div className="w-12 h-12 mx-auto rounded-xl bg-surface-2 flex items-center justify-center mb-4">
                         <svg
                             width="22"
                             height="22"
@@ -152,17 +152,17 @@ export default function NotificationDetailPage() {
                             strokeWidth="1.5"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            className="text-slate-500"
+                            className="text-text-3"
                         >
                             <circle cx="12" cy="12" r="10" />
                             <line x1="12" y1="8" x2="12" y2="12" />
                             <line x1="12" y1="16" x2="12.01" y2="16" />
                         </svg>
                     </div>
-                    <p className="text-sm font-semibold text-white">
+                    <p className="text-sm font-semibold text-text-1">
                         Notification not found
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-text-3 mt-1">
                         It may have been removed or you don&apos;t have access
                         to it.
                     </p>
@@ -170,13 +170,13 @@ export default function NotificationDetailPage() {
             )}
 
             {state.status === 'error' && (
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-10 text-center">
-                    <p className="text-sm font-semibold text-white">
+                <div className="bg-surface border border-border rounded-md p-10 text-center">
+                    <p className="text-sm font-semibold text-text-1">
                         {state.message}
                     </p>
                     <button
                         onClick={() => navigate(0)}
-                        className="mt-4 text-[13px] font-medium text-slate-400 hover:text-white px-4 py-2 rounded-lg hover:bg-white/5 transition-colors"
+                        className="mt-4 text-[13px] font-medium text-text-2 hover:text-text-1 px-4 py-2 rounded-lg hover:bg-surface-2 transition-colors"
                     >
                         Try again
                     </button>
@@ -184,8 +184,8 @@ export default function NotificationDetailPage() {
             )}
 
             {state.status === 'ready' && (
-                <article className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
-                    <div className="px-8 pt-8 pb-6 border-b border-white/5">
+                <article className="bg-surface border border-border rounded-md overflow-hidden">
+                    <div className="px-8 pt-8 pb-6 border-b border-border">
                         <div className="flex items-start gap-4">
                             {typeIcon(state.notification.type)}
                             <div className="flex-1 min-w-0">
@@ -198,19 +198,19 @@ export default function NotificationDetailPage() {
                                         {typeLabel(state.notification.type)}
                                     </span>
                                     {state.notification.isRead ? (
-                                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-md border bg-white/[0.03] text-slate-500 border-white/5">
+                                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-md border bg-surface-2 text-text-3 border-border">
                                             Read
                                         </span>
                                     ) : (
-                                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-md border bg-white/10 text-white border-white/10">
+                                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-md border bg-primary-soft text-text-1 border-border">
                                             New
                                         </span>
                                     )}
                                 </div>
-                                <h1 className="text-xl font-bold text-white tracking-tight leading-snug">
+                                <h1 className="text-xl font-bold text-text-1 tracking-tight leading-snug">
                                     {state.notification.title}
                                 </h1>
-                                <p className="text-[12px] text-slate-500 mt-2">
+                                <p className="text-[12px] text-text-3 mt-2">
                                     {formatFullDate(
                                         state.notification.createdAt,
                                     )}
@@ -220,10 +220,10 @@ export default function NotificationDetailPage() {
                     </div>
 
                     <div className="px-8 py-8">
-                        <h2 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                        <h2 className="text-[11px] font-semibold text-text-3 uppercase tracking-wider mb-3">
                             Message
                         </h2>
-                        <p className="text-[15px] text-slate-200 leading-relaxed whitespace-pre-wrap break-words">
+                        <p className="text-[15px] text-text-1 leading-relaxed whitespace-pre-wrap break-words">
                             {state.notification.message}
                         </p>
 

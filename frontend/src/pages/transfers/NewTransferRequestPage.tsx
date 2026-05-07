@@ -105,7 +105,7 @@ export default function NewTransferRequestPage() {
             <div className="mb-6">
                 <button
                     onClick={() => navigate(FRONTEND_ROUTES.TRANSFERS)}
-                    className="text-xs text-slate-500 hover:text-white transition-colors mb-3 flex items-center gap-1"
+                    className="text-xs text-text-3 hover:text-text-1 transition-colors mb-3 flex items-center gap-1"
                 >
                     <svg
                         width="14"
@@ -121,20 +121,20 @@ export default function NewTransferRequestPage() {
                     </svg>
                     Back to transfers
                 </button>
-                <h1 className="text-2xl font-bold text-white tracking-tight">
+                <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                     New transfer request
                 </h1>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-text-3 mt-1">
                     Tell admin what your branch needs from another branch.
                 </p>
             </div>
 
             <form
                 onSubmit={handleSubmit}
-                className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl p-6 space-y-6"
+                className="bg-surface border border-border rounded-md shadow-2xl p-6 space-y-6"
             >
                 <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-text-3 mb-2">
                         Product
                     </label>
                     <input
@@ -142,15 +142,15 @@ export default function NewTransferRequestPage() {
                         placeholder="Search by name or barcode…"
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
-                        className="w-full h-11 px-4 bg-[#0a0a0a] border border-white/10 rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600"
+                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3"
                     />
-                    <div className="mt-3 max-h-60 overflow-y-auto bg-[#0a0a0a] border border-white/10 rounded-xl divide-y divide-white/5">
+                    <div className="mt-3 max-h-60 overflow-y-auto bg-canvas border border-border rounded-xl divide-y divide-white/5">
                         {productsLoading ? (
-                            <div className="p-4 text-sm text-slate-500">
+                            <div className="p-4 text-sm text-text-3">
                                 Loading products…
                             </div>
                         ) : filteredProducts.length === 0 ? (
-                            <div className="p-4 text-sm text-slate-500">
+                            <div className="p-4 text-sm text-text-3">
                                 No products match your search.
                             </div>
                         ) : (
@@ -165,20 +165,20 @@ export default function NewTransferRequestPage() {
                                         }
                                         className={`w-full text-left px-4 py-3 transition-colors ${
                                             isActive
-                                                ? 'bg-white/10'
-                                                : 'hover:bg-white/[0.03]'
+                                                ? 'bg-primary-soft'
+                                                : 'hover:bg-surface-2'
                                         }`}
                                     >
                                         <div className="flex items-center justify-between gap-3">
                                             <div>
-                                                <p className="text-sm font-medium text-slate-200">
+                                                <p className="text-sm font-medium text-text-1">
                                                     {p.name}
                                                 </p>
-                                                <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                                <p className="text-[11px] text-text-3 font-mono mt-0.5">
                                                     {p.barcode}
                                                 </p>
                                             </div>
-                                            <span className="text-[11px] text-slate-500">
+                                            <span className="text-[11px] text-text-3">
                                                 {p.category}
                                             </span>
                                         </div>
@@ -188,22 +188,22 @@ export default function NewTransferRequestPage() {
                         )}
                     </div>
                     {selectedProduct && (
-                        <p className="text-xs text-slate-400 mt-2">
+                        <p className="text-xs text-text-2 mt-2">
                             Selected:{' '}
-                            <span className="text-white font-medium">
+                            <span className="text-text-1 font-medium">
                                 {selectedProduct.name}
                             </span>
                         </p>
                     )}
                     {errors.productId && (
-                        <p className="text-xs text-red-400 mt-1">
+                        <p className="text-xs text-danger mt-1">
                             {errors.productId}
                         </p>
                     )}
                 </div>
 
                 <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-text-3 mb-2">
                         Quantity needed
                     </label>
                     <input
@@ -211,22 +211,22 @@ export default function NewTransferRequestPage() {
                         min={1}
                         value={requestedQuantity}
                         onChange={(e) => setRequestedQuantity(e.target.value)}
-                        className={`w-full h-11 px-4 bg-[#0a0a0a] border rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 ${
+                        className={`w-full h-11 px-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 ${
                             errors.requestedQuantity
                                 ? 'border-red-500/50'
-                                : 'border-white/10'
+                                : 'border-border'
                         }`}
                         placeholder="e.g. 50"
                     />
                     {errors.requestedQuantity && (
-                        <p className="text-xs text-red-400 mt-1">
+                        <p className="text-xs text-danger mt-1">
                             {errors.requestedQuantity}
                         </p>
                     )}
                 </div>
 
                 <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-text-3 mb-2">
                         Reason (optional)
                     </label>
                     <textarea
@@ -234,27 +234,27 @@ export default function NewTransferRequestPage() {
                         onChange={(e) => setRequestReason(e.target.value)}
                         rows={3}
                         maxLength={500}
-                        className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 resize-none"
+                        className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 resize-none"
                         placeholder="Why does your branch need this transfer?"
                     />
-                    <p className="text-[11px] text-slate-600 mt-1">
+                    <p className="text-[11px] text-text-3 mt-1">
                         {requestReason.length} / 500
                     </p>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/5">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
                     <button
                         type="button"
                         onClick={() => navigate(FRONTEND_ROUTES.TRANSFERS)}
                         disabled={isSubmitting}
-                        className="h-10 px-5 rounded-xl border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
+                        className="h-10 px-5 rounded-xl border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors disabled:opacity-50"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="h-10 px-5 rounded-xl bg-white text-slate-900 text-sm font-bold hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+                        className="h-10 px-5 rounded-xl bg-primary text-text-inv text-sm font-bold hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
                     >
                         {isSubmitting ? 'Submitting…' : 'Submit request'}
                     </button>
