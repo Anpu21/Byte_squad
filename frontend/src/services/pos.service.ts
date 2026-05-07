@@ -1,5 +1,11 @@
 import api from './api';
-import type { IApiResponse, ICashierDashboard, IAdminDashboard, ITransaction } from '@/types';
+import type {
+    IApiResponse,
+    ICashierDashboard,
+    IAdminDashboard,
+    ITransaction,
+    ICashierTransactionsSummary,
+} from '@/types';
 
 export interface ICreateTransactionPayload {
     type: 'sale' | 'return' | 'void';
@@ -19,6 +25,16 @@ export interface ICreateTransactionPayload {
 export const posService = {
     getCashierDashboard: async (): Promise<ICashierDashboard> => {
         const response = await api.get<IApiResponse<ICashierDashboard>>('/pos/my-dashboard');
+        return response.data.data;
+    },
+
+    getMyTransactions: async (): Promise<ICashierTransactionsSummary> => {
+        const response = await api.get<IApiResponse<ICashierTransactionsSummary>>('/pos/my-transactions');
+        return response.data.data;
+    },
+
+    getAllTransactions: async (): Promise<ICashierTransactionsSummary> => {
+        const response = await api.get<IApiResponse<ICashierTransactionsSummary>>('/pos/all-transactions');
         return response.data.data;
     },
 

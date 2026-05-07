@@ -22,9 +22,9 @@ export interface Actor {
   branchId: string;
 }
 
-const STAFF_ROLES: UserRole[] = [
+const ASSIGNABLE_ROLES: UserRole[] = [
+  UserRole.ADMIN,
   UserRole.MANAGER,
-  UserRole.ACCOUNTANT,
   UserRole.CASHIER,
 ];
 
@@ -40,10 +40,6 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto, actor: Actor): Promise<User> {
-    // Admins always create within their own branch — ignore any client override
-    if (actor.role === UserRole.ADMIN) {
-      createUserDto.branchId = actor.branchId;
-    }
     this.assertCanCreate(actor, createUserDto);
 
     // Check if email already exists
@@ -104,9 +100,7 @@ export class UsersService {
 
   async findAll(actor: Actor): Promise<User[]> {
     const where =
-      actor.role === UserRole.SUPER_ADMIN
-        ? {}
-        : { branchId: actor.branchId };
+      actor.role === UserRole.ADMIN ? {} : { branchId: actor.branchId };
     const users = await this.userRepository.find({
       where,
       relations: ['branch'],
@@ -142,6 +136,43 @@ export class UsersService {
 
   async touchLastLogin(id: string): Promise<void> {
     await this.userRepository.update(id, { lastLoginAt: new Date() });
+  }
+
+  async createCustomerAccount(data: {
+    email: string;
+    passwordHash: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    otpCode: string;
+    otpExpiresAt: Date;
+  }): Promise<User> {
+    const user = this.userRepository.create({
+      email: data.email,
+      passwordHash: data.passwordHash,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      role: UserRole.CUSTOMER,
+      branchId: null,
+      isFirstLogin: false,
+      isVerified: false,
+      otpCode: data.otpCode,
+      otpExpiresAt: data.otpExpiresAt,
+    });
+    return this.userRepository.save(user);
+  }
+
+  async setOtp(id: string, otpCode: string, otpExpiresAt: Date): Promise<void> {
+    await this.userRepository.update(id, { otpCode, otpExpiresAt });
+  }
+
+  async markVerified(id: string): Promise<void> {
+    await this.userRepository.update(id, {
+      isVerified: true,
+      otpCode: null,
+      otpExpiresAt: null,
+    });
   }
 
   async updateProfile(
@@ -192,7 +223,7 @@ export class UsersService {
     }
     if (
       updateUserDto.branchId !== undefined &&
-      actor.role !== UserRole.SUPER_ADMIN &&
+      actor.role !== UserRole.ADMIN &&
       updateUserDto.branchId !== actor.branchId
     ) {
       throw new ForbiddenException(
@@ -252,52 +283,32 @@ export class UsersService {
 
   private assertCanCreate(actor: Actor, dto: CreateUserDto): void {
     this.assertRoleAssignable(actor, dto.role);
-    if (
-      actor.role === UserRole.ADMIN &&
-      dto.branchId !== actor.branchId
-    ) {
-      throw new ForbiddenException(
-        'Admins can only create users within their own branch',
-      );
+    if (actor.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Not allowed to create users');
     }
   }
 
   private assertCanManage(actor: Actor, target: User): void {
-    if (actor.role === UserRole.SUPER_ADMIN) return;
     if (actor.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Not allowed to manage users');
     }
-    if (target.branchId !== actor.branchId) {
+    // Admin is cross-branch — no branch check.
+    if (target.id === actor.id) {
       throw new ForbiddenException(
-        'Admins can only manage users within their own branch',
+        'You cannot manage your own account through this endpoint',
       );
-    }
-    if (
-      target.role === UserRole.ADMIN ||
-      target.role === UserRole.SUPER_ADMIN
-    ) {
-      throw new ForbiddenException('Admins cannot manage admin accounts');
     }
   }
 
   private assertRoleAssignable(actor: Actor, role: UserRole): void {
-    if (actor.role === UserRole.SUPER_ADMIN) {
-      if (role === UserRole.SUPER_ADMIN) {
-        throw new ForbiddenException(
-          'SUPER_ADMIN accounts cannot be created via this endpoint',
-        );
-      }
-      return;
+    if (actor.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Not allowed to create users');
     }
-    if (actor.role === UserRole.ADMIN) {
-      if (!STAFF_ROLES.includes(role)) {
-        throw new ForbiddenException(
-          'Admins can only create manager, accountant, or cashier accounts',
-        );
-      }
-      return;
+    if (!ASSIGNABLE_ROLES.includes(role)) {
+      throw new ForbiddenException(
+        'Admins can only create admin, manager, or cashier accounts',
+      );
     }
-    throw new ForbiddenException('Not allowed to create users');
   }
 
   private stripPassword(user: User): User {

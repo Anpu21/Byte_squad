@@ -2,35 +2,24 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/user.service';
 import { UserRole } from '@/constants/enums';
-import { useAuth } from '@/hooks/useAuth';
 import type { IUser, IBranch, IUserCreatePayload } from '@/types';
 import toast from 'react-hot-toast';
 
 function CreateUserModal({
     branches,
-    currentUserRole,
-    currentUserBranchId,
     onClose,
     onCreated,
 }: {
     branches: IBranch[];
-    currentUserRole: UserRole;
-    currentUserBranchId: string;
     onClose: () => void;
     onCreated: () => void;
 }) {
-    // Admins can only create non-admin staff within their own branch.
-    const isAdmin = currentUserRole === UserRole.ADMIN;
-    const defaultBranchId = isAdmin
-        ? currentUserBranchId
-        : branches[0]?.id || '';
-
     const [form, setForm] = useState<IUserCreatePayload>({
         email: '',
         firstName: '',
         lastName: '',
         role: UserRole.CASHIER,
-        branchId: defaultBranchId,
+        branchId: branches[0]?.id || '',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -114,11 +103,8 @@ function CreateUserModal({
                                 className="w-full h-9 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg px-3 outline-none focus:border-white/30 cursor-pointer"
                             >
                                 <option value={UserRole.CASHIER}>Cashier</option>
-                                <option value={UserRole.ACCOUNTANT}>Accountant</option>
                                 <option value={UserRole.MANAGER}>Manager</option>
-                                {!isAdmin && (
-                                    <option value={UserRole.ADMIN}>Admin</option>
-                                )}
+                                <option value={UserRole.ADMIN}>Admin</option>
                             </select>
                         </div>
                         <div>
@@ -126,8 +112,7 @@ function CreateUserModal({
                             <select
                                 value={form.branchId}
                                 onChange={(e) => setForm({ ...form, branchId: e.target.value })}
-                                disabled={isAdmin}
-                                className="w-full h-9 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg px-3 outline-none focus:border-white/30 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="w-full h-9 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg px-3 outline-none focus:border-white/30 cursor-pointer"
                             >
                                 {branches.map((branch) => (
                                     <option key={branch.id} value={branch.id}>{branch.name}</option>
@@ -166,7 +151,6 @@ function CreateUserModal({
 
 export default function UserManagementPage() {
     const queryClient = useQueryClient();
-    const { user: currentUser } = useAuth();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -197,6 +181,12 @@ export default function UserManagementPage() {
         onError: () => toast.error('Failed to resend credentials'),
     });
 
+    const resetPasswordMutation = useMutation({
+        mutationFn: userService.resetPassword,
+        onSuccess: () => toast.success('Password reset — new credentials sent via email'),
+        onError: () => toast.error('Failed to reset password'),
+    });
+
     // Filter users
     const filteredUsers = users.filter((user: IUser) => {
         const matchesSearch =
@@ -217,7 +207,6 @@ export default function UserManagementPage() {
         }
         const labels: Record<string, string> = {
             [UserRole.MANAGER]: 'Manager',
-            [UserRole.ACCOUNTANT]: 'Accountant',
             [UserRole.CASHIER]: 'Cashier',
         };
         return <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-transparent text-slate-300 border border-white/20">{labels[role] || role}</span>;
@@ -294,7 +283,6 @@ export default function UserManagementPage() {
                             <option value="all">All Roles</option>
                             <option value={UserRole.ADMIN}>Admin</option>
                             <option value={UserRole.MANAGER}>Manager</option>
-                            <option value={UserRole.ACCOUNTANT}>Accountant</option>
                             <option value={UserRole.CASHIER}>Cashier</option>
                         </select>
                         <select
@@ -384,6 +372,17 @@ export default function UserManagementPage() {
                                                         )}
                                                         <button
                                                             onClick={() => {
+                                                                if (confirm(`Reset password for ${user.firstName} ${user.lastName}? A new temporary password will be emailed and they'll need to change it on next login.`)) {
+                                                                    resetPasswordMutation.mutate(user.id);
+                                                                }
+                                                                setOpenMenuId(null);
+                                                            }}
+                                                            className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                                                        >
+                                                            Reset Password
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
                                                                 if (confirm(`Delete ${user.firstName} ${user.lastName}?`)) {
                                                                     deleteMutation.mutate(user.id);
                                                                 }
@@ -411,11 +410,9 @@ export default function UserManagementPage() {
             </div>
 
             {/* Create User Modal */}
-            {showCreateModal && branches.length > 0 && currentUser && (
+            {showCreateModal && branches.length > 0 && (
                 <CreateUserModal
                     branches={branches}
-                    currentUserRole={currentUser.role as UserRole}
-                    currentUserBranchId={currentUser.branchId}
                     onClose={() => setShowCreateModal(false)}
                     onCreated={() => queryClient.invalidateQueries({ queryKey: ['users'] })}
                 />

@@ -1,21 +1,31 @@
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   UnauthorizedException,
   ForbiddenException,
+  NotFoundException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { UsersService } from '@users/users.service';
 import { LoginDto } from '@auth/dto/login.dto';
+import { SignupDto } from '@auth/dto/signup.dto';
+import { VerifyOtpDto } from '@auth/dto/verify-otp.dto';
+import { ResendOtpDto } from '@auth/dto/resend-otp.dto';
 import { ChangePasswordDto } from '@auth/dto/change-password.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
+import { EmailService } from '@/modules/email/email.service';
+
+const OTP_EXPIRES_IN_MINUTES = 10;
 
 interface JwtPayload {
   sub: string;
   email: string;
   role: UserRole;
-  branchId: string;
+  branchId: string | null;
 }
 
 export interface AuthResult {
@@ -26,7 +36,7 @@ export interface AuthResult {
     firstName: string;
     lastName: string;
     role: UserRole;
-    branchId: string;
+    branchId: string | null;
     isFirstLogin: boolean;
     isVerified: boolean;
   };
@@ -39,7 +49,101 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
   ) {}
+
+  async signup(dto: SignupDto): Promise<{ userId: string }> {
+    const existing = await this.usersService.findByEmail(
+      dto.email.toLowerCase(),
+    );
+    if (existing) {
+      throw new ConflictException('An account with this email already exists');
+    }
+
+    const passwordHash = await this.hashPassword(dto.password);
+    const otpCode = this.generateOtp();
+    const otpExpiresAt = new Date(
+      Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
+    );
+
+    const saved = await this.usersService.createCustomerAccount({
+      email: dto.email.toLowerCase(),
+      passwordHash,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      phone: dto.phone ?? null,
+      otpCode,
+      otpExpiresAt,
+    });
+    this.logger.log(`Customer signup: ${saved.email}`);
+
+    this.emailService
+      .sendOtpEmail(
+        saved.email,
+        saved.firstName,
+        otpCode,
+        OTP_EXPIRES_IN_MINUTES,
+      )
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(
+          `Failed to send OTP email to ${saved.email}: ${message}`,
+        );
+      });
+
+    return { userId: saved.id };
+  }
+
+  async verifyOtp(dto: VerifyOtpDto): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(dto.email.toLowerCase());
+    if (!user) {
+      throw new NotFoundException('Account not found');
+    }
+    if (user.isVerified) {
+      return { message: 'Account already verified' };
+    }
+    if (!user.otpCode || !user.otpExpiresAt) {
+      throw new BadRequestException('No verification code pending');
+    }
+    if (new Date() > user.otpExpiresAt) {
+      throw new BadRequestException('Verification code has expired');
+    }
+    if (user.otpCode !== dto.otpCode) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    await this.usersService.markVerified(user.id);
+    return { message: 'Email verified' };
+  }
+
+  async resendOtp(dto: ResendOtpDto): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(dto.email.toLowerCase());
+    if (!user) {
+      throw new NotFoundException('Account not found');
+    }
+    if (user.isVerified) {
+      throw new BadRequestException('Account already verified');
+    }
+
+    const otpCode = this.generateOtp();
+    const otpExpiresAt = new Date(
+      Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
+    );
+    await this.usersService.setOtp(user.id, otpCode, otpExpiresAt);
+
+    await this.emailService.sendOtpEmail(
+      user.email,
+      user.firstName,
+      otpCode,
+      OTP_EXPIRES_IN_MINUTES,
+    );
+
+    return { message: 'Verification code sent' };
+  }
+
+  private generateOtp(): string {
+    return crypto.randomInt(100000, 1000000).toString();
+  }
 
   async login(loginDto: LoginDto): Promise<AuthResult> {
     try {
@@ -69,7 +173,14 @@ export class AuthService {
         throw new UnauthorizedException('Invalid credentials');
       }
 
-      // Check if temp password has expired (only for first-login users)
+      // Customers must verify their email before logging in
+      if (user.role === UserRole.CUSTOMER && !user.isVerified) {
+        throw new ForbiddenException(
+          'Please verify your email before logging in',
+        );
+      }
+
+      // Check if temp password has expired (only for staff first-login users)
       if (user.isFirstLogin && user.otpExpiresAt) {
         if (new Date() > user.otpExpiresAt) {
           this.logger.warn(

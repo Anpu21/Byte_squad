@@ -112,7 +112,12 @@ export default function NotificationDropdown() {
                                     onClick={() => {
                                         if (!n.isRead) markAsRead(n.id);
                                         setOpen(false);
-                                        navigate(FRONTEND_ROUTES.NOTIFICATIONS);
+                                        navigate(
+                                            FRONTEND_ROUTES.NOTIFICATION_DETAIL.replace(
+                                                ':id',
+                                                n.id,
+                                            ),
+                                        );
                                     }}
                                     className={`flex items-start gap-3 px-5 py-3.5 w-full text-left border-b border-white/5 hover:bg-white/[0.03] transition-colors ${
                                         n.isRead ? 'opacity-50' : ''

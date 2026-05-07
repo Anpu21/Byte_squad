@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useScanDetection } from '@/hooks/useScanDetection';
 import UniversalScanner from '@/components/Scanner/UniversalScanner';
 import { inventoryService } from '@/services/inventory.service';
 import { posService } from '@/services/pos.service';
+import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { IProduct } from '@/services/inventory.service';
 import type { ICreateTransactionPayload } from '@/services/pos.service';
 
@@ -317,6 +319,19 @@ export default function PosPage() {
                             <circle cx="12" cy="13" r="4" />
                         </svg>
                     </button>
+                    <Link
+                        to={FRONTEND_ROUTES.SCAN_REQUEST}
+                        className="h-14 px-4 flex-shrink-0 bg-[#111111] border border-white/10 rounded-2xl flex items-center gap-2 text-slate-300 hover:text-white hover:border-white/20 hover:bg-white/[0.04] transition-all shadow-xl text-sm font-semibold"
+                        title="Scan a customer pickup QR"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                            <path d="M14 14h3v3M21 14v.01M14 21v.01M17 21h.01M21 17h.01M21 21h.01" />
+                        </svg>
+                        Pickup
+                    </Link>
                 </div>
 
                 {/* Product Grid */}

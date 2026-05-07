@@ -6,6 +6,7 @@ import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
+import { TransactionType } from '@common/enums/transaction.enum';
 
 export interface DailyBreakdown {
   date: string;
@@ -57,6 +58,29 @@ export interface CashierDashboardData {
   };
   dailyBreakdown: DailyBreakdown[];
   recentTransactions: Transaction[];
+}
+
+export interface CashierPeriodStats {
+  totalSales: number;
+  transactionCount: number;
+}
+
+export interface CashierTransactionRow {
+  id: string;
+  transactionNumber: string;
+  total: number;
+  itemCount: number;
+  cashierName: string;
+  branchName?: string | null;
+  createdAt: Date;
+}
+
+export interface CashierTransactionsSummary {
+  scope: 'cashier' | 'branch' | 'system';
+  today: CashierPeriodStats;
+  month: CashierPeriodStats;
+  year: CashierPeriodStats;
+  recentTransactions: CashierTransactionRow[];
 }
 
 @Injectable()
@@ -363,6 +387,125 @@ export class PosService {
       dailyBreakdown,
       topProducts,
       recentTransactions,
+    };
+  }
+
+  async getTransactionsSummary(
+    branchId: string,
+    cashierId: string | null,
+  ): Promise<CashierTransactionsSummary> {
+    const now = new Date();
+
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+
+    const periodAgg = (start: Date) => {
+      const qb = this.transactionRepository
+        .createQueryBuilder('txn')
+        .select('COALESCE(SUM(txn.total), 0)', 'total')
+        .addSelect('COUNT(txn.id)', 'count')
+        .where('txn.branch_id = :branchId', { branchId })
+        .andWhere('txn.type = :type', { type: TransactionType.SALE })
+        .andWhere('txn.created_at >= :start', { start });
+
+      if (cashierId) {
+        qb.andWhere('txn.cashier_id = :cashierId', { cashierId });
+      }
+
+      return qb.getRawOne<{ total: string; count: string }>();
+    };
+
+    const recentWhere = cashierId ? { cashierId, branchId } : { branchId };
+
+    const [todayAgg, monthAgg, yearAgg, recentTxns] = await Promise.all([
+      periodAgg(todayStart),
+      periodAgg(monthStart),
+      periodAgg(yearStart),
+      this.transactionRepository.find({
+        where: recentWhere,
+        relations: ['items', 'cashier'],
+        order: { createdAt: 'DESC' },
+      }),
+    ]);
+
+    const toStats = (agg: { total: string; count: string } | undefined) => ({
+      totalSales: Math.round(Number(agg?.total ?? 0) * 100) / 100,
+      transactionCount: Number(agg?.count ?? 0),
+    });
+
+    return {
+      scope: cashierId ? 'cashier' : 'branch',
+      today: toStats(todayAgg),
+      month: toStats(monthAgg),
+      year: toStats(yearAgg),
+      recentTransactions: recentTxns.map((t) => ({
+        id: t.id,
+        transactionNumber: t.transactionNumber,
+        total: Number(t.total),
+        itemCount: t.items?.length ?? 0,
+        cashierName: t.cashier
+          ? `${t.cashier.firstName} ${t.cashier.lastName}`
+          : 'Unknown',
+        createdAt: t.createdAt,
+      })),
+    };
+  }
+
+  async getAllTransactionsSummary(): Promise<CashierTransactionsSummary> {
+    const now = new Date();
+
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+
+    const periodAgg = (start: Date) =>
+      this.transactionRepository
+        .createQueryBuilder('txn')
+        .select('COALESCE(SUM(txn.total), 0)', 'total')
+        .addSelect('COUNT(txn.id)', 'count')
+        .where('txn.type = :type', { type: TransactionType.SALE })
+        .andWhere('txn.created_at >= :start', { start })
+        .getRawOne<{ total: string; count: string }>();
+
+    const [todayAgg, monthAgg, yearAgg, recentTxns] = await Promise.all([
+      periodAgg(todayStart),
+      periodAgg(monthStart),
+      periodAgg(yearStart),
+      this.transactionRepository.find({
+        relations: ['items', 'cashier', 'branch'],
+        order: { createdAt: 'DESC' },
+        take: 200,
+      }),
+    ]);
+
+    const toStats = (agg: { total: string; count: string } | undefined) => ({
+      totalSales: Math.round(Number(agg?.total ?? 0) * 100) / 100,
+      transactionCount: Number(agg?.count ?? 0),
+    });
+
+    return {
+      scope: 'system',
+      today: toStats(todayAgg),
+      month: toStats(monthAgg),
+      year: toStats(yearAgg),
+      recentTransactions: recentTxns.map((t) => ({
+        id: t.id,
+        transactionNumber: t.transactionNumber,
+        total: Number(t.total),
+        itemCount: t.items?.length ?? 0,
+        cashierName: t.cashier
+          ? `${t.cashier.firstName} ${t.cashier.lastName}`
+          : 'Unknown',
+        branchName: t.branch?.name ?? null,
+        createdAt: t.createdAt,
+      })),
     };
   }
 }

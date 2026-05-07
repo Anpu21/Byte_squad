@@ -10,7 +10,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([LedgerEntry, Expense, Transaction, TransactionItem]),
+    TypeOrmModule.forFeature([
+      LedgerEntry,
+      Expense,
+      Transaction,
+      TransactionItem,
+    ]),
   ],
   controllers: [AccountingController],
   providers: [AccountingService],

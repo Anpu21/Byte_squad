@@ -11,11 +11,12 @@ import { Transaction } from '@pos/entities/transaction.entity';
 import type {
   CashierDashboardData,
   AdminDashboardData,
+  CashierTransactionsSummary,
 } from '@pos/pos.service';
 
 @Controller(APP_ROUTES.POS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER)
+@Roles(UserRole.CASHIER)
 export class PosController {
   constructor(private readonly posService: PosService) {}
 
@@ -31,6 +32,23 @@ export class PosController {
     @CurrentUser('branchId') branchId: string,
   ): Promise<CashierDashboardData> {
     return this.posService.getCashierDashboard(cashierId, branchId);
+  }
+
+  @Get(APP_ROUTES.POS.MY_TRANSACTIONS)
+  @Roles(UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER)
+  getMyTransactions(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('branchId') branchId: string,
+    @CurrentUser('role') role: UserRole,
+  ): Promise<CashierTransactionsSummary> {
+    const cashierId = role === UserRole.CASHIER ? userId : null;
+    return this.posService.getTransactionsSummary(branchId, cashierId);
+  }
+
+  @Get(APP_ROUTES.POS.ALL_TRANSACTIONS)
+  @Roles(UserRole.ADMIN)
+  getAllTransactions(): Promise<CashierTransactionsSummary> {
+    return this.posService.getAllTransactionsSummary();
   }
 
   @Post(APP_ROUTES.POS.TRANSACTIONS)

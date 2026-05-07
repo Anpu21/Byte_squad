@@ -1,12 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationType } from '@/constants/enums';
+import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { INotification } from '@/types/index';
 import {
     timeAgo,
     typeIcon,
-    typeLabel,
-    typeBadgeColor,
     groupByDate,
 } from '@/components/notifications/notificationUtils';
 
@@ -43,22 +43,11 @@ function getFilterCount(
 
 function NotificationItem({
     notification,
-    isExpanded,
-    onToggle,
-    onMarkAsRead,
+    onOpen,
 }: {
     notification: INotification;
-    isExpanded: boolean;
-    onToggle: () => void;
-    onMarkAsRead: (id: string) => void;
+    onOpen: (notification: INotification) => void;
 }) {
-    const handleClick = () => {
-        if (!notification.isRead) {
-            onMarkAsRead(notification.id);
-        }
-        onToggle();
-    };
-
     return (
         <div
             className={`border-b border-white/5 transition-colors ${
@@ -66,7 +55,7 @@ function NotificationItem({
             }`}
         >
             <button
-                onClick={handleClick}
+                onClick={() => onOpen(notification)}
                 className="flex items-start gap-4 px-6 py-4 w-full text-left hover:bg-white/[0.03] transition-colors"
             >
                 {typeIcon(notification.type)}
@@ -104,42 +93,11 @@ function NotificationItem({
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className={`text-slate-600 flex-shrink-0 mt-1 transition-transform duration-200 ${
-                        isExpanded ? 'rotate-180' : ''
-                    }`}
+                    className="text-slate-600 flex-shrink-0 mt-1"
                 >
-                    <polyline points="6 9 12 15 18 9" />
+                    <polyline points="9 18 15 12 9 6" />
                 </svg>
             </button>
-
-            {isExpanded && (
-                <div className="px-6 pb-5 pl-[4.75rem] animate-in fade-in slide-in-from-top-1 duration-200">
-                    <p className="text-[13px] text-slate-400 leading-relaxed">
-                        {notification.message}
-                    </p>
-                    <div className="flex items-center gap-3 mt-3">
-                        <span
-                            className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${typeBadgeColor(
-                                notification.type,
-                            )}`}
-                        >
-                            {typeLabel(notification.type)}
-                        </span>
-                        <span className="text-[11px] text-slate-600">
-                            {new Date(notification.createdAt).toLocaleString(
-                                'en-US',
-                                {
-                                    weekday: 'short',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                },
-                            )}
-                        </span>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
@@ -195,11 +153,20 @@ function EmptyState({ filter }: { filter: FilterTab }) {
 export default function NotificationsPage() {
     const { notifications, unreadCount, markAsRead, markAllAsRead } =
         useNotifications();
+    const navigate = useNavigate();
     const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
-    const [expandedId, setExpandedId] = useState<string | null>(null);
 
     const filtered = getFilteredNotifications(notifications, activeFilter);
     const groups = groupByDate(filtered);
+
+    const openDetail = (notification: INotification) => {
+        if (!notification.isRead) {
+            markAsRead(notification.id);
+        }
+        navigate(
+            FRONTEND_ROUTES.NOTIFICATION_DETAIL.replace(':id', notification.id),
+        );
+    };
 
     return (
         <div className="animate-in fade-in duration-300">
@@ -234,10 +201,7 @@ export default function NotificationsPage() {
                     return (
                         <button
                             key={tab.key}
-                            onClick={() => {
-                                setActiveFilter(tab.key);
-                                setExpandedId(null);
-                            }}
+                            onClick={() => setActiveFilter(tab.key)}
                             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
                                 isActive
                                     ? 'bg-white text-slate-900 shadow-sm'
@@ -275,15 +239,7 @@ export default function NotificationsPage() {
                                 <NotificationItem
                                     key={n.id}
                                     notification={n}
-                                    isExpanded={expandedId === n.id}
-                                    onToggle={() =>
-                                        setExpandedId(
-                                            expandedId === n.id
-                                                ? null
-                                                : n.id,
-                                        )
-                                    }
-                                    onMarkAsRead={markAsRead}
+                                    onOpen={openDetail}
                                 />
                             ))}
                         </div>

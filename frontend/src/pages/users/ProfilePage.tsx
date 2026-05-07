@@ -99,7 +99,6 @@ export default function ProfilePage() {
         const labels: Record<string, string> = {
             [UserRole.ADMIN]: 'Administrator',
             [UserRole.MANAGER]: 'Manager',
-            [UserRole.ACCOUNTANT]: 'Accountant',
             [UserRole.CASHIER]: 'Cashier',
         };
         if (role === UserRole.ADMIN) {

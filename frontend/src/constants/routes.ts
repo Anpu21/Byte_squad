@@ -6,6 +6,7 @@
 export const FRONTEND_ROUTES = {
     // Auth
     LOGIN: '/login',
+    SIGNUP: '/signup',
     OTP_VERIFICATION: '/verify-otp',
     CHANGE_PASSWORD: '/change-password',
 
@@ -20,6 +21,7 @@ export const FRONTEND_ROUTES = {
 
     // POS
     POS: '/pos',
+    TRANSACTIONS: '/transactions',
 
     // Accounting
     LEDGER: '/accounting/ledger',
@@ -32,16 +34,36 @@ export const FRONTEND_ROUTES = {
 
     // Branches
     BRANCHES: '/branches',
+    BRANCH_MANAGEMENT: '/branches/manage',
 
-    // Super Admin
-    SUPER_ADMIN_DASHBOARD: '/super-admin/dashboard',
-    BRANCH_MANAGEMENT: '/super-admin/branches',
-    ADMIN_MANAGEMENT: '/super-admin/admins',
-    BRANCH_COMPARISON: '/super-admin/comparison',
-    ALL_USERS: '/super-admin/users',
+    // Admin-only Branches CRUD
+    BRANCHES_HUB: '/admin/branches',
+
+    // Admin-only side-by-side branch comparison
+    BRANCH_COMPARE: '/admin/compare',
 
     // Notifications
     NOTIFICATIONS: '/notifications',
+    NOTIFICATION_DETAIL: '/notifications/:id',
+
+    // Stock Transfers
+    TRANSFERS: '/transfers',
+    TRANSFERS_NEW: '/transfers/new',
+    TRANSFER_HISTORY: '/transfers/history',
+    TRANSFER_DETAIL: '/transfers/:id',
+    ADMIN_TRANSFERS: '/admin/transfers',
+
+    // Customer storefront (login required)
+    SHOP: '/shop',
+    SHOP_PRODUCT_DETAIL: '/shop/products/:id',
+    SHOP_CART: '/shop/cart',
+    SHOP_CHECKOUT: '/shop/checkout',
+    SHOP_REQUEST_CONFIRMATION: '/shop/requests/:code',
+    SHOP_MY_REQUESTS: '/shop/my-requests',
+
+    // Cashier scan + shared customer requests view
+    SCAN_REQUEST: '/pos/scan-request',
+    CUSTOMER_REQUESTS: '/customer-requests',
 } as const;
 
 export type FrontendRoute = (typeof FRONTEND_ROUTES)[keyof typeof FRONTEND_ROUTES];

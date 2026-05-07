@@ -66,7 +66,7 @@ export class UsersController {
   // ── Admin CRUD endpoints ─────────────────────────────────
 
   @Post()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   create(
     @Body() createUserDto: CreateUserDto,
     @CurrentUser() actor: Actor,
@@ -75,19 +75,19 @@ export class UsersController {
   }
 
   @Get()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   findAll(@CurrentUser() actor: Actor): Promise<User[]> {
     return this.usersService.findAll(actor);
   }
 
   @Get(APP_ROUTES.USERS.BY_ID)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   findOne(@Param('id') id: string): Promise<User | null> {
     return this.usersService.findById(id);
   }
 
   @Patch(APP_ROUTES.USERS.BY_ID)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -97,16 +97,13 @@ export class UsersController {
   }
 
   @Delete(APP_ROUTES.USERS.BY_ID)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
-  remove(
-    @Param('id') id: string,
-    @CurrentUser() actor: Actor,
-  ): Promise<void> {
+  @Roles(UserRole.ADMIN)
+  remove(@Param('id') id: string, @CurrentUser() actor: Actor): Promise<void> {
     return this.usersService.remove(id, actor);
   }
 
   @Post(APP_ROUTES.USERS.RESEND_CREDENTIALS)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   resendCredentials(
     @Param('id') id: string,
     @CurrentUser() actor: Actor,
@@ -115,7 +112,7 @@ export class UsersController {
   }
 
   @Post(APP_ROUTES.USERS.RESET_PASSWORD)
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   resetPassword(
     @Param('id') id: string,
     @CurrentUser() actor: Actor,
