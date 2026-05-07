@@ -43,6 +43,18 @@ const NAV_ITEMS: NavItem[] = [
         icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M9 13h6" /><path d="M9 17h6" /></>
     },
     {
+        label: 'Scan Pickup',
+        path: FRONTEND_ROUTES.SCAN_REQUEST,
+        roles: [UserRole.CASHIER],
+        icon: <><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3M21 14v.01M14 21v.01M17 21h.01M21 17h.01M21 21h.01" /></>
+    },
+    {
+        label: 'Customer Requests',
+        path: FRONTEND_ROUTES.CUSTOMER_REQUESTS,
+        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
+        icon: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></>
+    },
+    {
         label: 'Inventory',
         path: FRONTEND_ROUTES.INVENTORY,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
@@ -73,6 +85,18 @@ const NAV_ITEMS: NavItem[] = [
         icon: <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
     },
     {
+        label: 'Transfers',
+        path: FRONTEND_ROUTES.TRANSFERS,
+        roles: [UserRole.MANAGER],
+        icon: <><path d="M7 16V4M3 8l4-4 4 4" /><path d="M17 8v12M21 16l-4 4-4-4" /></>
+    },
+    {
+        label: 'Transfer History',
+        path: FRONTEND_ROUTES.TRANSFER_HISTORY,
+        roles: [UserRole.MANAGER],
+        icon: <><path d="M3 12a9 9 0 1 0 9-9 9.74 9.74 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></>
+    },
+    {
         label: 'My Branch',
         path: FRONTEND_ROUTES.BRANCHES,
         roles: [UserRole.MANAGER],
@@ -83,6 +107,24 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.BRANCHES_HUB,
         roles: [UserRole.ADMIN],
         icon: <><path d="M3 21h18" /><path d="M5 21V7l8-4v18" /><path d="M19 21V11l-6-4" /><path d="M9 9h.01" /><path d="M9 13h.01" /><path d="M9 17h.01" /></>
+    },
+    {
+        label: 'Compare',
+        path: FRONTEND_ROUTES.BRANCH_COMPARE,
+        roles: [UserRole.ADMIN],
+        icon: <><path d="M3 3v18h18" /><path d="M8 17V9" /><path d="M13 17V5" /><path d="M18 17v-4" /></>
+    },
+    {
+        label: 'Transfers',
+        path: FRONTEND_ROUTES.ADMIN_TRANSFERS,
+        roles: [UserRole.ADMIN],
+        icon: <><path d="M7 16V4M3 8l4-4 4 4" /><path d="M17 8v12M21 16l-4 4-4-4" /></>
+    },
+    {
+        label: 'Transfer History',
+        path: FRONTEND_ROUTES.TRANSFER_HISTORY,
+        roles: [UserRole.ADMIN],
+        icon: <><path d="M3 12a9 9 0 1 0 9-9 9.74 9.74 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></>
     },
     {
         label: 'Notifications',

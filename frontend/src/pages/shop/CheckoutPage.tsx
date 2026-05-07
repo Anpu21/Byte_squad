@@ -1,0 +1,195 @@
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import type { RootState } from '@/store';
+import {
+    clearShopCart,
+    selectCartTotal,
+} from '@/store/slices/shopCartSlice';
+import { shopProductsService } from '@/services/shop-products.service';
+import { customerRequestsService } from '@/services/customer-requests.service';
+import { FRONTEND_ROUTES } from '@/constants/routes';
+
+function formatCurrency(amount: number) {
+    return new Intl.NumberFormat('en-LK', {
+        style: 'currency',
+        currency: 'LKR',
+    }).format(amount);
+}
+
+export default function CheckoutPage() {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const items = useSelector((state: RootState) => state.shopCart.items);
+    const branchId = useSelector(
+        (state: RootState) => state.shopCart.branchId,
+    );
+    const total = selectCartTotal(items);
+
+    const { data: branches = [] } = useQuery({
+        queryKey: ['shop-branches'],
+        queryFn: shopProductsService.listBranches,
+    });
+
+    const branch = useMemo(
+        () => branches.find((b) => b.id === branchId) ?? null,
+        [branches, branchId],
+    );
+
+    const [note, setNote] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (items.length > 0 && !branchId) {
+            toast.error('Pick a branch before checking out');
+            navigate(FRONTEND_ROUTES.SHOP);
+        }
+    }, [items.length, branchId, navigate]);
+
+    if (items.length === 0) {
+        return (
+            <div className="text-center py-24 text-slate-500 text-sm">
+                Your cart is empty.
+            </div>
+        );
+    }
+
+    const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!branchId) {
+            setError('Please choose a branch');
+            return;
+        }
+        setError(null);
+        setSubmitting(true);
+        try {
+            const request = await customerRequestsService.create({
+                branchId,
+                items: items.map((i) => ({
+                    productId: i.productId,
+                    quantity: i.quantity,
+                })),
+                note: note.trim() || undefined,
+            });
+            toast.success('Pickup request created');
+            dispatch(clearShopCart());
+            navigate(`/shop/requests/${request.requestCode}`);
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                const data = err.response?.data as
+                    | { message?: string | string[] }
+                    | undefined;
+                const msg = Array.isArray(data?.message)
+                    ? data.message.join(', ')
+                    : data?.message;
+                setError(msg ?? 'Could not submit request');
+            } else {
+                setError('Could not submit request');
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="max-w-2xl mx-auto">
+            <h1 className="text-2xl font-bold text-white tracking-tight mb-2">
+                Checkout
+            </h1>
+            <p className="text-sm text-slate-400 mb-8">
+                We&apos;ll generate a QR for the counter — pay when you pick up.
+            </p>
+
+            <form onSubmit={onSubmit} className="space-y-5">
+                <div>
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs uppercase tracking-widest text-slate-500">
+                            Pickup branch
+                        </label>
+                        <Link
+                            to={FRONTEND_ROUTES.SHOP}
+                            className="text-[11px] text-slate-400 hover:text-white underline-offset-4 hover:underline"
+                        >
+                            Change branch
+                        </Link>
+                    </div>
+                    <div className="bg-[#111] border border-white/10 rounded-lg px-3 py-2.5 text-sm">
+                        {branch ? (
+                            <>
+                                <p className="text-white font-medium">{branch.name}</p>
+                                <p className="text-slate-400 text-xs mt-0.5">
+                                    {branch.address}
+                                </p>
+                            </>
+                        ) : (
+                            <p className="text-slate-500">Loading branch…</p>
+                        )}
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-xs uppercase tracking-widest text-slate-500 mb-2">
+                        Note (optional)
+                    </label>
+                    <textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        rows={2}
+                        placeholder="Any pickup instructions"
+                        className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 resize-none"
+                    />
+                </div>
+
+                <div className="bg-[#111] border border-white/10 rounded-2xl p-5">
+                    <p className="text-[11px] uppercase tracking-widest text-slate-500 mb-3">
+                        Order summary
+                    </p>
+                    <div className="space-y-1.5 text-sm">
+                        {items.map((it) => (
+                            <div
+                                key={it.productId}
+                                className="flex items-center justify-between text-slate-300"
+                            >
+                                <span className="truncate pr-2">
+                                    {it.name} × {it.quantity}
+                                </span>
+                                <span>{formatCurrency(it.sellingPrice * it.quantity)}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between">
+                        <span className="text-xs uppercase tracking-widest text-slate-500">
+                            Estimated total
+                        </span>
+                        <span className="text-lg font-bold text-white">
+                            {formatCurrency(total)}
+                        </span>
+                    </div>
+                </div>
+
+                {error && (
+                    <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-sm text-rose-300">
+                        {error}
+                    </div>
+                )}
+
+                <button
+                    type="submit"
+                    disabled={submitting || !branchId}
+                    className="w-full bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50"
+                >
+                    {submitting ? 'Submitting…' : 'Submit pickup request'}
+                </button>
+
+                <p className="text-[11px] text-slate-500 text-center">
+                    You&apos;ll pay at the counter when you pick up. The price shown is an
+                    estimate based on today&apos;s prices.
+                </p>
+            </form>
+        </div>
+    );
+}

@@ -2,6 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { posService } from '@/services/pos.service';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { IAdminDashboard, ITopProduct, ITransaction } from '@/types';
+import { UserRole } from '@/constants/enums';
+import { useAuth } from '@/hooks/useAuth';
+import OverviewPage from '@/pages/admin/OverviewPage';
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(amount);
@@ -17,6 +20,9 @@ function formatTime(dateStr: string) {
 }
 
 export default function DashboardPage() {
+    const { user } = useAuth();
+    const isAdmin = user?.role === UserRole.ADMIN;
+
     const { data, isLoading } = useQuery<IAdminDashboard>({
         queryKey: ['admin-dashboard'],
         queryFn: posService.getAdminDashboard,
@@ -205,6 +211,13 @@ export default function DashboardPage() {
                     )}
                 </div>
             </div>
+
+            {/* All-branches overview (admin only) */}
+            {isAdmin && (
+                <div className="mb-8">
+                    <OverviewPage embedded />
+                </div>
+            )}
 
             {/* Recent Transactions */}
             <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
