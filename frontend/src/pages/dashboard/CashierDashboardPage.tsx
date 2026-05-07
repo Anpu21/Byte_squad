@@ -32,13 +32,6 @@ function formatDayShort(date: string) {
     return d.toLocaleDateString('en-US', { weekday: 'short' });
 }
 
-function getGreeting() {
-    const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-}
-
 export default function CashierDashboardPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
