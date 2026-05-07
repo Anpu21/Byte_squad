@@ -45,6 +45,12 @@ export class PosController {
     return this.posService.getTransactionsSummary(branchId, cashierId);
   }
 
+  @Get(APP_ROUTES.POS.ALL_TRANSACTIONS)
+  @Roles(UserRole.ADMIN)
+  getAllTransactions(): Promise<CashierTransactionsSummary> {
+    return this.posService.getAllTransactionsSummary();
+  }
+
   @Post(APP_ROUTES.POS.TRANSACTIONS)
   create(
     @Body() createTransactionDto: CreateTransactionDto,

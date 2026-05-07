@@ -22,13 +22,28 @@ import UserManagementPage from '@/pages/users/UserManagementPage';
 import ProfilePage from '@/pages/users/ProfilePage';
 import NotificationsPage from '@/pages/notifications/NotificationsPage';
 import NotificationDetailPage from '@/pages/notifications/NotificationDetailPage';
-import BranchesHubPage from '@/pages/admin/BranchesHubPage';
 import BranchManagementPage from '@/pages/branches/BranchManagementPage';
 import BranchPerformancePage from '@/pages/branches/BranchPerformancePage';
+import BranchComparisonPage from '@/pages/admin/BranchComparisonPage';
+import AdminInventoryPage from '@/pages/admin/AdminInventoryPage';
 import TransferRequestsPage from '@/pages/transfers/TransferRequestsPage';
 import NewTransferRequestPage from '@/pages/transfers/NewTransferRequestPage';
+import TransferHistoryPage from '@/pages/transfers/TransferHistoryPage';
 import TransferDetailPage from '@/pages/transfers/TransferDetailPage';
 import AdminTransfersPage from '@/pages/admin/AdminTransfersPage';
+import CustomerRequestsPage from '@/pages/requests/CustomerRequestsPage';
+import ScanRequestPage from '@/pages/pos/ScanRequestPage';
+import CustomerLayout from '@/layouts/CustomerLayout';
+import CustomerProtectedRoute from '@/routes/CustomerProtectedRoute';
+import CatalogPage from '@/pages/shop/CatalogPage';
+import ProductDetailPage from '@/pages/shop/ProductDetailPage';
+import CartPage from '@/pages/shop/CartPage';
+import CheckoutPage from '@/pages/shop/CheckoutPage';
+import RequestConfirmationPage from '@/pages/shop/RequestConfirmationPage';
+import MyRequestsPage from '@/pages/shop/MyRequestsPage';
+import CustomerLoginPage from '@/pages/shop/CustomerLoginPage';
+import CustomerSignupPage from '@/pages/shop/CustomerSignupPage';
+import CustomerOtpPage from '@/pages/shop/CustomerOtpPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function SmartRedirect() {
@@ -42,6 +57,15 @@ function SmartRedirect() {
         default:
             return <Navigate to={FRONTEND_ROUTES.DASHBOARD} replace />;
     }
+}
+
+function InventoryByRole() {
+    const { user } = useAuth();
+    return user?.role === UserRole.ADMIN ? (
+        <AdminInventoryPage />
+    ) : (
+        <InventoryListPage />
+    );
 }
 
 export default function AppRouter() {
@@ -109,9 +133,11 @@ export default function AppRouter() {
                 <Route
                     path={FRONTEND_ROUTES.INVENTORY}
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute
+                            allowedRoles={[UserRole.ADMIN, UserRole.MANAGER]}
+                        >
                             <DashboardLayout>
-                                <InventoryListPage />
+                                <InventoryByRole />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }
@@ -257,13 +283,25 @@ export default function AppRouter() {
                     }
                 />
 
-                {/* Admin-only Branches Hub (overview + manage + compare tabs) */}
+                {/* Admin-only Branches (CRUD) */}
                 <Route
                     path={FRONTEND_ROUTES.BRANCHES_HUB}
                     element={
                         <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                             <DashboardLayout>
-                                <BranchesHubPage />
+                                <BranchManagementPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Admin-only Compare (standalone) */}
+                <Route
+                    path={FRONTEND_ROUTES.BRANCH_COMPARE}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                            <DashboardLayout>
+                                <BranchComparisonPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }
@@ -295,6 +333,18 @@ export default function AppRouter() {
                     }
                 />
                 <Route
+                    path={FRONTEND_ROUTES.TRANSFER_HISTORY}
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={[UserRole.ADMIN, UserRole.MANAGER]}
+                        >
+                            <DashboardLayout>
+                                <TransferHistoryPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path={FRONTEND_ROUTES.TRANSFER_DETAIL}
                     element={
                         <ProtectedRoute
@@ -314,6 +364,108 @@ export default function AppRouter() {
                                 <AdminTransfersPage />
                             </DashboardLayout>
                         </ProtectedRoute>
+                    }
+                />
+
+                {/* Cashier — scan pickup request */}
+                <Route
+                    path={FRONTEND_ROUTES.SCAN_REQUEST}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.CASHIER]}>
+                            <DashboardLayout>
+                                <ScanRequestPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Customer requests — staff-shared with branch-scoping for non-admins */}
+                <Route
+                    path={FRONTEND_ROUTES.CUSTOMER_REQUESTS}
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER]}
+                        >
+                            <DashboardLayout>
+                                <CustomerRequestsPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Customer storefront (public + customer-protected) */}
+                <Route
+                    path={FRONTEND_ROUTES.SHOP}
+                    element={
+                        <CustomerLayout>
+                            <CatalogPage />
+                        </CustomerLayout>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.SHOP_PRODUCT_DETAIL}
+                    element={
+                        <CustomerLayout>
+                            <ProductDetailPage />
+                        </CustomerLayout>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.SHOP_CART}
+                    element={
+                        <CustomerLayout>
+                            <CartPage />
+                        </CustomerLayout>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.SHOP_CHECKOUT}
+                    element={
+                        <CustomerLayout>
+                            <CheckoutPage />
+                        </CustomerLayout>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.SHOP_REQUEST_CONFIRMATION}
+                    element={
+                        <CustomerLayout>
+                            <RequestConfirmationPage />
+                        </CustomerLayout>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.SHOP_LOGIN}
+                    element={
+                        <CustomerLayout>
+                            <CustomerLoginPage />
+                        </CustomerLayout>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.SHOP_SIGNUP}
+                    element={
+                        <CustomerLayout>
+                            <CustomerSignupPage />
+                        </CustomerLayout>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.SHOP_VERIFY_OTP}
+                    element={
+                        <CustomerLayout>
+                            <CustomerOtpPage />
+                        </CustomerLayout>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.SHOP_MY_REQUESTS}
+                    element={
+                        <CustomerProtectedRoute>
+                            <CustomerLayout>
+                                <MyRequestsPage />
+                            </CustomerLayout>
+                        </CustomerProtectedRoute>
                     }
                 />
 

@@ -35,8 +35,11 @@ export const FRONTEND_ROUTES = {
     BRANCHES: '/branches',
     BRANCH_MANAGEMENT: '/branches/manage',
 
-    // Admin Branches Hub (overview + manage + compare in tabs)
+    // Admin-only Branches CRUD
     BRANCHES_HUB: '/admin/branches',
+
+    // Admin-only side-by-side branch comparison
+    BRANCH_COMPARE: '/admin/compare',
 
     // Notifications
     NOTIFICATIONS: '/notifications',
@@ -45,8 +48,24 @@ export const FRONTEND_ROUTES = {
     // Stock Transfers
     TRANSFERS: '/transfers',
     TRANSFERS_NEW: '/transfers/new',
+    TRANSFER_HISTORY: '/transfers/history',
     TRANSFER_DETAIL: '/transfers/:id',
     ADMIN_TRANSFERS: '/admin/transfers',
+
+    // Customer storefront
+    SHOP: '/shop',
+    SHOP_PRODUCT_DETAIL: '/shop/products/:id',
+    SHOP_CART: '/shop/cart',
+    SHOP_CHECKOUT: '/shop/checkout',
+    SHOP_REQUEST_CONFIRMATION: '/shop/requests/:code',
+    SHOP_MY_REQUESTS: '/shop/my-requests',
+    SHOP_LOGIN: '/shop/login',
+    SHOP_SIGNUP: '/shop/signup',
+    SHOP_VERIFY_OTP: '/shop/verify-otp',
+
+    // Cashier scan + shared customer requests view
+    SCAN_REQUEST: '/pos/scan-request',
+    CUSTOMER_REQUESTS: '/customer-requests',
 } as const;
 
 export type FrontendRoute = (typeof FRONTEND_ROUTES)[keyof typeof FRONTEND_ROUTES];

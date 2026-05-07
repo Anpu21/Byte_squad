@@ -14,6 +14,49 @@ import type {
     IBranchComparisonResponse,
 } from '@/types';
 
+export interface IInventoryMatrixCell {
+    branchId: string;
+    inventoryId: string | null;
+    quantity: number;
+    lowStockThreshold: number | null;
+    isLowStock: boolean;
+    isOutOfStock: boolean;
+    lastRestockedAt: string | null;
+}
+
+export interface IInventoryMatrixRow {
+    productId: string;
+    productName: string;
+    barcode: string;
+    category: string;
+    sellingPrice: number;
+    cells: IInventoryMatrixCell[];
+    totalQuantity: number;
+}
+
+export interface IInventoryMatrixBranchColumn {
+    id: string;
+    name: string;
+    isActive: boolean;
+}
+
+export interface IInventoryMatrixResponse {
+    branches: IInventoryMatrixBranchColumn[];
+    rows: IInventoryMatrixRow[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}
+
+export interface IInventoryMatrixParams {
+    search?: string;
+    category?: string;
+    lowStockOnly?: boolean;
+    page?: number;
+    limit?: number;
+}
+
 export const adminService = {
     getOverview: async (): Promise<IOverviewResponse> => {
         const response = await api.get<IApiResponse<IOverviewResponse>>(
@@ -49,6 +92,16 @@ export const adminService = {
         const response = await api.post<IApiResponse<IBranchComparisonResponse>>(
             '/admin/comparison',
             payload,
+        );
+        return response.data.data;
+    },
+
+    getInventoryMatrix: async (
+        params?: IInventoryMatrixParams,
+    ): Promise<IInventoryMatrixResponse> => {
+        const response = await api.get<IApiResponse<IInventoryMatrixResponse>>(
+            '/admin/inventory/matrix',
+            { params },
         );
         return response.data.data;
     },

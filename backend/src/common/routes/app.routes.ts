@@ -56,6 +56,7 @@ export const APP_ROUTES = {
     DAILY_REPORT: 'daily-report',
     MY_DASHBOARD: 'my-dashboard',
     MY_TRANSACTIONS: 'my-transactions',
+    ALL_TRANSACTIONS: 'all-transactions',
     ADMIN_DASHBOARD: 'admin-dashboard',
   },
 
@@ -85,6 +86,42 @@ export const APP_ROUTES = {
     ADMINS: 'admins',
     COMPARISON: 'comparison',
     USERS: 'users',
+    INVENTORY_MATRIX: 'inventory/matrix',
+  },
+
+  // Public storefront (anonymous-accessible)
+  PUBLIC: {
+    BASE: `${API_PREFIX}/public`,
+    PRODUCTS: 'products',
+    PRODUCT_BY_ID: 'products/:id',
+    CATEGORIES: 'products/categories',
+    BRANCHES: 'branches',
+  },
+
+  // Customer auth (self-signup + OTP + login)
+  CUSTOMER_AUTH: {
+    BASE: `${API_PREFIX}/customer-auth`,
+    SIGNUP: 'signup',
+    LOGIN: 'login',
+    VERIFY_OTP: 'verify-otp',
+    RESEND_OTP: 'resend-otp',
+  },
+
+  // Customer profile
+  CUSTOMERS: {
+    BASE: `${API_PREFIX}/customers`,
+    ME: 'me',
+  },
+
+  // Customer pickup requests (cart → request → QR → fulfill at counter)
+  CUSTOMER_REQUESTS: {
+    BASE: `${API_PREFIX}/customer-requests`,
+    MINE: 'mine',
+    BY_CODE: 'code/:code',
+    BY_ID: ':id',
+    CANCEL: ':id/cancel',
+    REJECT: ':id/reject',
+    FULFILL: 'code/:code/fulfill',
   },
 
   // Stock Transfers (inter-branch stock movement)
@@ -92,6 +129,7 @@ export const APP_ROUTES = {
     BASE: `${API_PREFIX}/stock-transfers`,
     MY_REQUESTS: 'my-requests',
     INCOMING: 'incoming',
+    HISTORY: 'history',
     BY_ID: ':id',
     SOURCE_OPTIONS: ':id/source-options',
     APPROVE: ':id/approve',

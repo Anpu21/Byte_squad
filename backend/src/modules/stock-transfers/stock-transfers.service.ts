@@ -15,6 +15,10 @@ import { CreateTransferRequestDto } from '@stock-transfers/dto/create-transfer-r
 import { ApproveTransferDto } from '@stock-transfers/dto/approve-transfer.dto';
 import { RejectTransferDto } from '@stock-transfers/dto/reject-transfer.dto';
 import { ListTransfersQueryDto } from '@stock-transfers/dto/list-transfers-query.dto';
+import {
+  HISTORY_TERMINAL_STATUSES,
+  ListTransferHistoryQueryDto,
+} from '@stock-transfers/dto/list-transfer-history-query.dto';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { NotificationType } from '@common/enums/notification.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -251,6 +255,73 @@ export class StockTransfersService {
     };
   }
 
+  async listHistory(
+    actor: ActorContext,
+    query: ListTransferHistoryQueryDto,
+  ): Promise<PaginatedTransfers> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const statuses =
+      query.status && query.status.length > 0
+        ? query.status
+        : HISTORY_TERMINAL_STATUSES;
+
+    const qb = this.transferRepo
+      .createQueryBuilder('transfer')
+      .leftJoinAndSelect('transfer.product', 'product')
+      .leftJoinAndSelect('transfer.destinationBranch', 'destinationBranch')
+      .leftJoinAndSelect('transfer.sourceBranch', 'sourceBranch')
+      .leftJoinAndSelect('transfer.requestedBy', 'requestedBy')
+      .leftJoinAndSelect('transfer.reviewedBy', 'reviewedBy')
+      .leftJoinAndSelect('transfer.shippedBy', 'shippedBy')
+      .leftJoinAndSelect('transfer.receivedBy', 'receivedBy')
+      .where('transfer.status IN (:...statuses)', { statuses })
+      .orderBy('transfer.createdAt', 'DESC');
+
+    // Managers are auto-scoped to their own branch (source OR destination).
+    // Admins see everything by default, with optional branchId filter.
+    if (actor.role !== UserRole.ADMIN) {
+      qb.andWhere(
+        '(transfer.source_branch_id = :actorBranchId OR transfer.destination_branch_id = :actorBranchId)',
+        { actorBranchId: actor.branchId },
+      );
+    } else if (query.branchId) {
+      qb.andWhere(
+        '(transfer.source_branch_id = :branchId OR transfer.destination_branch_id = :branchId)',
+        { branchId: query.branchId },
+      );
+    }
+
+    if (query.productId) {
+      qb.andWhere('transfer.product_id = :productId', {
+        productId: query.productId,
+      });
+    }
+    if (query.from) {
+      qb.andWhere('transfer.created_at >= :from', { from: query.from });
+    }
+    if (query.to) {
+      // Treat `to` as inclusive end-of-day.
+      const endOfDay = new Date(query.to);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+      qb.andWhere('transfer.created_at <= :to', { to: endOfDay });
+    }
+
+    const [items, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1,
+    };
+  }
+
   async findById(
     id: string,
     actor: ActorContext,
@@ -351,9 +422,11 @@ export class StockTransfersService {
       );
     }
 
+    const trimmedNote = dto.approvalNote?.trim();
     transfer.status = TransferStatus.APPROVED;
     transfer.sourceBranchId = dto.sourceBranchId;
     transfer.approvedQuantity = dto.approvedQuantity;
+    transfer.approvalNote = trimmedNote ? trimmedNote : null;
     transfer.reviewedByUserId = actor.id;
     transfer.reviewedAt = new Date();
     await this.transferRepo.save(transfer);
@@ -366,7 +439,10 @@ export class StockTransfersService {
       transfer.destinationBranchId,
     ]);
     const productName = updated.product.name;
-    const message = `Approved: ${dto.approvedQuantity} unit(s) of ${productName} from ${sourceBranch.name} to ${updated.destinationBranch.name}`;
+    const baseMessage = `Approved: ${dto.approvedQuantity} unit(s) of ${productName} from ${sourceBranch.name} to ${updated.destinationBranch.name}`;
+    const message = trimmedNote
+      ? `${baseMessage} — Admin note: ${trimmedNote}`
+      : baseMessage;
     await Promise.all(
       recipients.map((user) =>
         this.notifyUser(user.id, {
@@ -379,6 +455,7 @@ export class StockTransfersService {
             sourceBranchName: sourceBranch.name,
             destinationBranchName: updated.destinationBranch.name,
             quantity: dto.approvedQuantity,
+            approvalNote: trimmedNote ?? null,
           },
         }),
       ),

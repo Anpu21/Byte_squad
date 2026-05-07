@@ -450,11 +450,12 @@ export interface ICashierTransactionRow {
     total: number;
     itemCount: number;
     cashierName: string;
+    branchName?: string | null;
     createdAt: string;
 }
 
 export interface ICashierTransactionsSummary {
-    scope: 'cashier' | 'branch';
+    scope: 'cashier' | 'branch' | 'system';
     today: ICashierPeriodStats;
     month: ICashierPeriodStats;
     year: ICashierPeriodStats;
@@ -465,6 +466,105 @@ export interface ICashierTransactionsSummary {
 
 export interface IUserProfile extends IUser {
     branch?: IBranch;
+}
+
+// ─── Customer Storefront ────────────────────────────────────────────────────
+
+export type CustomerRequestStatus =
+    | 'pending'
+    | 'completed'
+    | 'rejected'
+    | 'cancelled'
+    | 'expired';
+
+export interface ICustomer {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    isVerified: boolean;
+    createdAt: string;
+}
+
+export interface ICustomerSignupPayload {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+}
+
+export interface ICustomerLoginPayload {
+    email: string;
+    password: string;
+}
+
+export interface ICustomerVerifyOtpPayload {
+    email: string;
+    otpCode: string;
+}
+
+export interface ICustomerAuthResponse {
+    accessToken: string;
+    customer: ICustomer;
+}
+
+export interface IPublicProduct {
+    id: string;
+    name: string;
+    description: string | null;
+    category: string;
+    sellingPrice: number;
+    imageUrl: string | null;
+}
+
+export interface IPublicBranch {
+    id: string;
+    name: string;
+    address: string;
+    phone: string;
+}
+
+export interface ICustomerRequestItem {
+    id: string;
+    productId: string;
+    quantity: number;
+    unitPriceSnapshot: number;
+    product?: {
+        id: string;
+        name: string;
+        imageUrl: string | null;
+    };
+}
+
+export interface ICustomerRequest {
+    id: string;
+    requestCode: string;
+    customerId: string | null;
+    branchId: string;
+    branch?: IPublicBranch;
+    customer?: ICustomer | null;
+    status: CustomerRequestStatus;
+    estimatedTotal: number;
+    guestName: string | null;
+    note: string | null;
+    fulfilledTransactionId: string | null;
+    items: ICustomerRequestItem[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ICustomerRequestCreatePayload {
+    branchId: string;
+    items: { productId: string; quantity: number }[];
+    guestName?: string;
+    note?: string;
+}
+
+export interface IFulfillRequestPayload {
+    paymentMethod: 'cash' | 'card' | 'mobile';
+    items?: { productId: string; quantity: number }[];
 }
 
 // ─── Frontend-specific Types ─────────────────────────────────────────────────

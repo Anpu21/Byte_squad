@@ -6,7 +6,9 @@ import { User } from '@users/entities/user.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
+import { Product } from '@products/entities/product.entity';
 import { Expense } from '@accounting/entities/expense.entity';
+import { InventoryMatrixQueryDto } from '@admin-portal/dto/inventory-matrix-query.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { TransactionType } from '@common/enums/transaction.enum';
 
@@ -112,6 +114,41 @@ export interface BranchComparisonResponse {
   branches: BranchComparisonEntry[];
 }
 
+export interface InventoryMatrixBranchColumn {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+export interface InventoryMatrixCell {
+  branchId: string;
+  inventoryId: string | null;
+  quantity: number;
+  lowStockThreshold: number | null;
+  isLowStock: boolean;
+  isOutOfStock: boolean;
+  lastRestockedAt: Date | null;
+}
+
+export interface InventoryMatrixRow {
+  productId: string;
+  productName: string;
+  barcode: string;
+  category: string;
+  sellingPrice: number;
+  cells: InventoryMatrixCell[];
+  totalQuantity: number;
+}
+
+export interface InventoryMatrixResponse {
+  branches: InventoryMatrixBranchColumn[];
+  rows: InventoryMatrixRow[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 @Injectable()
 export class AdminPortalService {
   constructor(
@@ -125,6 +162,8 @@ export class AdminPortalService {
     private readonly transactionItemRepo: Repository<TransactionItem>,
     @InjectRepository(Inventory)
     private readonly inventoryRepo: Repository<Inventory>,
+    @InjectRepository(Product)
+    private readonly productRepo: Repository<Product>,
     @InjectRepository(Expense)
     private readonly expenseRepo: Repository<Expense>,
   ) {}
@@ -261,6 +300,147 @@ export class AdminPortalService {
       lastLoginAt: admin.lastLoginAt,
       createdAt: admin.createdAt,
     }));
+  }
+
+  async getInventoryMatrix(
+    query: InventoryMatrixQueryDto,
+  ): Promise<InventoryMatrixResponse> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 25;
+    const offset = (page - 1) * limit;
+
+    const branches = await this.branchRepo.find({ order: { name: 'ASC' } });
+    const branchColumns: InventoryMatrixBranchColumn[] = branches.map((b) => ({
+      id: b.id,
+      name: b.name,
+      isActive: b.isActive,
+    }));
+
+    const productQb = this.productRepo
+      .createQueryBuilder('p')
+      .where('p.is_active = :active', { active: true })
+      .orderBy('p.name', 'ASC');
+
+    if (query.search) {
+      productQb.andWhere('(p.name ILIKE :q OR p.barcode ILIKE :q)', {
+        q: `%${query.search}%`,
+      });
+    }
+    if (query.category) {
+      productQb.andWhere('p.category = :category', {
+        category: query.category,
+      });
+    }
+
+    // When `lowStockOnly` is set we cannot reliably paginate at the SQL layer
+    // because the flag depends on per-branch thresholds in the inventory rows.
+    // The callable workload is small (a few thousand products max), so we
+    // fetch the full filtered product list and post-filter + paginate in JS.
+    let products: Product[];
+    let total = 0;
+
+    if (query.lowStockOnly) {
+      products = await productQb.getMany();
+    } else {
+      const [rows, count] = await productQb
+        .skip(offset)
+        .take(limit)
+        .getManyAndCount();
+      products = rows;
+      total = count;
+    }
+
+    if (products.length === 0) {
+      return {
+        branches: branchColumns,
+        rows: [],
+        total: query.lowStockOnly ? 0 : (total ?? 0),
+        page,
+        limit,
+        totalPages: 1,
+      };
+    }
+
+    const productIds = products.map((p) => p.id);
+    const inventoryRows = await this.inventoryRepo.find({
+      where: { productId: In(productIds) },
+    });
+
+    // productId -> branchId -> Inventory
+    const inventoryByProduct = new Map<string, Map<string, Inventory>>();
+    for (const row of inventoryRows) {
+      let inner = inventoryByProduct.get(row.productId);
+      if (!inner) {
+        inner = new Map<string, Inventory>();
+        inventoryByProduct.set(row.productId, inner);
+      }
+      inner.set(row.branchId, row);
+    }
+
+    let assembled: InventoryMatrixRow[] = products.map((p) => {
+      const innerMap = inventoryByProduct.get(p.id);
+      const cells: InventoryMatrixCell[] = branches.map((b) => {
+        const inv = innerMap?.get(b.id) ?? null;
+        if (!inv) {
+          return {
+            branchId: b.id,
+            inventoryId: null,
+            quantity: 0,
+            lowStockThreshold: null,
+            isLowStock: false,
+            isOutOfStock: true,
+            lastRestockedAt: null,
+          };
+        }
+        const isOutOfStock = inv.quantity === 0;
+        const isLowStock =
+          !isOutOfStock && inv.quantity <= inv.lowStockThreshold;
+        return {
+          branchId: b.id,
+          inventoryId: inv.id,
+          quantity: inv.quantity,
+          lowStockThreshold: inv.lowStockThreshold,
+          isLowStock,
+          isOutOfStock,
+          lastRestockedAt: inv.lastRestockedAt,
+        };
+      });
+      const totalQuantity = cells.reduce((sum, c) => sum + c.quantity, 0);
+      return {
+        productId: p.id,
+        productName: p.name,
+        barcode: p.barcode,
+        category: p.category,
+        sellingPrice: Number(p.sellingPrice),
+        cells,
+        totalQuantity,
+      };
+    });
+
+    if (query.lowStockOnly) {
+      assembled = assembled.filter((row) =>
+        row.cells.some((c) => c.isLowStock || c.isOutOfStock),
+      );
+      const filteredTotal = assembled.length;
+      const paged = assembled.slice(offset, offset + limit);
+      return {
+        branches: branchColumns,
+        rows: paged,
+        total: filteredTotal,
+        page,
+        limit,
+        totalPages: Math.ceil(filteredTotal / limit) || 1,
+      };
+    }
+
+    return {
+      branches: branchColumns,
+      rows: assembled,
+      total: total ?? assembled.length,
+      page,
+      limit,
+      totalPages: Math.ceil((total ?? assembled.length) / limit) || 1,
+    };
   }
 
   // ── Internals ───────────────────────────────────────────

@@ -32,6 +32,7 @@ export interface IStockTransferRequest {
     status: TransferStatus;
     requestReason: string | null;
     rejectionReason: string | null;
+    approvalNote: string | null;
     requestedByUserId: string;
     requestedBy: ITransferUserSummary;
     reviewedByUserId: string | null;
@@ -72,12 +73,23 @@ export interface ICreateTransferPayload {
 export interface IApproveTransferPayload {
     sourceBranchId: string;
     approvedQuantity: number;
+    approvalNote?: string;
 }
 
 export interface IListTransfersParams {
     status?: TransferStatus;
     destinationBranchId?: string;
     sourceBranchId?: string;
+    page?: number;
+    limit?: number;
+}
+
+export interface IListTransferHistoryParams {
+    status?: TransferStatus[];
+    from?: string;
+    to?: string;
+    productId?: string;
+    branchId?: string;
     page?: number;
     limit?: number;
 }
@@ -118,6 +130,16 @@ export const stockTransfersService = {
     ): Promise<IPaginatedTransfers> => {
         const response = await api.get<IApiResponse<IPaginatedTransfers>>(
             '/stock-transfers/incoming',
+            { params },
+        );
+        return response.data.data;
+    },
+
+    getHistory: async (
+        params?: IListTransferHistoryParams,
+    ): Promise<IPaginatedTransfers> => {
+        const response = await api.get<IApiResponse<IPaginatedTransfers>>(
+            '/stock-transfers/history',
             { params },
         );
         return response.data.data;

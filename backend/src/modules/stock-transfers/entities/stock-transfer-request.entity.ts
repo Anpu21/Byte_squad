@@ -61,6 +61,9 @@ export class StockTransferRequest {
   @Column({ type: 'text', name: 'rejection_reason', nullable: true })
   rejectionReason!: string | null;
 
+  @Column({ type: 'text', name: 'approval_note', nullable: true })
+  approvalNote!: string | null;
+
   @Column({ type: 'uuid', name: 'requested_by_user_id' })
   requestedByUserId!: string;
 

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { AdminPortalService } from '@admin-portal/admin-portal.service';
 import type {
   OverviewResponse,
@@ -6,8 +6,10 @@ import type {
   AdminWithBranch,
   UserWithBranch,
   BranchComparisonResponse,
+  InventoryMatrixResponse,
 } from '@admin-portal/admin-portal.service';
 import { BranchComparisonDto } from '@admin-portal/dto/branch-comparison.dto';
+import { InventoryMatrixQueryDto } from '@admin-portal/dto/inventory-matrix-query.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -49,5 +51,12 @@ export class AdminPortalController {
       new Date(dto.startDate),
       new Date(dto.endDate),
     );
+  }
+
+  @Get(APP_ROUTES.ADMIN_PORTAL.INVENTORY_MATRIX)
+  getInventoryMatrix(
+    @Query() query: InventoryMatrixQueryDto,
+  ): Promise<InventoryMatrixResponse> {
+    return this.adminPortalService.getInventoryMatrix(query);
   }
 }

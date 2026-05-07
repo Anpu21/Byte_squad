@@ -71,11 +71,12 @@ export interface CashierTransactionRow {
   total: number;
   itemCount: number;
   cashierName: string;
+  branchName?: string | null;
   createdAt: Date;
 }
 
 export interface CashierTransactionsSummary {
-  scope: 'cashier' | 'branch';
+  scope: 'cashier' | 'branch' | 'system';
   today: CashierPeriodStats;
   month: CashierPeriodStats;
   year: CashierPeriodStats;
@@ -449,6 +450,60 @@ export class PosService {
         cashierName: t.cashier
           ? `${t.cashier.firstName} ${t.cashier.lastName}`
           : 'Unknown',
+        createdAt: t.createdAt,
+      })),
+    };
+  }
+
+  async getAllTransactionsSummary(): Promise<CashierTransactionsSummary> {
+    const now = new Date();
+
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+
+    const periodAgg = (start: Date) =>
+      this.transactionRepository
+        .createQueryBuilder('txn')
+        .select('COALESCE(SUM(txn.total), 0)', 'total')
+        .addSelect('COUNT(txn.id)', 'count')
+        .where('txn.type = :type', { type: TransactionType.SALE })
+        .andWhere('txn.created_at >= :start', { start })
+        .getRawOne<{ total: string; count: string }>();
+
+    const [todayAgg, monthAgg, yearAgg, recentTxns] = await Promise.all([
+      periodAgg(todayStart),
+      periodAgg(monthStart),
+      periodAgg(yearStart),
+      this.transactionRepository.find({
+        relations: ['items', 'cashier', 'branch'],
+        order: { createdAt: 'DESC' },
+        take: 200,
+      }),
+    ]);
+
+    const toStats = (agg: { total: string; count: string } | undefined) => ({
+      totalSales: Math.round(Number(agg?.total ?? 0) * 100) / 100,
+      transactionCount: Number(agg?.count ?? 0),
+    });
+
+    return {
+      scope: 'system',
+      today: toStats(todayAgg),
+      month: toStats(monthAgg),
+      year: toStats(yearAgg),
+      recentTransactions: recentTxns.map((t) => ({
+        id: t.id,
+        transactionNumber: t.transactionNumber,
+        total: Number(t.total),
+        itemCount: t.items?.length ?? 0,
+        cashierName: t.cashier
+          ? `${t.cashier.firstName} ${t.cashier.lastName}`
+          : 'Unknown',
+        branchName: t.branch?.name ?? null,
         createdAt: t.createdAt,
       })),
     };
