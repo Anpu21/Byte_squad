@@ -52,7 +52,7 @@ export default function CheckoutPage() {
 
     if (items.length === 0) {
         return (
-            <div className="text-center py-24 text-slate-500 text-sm">
+            <div className="text-center py-24 text-text-3 text-sm">
                 Your cart is empty.
             </div>
         );
@@ -97,42 +97,42 @@ export default function CheckoutPage() {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <h1 className="text-2xl font-bold text-white tracking-tight mb-2">
+            <h1 className="text-2xl font-bold text-text-1 tracking-tight mb-2">
                 Checkout
             </h1>
-            <p className="text-sm text-slate-400 mb-8">
+            <p className="text-sm text-text-2 mb-8">
                 We&apos;ll generate a QR for the counter — pay when you pick up.
             </p>
 
             <form onSubmit={onSubmit} className="space-y-5">
                 <div>
                     <div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs uppercase tracking-widest text-slate-500">
+                        <label className="block text-xs uppercase tracking-widest text-text-3">
                             Pickup branch
                         </label>
                         <Link
                             to={FRONTEND_ROUTES.SHOP}
-                            className="text-[11px] text-slate-400 hover:text-white underline-offset-4 hover:underline"
+                            className="text-[11px] text-text-2 hover:text-text-1 underline-offset-4 hover:underline"
                         >
                             Change branch
                         </Link>
                     </div>
-                    <div className="bg-[#111] border border-white/10 rounded-lg px-3 py-2.5 text-sm">
+                    <div className="bg-[#111] border border-border rounded-lg px-3 py-2.5 text-sm">
                         {branch ? (
                             <>
-                                <p className="text-white font-medium">{branch.name}</p>
-                                <p className="text-slate-400 text-xs mt-0.5">
+                                <p className="text-text-1 font-medium">{branch.name}</p>
+                                <p className="text-text-2 text-xs mt-0.5">
                                     {branch.address}
                                 </p>
                             </>
                         ) : (
-                            <p className="text-slate-500">Loading branch…</p>
+                            <p className="text-text-3">Loading branch…</p>
                         )}
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-xs uppercase tracking-widest text-slate-500 mb-2">
+                    <label className="block text-xs uppercase tracking-widest text-text-3 mb-2">
                         Note (optional)
                     </label>
                     <textarea
@@ -140,19 +140,19 @@ export default function CheckoutPage() {
                         onChange={(e) => setNote(e.target.value)}
                         rows={2}
                         placeholder="Any pickup instructions"
-                        className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 resize-none"
+                        className="w-full bg-[#111] border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-emerald-500 resize-none"
                     />
                 </div>
 
-                <div className="bg-[#111] border border-white/10 rounded-2xl p-5">
-                    <p className="text-[11px] uppercase tracking-widest text-slate-500 mb-3">
+                <div className="bg-[#111] border border-border rounded-md p-5">
+                    <p className="text-[11px] uppercase tracking-widest text-text-3 mb-3">
                         Order summary
                     </p>
                     <div className="space-y-1.5 text-sm">
                         {items.map((it) => (
                             <div
                                 key={it.productId}
-                                className="flex items-center justify-between text-slate-300"
+                                className="flex items-center justify-between text-text-1"
                             >
                                 <span className="truncate pr-2">
                                     {it.name} × {it.quantity}
@@ -161,18 +161,18 @@ export default function CheckoutPage() {
                             </div>
                         ))}
                     </div>
-                    <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between">
-                        <span className="text-xs uppercase tracking-widest text-slate-500">
+                    <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                        <span className="text-xs uppercase tracking-widest text-text-3">
                             Estimated total
                         </span>
-                        <span className="text-lg font-bold text-white">
+                        <span className="text-lg font-bold text-text-1">
                             {formatCurrency(total)}
                         </span>
                     </div>
                 </div>
 
                 {error && (
-                    <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-sm text-rose-300">
+                    <div className="p-3 rounded-lg bg-danger-soft border border-danger/40 text-sm text-danger">
                         {error}
                     </div>
                 )}
@@ -180,12 +180,12 @@ export default function CheckoutPage() {
                 <button
                     type="submit"
                     disabled={submitting || !branchId}
-                    className="w-full bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50"
+                    className="w-full bg-primary text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50"
                 >
                     {submitting ? 'Submitting…' : 'Submit pickup request'}
                 </button>
 
-                <p className="text-[11px] text-slate-500 text-center">
+                <p className="text-[11px] text-text-3 text-center">
                     You&apos;ll pay at the counter when you pick up. The price shown is an
                     estimate based on today&apos;s prices.
                 </p>

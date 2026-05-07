@@ -24,15 +24,15 @@ function statusLabel(cell: IInventoryMatrixCell): {
     color: string;
 } {
     if (cell.inventoryId === null) {
-        return { label: 'No record', color: 'text-slate-500' };
+        return { label: 'No record', color: 'text-text-3' };
     }
     if (cell.isOutOfStock) {
-        return { label: 'Out of Stock', color: 'text-rose-300' };
+        return { label: 'Out of Stock', color: 'text-danger' };
     }
     if (cell.isLowStock) {
-        return { label: 'Low Stock', color: 'text-amber-300' };
+        return { label: 'Low Stock', color: 'text-warning' };
     }
-    return { label: 'In Stock', color: 'text-emerald-300' };
+    return { label: 'In Stock', color: 'text-accent-text' };
 }
 
 interface DrillDownState {
@@ -139,17 +139,17 @@ export default function AdminInventoryPage({
         <div className={embedded ? '' : 'animate-in fade-in duration-300'}>
             {!embedded && (
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-white tracking-tight">
+                    <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                         All Branches Inventory
                     </h1>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-sm text-text-3 mt-1">
                         Pivot view of every product across every branch.
                     </p>
                 </div>
             )}
 
             {/* Filter bar */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl p-5 mb-6">
+            <div className="bg-surface border border-border rounded-md p-5 mb-6">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     {/* Search */}
                     <div className="flex-1 min-w-0">
@@ -158,7 +158,7 @@ export default function AdminInventoryPage({
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                             placeholder="Search product name or barcode…"
-                            className="w-full h-10 px-4 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600"
+                            className="w-full h-10 px-4 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3"
                         />
                     </div>
 
@@ -167,7 +167,7 @@ export default function AdminInventoryPage({
                         <select
                             value={category}
                             onChange={(e) => changeCategory(e.target.value)}
-                            className="w-full h-10 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
+                            className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
                         >
                             <option value="">All categories</option>
                             {categories.map((c) => (
@@ -183,8 +183,8 @@ export default function AdminInventoryPage({
                         onClick={toggleLowStockOnly}
                         className={`h-10 px-4 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                             lowStockOnly
-                                ? 'bg-amber-500/20 border border-amber-500/40 text-amber-200'
-                                : 'bg-[#0a0a0a] border border-white/10 text-slate-400 hover:text-white hover:bg-white/5'
+                                ? 'bg-warning-soft border border-warning/50 text-amber-200'
+                                : 'bg-canvas border border-border text-text-2 hover:text-text-1 hover:bg-surface-2'
                         }`}
                     >
                         {lowStockOnly ? '⚠ Low stock only' : 'Low stock only'}
@@ -192,13 +192,13 @@ export default function AdminInventoryPage({
 
                     {/* Count + clear */}
                     <div className="flex items-center gap-3">
-                        <span className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">
+                        <span className="text-[11px] uppercase tracking-widest text-text-3 font-semibold">
                             {total} {total === 1 ? 'product' : 'products'}
                         </span>
                         {hasActiveFilters && (
                             <button
                                 onClick={clearFilters}
-                                className="text-xs text-slate-500 hover:text-white transition-colors underline whitespace-nowrap"
+                                className="text-xs text-text-3 hover:text-text-1 transition-colors underline whitespace-nowrap"
                             >
                                 Clear
                             </button>
@@ -208,12 +208,12 @@ export default function AdminInventoryPage({
             </div>
 
             {/* Pivot table */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-surface border border-border rounded-md shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-white/10 text-[11px] uppercase tracking-widest text-slate-500 bg-[#0a0a0a]/50">
-                                <th className="px-6 py-4 font-semibold whitespace-nowrap sticky left-0 bg-[#0a0a0a] z-10">
+                            <tr className="border-b border-border text-[11px] uppercase tracking-widest text-text-3 bg-canvas/50">
+                                <th className="px-6 py-4 font-semibold whitespace-nowrap sticky left-0 bg-canvas z-10">
                                     Product
                                 </th>
                                 {branches.map((b) => (
@@ -223,7 +223,7 @@ export default function AdminInventoryPage({
                                     >
                                         {b.name}
                                         {!b.isActive && (
-                                            <span className="ml-1 text-[9px] text-slate-600">
+                                            <span className="ml-1 text-[9px] text-text-3">
                                                 (inactive)
                                             </span>
                                         )}
@@ -239,10 +239,10 @@ export default function AdminInventoryPage({
                                 [...Array(5)].map((_, i) => (
                                     <tr
                                         key={i}
-                                        className="border-b border-white/5"
+                                        className="border-b border-border"
                                     >
-                                        <td className="px-6 py-4 sticky left-0 bg-[#111111]">
-                                            <div className="h-5 w-40 bg-white/5 rounded animate-pulse" />
+                                        <td className="px-6 py-4 sticky left-0 bg-surface">
+                                            <div className="h-5 w-40 bg-surface-2 rounded animate-pulse" />
                                         </td>
                                         {[...Array(branches.length || 3)].map(
                                             (__, j) => (
@@ -250,12 +250,12 @@ export default function AdminInventoryPage({
                                                     key={j}
                                                     className="px-4 py-4 text-right"
                                                 >
-                                                    <div className="h-5 w-12 bg-white/5 rounded animate-pulse ml-auto" />
+                                                    <div className="h-5 w-12 bg-surface-2 rounded animate-pulse ml-auto" />
                                                 </td>
                                             ),
                                         )}
                                         <td className="px-4 py-4 text-right">
-                                            <div className="h-5 w-12 bg-white/5 rounded animate-pulse ml-auto" />
+                                            <div className="h-5 w-12 bg-surface-2 rounded animate-pulse ml-auto" />
                                         </td>
                                     </tr>
                                 ))
@@ -265,13 +265,13 @@ export default function AdminInventoryPage({
                                         colSpan={branches.length + 2}
                                         className="px-6 py-16 text-center"
                                     >
-                                        <p className="text-sm font-medium text-slate-400">
+                                        <p className="text-sm font-medium text-text-2">
                                             No products match these filters
                                         </p>
                                         {hasActiveFilters && (
                                             <button
                                                 onClick={clearFilters}
-                                                className="mt-3 text-xs text-slate-500 hover:text-white transition-colors underline"
+                                                className="mt-3 text-xs text-text-3 hover:text-text-1 transition-colors underline"
                                             >
                                                 Clear filters
                                             </button>
@@ -282,9 +282,9 @@ export default function AdminInventoryPage({
                                 rows.map((row) => (
                                     <tr
                                         key={row.productId}
-                                        className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group"
+                                        className="border-b border-border hover:bg-surface-2 transition-colors group"
                                     >
-                                        <td className="px-6 py-4 sticky left-0 bg-[#111111] group-hover:bg-[#141414]">
+                                        <td className="px-6 py-4 sticky left-0 bg-surface group-hover:bg-[#141414]">
                                             <button
                                                 onClick={() =>
                                                     navigate(
@@ -296,10 +296,10 @@ export default function AdminInventoryPage({
                                                 }
                                                 className="text-left"
                                             >
-                                                <div className="text-slate-200 font-medium hover:text-white transition-colors">
+                                                <div className="text-text-1 font-medium hover:text-text-1 transition-colors">
                                                     {row.productName}
                                                 </div>
-                                                <div className="text-[11px] text-slate-500 mt-0.5">
+                                                <div className="text-[11px] text-text-3 mt-0.5">
                                                     {row.barcode} ·{' '}
                                                     {row.category}
                                                 </div>
@@ -308,11 +308,11 @@ export default function AdminInventoryPage({
                                         {row.cells.map((cell) => {
                                             const tint = cell.isOutOfStock
                                                 ? cell.inventoryId === null
-                                                    ? 'text-slate-700'
-                                                    : 'bg-rose-500/10 text-rose-300'
+                                                    ? 'text-text-3'
+                                                    : 'bg-danger-soft text-danger'
                                                 : cell.isLowStock
-                                                  ? 'bg-amber-500/10 text-amber-200'
-                                                  : 'text-slate-200';
+                                                  ? 'bg-warning-soft text-amber-200'
+                                                  : 'text-text-1';
                                             return (
                                                 <td
                                                     key={cell.branchId}
@@ -345,7 +345,7 @@ export default function AdminInventoryPage({
                                                 </td>
                                             );
                                         })}
-                                        <td className="px-4 py-4 text-right tabular-nums font-semibold text-white">
+                                        <td className="px-4 py-4 text-right tabular-nums font-semibold text-text-1">
                                             {row.totalQuantity}
                                         </td>
                                     </tr>
@@ -356,7 +356,7 @@ export default function AdminInventoryPage({
                 </div>
 
                 {!isLoading && rows.length > 0 && totalPages > 1 && (
-                    <div className="p-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-500 bg-[#0a0a0a]/50">
+                    <div className="p-4 border-t border-border flex items-center justify-between text-xs text-text-3 bg-canvas/50">
                         <span>
                             Page {matrix?.page ?? page} of {totalPages}
                         </span>
@@ -364,14 +364,14 @@ export default function AdminInventoryPage({
                             <button
                                 onClick={() => setPage(page - 1)}
                                 disabled={page === 1}
-                                className="px-3 py-1.5 rounded border border-white/10 hover:bg-white/5 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 rounded border border-border hover:bg-surface-2 hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Previous
                             </button>
                             <button
                                 onClick={() => setPage(page + 1)}
                                 disabled={page === totalPages}
-                                className="px-3 py-1.5 rounded border border-white/10 hover:bg-white/5 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 rounded border border-border hover:bg-surface-2 hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Next
                             </button>
@@ -387,41 +387,41 @@ export default function AdminInventoryPage({
                     onClick={() => setDrillDown(null)}
                 >
                     <div
-                        className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200"
+                        className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="mb-4">
-                            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1">
+                            <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1">
                                 {drillDown.branch.name}
                             </p>
-                            <h3 className="text-lg font-semibold text-white">
+                            <h3 className="text-lg font-semibold text-text-1">
                                 {drillDown.row.productName}
                             </h3>
-                            <p className="text-xs text-slate-500 mt-1">
+                            <p className="text-xs text-text-3 mt-1">
                                 {drillDown.row.barcode} ·{' '}
                                 {drillDown.row.category}
                             </p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-5">
-                            <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-3">
-                                <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">
+                            <div className="bg-canvas border border-border rounded-xl p-3">
+                                <p className="text-[10px] uppercase tracking-widest text-text-3 font-semibold">
                                     Quantity
                                 </p>
-                                <p className="text-2xl font-bold text-white tabular-nums mt-1">
+                                <p className="text-2xl font-bold text-text-1 tabular-nums mt-1">
                                     {drillDown.cell.quantity}
                                 </p>
                             </div>
-                            <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-3">
-                                <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">
+                            <div className="bg-canvas border border-border rounded-xl p-3">
+                                <p className="text-[10px] uppercase tracking-widest text-text-3 font-semibold">
                                     Threshold
                                 </p>
-                                <p className="text-2xl font-bold text-slate-300 tabular-nums mt-1">
+                                <p className="text-2xl font-bold text-text-1 tabular-nums mt-1">
                                     {drillDown.cell.lowStockThreshold ?? '—'}
                                 </p>
                             </div>
-                            <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-3 col-span-2">
-                                <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">
+                            <div className="bg-canvas border border-border rounded-xl p-3 col-span-2">
+                                <p className="text-[10px] uppercase tracking-widest text-text-3 font-semibold">
                                     Status
                                 </p>
                                 <p
@@ -430,11 +430,11 @@ export default function AdminInventoryPage({
                                     {statusLabel(drillDown.cell).label}
                                 </p>
                             </div>
-                            <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-3 col-span-2">
-                                <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">
+                            <div className="bg-canvas border border-border rounded-xl p-3 col-span-2">
+                                <p className="text-[10px] uppercase tracking-widest text-text-3 font-semibold">
                                     Last restocked
                                 </p>
-                                <p className="text-sm text-slate-300 mt-1">
+                                <p className="text-sm text-text-1 mt-1">
                                     {formatDateTime(
                                         drillDown.cell.lastRestockedAt,
                                     )}
@@ -445,7 +445,7 @@ export default function AdminInventoryPage({
                         <div className="flex items-center justify-end gap-3">
                             <button
                                 onClick={() => setDrillDown(null)}
-                                className="h-9 px-4 rounded-lg border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors"
+                                className="h-9 px-4 rounded-lg border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors"
                             >
                                 Close
                             </button>
@@ -458,7 +458,7 @@ export default function AdminInventoryPage({
                                         ),
                                     )
                                 }
-                                className="h-9 px-4 rounded-lg bg-white text-slate-900 text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all"
+                                className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all"
                             >
                                 Edit product details
                             </button>

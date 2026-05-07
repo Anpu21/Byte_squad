@@ -11,17 +11,17 @@ const LABELS: Record<TransferStatus, string> = {
 
 const STYLES: Record<TransferStatus, string> = {
     [TransferStatus.PENDING]:
-        'bg-white/10 text-white border-white/20',
+        'bg-primary-soft text-text-1 border-border-strong',
     [TransferStatus.APPROVED]:
-        'bg-transparent text-slate-200 border-white/30',
+        'bg-transparent text-text-1 border-primary/40',
     [TransferStatus.REJECTED]:
-        'bg-rose-500/10 text-rose-300 border-rose-500/30 border-dashed',
+        'bg-danger-soft text-danger border-danger/40 border-dashed',
     [TransferStatus.IN_TRANSIT]:
-        'bg-amber-500/10 text-amber-300 border-amber-500/30',
+        'bg-warning-soft text-warning border-warning/40',
     [TransferStatus.COMPLETED]:
-        'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+        'bg-accent-soft text-accent-text border-accent/40',
     [TransferStatus.CANCELLED]:
-        'bg-transparent text-slate-500 border-white/10 border-dashed',
+        'bg-transparent text-text-3 border-border border-dashed',
 };
 
 export default function TransferStatusPill({

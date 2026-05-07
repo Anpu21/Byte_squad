@@ -32,14 +32,14 @@ interface AuditCardProps {
 
 function AuditCard({ label, user, timestamp }: AuditCardProps) {
     return (
-        <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+        <div className="bg-canvas border border-border rounded-xl p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-text-3 mb-2">
                 {label}
             </p>
-            <p className="text-sm text-slate-200 font-medium">
+            <p className="text-sm text-text-1 font-medium">
                 {fullName(user)}
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-text-3 mt-1">
                 {formatDateTime(timestamp)}
             </p>
         </div>
@@ -209,11 +209,11 @@ export default function TransferDetailPage() {
     if (isLoading) {
         return (
             <div className="animate-in fade-in duration-300">
-                <div className="h-8 w-48 bg-white/5 rounded animate-pulse mb-6" />
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 space-y-4">
-                    <div className="h-6 w-64 bg-white/5 rounded animate-pulse" />
-                    <div className="h-4 w-full bg-white/5 rounded animate-pulse" />
-                    <div className="h-4 w-2/3 bg-white/5 rounded animate-pulse" />
+                <div className="h-8 w-48 bg-surface-2 rounded animate-pulse mb-6" />
+                <div className="bg-surface border border-border rounded-md p-6 space-y-4">
+                    <div className="h-6 w-64 bg-surface-2 rounded animate-pulse" />
+                    <div className="h-4 w-full bg-surface-2 rounded animate-pulse" />
+                    <div className="h-4 w-2/3 bg-surface-2 rounded animate-pulse" />
                 </div>
             </div>
         );
@@ -222,12 +222,12 @@ export default function TransferDetailPage() {
     if (error || !transfer) {
         return (
             <div className="animate-in fade-in duration-300">
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-text-2">
                     {error ?? 'Transfer not found'}
                 </p>
                 <button
                     onClick={() => navigate(FRONTEND_ROUTES.TRANSFERS)}
-                    className="mt-4 h-9 px-4 rounded-lg border border-white/10 text-sm text-white hover:bg-white/5 transition-colors"
+                    className="mt-4 h-9 px-4 rounded-lg border border-border text-sm text-text-1 hover:bg-surface-2 transition-colors"
                 >
                     Back to transfers
                 </button>
@@ -264,7 +264,7 @@ export default function TransferDetailPage() {
             <div className="mb-6">
                 <button
                     onClick={() => navigate(FRONTEND_ROUTES.TRANSFERS)}
-                    className="text-xs text-slate-500 hover:text-white transition-colors mb-3 flex items-center gap-1"
+                    className="text-xs text-text-3 hover:text-text-1 transition-colors mb-3 flex items-center gap-1"
                 >
                     <svg
                         width="14"
@@ -284,12 +284,12 @@ export default function TransferDetailPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold text-white tracking-tight">
+                            <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                                 {transfer.product.name}
                             </h1>
                             <TransferStatusPill status={transfer.status} />
                         </div>
-                        <p className="text-sm text-slate-500 mt-1">
+                        <p className="text-sm text-text-3 mt-1">
                             {displayQty} unit(s) ·{' '}
                             {transfer.sourceBranch?.name ?? 'No source yet'}{' '}
                             → {transfer.destinationBranch.name}
@@ -332,33 +332,33 @@ export default function TransferDetailPage() {
             {(transfer.requestReason ||
                 transfer.rejectionReason ||
                 transfer.approvalNote) && (
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 mb-6 space-y-4">
+                <div className="bg-surface border border-border rounded-md p-6 mb-6 space-y-4">
                     {transfer.requestReason && (
                         <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-text-3 mb-1">
                                 Request reason
                             </p>
-                            <p className="text-sm text-slate-300">
+                            <p className="text-sm text-text-1">
                                 {transfer.requestReason}
                             </p>
                         </div>
                     )}
                     {transfer.approvalNote && (
                         <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-300 mb-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-accent-text mb-1">
                                 Admin verification message
                             </p>
-                            <p className="text-sm text-slate-300">
+                            <p className="text-sm text-text-1">
                                 {transfer.approvalNote}
                             </p>
                         </div>
                     )}
                     {transfer.rejectionReason && (
                         <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-300 mb-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-danger mb-1">
                                 Rejection reason
                             </p>
-                            <p className="text-sm text-slate-300">
+                            <p className="text-sm text-text-1">
                                 {transfer.rejectionReason}
                             </p>
                         </div>
@@ -368,8 +368,8 @@ export default function TransferDetailPage() {
 
             {/* Actions */}
             {(canApproveOrReject || canCancel || canShip || canReceive) && (
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-6">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-3">
+                <div className="bg-surface border border-border rounded-md p-6">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-text-3 mb-3">
                         Actions
                     </p>
                     <div className="flex flex-wrap items-center gap-3">
@@ -377,13 +377,13 @@ export default function TransferDetailPage() {
                             <>
                                 <button
                                     onClick={openApprove}
-                                    className="h-10 px-5 rounded-xl bg-white text-slate-900 text-sm font-bold hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 transition-all"
+                                    className="h-10 px-5 rounded-xl bg-primary text-text-inv text-sm font-bold hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 transition-all"
                                 >
                                     Approve
                                 </button>
                                 <button
                                     onClick={() => setActiveAction('reject')}
-                                    className="h-10 px-5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm font-medium hover:bg-rose-500/25 transition-colors"
+                                    className="h-10 px-5 rounded-xl bg-danger-soft border border-danger/40 text-danger text-sm font-medium hover:bg-rose-500/25 transition-colors"
                                 >
                                     Reject
                                 </button>
@@ -392,7 +392,7 @@ export default function TransferDetailPage() {
                         {canShip && (
                             <button
                                 onClick={() => setActiveAction('ship')}
-                                className="h-10 px-5 rounded-xl bg-white text-slate-900 text-sm font-bold hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 transition-all"
+                                className="h-10 px-5 rounded-xl bg-primary text-text-inv text-sm font-bold hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 transition-all"
                             >
                                 Mark Shipped
                             </button>
@@ -400,7 +400,7 @@ export default function TransferDetailPage() {
                         {canReceive && (
                             <button
                                 onClick={() => setActiveAction('receive')}
-                                className="h-10 px-5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-sm font-medium hover:bg-emerald-500/25 transition-colors"
+                                className="h-10 px-5 rounded-xl bg-accent-soft border border-accent/40 text-accent-text text-sm font-medium hover:bg-emerald-500/25 transition-colors"
                             >
                                 Mark Received
                             </button>
@@ -408,7 +408,7 @@ export default function TransferDetailPage() {
                         {canCancel && (
                             <button
                                 onClick={() => setActiveAction('cancel')}
-                                className="h-10 px-4 rounded-xl border border-white/10 text-slate-300 text-sm font-medium hover:bg-white/5 transition-colors"
+                                className="h-10 px-4 rounded-xl border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors"
                             >
                                 Cancel transfer
                             </button>
@@ -420,28 +420,28 @@ export default function TransferDetailPage() {
             {/* Approve modal */}
             {activeAction === 'approve' && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-lg font-semibold text-white mb-1">
+                    <div className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-lg font-semibold text-text-1 mb-1">
                             Approve transfer
                         </h3>
-                        <p className="text-xs text-slate-500 mb-4">
+                        <p className="text-xs text-text-3 mb-4">
                             Pick a source branch with enough stock and confirm
                             the quantity.
                         </p>
 
-                        <div className="bg-[#0a0a0a] border border-white/10 rounded-xl max-h-72 overflow-y-auto mb-4">
+                        <div className="bg-canvas border border-border rounded-xl max-h-72 overflow-y-auto mb-4">
                             {sourceLoading ? (
-                                <div className="p-4 text-sm text-slate-500">
+                                <div className="p-4 text-sm text-text-3">
                                     Loading branches…
                                 </div>
                             ) : sourceOptions.length === 0 ? (
-                                <div className="p-4 text-sm text-slate-500">
+                                <div className="p-4 text-sm text-text-3">
                                     No other branches found.
                                 </div>
                             ) : (
                                 <table className="w-full text-sm">
                                     <thead>
-                                        <tr className="text-[10px] uppercase tracking-widest text-slate-500 border-b border-white/10">
+                                        <tr className="text-[10px] uppercase tracking-widest text-text-3 border-b border-border">
                                             <th className="px-4 py-2 text-left font-semibold"></th>
                                             <th className="px-4 py-2 text-left font-semibold">
                                                 Branch
@@ -465,13 +465,13 @@ export default function TransferDetailPage() {
                                             return (
                                                 <tr
                                                     key={opt.branchId}
-                                                    className={`border-b border-white/5 transition-colors ${
+                                                    className={`border-b border-border transition-colors ${
                                                         disabled
                                                             ? 'opacity-50'
-                                                            : 'hover:bg-white/[0.02] cursor-pointer'
+                                                            : 'hover:bg-surface-2 cursor-pointer'
                                                     } ${
                                                         isChecked
-                                                            ? 'bg-white/[0.04]'
+                                                            ? 'bg-surface-2'
                                                             : ''
                                                     }`}
                                                     onClick={() => {
@@ -503,10 +503,10 @@ export default function TransferDetailPage() {
                                                             className="accent-white"
                                                         />
                                                     </td>
-                                                    <td className="px-4 py-3 text-slate-200">
+                                                    <td className="px-4 py-3 text-text-1">
                                                         {opt.branchName}
                                                         {!opt.isActive && (
-                                                            <span className="ml-2 text-[10px] text-slate-500">
+                                                            <span className="ml-2 text-[10px] text-text-3">
                                                                 (inactive)
                                                             </span>
                                                         )}
@@ -514,8 +514,8 @@ export default function TransferDetailPage() {
                                                     <td
                                                         className={`px-4 py-3 text-right tabular-nums font-medium ${
                                                             sufficient
-                                                                ? 'text-emerald-300'
-                                                                : 'text-amber-300'
+                                                                ? 'text-accent-text'
+                                                                : 'text-warning'
                                                         }`}
                                                     >
                                                         {opt.currentQuantity}
@@ -529,7 +529,7 @@ export default function TransferDetailPage() {
                         </div>
 
                         <div className="mb-4">
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-text-3 mb-2">
                                 Approved quantity
                             </label>
                             <input
@@ -540,15 +540,15 @@ export default function TransferDetailPage() {
                                 onChange={(e) =>
                                     setApprovedQuantityStr(e.target.value)
                                 }
-                                className="w-full h-11 px-4 bg-[#0a0a0a] border border-white/10 rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all"
+                                className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all"
                             />
-                            <p className="text-[11px] text-slate-600 mt-1">
+                            <p className="text-[11px] text-text-3 mt-1">
                                 Requested: {transfer.requestedQuantity} unit(s)
                             </p>
                         </div>
 
                         <div className="mb-4">
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-text-3 mb-2">
                                 Verification message to managers (optional)
                             </label>
                             <textarea
@@ -559,9 +559,9 @@ export default function TransferDetailPage() {
                                 rows={2}
                                 maxLength={500}
                                 placeholder="e.g. Please ship before Friday — store running out."
-                                className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 resize-none"
+                                className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 resize-none"
                             />
-                            <p className="text-[11px] text-slate-600 mt-1">
+                            <p className="text-[11px] text-text-3 mt-1">
                                 Sent to both source and destination branch
                                 managers in the approval notification.
                             </p>
@@ -571,14 +571,14 @@ export default function TransferDetailPage() {
                             <button
                                 onClick={closeModal}
                                 disabled={submitting}
-                                className="h-9 px-4 rounded-lg border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
+                                className="h-9 px-4 rounded-lg border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleApproveSubmit}
                                 disabled={submitting || !chosenSourceId}
-                                className="h-9 px-4 rounded-lg bg-white text-slate-900 text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
+                                className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
                             >
                                 {submitting
                                     ? 'Approving…'
@@ -592,11 +592,11 @@ export default function TransferDetailPage() {
             {/* Reject modal */}
             {activeAction === 'reject' && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-lg font-semibold text-white mb-2">
+                    <div className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-lg font-semibold text-text-1 mb-2">
                             Reject transfer
                         </h3>
-                        <p className="text-xs text-slate-500 mb-4">
+                        <p className="text-xs text-text-3 mb-4">
                             The requesting branch will see this reason.
                         </p>
                         <textarea
@@ -607,20 +607,20 @@ export default function TransferDetailPage() {
                             rows={3}
                             maxLength={500}
                             placeholder="Reason for rejection…"
-                            className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 resize-none"
+                            className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 resize-none"
                         />
                         <div className="flex items-center justify-end gap-3 mt-4">
                             <button
                                 onClick={closeModal}
                                 disabled={submitting}
-                                className="h-9 px-4 rounded-lg border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
+                                className="h-9 px-4 rounded-lg border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleRejectSubmit}
                                 disabled={submitting}
-                                className="h-9 px-4 rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-300 text-sm font-medium hover:bg-rose-500/30 transition-colors disabled:opacity-50"
+                                className="h-9 px-4 rounded-lg bg-danger-soft border border-danger/40 text-danger text-sm font-medium hover:bg-rose-500/30 transition-colors disabled:opacity-50"
                             >
                                 {submitting ? 'Rejecting…' : 'Reject transfer'}
                             </button>
@@ -634,15 +634,15 @@ export default function TransferDetailPage() {
                 activeAction === 'ship' ||
                 activeAction === 'receive') && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-lg font-semibold text-white mb-2">
+                    <div className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-lg font-semibold text-text-1 mb-2">
                             {activeAction === 'cancel'
                                 ? 'Cancel transfer'
                                 : activeAction === 'ship'
                                   ? 'Mark transfer as shipped'
                                   : 'Mark transfer as received'}
                         </h3>
-                        <p className="text-sm text-slate-400 mb-6">
+                        <p className="text-sm text-text-2 mb-6">
                             {activeAction === 'cancel'
                                 ? 'This will void the transfer. No inventory will move.'
                                 : activeAction === 'ship'
@@ -653,7 +653,7 @@ export default function TransferDetailPage() {
                             <button
                                 onClick={closeModal}
                                 disabled={submitting}
-                                className="h-9 px-4 rounded-lg border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
+                                className="h-9 px-4 rounded-lg border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors disabled:opacity-50"
                             >
                                 Back
                             </button>
@@ -669,10 +669,10 @@ export default function TransferDetailPage() {
                                 disabled={submitting}
                                 className={`h-9 px-4 rounded-lg text-sm font-bold transition-all disabled:opacity-50 ${
                                     activeAction === 'cancel'
-                                        ? 'bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:bg-rose-500/30'
+                                        ? 'bg-danger-soft border border-danger/40 text-danger hover:bg-rose-500/30'
                                         : activeAction === 'receive'
-                                          ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/30'
-                                          : 'bg-white text-slate-900 hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)]'
+                                          ? 'bg-accent-soft border border-accent/40 text-accent-text hover:bg-accent-soft'
+                                          : 'bg-primary text-text-inv hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)]'
                                 }`}
                             >
                                 {submitting ? 'Working…' : 'Confirm'}

@@ -62,17 +62,17 @@ export default function TransferRequestsPage() {
         <div className="animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">
+                    <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                         Stock Transfers
                     </h1>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-sm text-text-3 mt-1">
                         Request inventory from other branches and fulfill
                         approved incoming transfers.
                     </p>
                 </div>
                 <button
                     onClick={() => navigate(FRONTEND_ROUTES.TRANSFERS_NEW)}
-                    className="h-9 px-4 rounded-lg bg-white text-slate-900 text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all flex items-center gap-2 self-start"
+                    className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all flex items-center gap-2 self-start"
                 >
                     <svg
                         width="14"
@@ -91,7 +91,7 @@ export default function TransferRequestsPage() {
                 </button>
             </div>
 
-            <div className="flex items-center gap-1 mb-6 p-1 bg-white/[0.03] rounded-xl border border-white/5 w-fit">
+            <div className="flex items-center gap-1 mb-6 p-1 bg-surface-2 rounded-xl border border-border w-fit">
                 {TABS.map((t) => {
                     const isActive = tab === t.key;
                     const count =
@@ -104,16 +104,16 @@ export default function TransferRequestsPage() {
                             onClick={() => setTab(t.key)}
                             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
                                 isActive
-                                    ? 'bg-white text-slate-900 shadow-sm'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    ? 'bg-primary text-text-inv shadow-sm'
+                                    : 'text-text-2 hover:text-text-1 hover:bg-surface-2'
                             }`}
                         >
                             {t.label}
                             <span
                                 className={`text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full ${
                                     isActive
-                                        ? 'bg-slate-900/10 text-slate-700'
-                                        : 'bg-white/5 text-slate-500'
+                                        ? 'bg-slate-900/10 text-text-3'
+                                        : 'bg-surface-2 text-text-3'
                                 }`}
                             >
                                 {count}
@@ -123,11 +123,11 @@ export default function TransferRequestsPage() {
                 })}
             </div>
 
-            <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-surface border border-border rounded-md shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-white/10 text-[11px] uppercase tracking-widest text-slate-500 bg-[#0a0a0a]/50">
+                            <tr className="border-b border-border text-[11px] uppercase tracking-widest text-text-3 bg-canvas/50">
                                 <th className="px-6 py-4 font-semibold whitespace-nowrap">
                                     Product
                                 </th>
@@ -151,14 +151,14 @@ export default function TransferRequestsPage() {
                                 [...Array(4)].map((_, i) => (
                                     <tr
                                         key={i}
-                                        className="border-b border-white/5"
+                                        className="border-b border-border"
                                     >
                                         {[...Array(6)].map((__, j) => (
                                             <td
                                                 key={j}
                                                 className="px-6 py-4"
                                             >
-                                                <div className="h-5 w-24 bg-white/5 rounded animate-pulse" />
+                                                <div className="h-5 w-24 bg-surface-2 rounded animate-pulse" />
                                             </td>
                                         ))}
                                     </tr>
@@ -169,12 +169,12 @@ export default function TransferRequestsPage() {
                                         colSpan={6}
                                         className="px-6 py-16 text-center"
                                     >
-                                        <p className="text-sm font-medium text-slate-400">
+                                        <p className="text-sm font-medium text-text-2">
                                             {tab === 'my-requests'
                                                 ? 'No transfer requests yet'
                                                 : 'No incoming transfers'}
                                         </p>
-                                        <p className="text-xs text-slate-600 mt-1">
+                                        <p className="text-xs text-text-3 mt-1">
                                             {tab === 'my-requests'
                                                 ? 'Create one when your branch needs stock from another branch.'
                                                 : 'Approved transfers from other branches will appear here.'}
@@ -198,7 +198,7 @@ export default function TransferRequestsPage() {
                                     return (
                                         <tr
                                             key={item.id}
-                                            className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                                            className="border-b border-border hover:bg-surface-2 transition-colors group cursor-pointer"
                                             onClick={() =>
                                                 navigate(
                                                     FRONTEND_ROUTES.TRANSFER_DETAIL.replace(
@@ -209,14 +209,14 @@ export default function TransferRequestsPage() {
                                             }
                                         >
                                             <td className="px-6 py-4">
-                                                <span className="text-slate-200 font-medium">
+                                                <span className="text-text-1 font-medium">
                                                     {item.product.name}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-slate-400">
+                                            <td className="px-6 py-4 text-text-2">
                                                 {otherBranch}
                                             </td>
-                                            <td className="px-6 py-4 text-right tabular-nums text-slate-300 font-medium">
+                                            <td className="px-6 py-4 text-right tabular-nums text-text-1 font-medium">
                                                 {qty}
                                             </td>
                                             <td className="px-6 py-4">
@@ -224,7 +224,7 @@ export default function TransferRequestsPage() {
                                                     status={item.status}
                                                 />
                                             </td>
-                                            <td className="px-6 py-4 text-slate-500">
+                                            <td className="px-6 py-4 text-text-3">
                                                 {formatTimeAgo(
                                                     item.createdAt,
                                                 )}
@@ -240,7 +240,7 @@ export default function TransferRequestsPage() {
                                                             shippingId ===
                                                             item.id
                                                         }
-                                                        className="h-8 px-3 rounded-lg bg-white text-slate-900 text-xs font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
+                                                        className="h-8 px-3 rounded-lg bg-primary text-text-inv text-xs font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
                                                     >
                                                         {shippingId ===
                                                         item.id

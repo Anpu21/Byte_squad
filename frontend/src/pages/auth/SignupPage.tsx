@@ -2,9 +2,13 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { Eye, EyeOff } from 'lucide-react';
 import { authService } from '@/services/auth.service';
 import { isValidEmail } from '@/lib/utils';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import Button from '@/components/ui/Button';
+import Logo from '@/components/ui/Logo';
+import { cn } from '@/lib/utils';
 
 interface FieldErrors {
     firstName?: string;
@@ -14,6 +18,9 @@ interface FieldErrors {
     confirmPassword?: string;
     phone?: string;
 }
+
+const inputBase =
+    'w-full h-[42px] px-3 bg-surface border rounded-md text-[13px] text-text-1 placeholder:text-text-3 outline-none transition-colors';
 
 export default function SignupPage() {
     const [firstName, setFirstName] = useState('');
@@ -76,21 +83,28 @@ export default function SignupPage() {
         }
     };
 
+    const inputClass = (hasError?: string) =>
+        cn(
+            inputBase,
+            hasError
+                ? 'border-danger focus:border-danger focus:ring-[3px] focus:ring-danger/20'
+                : 'border-border-strong focus:border-primary focus:ring-[3px] focus:ring-primary/20',
+        );
+
     return (
         <>
-            <div className="mb-7">
-                <h2 className="text-[22px] font-semibold text-slate-100 leading-tight">
-                    Create your account
-                </h2>
-                <p className="text-sm text-slate-400 mt-1.5">
-                    We&apos;ll email you a verification code to finish setup
-                </p>
-            </div>
+            <Logo size={36} />
+            <h1 className="mt-7 text-[28px] font-bold tracking-[-0.02em] text-text-1 leading-tight">
+                Create your account
+            </h1>
+            <p className="text-xs text-text-2 mt-1.5 mb-7">
+                We&apos;ll email you a verification code to finish setup.
+            </p>
 
-            <form onSubmit={handleSubmit} noValidate>
-                <div className="grid grid-cols-2 gap-3 mb-5">
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+                <div className="grid grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                        <label className="block text-xs font-medium text-text-2 mb-1.5">
                             First name
                         </label>
                         <input
@@ -98,20 +112,16 @@ export default function SignupPage() {
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
                             placeholder="Jane"
-                            className={`w-full h-12 px-4 bg-white/5 border rounded-xl text-slate-200 text-sm outline-none transition-all duration-200 placeholder:text-slate-600 ${
-                                errors.firstName
-                                    ? 'border-rose-500/50 focus:border-rose-500'
-                                    : 'border-white/10 focus:border-white focus:ring-[3px] focus:ring-white/20'
-                            }`}
+                            className={inputClass(errors.firstName)}
                         />
                         {errors.firstName && (
-                            <p className="mt-2 text-[12px] text-rose-400">
+                            <p className="mt-1.5 text-xs text-danger font-medium">
                                 {errors.firstName}
                             </p>
                         )}
                     </div>
                     <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                        <label className="block text-xs font-medium text-text-2 mb-1.5">
                             Last name
                         </label>
                         <input
@@ -119,22 +129,18 @@ export default function SignupPage() {
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
                             placeholder="Doe"
-                            className={`w-full h-12 px-4 bg-white/5 border rounded-xl text-slate-200 text-sm outline-none transition-all duration-200 placeholder:text-slate-600 ${
-                                errors.lastName
-                                    ? 'border-rose-500/50 focus:border-rose-500'
-                                    : 'border-white/10 focus:border-white focus:ring-[3px] focus:ring-white/20'
-                            }`}
+                            className={inputClass(errors.lastName)}
                         />
                         {errors.lastName && (
-                            <p className="mt-2 text-[12px] text-rose-400">
+                            <p className="mt-1.5 text-xs text-danger font-medium">
                                 {errors.lastName}
                             </p>
                         )}
                     </div>
                 </div>
 
-                <div className="mb-5">
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                <div>
+                    <label className="block text-xs font-medium text-text-2 mb-1.5">
                         Email
                     </label>
                     <input
@@ -142,76 +148,65 @@ export default function SignupPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@company.com"
-                        className={`w-full h-12 px-4 bg-white/5 border rounded-xl text-slate-200 text-sm outline-none transition-all duration-200 placeholder:text-slate-600 ${
-                            errors.email
-                                ? 'border-rose-500/50 focus:border-rose-500'
-                                : 'border-white/10 focus:border-white focus:ring-[3px] focus:ring-white/20'
-                        }`}
+                        className={inputClass(errors.email)}
                     />
                     {errors.email && (
-                        <p className="mt-2 text-[12px] text-rose-400">
+                        <p className="mt-1.5 text-xs text-danger font-medium">
                             {errors.email}
                         </p>
                     )}
                 </div>
 
-                <div className="mb-5">
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
-                        Phone (optional)
+                <div>
+                    <label className="block text-xs font-medium text-text-2 mb-1.5">
+                        Phone <span className="text-text-3">(optional)</span>
                     </label>
                     <input
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+94 …"
-                        className="w-full h-12 px-4 bg-white/5 border border-white/10 rounded-xl text-slate-200 text-sm outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 placeholder:text-slate-600 transition-all duration-200"
+                        className={inputClass()}
                     />
                 </div>
 
-                <div className="mb-5">
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                <div>
+                    <label className="block text-xs font-medium text-text-2 mb-1.5">
                         Password
                     </label>
-                    <div className="relative">
+                    <div
+                        className={cn(
+                            'flex items-center gap-2 h-[42px] px-3 bg-surface border rounded-md transition-colors',
+                            errors.password
+                                ? 'border-danger'
+                                : 'border-border-strong focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/20',
+                        )}
+                    >
                         <input
                             type={showPassword ? 'text' : 'password'}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="At least 8 characters"
-                            className={`w-full h-12 pl-4 pr-12 bg-white/5 border rounded-xl text-slate-200 text-sm outline-none transition-all duration-200 placeholder:text-slate-600 ${
-                                errors.password
-                                    ? 'border-rose-500/50 focus:border-rose-500'
-                                    : 'border-white/10 focus:border-white focus:ring-[3px] focus:ring-white/20'
-                            }`}
+                            className="flex-1 bg-transparent outline-none text-[13px] text-text-1 placeholder:text-text-3"
                         />
                         <button
                             type="button"
                             onClick={() => setShowPassword((s) => !s)}
-                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors p-1"
+                            className="text-text-3 hover:text-text-1 transition-colors"
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
-                            {showPassword ? (
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                                    <line x1="1" y1="1" x2="23" y2="23" />
-                                </svg>
-                            ) : (
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                </svg>
-                            )}
+                            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                         </button>
                     </div>
                     {errors.password && (
-                        <p className="mt-2 text-[12px] text-rose-400">
+                        <p className="mt-1.5 text-xs text-danger font-medium">
                             {errors.password}
                         </p>
                     )}
                 </div>
 
-                <div className="mb-7">
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                <div>
+                    <label className="block text-xs font-medium text-text-2 mb-1.5">
                         Confirm password
                     </label>
                     <input
@@ -219,47 +214,34 @@ export default function SignupPage() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Re-enter your password"
-                        className={`w-full h-12 px-4 bg-white/5 border rounded-xl text-slate-200 text-sm outline-none transition-all duration-200 placeholder:text-slate-600 ${
-                            errors.confirmPassword
-                                ? 'border-rose-500/50 focus:border-rose-500'
-                                : 'border-white/10 focus:border-white focus:ring-[3px] focus:ring-white/20'
-                        }`}
+                        className={inputClass(errors.confirmPassword)}
                     />
                     {errors.confirmPassword && (
-                        <p className="mt-2 text-[12px] text-rose-400">
+                        <p className="mt-1.5 text-xs text-danger font-medium">
                             {errors.confirmPassword}
                         </p>
                     )}
                 </div>
 
-                <button
+                <Button
                     type="submit"
+                    size="lg"
                     disabled={submitting}
-                    className={`w-full h-[50px] rounded-xl border-none text-slate-900 text-[15px] font-bold tracking-wide flex items-center justify-center gap-2 transition-all duration-300 bg-white shadow-[0_6px_24px_rgba(255,255,255,0.1)] ${
-                        submitting ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer hover:-translate-y-0.5'
-                    }`}
+                    className="w-full mt-2"
                 >
                     {submitting ? 'Creating account…' : 'Create account'}
-                </button>
+                </Button>
+
+                <p className="text-center text-xs text-text-2 mt-2">
+                    Already have an account?{' '}
+                    <Link
+                        to={FRONTEND_ROUTES.LOGIN}
+                        className="text-primary font-medium hover:opacity-80 transition-opacity"
+                    >
+                        Sign in
+                    </Link>
+                </p>
             </form>
-
-            <div className="flex items-center gap-3.5 my-7">
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                <span className="text-[11px] text-slate-500 uppercase tracking-[1.5px] font-semibold">
-                    or
-                </span>
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-            </div>
-
-            <p className="text-center text-[13px] text-slate-400">
-                Already have an account?{' '}
-                <Link
-                    to={FRONTEND_ROUTES.LOGIN}
-                    className="text-slate-200 font-semibold hover:text-white transition-colors"
-                >
-                    Sign in
-                </Link>
-            </p>
         </>
     );
 }
