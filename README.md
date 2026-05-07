@@ -10,7 +10,7 @@
 
 | Layer    | Technology                                                                                              |
 |----------|---------------------------------------------------------------------------------------------------------|
-| Frontend | React 19 · Vite 7 · TypeScript · Tailwind CSS · Redux Toolkit · TanStack React Query · Recharts · socket.io-client · jsPDF · xlsx · react-hot-toast |
+| Frontend | React 19 · Vite 7 · TypeScript · Tailwind CSS 4 (`@theme` design tokens) · Geist + Geist Mono · Redux Toolkit · TanStack React Query · Recharts · socket.io-client · jsPDF · xlsx · react-hot-toast · lucide-react |
 | Backend  | NestJS 11 · TypeORM · Passport JWT · bcrypt · socket.io · Nodemailer                                    |
 | Database | PostgreSQL 16                                                                                           |
 | DevOps   | Docker Compose · GitHub Actions · pnpm 10.33.2                                                          |
@@ -31,6 +31,59 @@
 - **Email Notifications** — Welcome emails with auto-generated temp passwords for new users.
 - **Auto Seeding** — Idempotent seeder creates branches, users, supermarket products, inventory, transactions, expenses, and sample stock transfers on first boot.
 - **Reproducible Builds** — Exact-pinned dependency versions, `save-exact` `.npmrc`, and `pnpm-lock.yaml` checked in.
+- **Design System (May 2026 redesign)** — Sage/slate palette built on the brand color `#19183B`, full light + dark theme support with a one-click toggle, Geist + Geist Mono typography, and a tokenized component library (KPI cards, sparklines, status pills, segmented controls, page headers, and more).
+
+---
+
+## Design System
+
+The frontend is built on a token-first design system based on the [Anthropic Claude Design](https://claude.ai/design) handoff for "Ledger Pro Redesign". Every color, font, radius, and shadow flows through CSS variables defined in [frontend/src/index.css](frontend/src/index.css), and is exposed to Tailwind via the `@theme` directive so pages can write `bg-surface`, `text-text-1`, `border-border-strong` instead of hardcoded hex literals.
+
+### Theme tokens
+
+| Token              | Light                  | Dark                          |
+|--------------------|------------------------|-------------------------------|
+| `--canvas`         | `#F5F8F7`              | `#0E0D24`                     |
+| `--surface`        | `#FFFFFF`              | `#19183B`                     |
+| `--text-1`         | `#19183B` (deep navy)  | `#E7F2EF`                     |
+| `--primary`        | `#19183B`              | `#A1C2BD` (light sage)        |
+| `--accent`         | `#4A8073` (sage)       | `#A1C2BD`                     |
+| `--warning`        | `#B7791F`              | `#E0B872`                     |
+| `--danger`         | `#B4342E`              | `#E08680`                     |
+| `--info`           | `#2F6594`              | `#8FB5D6`                     |
+
+Brand palette: `#19183B` (primary navy), `#708993` (slate), `#A1C2BD` (sage), `#E7F2EF` (cloud).
+
+### Theme toggle
+
+`useTheme()` hook in [frontend/src/hooks/useTheme.ts](frontend/src/hooks/useTheme.ts) flips `<html data-theme="light|dark">` and persists the choice to `localStorage`. A pre-React inline script in [frontend/index.html](frontend/index.html) applies the saved preference before paint to prevent flash. The toggle button is mounted in the dashboard topbar, customer header, and auth layout.
+
+### UI primitives
+
+All under [frontend/src/components/ui/](frontend/src/components/ui/) — re-paint and reuse rather than building one-off styles:
+
+`Button` · `Card` · `Input` · `Modal` · `Pill` · `StatusPill` · `Avatar` · `Logo` · `KpiCard` · `Spark` · `PageHeader` · `Segmented` · `Stepper` · `EmptyState` · `Toolbar` · `ThemeToggle`
+
+### Charts
+
+[frontend/src/components/charts/AreaChart.tsx](frontend/src/components/charts/AreaChart.tsx) and [BarChart.tsx](frontend/src/components/charts/BarChart.tsx) wrap Recharts and read CSS variables for stroke, fill, grid, and tooltip — so charts auto-reskin on theme toggle.
+
+### Token migration script
+
+[frontend/scripts/migrate-tokens.mjs](frontend/scripts/migrate-tokens.mjs) is a one-shot codemod that converts hardcoded Tailwind literals (`bg-[#0a0a0a]`, `text-slate-400`, `border-white/10`, status colors `emerald/rose/amber/blue`) to design tokens across `src/pages` and `src/components`. Run it with `node scripts/migrate-tokens.mjs` from the `frontend/` folder. Used during the migration; safe to re-run if new dark literals slip in via PRs.
+
+---
+
+## Documentation
+
+| File                                                                       | Description                                                                                |
+|----------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| [docs/use-case-diagram.puml](docs/use-case-diagram.puml)                   | PlantUML source of the project's use case diagram (6 actors · 10 packages · ~50 use cases) |
+| [docs/branch-relationships.md](docs/branch-relationships.md)               | Branch-to-user-to-inventory relationship notes                                             |
+| [docs/super-admin-features.md](docs/super-admin-features.md)               | Admin-portal feature breakdown                                                             |
+| [DOCKER.md](DOCKER.md)                                                     | Docker / deployment notes                                                                  |
+
+To re-render the use case diagram, paste the `.puml` source into [PlantUML online](https://www.plantuml.com/plantuml/uml/) or run it through any PlantUML-compatible renderer (Kroki, plantuml.jar, IDE extensions).
 
 ---
 
@@ -247,6 +300,11 @@ Byte_squad/
 ├── README.md                    # This file
 ├── DOCKER.md                    # Docker / deployment notes
 │
+├── docs/                        # Architecture & design docs
+│   ├── use-case-diagram.puml    # PlantUML source for the use case diagram
+│   ├── branch-relationships.md
+│   └── super-admin-features.md
+│
 ├── .github/workflows/           # CI: backend, frontend, docker, deploy
 │
 ├── backend/                     # NestJS API
@@ -284,30 +342,42 @@ Byte_squad/
     ├── nginx.conf               # Production SPA + caching headers
     ├── package.json             # Exact-pinned deps · pnpm 10.33.2
     ├── pnpm-lock.yaml
+    ├── index.html               # FOUC theme script + Google Fonts preconnect
+    ├── scripts/
+    │   └── migrate-tokens.mjs   # One-shot codemod: dark literals → design tokens
     └── src/
-        ├── App.tsx              # Providers, Toaster
+        ├── App.tsx              # Providers, Toaster (theme-aware)
+        ├── index.css            # Design tokens (@theme + :root + [data-theme="dark"])
         ├── constants/           # Enums (UserRole, TransferStatus, …), routes
-        ├── layouts/             # DashboardLayout (sidebar, top bar)
-        ├── routes/              # AppRouter, ProtectedRoute, PublicRoute
+        ├── layouts/             # DashboardLayout · AuthLayout · CustomerLayout
+        ├── routes/              # AppRouter, ProtectedRoute, PublicRoute, routeMeta (breadcrumbs)
         ├── pages/
-        │   ├── auth/            # Login, OTP, ChangePassword
+        │   ├── auth/            # Login, Signup, OTP, ChangePassword
         │   ├── dashboard/       # Admin & Cashier dashboards
         │   ├── users/           # UserManagement, Profile
-        │   ├── pos/             # POS terminal + Transactions
+        │   ├── pos/             # POS terminal + Transactions + ScanRequest
         │   ├── inventory/       # InventoryList, ProductForm
         │   ├── accounting/      # Ledger, Expenses, ProfitLoss
         │   ├── notifications/   # NotificationsList + Detail
         │   ├── branches/        # BranchManagement, BranchPerformance
         │   ├── transfers/       # ✨ TransferRequests, NewTransferRequest, TransferDetail
-        │   └── admin/           # BranchesHub (tabbed), AdminTransfers
+        │   ├── shop/            # Customer storefront (Catalog, Cart, Checkout, MyRequests)
+        │   ├── requests/        # CustomerRequests (staff fulfillment)
+        │   └── admin/           # BranchesHub (tabbed), AdminTransfers, BranchComparison
         ├── components/
+        │   ├── ui/              # 🎨 Design-system primitives (Button, Card, Input, Modal,
+        │   │                    #   Pill, StatusPill, Avatar, Logo, KpiCard, Spark,
+        │   │                    #   PageHeader, Segmented, Stepper, EmptyState, Toolbar,
+        │   │                    #   ThemeToggle)
+        │   ├── charts/          # AreaChart, BarChart, SalesChart (CSS-var themed)
         │   ├── common/          # ExportMenu, shared bits
         │   ├── notifications/   # Bell dropdown, list utilities
+        │   ├── shop/            # CartDrawer
         │   └── transfers/       # ✨ TransferStatusPill
         ├── services/            # Axios + per-module clients
-        ├── hooks/               # useAuth, useInventory, useNotifications, useStockTransfers
-        ├── lib/                 # exportUtils (PDF + Excel), formatters
-        ├── store/               # Redux auth slice
+        ├── hooks/               # useAuth, useTheme, useBreadcrumbs, useInventory, …
+        ├── lib/                 # exportUtils (PDF + Excel), formatters, cn()
+        ├── store/               # Redux: auth + shopCart slices
         └── types/               # Shared TypeScript interfaces
 ```
 
