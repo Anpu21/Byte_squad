@@ -70,6 +70,7 @@ export default function TransferDetailPage() {
     const [chosenSourceId, setChosenSourceId] = useState<string>('');
     const [approvedQuantityStr, setApprovedQuantityStr] =
         useState<string>('');
+    const [approvalNote, setApprovalNote] = useState('');
 
     // Reject modal state
     const [rejectionReason, setRejectionReason] = useState('');
@@ -97,6 +98,7 @@ export default function TransferDetailPage() {
         setActiveAction('approve');
         setApprovedQuantityStr(String(transfer.requestedQuantity));
         setChosenSourceId('');
+        setApprovalNote('');
         setSourceLoading(true);
         try {
             const opts = await stockTransfersService.getSourceOptions(id);
@@ -112,6 +114,7 @@ export default function TransferDetailPage() {
         if (submitting) return;
         setActiveAction(null);
         setRejectionReason('');
+        setApprovalNote('');
     };
 
     const handleApproveSubmit = async () => {
@@ -129,12 +132,15 @@ export default function TransferDetailPage() {
         }
         setSubmitting(true);
         try {
+            const trimmedNote = approvalNote.trim();
             await stockTransfersService.approve(id, {
                 sourceBranchId: chosenSourceId,
                 approvedQuantity: qty,
+                approvalNote: trimmedNote ? trimmedNote : undefined,
             });
             toast.success('Transfer approved');
             setActiveAction(null);
+            setApprovalNote('');
             fetchTransfer();
         } catch (err) {
             const message =
@@ -323,7 +329,9 @@ export default function TransferDetailPage() {
             </div>
 
             {/* Reasons */}
-            {(transfer.requestReason || transfer.rejectionReason) && (
+            {(transfer.requestReason ||
+                transfer.rejectionReason ||
+                transfer.approvalNote) && (
                 <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 mb-6 space-y-4">
                     {transfer.requestReason && (
                         <div>
@@ -332,6 +340,16 @@ export default function TransferDetailPage() {
                             </p>
                             <p className="text-sm text-slate-300">
                                 {transfer.requestReason}
+                            </p>
+                        </div>
+                    )}
+                    {transfer.approvalNote && (
+                        <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-300 mb-1">
+                                Admin verification message
+                            </p>
+                            <p className="text-sm text-slate-300">
+                                {transfer.approvalNote}
                             </p>
                         </div>
                     )}
@@ -526,6 +544,26 @@ export default function TransferDetailPage() {
                             />
                             <p className="text-[11px] text-slate-600 mt-1">
                                 Requested: {transfer.requestedQuantity} unit(s)
+                            </p>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                                Verification message to managers (optional)
+                            </label>
+                            <textarea
+                                value={approvalNote}
+                                onChange={(e) =>
+                                    setApprovalNote(e.target.value)
+                                }
+                                rows={2}
+                                maxLength={500}
+                                placeholder="e.g. Please ship before Friday — store running out."
+                                className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 resize-none"
+                            />
+                            <p className="text-[11px] text-slate-600 mt-1">
+                                Sent to both source and destination branch
+                                managers in the approval notification.
                             </p>
                         </div>
 

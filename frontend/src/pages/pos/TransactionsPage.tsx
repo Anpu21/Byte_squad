@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { UserRole } from '@/constants/enums';
 import { posService } from '@/services/pos.service';
 import type { ICashierTransactionsSummary, ICashierTransactionRow } from '@/types';
 
@@ -18,10 +19,11 @@ function formatDateTime(dateStr: string) {
 
 export default function TransactionsPage() {
     const { user } = useAuth();
+    const isAdmin = user?.role === UserRole.ADMIN;
 
     const { data, isLoading } = useQuery<ICashierTransactionsSummary>({
-        queryKey: ['cashier-transactions-summary'],
-        queryFn: posService.getMyTransactions,
+        queryKey: ['transactions-summary', isAdmin ? 'system' : 'self'],
+        queryFn: isAdmin ? posService.getAllTransactions : posService.getMyTransactions,
         refetchInterval: 30000,
     });
 
@@ -62,9 +64,11 @@ export default function TransactionsPage() {
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-white tracking-tight">Transactions</h1>
                 <p className="text-sm text-slate-400 mt-1">
-                    {data?.scope === 'branch'
-                        ? 'Branch sales summary'
-                        : `${user?.firstName ?? 'Your'}'s sales summary`}{' '}
+                    {data?.scope === 'system'
+                        ? 'All branches sales summary'
+                        : data?.scope === 'branch'
+                          ? 'Branch sales summary'
+                          : `${user?.firstName ?? 'Your'}'s sales summary`}{' '}
                     &middot;{' '}
                     {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
@@ -100,7 +104,11 @@ export default function TransactionsPage() {
                     <p className="text-[11px] text-slate-500 mt-1">
                         {data?.recentTransactions.length ?? 0}{' '}
                         {data?.recentTransactions.length === 1 ? 'transaction' : 'transactions'}
-                        {data?.scope === 'branch' ? ' across the branch' : ''}
+                        {data?.scope === 'system'
+                            ? ' across all branches'
+                            : data?.scope === 'branch'
+                              ? ' across the branch'
+                              : ''}
                     </p>
                 </div>
                 <div className="overflow-auto max-h-[600px]">
@@ -110,7 +118,10 @@ export default function TransactionsPage() {
                                 <tr className="text-[11px] uppercase tracking-widest text-slate-500 border-b border-white/10">
                                     <th className="px-6 py-3 font-semibold">Transaction #</th>
                                     <th className="px-6 py-3 font-semibold">Date / Time</th>
-                                    {data.scope === 'branch' && (
+                                    {data.scope === 'system' && (
+                                        <th className="px-6 py-3 font-semibold">Branch</th>
+                                    )}
+                                    {(data.scope === 'branch' || data.scope === 'system') && (
                                         <th className="px-6 py-3 font-semibold">Cashier</th>
                                     )}
                                     <th className="px-6 py-3 font-semibold">Items</th>
@@ -126,7 +137,10 @@ export default function TransactionsPage() {
                                         <td className="px-6 py-3 text-slate-400 text-[13px]">
                                             {formatDateTime(txn.createdAt)}
                                         </td>
-                                        {data.scope === 'branch' && (
+                                        {data.scope === 'system' && (
+                                            <td className="px-6 py-3 text-slate-300">{txn.branchName ?? '—'}</td>
+                                        )}
+                                        {(data.scope === 'branch' || data.scope === 'system') && (
                                             <td className="px-6 py-3 text-slate-400">{txn.cashierName}</td>
                                         )}
                                         <td className="px-6 py-3 text-slate-400">{txn.itemCount}</td>

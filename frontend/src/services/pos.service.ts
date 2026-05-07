@@ -33,6 +33,11 @@ export const posService = {
         return response.data.data;
     },
 
+    getAllTransactions: async (): Promise<ICashierTransactionsSummary> => {
+        const response = await api.get<IApiResponse<ICashierTransactionsSummary>>('/pos/all-transactions');
+        return response.data.data;
+    },
+
     getAdminDashboard: async (): Promise<IAdminDashboard> => {
         const response = await api.get<IApiResponse<IAdminDashboard>>('/pos/admin-dashboard');
         return response.data.data;

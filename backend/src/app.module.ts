@@ -12,6 +12,8 @@ import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
 import { AdminPortalModule } from '@admin-portal/admin-portal.module';
 import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
+import { CustomerRequestsModule } from '@/modules/customer-requests/customer-requests.module';
+import { ShopModule } from '@/modules/shop/shop.module';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
@@ -22,6 +24,8 @@ import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { Notification } from '@notifications/entities/notification.entity';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
+import { CustomerRequest } from '@/modules/customer-requests/entities/customer-request.entity';
+import { CustomerRequestItem } from '@/modules/customer-requests/entities/customer-request-item.entity';
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
 
 import appConfig from '@common/config/app.config';
@@ -48,6 +52,8 @@ import appConfig from '@common/config/app.config';
       Expense,
       Notification,
       StockTransferRequest,
+      CustomerRequest,
+      CustomerRequestItem,
     ]),
     AuthModule,
     UsersModule,
@@ -59,6 +65,8 @@ import appConfig from '@common/config/app.config';
     NotificationsModule,
     AdminPortalModule,
     StockTransfersModule,
+    CustomerRequestsModule,
+    ShopModule,
   ],
   providers: [AdminSeedService],
 })

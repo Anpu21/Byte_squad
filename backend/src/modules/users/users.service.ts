@@ -138,6 +138,43 @@ export class UsersService {
     await this.userRepository.update(id, { lastLoginAt: new Date() });
   }
 
+  async createCustomerAccount(data: {
+    email: string;
+    passwordHash: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    otpCode: string;
+    otpExpiresAt: Date;
+  }): Promise<User> {
+    const user = this.userRepository.create({
+      email: data.email,
+      passwordHash: data.passwordHash,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      role: UserRole.CUSTOMER,
+      branchId: null,
+      isFirstLogin: false,
+      isVerified: false,
+      otpCode: data.otpCode,
+      otpExpiresAt: data.otpExpiresAt,
+    });
+    return this.userRepository.save(user);
+  }
+
+  async setOtp(id: string, otpCode: string, otpExpiresAt: Date): Promise<void> {
+    await this.userRepository.update(id, { otpCode, otpExpiresAt });
+  }
+
+  async markVerified(id: string): Promise<void> {
+    await this.userRepository.update(id, {
+      isVerified: true,
+      otpCode: null,
+      otpExpiresAt: null,
+    });
+  }
+
   async updateProfile(
     id: string,
     data: { firstName?: string; lastName?: string },

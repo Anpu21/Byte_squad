@@ -21,11 +21,25 @@ export interface IUser {
     lastName: string;
     avatarUrl: string | null;
     role: UserRole;
-    branchId: string;
+    branchId: string | null;
+    phone?: string | null;
     isFirstLogin: boolean;
     isVerified: boolean;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface ISignupPayload {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+}
+
+export interface IVerifyOtpPayload {
+    email: string;
+    otpCode: string;
 }
 
 export interface IUserCreatePayload {
@@ -450,11 +464,12 @@ export interface ICashierTransactionRow {
     total: number;
     itemCount: number;
     cashierName: string;
+    branchName?: string | null;
     createdAt: string;
 }
 
 export interface ICashierTransactionsSummary {
-    scope: 'cashier' | 'branch';
+    scope: 'cashier' | 'branch' | 'system';
     today: ICashierPeriodStats;
     month: ICashierPeriodStats;
     year: ICashierPeriodStats;
@@ -465,6 +480,80 @@ export interface ICashierTransactionsSummary {
 
 export interface IUserProfile extends IUser {
     branch?: IBranch;
+}
+
+// ─── Customer Storefront ────────────────────────────────────────────────────
+
+export type CustomerRequestStatus =
+    | 'pending'
+    | 'completed'
+    | 'rejected'
+    | 'cancelled'
+    | 'expired';
+
+export type ShopStockStatus = 'in' | 'low' | 'out';
+
+export interface IShopProductBranchRef {
+    id: string;
+    name: string;
+}
+
+export interface IShopProduct {
+    id: string;
+    name: string;
+    description: string | null;
+    category: string;
+    sellingPrice: number;
+    imageUrl: string | null;
+    stockStatus: ShopStockStatus;
+    availableBranches: IShopProductBranchRef[];
+}
+
+export interface IShopBranch {
+    id: string;
+    name: string;
+    address: string;
+    phone: string;
+}
+
+export interface ICustomerRequestItem {
+    id: string;
+    productId: string;
+    quantity: number;
+    unitPriceSnapshot: number;
+    product?: {
+        id: string;
+        name: string;
+        imageUrl: string | null;
+    };
+}
+
+export interface ICustomerRequest {
+    id: string;
+    requestCode: string;
+    userId: string | null;
+    branchId: string;
+    branch?: IShopBranch;
+    user?: IUser | null;
+    status: CustomerRequestStatus;
+    estimatedTotal: number;
+    guestName: string | null;
+    note: string | null;
+    fulfilledTransactionId: string | null;
+    items: ICustomerRequestItem[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ICustomerRequestCreatePayload {
+    branchId: string;
+    items: { productId: string; quantity: number }[];
+    note?: string;
+}
+
+export interface IFulfillRequestPayload {
+    paymentMethod: 'cash' | 'card' | 'mobile';
+    items?: { productId: string; quantity: number }[];
 }
 
 // ─── Frontend-specific Types ─────────────────────────────────────────────────

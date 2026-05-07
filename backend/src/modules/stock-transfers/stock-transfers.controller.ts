@@ -17,6 +17,7 @@ import { CreateTransferRequestDto } from '@stock-transfers/dto/create-transfer-r
 import { ApproveTransferDto } from '@stock-transfers/dto/approve-transfer.dto';
 import { RejectTransferDto } from '@stock-transfers/dto/reject-transfer.dto';
 import { ListTransfersQueryDto } from '@stock-transfers/dto/list-transfers-query.dto';
+import { ListTransferHistoryQueryDto } from '@stock-transfers/dto/list-transfer-history-query.dto';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -70,6 +71,15 @@ export class StockTransfersController {
     @Query() query: ListTransfersQueryDto,
   ): Promise<PaginatedTransfers> {
     return this.stockTransfersService.listIncoming(actor, query);
+  }
+
+  @Get(APP_ROUTES.STOCK_TRANSFERS.HISTORY)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  listHistory(
+    @CurrentUser() actor: ActorPayload,
+    @Query() query: ListTransferHistoryQueryDto,
+  ): Promise<PaginatedTransfers> {
+    return this.stockTransfersService.listHistory(actor, query);
   }
 
   @Get(APP_ROUTES.STOCK_TRANSFERS.SOURCE_OPTIONS)
