@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Download, MapPin, Package } from 'lucide-react';
-import { BrowserQRCodeSvgWriter } from '@zxing/browser';
+import QRCode from 'qrcode';
 import { customerRequestsService } from '@/services/customer-requests.service';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { CustomerRequestStatus } from '@/types';
@@ -32,7 +32,7 @@ const STATUS_TONE: Record<CustomerRequestStatus, string> = {
 
 export default function RequestConfirmationPage() {
     const { code } = useParams<{ code: string }>();
-    const qrRef = useRef<HTMLDivElement>(null);
+    const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
     const { data: request, isLoading, error } = useQuery({
         queryKey: ['customer-request-by-code', code],
@@ -41,43 +41,25 @@ export default function RequestConfirmationPage() {
     });
 
     useEffect(() => {
-        if (!code || !qrRef.current) return;
-        qrRef.current.innerHTML = '';
-        try {
-            const writer = new BrowserQRCodeSvgWriter();
-            writer.writeToDom(qrRef.current, code, 240, 240);
-        } catch (err) {
-            console.error('QR render failed', err);
-        }
-    }, [code]);
-
-    const downloadPng = () => {
-        const svgEl = qrRef.current?.querySelector('svg');
-        if (!svgEl || !code) return;
-        const xml = new XMLSerializer().serializeToString(svgEl);
-        const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(xml)))}`;
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-            const size = 512;
-            const canvas = document.createElement('canvas');
-            canvas.width = size;
-            canvas.height = size;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(0, 0, size, size);
-            ctx.drawImage(img, 0, 0, size, size);
-            const png = canvas.toDataURL('image/png');
-            const a = document.createElement('a');
-            a.href = png;
-            a.download = `${code}.png`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+        if (!code) return;
+        let cancelled = false;
+        QRCode.toDataURL(code, {
+            width: 512,
+            margin: 2,
+            color: { dark: '#000000', light: '#ffffff' },
+            errorCorrectionLevel: 'M',
+        })
+            .then((url) => {
+                if (!cancelled) setQrDataUrl(url);
+            })
+            .catch((err) => {
+                console.error('QR render failed', err);
+                if (!cancelled) setQrDataUrl(null);
+            });
+        return () => {
+            cancelled = true;
         };
-        img.src = svgDataUrl;
-    };
+    }, [code]);
 
     if (isLoading) {
         return (
@@ -119,20 +101,32 @@ export default function RequestConfirmationPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl p-6 flex flex-col items-center">
-                    <div ref={qrRef} className="bg-white" />
+                    {qrDataUrl ? (
+                        <img
+                            src={qrDataUrl}
+                            alt={`QR code for request ${request.requestCode}`}
+                            className="w-60 h-60"
+                        />
+                    ) : (
+                        <div className="w-60 h-60 flex items-center justify-center text-xs text-slate-400">
+                            Generating QR…
+                        </div>
+                    )}
                     <p className="mt-4 text-xs uppercase tracking-widest text-slate-500">
                         Code
                     </p>
                     <p className="font-mono text-lg font-bold text-slate-900 mt-1">
                         {request.requestCode}
                     </p>
-                    <button
-                        type="button"
-                        onClick={downloadPng}
-                        className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
-                    >
-                        <Download size={14} /> Download PNG
-                    </button>
+                    {qrDataUrl && (
+                        <a
+                            href={qrDataUrl}
+                            download={`${request.requestCode}.png`}
+                            className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
+                        >
+                            <Download size={14} /> Download PNG
+                        </a>
+                    )}
                 </div>
 
                 <div className="bg-[#111] border border-white/10 rounded-2xl p-6">

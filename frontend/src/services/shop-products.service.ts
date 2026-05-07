@@ -15,10 +15,9 @@ export const shopProductsService = {
         return response.data.data;
     },
 
-    getCategories: async (branchId: string): Promise<string[]> => {
+    getCategories: async (): Promise<string[]> => {
         const response = await api.get<IApiResponse<string[]>>(
             '/shop/products/categories',
-            { params: { branchId } },
         );
         return response.data.data;
     },

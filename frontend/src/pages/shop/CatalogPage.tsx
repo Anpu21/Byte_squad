@@ -55,9 +55,8 @@ export default function CatalogPage() {
     });
 
     const { data: categories = [] } = useQuery({
-        queryKey: ['shop-categories', branchId],
-        queryFn: () => shopProductsService.getCategories(branchId!),
-        enabled: Boolean(branchId),
+        queryKey: ['shop-categories'],
+        queryFn: shopProductsService.getCategories,
     });
 
     const { data: products = [], isLoading } = useQuery({
@@ -264,6 +263,25 @@ export default function CatalogPage() {
                                             )}
                                         </button>
                                     </div>
+                                    {out && product.availableBranches.length > 0 && (
+                                        <div className="mt-3 pt-3 border-t border-white/5">
+                                            <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-1.5 flex items-center gap-1">
+                                                <Store size={10} /> Available at
+                                            </p>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {product.availableBranches.map((b) => (
+                                                    <button
+                                                        key={b.id}
+                                                        type="button"
+                                                        onClick={() => handleBranchChange(b.id)}
+                                                        className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors"
+                                                    >
+                                                        {b.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );

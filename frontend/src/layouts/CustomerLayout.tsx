@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { ShoppingBag, ShoppingCart, User, LogOut, ScrollText } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { RootState } from '@/store';
 import { useAuth } from '@/hooks/useAuth';
-import { selectCartItemCount } from '@/store/slices/shopCartSlice';
+import {
+    selectCartItemCount,
+    toggleCartDrawer,
+} from '@/store/slices/shopCartSlice';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import CartDrawer from '@/components/shop/CartDrawer';
 
 interface CustomerLayoutProps {
     children: ReactNode;
@@ -14,6 +18,7 @@ interface CustomerLayoutProps {
 
 export default function CustomerLayout({ children }: CustomerLayoutProps) {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const { user, isAuthenticated, logout } = useAuth();
     const cartItems = useSelector((state: RootState) => state.shopCart.items);
     const cartCount = selectCartItemCount(cartItems);
@@ -38,8 +43,9 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
                     </Link>
 
                     <div className="flex items-center gap-2">
-                        <Link
-                            to={FRONTEND_ROUTES.SHOP_CART}
+                        <button
+                            type="button"
+                            onClick={() => dispatch(toggleCartDrawer())}
                             className="relative inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-white/5 transition-colors"
                         >
                             <ShoppingCart size={16} />
@@ -49,7 +55,7 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
                                     {cartCount}
                                 </span>
                             )}
-                        </Link>
+                        </button>
 
                         {isAuthenticated && user ? (
                             <div className="relative">
@@ -101,6 +107,8 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
                     LedgerPro Shop — pickup at your nearest branch.
                 </div>
             </footer>
+
+            <CartDrawer />
         </div>
     );
 }

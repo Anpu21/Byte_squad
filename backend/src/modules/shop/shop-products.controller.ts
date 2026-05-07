@@ -1,9 +1,6 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ShopService, ShopProduct } from '@/modules/shop/shop.service';
-import {
-  ListShopProductsDto,
-  ShopBranchScopedDto,
-} from '@/modules/shop/dto/list-shop-products.dto';
+import { ListShopProductsDto } from '@/modules/shop/dto/list-shop-products.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -26,8 +23,8 @@ export class ShopProductsController {
   }
 
   @Get('categories')
-  getCategories(@Query() query: ShopBranchScopedDto): Promise<string[]> {
-    return this.shopService.getCategories(query.branchId);
+  getCategories(): Promise<string[]> {
+    return this.shopService.getCategories();
   }
 
   @Get(':id')

@@ -493,6 +493,11 @@ export type CustomerRequestStatus =
 
 export type ShopStockStatus = 'in' | 'low' | 'out';
 
+export interface IShopProductBranchRef {
+    id: string;
+    name: string;
+}
+
 export interface IShopProduct {
     id: string;
     name: string;
@@ -501,6 +506,7 @@ export interface IShopProduct {
     sellingPrice: number;
     imageUrl: string | null;
     stockStatus: ShopStockStatus;
+    availableBranches: IShopProductBranchRef[];
 }
 
 export interface IShopBranch {

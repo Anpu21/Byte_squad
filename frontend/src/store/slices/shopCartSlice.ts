@@ -11,6 +11,7 @@ export interface ShopCartItem {
 interface ShopCartState {
     items: ShopCartItem[];
     branchId: string | null;
+    isCartOpen: boolean;
 }
 
 const STORAGE_KEY = 'ledgerpro_shop_cart';
@@ -18,7 +19,7 @@ const STORAGE_KEY = 'ledgerpro_shop_cart';
 function loadInitial(): ShopCartState {
     try {
         const json = localStorage.getItem(STORAGE_KEY);
-        if (!json) return { items: [], branchId: null };
+        if (!json) return { items: [], branchId: null, isCartOpen: false };
         const parsed = JSON.parse(json) as {
             items?: ShopCartItem[];
             branchId?: string | null;
@@ -26,9 +27,9 @@ function loadInitial(): ShopCartState {
         const items = Array.isArray(parsed.items) ? parsed.items : [];
         const branchId =
             typeof parsed.branchId === 'string' ? parsed.branchId : null;
-        return { items, branchId };
+        return { items, branchId, isCartOpen: false };
     } catch {
-        return { items: [], branchId: null };
+        return { items: [], branchId: null, isCartOpen: false };
     }
 }
 
@@ -63,6 +64,7 @@ const shopCartSlice = createSlice({
                     quantity: qty,
                 });
             }
+            state.isCartOpen = true;
         },
         removeFromCart(state, action: PayloadAction<string>) {
             state.items = state.items.filter(
@@ -83,6 +85,15 @@ const shopCartSlice = createSlice({
         setBranch(state, action: PayloadAction<string | null>) {
             state.branchId = action.payload;
         },
+        openCartDrawer(state) {
+            state.isCartOpen = true;
+        },
+        closeCartDrawer(state) {
+            state.isCartOpen = false;
+        },
+        toggleCartDrawer(state) {
+            state.isCartOpen = !state.isCartOpen;
+        },
         clearShopCart(state) {
             state.items = [];
             state.branchId = null;
@@ -95,6 +106,9 @@ export const {
     removeFromCart,
     setQuantity,
     setBranch,
+    openCartDrawer,
+    closeCartDrawer,
+    toggleCartDrawer,
     clearShopCart,
 } = shopCartSlice.actions;
 
@@ -108,7 +122,8 @@ export function selectCartItemCount(items: ShopCartItem[]): number {
 
 export function persistShopCart(state: ShopCartState): void {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        const { items, branchId } = state;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, branchId }));
     } catch {
         // localStorage full / disabled — silently ignore
     }

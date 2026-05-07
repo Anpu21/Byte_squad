@@ -12,8 +12,3 @@ export class ListShopProductsDto {
   @IsString()
   search?: string;
 }
-
-export class ShopBranchScopedDto {
-  @IsUUID()
-  branchId!: string;
-}

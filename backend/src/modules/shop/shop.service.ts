@@ -7,6 +7,11 @@ import { Inventory } from '@inventory/entities/inventory.entity';
 
 export type StockStatus = 'in' | 'low' | 'out';
 
+export interface ShopProductBranchRef {
+  id: string;
+  name: string;
+}
+
 export interface ShopProduct {
   id: string;
   name: string;
@@ -15,6 +20,7 @@ export interface ShopProduct {
   sellingPrice: number;
   imageUrl: string | null;
   stockStatus: StockStatus;
+  availableBranches: ShopProductBranchRef[];
 }
 
 export interface ShopBranch {
@@ -37,8 +43,14 @@ interface ProductWithStockRow {
   p_category: string;
   p_selling_price: string;
   p_image_url: string | null;
-  inv_quantity: number;
-  inv_low_stock_threshold: number;
+  inv_quantity: number | null;
+  inv_low_stock_threshold: number | null;
+}
+
+interface OtherBranchRow {
+  product_id: string;
+  branch_id: string;
+  branch_name: string;
 }
 
 @Injectable()
@@ -55,7 +67,7 @@ export class ShopService {
   async listProducts(query: ListProductsQuery): Promise<ShopProduct[]> {
     const qb = this.productRepo
       .createQueryBuilder('p')
-      .innerJoin(
+      .leftJoin(
         Inventory,
         'inv',
         'inv.product_id = p.id AND inv.branch_id = :branchId',
@@ -86,18 +98,37 @@ export class ShopService {
     }
 
     const rows = await qb.getRawMany<ProductWithStockRow>();
-    return rows.map((row) => this.toShopProductFromRaw(row));
+
+    const outProductIds = rows
+      .filter((r) => this.computeStatusFromRow(r) === 'out')
+      .map((r) => r.p_id);
+
+    const otherBranchesByProduct = await this.lookupOtherBranches(
+      outProductIds,
+      query.branchId,
+    );
+
+    return rows.map((row) => {
+      const stockStatus = this.computeStatusFromRow(row);
+      return {
+        id: row.p_id,
+        name: row.p_name,
+        description: row.p_description,
+        category: row.p_category,
+        sellingPrice: Number(row.p_selling_price),
+        imageUrl: row.p_image_url,
+        stockStatus,
+        availableBranches:
+          stockStatus === 'out'
+            ? (otherBranchesByProduct.get(row.p_id) ?? [])
+            : [],
+      };
+    });
   }
 
-  async getCategories(branchId: string): Promise<string[]> {
+  async getCategories(): Promise<string[]> {
     const rows = await this.productRepo
       .createQueryBuilder('p')
-      .innerJoin(
-        Inventory,
-        'inv',
-        'inv.product_id = p.id AND inv.branch_id = :branchId',
-        { branchId },
-      )
       .select('DISTINCT p.category', 'category')
       .where('p.is_active = :isActive', { isActive: true })
       .orderBy('p.category', 'ASC')
@@ -114,14 +145,19 @@ export class ShopService {
     }
 
     let stockStatus: StockStatus = 'out';
+    let availableBranches: ShopProductBranchRef[] = [];
+
     if (branchId) {
       const inv = await this.inventoryRepo.findOne({
         where: { productId: id, branchId },
       });
-      if (!inv) {
-        throw new NotFoundException('Product not available at this branch');
+      stockStatus = inv
+        ? this.computeStatus(inv.quantity, inv.lowStockThreshold)
+        : 'out';
+      if (stockStatus === 'out') {
+        const map = await this.lookupOtherBranches([id], branchId);
+        availableBranches = map.get(id) ?? [];
       }
-      stockStatus = this.computeStatus(inv.quantity, inv.lowStockThreshold);
     }
 
     return {
@@ -132,6 +168,7 @@ export class ShopService {
       sellingPrice: Number(product.sellingPrice),
       imageUrl: product.imageUrl,
       stockStatus,
+      availableBranches,
     };
   }
 
@@ -148,18 +185,43 @@ export class ShopService {
     }));
   }
 
-  private toShopProductFromRaw(row: ProductWithStockRow): ShopProduct {
+  private async lookupOtherBranches(
+    productIds: string[],
+    excludeBranchId: string,
+  ): Promise<Map<string, ShopProductBranchRef[]>> {
+    const map = new Map<string, ShopProductBranchRef[]>();
+    if (productIds.length === 0) return map;
+
+    const rows = await this.inventoryRepo
+      .createQueryBuilder('inv')
+      .innerJoin(Branch, 'b', 'b.id = inv.branch_id')
+      .select([
+        'inv.product_id AS product_id',
+        'inv.branch_id AS branch_id',
+        'b.name AS branch_name',
+      ])
+      .where('inv.product_id IN (:...productIds)', { productIds })
+      .andWhere('inv.quantity > 0')
+      .andWhere('inv.branch_id != :excludeBranchId', { excludeBranchId })
+      .andWhere('b.is_active = :isActive', { isActive: true })
+      .orderBy('b.name', 'ASC')
+      .getRawMany<OtherBranchRow>();
+
+    for (const row of rows) {
+      const list = map.get(row.product_id) ?? [];
+      list.push({ id: row.branch_id, name: row.branch_name });
+      map.set(row.product_id, list);
+    }
+    return map;
+  }
+
+  private computeStatusFromRow(row: ProductWithStockRow): StockStatus {
+    if (row.inv_quantity === null || row.inv_quantity === undefined) {
+      return 'out';
+    }
     const quantity = Number(row.inv_quantity);
-    const threshold = Number(row.inv_low_stock_threshold);
-    return {
-      id: row.p_id,
-      name: row.p_name,
-      description: row.p_description,
-      category: row.p_category,
-      sellingPrice: Number(row.p_selling_price),
-      imageUrl: row.p_image_url,
-      stockStatus: this.computeStatus(quantity, threshold),
-    };
+    const threshold = Number(row.inv_low_stock_threshold ?? 0);
+    return this.computeStatus(quantity, threshold);
   }
 
   private computeStatus(quantity: number, threshold: number): StockStatus {
