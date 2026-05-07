@@ -42,28 +42,28 @@ export default function ProfitLossPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Profit & Loss</h1>
-                    <p className="text-sm text-slate-400 mt-1">Revenue, costs, and profitability overview</p>
+                    <h1 className="text-2xl font-bold text-text-1 tracking-tight">Profit & Loss</h1>
+                    <p className="text-sm text-text-2 mt-1">Revenue, costs, and profitability overview</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <input
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="h-9 px-3 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg outline-none focus:border-white/30"
+                        className="h-9 px-3 bg-canvas border border-border text-text-1 text-sm rounded-lg outline-none focus:border-primary/40"
                     />
-                    <span className="text-slate-500 text-sm">to</span>
+                    <span className="text-text-3 text-sm">to</span>
                     <input
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="h-9 px-3 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg outline-none focus:border-white/30"
+                        className="h-9 px-3 bg-canvas border border-border text-text-1 text-sm rounded-lg outline-none focus:border-primary/40"
                     />
                 </div>
             </div>
 
             {error && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
+                <div className="mb-6 p-4 bg-danger-soft border border-danger/30 rounded-xl text-sm text-danger">
                     {error}
                 </div>
             )}
@@ -71,11 +71,11 @@ export default function ProfitLossPage() {
             {isLoading ? (
                 <div className="space-y-6">
                     {[...Array(4)].map((_, i) => (
-                        <div key={i} className="bg-[#111111] border border-white/10 rounded-2xl p-6">
-                            <div className="h-6 w-40 bg-white/5 rounded animate-pulse mb-4" />
+                        <div key={i} className="bg-surface border border-border rounded-md p-6">
+                            <div className="h-6 w-40 bg-surface-2 rounded animate-pulse mb-4" />
                             <div className="space-y-3">
-                                <div className="h-5 w-full bg-white/5 rounded animate-pulse" />
-                                <div className="h-5 w-3/4 bg-white/5 rounded animate-pulse" />
+                                <div className="h-5 w-full bg-surface-2 rounded animate-pulse" />
+                                <div className="h-5 w-3/4 bg-surface-2 rounded animate-pulse" />
                             </div>
                         </div>
                     ))}
@@ -108,9 +108,9 @@ export default function ProfitLossPage() {
                     </div>
 
                     {/* P&L Statement */}
-                    <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-                        <div className="p-5 border-b border-white/10 bg-white/[0.02]">
-                            <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Income Statement</h2>
+                    <div className="bg-surface border border-border rounded-md shadow-2xl overflow-hidden">
+                        <div className="p-5 border-b border-border bg-surface-2">
+                            <h2 className="text-sm font-semibold text-text-1 uppercase tracking-wider">Income Statement</h2>
                         </div>
 
                         <div className="divide-y divide-white/5">
@@ -129,13 +129,13 @@ export default function ProfitLossPage() {
                             </Section>
 
                             {/* Gross Profit */}
-                            <div className="px-6 py-4 flex items-center justify-between bg-white/[0.02]">
-                                <span className="text-sm font-bold text-white">Gross Profit</span>
+                            <div className="px-6 py-4 flex items-center justify-between bg-surface-2">
+                                <span className="text-sm font-bold text-text-1">Gross Profit</span>
                                 <div className="text-right">
-                                    <span className="text-sm font-bold tabular-nums text-white">
+                                    <span className="text-sm font-bold tabular-nums text-text-1">
                                         {formatCurrency(data.grossProfit)}
                                     </span>
-                                    <span className="text-[11px] text-slate-500 ml-2">({formatPercent(data.grossMargin)})</span>
+                                    <span className="text-[11px] text-text-3 ml-2">({formatPercent(data.grossMargin)})</span>
                                 </div>
                             </div>
 
@@ -152,13 +152,13 @@ export default function ProfitLossPage() {
                             </Section>
 
                             {/* Net Profit */}
-                            <div className="px-6 py-5 flex items-center justify-between bg-white/[0.04]">
-                                <span className="text-base font-bold text-white">Net Profit</span>
+                            <div className="px-6 py-5 flex items-center justify-between bg-surface-2">
+                                <span className="text-base font-bold text-text-1">Net Profit</span>
                                 <div className="text-right">
-                                    <span className="text-base font-bold tabular-nums text-white">
+                                    <span className="text-base font-bold tabular-nums text-text-1">
                                         {formatCurrency(data.netProfit)}
                                     </span>
-                                    <span className="text-xs text-slate-500 ml-2">({formatPercent(data.netMargin)})</span>
+                                    <span className="text-xs text-text-3 ml-2">({formatPercent(data.netMargin)})</span>
                                 </div>
                             </div>
                         </div>
@@ -176,10 +176,10 @@ function SummaryCard({ label, value, sub, highlight }: {
     highlight?: boolean;
 }) {
     return (
-        <div className={`bg-[#111111] border rounded-2xl p-5 ${highlight ? 'border-white/20' : 'border-white/10'}`}>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">{label}</p>
-            <p className="text-xl font-bold tabular-nums text-white">{value}</p>
-            <p className="text-[11px] text-slate-500 mt-1">{sub}</p>
+        <div className={`bg-surface border rounded-md p-5 ${highlight ? 'border-border-strong' : 'border-border'}`}>
+            <p className="text-[11px] font-semibold text-text-3 uppercase tracking-wider mb-2">{label}</p>
+            <p className="text-xl font-bold tabular-nums text-text-1">{value}</p>
+            <p className="text-[11px] text-text-3 mt-1">{sub}</p>
         </div>
     );
 }
@@ -188,7 +188,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     return (
         <div className="py-2">
             <div className="px-6 py-3">
-                <h3 className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">{title}</h3>
+                <h3 className="text-[11px] font-semibold text-text-3 uppercase tracking-widest">{title}</h3>
             </div>
             {children}
         </div>
@@ -203,10 +203,10 @@ function Row({ label, value, bold, dim }: {
 }) {
     return (
         <div className="px-6 py-2.5 flex items-center justify-between">
-            <span className={`text-sm ${bold ? 'font-semibold text-slate-200' : dim ? 'text-slate-500' : 'text-slate-400'}`}>
+            <span className={`text-sm ${bold ? 'font-semibold text-text-1' : dim ? 'text-text-3' : 'text-text-2'}`}>
                 {label}
             </span>
-            <span className={`text-sm tabular-nums ${bold ? 'font-semibold text-white' : dim ? 'text-slate-500' : 'text-slate-300'}`}>
+            <span className={`text-sm tabular-nums ${bold ? 'font-semibold text-text-1' : dim ? 'text-text-3' : 'text-text-1'}`}>
                 {value}
             </span>
         </div>

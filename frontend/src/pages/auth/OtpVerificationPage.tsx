@@ -2,8 +2,11 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { authService } from '@/services/auth.service';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import Button from '@/components/ui/Button';
+import Logo from '@/components/ui/Logo';
 
 interface LocationState {
     email?: string;
@@ -58,20 +61,22 @@ export default function OtpVerificationPage() {
         }
     };
 
+    const digits = otpCode.padEnd(6, ' ').split('').slice(0, 6);
+
     return (
         <>
-            <div className="mb-7">
-                <h2 className="text-[22px] font-semibold text-slate-100 leading-tight">
-                    Verify your email
-                </h2>
-                <p className="text-sm text-slate-400 mt-1.5">
-                    Enter the 6-digit code we sent to your inbox
-                </p>
-            </div>
+            <Logo size={36} />
+            <h1 className="mt-7 text-2xl font-bold tracking-[-0.015em] text-text-1">
+                Verify your email
+            </h1>
+            <p className="text-xs text-text-2 mt-1.5 mb-7">
+                We sent a 6-digit code to{' '}
+                <b className="text-text-1">{email || 'your inbox'}</b>
+            </p>
 
-            <form onSubmit={onSubmit} className="space-y-5">
+            <form onSubmit={onSubmit} className="flex flex-col gap-5">
                 <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                    <label className="block text-xs font-medium text-text-2 mb-1.5">
                         Email
                     </label>
                     <input
@@ -79,12 +84,12 @@ export default function OtpVerificationPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="w-full h-12 px-4 bg-white/5 border border-white/10 rounded-xl text-slate-200 text-sm outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 placeholder:text-slate-600 transition-all duration-200"
+                        className="w-full h-[42px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 placeholder:text-text-3"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                    <label className="block text-xs font-medium text-text-2 mb-1.5">
                         Verification code
                     </label>
                     <input
@@ -95,45 +100,62 @@ export default function OtpVerificationPage() {
                             setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))
                         }
                         required
-                        placeholder="123456"
-                        className="w-full h-14 px-4 bg-white/5 border border-white/10 rounded-xl text-center text-2xl font-mono tracking-[0.5em] text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 placeholder:text-slate-700 transition-all duration-200"
+                        className="sr-only"
+                        autoFocus
                     />
+                    <div className="flex gap-2">
+                        {digits.map((d, i) => (
+                            <div
+                                key={i}
+                                className={`flex-1 h-14 mono text-2xl font-semibold flex items-center justify-center rounded-md border bg-surface text-text-1 ${
+                                    i === otpCode.length
+                                        ? 'border-primary ring-[3px] ring-primary/20'
+                                        : 'border-border-strong'
+                                }`}
+                            >
+                                {d.trim() || ''}
+                            </div>
+                        ))}
+                    </div>
+                    <p className="caption text-xs text-text-2 mt-2">
+                        Tap the field above and enter your 6-digit code.
+                    </p>
                 </div>
 
                 {error && (
-                    <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-sm text-rose-300">
+                    <div className="px-3 py-2 rounded-md bg-danger-soft border border-danger/40 text-xs text-danger font-medium">
                         {error}
                     </div>
                 )}
 
-                <button
+                <Button
                     type="submit"
+                    size="lg"
                     disabled={submitting || otpCode.length !== 6}
-                    className={`w-full h-[50px] rounded-xl border-none text-slate-900 text-[15px] font-bold tracking-wide flex items-center justify-center gap-2 transition-all duration-300 bg-white shadow-[0_6px_24px_rgba(255,255,255,0.1)] ${
-                        submitting || otpCode.length !== 6
-                            ? 'opacity-50 cursor-not-allowed'
-                            : 'cursor-pointer hover:-translate-y-0.5'
-                    }`}
+                    className="w-full"
                 >
                     {submitting ? 'Verifying…' : 'Verify'}
+                    {!submitting && otpCode.length === 6 && (
+                        <ArrowRight size={14} />
+                    )}
+                </Button>
+
+                <button
+                    type="button"
+                    onClick={onResend}
+                    disabled={resending}
+                    className="text-sm text-text-2 hover:text-text-1 transition-colors disabled:opacity-50"
+                >
+                    {resending ? 'Sending…' : 'Resend code'}
                 </button>
             </form>
-
-            <button
-                type="button"
-                onClick={onResend}
-                disabled={resending}
-                className="mt-5 w-full text-sm text-slate-400 hover:text-white transition-colors disabled:opacity-50 bg-transparent border-none cursor-pointer py-2"
-            >
-                {resending ? 'Sending…' : 'Resend code'}
-            </button>
 
             <div className="mt-6 text-center">
                 <Link
                     to={FRONTEND_ROUTES.LOGIN}
-                    className="text-[13px] text-slate-400 hover:text-slate-200 transition-colors"
+                    className="inline-flex items-center gap-1 text-xs text-text-2 hover:text-text-1 transition-colors"
                 >
-                    ← Back to sign in
+                    <ArrowLeft size={12} /> Back to sign in
                 </Link>
             </div>
         </>

@@ -48,7 +48,7 @@ export default function ExportMenu({
                 type="button"
                 onClick={() => setOpen((v) => !v)}
                 disabled={isDisabled}
-                className="h-9 px-4 rounded-lg bg-transparent border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 px-4 rounded-lg bg-transparent border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <svg
                     width="14"
@@ -81,13 +81,13 @@ export default function ExportMenu({
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-[#111111] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute right-0 top-full mt-2 w-56 bg-surface border border-border rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <button
                         type="button"
                         onClick={() => handleSelect('pdf')}
-                        className="flex items-start gap-3 px-4 py-3 w-full text-left hover:bg-white/[0.04] transition-colors border-b border-white/5"
+                        className="flex items-start gap-3 px-4 py-3 w-full text-left hover:bg-surface-2 transition-colors border-b border-border"
                     >
-                        <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center flex-shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-danger-soft flex items-center justify-center flex-shrink-0">
                             <svg
                                 width="16"
                                 height="16"
@@ -103,10 +103,10 @@ export default function ExportMenu({
                             </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-medium text-slate-200">
+                            <p className="text-[13px] font-medium text-text-1">
                                 Download PDF
                             </p>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
+                            <p className="text-[11px] text-text-3 mt-0.5">
                                 Printable report
                             </p>
                         </div>
@@ -114,9 +114,9 @@ export default function ExportMenu({
                     <button
                         type="button"
                         onClick={() => handleSelect('excel')}
-                        className="flex items-start gap-3 px-4 py-3 w-full text-left hover:bg-white/[0.04] transition-colors"
+                        className="flex items-start gap-3 px-4 py-3 w-full text-left hover:bg-surface-2 transition-colors"
                     >
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-accent-soft flex items-center justify-center flex-shrink-0">
                             <svg
                                 width="16"
                                 height="16"
@@ -135,10 +135,10 @@ export default function ExportMenu({
                             </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-medium text-slate-200">
+                            <p className="text-[13px] font-medium text-text-1">
                                 Download Excel
                             </p>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
+                            <p className="text-[11px] text-text-3 mt-0.5">
                                 Sortable spreadsheet
                             </p>
                         </div>

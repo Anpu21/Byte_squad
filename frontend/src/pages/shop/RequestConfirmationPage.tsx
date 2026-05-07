@@ -23,11 +23,11 @@ const STATUS_LABEL: Record<CustomerRequestStatus, string> = {
 };
 
 const STATUS_TONE: Record<CustomerRequestStatus, string> = {
-    pending: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
-    completed: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-    rejected: 'bg-rose-500/10 text-rose-300 border-rose-500/30',
-    cancelled: 'bg-slate-500/10 text-slate-300 border-slate-500/30',
-    expired: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
+    pending: 'bg-warning-soft text-warning border-warning/40',
+    completed: 'bg-accent-soft text-accent-text border-accent/40',
+    rejected: 'bg-danger-soft text-danger border-danger/40',
+    cancelled: 'bg-slate-500/10 text-text-1 border-slate-500/30',
+    expired: 'bg-slate-500/10 text-text-2 border-slate-500/30',
 };
 
 export default function RequestConfirmationPage() {
@@ -64,7 +64,7 @@ export default function RequestConfirmationPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-24">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
             </div>
         );
     }
@@ -72,15 +72,15 @@ export default function RequestConfirmationPage() {
     if (error || !request) {
         return (
             <div className="max-w-md mx-auto text-center py-24">
-                <h1 className="text-xl font-bold text-white tracking-tight mb-2">
+                <h1 className="text-xl font-bold text-text-1 tracking-tight mb-2">
                     Request not found
                 </h1>
-                <p className="text-sm text-slate-400 mb-6">
+                <p className="text-sm text-text-2 mb-6">
                     The request code may be invalid or expired.
                 </p>
                 <Link
                     to={FRONTEND_ROUTES.SHOP}
-                    className="inline-block px-4 py-2 bg-white text-black font-semibold rounded-lg hover:bg-slate-200 transition-colors"
+                    className="inline-block px-4 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-slate-200 transition-colors"
                 >
                     Browse products
                 </Link>
@@ -91,16 +91,16 @@ export default function RequestConfirmationPage() {
     return (
         <div className="max-w-3xl mx-auto">
             <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-white tracking-tight">
+                <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                     Pickup request ready
                 </h1>
-                <p className="text-sm text-slate-400 mt-2">
+                <p className="text-sm text-text-2 mt-2">
                     Show this QR code at the counter to pick up your order.
                 </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl p-6 flex flex-col items-center">
+                <div className="bg-primary rounded-md p-6 flex flex-col items-center">
                     {qrDataUrl ? (
                         <img
                             src={qrDataUrl}
@@ -108,47 +108,47 @@ export default function RequestConfirmationPage() {
                             className="w-60 h-60"
                         />
                     ) : (
-                        <div className="w-60 h-60 flex items-center justify-center text-xs text-slate-400">
+                        <div className="w-60 h-60 flex items-center justify-center text-xs text-text-2">
                             Generating QR…
                         </div>
                     )}
-                    <p className="mt-4 text-xs uppercase tracking-widest text-slate-500">
+                    <p className="mt-4 text-xs uppercase tracking-widest text-text-3">
                         Code
                     </p>
-                    <p className="font-mono text-lg font-bold text-slate-900 mt-1">
+                    <p className="font-mono text-lg font-bold text-text-inv mt-1">
                         {request.requestCode}
                     </p>
                     {qrDataUrl && (
                         <a
                             href={qrDataUrl}
                             download={`${request.requestCode}.png`}
-                            className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
+                            className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-slate-900 text-text-1 rounded-lg hover:bg-slate-800 transition-colors"
                         >
                             <Download size={14} /> Download PNG
                         </a>
                     )}
                 </div>
 
-                <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+                <div className="bg-[#111] border border-border rounded-md p-6">
                     <div className="flex items-center justify-between mb-4">
                         <span
                             className={`text-[11px] uppercase tracking-widest px-2 py-1 rounded-full border ${STATUS_TONE[request.status]}`}
                         >
                             {STATUS_LABEL[request.status]}
                         </span>
-                        <span className="text-[11px] text-slate-500">
+                        <span className="text-[11px] text-text-3">
                             {new Date(request.createdAt).toLocaleString()}
                         </span>
                     </div>
 
                     {request.branch && (
                         <div className="mb-4 flex items-start gap-2 text-sm">
-                            <MapPin size={14} className="mt-0.5 text-slate-500" />
+                            <MapPin size={14} className="mt-0.5 text-text-3" />
                             <div>
-                                <p className="font-semibold text-white">
+                                <p className="font-semibold text-text-1">
                                     {request.branch.name}
                                 </p>
-                                <p className="text-slate-400 text-xs mt-0.5">
+                                <p className="text-text-2 text-xs mt-0.5">
                                     {request.branch.address}
                                 </p>
                             </div>
@@ -156,14 +156,14 @@ export default function RequestConfirmationPage() {
                     )}
 
                     <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-2 text-xs uppercase tracking-widest text-slate-500">
+                        <div className="flex items-center gap-2 mb-2 text-xs uppercase tracking-widest text-text-3">
                             <Package size={12} /> Items
                         </div>
                         <div className="space-y-1.5 text-sm">
                             {request.items.map((it) => (
                                 <div
                                     key={it.id}
-                                    className="flex items-center justify-between text-slate-300"
+                                    className="flex items-center justify-between text-text-1"
                                 >
                                     <span className="truncate pr-2">
                                         {it.product?.name ?? 'Unknown'} × {it.quantity}
@@ -178,21 +178,21 @@ export default function RequestConfirmationPage() {
                         </div>
                     </div>
 
-                    <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                        <span className="text-xs uppercase tracking-widest text-slate-500">
+                    <div className="pt-3 border-t border-border flex items-center justify-between">
+                        <span className="text-xs uppercase tracking-widest text-text-3">
                             Estimated total
                         </span>
-                        <span className="text-lg font-bold text-white">
+                        <span className="text-lg font-bold text-text-1">
                             {formatCurrency(Number(request.estimatedTotal))}
                         </span>
                     </div>
 
                     {request.note && (
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                            <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">
+                        <div className="mt-4 pt-4 border-t border-border">
+                            <p className="text-xs uppercase tracking-widest text-text-3 mb-1">
                                 Note
                             </p>
-                            <p className="text-sm text-slate-300">{request.note}</p>
+                            <p className="text-sm text-text-1">{request.note}</p>
                         </div>
                     )}
                 </div>
@@ -201,7 +201,7 @@ export default function RequestConfirmationPage() {
             <div className="mt-8 text-center">
                 <Link
                     to={FRONTEND_ROUTES.SHOP}
-                    className="text-sm text-slate-400 hover:text-white"
+                    className="text-sm text-text-2 hover:text-text-1"
                 >
                     ← Continue shopping
                 </Link>

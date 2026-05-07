@@ -168,14 +168,14 @@ export default function ProductFormPage() {
         return (
             <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="mb-8">
-                    <div className="h-4 w-32 bg-white/10 rounded animate-pulse mb-4" />
-                    <div className="h-8 w-64 bg-white/10 rounded animate-pulse mb-2" />
-                    <div className="h-4 w-48 bg-white/10 rounded animate-pulse" />
+                    <div className="h-4 w-32 bg-primary-soft rounded animate-pulse mb-4" />
+                    <div className="h-8 w-64 bg-primary-soft rounded animate-pulse mb-2" />
+                    <div className="h-4 w-48 bg-primary-soft rounded animate-pulse" />
                 </div>
-                <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl p-8">
+                <div className="bg-surface border border-border rounded-md shadow-2xl p-8">
                     <div className="space-y-6">
                         {[...Array(4)].map((_, i) => (
-                            <div key={i} className="h-11 bg-white/5 rounded-xl animate-pulse" />
+                            <div key={i} className="h-11 bg-surface-2 rounded-xl animate-pulse" />
                         ))}
                     </div>
                 </div>
@@ -189,52 +189,52 @@ export default function ProductFormPage() {
             <div className="mb-8">
                 <button
                     onClick={() => navigate(FRONTEND_ROUTES.INVENTORY)}
-                    className="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-2 mb-4 font-medium"
+                    className="text-sm text-text-2 hover:text-text-1 transition-colors flex items-center gap-2 mb-4 font-medium"
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="m15 18-6-6 6-6"/>
                     </svg>
                     Back to Inventory
                 </button>
-                <h1 className="text-2xl font-bold text-white tracking-tight">
+                <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                     {isEditMode ? 'Edit Product' : 'Add New Product'}
                 </h1>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-text-2 mt-1">
                     {isEditMode ? 'Update the details for this product.' : 'Enter the details for your new inventory item.'}
                 </p>
             </div>
 
             {errors.general && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
+                <div className="mb-6 p-4 bg-danger-soft border border-danger/30 rounded-xl text-sm text-danger">
                     {errors.general}
                 </div>
             )}
 
             <form onSubmit={handleSubmit}>
-                <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                <div className="bg-surface border border-border rounded-md shadow-2xl overflow-hidden">
                     <div className="p-8 space-y-8">
 
                         {/* Section 1: General Info */}
                         <div>
-                            <h2 className="text-lg font-semibold text-white mb-5 pb-2 border-b border-white/10">
+                            <h2 className="text-lg font-semibold text-text-1 mb-5 pb-2 border-b border-border">
                                 General Information
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div className="sm:col-span-2">
-                                    <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                                    <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
                                         Product Name
                                     </label>
                                     <input
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        className={`w-full h-11 px-4 bg-[#0a0a0a] border rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 ${errors.name ? 'border-red-500/50' : 'border-white/10'}`}
+                                        className={`w-full h-11 px-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 ${errors.name ? 'border-red-500/50' : 'border-border'}`}
                                         placeholder="e.g. Premium Wireless Headphones"
                                     />
-                                    {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name}</p>}
+                                    {errors.name && <p className="text-xs text-danger mt-1">{errors.name}</p>}
                                 </div>
 
                                 <div>
-                                    <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                                    <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
                                         Category
                                     </label>
                                     <div className="relative">
@@ -242,7 +242,7 @@ export default function ProductFormPage() {
                                             value={category}
                                             onChange={(e) => setCategory(e.target.value)}
                                             list="category-list"
-                                            className={`w-full h-11 px-4 bg-[#0a0a0a] border rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 ${errors.category ? 'border-red-500/50' : 'border-white/10'}`}
+                                            className={`w-full h-11 px-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 ${errors.category ? 'border-red-500/50' : 'border-border'}`}
                                             placeholder="Select or type a category..."
                                         />
                                         <datalist id="category-list">
@@ -251,11 +251,11 @@ export default function ProductFormPage() {
                                             ))}
                                         </datalist>
                                     </div>
-                                    {errors.category && <p className="text-xs text-red-400 mt-1">{errors.category}</p>}
+                                    {errors.category && <p className="text-xs text-danger mt-1">{errors.category}</p>}
                                 </div>
 
                                 <div>
-                                    <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                                    <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
                                         Barcode / UPC
                                     </label>
                                     <div className="flex gap-2">
@@ -264,15 +264,15 @@ export default function ProductFormPage() {
                                                 value={barcode}
                                                 onChange={(e) => setBarcode(e.target.value)}
                                                 onBlur={() => { if (barcode.trim().length >= 4 && !isEditMode) lookupBarcode(barcode.trim()); }}
-                                                className={`w-full h-11 px-4 pr-28 bg-[#0a0a0a] border rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 font-mono tracking-wider ${errors.barcode ? 'border-red-500/50' : barcodeStatus === 'found' ? 'border-green-500/50 ring-[3px] ring-green-500/20' : scanDetected ? 'border-green-500/50 ring-[3px] ring-green-500/20' : 'border-white/10'}`}
+                                                className={`w-full h-11 px-4 pr-28 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 font-mono tracking-wider ${errors.barcode ? 'border-red-500/50' : barcodeStatus === 'found' ? 'border-green-500/50 ring-[3px] ring-green-500/20' : scanDetected ? 'border-green-500/50 ring-[3px] ring-green-500/20' : 'border-border'}`}
                                                 placeholder="Scan or type barcode"
                                             />
                                             <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md transition-all ${
-                                                barcodeStatus === 'looking' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                                                barcodeStatus === 'looking' ? 'bg-warning-soft text-warning border border-yellow-500/30' :
                                                 barcodeStatus === 'found' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                                                barcodeStatus === 'new' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                                                barcodeStatus === 'new' ? 'bg-info-soft text-info border border-info/40' :
                                                 scanDetected ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                                                'bg-white/5 text-slate-500 border border-white/10'
+                                                'bg-surface-2 text-text-3 border border-border'
                                             }`}>
                                                 {barcodeStatus === 'looking' ? 'Looking up...' :
                                                  barcodeStatus === 'found' ? 'Product found' :
@@ -283,7 +283,7 @@ export default function ProductFormPage() {
                                         <button
                                             type="button"
                                             onClick={() => setShowCameraScanner(true)}
-                                            className="h-11 px-3 rounded-xl border border-white/10 bg-[#0a0a0a] text-slate-400 hover:text-white hover:border-white/30 hover:bg-white/5 transition-all flex items-center gap-2 shrink-0"
+                                            className="h-11 px-3 rounded-xl border border-border bg-canvas text-text-2 hover:text-text-1 hover:border-primary/40 hover:bg-surface-2 transition-all flex items-center gap-2 shrink-0"
                                             title="Scan with camera"
                                         >
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -293,22 +293,22 @@ export default function ProductFormPage() {
                                             <span className="text-xs font-medium hidden sm:inline">Camera</span>
                                         </button>
                                     </div>
-                                    {errors.barcode && <p className="text-xs text-red-400 mt-1">{errors.barcode}</p>}
-                                    <p className="text-[11px] text-slate-500 mt-2">Scan or type a barcode — if the product exists, details will auto-fill.</p>
+                                    {errors.barcode && <p className="text-xs text-danger mt-1">{errors.barcode}</p>}
+                                    <p className="text-[11px] text-text-3 mt-2">Scan or type a barcode — if the product exists, details will auto-fill.</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Section 2: Description */}
                         <div>
-                            <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                            <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
                                 Description (optional)
                             </label>
                             <textarea
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 rows={3}
-                                className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 resize-none"
+                                className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 resize-none"
                                 placeholder="Brief product description..."
                             />
                         </div>
@@ -316,12 +316,12 @@ export default function ProductFormPage() {
                         {/* Section 3: Initial Stock (create mode only) */}
                         {!isEditMode && (
                             <div>
-                                <h2 className="text-lg font-semibold text-white mb-5 pb-2 border-b border-white/10">
+                                <h2 className="text-lg font-semibold text-text-1 mb-5 pb-2 border-b border-border">
                                     Stock Details
                                 </h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                                        <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
                                             Initial Stock Quantity
                                         </label>
                                         <input
@@ -330,15 +330,15 @@ export default function ProductFormPage() {
                                             step="1"
                                             value={initialStock}
                                             onChange={(e) => setInitialStock(e.target.value)}
-                                            className={`w-full h-11 px-4 bg-[#0a0a0a] border rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 tabular-nums ${errors.initialStock ? 'border-red-500/50' : 'border-white/10'}`}
+                                            className={`w-full h-11 px-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 tabular-nums ${errors.initialStock ? 'border-red-500/50' : 'border-border'}`}
                                             placeholder="0"
                                         />
-                                        {errors.initialStock && <p className="text-xs text-red-400 mt-1">{errors.initialStock}</p>}
-                                        <p className="text-[11px] text-slate-500 mt-2">How many units are you adding to inventory right now?</p>
+                                        {errors.initialStock && <p className="text-xs text-danger mt-1">{errors.initialStock}</p>}
+                                        <p className="text-[11px] text-text-3 mt-2">How many units are you adding to inventory right now?</p>
                                     </div>
 
                                     <div>
-                                        <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                                        <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
                                             Low Stock Alert Threshold
                                         </label>
                                         <input
@@ -347,11 +347,11 @@ export default function ProductFormPage() {
                                             step="1"
                                             value={lowStockThreshold}
                                             onChange={(e) => setLowStockThreshold(e.target.value)}
-                                            className={`w-full h-11 px-4 bg-[#0a0a0a] border rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 tabular-nums ${errors.lowStockThreshold ? 'border-red-500/50' : 'border-white/10'}`}
+                                            className={`w-full h-11 px-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 tabular-nums ${errors.lowStockThreshold ? 'border-red-500/50' : 'border-border'}`}
                                             placeholder="10"
                                         />
-                                        {errors.lowStockThreshold && <p className="text-xs text-red-400 mt-1">{errors.lowStockThreshold}</p>}
-                                        <p className="text-[11px] text-slate-500 mt-2">You'll get an alert when stock drops to this level.</p>
+                                        {errors.lowStockThreshold && <p className="text-xs text-danger mt-1">{errors.lowStockThreshold}</p>}
+                                        <p className="text-[11px] text-text-3 mt-2">You'll get an alert when stock drops to this level.</p>
                                     </div>
                                 </div>
                             </div>
@@ -359,48 +359,48 @@ export default function ProductFormPage() {
 
                         {/* Section 4: Pricing */}
                         <div>
-                            <h2 className="text-lg font-semibold text-white mb-5 pb-2 border-b border-white/10">
+                            <h2 className="text-lg font-semibold text-text-1 mb-5 pb-2 border-b border-border">
                                 Pricing Details
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                                    <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
                                         Cost Price
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium">Rs</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-3 text-sm font-medium">Rs</span>
                                         <input
                                             type="number"
                                             step="0.01"
                                             min="0"
                                             value={costPrice}
                                             onChange={(e) => setCostPrice(e.target.value)}
-                                            className={`w-full h-11 pl-10 pr-4 bg-[#0a0a0a] border rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 tabular-nums ${errors.costPrice ? 'border-red-500/50' : 'border-white/10'}`}
+                                            className={`w-full h-11 pl-10 pr-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 tabular-nums ${errors.costPrice ? 'border-red-500/50' : 'border-border'}`}
                                             placeholder="0.00"
                                         />
                                     </div>
-                                    {errors.costPrice && <p className="text-xs text-red-400 mt-1">{errors.costPrice}</p>}
-                                    <p className="text-[11px] text-slate-500 mt-2">Your internal purchase cost.</p>
+                                    {errors.costPrice && <p className="text-xs text-danger mt-1">{errors.costPrice}</p>}
+                                    <p className="text-[11px] text-text-3 mt-2">Your internal purchase cost.</p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]">
+                                    <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
                                         Selling Price
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium">Rs</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-3 text-sm font-medium">Rs</span>
                                         <input
                                             type="number"
                                             step="0.01"
                                             min="0"
                                             value={sellingPrice}
                                             onChange={(e) => setSellingPrice(e.target.value)}
-                                            className={`w-full h-11 pl-10 pr-4 bg-[#0a0a0a] border rounded-xl text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600 tabular-nums ${errors.sellingPrice ? 'border-red-500/50' : 'border-white/10'}`}
+                                            className={`w-full h-11 pl-10 pr-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 tabular-nums ${errors.sellingPrice ? 'border-red-500/50' : 'border-border'}`}
                                             placeholder="0.00"
                                         />
                                     </div>
-                                    {errors.sellingPrice && <p className="text-xs text-red-400 mt-1">{errors.sellingPrice}</p>}
-                                    <p className="text-[11px] text-slate-500 mt-2">Customer facing price.</p>
+                                    {errors.sellingPrice && <p className="text-xs text-danger mt-1">{errors.sellingPrice}</p>}
+                                    <p className="text-[11px] text-text-3 mt-2">Customer facing price.</p>
                                 </div>
                             </div>
                         </div>
@@ -408,18 +408,18 @@ export default function ProductFormPage() {
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="p-6 border-t border-white/10 bg-white/[0.02] flex items-center justify-end gap-3">
+                    <div className="p-6 border-t border-border bg-surface-2 flex items-center justify-end gap-3">
                         <button
                             type="button"
                             onClick={() => navigate(FRONTEND_ROUTES.INVENTORY)}
-                            className="h-10 px-5 rounded-xl border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors"
+                            className="h-10 px-5 rounded-xl border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="h-10 px-6 rounded-xl bg-white text-slate-900 text-sm font-bold tracking-wide hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="h-10 px-6 rounded-xl bg-primary text-text-inv text-sm font-bold tracking-wide hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
@@ -445,7 +445,7 @@ export default function ProductFormPage() {
                         <button
                             type="button"
                             onClick={() => setShowCameraScanner(false)}
-                            className="mt-3 w-full h-10 rounded-xl border border-white/10 bg-[#111111] text-white text-sm font-medium hover:bg-white/5 transition-colors"
+                            className="mt-3 w-full h-10 rounded-xl border border-border bg-surface text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors"
                         >
                             Close Scanner
                         </button>

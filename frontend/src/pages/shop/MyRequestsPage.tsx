@@ -28,11 +28,11 @@ const STATUS_LABEL: Record<CustomerRequestStatus, string> = {
 };
 
 const STATUS_TONE: Record<CustomerRequestStatus, string> = {
-    pending: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
-    completed: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-    rejected: 'bg-rose-500/10 text-rose-300 border-rose-500/30',
-    cancelled: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
-    expired: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
+    pending: 'bg-warning-soft text-warning border-warning/40',
+    completed: 'bg-accent-soft text-accent-text border-accent/40',
+    rejected: 'bg-danger-soft text-danger border-danger/40',
+    cancelled: 'bg-slate-500/10 text-text-2 border-slate-500/30',
+    expired: 'bg-slate-500/10 text-text-2 border-slate-500/30',
 };
 
 export default function MyRequestsPage() {
@@ -58,27 +58,27 @@ export default function MyRequestsPage() {
     return (
         <div>
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-white tracking-tight">
+                <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                     My pickup requests
                 </h1>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-text-2 mt-1">
                     Past and pending requests. Click any row to view its QR.
                 </p>
             </div>
 
             {isLoading ? (
                 <div className="flex items-center justify-center py-24">
-                    <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
                 </div>
             ) : requests.length === 0 ? (
-                <div className="text-center py-24 text-slate-500 text-sm">
+                <div className="text-center py-24 text-text-3 text-sm">
                     No requests yet.
                 </div>
             ) : (
-                <div className="bg-[#111] border border-white/10 rounded-2xl overflow-hidden">
+                <div className="bg-[#111] border border-border rounded-md overflow-hidden">
                     <table className="w-full text-left">
-                        <thead className="bg-[#111] border-b border-white/10">
-                            <tr className="text-[11px] uppercase tracking-widest text-slate-500">
+                        <thead className="bg-[#111] border-b border-border">
+                            <tr className="text-[11px] uppercase tracking-widest text-text-3">
                                 <th className="px-4 py-3 font-semibold">Code</th>
                                 <th className="px-4 py-3 font-semibold">Date</th>
                                 <th className="px-4 py-3 font-semibold">Branch</th>
@@ -92,26 +92,26 @@ export default function MyRequestsPage() {
                             {requests.map((req) => (
                                 <tr
                                     key={req.id}
-                                    className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+                                    className="border-b border-border hover:bg-surface-2 transition-colors"
                                 >
                                     <td className="px-4 py-3">
                                         <Link
                                             to={`/shop/requests/${req.requestCode}`}
-                                            className="text-emerald-400 hover:underline font-mono text-xs"
+                                            className="text-accent-text hover:underline font-mono text-xs"
                                         >
                                             {req.requestCode}
                                         </Link>
                                     </td>
-                                    <td className="px-4 py-3 text-slate-400 text-[13px]">
+                                    <td className="px-4 py-3 text-text-2 text-[13px]">
                                         {formatDate(req.createdAt)}
                                     </td>
-                                    <td className="px-4 py-3 text-slate-300">
+                                    <td className="px-4 py-3 text-text-1">
                                         {req.branch?.name ?? '—'}
                                     </td>
-                                    <td className="px-4 py-3 text-slate-400">
+                                    <td className="px-4 py-3 text-text-2">
                                         {req.items.length}
                                     </td>
-                                    <td className="px-4 py-3 text-white font-medium text-right">
+                                    <td className="px-4 py-3 text-text-1 font-medium text-right">
                                         {formatCurrency(Number(req.estimatedTotal))}
                                     </td>
                                     <td className="px-4 py-3">
@@ -126,7 +126,7 @@ export default function MyRequestsPage() {
                                             <button
                                                 type="button"
                                                 onClick={() => onCancel(req.id)}
-                                                className="text-[11px] text-rose-400 hover:underline"
+                                                className="text-[11px] text-danger hover:underline"
                                             >
                                                 Cancel
                                             </button>

@@ -156,14 +156,14 @@ export default function TransferHistoryPage() {
             <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold text-white tracking-tight">
+                        <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                             Transfer History
                         </h1>
-                        <span className="text-[11px] min-w-[22px] h-[22px] px-2 flex items-center justify-center rounded-full bg-white/5 text-slate-400 font-medium">
+                        <span className="text-[11px] min-w-[22px] h-[22px] px-2 flex items-center justify-center rounded-full bg-surface-2 text-text-2 font-medium">
                             {total}
                         </span>
                     </div>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-sm text-text-3 mt-1">
                         {isAdmin
                             ? 'Audit trail of all completed, rejected, and cancelled transfers across every branch.'
                             : 'Past transfers your branch has been involved in — completed, rejected, or cancelled.'}
@@ -172,7 +172,7 @@ export default function TransferHistoryPage() {
                 {hasActiveFilters && (
                     <button
                         onClick={clearFilters}
-                        className="h-9 px-4 rounded-lg border border-white/10 text-slate-300 text-sm font-medium hover:bg-white/5 transition-colors self-start"
+                        className="h-9 px-4 rounded-lg border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors self-start"
                     >
                         Clear filters
                     </button>
@@ -180,10 +180,10 @@ export default function TransferHistoryPage() {
             </div>
 
             {/* Filter bar */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
+            <div className="bg-surface border border-border rounded-md p-5 mb-6 space-y-4">
                 {/* Status pills */}
                 <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mr-1">
+                    <span className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mr-1">
                         Status
                     </span>
                     {HISTORY_STATUSES.map((s) => {
@@ -194,8 +194,8 @@ export default function TransferHistoryPage() {
                                 onClick={() => toggleStatus(s.key)}
                                 className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
                                     isSelected
-                                        ? 'bg-white text-slate-900 shadow-sm'
-                                        : 'bg-white/[0.03] border border-white/5 text-slate-400 hover:text-white hover:bg-white/5'
+                                        ? 'bg-primary text-text-inv shadow-sm'
+                                        : 'bg-surface-2 border border-border text-text-2 hover:text-text-1 hover:bg-surface-2'
                                 }`}
                             >
                                 {s.label}
@@ -207,7 +207,7 @@ export default function TransferHistoryPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Date from */}
                     <div>
-                        <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">
+                        <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
                             From
                         </label>
                         <input
@@ -215,12 +215,12 @@ export default function TransferHistoryPage() {
                             value={from}
                             max={to || undefined}
                             onChange={(e) => setFrom(e.target.value)}
-                            className="w-full h-10 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
+                            className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
                         />
                     </div>
                     {/* Date to */}
                     <div>
-                        <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">
+                        <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
                             To
                         </label>
                         <input
@@ -228,18 +228,18 @@ export default function TransferHistoryPage() {
                             value={to}
                             min={from || undefined}
                             onChange={(e) => setTo(e.target.value)}
-                            className="w-full h-10 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
+                            className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
                         />
                     </div>
 
                     {/* Product typeahead */}
                     <div className="relative">
-                        <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">
+                        <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
                             Product
                         </label>
                         {selectedProduct ? (
-                            <div className="flex items-center gap-2 h-10 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg">
-                                <span className="text-sm text-slate-200 truncate flex-1">
+                            <div className="flex items-center gap-2 h-10 px-3 bg-canvas border border-border rounded-lg">
+                                <span className="text-sm text-text-1 truncate flex-1">
                                     {selectedProduct.name}
                                 </span>
                                 <button
@@ -247,7 +247,7 @@ export default function TransferHistoryPage() {
                                         setProductId('');
                                         setProductSearch('');
                                     }}
-                                    className="text-slate-500 hover:text-white text-lg leading-none"
+                                    className="text-text-3 hover:text-text-1 text-lg leading-none"
                                     aria-label="Clear product filter"
                                 >
                                     ×
@@ -271,11 +271,11 @@ export default function TransferHistoryPage() {
                                         );
                                     }}
                                     placeholder="Search product or barcode…"
-                                    className="w-full h-10 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-slate-600"
+                                    className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3"
                                 />
                                 {showProductDropdown &&
                                     productResults.length > 0 && (
-                                        <div className="absolute z-20 mt-1 left-0 right-0 bg-[#111111] border border-white/10 rounded-lg shadow-2xl max-h-56 overflow-y-auto">
+                                        <div className="absolute z-20 mt-1 left-0 right-0 bg-surface border border-border rounded-lg shadow-2xl max-h-56 overflow-y-auto">
                                             {productResults.map((p) => (
                                                 <button
                                                     key={p.id}
@@ -289,12 +289,12 @@ export default function TransferHistoryPage() {
                                                             false,
                                                         );
                                                     }}
-                                                    className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-white/5 transition-colors"
+                                                    className="w-full text-left px-3 py-2 text-sm text-text-1 hover:bg-surface-2 transition-colors"
                                                 >
                                                     <div className="font-medium">
                                                         {p.name}
                                                     </div>
-                                                    <div className="text-[11px] text-slate-500">
+                                                    <div className="text-[11px] text-text-3">
                                                         {p.barcode}
                                                     </div>
                                                 </button>
@@ -308,13 +308,13 @@ export default function TransferHistoryPage() {
                     {/* Branch dropdown — admin only */}
                     {isAdmin && (
                         <div>
-                            <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">
+                            <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
                                 Branch
                             </label>
                             <select
                                 value={branchId}
                                 onChange={(e) => setBranchId(e.target.value)}
-                                className="w-full h-10 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
+                                className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
                             >
                                 <option value="">All branches</option>
                                 {branches.map((b) => (
@@ -329,11 +329,11 @@ export default function TransferHistoryPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-surface border border-border rounded-md shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-white/10 text-[11px] uppercase tracking-widest text-slate-500 bg-[#0a0a0a]/50">
+                            <tr className="border-b border-border text-[11px] uppercase tracking-widest text-text-3 bg-canvas/50">
                                 <th className="px-6 py-4 font-semibold whitespace-nowrap">
                                     Status
                                 </th>
@@ -362,11 +362,11 @@ export default function TransferHistoryPage() {
                                 [...Array(4)].map((_, i) => (
                                     <tr
                                         key={i}
-                                        className="border-b border-white/5"
+                                        className="border-b border-border"
                                     >
                                         {[...Array(7)].map((__, j) => (
                                             <td key={j} className="px-6 py-4">
-                                                <div className="h-5 w-24 bg-white/5 rounded animate-pulse" />
+                                                <div className="h-5 w-24 bg-surface-2 rounded animate-pulse" />
                                             </td>
                                         ))}
                                     </tr>
@@ -377,13 +377,13 @@ export default function TransferHistoryPage() {
                                         colSpan={7}
                                         className="px-6 py-16 text-center"
                                     >
-                                        <p className="text-sm font-medium text-slate-400">
+                                        <p className="text-sm font-medium text-text-2">
                                             No transfers in this range
                                         </p>
                                         {hasActiveFilters && (
                                             <button
                                                 onClick={clearFilters}
-                                                className="mt-3 text-xs text-slate-500 hover:text-white transition-colors underline"
+                                                className="mt-3 text-xs text-text-3 hover:text-text-1 transition-colors underline"
                                             >
                                                 Clear filters
                                             </button>
@@ -402,7 +402,7 @@ export default function TransferHistoryPage() {
                                     return (
                                         <tr
                                             key={item.id}
-                                            className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                                            className="border-b border-border hover:bg-surface-2 transition-colors group cursor-pointer"
                                             onClick={() =>
                                                 navigate(
                                                     FRONTEND_ROUTES.TRANSFER_DETAIL.replace(
@@ -418,29 +418,29 @@ export default function TransferHistoryPage() {
                                                 />
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className="text-slate-200 font-medium">
+                                                <span className="text-text-1 font-medium">
                                                     {item.product.name}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-slate-400">
+                                            <td className="px-6 py-4 text-text-2">
                                                 {item.sourceBranch?.name ?? '—'}
-                                                <span className="mx-2 text-slate-600">
+                                                <span className="mx-2 text-text-3">
                                                     →
                                                 </span>
-                                                <span className="text-slate-300">
+                                                <span className="text-text-1">
                                                     {item.destinationBranch.name}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-right tabular-nums text-slate-300 font-medium">
+                                            <td className="px-6 py-4 text-right tabular-nums text-text-1 font-medium">
                                                 {qty}
                                             </td>
-                                            <td className="px-6 py-4 text-slate-400">
+                                            <td className="px-6 py-4 text-text-2">
                                                 {requester}
                                             </td>
-                                            <td className="px-6 py-4 text-slate-500">
+                                            <td className="px-6 py-4 text-text-3">
                                                 {formatDate(closedAt)}
                                             </td>
-                                            <td className="px-6 py-4 text-right text-slate-500 tabular-nums">
+                                            <td className="px-6 py-4 text-right text-text-3 tabular-nums">
                                                 {formatDuration(
                                                     item.createdAt,
                                                     closedAt,
@@ -455,7 +455,7 @@ export default function TransferHistoryPage() {
                 </div>
 
                 {!isLoading && items.length > 0 && totalPages > 1 && (
-                    <div className="p-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-500 bg-[#0a0a0a]/50">
+                    <div className="p-4 border-t border-border flex items-center justify-between text-xs text-text-3 bg-canvas/50">
                         <span>
                             Page {page} of {totalPages}
                         </span>
@@ -463,14 +463,14 @@ export default function TransferHistoryPage() {
                             <button
                                 onClick={() => setPage(page - 1)}
                                 disabled={page === 1}
-                                className="px-3 py-1.5 rounded border border-white/10 hover:bg-white/5 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 rounded border border-border hover:bg-surface-2 hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Previous
                             </button>
                             <button
                                 onClick={() => setPage(page + 1)}
                                 disabled={page === totalPages}
-                                className="px-3 py-1.5 rounded border border-white/10 hover:bg-white/5 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 rounded border border-border hover:bg-surface-2 hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Next
                             </button>

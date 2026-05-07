@@ -1,11 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
+import { Calendar, CalendarDays, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { posService } from '@/services/pos.service';
-import type { ICashierTransactionsSummary, ICashierTransactionRow } from '@/types';
+import type {
+    ICashierTransactionsSummary,
+    ICashierTransactionRow,
+} from '@/types';
+import KpiCard from '@/components/ui/KpiCard';
+import Card from '@/components/ui/Card';
+import EmptyState from '@/components/ui/EmptyState';
+import PageHeader from '@/components/ui/PageHeader';
 
 function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(amount);
+    return new Intl.NumberFormat('en-LK', {
+        style: 'currency',
+        currency: 'LKR',
+        maximumFractionDigits: 0,
+    }).format(amount);
 }
 
 function formatDateTime(dateStr: string) {
@@ -27,83 +39,62 @@ export default function TransactionsPage() {
         refetchInterval: 30000,
     });
 
-    const stats = data
-        ? [
-              {
-                  title: 'Today',
-                  value: formatCurrency(data.today.totalSales),
-                  sub: `${data.today.transactionCount} transaction${data.today.transactionCount !== 1 ? 's' : ''}`,
-                  icon: <path d="M12 8v4l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />,
-              },
-              {
-                  title: 'This Month',
-                  value: formatCurrency(data.month.totalSales),
-                  sub: `${data.month.transactionCount} transaction${data.month.transactionCount !== 1 ? 's' : ''}`,
-                  icon: <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />,
-              },
-              {
-                  title: 'This Year',
-                  value: formatCurrency(data.year.totalSales),
-                  sub: `${data.year.transactionCount} transaction${data.year.transactionCount !== 1 ? 's' : ''}`,
-                  icon: <path d="M3 3v18h18M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />,
-              },
-          ]
-        : [];
-
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-[60vh]">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border border-t-primary rounded-full animate-spin" />
             </div>
         );
     }
 
+    const subtitle = `${
+        data?.scope === 'system'
+            ? 'All branches sales summary'
+            : data?.scope === 'branch'
+              ? 'Branch sales summary'
+              : `${user?.firstName ?? 'Your'} sales summary`
+    } · ${data?.recentTransactions.length ?? 0} records`;
+
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold text-white tracking-tight">Transactions</h1>
-                <p className="text-sm text-slate-400 mt-1">
-                    {data?.scope === 'system'
-                        ? 'All branches sales summary'
-                        : data?.scope === 'branch'
-                          ? 'Branch sales summary'
-                          : `${user?.firstName ?? 'Your'}'s sales summary`}{' '}
-                    &middot;{' '}
-                    {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </p>
+        <div className="animate-in fade-in duration-500">
+            <PageHeader title="Transactions" subtitle={subtitle} />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <KpiCard
+                    label="Today"
+                    value={formatCurrency(data?.today.totalSales ?? 0)}
+                    delta={`${data?.today.transactionCount ?? 0} transactions`}
+                    sparkData={[2, 3, 4, 5, 7, 6, 8]}
+                    sparkColor="var(--accent)"
+                    icon={<Calendar size={14} />}
+                />
+                <KpiCard
+                    label="This month"
+                    value={formatCurrency(data?.month.totalSales ?? 0)}
+                    delta={`${data?.month.transactionCount ?? 0} transactions`}
+                    sparkData={[3, 4, 5, 7, 6, 8, 10]}
+                    icon={<CalendarDays size={14} />}
+                />
+                <KpiCard
+                    label="This year"
+                    value={formatCurrency(data?.year.totalSales ?? 0)}
+                    delta={`${data?.year.transactionCount ?? 0} transactions`}
+                    sparkData={[4, 5, 6, 7, 8, 9, 11]}
+                    sparkColor="var(--brand-400)"
+                    icon={<TrendingUp size={14} />}
+                />
             </div>
 
-            {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-                {stats.map((stat) => (
-                    <div
-                        key={stat.title}
-                        className="bg-[#111111] border border-white/10 rounded-2xl p-5 hover:border-white/20 hover:bg-[#161616] transition-all duration-300"
-                    >
-                        <div className="flex items-start justify-between">
-                            <p className="text-[13px] font-medium text-slate-400">{stat.title}</p>
-                            <div className="p-2 bg-white/5 rounded-lg text-slate-300">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    {stat.icon}
-                                </svg>
-                            </div>
-                        </div>
-                        <div className="mt-4">
-                            <p className="text-2xl font-bold text-white tracking-tight">{stat.value}</p>
-                            <p className="text-[11px] text-slate-500 mt-1 font-medium">{stat.sub}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* All Transactions */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
-                <div className="p-6 pb-4">
-                    <h3 className="text-sm font-semibold text-white tracking-wide">All Transactions</h3>
-                    <p className="text-[11px] text-slate-500 mt-1">
+            <Card>
+                <div className="px-5 py-4 border-b border-border">
+                    <h3 className="text-[15px] font-semibold text-text-1">
+                        All transactions
+                    </h3>
+                    <p className="text-xs text-text-2 mt-0.5">
                         {data?.recentTransactions.length ?? 0}{' '}
-                        {data?.recentTransactions.length === 1 ? 'transaction' : 'transactions'}
+                        {data?.recentTransactions.length === 1
+                            ? 'transaction'
+                            : 'transactions'}
                         {data?.scope === 'system'
                             ? ' across all branches'
                             : data?.scope === 'branch'
@@ -113,38 +104,59 @@ export default function TransactionsPage() {
                 </div>
                 <div className="overflow-auto max-h-[600px]">
                     {data && data.recentTransactions.length > 0 ? (
-                        <table className="w-full text-left">
-                            <thead className="sticky top-0 bg-[#111111] z-10">
-                                <tr className="text-[11px] uppercase tracking-widest text-slate-500 border-b border-white/10">
-                                    <th className="px-6 py-3 font-semibold">Transaction #</th>
-                                    <th className="px-6 py-3 font-semibold">Date / Time</th>
+                        <table className="w-full">
+                            <thead className="sticky top-0 bg-surface-2 z-10">
+                                <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 border-b border-border">
+                                    <th className="px-5 py-2.5 text-left font-semibold">
+                                        Transaction #
+                                    </th>
+                                    <th className="px-5 py-2.5 text-left font-semibold">
+                                        Date / Time
+                                    </th>
                                     {data.scope === 'system' && (
-                                        <th className="px-6 py-3 font-semibold">Branch</th>
+                                        <th className="px-5 py-2.5 text-left font-semibold">
+                                            Branch
+                                        </th>
                                     )}
                                     {(data.scope === 'branch' || data.scope === 'system') && (
-                                        <th className="px-6 py-3 font-semibold">Cashier</th>
+                                        <th className="px-5 py-2.5 text-left font-semibold">
+                                            Cashier
+                                        </th>
                                     )}
-                                    <th className="px-6 py-3 font-semibold">Items</th>
-                                    <th className="px-6 py-3 font-semibold text-right">Amount</th>
+                                    <th className="px-5 py-2.5 text-right font-semibold">
+                                        Items
+                                    </th>
+                                    <th className="px-5 py-2.5 text-right font-semibold">
+                                        Amount
+                                    </th>
                                 </tr>
                             </thead>
-                            <tbody className="text-sm">
+                            <tbody>
                                 {data.recentTransactions.map((txn: ICashierTransactionRow) => (
-                                    <tr key={txn.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                                        <td className="px-6 py-3">
-                                            <span className="text-slate-300 font-mono text-xs">{txn.transactionNumber}</span>
+                                    <tr
+                                        key={txn.id}
+                                        className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors"
+                                    >
+                                        <td className="px-5 py-3 mono text-xs text-text-1">
+                                            {txn.transactionNumber}
                                         </td>
-                                        <td className="px-6 py-3 text-slate-400 text-[13px]">
+                                        <td className="px-5 py-3 mono text-xs text-text-2">
                                             {formatDateTime(txn.createdAt)}
                                         </td>
                                         {data.scope === 'system' && (
-                                            <td className="px-6 py-3 text-slate-300">{txn.branchName ?? '—'}</td>
+                                            <td className="px-5 py-3 text-[13px] text-text-1">
+                                                {txn.branchName ?? '—'}
+                                            </td>
                                         )}
                                         {(data.scope === 'branch' || data.scope === 'system') && (
-                                            <td className="px-6 py-3 text-slate-400">{txn.cashierName}</td>
+                                            <td className="px-5 py-3 text-[13px] text-text-2">
+                                                {txn.cashierName}
+                                            </td>
                                         )}
-                                        <td className="px-6 py-3 text-slate-400">{txn.itemCount}</td>
-                                        <td className="px-6 py-3 text-white font-medium text-right">
+                                        <td className="px-5 py-3 mono text-[13px] text-text-1 text-right">
+                                            {txn.itemCount}
+                                        </td>
+                                        <td className="px-5 py-3 mono text-[13px] font-semibold text-text-1 text-right">
                                             {formatCurrency(Number(txn.total))}
                                         </td>
                                     </tr>
@@ -152,12 +164,10 @@ export default function TransactionsPage() {
                             </tbody>
                         </table>
                     ) : (
-                        <div className="px-6 py-12 text-center text-slate-500 text-sm">
-                            No transactions yet
-                        </div>
+                        <EmptyState title="No transactions yet" />
                     )}
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }

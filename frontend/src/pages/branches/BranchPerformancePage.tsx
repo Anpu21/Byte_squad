@@ -41,11 +41,11 @@ interface TooltipPayload {
 function ChartTooltip({ active, payload }: TooltipPayload) {
     if (!active || !payload || !payload.length) return null;
     return (
-        <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-3 shadow-2xl">
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+        <div className="bg-canvas border border-border rounded-xl p-3 shadow-2xl">
+            <p className="text-[11px] font-semibold text-text-2 uppercase tracking-wider mb-1">
                 {payload[0].payload.label}
             </p>
-            <p className="text-sm font-bold text-white tabular-nums">
+            <p className="text-sm font-bold text-text-1 tabular-nums">
                 {formatCurrency(payload[0].value)}
             </p>
         </div>
@@ -63,25 +63,25 @@ export default function BranchPerformancePage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-[60vh]">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
             </div>
         );
     }
 
     if (isError || !data) {
         return (
-            <div className="bg-[#111111] border border-red-500/30 rounded-2xl p-6">
-                <p className="text-red-400 font-semibold mb-2">
+            <div className="bg-surface border border-danger/40 rounded-md p-6">
+                <p className="text-danger font-semibold mb-2">
                     Failed to load branch performance
                 </p>
-                <p className="text-sm text-slate-400 mb-4">
+                <p className="text-sm text-text-2 mb-4">
                     {error instanceof Error
                         ? error.message
                         : 'Unknown error occurred'}
                 </p>
                 <button
                     onClick={() => refetch()}
-                    className="px-4 py-2 bg-white text-slate-900 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors"
+                    className="px-4 py-2 bg-primary text-text-inv rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors"
                 >
                     Retry
                 </button>
@@ -165,43 +165,43 @@ export default function BranchPerformancePage() {
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header: Branch info */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 mb-6">
+            <div className="bg-surface border border-border rounded-md p-6 mb-6">
                 <div className="flex items-start justify-between flex-wrap gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <h1 className="text-2xl font-bold text-white tracking-tight">
+                            <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                                 {branch.name}
                             </h1>
                             {branch.isActive ? (
-                                <span className="inline-flex items-center gap-1.5 text-white text-[13px] bg-white/5 border border-white/10 rounded-full px-2.5 py-0.5">
+                                <span className="inline-flex items-center gap-1.5 text-text-1 text-[13px] bg-surface-2 border border-border rounded-full px-2.5 py-0.5">
                                     <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                                     Active
                                 </span>
                             ) : (
-                                <span className="inline-flex items-center gap-1.5 text-slate-500 text-[13px] bg-white/5 border border-white/10 rounded-full px-2.5 py-0.5">
+                                <span className="inline-flex items-center gap-1.5 text-text-3 text-[13px] bg-surface-2 border border-border rounded-full px-2.5 py-0.5">
                                     <span className="w-2 h-2 rounded-full bg-slate-600" />
                                     Inactive
                                 </span>
                             )}
                         </div>
-                        <p className="text-sm text-slate-400">{branch.address}</p>
-                        <p className="text-sm text-slate-400">{branch.phone}</p>
+                        <p className="text-sm text-text-2">{branch.address}</p>
+                        <p className="text-sm text-text-2">{branch.phone}</p>
                     </div>
                     <div className="text-right">
-                        <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1">
+                        <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1">
                             Branch Admin
                         </p>
                         {admin ? (
                             <>
-                                <p className="text-sm font-semibold text-white">
+                                <p className="text-sm font-semibold text-text-1">
                                     {admin.name}
                                 </p>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-text-3">
                                     {admin.email}
                                 </p>
                             </>
                         ) : (
-                            <p className="text-sm text-amber-400">
+                            <p className="text-sm text-warning">
                                 No admin assigned
                             </p>
                         )}
@@ -214,15 +214,15 @@ export default function BranchPerformancePage() {
                 {todayCards.map((card) => (
                     <div
                         key={card.title}
-                        className="bg-[#111111] border border-white/10 rounded-2xl p-5"
+                        className="bg-surface border border-border rounded-md p-5"
                     >
-                        <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">
+                        <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
                             {card.title}
                         </p>
-                        <p className="text-2xl font-bold text-white tracking-tight tabular-nums">
+                        <p className="text-2xl font-bold text-text-1 tracking-tight tabular-nums">
                             {card.value}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">{card.sub}</p>
+                        <p className="text-xs text-text-3 mt-1">{card.sub}</p>
                     </div>
                 ))}
             </div>
@@ -232,18 +232,18 @@ export default function BranchPerformancePage() {
                 {monthCards.map((card) => {
                     const valueClass =
                         card.tone === 'positive'
-                            ? 'text-emerald-400'
+                            ? 'text-accent-text'
                             : card.tone === 'negative'
-                              ? 'text-red-400'
+                              ? 'text-danger'
                               : card.tone === 'warning'
-                                ? 'text-amber-400'
-                                : 'text-white';
+                                ? 'text-warning'
+                                : 'text-text-1';
                     return (
                         <div
                             key={card.title}
-                            className="bg-[#111111] border border-white/10 rounded-2xl p-5"
+                            className="bg-surface border border-border rounded-md p-5"
                         >
-                            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">
+                            <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
                                 {card.title}
                             </p>
                             <p
@@ -251,7 +251,7 @@ export default function BranchPerformancePage() {
                             >
                                 {card.value}
                             </p>
-                            <p className="text-xs text-slate-500 mt-1">
+                            <p className="text-xs text-text-3 mt-1">
                                 {card.sub}
                             </p>
                         </div>
@@ -260,12 +260,12 @@ export default function BranchPerformancePage() {
             </div>
 
             {/* Sales chart (last 7 days) */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl p-5 mb-6">
+            <div className="bg-surface border border-border rounded-md p-5 mb-6">
                 <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-sm font-bold text-white uppercase tracking-widest">
+                    <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest">
                         Sales — Last 7 Days
                     </h2>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-text-3">
                         Total: {formatCurrency(week.sales)}
                     </p>
                 </div>
@@ -352,16 +352,16 @@ export default function BranchPerformancePage() {
             {/* Top Products + Low Stock two columns */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                 {/* Top Products */}
-                <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
-                    <div className="p-5 border-b border-white/10">
-                        <h2 className="text-sm font-bold text-white uppercase tracking-widest">
+                <div className="bg-surface border border-border rounded-md overflow-hidden">
+                    <div className="p-5 border-b border-border">
+                        <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest">
                             Top Products — Last 30 Days
                         </h2>
                     </div>
                     <div className="overflow-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="text-[11px] uppercase tracking-widest text-slate-500 border-b border-white/10">
+                                <tr className="text-[11px] uppercase tracking-widest text-text-3 border-b border-border">
                                     <th className="px-5 py-3 font-semibold">
                                         Product
                                     </th>
@@ -378,7 +378,7 @@ export default function BranchPerformancePage() {
                                     <tr>
                                         <td
                                             colSpan={3}
-                                            className="px-5 py-12 text-center text-slate-500"
+                                            className="px-5 py-12 text-center text-text-3"
                                         >
                                             No sales data yet
                                         </td>
@@ -387,15 +387,15 @@ export default function BranchPerformancePage() {
                                     topProducts.map((p) => (
                                         <tr
                                             key={p.productId}
-                                            className="border-b border-white/5 hover:bg-white/[0.02]"
+                                            className="border-b border-border hover:bg-surface-2"
                                         >
-                                            <td className="px-5 py-3 text-slate-200 font-medium">
+                                            <td className="px-5 py-3 text-text-1 font-medium">
                                                 {p.name}
                                             </td>
-                                            <td className="px-5 py-3 text-right text-slate-300 tabular-nums">
+                                            <td className="px-5 py-3 text-right text-text-1 tabular-nums">
                                                 {p.quantity}
                                             </td>
-                                            <td className="px-5 py-3 text-right text-white font-medium tabular-nums">
+                                            <td className="px-5 py-3 text-right text-text-1 font-medium tabular-nums">
                                                 {formatCurrency(p.revenue)}
                                             </td>
                                         </tr>
@@ -407,13 +407,13 @@ export default function BranchPerformancePage() {
                 </div>
 
                 {/* Low Stock */}
-                <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
-                    <div className="p-5 border-b border-white/10 flex items-center justify-between">
-                        <h2 className="text-sm font-bold text-white uppercase tracking-widest">
+                <div className="bg-surface border border-border rounded-md overflow-hidden">
+                    <div className="p-5 border-b border-border flex items-center justify-between">
+                        <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest">
                             Low Stock Items
                         </h2>
                         {lowStockList.length > 0 && (
-                            <span className="text-[11px] text-red-400 font-semibold bg-red-500/10 border border-red-500/20 rounded-full px-2 py-0.5">
+                            <span className="text-[11px] text-danger font-semibold bg-danger-soft border border-danger/30 rounded-full px-2 py-0.5">
                                 {inventory.lowStockItems} total
                             </span>
                         )}
@@ -421,7 +421,7 @@ export default function BranchPerformancePage() {
                     <div className="overflow-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="text-[11px] uppercase tracking-widest text-slate-500 border-b border-white/10">
+                                <tr className="text-[11px] uppercase tracking-widest text-text-3 border-b border-border">
                                     <th className="px-5 py-3 font-semibold">
                                         Product
                                     </th>
@@ -438,7 +438,7 @@ export default function BranchPerformancePage() {
                                     <tr>
                                         <td
                                             colSpan={3}
-                                            className="px-5 py-12 text-center text-slate-500"
+                                            className="px-5 py-12 text-center text-text-3"
                                         >
                                             All stock levels healthy
                                         </td>
@@ -449,21 +449,21 @@ export default function BranchPerformancePage() {
                                         return (
                                             <tr
                                                 key={item.productId}
-                                                className="border-b border-white/5 hover:bg-white/[0.02]"
+                                                className="border-b border-border hover:bg-surface-2"
                                             >
-                                                <td className="px-5 py-3 text-slate-200 font-medium">
+                                                <td className="px-5 py-3 text-text-1 font-medium">
                                                     {item.name}
                                                 </td>
                                                 <td
                                                     className={`px-5 py-3 text-right font-bold tabular-nums ${
                                                         isOut
-                                                            ? 'text-red-400'
-                                                            : 'text-amber-400'
+                                                            ? 'text-danger'
+                                                            : 'text-warning'
                                                     }`}
                                                 >
                                                     {item.quantity}
                                                 </td>
-                                                <td className="px-5 py-3 text-right text-slate-500 tabular-nums">
+                                                <td className="px-5 py-3 text-right text-text-3 tabular-nums">
                                                     {item.threshold}
                                                 </td>
                                             </tr>
@@ -479,8 +479,8 @@ export default function BranchPerformancePage() {
             {/* Staff breakdown + Recent transactions */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Staff by role */}
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-5">
-                    <h2 className="text-sm font-bold text-white uppercase tracking-widest mb-4">
+                <div className="bg-surface border border-border rounded-md p-5">
+                    <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest mb-4">
                         Staff by Role
                     </h2>
                     <div className="space-y-3">
@@ -491,21 +491,21 @@ export default function BranchPerformancePage() {
                         ].map((r) => (
                             <div
                                 key={r.label}
-                                className="flex items-center justify-between border-b border-white/5 pb-2 last:border-0"
+                                className="flex items-center justify-between border-b border-border pb-2 last:border-0"
                             >
-                                <span className="text-sm text-slate-400">
+                                <span className="text-sm text-text-2">
                                     {r.label}
                                 </span>
-                                <span className="text-sm font-bold text-white tabular-nums">
+                                <span className="text-sm font-bold text-text-1 tabular-nums">
                                     {r.count}
                                 </span>
                             </div>
                         ))}
                         <div className="flex items-center justify-between pt-2">
-                            <span className="text-sm text-slate-300 font-semibold">
+                            <span className="text-sm text-text-1 font-semibold">
                                 Total
                             </span>
-                            <span className="text-lg font-bold text-white tabular-nums">
+                            <span className="text-lg font-bold text-text-1 tabular-nums">
                                 {staff.total}
                             </span>
                         </div>
@@ -513,16 +513,16 @@ export default function BranchPerformancePage() {
                 </div>
 
                 {/* Recent transactions */}
-                <div className="lg:col-span-2 bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
-                    <div className="p-5 border-b border-white/10">
-                        <h2 className="text-sm font-bold text-white uppercase tracking-widest">
+                <div className="lg:col-span-2 bg-surface border border-border rounded-md overflow-hidden">
+                    <div className="p-5 border-b border-border">
+                        <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest">
                             Recent Transactions
                         </h2>
                     </div>
                     <div className="overflow-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="text-[11px] uppercase tracking-widest text-slate-500 border-b border-white/10">
+                                <tr className="text-[11px] uppercase tracking-widest text-text-3 border-b border-border">
                                     <th className="px-5 py-3 font-semibold">
                                         Txn #
                                     </th>
@@ -542,7 +542,7 @@ export default function BranchPerformancePage() {
                                     <tr>
                                         <td
                                             colSpan={4}
-                                            className="px-5 py-12 text-center text-slate-500"
+                                            className="px-5 py-12 text-center text-text-3"
                                         >
                                             No transactions yet
                                         </td>
@@ -551,18 +551,18 @@ export default function BranchPerformancePage() {
                                     recentTransactions.map((t) => (
                                         <tr
                                             key={t.id}
-                                            className="border-b border-white/5 hover:bg-white/[0.02]"
+                                            className="border-b border-border hover:bg-surface-2"
                                         >
-                                            <td className="px-5 py-3 text-slate-300 font-mono text-xs">
+                                            <td className="px-5 py-3 text-text-1 font-mono text-xs">
                                                 {t.transactionNumber}
                                             </td>
-                                            <td className="px-5 py-3 text-slate-300">
+                                            <td className="px-5 py-3 text-text-1">
                                                 {t.cashierName}
                                             </td>
-                                            <td className="px-5 py-3 text-slate-500 text-xs">
+                                            <td className="px-5 py-3 text-text-3 text-xs">
                                                 {formatDateTime(t.createdAt)}
                                             </td>
-                                            <td className="px-5 py-3 text-right text-white font-medium tabular-nums">
+                                            <td className="px-5 py-3 text-right text-text-1 font-medium tabular-nums">
                                                 {formatCurrency(t.total)}
                                             </td>
                                         </tr>

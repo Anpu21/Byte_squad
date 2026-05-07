@@ -1,0 +1,198 @@
+@startuml LedgerProUseCases
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam ArrowColor #19183B
+skinparam usecase {
+  BackgroundColor #E7F2EF
+  BorderColor #19183B
+  FontColor #19183B
+}
+skinparam actor {
+  BackgroundColor #A1C2BD
+  BorderColor #19183B
+}
+skinparam package {
+  BackgroundColor #F5F8F7
+  BorderColor #708993
+}
+
+title Ledger Pro — Use Case Diagram\n<size:11><color:#708993>POS · Inventory · Accounting · Customer Shop</color></size>
+
+' ==================== Actors ====================
+actor "Anonymous\nVisitor" as Visitor
+actor "Customer" as Customer
+actor "Cashier" as Cashier
+actor "Manager" as Manager
+actor "Admin" as Admin
+actor "System\n(scheduler / alerts)" as System
+
+' Role hierarchy
+Cashier <|-- Manager
+Manager <|-- Admin
+Visitor <|-- Customer
+
+' ==================== Authentication ====================
+package "Authentication" {
+  usecase "Sign up" as UC_Signup
+  usecase "Verify email (OTP)" as UC_OTP
+  usecase "Sign in" as UC_Login
+  usecase "Change password" as UC_ChangePw
+  usecase "Sign out" as UC_Logout
+}
+
+' ==================== POS / Sales ====================
+package "POS  &  Sales" {
+  usecase "Open POS" as UC_POS
+  usecase "Scan barcode" as UC_Scan
+  usecase "Search product" as UC_SearchPdct
+  usecase "Add custom item" as UC_Custom
+  usecase "Apply per-item\ndiscount" as UC_Discount
+  usecase "Process payment" as UC_Pay
+  usecase "Print receipt" as UC_Receipt
+  usecase "View transactions" as UC_Txns
+  usecase "Refund transaction" as UC_Refund
+  usecase "Scan pickup QR" as UC_ScanPickup
+  usecase "Fulfill customer\nrequest" as UC_Fulfill
+}
+
+' ==================== Inventory ====================
+package "Inventory" {
+  usecase "Browse products" as UC_Products
+  usecase "Add product" as UC_AddProd
+  usecase "Edit product" as UC_EditProd
+  usecase "Adjust branch\nstock" as UC_AdjStock
+  usecase "Low stock alert" as UC_LowStock
+  usecase "Export inventory" as UC_ExportInv
+}
+
+' ==================== Accounting ====================
+package "Accounting" {
+  usecase "View ledger" as UC_Ledger
+  usecase "Record expense" as UC_Expense
+  usecase "View P&L" as UC_PL
+  usecase "Export report" as UC_ExportReport
+}
+
+' ==================== People ====================
+package "People  &  Profile" {
+  usecase "View profile" as UC_Profile
+  usecase "Edit profile" as UC_EditProfile
+  usecase "Invite user" as UC_Invite
+  usecase "Manage user\nroles" as UC_RoleMgmt
+  usecase "Deactivate user" as UC_Deactivate
+}
+
+' ==================== Branches ====================
+package "Branches" {
+  usecase "View my branch" as UC_MyBranch
+  usecase "Manage branches" as UC_BranchMgmt
+  usecase "Compare branches" as UC_BranchCompare
+}
+
+' ==================== Stock Transfers ====================
+package "Stock Transfers" {
+  usecase "Create transfer" as UC_NewTrf
+  usecase "Approve transfer" as UC_ApproveTrf
+  usecase "Mark in transit" as UC_TransitTrf
+  usecase "Receive transfer" as UC_ReceiveTrf
+  usecase "Reject transfer" as UC_RejectTrf
+  usecase "Transfer history" as UC_TrfHistory
+  usecase "Manage all\ntransfers" as UC_AdminTrf
+}
+
+' ==================== Notifications ====================
+package "Notifications" {
+  usecase "View notifications" as UC_ViewNotif
+  usecase "Mark as read" as UC_ReadNotif
+  usecase "Send alert" as UC_SendNotif
+}
+
+' ==================== Customer Shop ====================
+package "Customer Shop" {
+  usecase "Browse catalog" as UC_Catalog
+  usecase "View product\ndetail" as UC_ProdDetail
+  usecase "Add to cart" as UC_AddCart
+  usecase "Checkout &\nreserve" as UC_Checkout
+  usecase "Receive\npickup QR" as UC_PickupQR
+  usecase "My requests" as UC_MyReq
+  usecase "Reorder" as UC_Reorder
+}
+
+' ==================== Visitor associations ====================
+Visitor --> UC_Signup
+Visitor --> UC_Login
+
+' ==================== Customer ====================
+Customer --> UC_Catalog
+Customer --> UC_ProdDetail
+Customer --> UC_AddCart
+Customer --> UC_Checkout
+Customer --> UC_PickupQR
+Customer --> UC_MyReq
+Customer --> UC_Reorder
+Customer --> UC_ChangePw
+Customer --> UC_Logout
+Customer --> UC_ViewNotif
+
+' ==================== Cashier ====================
+Cashier --> UC_POS
+Cashier --> UC_Txns
+Cashier --> UC_ScanPickup
+Cashier --> UC_Fulfill
+Cashier --> UC_ViewNotif
+Cashier --> UC_Profile
+Cashier --> UC_ChangePw
+Cashier --> UC_Logout
+
+' ==================== Manager (inherits Cashier) ====================
+Manager --> UC_MyBranch
+Manager --> UC_LowStock
+Manager --> UC_NewTrf
+Manager --> UC_ApproveTrf
+Manager --> UC_ReceiveTrf
+Manager --> UC_RejectTrf
+Manager --> UC_TrfHistory
+Manager --> UC_Products
+Manager --> UC_AddProd
+Manager --> UC_EditProd
+Manager --> UC_AdjStock
+Manager --> UC_ExportInv
+
+' ==================== Admin (inherits Manager) ====================
+Admin --> UC_Ledger
+Admin --> UC_Expense
+Admin --> UC_PL
+Admin --> UC_ExportReport
+Admin --> UC_BranchMgmt
+Admin --> UC_BranchCompare
+Admin --> UC_AdminTrf
+Admin --> UC_Invite
+Admin --> UC_RoleMgmt
+Admin --> UC_Deactivate
+
+' ==================== System ====================
+System --> UC_SendNotif
+System --> UC_LowStock
+
+' ==================== Includes / extends ====================
+UC_POS ..> UC_Scan : <<include>>
+UC_POS ..> UC_SearchPdct : <<include>>
+UC_POS ..> UC_Discount : <<extend>>
+UC_POS ..> UC_Custom : <<extend>>
+UC_POS ..> UC_Pay : <<include>>
+UC_Pay ..> UC_Receipt : <<include>>
+UC_Txns ..> UC_Refund : <<extend>>
+UC_Signup ..> UC_OTP : <<include>>
+UC_Login ..> UC_ChangePw : <<extend>>
+UC_Checkout ..> UC_PickupQR : <<include>>
+UC_AddProd ..> UC_AdjStock : <<extend>>
+UC_NewTrf ..> UC_ApproveTrf : <<include>>
+UC_ApproveTrf ..> UC_TransitTrf : <<extend>>
+UC_TransitTrf ..> UC_ReceiveTrf : <<extend>>
+UC_ScanPickup ..> UC_Fulfill : <<include>>
+UC_LowStock ..> UC_SendNotif : <<extend>>
+UC_Profile ..> UC_EditProfile : <<extend>>
+UC_ViewNotif ..> UC_ReadNotif : <<include>>
+
+@enduml
