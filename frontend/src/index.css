@@ -1,1 +1,141 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+
+@theme {
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', monospace;
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-text-inv: var(--text-inv);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-text: var(--primary-soft-text);
+
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --color-brand-900: #19183B;
+  --color-brand-700: #2C2A55;
+  --color-brand-500: #4A487A;
+  --color-brand-400: #708993;
+  --color-brand-300: #A1C2BD;
+  --color-brand-100: #C8DDD8;
+  --color-brand-50:  #E7F2EF;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+:root {
+  --canvas: #F5F8F7;
+  --surface: #FFFFFF;
+  --surface-2: #EEF3F1;
+  --surface-3: #E1EBE7;
+  --border: #D7E2DE;
+  --border-strong: #B8CAC4;
+
+  --text-1: #19183B;
+  --text-2: #4F5E63;
+  --text-3: #8A9A9C;
+  --text-inv: #FFFFFF;
+
+  --primary: #19183B;
+  --primary-hover: #2C2A55;
+  --primary-soft: #E7F2EF;
+  --primary-soft-text: #19183B;
+
+  --accent: #4A8073;
+  --accent-soft: #E7F2EF;
+  --accent-text: #2F5A50;
+
+  --warning: #B7791F;
+  --warning-soft: #FBF1DD;
+  --danger: #B4342E;
+  --danger-soft: #F8E4E2;
+  --info: #2F6594;
+  --info-soft: #E0EDF5;
+
+  --shadow-xs: 0 1px 2px rgba(25,24,59,.04);
+  --shadow-sm: 0 1px 3px rgba(25,24,59,.06), 0 1px 2px rgba(25,24,59,.04);
+  --shadow-md: 0 6px 18px rgba(25,24,59,.08);
+  --shadow-lg: 0 18px 40px rgba(25,24,59,.16);
+  --ring: 0 0 0 3px rgba(25,24,59,.18);
+}
+
+[data-theme="dark"] {
+  --canvas: #0E0D24;
+  --surface: #19183B;
+  --surface-2: #22214A;
+  --surface-3: #2C2A55;
+  --border: #2C2A55;
+  --border-strong: #3D3B70;
+
+  --text-1: #E7F2EF;
+  --text-2: #A1C2BD;
+  --text-3: #708993;
+  --text-inv: #19183B;
+
+  --primary: #A1C2BD;
+  --primary-hover: #C8DDD8;
+  --primary-soft: rgba(161,194,189,.12);
+  --primary-soft-text: #C8DDD8;
+
+  --accent: #A1C2BD;
+  --accent-soft: rgba(161,194,189,.14);
+  --accent-text: #C8DDD8;
+
+  --warning: #E0B872;
+  --warning-soft: rgba(224,184,114,.14);
+  --danger: #E08680;
+  --danger-soft: rgba(224,134,128,.14);
+  --info: #8FB5D6;
+  --info-soft: rgba(143,181,214,.14);
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.35);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.4);
+  --shadow-md: 0 6px 18px rgba(0,0,0,.5);
+  --shadow-lg: 0 18px 40px rgba(0,0,0,.6);
+  --ring: 0 0 0 3px rgba(161,194,189,.3);
+}
+
+html, body {
+  background: var(--canvas);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.num { font-variant-numeric: tabular-nums; }
+
+.shadow-xs { box-shadow: var(--shadow-xs); }
+.shadow-sm-token { box-shadow: var(--shadow-sm); }
+.shadow-md-token { box-shadow: var(--shadow-md); }
+.shadow-lg-token { box-shadow: var(--shadow-lg); }
+
+input, textarea, select, button { font-family: inherit; }
+
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 6px; border: 2px solid var(--canvas); }
+*::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
