@@ -64,7 +64,6 @@ const shopCartSlice = createSlice({
                     quantity: qty,
                 });
             }
-            state.isCartOpen = true;
         },
         removeFromCart(state, action: PayloadAction<string>) {
             state.items = state.items.filter(
@@ -96,7 +95,6 @@ const shopCartSlice = createSlice({
         },
         clearShopCart(state) {
             state.items = [];
-            state.branchId = null;
         },
     },
 });

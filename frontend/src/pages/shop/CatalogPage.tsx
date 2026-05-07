@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -103,36 +103,33 @@ export default function CatalogPage() {
         toast.success(`${product.name} added`);
     };
 
+    useEffect(() => {
+        if (!branchId && branches.length > 0) {
+            dispatch(setBranch(branches[0].id));
+        }
+    }, [branchId, branches, dispatch]);
+
     if (!branchId) {
-        return (
-            <div className="max-w-md mx-auto py-16">
-                <div className="bg-[#111] border border-white/10 rounded-2xl p-7 text-center">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/5 border border-white/10 mb-4">
-                        <Store size={20} className="text-slate-300" />
+        if (!branchesLoading && branches.length === 0) {
+            return (
+                <div className="max-w-md mx-auto py-16">
+                    <div className="bg-[#111] border border-white/10 rounded-2xl p-7 text-center">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/5 border border-white/10 mb-4">
+                            <Store size={20} className="text-slate-300" />
+                        </div>
+                        <h1 className="text-xl font-bold text-white tracking-tight mb-1">
+                            No branches available
+                        </h1>
+                        <p className="text-sm text-slate-400">
+                            Please check back later.
+                        </p>
                     </div>
-                    <h1 className="text-xl font-bold text-white tracking-tight mb-1">
-                        Choose your branch
-                    </h1>
-                    <p className="text-sm text-slate-400 mb-6">
-                        Pick the branch you want to shop from. We&apos;ll only show items
-                        that branch carries.
-                    </p>
-                    <select
-                        value=""
-                        onChange={(e) => handleBranchChange(e.target.value)}
-                        disabled={branchesLoading}
-                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-                    >
-                        <option value="">
-                            {branchesLoading ? 'Loading branches…' : 'Select a branch'}
-                        </option>
-                        {branches.map((b) => (
-                            <option key={b.id} value={b.id}>
-                                {b.name} — {b.address}
-                            </option>
-                        ))}
-                    </select>
                 </div>
+            );
+        }
+        return (
+            <div className="flex items-center justify-center py-24">
+                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             </div>
         );
     }
