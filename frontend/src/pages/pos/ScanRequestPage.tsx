@@ -18,11 +18,11 @@ function formatCurrency(amount: number) {
 }
 
 const STATUS_TONE: Record<CustomerRequestStatus, string> = {
-    pending: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
-    completed: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-    rejected: 'bg-rose-500/10 text-rose-300 border-rose-500/30',
-    cancelled: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
-    expired: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
+    pending: 'bg-warning-soft text-warning border-warning/40',
+    completed: 'bg-accent-soft text-accent-text border-accent/40',
+    rejected: 'bg-danger-soft text-danger border-danger/40',
+    cancelled: 'bg-slate-500/10 text-text-2 border-slate-500/30',
+    expired: 'bg-slate-500/10 text-text-2 border-slate-500/30',
 };
 
 export default function ScanRequestPage() {
@@ -94,15 +94,15 @@ export default function ScanRequestPage() {
             <button
                 type="button"
                 onClick={() => navigate(FRONTEND_ROUTES.POS)}
-                className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white mb-6"
+                className="inline-flex items-center gap-1 text-sm text-text-2 hover:text-text-1 mb-6"
             >
                 <ChevronLeft size={14} /> Back to POS
             </button>
 
-            <h1 className="text-2xl font-bold text-white tracking-tight mb-2">
+            <h1 className="text-2xl font-bold text-text-1 tracking-tight mb-2">
                 Scan Pickup Request
             </h1>
-            <p className="text-sm text-slate-400 mb-8">
+            <p className="text-sm text-text-2 mb-8">
                 Point the camera at the customer&apos;s QR — or type / scan the code
                 manually.
             </p>
@@ -113,9 +113,9 @@ export default function ScanRequestPage() {
 
                     <form
                         onSubmit={handleManualSubmit}
-                        className="mt-4 bg-[#111] border border-white/10 rounded-2xl p-4"
+                        className="mt-4 bg-[#111] border border-border rounded-md p-4"
                     >
-                        <label className="text-[11px] uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-2">
+                        <label className="text-[11px] uppercase tracking-widest text-text-3 mb-2 flex items-center gap-2">
                             <Keyboard size={12} /> Manual / hardware scanner
                         </label>
                         <div className="flex gap-2">
@@ -124,12 +124,12 @@ export default function ScanRequestPage() {
                                 value={manualCode}
                                 onChange={(e) => setManualCode(e.target.value)}
                                 placeholder="REQ-XXXXXXXX"
-                                className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-emerald-500"
+                                className="flex-1 bg-canvas border border-border rounded-lg px-3 py-2 text-sm font-mono text-text-1 focus:outline-none focus:border-emerald-500"
                             />
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="px-4 py-2 bg-white text-black font-semibold rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50"
+                                className="px-4 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50"
                             >
                                 {loading ? 'Looking up…' : 'Look up'}
                             </button>
@@ -137,15 +137,15 @@ export default function ScanRequestPage() {
                     </form>
                 </div>
 
-                <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+                <div className="bg-[#111] border border-border rounded-md p-6">
                     {!request ? (
-                        <div className="h-full flex items-center justify-center text-center text-slate-500 text-sm py-12">
+                        <div className="h-full flex items-center justify-center text-center text-text-3 text-sm py-12">
                             Scan a QR code or enter a request code to begin.
                         </div>
                     ) : (
                         <>
                             <div className="flex items-center justify-between mb-4">
-                                <p className="font-mono text-sm font-bold text-white">
+                                <p className="font-mono text-sm font-bold text-text-1">
                                     {request.requestCode}
                                 </p>
                                 <span
@@ -155,7 +155,7 @@ export default function ScanRequestPage() {
                                 </span>
                             </div>
 
-                            <p className="text-xs text-slate-500 mb-4">
+                            <p className="text-xs text-text-3 mb-4">
                                 {request.branch?.name} ·{' '}
                                 {request.customer
                                     ? `${request.customer.firstName} ${request.customer.lastName}`
@@ -167,7 +167,7 @@ export default function ScanRequestPage() {
                                 {request.items.map((it) => (
                                     <div
                                         key={it.id}
-                                        className="flex items-center justify-between text-slate-300"
+                                        className="flex items-center justify-between text-text-1"
                                     >
                                         <span className="truncate pr-2">
                                             {it.product?.name ?? 'Unknown'} × {it.quantity}
@@ -181,18 +181,18 @@ export default function ScanRequestPage() {
                                 ))}
                             </div>
 
-                            <div className="pt-3 border-t border-white/10 mb-5 flex items-center justify-between">
-                                <span className="text-xs uppercase tracking-widest text-slate-500">
+                            <div className="pt-3 border-t border-border mb-5 flex items-center justify-between">
+                                <span className="text-xs uppercase tracking-widest text-text-3">
                                     Estimated total
                                 </span>
-                                <span className="text-lg font-bold text-white">
+                                <span className="text-lg font-bold text-text-1">
                                     {formatCurrency(Number(request.estimatedTotal))}
                                 </span>
                             </div>
 
                             {isFulfillable && (
                                 <>
-                                    <p className="text-[11px] uppercase tracking-widest text-slate-500 mb-2">
+                                    <p className="text-[11px] uppercase tracking-widest text-text-3 mb-2">
                                         Payment method
                                     </p>
                                     <div className="grid grid-cols-3 gap-2 mb-5">
@@ -204,8 +204,8 @@ export default function ScanRequestPage() {
                                                     onClick={() => setPaymentMethod(p)}
                                                     className={`py-2 text-sm font-semibold rounded-lg border transition-colors capitalize ${
                                                         paymentMethod === p
-                                                            ? 'bg-white text-black border-white'
-                                                            : 'bg-[#0a0a0a] text-slate-300 border-white/10 hover:border-white/20'
+                                                            ? 'bg-primary text-black border-white'
+                                                            : 'bg-canvas text-text-1 border-border hover:border-border-strong'
                                                     }`}
                                                 >
                                                     {p}
@@ -228,7 +228,7 @@ export default function ScanRequestPage() {
                             )}
 
                             {!isFulfillable && (
-                                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm text-amber-300">
+                                <div className="p-3 rounded-lg bg-warning-soft border border-warning/40 text-sm text-warning">
                                     This request is {request.status} and cannot be charged.
                                 </div>
                             )}

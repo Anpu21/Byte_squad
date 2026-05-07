@@ -12,13 +12,13 @@ function formatCurrency(amount: number) {
 function alertTone(type: IOverviewAlert['type']): string {
     switch (type) {
         case 'critical_low_stock':
-            return 'text-red-400 border-red-500/30 bg-red-500/5';
+            return 'text-danger border-danger/40 bg-red-500/5';
         case 'no_admin':
-            return 'text-amber-400 border-amber-500/30 bg-amber-500/5';
+            return 'text-warning border-warning/40 bg-amber-500/5';
         case 'no_transactions':
-            return 'text-sky-400 border-sky-500/30 bg-sky-500/5';
+            return 'text-info border-info/40 bg-sky-500/5';
         case 'inactive_branch':
-            return 'text-slate-400 border-slate-500/30 bg-slate-500/5';
+            return 'text-text-2 border-slate-500/30 bg-slate-500/5';
     }
 }
 
@@ -36,7 +36,7 @@ export default function OverviewPage({ embedded = false }: OverviewPageProps = {
     if (isLoading || !data) {
         return (
             <div className="flex items-center justify-center h-[60vh]">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
             </div>
         );
     }
@@ -71,10 +71,10 @@ export default function OverviewPage({ embedded = false }: OverviewPageProps = {
             {!embedded && (
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">
+                        <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                             System Overview
                         </h1>
-                        <p className="text-sm text-slate-400 mt-1">
+                        <p className="text-sm text-text-2 mt-1">
                             All branches at a glance
                         </p>
                     </div>
@@ -86,30 +86,30 @@ export default function OverviewPage({ embedded = false }: OverviewPageProps = {
                 {cards.map((card) => (
                     <div
                         key={card.title}
-                        className="bg-[#111111] border border-white/10 rounded-2xl p-5"
+                        className="bg-surface border border-border rounded-md p-5"
                     >
-                        <p className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">
+                        <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
                             {card.title}
                         </p>
-                        <p className="text-2xl font-bold text-white tracking-tight">
+                        <p className="text-2xl font-bold text-text-1 tracking-tight">
                             {card.value}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">{card.sub}</p>
+                        <p className="text-xs text-text-3 mt-1">{card.sub}</p>
                     </div>
                 ))}
             </div>
 
             {/* Branch Performance Table */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl mb-6 overflow-hidden">
-                <div className="p-5 border-b border-white/10">
-                    <h2 className="text-sm font-bold text-white uppercase tracking-widest">
+            <div className="bg-surface border border-border rounded-md mb-6 overflow-hidden">
+                <div className="p-5 border-b border-border">
+                    <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest">
                         Branch Performance
                     </h2>
                 </div>
                 <div className="overflow-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="text-[11px] uppercase tracking-widest text-slate-500 border-b border-white/10">
+                            <tr className="text-[11px] uppercase tracking-widest text-text-3 border-b border-border">
                                 <th className="px-5 py-3 font-semibold">Branch</th>
                                 <th className="px-5 py-3 font-semibold">Today's Sales</th>
                                 <th className="px-5 py-3 font-semibold">Txns</th>
@@ -124,7 +124,7 @@ export default function OverviewPage({ embedded = false }: OverviewPageProps = {
                                 <tr>
                                     <td
                                         colSpan={7}
-                                        className="px-5 py-12 text-center text-slate-500"
+                                        className="px-5 py-12 text-center text-text-3"
                                     >
                                         No branches yet
                                     </td>
@@ -133,36 +133,36 @@ export default function OverviewPage({ embedded = false }: OverviewPageProps = {
                                 branches.map((b) => (
                                     <tr
                                         key={b.branchId}
-                                        className="border-b border-white/5 hover:bg-white/[0.02]"
+                                        className="border-b border-border hover:bg-surface-2"
                                     >
                                         <td className="px-5 py-3">
                                             <div className="flex flex-col">
-                                                <span className="text-slate-200 font-medium">
+                                                <span className="text-text-1 font-medium">
                                                     {b.branchName}
                                                 </span>
-                                                <span className="text-[11px] text-slate-500">
+                                                <span className="text-[11px] text-text-3">
                                                     {b.adminName || 'No admin'}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-5 py-3 text-slate-200 font-medium">
+                                        <td className="px-5 py-3 text-text-1 font-medium">
                                             {formatCurrency(b.todaySales)}
                                         </td>
-                                        <td className="px-5 py-3 text-slate-300">
+                                        <td className="px-5 py-3 text-text-1">
                                             {b.todayTransactions}
                                         </td>
-                                        <td className="px-5 py-3 text-slate-300">
+                                        <td className="px-5 py-3 text-text-1">
                                             {b.staffCount}
                                         </td>
-                                        <td className="px-5 py-3 text-slate-300">
+                                        <td className="px-5 py-3 text-text-1">
                                             {b.activeProducts}
                                         </td>
                                         <td className="px-5 py-3">
                                             <span
                                                 className={
                                                     b.lowStockItems > 0
-                                                        ? 'text-red-400 font-medium'
-                                                        : 'text-slate-500'
+                                                        ? 'text-danger font-medium'
+                                                        : 'text-text-3'
                                                 }
                                             >
                                                 {b.lowStockItems}
@@ -170,12 +170,12 @@ export default function OverviewPage({ embedded = false }: OverviewPageProps = {
                                         </td>
                                         <td className="px-5 py-3">
                                             {b.isActive ? (
-                                                <span className="inline-flex items-center gap-1.5 text-white text-[13px]">
-                                                    <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                                                <span className="inline-flex items-center gap-1.5 text-text-1 text-[13px]">
+                                                    <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
                                                     Active
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1.5 text-slate-500 text-[13px]">
+                                                <span className="inline-flex items-center gap-1.5 text-text-3 text-[13px]">
                                                     <span className="w-2 h-2 rounded-full bg-slate-600" />
                                                     Inactive
                                                 </span>
@@ -190,15 +190,15 @@ export default function OverviewPage({ embedded = false }: OverviewPageProps = {
             </div>
 
             {/* Alerts */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
-                <div className="p-5 border-b border-white/10">
-                    <h2 className="text-sm font-bold text-white uppercase tracking-widest">
+            <div className="bg-surface border border-border rounded-md overflow-hidden">
+                <div className="p-5 border-b border-border">
+                    <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest">
                         Alerts
                     </h2>
                 </div>
                 <div className="p-5 space-y-2">
                     {alerts.length === 0 ? (
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-text-3">
                             All systems nominal — no active alerts.
                         </p>
                     ) : (

@@ -3,7 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ledger pro</title>
+    <title>Ledger Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script>
+      (function () {
+        var t = localStorage.getItem('lp-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

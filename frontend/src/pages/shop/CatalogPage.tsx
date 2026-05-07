@@ -26,9 +26,9 @@ const STOCK_LABEL: Record<ShopStockStatus, string> = {
 };
 
 const STOCK_PILL: Record<ShopStockStatus, string> = {
-    in: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-    low: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-    out: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
+    in: 'bg-accent-soft text-accent-text border-accent/40',
+    low: 'bg-warning-soft text-warning border-warning/40',
+    out: 'bg-danger-soft text-danger border-danger/40',
 };
 
 const STOCK_DOT: Record<ShopStockStatus, string> = {
@@ -113,14 +113,14 @@ export default function CatalogPage() {
         if (!branchesLoading && branches.length === 0) {
             return (
                 <div className="max-w-md mx-auto py-16">
-                    <div className="bg-[#111] border border-white/10 rounded-2xl p-7 text-center">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/5 border border-white/10 mb-4">
-                            <Store size={20} className="text-slate-300" />
+                    <div className="bg-[#111] border border-border rounded-md p-7 text-center">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-2 border border-border mb-4">
+                            <Store size={20} className="text-text-1" />
                         </div>
-                        <h1 className="text-xl font-bold text-white tracking-tight mb-1">
+                        <h1 className="text-xl font-bold text-text-1 tracking-tight mb-1">
                             No branches available
                         </h1>
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-text-2">
                             Please check back later.
                         </p>
                     </div>
@@ -129,7 +129,7 @@ export default function CatalogPage() {
         }
         return (
             <div className="flex items-center justify-center py-24">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
             </div>
         );
     }
@@ -137,12 +137,12 @@ export default function CatalogPage() {
     return (
         <div>
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-white tracking-tight">
+                <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                     Browse products
                 </h1>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-text-2 mt-1">
                     Showing items at{' '}
-                    <span className="text-slate-200 font-medium">
+                    <span className="text-text-1 font-medium">
                         {currentBranch?.name ?? '…'}
                     </span>
                     . Switch any time.
@@ -153,7 +153,7 @@ export default function CatalogPage() {
                 <select
                     value={branchId}
                     onChange={(e) => handleBranchChange(e.target.value)}
-                    className="bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    className="bg-[#111] border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-emerald-500"
                 >
                     {branches.map((b) => (
                         <option key={b.id} value={b.id}>
@@ -164,20 +164,20 @@ export default function CatalogPage() {
                 <div className="relative flex-1">
                     <Search
                         size={16}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3"
                     />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search products…"
-                        className="w-full bg-[#111] border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-[#111] border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-text-1 focus:outline-none focus:border-emerald-500"
                     />
                 </div>
                 <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    className="bg-[#111] border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-emerald-500"
                 >
                     <option value="">All categories</option>
                     {categories.map((c) => (
@@ -190,10 +190,10 @@ export default function CatalogPage() {
 
             {isLoading ? (
                 <div className="flex items-center justify-center py-24">
-                    <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
                 </div>
             ) : productCount === 0 ? (
-                <div className="text-center py-24 text-slate-500 text-sm">
+                <div className="text-center py-24 text-text-3 text-sm">
                     No products match your search at this branch.
                 </div>
             ) : (
@@ -203,11 +203,11 @@ export default function CatalogPage() {
                         return (
                             <div
                                 key={product.id}
-                                className={`bg-[#111] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-colors ${
+                                className={`bg-[#111] border border-border rounded-md overflow-hidden hover:border-border-strong transition-colors ${
                                     out ? 'opacity-60' : ''
                                 }`}
                             >
-                                <div className="relative aspect-square bg-[#0a0a0a] flex items-center justify-center overflow-hidden">
+                                <div className="relative aspect-square bg-canvas flex items-center justify-center overflow-hidden">
                                     {product.imageUrl ? (
                                         <img
                                             src={product.imageUrl}
@@ -215,7 +215,7 @@ export default function CatalogPage() {
                                             className={out ? 'w-full h-full object-cover grayscale' : 'w-full h-full object-cover'}
                                         />
                                     ) : (
-                                        <span className="text-slate-600 text-xs">No image</span>
+                                        <span className="text-text-3 text-xs">No image</span>
                                     )}
                                     <span
                                         className={`absolute top-2 right-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-wider ${
@@ -231,14 +231,14 @@ export default function CatalogPage() {
                                     </span>
                                 </div>
                                 <div className="p-3">
-                                    <p className="text-[11px] text-slate-500 uppercase tracking-widest">
+                                    <p className="text-[11px] text-text-3 uppercase tracking-widest">
                                         {product.category}
                                     </p>
-                                    <h3 className="text-sm font-semibold text-white mt-1 line-clamp-2 min-h-[2.5em]">
+                                    <h3 className="text-sm font-semibold text-text-1 mt-1 line-clamp-2 min-h-[2.5em]">
                                         {product.name}
                                     </h3>
                                     <div className="mt-3 flex items-center justify-between gap-2">
-                                        <p className="text-sm font-bold text-white">
+                                        <p className="text-sm font-bold text-text-1">
                                             {formatCurrency(product.sellingPrice)}
                                         </p>
                                         <button
@@ -247,8 +247,8 @@ export default function CatalogPage() {
                                             disabled={out}
                                             className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors ${
                                                 out
-                                                    ? 'bg-white/5 text-slate-500 cursor-not-allowed'
-                                                    : 'bg-white text-black hover:bg-slate-200'
+                                                    ? 'bg-surface-2 text-text-3 cursor-not-allowed'
+                                                    : 'bg-primary text-black hover:bg-slate-200'
                                             }`}
                                         >
                                             {out ? (
@@ -261,8 +261,8 @@ export default function CatalogPage() {
                                         </button>
                                     </div>
                                     {out && product.availableBranches.length > 0 && (
-                                        <div className="mt-3 pt-3 border-t border-white/5">
-                                            <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-1.5 flex items-center gap-1">
+                                        <div className="mt-3 pt-3 border-t border-border">
+                                            <p className="text-[10px] uppercase tracking-widest text-text-3 mb-1.5 flex items-center gap-1">
                                                 <Store size={10} /> Available at
                                             </p>
                                             <div className="flex flex-wrap gap-1.5">
@@ -271,7 +271,7 @@ export default function CatalogPage() {
                                                         key={b.id}
                                                         type="button"
                                                         onClick={() => handleBranchChange(b.id)}
-                                                        className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors"
+                                                        className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-accent-soft text-accent-text border border-accent/40 hover:bg-accent-soft transition-colors"
                                                     >
                                                         {b.name}
                                                     </button>

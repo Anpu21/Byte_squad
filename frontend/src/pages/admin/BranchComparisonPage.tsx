@@ -89,24 +89,24 @@ export default function BranchComparisonPage({
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8">
             {!embedded && (
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">
+                    <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                         Branch Comparison
                     </h1>
-                    <p className="text-sm text-slate-400 mt-1">
+                    <p className="text-sm text-text-2 mt-1">
                         Side-by-side analytics for any branches over a date range
                     </p>
                 </div>
             )}
 
             {/* Filters */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 space-y-5">
+            <div className="bg-surface border border-border rounded-md p-6 space-y-5">
                 <div>
-                    <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">
+                    <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
                         Branches
                     </label>
                     <div className="flex flex-wrap gap-2">
                         {branches.length === 0 ? (
-                            <p className="text-sm text-slate-500">No branches available</p>
+                            <p className="text-sm text-text-3">No branches available</p>
                         ) : (
                             branches.map((b) => {
                                 const active = selectedIds.includes(b.id);
@@ -117,8 +117,8 @@ export default function BranchComparisonPage({
                                         onClick={() => toggleBranch(b.id)}
                                         className={`h-8 px-3 rounded-lg text-xs font-medium border transition-all ${
                                             active
-                                                ? 'bg-white text-slate-900 border-white'
-                                                : 'bg-[#0a0a0a] text-slate-300 border-white/10 hover:border-white/30'
+                                                ? 'bg-primary text-text-inv border-white'
+                                                : 'bg-canvas text-text-1 border-border hover:border-primary/40'
                                         }`}
                                     >
                                         {b.name}
@@ -131,25 +131,25 @@ export default function BranchComparisonPage({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1.5">
+                        <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
                             Start Date
                         </label>
                         <input
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            className="w-full h-9 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20"
+                            className="w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20"
                         />
                     </div>
                     <div>
-                        <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1.5">
+                        <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
                             End Date
                         </label>
                         <input
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            className="w-full h-9 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20"
+                            className="w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20"
                         />
                     </div>
                     <div className="flex items-end">
@@ -157,7 +157,7 @@ export default function BranchComparisonPage({
                             type="button"
                             onClick={handleRun}
                             disabled={selectedIds.length < 1 || isFetching}
-                            className="w-full h-9 rounded-lg bg-white text-slate-900 text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                            className="w-full h-9 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                         >
                             {isFetching ? 'Running...' : 'Run Comparison'}
                         </button>
@@ -167,14 +167,14 @@ export default function BranchComparisonPage({
 
             {/* Results */}
             {!submitted && (
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-16 text-center text-slate-500 text-sm">
+                <div className="bg-surface border border-border rounded-md p-16 text-center text-text-3 text-sm">
                     Select at least one branch and click Run Comparison to see results.
                 </div>
             )}
 
             {submitted && isLoading && (
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-16 flex items-center justify-center">
-                    <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="bg-surface border border-border rounded-md p-16 flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-border-strong border-t-white rounded-full animate-spin" />
                 </div>
             )}
 
@@ -188,8 +188,8 @@ export default function BranchComparisonPage({
                     </div>
 
                     {/* Revenue vs Expenses chart */}
-                    <div className="bg-[#111111] border border-white/10 rounded-2xl p-6">
-                        <h2 className="text-sm font-semibold text-white mb-4">
+                    <div className="bg-surface border border-border rounded-md p-6">
+                        <h2 className="text-sm font-semibold text-text-1 mb-4">
                             Revenue vs Expenses
                         </h2>
                         <div className="h-72">
@@ -241,8 +241,8 @@ export default function BranchComparisonPage({
 
 function MetricCard({ entry }: { entry: IBranchComparisonEntry }) {
     return (
-        <div className="bg-[#111111] border border-white/10 rounded-2xl p-5 space-y-3">
-            <p className="text-sm font-semibold text-white truncate">
+        <div className="bg-surface border border-border rounded-md p-5 space-y-3">
+            <p className="text-sm font-semibold text-text-1 truncate">
                 {entry.branchName}
             </p>
             <div className="space-y-2 text-[13px]">
@@ -270,28 +270,28 @@ function MetricCard({ entry }: { entry: IBranchComparisonEntry }) {
 function Row({ label, value }: { label: string; value: string }) {
     return (
         <div className="flex items-center justify-between gap-3">
-            <span className="text-slate-500">{label}</span>
-            <span className="text-slate-200 font-medium">{value}</span>
+            <span className="text-text-3">{label}</span>
+            <span className="text-text-1 font-medium">{value}</span>
         </div>
     );
 }
 
 function TopProductsTable({ entry }: { entry: IBranchComparisonEntry }) {
     return (
-        <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-white/10">
-                <p className="text-sm font-semibold text-white">
+        <div className="bg-surface border border-border rounded-md overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+                <p className="text-sm font-semibold text-text-1">
                     Top Products — {entry.branchName}
                 </p>
             </div>
             {entry.topProducts.length === 0 ? (
-                <div className="px-5 py-8 text-center text-slate-500 text-sm">
+                <div className="px-5 py-8 text-center text-text-3 text-sm">
                     No sales in this range
                 </div>
             ) : (
                 <table className="w-full text-left">
                     <thead>
-                        <tr className="text-[10px] uppercase tracking-widest text-slate-500 border-b border-white/10">
+                        <tr className="text-[10px] uppercase tracking-widest text-text-3 border-b border-border">
                             <th className="px-5 py-3 font-semibold">Product</th>
                             <th className="px-5 py-3 font-semibold text-right">Qty</th>
                             <th className="px-5 py-3 font-semibold text-right">Revenue</th>
@@ -301,13 +301,13 @@ function TopProductsTable({ entry }: { entry: IBranchComparisonEntry }) {
                         {entry.topProducts.map((p) => (
                             <tr
                                 key={p.productId}
-                                className="border-b border-white/5 last:border-b-0"
+                                className="border-b border-border last:border-b-0"
                             >
-                                <td className="px-5 py-3 text-slate-200">{p.productName}</td>
-                                <td className="px-5 py-3 text-right text-slate-300">
+                                <td className="px-5 py-3 text-text-1">{p.productName}</td>
+                                <td className="px-5 py-3 text-right text-text-1">
                                     {p.quantity.toLocaleString()}
                                 </td>
-                                <td className="px-5 py-3 text-right text-slate-300">
+                                <td className="px-5 py-3 text-right text-text-1">
                                     {formatCurrency(p.revenue)}
                                 </td>
                             </tr>

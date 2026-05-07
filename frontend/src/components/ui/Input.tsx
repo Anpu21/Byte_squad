@@ -8,54 +8,46 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
     ({ label, error, className, id, ...props }, ref) => {
-        // Auto-generate a unique ID for accessibility if one isn't provided
         const uniqueId = useId();
         const inputId = id || uniqueId;
 
         return (
             <div className="w-full">
-                {/* Standardized Uppercase Label */}
                 {label && (
                     <label
                         htmlFor={inputId}
-                        className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]"
+                        className="block text-xs font-medium text-text-2 mb-1.5"
                     >
                         {label}
                     </label>
                 )}
-                
+
                 <div className="relative">
                     <input
                         ref={ref}
                         id={inputId}
                         aria-invalid={!!error}
                         className={cn(
-                            // Base input styles
-                            'w-full h-11 px-4 bg-[#0a0a0a] border rounded-xl text-sm text-slate-200 outline-none transition-all duration-200 placeholder:text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed',
-                            
-                            // Dynamic state styling (Error vs Default)
-                            error 
-                                ? 'border-rose-500/50 focus:border-rose-500 focus:ring-[3px] focus:ring-rose-500/20' 
-                                : 'border-white/10 focus:border-white focus:ring-[3px] focus:ring-white/20 hover:border-white/20',
-                            
-                            // User overrides
-                            className
+                            'w-full h-[38px] px-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors duration-150 placeholder:text-text-3 disabled:opacity-50 disabled:cursor-not-allowed',
+                            error
+                                ? 'border-danger focus:border-danger focus:ring-[3px] focus:ring-danger/20'
+                                : 'border-border-strong focus:border-primary focus:ring-[3px] focus:ring-primary/20 hover:border-text-3',
+                            className,
                         )}
                         {...props}
                     />
                 </div>
 
-                {/* Standardized Animated Error Message */}
                 {error && (
-                    <p className="mt-2 text-[12px] text-rose-400 flex items-center gap-1.5 font-medium animate-in fade-in slide-in-from-top-1 duration-200">
-                        <svg 
-                            width="14" 
-                            height="14" 
-                            viewBox="0 0 24 24" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            strokeWidth="2" 
-                            strokeLinecap="round" 
+                    <p className="mt-1.5 text-xs text-danger flex items-center gap-1.5 font-medium animate-in fade-in slide-in-from-top-1 duration-200">
+                        <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
                             strokeLinejoin="round"
                         >
                             <circle cx="12" cy="12" r="10"></circle>

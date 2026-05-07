@@ -54,14 +54,14 @@ function BranchModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                <div className="flex items-center justify-between p-6 border-b border-white/10">
-                    <h2 className="text-lg font-bold text-white">
+            <div className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-md overflow-hidden">
+                <div className="flex items-center justify-between p-6 border-b border-border">
+                    <h2 className="text-lg font-bold text-text-1">
                         {isEdit ? 'Edit Branch' : 'Create Branch'}
                     </h2>
                     <button
                         onClick={onClose}
-                        className="p-1.5 text-slate-500 hover:text-white rounded-md hover:bg-white/10 transition-colors"
+                        className="p-1.5 text-text-3 hover:text-text-1 rounded-md hover:bg-primary-soft transition-colors"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -70,7 +70,7 @@ function BranchModal({
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div>
-                        <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1.5">
+                        <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
                             Name
                         </label>
                         <input
@@ -78,11 +78,11 @@ function BranchModal({
                             required
                             value={form.name}
                             onChange={(e) => setForm({ ...form, name: e.target.value })}
-                            className="w-full h-9 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
+                            className="w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
                         />
                     </div>
                     <div>
-                        <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1.5">
+                        <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
                             Address
                         </label>
                         <input
@@ -90,32 +90,32 @@ function BranchModal({
                             required
                             value={form.address}
                             onChange={(e) => setForm({ ...form, address: e.target.value })}
-                            className="w-full h-9 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
+                            className="w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
                         />
                     </div>
                     <div>
-                        <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1.5">
+                        <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
                             Phone
                         </label>
                         <input
                             type="text"
                             value={form.phone}
                             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                            className="w-full h-9 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
+                            className="w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
                         />
                     </div>
                     <div className="flex gap-3 pt-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 h-9 rounded-lg border border-white/10 text-slate-300 text-sm font-medium hover:bg-white/5 transition-colors"
+                            className="flex-1 h-9 rounded-lg border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 h-9 rounded-lg bg-white text-slate-900 text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
+                            className="flex-1 h-9 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
                         >
                             {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Branch'}
                         </button>
@@ -192,28 +192,28 @@ export default function BranchManagementPage({
             >
                 {!embedded && (
                     <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">Branch Management</h1>
-                        <p className="text-sm text-slate-400 mt-1">Create, edit, and manage all branches</p>
+                        <h1 className="text-2xl font-bold text-text-1 tracking-tight">Branch Management</h1>
+                        <p className="text-sm text-text-2 mt-1">Create, edit, and manage all branches</p>
                     </div>
                 )}
                 <button
                     onClick={openCreate}
-                    className="h-9 px-4 rounded-lg bg-white text-slate-900 text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 transition-all self-start sm:self-auto"
+                    className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 transition-all self-start sm:self-auto"
                 >
                     + Create Branch
                 </button>
             </div>
 
-            <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
+            <div className="bg-surface border border-border rounded-md overflow-hidden">
                 <div className="overflow-auto">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-20">
-                            <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                            <div className="w-6 h-6 border-2 border-border-strong border-t-white rounded-full animate-spin" />
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-b border-white/10 text-[11px] uppercase tracking-widest text-slate-500">
+                                <tr className="border-b border-border text-[11px] uppercase tracking-widest text-text-3">
                                     <th className="px-6 py-4 font-semibold">Name</th>
                                     <th className="px-6 py-4 font-semibold">Address</th>
                                     <th className="px-6 py-4 font-semibold">Phone</th>
@@ -226,7 +226,7 @@ export default function BranchManagementPage({
                             <tbody className="text-sm">
                                 {branches.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-16 text-center text-slate-500">
+                                        <td colSpan={7} className="px-6 py-16 text-center text-text-3">
                                             No branches yet
                                         </td>
                                     </tr>
@@ -234,32 +234,32 @@ export default function BranchManagementPage({
                                     branches.map((b) => (
                                         <tr
                                             key={b.id}
-                                            className="border-b border-white/5 hover:bg-white/[0.02]"
+                                            className="border-b border-border hover:bg-surface-2"
                                         >
-                                            <td className="px-6 py-4 text-slate-200 font-medium">{b.name}</td>
-                                            <td className="px-6 py-4 text-slate-400">{b.address}</td>
-                                            <td className="px-6 py-4 text-slate-400">{b.phone || '—'}</td>
+                                            <td className="px-6 py-4 text-text-1 font-medium">{b.name}</td>
+                                            <td className="px-6 py-4 text-text-2">{b.address}</td>
+                                            <td className="px-6 py-4 text-text-2">{b.phone || '—'}</td>
                                             <td className="px-6 py-4">
                                                 {b.adminName ? (
                                                     <div className="flex flex-col">
-                                                        <span className="text-slate-300">{b.adminName}</span>
-                                                        <span className="text-[11px] text-slate-500">{b.adminEmail}</span>
+                                                        <span className="text-text-1">{b.adminName}</span>
+                                                        <span className="text-[11px] text-text-3">{b.adminEmail}</span>
                                                     </div>
                                                 ) : (
-                                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 uppercase tracking-widest">
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-warning-soft text-warning border border-warning/40 uppercase tracking-widest">
                                                         No admin
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 text-slate-300">{b.staffCount}</td>
+                                            <td className="px-6 py-4 text-text-1">{b.staffCount}</td>
                                             <td className="px-6 py-4">
                                                 {b.isActive ? (
-                                                    <span className="inline-flex items-center gap-1.5 text-white text-[13px]">
-                                                        <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                                                    <span className="inline-flex items-center gap-1.5 text-text-1 text-[13px]">
+                                                        <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
                                                         Active
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1.5 text-slate-500 text-[13px]">
+                                                    <span className="inline-flex items-center gap-1.5 text-text-3 text-[13px]">
                                                         <span className="w-2 h-2 rounded-full bg-slate-600" />
                                                         Inactive
                                                     </span>
@@ -268,13 +268,13 @@ export default function BranchManagementPage({
                                             <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                                                 <button
                                                     onClick={() => openEdit(b)}
-                                                    className="text-xs text-slate-300 hover:text-white hover:underline"
+                                                    className="text-xs text-text-1 hover:text-text-1 hover:underline"
                                                 >
                                                     Edit
                                                 </button>
                                                 <button
                                                     onClick={() => toggleMutation.mutate(b.id)}
-                                                    className="text-xs text-slate-300 hover:text-white hover:underline"
+                                                    className="text-xs text-text-1 hover:text-text-1 hover:underline"
                                                 >
                                                     {b.isActive ? 'Deactivate' : 'Activate'}
                                                 </button>
@@ -284,7 +284,7 @@ export default function BranchManagementPage({
                                                             deleteMutation.mutate(b.id);
                                                         }
                                                     }}
-                                                    className="text-xs text-red-400 hover:text-red-300 hover:underline"
+                                                    className="text-xs text-danger hover:text-danger hover:underline"
                                                 >
                                                     Delete
                                                 </button>

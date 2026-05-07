@@ -50,13 +50,13 @@ function NotificationItem({
 }) {
     return (
         <div
-            className={`border-b border-white/5 transition-colors ${
-                notification.isRead ? 'opacity-60' : 'bg-white/[0.02]'
+            className={`border-b border-border transition-colors ${
+                notification.isRead ? 'opacity-60' : 'bg-surface-2'
             }`}
         >
             <button
                 onClick={() => onOpen(notification)}
-                className="flex items-start gap-4 px-6 py-4 w-full text-left hover:bg-white/[0.03] transition-colors"
+                className="flex items-start gap-4 px-6 py-4 w-full text-left hover:bg-surface-2 transition-colors"
             >
                 {typeIcon(notification.type)}
 
@@ -65,22 +65,22 @@ function NotificationItem({
                         <p
                             className={`text-sm font-medium ${
                                 notification.isRead
-                                    ? 'text-slate-400'
-                                    : 'text-slate-200'
+                                    ? 'text-text-2'
+                                    : 'text-text-1'
                             }`}
                         >
                             {notification.title}
                         </p>
                         {!notification.isRead && (
-                            <span className="w-2 h-2 rounded-full bg-white flex-shrink-0" />
+                            <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
                         )}
                     </div>
-                    <p className="text-[13px] text-slate-500 mt-0.5 leading-relaxed truncate">
+                    <p className="text-[13px] text-text-3 mt-0.5 leading-relaxed truncate">
                         {notification.message}
                     </p>
                 </div>
 
-                <span className="text-[11px] text-slate-600 font-medium flex-shrink-0 mt-0.5">
+                <span className="text-[11px] text-text-3 font-medium flex-shrink-0 mt-0.5">
                     {timeAgo(notification.createdAt)}
                 </span>
 
@@ -93,7 +93,7 @@ function NotificationItem({
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="text-slate-600 flex-shrink-0 mt-1"
+                    className="text-text-3 flex-shrink-0 mt-1"
                 >
                     <polyline points="9 18 15 12 9 6" />
                 </svg>
@@ -129,7 +129,7 @@ function EmptyState({ filter }: { filter: FilterTab }) {
     const msg = messages[filter] ?? messages.all;
 
     return (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+        <div className="flex flex-col items-center justify-center py-16 text-text-3">
             <svg
                 width="40"
                 height="40"
@@ -145,7 +145,7 @@ function EmptyState({ filter }: { filter: FilterTab }) {
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
             <p className="text-sm font-medium">{msg.title}</p>
-            <p className="text-xs text-slate-600 mt-1">{msg.subtitle}</p>
+            <p className="text-xs text-text-3 mt-1">{msg.subtitle}</p>
         </div>
     );
 }
@@ -173,10 +173,10 @@ export default function NotificationsPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">
+                    <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                         Notifications
                     </h1>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-sm text-text-3 mt-1">
                         {unreadCount > 0
                             ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
                             : 'All caught up'}
@@ -186,7 +186,7 @@ export default function NotificationsPage() {
                 {unreadCount > 0 && (
                     <button
                         onClick={markAllAsRead}
-                        className="text-sm font-medium text-slate-400 hover:text-white px-4 py-2 rounded-lg hover:bg-white/5 transition-colors"
+                        className="text-sm font-medium text-text-2 hover:text-text-1 px-4 py-2 rounded-lg hover:bg-surface-2 transition-colors"
                     >
                         Mark all as read
                     </button>
@@ -194,7 +194,7 @@ export default function NotificationsPage() {
             </div>
 
             {/* Filter tabs */}
-            <div className="flex items-center gap-1 mb-4 p-1 bg-white/[0.03] rounded-xl border border-white/5 w-fit">
+            <div className="flex items-center gap-1 mb-4 p-1 bg-surface-2 rounded-xl border border-border w-fit">
                 {FILTER_TABS.map((tab) => {
                     const count = getFilterCount(notifications, tab.key);
                     const isActive = activeFilter === tab.key;
@@ -204,16 +204,16 @@ export default function NotificationsPage() {
                             onClick={() => setActiveFilter(tab.key)}
                             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
                                 isActive
-                                    ? 'bg-white text-slate-900 shadow-sm'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    ? 'bg-primary text-text-inv shadow-sm'
+                                    : 'text-text-2 hover:text-text-1 hover:bg-surface-2'
                             }`}
                         >
                             {tab.label}
                             <span
                                 className={`text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full ${
                                     isActive
-                                        ? 'bg-slate-900/10 text-slate-700'
-                                        : 'bg-white/5 text-slate-500'
+                                        ? 'bg-slate-900/10 text-text-3'
+                                        : 'bg-surface-2 text-text-3'
                                 }`}
                             >
                                 {count}
@@ -224,14 +224,14 @@ export default function NotificationsPage() {
             </div>
 
             {/* Notifications list */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
+            <div className="bg-surface border border-border rounded-md overflow-hidden">
                 {filtered.length === 0 ? (
                     <EmptyState filter={activeFilter} />
                 ) : (
                     groups.map((group) => (
                         <div key={group.label}>
-                            <div className="px-6 py-2.5 bg-white/[0.02] border-b border-white/5">
-                                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                            <div className="px-6 py-2.5 bg-surface-2 border-b border-border">
+                                <p className="text-[11px] font-semibold text-text-3 uppercase tracking-wider">
                                     {group.label}
                                 </p>
                             </div>

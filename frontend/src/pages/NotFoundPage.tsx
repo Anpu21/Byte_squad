@@ -14,7 +14,7 @@ export default function NotFoundPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center relative bg-[#0a0a0a] overflow-hidden selection:bg-white/20">
+        <div className="min-h-screen flex flex-col items-center justify-center relative bg-canvas overflow-hidden selection:bg-primary-soft">
             
             {/* Custom Animations for the 404 Page */}
             <style>{`
@@ -56,7 +56,7 @@ export default function NotFoundPage() {
                 {/* Animated Graphic Element */}
                 <div className="relative w-48 h-48 mb-8 flex items-center justify-center">
                     {/* Glowing Backdrop */}
-                    <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full"></div>
+                    <div className="absolute inset-0 bg-surface-2 blur-3xl rounded-full"></div>
                     
                     {/* Floating Abstract "Missing Document" */}
                     <div className="absolute animate-float-delayed text-white/5">
@@ -72,10 +72,10 @@ export default function NotFoundPage() {
                 </div>
 
                 {/* Text Content */}
-                <h2 className="text-2xl font-bold text-white tracking-tight mb-3">
+                <h2 className="text-2xl font-bold text-text-1 tracking-tight mb-3">
                     Ledger Entry Not Found
                 </h2>
-                <p className="text-slate-400 text-sm max-w-md mb-10 leading-relaxed">
+                <p className="text-text-2 text-sm max-w-md mb-10 leading-relaxed">
                     The page or record you are looking for has been moved, deleted, or never existed in the database.
                 </p>
 
@@ -83,7 +83,7 @@ export default function NotFoundPage() {
                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                     <button
                         onClick={() => navigate(-1)}
-                        className="w-full sm:w-auto h-11 px-6 rounded-xl border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
+                        className="w-full sm:w-auto h-11 px-6 rounded-xl border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors flex items-center justify-center gap-2"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -95,7 +95,7 @@ export default function NotFoundPage() {
                     {/* Smart Routing Button */}
                     <button
                         onClick={handleReturnHome}
-                        className="w-full sm:w-auto h-11 px-8 rounded-xl bg-white text-slate-900 text-sm font-bold tracking-wide hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] transition-all flex items-center justify-center gap-2"
+                        className="w-full sm:w-auto h-11 px-8 rounded-xl bg-primary text-text-inv text-sm font-bold tracking-wide hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] transition-all flex items-center justify-center gap-2"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             {user ? (

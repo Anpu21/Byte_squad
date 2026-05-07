@@ -107,16 +107,16 @@ export default function AdminTransfersPage() {
     return (
         <div className="animate-in fade-in duration-300">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-white tracking-tight">
+                <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                     Stock Transfers
                 </h1>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-text-3 mt-1">
                     Review and approve inter-branch transfer requests.
                 </p>
             </div>
 
             {/* Filter tabs */}
-            <div className="flex flex-wrap items-center gap-1 mb-6 p-1 bg-white/[0.03] rounded-xl border border-white/5 w-fit">
+            <div className="flex flex-wrap items-center gap-1 mb-6 p-1 bg-surface-2 rounded-xl border border-border w-fit">
                 {FILTER_TABS.map((t) => {
                     const isActive = filter === t.key;
                     const count = counts[t.key] ?? 0;
@@ -126,16 +126,16 @@ export default function AdminTransfersPage() {
                             onClick={() => changeFilter(t.key)}
                             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
                                 isActive
-                                    ? 'bg-white text-slate-900 shadow-sm'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    ? 'bg-primary text-text-inv shadow-sm'
+                                    : 'text-text-2 hover:text-text-1 hover:bg-surface-2'
                             }`}
                         >
                             {t.label}
                             <span
                                 className={`text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full ${
                                     isActive
-                                        ? 'bg-slate-900/10 text-slate-700'
-                                        : 'bg-white/5 text-slate-500'
+                                        ? 'bg-slate-900/10 text-text-3'
+                                        : 'bg-surface-2 text-text-3'
                                 }`}
                             >
                                 {count}
@@ -145,11 +145,11 @@ export default function AdminTransfersPage() {
                 })}
             </div>
 
-            <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-surface border border-border rounded-md shadow-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-white/10 text-[11px] uppercase tracking-widest text-slate-500 bg-[#0a0a0a]/50">
+                            <tr className="border-b border-border text-[11px] uppercase tracking-widest text-text-3 bg-canvas/50">
                                 <th className="px-6 py-4 font-semibold whitespace-nowrap">
                                     Product
                                 </th>
@@ -176,14 +176,14 @@ export default function AdminTransfersPage() {
                                 [...Array(4)].map((_, i) => (
                                     <tr
                                         key={i}
-                                        className="border-b border-white/5"
+                                        className="border-b border-border"
                                     >
                                         {[...Array(7)].map((__, j) => (
                                             <td
                                                 key={j}
                                                 className="px-6 py-4"
                                             >
-                                                <div className="h-5 w-24 bg-white/5 rounded animate-pulse" />
+                                                <div className="h-5 w-24 bg-surface-2 rounded animate-pulse" />
                                             </td>
                                         ))}
                                     </tr>
@@ -194,7 +194,7 @@ export default function AdminTransfersPage() {
                                         colSpan={7}
                                         className="px-6 py-16 text-center"
                                     >
-                                        <p className="text-sm font-medium text-slate-400">
+                                        <p className="text-sm font-medium text-text-2">
                                             No transfers in this view
                                         </p>
                                     </td>
@@ -210,7 +210,7 @@ export default function AdminTransfersPage() {
                                     return (
                                         <tr
                                             key={item.id}
-                                            className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                                            className="border-b border-border hover:bg-surface-2 transition-colors group cursor-pointer"
                                             onClick={() =>
                                                 navigate(
                                                     FRONTEND_ROUTES.TRANSFER_DETAIL.replace(
@@ -221,18 +221,18 @@ export default function AdminTransfersPage() {
                                             }
                                         >
                                             <td className="px-6 py-4">
-                                                <span className="text-slate-200 font-medium">
+                                                <span className="text-text-1 font-medium">
                                                     {item.product.name}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-slate-300">
+                                            <td className="px-6 py-4 text-text-1">
                                                 {item.destinationBranch.name}
                                             </td>
-                                            <td className="px-6 py-4 text-slate-400">
+                                            <td className="px-6 py-4 text-text-2">
                                                 {item.sourceBranch?.name ??
                                                     '—'}
                                             </td>
-                                            <td className="px-6 py-4 text-right tabular-nums text-slate-300 font-medium">
+                                            <td className="px-6 py-4 text-right tabular-nums text-text-1 font-medium">
                                                 {qty}
                                             </td>
                                             <td className="px-6 py-4">
@@ -240,7 +240,7 @@ export default function AdminTransfersPage() {
                                                     status={item.status}
                                                 />
                                             </td>
-                                            <td className="px-6 py-4 text-slate-500">
+                                            <td className="px-6 py-4 text-text-3">
                                                 {formatTimeAgo(
                                                     item.createdAt,
                                                 )}
@@ -258,8 +258,8 @@ export default function AdminTransfersPage() {
                                                     }}
                                                     className={`h-8 px-3 rounded-lg text-xs font-bold transition-all ${
                                                         isPending
-                                                            ? 'bg-white text-slate-900 hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)]'
-                                                            : 'border border-white/10 text-slate-300 hover:bg-white/5'
+                                                            ? 'bg-primary text-text-inv hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)]'
+                                                            : 'border border-border text-text-1 hover:bg-surface-2'
                                                     }`}
                                                 >
                                                     {isPending
@@ -276,7 +276,7 @@ export default function AdminTransfersPage() {
                 </div>
 
                 {!isLoading && items.length > 0 && totalPages > 1 && (
-                    <div className="p-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-500 bg-[#0a0a0a]/50">
+                    <div className="p-4 border-t border-border flex items-center justify-between text-xs text-text-3 bg-canvas/50">
                         <span>
                             Page {page} of {totalPages}
                         </span>
@@ -284,14 +284,14 @@ export default function AdminTransfersPage() {
                             <button
                                 onClick={() => setPage(page - 1)}
                                 disabled={page === 1}
-                                className="px-3 py-1.5 rounded border border-white/10 hover:bg-white/5 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 rounded border border-border hover:bg-surface-2 hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Previous
                             </button>
                             <button
                                 onClick={() => setPage(page + 1)}
                                 disabled={page === totalPages}
-                                className="px-3 py-1.5 rounded border border-white/10 hover:bg-white/5 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 rounded border border-border hover:bg-surface-2 hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Next
                             </button>
