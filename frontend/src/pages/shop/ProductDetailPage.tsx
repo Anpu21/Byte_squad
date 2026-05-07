@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
 import { ChevronLeft, Plus, Minus, ShoppingCart } from 'lucide-react';
-import { publicProductsService } from '@/services/public-products.service';
+import { shopProductsService } from '@/services/shop-products.service';
 import { addToCart } from '@/store/slices/shopCartSlice';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
@@ -23,7 +23,7 @@ export default function ProductDetailPage() {
 
     const { data: product, isLoading } = useQuery({
         queryKey: ['public-product', id],
-        queryFn: () => publicProductsService.getProduct(id!),
+        queryFn: () => shopProductsService.getProduct(id!),
         enabled: !!id,
     });
 

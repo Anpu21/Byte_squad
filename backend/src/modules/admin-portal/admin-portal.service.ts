@@ -68,7 +68,7 @@ export interface AdminWithBranch {
   firstName: string;
   lastName: string;
   role: UserRole;
-  branchId: string;
+  branchId: string | null;
   branchName: string | null;
   isVerified: boolean;
   lastLoginAt: Date | null;
@@ -81,7 +81,7 @@ export interface UserWithBranch {
   firstName: string;
   lastName: string;
   role: UserRole;
-  branchId: string;
+  branchId: string | null;
   branchName: string | null;
   isVerified: boolean;
   lastLoginAt: Date | null;

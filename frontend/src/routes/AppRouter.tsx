@@ -7,6 +7,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import PublicRoute from '@/routes/PublicRoute';
 import LoginPage from '@/pages/auth/LoginPage';
+import SignupPage from '@/pages/auth/SignupPage';
 import OtpVerificationPage from '@/pages/auth/OtpVerificationPage';
 import ChangePasswordPage from '@/pages/auth/ChangePasswordPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
@@ -34,16 +35,12 @@ import AdminTransfersPage from '@/pages/admin/AdminTransfersPage';
 import CustomerRequestsPage from '@/pages/requests/CustomerRequestsPage';
 import ScanRequestPage from '@/pages/pos/ScanRequestPage';
 import CustomerLayout from '@/layouts/CustomerLayout';
-import CustomerProtectedRoute from '@/routes/CustomerProtectedRoute';
 import CatalogPage from '@/pages/shop/CatalogPage';
 import ProductDetailPage from '@/pages/shop/ProductDetailPage';
 import CartPage from '@/pages/shop/CartPage';
 import CheckoutPage from '@/pages/shop/CheckoutPage';
 import RequestConfirmationPage from '@/pages/shop/RequestConfirmationPage';
 import MyRequestsPage from '@/pages/shop/MyRequestsPage';
-import CustomerLoginPage from '@/pages/shop/CustomerLoginPage';
-import CustomerSignupPage from '@/pages/shop/CustomerSignupPage';
-import CustomerOtpPage from '@/pages/shop/CustomerOtpPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function SmartRedirect() {
@@ -54,6 +51,8 @@ function SmartRedirect() {
     switch (user.role) {
         case UserRole.CASHIER:
             return <Navigate to={FRONTEND_ROUTES.CASHIER_DASHBOARD} replace />;
+        case UserRole.CUSTOMER:
+            return <Navigate to={FRONTEND_ROUTES.SHOP} replace />;
         default:
             return <Navigate to={FRONTEND_ROUTES.DASHBOARD} replace />;
     }
@@ -82,6 +81,16 @@ export default function AppRouter() {
                         <PublicRoute>
                             <AuthLayout>
                                 <LoginPage />
+                            </AuthLayout>
+                        </PublicRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.SIGNUP}
+                    element={
+                        <PublicRoute>
+                            <AuthLayout>
+                                <SignupPage />
                             </AuthLayout>
                         </PublicRoute>
                     }
@@ -393,39 +402,48 @@ export default function AppRouter() {
                     }
                 />
 
-                {/* Customer storefront (public + customer-protected) */}
+                {/* Customer storefront — login required (CUSTOMER role) */}
                 <Route
                     path={FRONTEND_ROUTES.SHOP}
                     element={
-                        <CustomerLayout>
-                            <CatalogPage />
-                        </CustomerLayout>
+                        <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
+                            <CustomerLayout>
+                                <CatalogPage />
+                            </CustomerLayout>
+                        </ProtectedRoute>
                     }
                 />
                 <Route
                     path={FRONTEND_ROUTES.SHOP_PRODUCT_DETAIL}
                     element={
-                        <CustomerLayout>
-                            <ProductDetailPage />
-                        </CustomerLayout>
+                        <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
+                            <CustomerLayout>
+                                <ProductDetailPage />
+                            </CustomerLayout>
+                        </ProtectedRoute>
                     }
                 />
                 <Route
                     path={FRONTEND_ROUTES.SHOP_CART}
                     element={
-                        <CustomerLayout>
-                            <CartPage />
-                        </CustomerLayout>
+                        <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
+                            <CustomerLayout>
+                                <CartPage />
+                            </CustomerLayout>
+                        </ProtectedRoute>
                     }
                 />
                 <Route
                     path={FRONTEND_ROUTES.SHOP_CHECKOUT}
                     element={
-                        <CustomerLayout>
-                            <CheckoutPage />
-                        </CustomerLayout>
+                        <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
+                            <CustomerLayout>
+                                <CheckoutPage />
+                            </CustomerLayout>
+                        </ProtectedRoute>
                     }
                 />
+                {/* Public confirmation — anyone with the code can view (the QR is the credential) */}
                 <Route
                     path={FRONTEND_ROUTES.SHOP_REQUEST_CONFIRMATION}
                     element={
@@ -435,37 +453,13 @@ export default function AppRouter() {
                     }
                 />
                 <Route
-                    path={FRONTEND_ROUTES.SHOP_LOGIN}
-                    element={
-                        <CustomerLayout>
-                            <CustomerLoginPage />
-                        </CustomerLayout>
-                    }
-                />
-                <Route
-                    path={FRONTEND_ROUTES.SHOP_SIGNUP}
-                    element={
-                        <CustomerLayout>
-                            <CustomerSignupPage />
-                        </CustomerLayout>
-                    }
-                />
-                <Route
-                    path={FRONTEND_ROUTES.SHOP_VERIFY_OTP}
-                    element={
-                        <CustomerLayout>
-                            <CustomerOtpPage />
-                        </CustomerLayout>
-                    }
-                />
-                <Route
                     path={FRONTEND_ROUTES.SHOP_MY_REQUESTS}
                     element={
-                        <CustomerProtectedRoute>
+                        <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
                             <CustomerLayout>
                                 <MyRequestsPage />
                             </CustomerLayout>
-                        </CustomerProtectedRoute>
+                        </ProtectedRoute>
                     }
                 />
 

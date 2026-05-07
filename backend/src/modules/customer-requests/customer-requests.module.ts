@@ -9,7 +9,6 @@ import { Branch } from '@branches/entities/branch.entity';
 import { User } from '@users/entities/user.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
-import { CustomersModule } from '@/modules/customers/customers.module';
 import { NotificationsModule } from '@notifications/notifications.module';
 
 @Module({
@@ -23,7 +22,6 @@ import { NotificationsModule } from '@notifications/notifications.module';
       Transaction,
       LedgerEntry,
     ]),
-    CustomersModule,
     NotificationsModule,
   ],
   controllers: [CustomerRequestsController],

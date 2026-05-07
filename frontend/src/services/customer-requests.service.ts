@@ -1,4 +1,3 @@
-import customerApi from './customer-api';
 import api from './api';
 import type {
     IApiResponse,
@@ -20,7 +19,7 @@ export const customerRequestsService = {
     create: async (
         payload: ICustomerRequestCreatePayload,
     ): Promise<ICustomerRequest> => {
-        const response = await customerApi.post<IApiResponse<ICustomerRequest>>(
+        const response = await api.post<IApiResponse<ICustomerRequest>>(
             '/customer-requests',
             payload,
         );
@@ -28,27 +27,26 @@ export const customerRequestsService = {
     },
 
     findByCode: async (code: string): Promise<ICustomerRequest> => {
-        const response = await customerApi.get<IApiResponse<ICustomerRequest>>(
+        const response = await api.get<IApiResponse<ICustomerRequest>>(
             `/customer-requests/code/${code}`,
         );
         return response.data.data;
     },
 
     listMine: async (): Promise<ICustomerRequest[]> => {
-        const response = await customerApi.get<IApiResponse<ICustomerRequest[]>>(
+        const response = await api.get<IApiResponse<ICustomerRequest[]>>(
             '/customer-requests/mine',
         );
         return response.data.data;
     },
 
     cancelMine: async (id: string): Promise<ICustomerRequest> => {
-        const response = await customerApi.patch<IApiResponse<ICustomerRequest>>(
+        const response = await api.patch<IApiResponse<ICustomerRequest>>(
             `/customer-requests/${id}/cancel`,
         );
         return response.data.data;
     },
 
-    // Staff endpoints (use the staff axios instance)
     listForStaff: async (
         query: ListRequestsQuery = {},
     ): Promise<ICustomerRequest[]> => {

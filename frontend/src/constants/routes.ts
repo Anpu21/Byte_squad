@@ -6,6 +6,7 @@
 export const FRONTEND_ROUTES = {
     // Auth
     LOGIN: '/login',
+    SIGNUP: '/signup',
     OTP_VERIFICATION: '/verify-otp',
     CHANGE_PASSWORD: '/change-password',
 
@@ -52,16 +53,13 @@ export const FRONTEND_ROUTES = {
     TRANSFER_DETAIL: '/transfers/:id',
     ADMIN_TRANSFERS: '/admin/transfers',
 
-    // Customer storefront
+    // Customer storefront (login required)
     SHOP: '/shop',
     SHOP_PRODUCT_DETAIL: '/shop/products/:id',
     SHOP_CART: '/shop/cart',
     SHOP_CHECKOUT: '/shop/checkout',
     SHOP_REQUEST_CONFIRMATION: '/shop/requests/:code',
     SHOP_MY_REQUESTS: '/shop/my-requests',
-    SHOP_LOGIN: '/shop/login',
-    SHOP_SIGNUP: '/shop/signup',
-    SHOP_VERIFY_OTP: '/shop/verify-otp',
 
     // Cashier scan + shared customer requests view
     SCAN_REQUEST: '/pos/scan-request',

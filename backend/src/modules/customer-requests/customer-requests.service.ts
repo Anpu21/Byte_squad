@@ -34,7 +34,7 @@ const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 interface StaffActor {
   id: string;
   role: UserRole;
-  branchId: string;
+  branchId: string | null;
 }
 
 @Injectable()
@@ -61,7 +61,7 @@ export class CustomerRequestsService {
 
   async create(
     dto: CreateCustomerRequestDto,
-    customerId: string | null,
+    userId: string,
   ): Promise<CustomerRequest> {
     const branch = await this.branchRepo.findOne({
       where: { id: dto.branchId, isActive: true },
@@ -98,11 +98,11 @@ export class CustomerRequestsService {
 
     const request = this.requestRepo.create({
       requestCode,
-      customerId: customerId ?? null,
+      userId,
       branchId: dto.branchId,
       status: CustomerRequestStatus.PENDING,
       estimatedTotal: Math.round(estimatedTotal * 100) / 100,
-      guestName: customerId ? null : (dto.guestName ?? null),
+      guestName: null,
       note: dto.note ?? null,
       items: itemEntities,
     });
@@ -123,7 +123,7 @@ export class CustomerRequestsService {
   async findByCode(code: string): Promise<CustomerRequest> {
     const req = await this.requestRepo.findOne({
       where: { requestCode: code },
-      relations: ['items', 'items.product', 'branch', 'customer'],
+      relations: ['items', 'items.product', 'branch', 'user'],
     });
     if (!req) {
       throw new NotFoundException('Request not found');
@@ -143,7 +143,7 @@ export class CustomerRequestsService {
   async findById(id: string): Promise<CustomerRequest> {
     const req = await this.requestRepo.findOne({
       where: { id },
-      relations: ['items', 'items.product', 'branch', 'customer'],
+      relations: ['items', 'items.product', 'branch', 'user'],
     });
     if (!req) {
       throw new NotFoundException('Request not found');
@@ -160,7 +160,7 @@ export class CustomerRequestsService {
       .leftJoinAndSelect('req.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
       .leftJoinAndSelect('req.branch', 'branch')
-      .leftJoinAndSelect('req.customer', 'customer')
+      .leftJoinAndSelect('req.user', 'user')
       .orderBy('req.createdAt', 'DESC')
       .take(query.limit ?? 200);
 
@@ -184,20 +184,17 @@ export class CustomerRequestsService {
     return qb.getMany();
   }
 
-  async listForCustomer(customerId: string): Promise<CustomerRequest[]> {
+  async listForUser(userId: string): Promise<CustomerRequest[]> {
     return this.requestRepo.find({
-      where: { customerId },
+      where: { userId },
       relations: ['items', 'items.product', 'branch'],
       order: { createdAt: 'DESC' },
     });
   }
 
-  async cancelByCustomer(
-    id: string,
-    customerId: string,
-  ): Promise<CustomerRequest> {
+  async cancelByUser(id: string, userId: string): Promise<CustomerRequest> {
     const req = await this.findById(id);
-    if (req.customerId !== customerId) {
+    if (req.userId !== userId) {
       throw new ForbiddenException('Not your request');
     }
     if (req.status !== CustomerRequestStatus.PENDING) {
@@ -334,9 +331,10 @@ export class CustomerRequestsService {
       ],
     });
 
-    const title = request.guestName
-      ? `New pickup request from ${request.guestName}`
-      : `New pickup request — ${request.requestCode}`;
+    const customerName = request.user
+      ? `${request.user.firstName} ${request.user.lastName}`
+      : (request.guestName ?? 'a customer');
+    const title = `New pickup request from ${customerName}`;
     const itemCount = request.items?.length ?? 0;
     const message = `Pickup request at ${branchName}. Code ${request.requestCode}, ${itemCount} item${itemCount === 1 ? '' : 's'}.`;
 

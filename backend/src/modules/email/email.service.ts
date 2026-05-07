@@ -93,13 +93,13 @@ export class EmailService {
     }
   }
 
-  async sendCustomerOtpEmail(
+  async sendOtpEmail(
     to: string,
     firstName: string,
     otpCode: string,
     expiresInMinutes: number,
   ): Promise<void> {
-    const subject = 'LedgerPro Shop — Verify Your Email';
+    const subject = 'LedgerPro — Verify Your Email';
 
     const html = `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #0a0a0a; border: 1px solid #222; border-radius: 12px; overflow: hidden;">

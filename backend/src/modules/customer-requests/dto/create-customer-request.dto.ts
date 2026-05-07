@@ -3,7 +3,6 @@ import {
   ArrayMinSize,
   IsArray,
   IsInt,
-  IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
@@ -29,11 +28,6 @@ export class CreateCustomerRequestDto {
   @ValidateNested({ each: true })
   @Type(() => CreateCustomerRequestItemDto)
   items!: CreateCustomerRequestItemDto[];
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  guestName?: string;
 
   @IsOptional()
   @IsString()

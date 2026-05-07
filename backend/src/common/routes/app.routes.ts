@@ -9,7 +9,9 @@ export const APP_ROUTES = {
   AUTH: {
     BASE: `${API_PREFIX}/auth`,
     LOGIN: 'login',
+    SIGNUP: 'signup',
     VERIFY_OTP: 'verify-otp',
+    RESEND_OTP: 'resend-otp',
     CHANGE_PASSWORD: 'change-password',
     REFRESH: 'refresh',
   },
@@ -89,28 +91,13 @@ export const APP_ROUTES = {
     INVENTORY_MATRIX: 'inventory/matrix',
   },
 
-  // Public storefront (anonymous-accessible)
-  PUBLIC: {
-    BASE: `${API_PREFIX}/public`,
+  // Storefront catalog (CUSTOMER role only)
+  SHOP: {
+    BASE: `${API_PREFIX}/shop`,
     PRODUCTS: 'products',
     PRODUCT_BY_ID: 'products/:id',
     CATEGORIES: 'products/categories',
     BRANCHES: 'branches',
-  },
-
-  // Customer auth (self-signup + OTP + login)
-  CUSTOMER_AUTH: {
-    BASE: `${API_PREFIX}/customer-auth`,
-    SIGNUP: 'signup',
-    LOGIN: 'login',
-    VERIFY_OTP: 'verify-otp',
-    RESEND_OTP: 'resend-otp',
-  },
-
-  // Customer profile
-  CUSTOMERS: {
-    BASE: `${API_PREFIX}/customers`,
-    ME: 'me',
   },
 
   // Customer pickup requests (cart → request → QR → fulfill at counter)

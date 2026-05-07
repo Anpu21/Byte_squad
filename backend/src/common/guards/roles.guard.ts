@@ -7,7 +7,7 @@ interface UserPayload {
   id: string;
   email: string;
   role: UserRole;
-  branchId: string;
+  branchId: string | null;
 }
 
 @Injectable()

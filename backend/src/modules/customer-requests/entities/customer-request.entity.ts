@@ -10,13 +10,13 @@ import {
   Index,
 } from 'typeorm';
 import { Branch } from '@branches/entities/branch.entity';
-import { Customer } from '@/modules/customers/entities/customer.entity';
+import { User } from '@users/entities/user.entity';
 import { CustomerRequestItem } from '@/modules/customer-requests/entities/customer-request-item.entity';
 import { CustomerRequestStatus } from '@common/enums/customer-request.enum';
 
 @Entity('customer_requests')
 @Index(['branchId'])
-@Index(['customerId'])
+@Index(['userId'])
 @Index(['status'])
 export class CustomerRequest {
   @PrimaryGeneratedColumn('uuid')
@@ -25,12 +25,12 @@ export class CustomerRequest {
   @Column({ type: 'varchar', name: 'request_code', unique: true })
   requestCode!: string;
 
-  @Column({ type: 'uuid', name: 'customer_id', nullable: true })
-  customerId!: string | null;
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId!: string | null;
 
-  @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'customer_id' })
-  customer!: Customer | null;
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user!: User | null;
 
   @Column({ type: 'uuid', name: 'branch_id' })
   branchId!: string;

@@ -10,6 +10,7 @@ export interface ShopCartItem {
 
 interface ShopCartState {
     items: ShopCartItem[];
+    branchId: string | null;
 }
 
 const STORAGE_KEY = 'ledgerpro_shop_cart';
@@ -17,12 +18,17 @@ const STORAGE_KEY = 'ledgerpro_shop_cart';
 function loadInitial(): ShopCartState {
     try {
         const json = localStorage.getItem(STORAGE_KEY);
-        if (!json) return { items: [] };
-        const parsed = JSON.parse(json) as { items: ShopCartItem[] };
-        if (!Array.isArray(parsed.items)) return { items: [] };
-        return { items: parsed.items };
+        if (!json) return { items: [], branchId: null };
+        const parsed = JSON.parse(json) as {
+            items?: ShopCartItem[];
+            branchId?: string | null;
+        };
+        const items = Array.isArray(parsed.items) ? parsed.items : [];
+        const branchId =
+            typeof parsed.branchId === 'string' ? parsed.branchId : null;
+        return { items, branchId };
     } catch {
-        return { items: [] };
+        return { items: [], branchId: null };
     }
 }
 
@@ -74,14 +80,23 @@ const shopCartSlice = createSlice({
                 item.quantity = Math.max(1, Math.floor(action.payload.quantity));
             }
         },
+        setBranch(state, action: PayloadAction<string | null>) {
+            state.branchId = action.payload;
+        },
         clearShopCart(state) {
             state.items = [];
+            state.branchId = null;
         },
     },
 });
 
-export const { addToCart, removeFromCart, setQuantity, clearShopCart } =
-    shopCartSlice.actions;
+export const {
+    addToCart,
+    removeFromCart,
+    setQuantity,
+    setBranch,
+    clearShopCart,
+} = shopCartSlice.actions;
 
 export function selectCartTotal(items: ShopCartItem[]): number {
     return items.reduce((sum, item) => sum + item.sellingPrice * item.quantity, 0);

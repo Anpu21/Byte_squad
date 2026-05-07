@@ -12,9 +12,6 @@ import { CustomerRequestsService } from '@/modules/customer-requests/customer-re
 import { CreateCustomerRequestDto } from '@/modules/customer-requests/dto/create-customer-request.dto';
 import { FulfillCustomerRequestDto } from '@/modules/customer-requests/dto/fulfill-customer-request.dto';
 import { ListCustomerRequestsQueryDto } from '@/modules/customer-requests/dto/list-customer-requests-query.dto';
-import { CustomerJwtAuthGuard } from '@/modules/customers/guards/customer-jwt-auth.guard';
-import { OptionalCustomerJwtAuthGuard } from '@/modules/customers/guards/optional-customer-jwt-auth.guard';
-import { CurrentCustomer } from '@/modules/customers/decorators/current-customer.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -27,18 +24,20 @@ export class CustomerRequestsController {
   constructor(private readonly service: CustomerRequestsService) {}
 
   @Post()
-  @UseGuards(OptionalCustomerJwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER)
   create(
     @Body() dto: CreateCustomerRequestDto,
-    @CurrentCustomer('id') customerId: string | null,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.service.create(dto, customerId);
+    return this.service.create(dto, userId);
   }
 
   @Get(APP_ROUTES.CUSTOMER_REQUESTS.MINE)
-  @UseGuards(CustomerJwtAuthGuard)
-  listMine(@CurrentCustomer('id') customerId: string) {
-    return this.service.listForCustomer(customerId);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER)
+  listMine(@CurrentUser('id') userId: string) {
+    return this.service.listForUser(userId);
   }
 
   @Get(APP_ROUTES.CUSTOMER_REQUESTS.BY_CODE)
@@ -51,15 +50,17 @@ export class CustomerRequestsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   list(
     @Query() query: ListCustomerRequestsQueryDto,
-    @CurrentUser() actor: { id: string; role: UserRole; branchId: string },
+    @CurrentUser()
+    actor: { id: string; role: UserRole; branchId: string | null },
   ) {
     return this.service.listForStaff(actor, query);
   }
 
   @Patch(APP_ROUTES.CUSTOMER_REQUESTS.CANCEL)
-  @UseGuards(CustomerJwtAuthGuard)
-  cancel(@Param('id') id: string, @CurrentCustomer('id') customerId: string) {
-    return this.service.cancelByCustomer(id, customerId);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER)
+  cancel(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.service.cancelByUser(id, userId);
   }
 
   @Patch(APP_ROUTES.CUSTOMER_REQUESTS.REJECT)
@@ -67,7 +68,8 @@ export class CustomerRequestsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   reject(
     @Param('id') id: string,
-    @CurrentUser() actor: { id: string; role: UserRole; branchId: string },
+    @CurrentUser()
+    actor: { id: string; role: UserRole; branchId: string | null },
   ) {
     return this.service.rejectByStaff(id, actor);
   }
@@ -78,7 +80,8 @@ export class CustomerRequestsController {
   fulfill(
     @Param('code') code: string,
     @Body() dto: FulfillCustomerRequestDto,
-    @CurrentUser() actor: { id: string; role: UserRole; branchId: string },
+    @CurrentUser()
+    actor: { id: string; role: UserRole; branchId: string | null },
   ) {
     return this.service.fulfill(code, dto, actor);
   }

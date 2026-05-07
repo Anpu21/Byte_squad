@@ -21,11 +21,25 @@ export interface IUser {
     lastName: string;
     avatarUrl: string | null;
     role: UserRole;
-    branchId: string;
+    branchId: string | null;
+    phone?: string | null;
     isFirstLogin: boolean;
     isVerified: boolean;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface ISignupPayload {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+}
+
+export interface IVerifyOtpPayload {
+    email: string;
+    otpCode: string;
 }
 
 export interface IUserCreatePayload {
@@ -477,49 +491,19 @@ export type CustomerRequestStatus =
     | 'cancelled'
     | 'expired';
 
-export interface ICustomer {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    phone: string | null;
-    isVerified: boolean;
-    createdAt: string;
-}
+export type ShopStockStatus = 'in' | 'low' | 'out';
 
-export interface ICustomerSignupPayload {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    phone?: string;
-}
-
-export interface ICustomerLoginPayload {
-    email: string;
-    password: string;
-}
-
-export interface ICustomerVerifyOtpPayload {
-    email: string;
-    otpCode: string;
-}
-
-export interface ICustomerAuthResponse {
-    accessToken: string;
-    customer: ICustomer;
-}
-
-export interface IPublicProduct {
+export interface IShopProduct {
     id: string;
     name: string;
     description: string | null;
     category: string;
     sellingPrice: number;
     imageUrl: string | null;
+    stockStatus: ShopStockStatus;
 }
 
-export interface IPublicBranch {
+export interface IShopBranch {
     id: string;
     name: string;
     address: string;
@@ -541,10 +525,10 @@ export interface ICustomerRequestItem {
 export interface ICustomerRequest {
     id: string;
     requestCode: string;
-    customerId: string | null;
+    userId: string | null;
     branchId: string;
-    branch?: IPublicBranch;
-    customer?: ICustomer | null;
+    branch?: IShopBranch;
+    user?: IUser | null;
     status: CustomerRequestStatus;
     estimatedTotal: number;
     guestName: string | null;
@@ -558,7 +542,6 @@ export interface ICustomerRequest {
 export interface ICustomerRequestCreatePayload {
     branchId: string;
     items: { productId: string; quantity: number }[];
-    guestName?: string;
     note?: string;
 }
 

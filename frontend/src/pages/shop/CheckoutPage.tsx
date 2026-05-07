@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
@@ -9,9 +9,9 @@ import {
     clearShopCart,
     selectCartTotal,
 } from '@/store/slices/shopCartSlice';
-import { publicProductsService } from '@/services/public-products.service';
+import { shopProductsService } from '@/services/shop-products.service';
 import { customerRequestsService } from '@/services/customer-requests.service';
-import { useCustomerAuth } from '@/hooks/useCustomerAuth';
+import { FRONTEND_ROUTES } from '@/constants/routes';
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-LK', {
@@ -24,19 +24,31 @@ export default function CheckoutPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const items = useSelector((state: RootState) => state.shopCart.items);
+    const branchId = useSelector(
+        (state: RootState) => state.shopCart.branchId,
+    );
     const total = selectCartTotal(items);
-    const { isAuthenticated } = useCustomerAuth();
 
-    const { data: branches = [], isLoading: branchesLoading } = useQuery({
-        queryKey: ['public-branches'],
-        queryFn: publicProductsService.listBranches,
+    const { data: branches = [] } = useQuery({
+        queryKey: ['shop-branches'],
+        queryFn: shopProductsService.listBranches,
     });
 
-    const [branchId, setBranchId] = useState('');
-    const [guestName, setGuestName] = useState('');
+    const branch = useMemo(
+        () => branches.find((b) => b.id === branchId) ?? null,
+        [branches, branchId],
+    );
+
     const [note, setNote] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (items.length > 0 && !branchId) {
+            toast.error('Pick a branch before checking out');
+            navigate(FRONTEND_ROUTES.SHOP);
+        }
+    }, [items.length, branchId, navigate]);
 
     if (items.length === 0) {
         return (
@@ -61,9 +73,6 @@ export default function CheckoutPage() {
                     productId: i.productId,
                     quantity: i.quantity,
                 })),
-                guestName: !isAuthenticated && guestName.trim()
-                    ? guestName.trim()
-                    : undefined,
                 note: note.trim() || undefined,
             });
             toast.success('Pickup request created');
@@ -92,46 +101,35 @@ export default function CheckoutPage() {
                 Checkout
             </h1>
             <p className="text-sm text-slate-400 mb-8">
-                Choose a branch. We&apos;ll generate a QR for the counter — pay when you
-                pick up.
+                We&apos;ll generate a QR for the counter — pay when you pick up.
             </p>
 
             <form onSubmit={onSubmit} className="space-y-5">
                 <div>
-                    <label className="block text-xs uppercase tracking-widest text-slate-500 mb-2">
-                        Pickup branch *
-                    </label>
-                    <select
-                        value={branchId}
-                        onChange={(e) => setBranchId(e.target.value)}
-                        required
-                        className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                    >
-                        <option value="">
-                            {branchesLoading ? 'Loading…' : 'Select a branch'}
-                        </option>
-                        {branches.map((b) => (
-                            <option key={b.id} value={b.id}>
-                                {b.name} — {b.address}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {!isAuthenticated && (
-                    <div>
-                        <label className="block text-xs uppercase tracking-widest text-slate-500 mb-2">
-                            Your name (optional)
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs uppercase tracking-widest text-slate-500">
+                            Pickup branch
                         </label>
-                        <input
-                            type="text"
-                            value={guestName}
-                            onChange={(e) => setGuestName(e.target.value)}
-                            placeholder="So staff can call you when ready"
-                            className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                        />
+                        <Link
+                            to={FRONTEND_ROUTES.SHOP}
+                            className="text-[11px] text-slate-400 hover:text-white underline-offset-4 hover:underline"
+                        >
+                            Change branch
+                        </Link>
                     </div>
-                )}
+                    <div className="bg-[#111] border border-white/10 rounded-lg px-3 py-2.5 text-sm">
+                        {branch ? (
+                            <>
+                                <p className="text-white font-medium">{branch.name}</p>
+                                <p className="text-slate-400 text-xs mt-0.5">
+                                    {branch.address}
+                                </p>
+                            </>
+                        ) : (
+                            <p className="text-slate-500">Loading branch…</p>
+                        )}
+                    </div>
+                </div>
 
                 <div>
                     <label className="block text-xs uppercase tracking-widest text-slate-500 mb-2">
@@ -181,7 +179,7 @@ export default function CheckoutPage() {
 
                 <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || !branchId}
                     className="w-full bg-white text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50"
                 >
                     {submitting ? 'Submitting…' : 'Submit pickup request'}

@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { ShoppingBag, ShoppingCart, User, LogOut, ScrollText } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { RootState } from '@/store';
-import { useCustomerAuth } from '@/hooks/useCustomerAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { selectCartItemCount } from '@/store/slices/shopCartSlice';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
@@ -14,7 +14,7 @@ interface CustomerLayoutProps {
 
 export default function CustomerLayout({ children }: CustomerLayoutProps) {
     const navigate = useNavigate();
-    const { customer, isAuthenticated, logout } = useCustomerAuth();
+    const { user, isAuthenticated, logout } = useAuth();
     const cartItems = useSelector((state: RootState) => state.shopCart.items);
     const cartCount = selectCartItemCount(cartItems);
     const [menuOpen, setMenuOpen] = useState(false);
@@ -22,7 +22,7 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
     const handleLogout = () => {
         logout();
         setMenuOpen(false);
-        navigate(FRONTEND_ROUTES.SHOP);
+        navigate(FRONTEND_ROUTES.LOGIN);
     };
 
     return (
@@ -51,7 +51,7 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
                             )}
                         </Link>
 
-                        {isAuthenticated && customer ? (
+                        {isAuthenticated && user ? (
                             <div className="relative">
                                 <button
                                     type="button"
@@ -60,7 +60,7 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
                                 >
                                     <User size={16} />
                                     <span className="hidden sm:inline">
-                                        {customer.firstName}
+                                        {user.firstName}
                                     </span>
                                 </button>
                                 {menuOpen && (
@@ -84,7 +84,7 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
                             </div>
                         ) : (
                             <Link
-                                to={FRONTEND_ROUTES.SHOP_LOGIN}
+                                to={FRONTEND_ROUTES.LOGIN}
                                 className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-white text-black font-semibold hover:bg-slate-200 transition-colors"
                             >
                                 Sign in

@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { useAuth } from '@/hooks/useAuth';
 import { isValidEmail } from '@/lib/utils';
+import { FRONTEND_ROUTES } from '@/constants/routes';
 
 export default function LoginPage() {
     const [email, setEmail] = useState<string>('');
@@ -47,15 +48,24 @@ export default function LoginPage() {
         try {
             await login(email, password);
             toast.success('Successfully logged in!');
-            navigate('/dashboard');
+            navigate('/');
         } catch (error) {
             console.error('Login failed:', error);
-            
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(String(error.response.data.message));
-            } else {
-                toast.error('Invalid email or password');
+
+            if (axios.isAxiosError(error)) {
+                if (error.response?.status === 403) {
+                    toast('Verify your email first', { icon: '📧' });
+                    navigate(FRONTEND_ROUTES.OTP_VERIFICATION, {
+                        state: { email },
+                    });
+                    return;
+                }
+                if (error.response?.data?.message) {
+                    toast.error(String(error.response.data.message));
+                    return;
+                }
             }
+            toast.error('Invalid email or password');
         }
     };
 
@@ -219,9 +229,12 @@ export default function LoginPage() {
 
             <p className="text-center text-[13px] text-slate-400">
                 Don&apos;t have an account?{' '}
-                <button type="button" className="text-slate-200 font-semibold bg-transparent border-none cursor-pointer text-[13px] transition-colors hover:text-white p-0">
-                    Request access
-                </button>
+                <Link
+                    to={FRONTEND_ROUTES.SIGNUP}
+                    className="text-slate-200 font-semibold hover:text-white transition-colors"
+                >
+                    Create one
+                </Link>
             </p>
         </>
     );
