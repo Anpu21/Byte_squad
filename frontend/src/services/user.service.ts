@@ -38,4 +38,11 @@ export const userService = {
     const response = await api.get<IApiResponse<IBranch[]>>('/branches');
     return response.data.data;
   },
+
+  updateMyBranch: async (branchId: string): Promise<IUser> => {
+    const response = await api.patch<IApiResponse<IUser>>('/users/me/branch', {
+      branchId,
+    });
+    return response.data.data;
+  },
 };

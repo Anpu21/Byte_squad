@@ -13,6 +13,8 @@ export const APP_ROUTES = {
     VERIFY_OTP: 'verify-otp',
     RESEND_OTP: 'resend-otp',
     CHANGE_PASSWORD: 'change-password',
+    FORGOT_PASSWORD: 'forgot-password',
+    RESET_PASSWORD: 'reset-password',
     REFRESH: 'refresh',
   },
 
@@ -21,6 +23,7 @@ export const APP_ROUTES = {
     BASE: `${API_PREFIX}/users`,
     PROFILE: 'profile',
     PROFILE_AVATAR: 'profile/avatar',
+    MY_BRANCH: 'me/branch',
     BY_ID: ':id',
     RESEND_CREDENTIALS: ':id/resend-credentials',
     RESET_PASSWORD: ':id/reset-password',
@@ -40,6 +43,7 @@ export const APP_ROUTES = {
     CATEGORIES: 'categories',
     BY_ID: ':id',
     BY_BARCODE: 'barcode/:barcode',
+    IMAGE: ':id/image',
   },
 
   // Inventory
@@ -69,6 +73,7 @@ export const APP_ROUTES = {
     LEDGER_SUMMARY: 'ledger/summary',
     EXPENSES: 'expenses',
     EXPENSE_BY_ID: 'expenses/:id',
+    EXPENSE_REVIEW: 'expenses/:id/review',
     PROFIT_LOSS: 'profit-loss',
   },
 
@@ -107,6 +112,7 @@ export const APP_ROUTES = {
     BY_CODE: 'code/:code',
     BY_ID: ':id',
     CANCEL: ':id/cancel',
+    ACCEPT: ':id/accept',
     REJECT: ':id/reject',
     FULFILL: 'code/:code/fulfill',
   },

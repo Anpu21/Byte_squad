@@ -1,10 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import {
+    ArrowLeft,
+    Camera,
+    Image as ImageIcon,
+    Package,
+    Save,
+    Scan,
+    Upload,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { inventoryService } from '@/services/inventory.service';
 import { useScanDetection } from '@/hooks/useScanDetection';
 import { useAuth } from '@/hooks/useAuth';
 import UniversalScanner from '@/components/Scanner/UniversalScanner';
+import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import Pill from '@/components/ui/Pill';
 
 interface FormErrors {
     name?: string;
@@ -15,6 +28,14 @@ interface FormErrors {
     initialStock?: string;
     lowStockThreshold?: string;
     general?: string;
+}
+
+function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-LK', {
+        style: 'currency',
+        currency: 'LKR',
+        maximumFractionDigits: 2,
+    }).format(amount);
 }
 
 export default function ProductFormPage() {
@@ -37,45 +58,53 @@ export default function ProductFormPage() {
     const [isLoadingProduct, setIsLoadingProduct] = useState(false);
     const [scanDetected, setScanDetected] = useState(false);
     const [showCameraScanner, setShowCameraScanner] = useState(false);
-    const [barcodeStatus, setBarcodeStatus] = useState<'idle' | 'looking' | 'found' | 'new'>('idle');
+    const [barcodeStatus, setBarcodeStatus] = useState<
+        'idle' | 'looking' | 'found' | 'new'
+    >('idle');
 
-    // Look up barcode in database and auto-fill form if product exists
-    const lookupBarcode = useCallback(async (scannedBarcode: string) => {
-        setBarcode(scannedBarcode);
-        setScanDetected(true);
-        setTimeout(() => setScanDetected(false), 2000);
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-        if (isEditMode || scannedBarcode.length < 4) return;
+    const lookupBarcode = useCallback(
+        async (scannedBarcode: string) => {
+            setBarcode(scannedBarcode);
+            setScanDetected(true);
+            setTimeout(() => setScanDetected(false), 2000);
 
-        setBarcodeStatus('looking');
-        const product = await inventoryService.getProductByBarcode(scannedBarcode);
+            if (isEditMode || scannedBarcode.length < 4) return;
 
-        if (product) {
-            setName(product.name);
-            setCategory(product.category);
-            setDescription(product.description || '');
-            setCostPrice(String(product.costPrice));
-            setSellingPrice(String(product.sellingPrice));
-            setBarcodeStatus('found');
-        } else {
-            setBarcodeStatus('new');
-        }
+            setBarcodeStatus('looking');
+            const product = await inventoryService.getProductByBarcode(
+                scannedBarcode,
+            );
 
-        setTimeout(() => setBarcodeStatus('idle'), 3000);
-    }, [isEditMode]);
+            if (product) {
+                setName(product.name);
+                setCategory(product.category);
+                setDescription(product.description || '');
+                setCostPrice(String(product.costPrice));
+                setSellingPrice(String(product.sellingPrice));
+                setBarcodeStatus('found');
+            } else {
+                setBarcodeStatus('new');
+            }
 
-    // USB barcode scanner detection
+            setTimeout(() => setBarcodeStatus('idle'), 3000);
+        },
+        [isEditMode],
+    );
+
     useScanDetection({
         onScan: lookupBarcode,
         minLength: 6,
     });
 
-    // Load categories
     useEffect(() => {
         inventoryService.getCategories().then(setCategories).catch(() => {});
     }, []);
 
-    // Load product data for edit mode
     const loadProduct = useCallback((id: string) => {
         setIsLoadingProduct(true);
         inventoryService
@@ -87,6 +116,7 @@ export default function ProductFormPage() {
                 setCategory(product.category);
                 setCostPrice(String(product.costPrice));
                 setSellingPrice(String(product.sellingPrice));
+                setImageUrl(product.imageUrl);
             })
             .catch(() => {
                 setErrors({ general: 'Failed to load product' });
@@ -105,13 +135,17 @@ export default function ProductFormPage() {
         if (!category.trim()) newErrors.category = 'Category is required';
         const cost = parseFloat(costPrice);
         const sell = parseFloat(sellingPrice);
-        if (isNaN(cost) || cost < 0) newErrors.costPrice = 'Cost price must be a positive number';
-        if (isNaN(sell) || sell < 0) newErrors.sellingPrice = 'Selling price must be a positive number';
+        if (isNaN(cost) || cost < 0)
+            newErrors.costPrice = 'Cost price must be a positive number';
+        if (isNaN(sell) || sell < 0)
+            newErrors.sellingPrice = 'Selling price must be a positive number';
         if (!isEditMode) {
             const qty = parseInt(initialStock, 10);
-            if (initialStock !== '' && (isNaN(qty) || qty < 0)) newErrors.initialStock = 'Stock must be 0 or more';
+            if (initialStock !== '' && (isNaN(qty) || qty < 0))
+                newErrors.initialStock = 'Stock must be 0 or more';
             const threshold = parseInt(lowStockThreshold, 10);
-            if (isNaN(threshold) || threshold < 1) newErrors.lowStockThreshold = 'Threshold must be at least 1';
+            if (isNaN(threshold) || threshold < 1)
+                newErrors.lowStockThreshold = 'Threshold must be at least 1';
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -146,6 +180,18 @@ export default function ProductFormPage() {
                         lowStockThreshold: parseInt(lowStockThreshold, 10) || 10,
                     });
                 }
+                if (pendingImageFile) {
+                    try {
+                        await inventoryService.uploadProductImage(
+                            product.id,
+                            pendingImageFile,
+                        );
+                    } catch {
+                        toast.error(
+                            'Product saved but image upload failed. Edit the product to retry.',
+                        );
+                    }
+                }
             }
             navigate(FRONTEND_ROUTES.INVENTORY);
         } catch (err: unknown) {
@@ -155,300 +201,578 @@ export default function ProductFormPage() {
                 'response' in err &&
                 (err as { response?: { status?: number } }).response?.status === 409
             ) {
-                setErrors({ barcode: 'A product with this barcode already exists' });
+                setErrors({
+                    barcode: 'A product with this barcode already exists',
+                });
             } else {
-                setErrors({ general: 'Failed to save product. Please try again.' });
+                setErrors({
+                    general: 'Failed to save product. Please try again.',
+                });
             }
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    const handleImageSelected = async (file: File) => {
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error('Image must be 2 MB or smaller.');
+            return;
+        }
+        if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+            toast.error('JPG, PNG, WebP, or GIF only.');
+            return;
+        }
+
+        if (isEditMode && productId) {
+            setUploadingImage(true);
+            try {
+                const updated = await inventoryService.uploadProductImage(
+                    productId,
+                    file,
+                );
+                setImageUrl(updated.imageUrl);
+                toast.success('Image uploaded');
+            } catch {
+                toast.error('Image upload failed');
+            } finally {
+                setUploadingImage(false);
+            }
+        } else {
+            // Create mode: stash file, show local preview, upload after save.
+            setPendingImageFile(file);
+            const reader = new FileReader();
+            reader.onload = () => setImageUrl(String(reader.result));
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveImage = async () => {
+        if (isEditMode && productId) {
+            setUploadingImage(true);
+            try {
+                await inventoryService.deleteProductImage(productId);
+                setImageUrl(null);
+            } catch {
+                toast.error('Failed to remove image');
+            } finally {
+                setUploadingImage(false);
+            }
+        } else {
+            setPendingImageFile(null);
+            setImageUrl(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    // Margin / Markup auto-calc
+    const cost = parseFloat(costPrice);
+    const sell = parseFloat(sellingPrice);
+    const validPrices = !isNaN(cost) && !isNaN(sell) && cost > 0 && sell > 0;
+    const marginPct = validPrices ? ((sell - cost) / sell) * 100 : null;
+    const markupPct = validPrices ? ((sell - cost) / cost) * 100 : null;
+    const profitAbs = validPrices ? sell - cost : null;
+
     if (isLoadingProduct) {
         return (
-            <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="mb-8">
-                    <div className="h-4 w-32 bg-primary-soft rounded animate-pulse mb-4" />
-                    <div className="h-8 w-64 bg-primary-soft rounded animate-pulse mb-2" />
-                    <div className="h-4 w-48 bg-primary-soft rounded animate-pulse" />
-                </div>
-                <div className="bg-surface border border-border rounded-md shadow-2xl p-8">
-                    <div className="space-y-6">
-                        {[...Array(4)].map((_, i) => (
-                            <div key={i} className="h-11 bg-surface-2 rounded-xl animate-pulse" />
-                        ))}
-                    </div>
-                </div>
+            <div className="flex items-center justify-center h-[60vh]">
+                <div className="w-8 h-8 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Header & Back Navigation */}
-            <div className="mb-8">
-                <button
-                    onClick={() => navigate(FRONTEND_ROUTES.INVENTORY)}
-                    className="text-sm text-text-2 hover:text-text-1 transition-colors flex items-center gap-2 mb-4 font-medium"
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="m15 18-6-6 6-6"/>
-                    </svg>
-                    Back to Inventory
-                </button>
-                <h1 className="text-2xl font-bold text-text-1 tracking-tight">
-                    {isEditMode ? 'Edit Product' : 'Add New Product'}
-                </h1>
-                <p className="text-sm text-text-2 mt-1">
-                    {isEditMode ? 'Update the details for this product.' : 'Enter the details for your new inventory item.'}
-                </p>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+                <div className="min-w-0">
+                    <button
+                        type="button"
+                        onClick={() => navigate(FRONTEND_ROUTES.INVENTORY)}
+                        className="inline-flex items-center gap-1.5 text-xs text-text-2 hover:text-text-1 transition-colors mb-2"
+                    >
+                        <ArrowLeft size={12} /> Back to inventory
+                    </button>
+                    <h1 className="text-2xl font-bold text-text-1 tracking-tight">
+                        {isEditMode ? 'Edit product' : 'Add new product'}
+                    </h1>
+                    <p className="text-xs text-text-2 mt-1">
+                        {isEditMode
+                            ? 'Update the details for this product.'
+                            : 'Enter the details for your new inventory item.'}
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="md"
+                        onClick={() => navigate(FRONTEND_ROUTES.INVENTORY)}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        form="product-form"
+                        size="md"
+                        disabled={isSubmitting}
+                    >
+                        <Save size={14} />
+                        {isSubmitting
+                            ? 'Saving…'
+                            : isEditMode
+                              ? 'Save product'
+                              : 'Create product'}
+                    </Button>
+                </div>
             </div>
 
             {errors.general && (
-                <div className="mb-6 p-4 bg-danger-soft border border-danger/30 rounded-xl text-sm text-danger">
+                <div className="mb-4 px-4 py-2.5 rounded-md bg-danger-soft border border-danger/40 text-sm text-danger">
                     {errors.general}
                 </div>
             )}
 
-            <form onSubmit={handleSubmit}>
-                <div className="bg-surface border border-border rounded-md shadow-2xl overflow-hidden">
-                    <div className="p-8 space-y-8">
+            <form
+                id="product-form"
+                onSubmit={handleSubmit}
+                className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+            >
+                {/* Left: Basics + Pricing + Stock */}
+                <div className="lg:col-span-2 flex flex-col gap-4">
+                    {/* Basics */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Basics</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="sm:col-span-2">
+                                <label className="block text-xs font-medium text-text-2 mb-1.5">
+                                    Name
+                                </label>
+                                <input
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className={`w-full h-[38px] px-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
+                                        errors.name
+                                            ? 'border-danger'
+                                            : 'border-border-strong hover:border-text-3'
+                                    }`}
+                                    placeholder="e.g. Coca-Cola 1L PET"
+                                />
+                                {errors.name && (
+                                    <p className="text-xs text-danger mt-1">
+                                        {errors.name}
+                                    </p>
+                                )}
+                            </div>
 
-                        {/* Section 1: General Info */}
-                        <div>
-                            <h2 className="text-lg font-semibold text-text-1 mb-5 pb-2 border-b border-border">
-                                General Information
-                            </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="sm:col-span-2">
-                                    <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
-                                        Product Name
+                            <div>
+                                <label className="block text-xs font-medium text-text-2 mb-1.5">
+                                    Category
+                                </label>
+                                <input
+                                    value={category}
+                                    onChange={(e) => setCategory(e.target.value)}
+                                    list="category-list"
+                                    className={`w-full h-[38px] px-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
+                                        errors.category
+                                            ? 'border-danger'
+                                            : 'border-border-strong hover:border-text-3'
+                                    }`}
+                                    placeholder="Select or type a category"
+                                />
+                                <datalist id="category-list">
+                                    {categories.map((cat) => (
+                                        <option key={cat} value={cat} />
+                                    ))}
+                                </datalist>
+                                {errors.category && (
+                                    <p className="text-xs text-danger mt-1">
+                                        {errors.category}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-text-2 mb-1.5">
+                                    Barcode / SKU
+                                </label>
+                                <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                        <input
+                                            value={barcode}
+                                            onChange={(e) => setBarcode(e.target.value)}
+                                            onBlur={() => {
+                                                if (
+                                                    barcode.trim().length >= 4 &&
+                                                    !isEditMode
+                                                )
+                                                    lookupBarcode(barcode.trim());
+                                            }}
+                                            className={`w-full h-[38px] px-3 pr-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono ${
+                                                errors.barcode
+                                                    ? 'border-danger'
+                                                    : barcodeStatus === 'found' ||
+                                                        scanDetected
+                                                      ? 'border-accent'
+                                                      : 'border-border-strong hover:border-text-3 focus:border-primary focus:ring-[3px] focus:ring-primary/30'
+                                            }`}
+                                            placeholder="Scan or type barcode"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCameraScanner(true)}
+                                        className="h-[38px] w-[38px] flex items-center justify-center rounded-md border border-border-strong text-text-2 hover:text-text-1 hover:bg-surface-2 transition-colors"
+                                        title="Scan with camera"
+                                    >
+                                        <Camera size={16} />
+                                    </button>
+                                </div>
+                                {(barcodeStatus !== 'idle' || scanDetected) && (
+                                    <div className="mt-1.5">
+                                        {barcodeStatus === 'looking' && (
+                                            <Pill tone="warning">Looking up…</Pill>
+                                        )}
+                                        {barcodeStatus === 'found' && (
+                                            <Pill tone="success">
+                                                Product details auto-filled
+                                            </Pill>
+                                        )}
+                                        {barcodeStatus === 'new' && (
+                                            <Pill tone="info">New product</Pill>
+                                        )}
+                                        {scanDetected &&
+                                            barcodeStatus === 'idle' && (
+                                                <Pill tone="success">
+                                                    Scanned
+                                                </Pill>
+                                            )}
+                                    </div>
+                                )}
+                                {errors.barcode && (
+                                    <p className="text-xs text-danger mt-1">
+                                        {errors.barcode}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="sm:col-span-2">
+                                <label className="block text-xs font-medium text-text-2 mb-1.5">
+                                    Description (optional)
+                                </label>
+                                <textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    rows={3}
+                                    className="w-full px-3 py-2 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 placeholder:text-text-3 resize-none transition-colors"
+                                    placeholder="Brief product description"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Pricing */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Pricing</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-medium text-text-2 mb-1.5">
+                                    Selling price (LKR)
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-xs font-medium">
+                                        Rs
+                                    </span>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={sellingPrice}
+                                        onChange={(e) =>
+                                            setSellingPrice(e.target.value)
+                                        }
+                                        className={`w-full h-[38px] pl-9 pr-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
+                                            errors.sellingPrice
+                                                ? 'border-danger'
+                                                : 'border-border-strong hover:border-text-3'
+                                        }`}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                {errors.sellingPrice && (
+                                    <p className="text-xs text-danger mt-1">
+                                        {errors.sellingPrice}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-text-2 mb-1.5">
+                                    Cost price (LKR)
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-xs font-medium">
+                                        Rs
+                                    </span>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={costPrice}
+                                        onChange={(e) =>
+                                            setCostPrice(e.target.value)
+                                        }
+                                        className={`w-full h-[38px] pl-9 pr-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
+                                            errors.costPrice
+                                                ? 'border-danger'
+                                                : 'border-border-strong hover:border-text-3'
+                                        }`}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                {errors.costPrice && (
+                                    <p className="text-xs text-danger mt-1">
+                                        {errors.costPrice}
+                                    </p>
+                                )}
+                            </div>
+
+                            {marginPct !== null && markupPct !== null && (
+                                <div className="sm:col-span-2 flex items-center gap-4 px-3 py-2.5 rounded-md bg-surface-2 text-xs text-text-2">
+                                    <span>
+                                        Margin{' '}
+                                        <span className="mono font-semibold text-text-1">
+                                            {marginPct.toFixed(1)}%
+                                        </span>
+                                    </span>
+                                    <span className="text-text-3">·</span>
+                                    <span>
+                                        Markup{' '}
+                                        <span className="mono font-semibold text-text-1">
+                                            {markupPct.toFixed(1)}%
+                                        </span>
+                                    </span>
+                                    <span className="text-text-3">·</span>
+                                    <span>
+                                        Profit{' '}
+                                        <span className="mono font-semibold text-text-1">
+                                            {formatCurrency(profitAbs ?? 0)}
+                                        </span>
+                                    </span>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Stock (create mode only — backend per-branch stock not loaded for edit) */}
+                    {!isEditMode && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Stock</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-text-2 mb-1.5">
+                                        Initial stock quantity
                                     </label>
                                     <input
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        className={`w-full h-11 px-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 ${errors.name ? 'border-red-500/50' : 'border-border'}`}
-                                        placeholder="e.g. Premium Wireless Headphones"
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={initialStock}
+                                        onChange={(e) =>
+                                            setInitialStock(e.target.value)
+                                        }
+                                        className={`w-full h-[38px] px-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
+                                            errors.initialStock
+                                                ? 'border-danger'
+                                                : 'border-border-strong hover:border-text-3'
+                                        }`}
+                                        placeholder="0"
                                     />
-                                    {errors.name && <p className="text-xs text-danger mt-1">{errors.name}</p>}
+                                    <p className="text-[11px] text-text-3 mt-1">
+                                        Units to add at this branch right now.
+                                    </p>
+                                    {errors.initialStock && (
+                                        <p className="text-xs text-danger mt-1">
+                                            {errors.initialStock}
+                                        </p>
+                                    )}
                                 </div>
-
                                 <div>
-                                    <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
-                                        Category
+                                    <label className="block text-xs font-medium text-text-2 mb-1.5">
+                                        Low-stock threshold
                                     </label>
-                                    <div className="relative">
-                                        <input
-                                            value={category}
-                                            onChange={(e) => setCategory(e.target.value)}
-                                            list="category-list"
-                                            className={`w-full h-11 px-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 ${errors.category ? 'border-red-500/50' : 'border-border'}`}
-                                            placeholder="Select or type a category..."
-                                        />
-                                        <datalist id="category-list">
-                                            {categories.map((cat) => (
-                                                <option key={cat} value={cat} />
-                                            ))}
-                                        </datalist>
-                                    </div>
-                                    {errors.category && <p className="text-xs text-danger mt-1">{errors.category}</p>}
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value={lowStockThreshold}
+                                        onChange={(e) =>
+                                            setLowStockThreshold(e.target.value)
+                                        }
+                                        className={`w-full h-[38px] px-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
+                                            errors.lowStockThreshold
+                                                ? 'border-danger'
+                                                : 'border-border-strong hover:border-text-3'
+                                        }`}
+                                        placeholder="10"
+                                    />
+                                    <p className="text-[11px] text-text-3 mt-1">
+                                        Alert when stock drops to this number.
+                                    </p>
+                                    {errors.lowStockThreshold && (
+                                        <p className="text-xs text-danger mt-1">
+                                            {errors.lowStockThreshold}
+                                        </p>
+                                    )}
                                 </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
 
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
-                                        Barcode / UPC
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                            <input
-                                                value={barcode}
-                                                onChange={(e) => setBarcode(e.target.value)}
-                                                onBlur={() => { if (barcode.trim().length >= 4 && !isEditMode) lookupBarcode(barcode.trim()); }}
-                                                className={`w-full h-11 px-4 pr-28 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 font-mono tracking-wider ${errors.barcode ? 'border-red-500/50' : barcodeStatus === 'found' ? 'border-green-500/50 ring-[3px] ring-green-500/20' : scanDetected ? 'border-green-500/50 ring-[3px] ring-green-500/20' : 'border-border'}`}
-                                                placeholder="Scan or type barcode"
-                                            />
-                                            <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md transition-all ${
-                                                barcodeStatus === 'looking' ? 'bg-warning-soft text-warning border border-yellow-500/30' :
-                                                barcodeStatus === 'found' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                                                barcodeStatus === 'new' ? 'bg-info-soft text-info border border-info/40' :
-                                                scanDetected ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                                                'bg-surface-2 text-text-3 border border-border'
-                                            }`}>
-                                                {barcodeStatus === 'looking' ? 'Looking up...' :
-                                                 barcodeStatus === 'found' ? 'Product found' :
-                                                 barcodeStatus === 'new' ? 'New product' :
-                                                 scanDetected ? 'Scanned' : 'Scanner ready'}
-                                            </span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCameraScanner(true)}
-                                            className="h-11 px-3 rounded-xl border border-border bg-canvas text-text-2 hover:text-text-1 hover:border-primary/40 hover:bg-surface-2 transition-all flex items-center gap-2 shrink-0"
-                                            title="Scan with camera"
-                                        >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                                                <circle cx="12" cy="13" r="4"/>
-                                            </svg>
-                                            <span className="text-xs font-medium hidden sm:inline">Camera</span>
-                                        </button>
+                {/* Right column: Image + Tips */}
+                <div className="flex flex-col gap-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="inline-flex items-center gap-2">
+                                <ImageIcon size={14} />
+                                Image
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <div className="aspect-square w-full max-w-[220px] mx-auto rounded-md border border-border overflow-hidden bg-surface-2 flex items-center justify-center">
+                                {imageUrl ? (
+                                    <img
+                                        src={imageUrl}
+                                        alt="Product"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex flex-col items-center gap-1.5 text-text-3">
+                                        <ImageIcon size={28} />
+                                        <p className="text-[11px] uppercase tracking-widest">
+                                            No image
+                                        </p>
                                     </div>
-                                    {errors.barcode && <p className="text-xs text-danger mt-1">{errors.barcode}</p>}
-                                    <p className="text-[11px] text-text-3 mt-2">Scan or type a barcode — if the product exists, details will auto-fill.</p>
-                                </div>
+                                )}
                             </div>
-                        </div>
 
-                        {/* Section 2: Description */}
-                        <div>
-                            <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
-                                Description (optional)
-                            </label>
-                            <textarea
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                rows={3}
-                                className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 resize-none"
-                                placeholder="Brief product description..."
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp,image/gif"
+                                className="hidden"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) void handleImageSelected(file);
+                                    e.target.value = '';
+                                }}
                             />
-                        </div>
 
-                        {/* Section 3: Initial Stock (create mode only) */}
-                        {!isEditMode && (
-                            <div>
-                                <h2 className="text-lg font-semibold text-text-1 mb-5 pb-2 border-b border-border">
-                                    Stock Details
-                                </h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
-                                            Initial Stock Quantity
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="1"
-                                            value={initialStock}
-                                            onChange={(e) => setInitialStock(e.target.value)}
-                                            className={`w-full h-11 px-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 tabular-nums ${errors.initialStock ? 'border-red-500/50' : 'border-border'}`}
-                                            placeholder="0"
-                                        />
-                                        {errors.initialStock && <p className="text-xs text-danger mt-1">{errors.initialStock}</p>}
-                                        <p className="text-[11px] text-text-3 mt-2">How many units are you adding to inventory right now?</p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
-                                            Low Stock Alert Threshold
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            step="1"
-                                            value={lowStockThreshold}
-                                            onChange={(e) => setLowStockThreshold(e.target.value)}
-                                            className={`w-full h-11 px-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 tabular-nums ${errors.lowStockThreshold ? 'border-red-500/50' : 'border-border'}`}
-                                            placeholder="10"
-                                        />
-                                        {errors.lowStockThreshold && <p className="text-xs text-danger mt-1">{errors.lowStockThreshold}</p>}
-                                        <p className="text-[11px] text-text-3 mt-2">You'll get an alert when stock drops to this level.</p>
-                                    </div>
-                                </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant={imageUrl ? 'secondary' : 'primary'}
+                                    size="sm"
+                                    onClick={() =>
+                                        fileInputRef.current?.click()
+                                    }
+                                    disabled={uploadingImage}
+                                    className="flex-1"
+                                >
+                                    <Upload size={13} />
+                                    {uploadingImage
+                                        ? 'Uploading…'
+                                        : imageUrl
+                                          ? 'Replace'
+                                          : 'Upload image'}
+                                </Button>
+                                {imageUrl && (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleRemoveImage}
+                                        disabled={uploadingImage}
+                                    >
+                                        Remove
+                                    </Button>
+                                )}
                             </div>
-                        )}
+                            <p className="text-[11px] text-text-3">
+                                JPG, PNG, WebP or GIF · up to 2 MB.
+                                {!isEditMode && pendingImageFile && (
+                                    <>
+                                        {' '}
+                                        Image will upload after the product is
+                                        created.
+                                    </>
+                                )}
+                            </p>
+                        </CardContent>
+                    </Card>
 
-                        {/* Section 4: Pricing */}
-                        <div>
-                            <h2 className="text-lg font-semibold text-text-1 mb-5 pb-2 border-b border-border">
-                                Pricing Details
-                            </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
-                                        Cost Price
-                                    </label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-3 text-sm font-medium">Rs</span>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            value={costPrice}
-                                            onChange={(e) => setCostPrice(e.target.value)}
-                                            className={`w-full h-11 pl-10 pr-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 tabular-nums ${errors.costPrice ? 'border-red-500/50' : 'border-border'}`}
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-                                    {errors.costPrice && <p className="text-xs text-danger mt-1">{errors.costPrice}</p>}
-                                    <p className="text-[11px] text-text-3 mt-2">Your internal purchase cost.</p>
-                                </div>
-
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]">
-                                        Selling Price
-                                    </label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-3 text-sm font-medium">Rs</span>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            value={sellingPrice}
-                                            onChange={(e) => setSellingPrice(e.target.value)}
-                                            className={`w-full h-11 pl-10 pr-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 tabular-nums ${errors.sellingPrice ? 'border-red-500/50' : 'border-border'}`}
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-                                    {errors.sellingPrice && <p className="text-xs text-danger mt-1">{errors.sellingPrice}</p>}
-                                    <p className="text-[11px] text-text-3 mt-2">Customer facing price.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    {/* Footer Actions */}
-                    <div className="p-6 border-t border-border bg-surface-2 flex items-center justify-end gap-3">
-                        <button
-                            type="button"
-                            onClick={() => navigate(FRONTEND_ROUTES.INVENTORY)}
-                            className="h-10 px-5 rounded-xl border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="h-10 px-6 rounded-xl bg-primary text-text-inv text-sm font-bold tracking-wide hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                                <polyline points="17 21 17 13 7 13 7 21"/>
-                                <polyline points="7 3 7 8 15 8"/>
-                            </svg>
-                            {isSubmitting ? 'Saving...' : isEditMode ? 'Update Product' : 'Save Product'}
-                        </button>
-                    </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Scanner</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-xs text-text-2 space-y-2">
+                            <p className="flex items-start gap-2">
+                                <Scan
+                                    size={13}
+                                    className="text-text-3 mt-0.5 flex-shrink-0"
+                                />
+                                Use a USB barcode scanner — it auto-fills the
+                                barcode field.
+                            </p>
+                            <p className="flex items-start gap-2">
+                                <Camera
+                                    size={13}
+                                    className="text-text-3 mt-0.5 flex-shrink-0"
+                                />
+                                Or click the camera icon next to the Barcode
+                                input.
+                            </p>
+                            <p className="flex items-start gap-2">
+                                <Package
+                                    size={13}
+                                    className="text-text-3 mt-0.5 flex-shrink-0"
+                                />
+                                If the barcode matches a product, fields
+                                auto-fill on blur.
+                            </p>
+                        </CardContent>
+                    </Card>
                 </div>
             </form>
 
-            {/* Camera Scanner Modal */}
             {showCameraScanner && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                    <div className="w-full max-w-lg mx-4 animate-in fade-in zoom-in-95 duration-200">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+                    style={{ background: 'var(--overlay)' }}
+                >
+                    <div className="w-full max-w-lg animate-in fade-in zoom-in-95 duration-200">
                         <UniversalScanner
                             onScanSuccess={(scannedBarcode) => {
                                 lookupBarcode(scannedBarcode);
                                 setShowCameraScanner(false);
                             }}
                         />
-                        <button
+                        <Button
                             type="button"
+                            variant="secondary"
+                            size="md"
                             onClick={() => setShowCameraScanner(false)}
-                            className="mt-3 w-full h-10 rounded-xl border border-border bg-surface text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors"
+                            className="w-full mt-3"
                         >
-                            Close Scanner
-                        </button>
+                            Close scanner
+                        </Button>
                     </div>
                 </div>
             )}

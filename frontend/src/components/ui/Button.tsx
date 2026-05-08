@@ -11,11 +11,11 @@ const variants = {
     primary:
         'bg-primary text-text-inv hover:bg-primary-hover focus:ring-[3px] focus:ring-primary/30',
     secondary:
-        'bg-surface text-text-1 border border-border-strong hover:bg-surface-2 focus:ring-[3px] focus:ring-primary/20',
+        'bg-surface text-text-1 border border-border-strong hover:bg-surface-2 focus:ring-[3px] focus:ring-primary/30',
     danger:
         'bg-danger text-white hover:opacity-90 focus:ring-[3px] focus:ring-danger/30',
     ghost:
-        'bg-transparent text-text-1 hover:bg-surface-2 focus:ring-[3px] focus:ring-primary/15',
+        'bg-transparent text-text-1 hover:bg-surface-2 focus:ring-[3px] focus:ring-primary/25',
 };
 
 const sizes = {

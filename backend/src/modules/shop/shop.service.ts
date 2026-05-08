@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Product } from '@products/entities/product.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
+import { User } from '@users/entities/user.entity';
+import { UserRole } from '@common/enums/user-roles.enums';
 
 export type StockStatus = 'in' | 'low' | 'out';
 
@@ -28,6 +30,7 @@ export interface ShopBranch {
   name: string;
   address: string;
   phone: string;
+  staffCount: number;
 }
 
 interface ListProductsQuery {
@@ -62,6 +65,8 @@ export class ShopService {
     private readonly branchRepo: Repository<Branch>,
     @InjectRepository(Inventory)
     private readonly inventoryRepo: Repository<Inventory>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   async listProducts(query: ListProductsQuery): Promise<ShopProduct[]> {
@@ -177,11 +182,29 @@ export class ShopService {
       where: { isActive: true },
       order: { name: 'ASC' },
     });
+
+    const staffRows = await this.userRepo
+      .createQueryBuilder('u')
+      .select('u.branch_id', 'branchId')
+      .addSelect('COUNT(u.id)', 'count')
+      .where('u.role IN (:...roles)', {
+        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
+      })
+      .andWhere('u.branch_id IS NOT NULL')
+      .groupBy('u.branch_id')
+      .getRawMany<{ branchId: string; count: string }>();
+
+    const countByBranch = new Map<string, number>();
+    for (const row of staffRows) {
+      countByBranch.set(row.branchId, Number(row.count));
+    }
+
     return branches.map((b) => ({
       id: b.id,
       name: b.name,
       address: b.address,
       phone: b.phone,
+      staffCount: countByBranch.get(b.id) ?? 0,
     }));
   }
 

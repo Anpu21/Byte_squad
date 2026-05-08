@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Trash2, Minus, Plus } from 'lucide-react';
+import { Trash2, Minus, Plus, ShoppingCart } from 'lucide-react';
 import type { RootState } from '@/store';
 import {
     removeFromCart,
@@ -21,11 +22,23 @@ export default function CartPage() {
     const navigate = useNavigate();
     const items = useSelector((state: RootState) => state.shopCart.items);
     const total = selectCartTotal(items);
+    const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+    const markImageFailed = (productId: string) =>
+        setFailedImages((prev) => {
+            if (prev.has(productId)) return prev;
+            const next = new Set(prev);
+            next.add(productId);
+            return next;
+        });
 
     if (items.length === 0) {
         return (
-            <div className="max-w-2xl mx-auto text-center py-24">
-                <h1 className="text-2xl font-bold text-text-1 tracking-tight mb-3">
+            <div className="max-w-2xl mx-auto flex flex-col items-center justify-center text-center py-24">
+                <div className="w-14 h-14 rounded-full bg-surface-2 border border-border flex items-center justify-center mb-4">
+                    <ShoppingCart size={22} className="text-text-2" />
+                </div>
+                <h1 className="text-2xl font-bold text-text-1 tracking-tight mb-2">
                     Your cart is empty
                 </h1>
                 <p className="text-sm text-text-2 mb-6">
@@ -33,7 +46,7 @@ export default function CartPage() {
                 </p>
                 <Link
                     to={FRONTEND_ROUTES.SHOP}
-                    className="inline-block px-4 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-slate-200 transition-colors"
+                    className="inline-block px-4 py-2 bg-primary text-text-inv font-semibold rounded-lg hover:bg-primary-hover transition-colors"
                 >
                     Browse products
                 </Link>
@@ -47,17 +60,18 @@ export default function CartPage() {
                 Cart
             </h1>
 
-            <div className="bg-[#111] border border-border rounded-md overflow-hidden">
+            <div className="bg-surface border border-border rounded-md overflow-hidden">
                 {items.map((item) => (
                     <div
                         key={item.productId}
                         className="flex items-center gap-4 p-4 border-b border-border last:border-0"
                     >
                         <div className="w-16 h-16 bg-canvas rounded-lg overflow-hidden flex items-center justify-center">
-                            {item.imageUrl ? (
+                            {item.imageUrl && !failedImages.has(item.productId) ? (
                                 <img
                                     src={item.imageUrl}
                                     alt={item.name}
+                                    onError={() => markImageFailed(item.productId)}
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
@@ -121,7 +135,7 @@ export default function CartPage() {
                 ))}
             </div>
 
-            <div className="mt-6 flex items-center justify-between bg-[#111] border border-border rounded-md p-5">
+            <div className="mt-6 flex items-center justify-between bg-surface border border-border rounded-md p-5">
                 <div>
                     <p className="text-[11px] uppercase tracking-widest text-text-3">
                         Estimated total
@@ -133,7 +147,7 @@ export default function CartPage() {
                 <button
                     type="button"
                     onClick={() => navigate(FRONTEND_ROUTES.SHOP_CHECKOUT)}
-                    className="px-5 py-2.5 bg-primary text-black font-semibold rounded-lg hover:bg-slate-200 transition-colors"
+                    className="px-5 py-2.5 bg-primary text-text-inv font-semibold rounded-lg hover:bg-primary-hover transition-colors"
                 >
                     Checkout →
                 </button>

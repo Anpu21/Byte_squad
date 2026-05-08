@@ -86,6 +86,24 @@ export const inventoryService = {
     await api.delete(`/products/${id}`);
   },
 
+  uploadProductImage: async (id: string, file: File): Promise<IProduct> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await api.post<IApiResponse<IProduct>>(
+      `/products/${id}/image`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
+    return response.data.data;
+  },
+
+  deleteProductImage: async (id: string): Promise<IProduct> => {
+    const response = await api.delete<IApiResponse<IProduct>>(
+      `/products/${id}/image`,
+    );
+    return response.data.data;
+  },
+
   createInventory: async (payload: {
     productId: string;
     branchId: string;

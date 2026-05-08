@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import {
     AlertTriangle,
-    Box,
-    DollarSign,
     Download,
+    Receipt,
+    ShoppingCart,
     TrendingUp,
 } from 'lucide-react';
 import { posService } from '@/services/pos.service';
@@ -79,10 +79,15 @@ export default function DashboardPage() {
         value: Number(d.totalSales),
     }));
 
+    const todayRevenue = Number(data?.today.totalSales ?? 0);
+    const todayCount = Number(data?.today.transactionCount ?? 0);
+    const avgOrderValue = todayCount > 0 ? todayRevenue / todayCount : 0;
+    const lowStockCount = Number(data?.stats.lowStockItems ?? 0);
+
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-start justify-between gap-4 mb-6">
-                <div>
+                <div className="min-w-0">
                     <p className="text-xs text-text-2">{today}</p>
                     <h1 className="text-[32px] font-bold tracking-[-0.02em] text-text-1 mt-0.5">
                         {greeting}, {user?.firstName ?? 'there'}
@@ -95,39 +100,40 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <KpiCard
                     label="Today's revenue"
-                    value={formatCurrency(data?.today.totalSales ?? 0)}
-                    delta={`${data?.today.transactionCount ?? 0} transactions`}
+                    value={formatCurrency(todayRevenue)}
+                    delta={`${todayCount} transactions`}
                     sparkData={sparkline.length >= 2 ? sparkline : [1, 2, 3, 4]}
                     sparkColor="var(--accent)"
-                    icon={<DollarSign size={14} />}
-                />
-                <KpiCard
-                    label="Monthly revenue"
-                    value={formatCurrency(data?.month.totalRevenue ?? 0)}
-                    delta={`${data?.month.transactionCount ?? 0} transactions`}
-                    sparkData={sparkline.length >= 2 ? sparkline : [2, 3, 4, 5]}
                     icon={<TrendingUp size={14} />}
                 />
                 <KpiCard
-                    label="Active products"
-                    value={String(data?.stats.activeProducts ?? 0)}
-                    delta={`${data?.stats.totalBranches ?? 0} branches`}
+                    label="Transactions"
+                    value={String(todayCount)}
+                    delta={`${data?.month.transactionCount ?? 0} this month`}
+                    sparkColor="var(--primary)"
+                    sparkData={sparkline.length >= 2 ? sparkline : [2, 3, 4, 5]}
+                    icon={<Receipt size={14} />}
+                />
+                <KpiCard
+                    label="Avg order value"
+                    value={formatCurrency(avgOrderValue)}
+                    delta={`${data?.stats.activeProducts ?? 0} active products`}
                     sparkColor="var(--brand-400)"
                     sparkData={[3, 5, 4, 6, 5, 7]}
-                    icon={<Box size={14} />}
+                    icon={<ShoppingCart size={14} />}
                 />
                 <KpiCard
                     label="Low stock items"
-                    value={String(data?.stats.lowStockItems ?? 0)}
+                    value={String(lowStockCount)}
                     delta={
-                        data?.stats.lowStockItems
+                        lowStockCount > 0
                             ? 'Requires attention'
-                            : 'All good'
+                            : 'All branches stocked'
                     }
-                    deltaPositive={!data?.stats.lowStockItems}
+                    deltaPositive={lowStockCount === 0}
                     sparkColor="var(--warning)"
                     sparkData={[2, 3, 3, 4, 4, 5]}
                     icon={<AlertTriangle size={14} />}
@@ -136,9 +142,9 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
                 <Card className="lg:col-span-2 p-5">
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between mb-4">
                         <div>
-                            <h3 className="text-[15px] font-semibold text-text-1">
+                            <h3 className="text-[15px] font-semibold text-text-1 tracking-tight">
                                 Sales overview
                             </h3>
                             <p className="text-xs text-text-2 mt-0.5">
@@ -147,7 +153,10 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center gap-3 text-xs text-text-2">
                             <span className="inline-flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-primary" />
+                                <span
+                                    className="w-2 h-2 rounded-full"
+                                    style={{ background: 'var(--primary)' }}
+                                />
                                 Revenue
                             </span>
                         </div>
@@ -168,9 +177,16 @@ export default function DashboardPage() {
                 </Card>
 
                 <Card className="p-5">
-                    <h3 className="text-[15px] font-semibold text-text-1 mb-3">
-                        Top products
-                    </h3>
+                    <div className="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 className="text-[15px] font-semibold text-text-1 tracking-tight">
+                                Top products today
+                            </h3>
+                            <p className="text-xs text-text-2 mt-0.5">
+                                Ranked by revenue
+                            </p>
+                        </div>
+                    </div>
                     {data && data.topProducts.length > 0 ? (
                         <div className="flex flex-col gap-3">
                             {data.topProducts
@@ -178,7 +194,8 @@ export default function DashboardPage() {
                                 .map((product: ITopProduct, idx: number) => {
                                     const maxRevenue =
                                         data.topProducts[0]?.totalRevenue || 1;
-                                    const pct = (product.totalRevenue / maxRevenue) * 100;
+                                    const pct =
+                                        (product.totalRevenue / maxRevenue) * 100;
                                     return (
                                         <div key={product.productId}>
                                             <div className="flex items-center justify-between mb-1">
@@ -191,7 +208,9 @@ export default function DashboardPage() {
                                                     </span>
                                                 </div>
                                                 <span className="mono text-xs text-text-1 font-semibold flex-shrink-0">
-                                                    {formatCurrency(product.totalRevenue)}
+                                                    {formatCurrency(
+                                                        product.totalRevenue,
+                                                    )}
                                                 </span>
                                             </div>
                                             <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
@@ -222,29 +241,44 @@ export default function DashboardPage() {
             <Card>
                 <div className="px-5 py-4 border-b border-border flex items-center justify-between">
                     <div>
-                        <h3 className="text-[15px] font-semibold text-text-1">
-                            Recent transactions
+                        <h3 className="text-[15px] font-semibold text-text-1 tracking-tight">
+                            Recent activity
                         </h3>
-                        <p className="text-xs text-text-2 mt-0.5">All branches</p>
+                        <p className="text-xs text-text-2 mt-0.5">
+                            Latest sales across all branches
+                        </p>
                     </div>
                 </div>
-                <div className="overflow-auto max-h-[360px]">
+                <div className="overflow-auto max-h-[420px]">
                     {data && data.recentTransactions.length > 0 ? (
                         <table className="w-full">
                             <thead>
                                 <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 bg-surface-2">
-                                    <th className="px-5 py-2.5 text-left font-semibold">Transaction</th>
-                                    <th className="px-5 py-2.5 text-left font-semibold">Cashier</th>
-                                    <th className="px-5 py-2.5 text-left font-semibold">Time</th>
-                                    <th className="px-5 py-2.5 text-left font-semibold">Method</th>
-                                    <th className="px-5 py-2.5 text-right font-semibold">Amount</th>
+                                    <th className="px-5 py-2.5 text-left font-semibold">
+                                        Transaction
+                                    </th>
+                                    <th className="px-5 py-2.5 text-left font-semibold">
+                                        Cashier
+                                    </th>
+                                    <th className="px-5 py-2.5 text-left font-semibold">
+                                        Time
+                                    </th>
+                                    <th className="px-5 py-2.5 text-left font-semibold">
+                                        Method
+                                    </th>
+                                    <th className="px-5 py-2.5 text-right font-semibold">
+                                        Amount
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {data.recentTransactions.map(
                                     (
                                         txn: ITransaction & {
-                                            cashier?: { firstName: string; lastName: string };
+                                            cashier?: {
+                                                firstName: string;
+                                                lastName: string;
+                                            };
                                         },
                                     ) => (
                                         <tr

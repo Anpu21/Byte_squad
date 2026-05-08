@@ -11,10 +11,14 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { User } from '@users/entities/user.entity';
+import { Branch } from '@branches/entities/branch.entity';
 import { CreateUserDto } from '@users/dto/create-user.dto';
 import { UpdateUserDto } from '@users/dto/update-user.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { EmailService } from '../email/email.service';
+import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
+
+const AVATAR_CLOUDINARY_FOLDER = 'ledgerpro/avatars';
 
 export interface Actor {
   id: string;
@@ -35,8 +39,11 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Branch)
+    private readonly branchRepository: Repository<Branch>,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
   async create(createUserDto: CreateUserDto, actor: Actor): Promise<User> {
@@ -130,6 +137,7 @@ export class UsersService {
       passwordHash,
       isFirstLogin: false,
       isVerified: true,
+      otpCode: null,
       otpExpiresAt: null,
     });
   }
@@ -177,7 +185,7 @@ export class UsersService {
 
   async updateProfile(
     id: string,
-    data: { firstName?: string; lastName?: string },
+    data: { firstName?: string; lastName?: string; phone?: string | null },
   ): Promise<User | null> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
@@ -186,10 +194,37 @@ export class UsersService {
     const updateData: Partial<User> = {};
     if (data.firstName) updateData.firstName = data.firstName;
     if (data.lastName) updateData.lastName = data.lastName;
+    if (data.phone !== undefined) {
+      const trimmed = data.phone?.trim();
+      updateData.phone = trimmed && trimmed.length > 0 ? trimmed : null;
+    }
     if (Object.keys(updateData).length > 0) {
       await this.userRepository.update(id, updateData);
     }
     return this.findById(id);
+  }
+
+  async updateMyBranch(userId: string, branchId: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (user.role !== UserRole.CUSTOMER) {
+      throw new ForbiddenException(
+        'Only customers can pick their branch through this endpoint',
+      );
+    }
+
+    const branch = await this.branchRepository.findOne({
+      where: { id: branchId, isActive: true },
+    });
+    if (!branch) {
+      throw new NotFoundException('Branch not found or inactive');
+    }
+
+    await this.userRepository.update(userId, { branchId });
+    this.logger.log(`Customer ${user.email} selected branch ${branch.name}`);
+    return this.findById(userId);
   }
 
   async updateAvatar(
@@ -200,9 +235,20 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    // Store as base64 data URL for dev; in production, upload to cloud storage
-    const base64 = file.buffer.toString('base64');
-    const avatarUrl = `data:${file.mimetype};base64,${base64}`;
+
+    let avatarUrl: string;
+    if (this.cloudinary.isEnabled()) {
+      const { url } = await this.cloudinary.uploadImage(file, {
+        folder: AVATAR_CLOUDINARY_FOLDER,
+        publicId: id,
+      });
+      avatarUrl = url;
+    } else {
+      // Fallback for dev environments without Cloudinary credentials.
+      const base64 = file.buffer.toString('base64');
+      avatarUrl = `data:${file.mimetype};base64,${base64}`;
+    }
+
     await this.userRepository.update(id, { avatarUrl });
     return this.findById(id);
   }
@@ -241,6 +287,15 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
     this.assertCanManage(actor, user);
+    await this.userRepository.delete(id);
+  }
+
+  /**
+   * Internal: hard-delete a user row without RBAC checks. Used by AuthService
+   * to roll back a half-created customer signup when the OTP email fails.
+   * Do not expose via HTTP.
+   */
+  async removeByIdInternal(id: string): Promise<void> {
     await this.userRepository.delete(id);
   }
 

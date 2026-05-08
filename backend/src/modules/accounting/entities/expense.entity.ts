@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Branch } from '@branches/entities/branch.entity';
 import { User } from '@users/entities/user.entity';
+import { ExpenseStatus } from '@common/enums/expense-status.enum';
 
 @Entity('expenses')
 export class Expense {
@@ -42,6 +43,26 @@ export class Expense {
 
   @Column({ type: 'varchar', name: 'receipt_url', nullable: true })
   receiptUrl!: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: ExpenseStatus,
+    default: ExpenseStatus.PENDING,
+  })
+  status!: ExpenseStatus;
+
+  @Column({ type: 'uuid', name: 'reviewed_by', nullable: true })
+  reviewedBy!: string | null;
+
+  @ManyToOne(() => User, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'reviewed_by' })
+  reviewer!: User | null;
+
+  @Column({ type: 'timestamp', name: 'reviewed_at', nullable: true })
+  reviewedAt!: Date | null;
+
+  @Column({ type: 'text', name: 'review_note', nullable: true })
+  reviewNote!: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

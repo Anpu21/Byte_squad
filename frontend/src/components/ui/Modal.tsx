@@ -47,7 +47,8 @@ export default function Modal({
             aria-labelledby="modal-title"
         >
             <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+                className="absolute inset-0 backdrop-blur-sm animate-in fade-in duration-200"
+                style={{ background: 'var(--overlay)' }}
                 onClick={onClose}
                 aria-hidden="true"
             />

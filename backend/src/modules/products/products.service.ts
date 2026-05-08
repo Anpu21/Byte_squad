@@ -4,12 +4,16 @@ import { Repository } from 'typeorm';
 import { Product } from '@products/entities/product.entity';
 import { CreateProductDto } from '@products/dto/create-product.dto';
 import { UpdateProductDto } from '@products/dto/update-product.dto';
+import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
+
+const CLOUDINARY_FOLDER = 'ledgerpro/products';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
@@ -53,5 +57,42 @@ export class ProductsService {
 
   async remove(id: string): Promise<void> {
     await this.productRepository.update(id, { isActive: false });
+  }
+
+  /**
+   * Persist a product image. When Cloudinary is enabled the image is uploaded
+   * there and the secure URL is stored on the row; otherwise we fall back to
+   * a base64 data URL embedded in the column. Pass `file = null` to clear.
+   */
+  async setImage(
+    id: string,
+    file: Express.Multer.File | null,
+  ): Promise<Product> {
+    const product = await this.productRepository.findOne({ where: { id } });
+    if (!product) {
+      throw new NotFoundException(`Product with ID "${id}" not found`);
+    }
+
+    let imageUrl: string | null;
+    if (this.cloudinary.isEnabled()) {
+      if (file) {
+        const { url } = await this.cloudinary.uploadImage(file, {
+          folder: CLOUDINARY_FOLDER,
+          publicId: id,
+        });
+        imageUrl = url;
+      } else {
+        await this.cloudinary.deleteImage(`${CLOUDINARY_FOLDER}/${id}`);
+        imageUrl = null;
+      }
+    } else {
+      imageUrl = file
+        ? `data:${file.mimetype};base64,${file.buffer.toString('base64')}`
+        : null;
+    }
+
+    await this.productRepository.update(id, { imageUrl });
+    const refreshed = await this.productRepository.findOne({ where: { id } });
+    return refreshed!;
   }
 }

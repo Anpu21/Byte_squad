@@ -9,6 +9,9 @@ export const FRONTEND_ROUTES = {
     SIGNUP: '/signup',
     OTP_VERIFICATION: '/verify-otp',
     CHANGE_PASSWORD: '/change-password',
+    FORGOT_PASSWORD: '/forgot-password',
+    RESET_PASSWORD: '/reset-password',
+    SELECT_BRANCH: '/select-branch',
 
     // Dashboard
     DASHBOARD: '/dashboard',
@@ -60,6 +63,7 @@ export const FRONTEND_ROUTES = {
     SHOP_CHECKOUT: '/shop/checkout',
     SHOP_REQUEST_CONFIRMATION: '/shop/requests/:code',
     SHOP_MY_REQUESTS: '/shop/my-requests',
+    SHOP_PROFILE: '/shop/profile',
 
     // Cashier scan + shared customer requests view
     SCAN_REQUEST: '/pos/scan-request',

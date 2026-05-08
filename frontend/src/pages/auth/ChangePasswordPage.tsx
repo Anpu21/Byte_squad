@@ -7,6 +7,7 @@ import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/ui/Button';
 import Card, { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function ChangePasswordPage() {
@@ -53,9 +54,6 @@ export default function ChangePasswordPage() {
         }
     };
 
-    const inputBase =
-        'w-full h-[42px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 placeholder:text-text-3 transition-colors';
-
     const strength = (() => {
         let s = 0;
         if (newPassword.length >= 8) s++;
@@ -94,39 +92,29 @@ export default function ChangePasswordPage() {
                                 </div>
                             )}
 
-                            <div>
-                                <label className="block text-xs font-medium text-text-2 mb-1.5">
-                                    Temporary password
-                                </label>
-                                <div className="relative">
-                                    <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
-                                    <input
-                                        type="password"
-                                        value={currentPassword}
-                                        onChange={(e) => setCurrentPassword(e.target.value)}
-                                        required
-                                        placeholder="Enter your temporary password"
-                                        className={inputBase + ' pl-9'}
-                                    />
-                                </div>
-                            </div>
+                            <Input
+                                label="Temporary password"
+                                type="password"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                required
+                                placeholder="Enter your temporary password"
+                                leftIcon={<Lock size={14} />}
+                                sizeVariant="lg"
+                            />
 
                             <div>
-                                <label className="block text-xs font-medium text-text-2 mb-1.5">
-                                    New password
-                                </label>
-                                <div className="relative">
-                                    <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
-                                    <input
-                                        type="password"
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        required
-                                        minLength={8}
-                                        placeholder="Minimum 8 characters"
-                                        className={inputBase + ' pl-9'}
-                                    />
-                                </div>
+                                <Input
+                                    label="New password"
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    required
+                                    minLength={8}
+                                    placeholder="Minimum 8 characters"
+                                    leftIcon={<Lock size={14} />}
+                                    sizeVariant="lg"
+                                />
                                 {newPassword && (
                                     <>
                                         <div className="h-1.5 bg-surface-2 rounded-full mt-2 overflow-hidden">
@@ -148,22 +136,16 @@ export default function ChangePasswordPage() {
                                 )}
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-medium text-text-2 mb-1.5">
-                                    Confirm new password
-                                </label>
-                                <div className="relative">
-                                    <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
-                                    <input
-                                        type="password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        required
-                                        placeholder="Re-enter your new password"
-                                        className={inputBase + ' pl-9'}
-                                    />
-                                </div>
-                            </div>
+                            <Input
+                                label="Confirm new password"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                                placeholder="Re-enter your new password"
+                                leftIcon={<Lock size={14} />}
+                                sizeVariant="lg"
+                            />
 
                             <Button type="submit" size="lg" disabled={isLoading} className="w-full mt-2">
                                 {isLoading ? 'Changing password…' : 'Update password'}

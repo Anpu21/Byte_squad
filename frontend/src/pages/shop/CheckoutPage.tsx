@@ -77,7 +77,12 @@ export default function CheckoutPage() {
             });
             toast.success('Pickup request created');
             dispatch(clearShopCart());
-            navigate(`/shop/requests/${request.requestCode}`);
+            navigate(
+                FRONTEND_ROUTES.SHOP_REQUEST_CONFIRMATION.replace(
+                    ':code',
+                    request.requestCode,
+                ),
+            );
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 const data = err.response?.data as
@@ -117,7 +122,7 @@ export default function CheckoutPage() {
                             Change branch
                         </Link>
                     </div>
-                    <div className="bg-[#111] border border-border rounded-lg px-3 py-2.5 text-sm">
+                    <div className="bg-surface border border-border rounded-lg px-3 py-2.5 text-sm">
                         {branch ? (
                             <>
                                 <p className="text-text-1 font-medium">{branch.name}</p>
@@ -140,11 +145,11 @@ export default function CheckoutPage() {
                         onChange={(e) => setNote(e.target.value)}
                         rows={2}
                         placeholder="Any pickup instructions"
-                        className="w-full bg-[#111] border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-emerald-500 resize-none"
+                        className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-primary resize-none"
                     />
                 </div>
 
-                <div className="bg-[#111] border border-border rounded-md p-5">
+                <div className="bg-surface border border-border rounded-md p-5">
                     <p className="text-[11px] uppercase tracking-widest text-text-3 mb-3">
                         Order summary
                     </p>
@@ -180,7 +185,7 @@ export default function CheckoutPage() {
                 <button
                     type="submit"
                     disabled={submitting || !branchId}
-                    className="w-full bg-primary text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50"
+                    className="w-full bg-primary text-text-inv font-semibold py-2.5 rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
                 >
                     {submitting ? 'Submitting…' : 'Submit pickup request'}
                 </button>

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -6,7 +6,9 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { authService } from '@/services/auth.service';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import Logo from '@/components/ui/Logo';
+import OnboardingStepper from '@/components/auth/OnboardingStepper';
 
 interface LocationState {
     email?: string;
@@ -19,9 +21,11 @@ export default function OtpVerificationPage() {
 
     const [email, setEmail] = useState(initialEmail);
     const [otpCode, setOtpCode] = useState('');
+    const [otpFocused, setOtpFocused] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [resending, setResending] = useState(false);
+    const otpInputRef = useRef<HTMLInputElement>(null);
 
     const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -66,7 +70,10 @@ export default function OtpVerificationPage() {
     return (
         <>
             <Logo size={36} />
-            <h1 className="mt-7 text-2xl font-bold tracking-[-0.015em] text-text-1">
+            <div className="mt-7">
+                <OnboardingStepper currentStep={2} />
+            </div>
+            <h1 className="text-2xl font-bold tracking-[-0.015em] text-text-1">
                 Verify your email
             </h1>
             <p className="text-xs text-text-2 mt-1.5 mb-7">
@@ -75,50 +82,68 @@ export default function OtpVerificationPage() {
             </p>
 
             <form onSubmit={onSubmit} className="flex flex-col gap-5">
-                <div>
-                    <label className="block text-xs font-medium text-text-2 mb-1.5">
-                        Email
-                    </label>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="w-full h-[42px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 placeholder:text-text-3"
-                    />
-                </div>
+                <Input
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    sizeVariant="lg"
+                />
+
 
                 <div>
-                    <label className="block text-xs font-medium text-text-2 mb-1.5">
+                    <label
+                        htmlFor="otp-code"
+                        className="block text-xs font-medium text-text-2 mb-1.5"
+                    >
                         Verification code
                     </label>
-                    <input
-                        type="text"
-                        inputMode="numeric"
-                        value={otpCode}
-                        onChange={(e) =>
-                            setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))
-                        }
-                        required
-                        className="sr-only"
-                        autoFocus
-                    />
-                    <div className="flex gap-2">
-                        {digits.map((d, i) => (
-                            <div
-                                key={i}
-                                className={`flex-1 h-14 mono text-2xl font-semibold flex items-center justify-center rounded-md border bg-surface text-text-1 ${
-                                    i === otpCode.length
-                                        ? 'border-primary ring-[3px] ring-primary/20'
-                                        : 'border-border-strong'
-                                }`}
-                            >
-                                {d.trim() || ''}
-                            </div>
-                        ))}
+                    <div
+                        className="relative cursor-text"
+                        onClick={() => otpInputRef.current?.focus()}
+                    >
+                        <input
+                            ref={otpInputRef}
+                            id="otp-code"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            value={otpCode}
+                            onChange={(e) =>
+                                setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))
+                            }
+                            onFocus={() => setOtpFocused(true)}
+                            onBlur={() => setOtpFocused(false)}
+                            required
+                            autoFocus
+                            aria-label="6-digit verification code"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-text"
+                        />
+                        <div className="flex gap-2 pointer-events-none">
+                            {digits.map((d, i) => {
+                                const isActive =
+                                    otpFocused && i === otpCode.length;
+                                const isFilled = i < otpCode.length;
+                                return (
+                                    <div
+                                        key={i}
+                                        className={`flex-1 h-14 mono text-2xl font-semibold flex items-center justify-center rounded-md border bg-surface text-text-1 transition-colors ${
+                                            isActive
+                                                ? 'border-primary ring-[3px] ring-primary/30'
+                                                : isFilled
+                                                ? 'border-primary'
+                                                : 'border-border-strong'
+                                        }`}
+                                    >
+                                        {d.trim() || ''}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                     <p className="caption text-xs text-text-2 mt-2">
-                        Tap the field above and enter your 6-digit code.
+                        Enter the 6-digit code from your email.
                     </p>
                 </div>
 
