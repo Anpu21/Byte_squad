@@ -83,7 +83,8 @@ export default function ScanRequestPage() {
         }
     };
 
-    const isFulfillable = request?.status === 'pending';
+    const isFulfillable =
+        request?.status === 'pending' || request?.status === 'accepted';
 
     return (
         <div>

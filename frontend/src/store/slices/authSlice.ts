@@ -75,6 +75,15 @@ const authSlice = createSlice({
                 );
             }
         },
+        setUser: (state, action: PayloadAction<Partial<IUser>>) => {
+            if (state.user) {
+                state.user = { ...state.user, ...action.payload };
+                localStorage.setItem(
+                    'ledgerpro_user',
+                    JSON.stringify(state.user),
+                );
+            }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -99,5 +108,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { logout, clearError, setUserBranch } = authSlice.actions;
+export const { logout, clearError, setUserBranch, setUser } = authSlice.actions;
 export default authSlice.reducer;

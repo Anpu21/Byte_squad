@@ -112,6 +112,7 @@ export const APP_ROUTES = {
     BY_CODE: 'code/:code',
     BY_ID: ':id',
     CANCEL: ':id/cancel',
+    ACCEPT: ':id/accept',
     REJECT: ':id/reject',
     FULFILL: 'code/:code/fulfill',
   },

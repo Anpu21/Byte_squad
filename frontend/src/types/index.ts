@@ -486,6 +486,7 @@ export interface IUserProfile extends IUser {
 
 export type CustomerRequestStatus =
     | 'pending'
+    | 'accepted'
     | 'completed'
     | 'rejected'
     | 'cancelled'

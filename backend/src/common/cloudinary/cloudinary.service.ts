@@ -71,6 +71,23 @@ export class CloudinaryService {
     });
   }
 
+  async uploadImageFromUrl(
+    sourceUrl: string,
+    opts: CloudinaryUploadOptions,
+  ): Promise<CloudinaryUploadResult> {
+    if (!this.enabled) {
+      throw new Error('Cloudinary is not configured');
+    }
+    const result = await cloudinary.uploader.upload(sourceUrl, {
+      folder: opts.folder,
+      public_id: opts.publicId,
+      overwrite: true,
+      resource_type: 'image',
+      transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+    });
+    return { url: result.secure_url, publicId: result.public_id };
+  }
+
   async deleteImage(publicId: string): Promise<void> {
     if (!this.enabled) return;
     try {

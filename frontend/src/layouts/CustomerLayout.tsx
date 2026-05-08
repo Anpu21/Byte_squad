@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { useQuery } from '@tanstack/react-query';
 import {
-    Building2,
     ChevronDown,
     LogOut,
+    MapPin,
     Search,
     ScrollText,
     ShoppingCart,
     User,
+    UserRound,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { RootState } from '@/store';
@@ -19,6 +21,7 @@ import {
     toggleCartDrawer,
 } from '@/store/slices/shopCartSlice';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import { profileService } from '@/services/profile.service';
 import CartDrawer from '@/components/shop/CartDrawer';
 import Logo from '@/components/ui/Logo';
 import ThemeToggle from '@/components/ui/ThemeToggle';
@@ -36,6 +39,15 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
     const cartCount = selectCartItemCount(cartItems);
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    const { data: profile } = useQuery({
+        queryKey: ['profile'],
+        queryFn: profileService.getProfile,
+        enabled: isAuthenticated && user?.role === UserRole.CUSTOMER,
+        staleTime: 60_000,
+    });
+    const branchName = profile?.branch?.name ?? null;
+    const avatarSrc = profile?.avatarUrl ?? user?.avatarUrl ?? undefined;
 
     useEffect(() => {
         if (!menuOpen) return;
@@ -72,11 +84,19 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
 
                     <button
                         type="button"
-                        className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-soft text-primary-soft-text text-xs font-medium hover:opacity-90 transition-opacity"
+                        onClick={() => navigate(FRONTEND_ROUTES.SELECT_BRANCH)}
+                        className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-soft text-primary-soft-text text-xs font-medium hover:opacity-90 transition-opacity max-w-[240px]"
+                        title={
+                            branchName
+                                ? `Pickup at ${branchName} — click to change`
+                                : 'Select your pickup branch'
+                        }
                     >
-                        <Building2 size={13} />
-                        <span>Colombo · Bambalapitiya</span>
-                        <ChevronDown size={12} />
+                        <MapPin size={13} />
+                        <span className="truncate">
+                            {branchName ?? 'Select branch'}
+                        </span>
+                        <ChevronDown size={12} className="flex-shrink-0" />
                     </button>
 
                     <div className="hidden md:flex items-center flex-1 max-w-[420px] h-[36px] px-3 bg-surface-2 border border-border rounded-md gap-2">
@@ -125,6 +145,7 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
                                 >
                                     <Avatar
                                         name={`${user.firstName} ${user.lastName}`}
+                                        src={avatarSrc}
                                         size={32}
                                     />
                                 </button>
@@ -138,6 +159,13 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
                                                 {user.email}
                                             </p>
                                         </div>
+                                        <Link
+                                            to={FRONTEND_ROUTES.SHOP_PROFILE}
+                                            className="flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors"
+                                            onClick={() => setMenuOpen(false)}
+                                        >
+                                            <UserRound size={14} /> Profile
+                                        </Link>
                                         <Link
                                             to={FRONTEND_ROUTES.SHOP_MY_REQUESTS}
                                             className="flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors"

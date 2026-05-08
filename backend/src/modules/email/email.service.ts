@@ -18,7 +18,7 @@ export class EmailService implements OnModuleInit {
       port,
       secure: port === 465, // 465 → SSL/TLS, 587 → STARTTLS
       requireTLS: port === 587,
-      connectionTimeout: 60_000,
+      connectionTimeout: 10_000, // fail fast at startup verify if SMTP unreachable
       greetingTimeout: 60_000,
       socketTimeout: 60_000,
       auth: {

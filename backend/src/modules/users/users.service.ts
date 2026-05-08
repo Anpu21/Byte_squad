@@ -185,7 +185,7 @@ export class UsersService {
 
   async updateProfile(
     id: string,
-    data: { firstName?: string; lastName?: string },
+    data: { firstName?: string; lastName?: string; phone?: string | null },
   ): Promise<User | null> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
@@ -194,6 +194,10 @@ export class UsersService {
     const updateData: Partial<User> = {};
     if (data.firstName) updateData.firstName = data.firstName;
     if (data.lastName) updateData.lastName = data.lastName;
+    if (data.phone !== undefined) {
+      const trimmed = data.phone?.trim();
+      updateData.phone = trimmed && trimmed.length > 0 ? trimmed : null;
+    }
     if (Object.keys(updateData).length > 0) {
       await this.userRepository.update(id, updateData);
     }

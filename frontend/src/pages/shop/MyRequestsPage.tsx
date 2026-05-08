@@ -23,6 +23,7 @@ function formatDate(dateStr: string) {
 
 const STATUS_LABEL: Record<CustomerRequestStatus, string> = {
     pending: 'Pending',
+    accepted: 'Accepted',
     completed: 'Picked up',
     rejected: 'Rejected',
     cancelled: 'Cancelled',
@@ -31,6 +32,7 @@ const STATUS_LABEL: Record<CustomerRequestStatus, string> = {
 
 const STATUS_TONE: Record<CustomerRequestStatus, string> = {
     pending: 'bg-warning-soft text-warning border-warning/40',
+    accepted: 'bg-primary-soft text-primary-soft-text border-primary/40',
     completed: 'bg-accent-soft text-accent-text border-accent/40',
     rejected: 'bg-danger-soft text-danger border-danger/40',
     cancelled: 'bg-slate-500/10 text-text-2 border-slate-500/30',

@@ -42,7 +42,8 @@ export class UsersController {
   @Patch(APP_ROUTES.USERS.PROFILE)
   updateProfile(
     @CurrentUser('id') userId: string,
-    @Body() body: { firstName?: string; lastName?: string },
+    @Body()
+    body: { firstName?: string; lastName?: string; phone?: string | null },
   ): Promise<User | null> {
     return this.usersService.updateProfile(userId, body);
   }

@@ -63,6 +63,7 @@ export const FRONTEND_ROUTES = {
     SHOP_CHECKOUT: '/shop/checkout',
     SHOP_REQUEST_CONFIRMATION: '/shop/requests/:code',
     SHOP_MY_REQUESTS: '/shop/my-requests',
+    SHOP_PROFILE: '/shop/profile',
 
     // Cashier scan + shared customer requests view
     SCAN_REQUEST: '/pos/scan-request',

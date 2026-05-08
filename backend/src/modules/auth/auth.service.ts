@@ -9,6 +9,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { UsersService } from '@users/users.service';
@@ -53,7 +54,15 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
   ) {}
+
+  private isProduction(): boolean {
+    return (
+      (this.configService.get<string>('NODE_ENV') ?? 'development') ===
+      'production'
+    );
+  }
 
   async signup(dto: SignupDto): Promise<{ userId: string }> {
     const existing = await this.usersService.findByEmail(
@@ -80,22 +89,38 @@ export class AuthService {
     });
     this.logger.log(`Customer signup: ${saved.email}`);
 
-    try {
-      await this.emailService.sendOtpEmail(
-        saved.email,
-        saved.firstName,
-        otpCode,
-        OTP_EXPIRES_IN_MINUTES,
-      );
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
+    if (this.emailService.isVerified()) {
+      try {
+        await this.emailService.sendOtpEmail(
+          saved.email,
+          saved.firstName,
+          otpCode,
+          OTP_EXPIRES_IN_MINUTES,
+        );
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(
+          `Failed to send OTP email to ${saved.email}: ${message}. Rolling back signup.`,
+        );
+        // Roll back the half-created user so a retry can succeed without 409.
+        await this.usersService.removeByIdInternal(saved.id);
+        throw new ServiceUnavailableException(
+          'Email service unavailable. Please try again in a moment.',
+        );
+      }
+    } else if (this.isProduction()) {
       this.logger.error(
-        `Failed to send OTP email to ${saved.email}: ${message}. Rolling back signup.`,
+        `Cannot send OTP to ${saved.email}: email transporter not verified. Rolling back signup.`,
       );
-      // Roll back the half-created user so a retry can succeed without 409.
       await this.usersService.removeByIdInternal(saved.id);
       throw new ServiceUnavailableException(
         'Email service unavailable. Please try again in a moment.',
+      );
+    } else {
+      // Dev fallback: SMTP unreachable. Log the OTP so the developer can copy
+      // it from the container logs and continue verification.
+      this.logger.warn(
+        `✨ DEV OTP for ${saved.email}: ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m). SMTP unavailable; copy from logs to verify.`,
       );
     }
 
@@ -264,20 +289,33 @@ export class AuthService {
     );
     await this.usersService.setOtp(user.id, otpCode, otpExpiresAt);
 
-    try {
-      await this.emailService.sendPasswordResetOtpEmail(
-        user.email,
-        user.firstName,
-        otpCode,
-        OTP_EXPIRES_IN_MINUTES,
-      );
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
+    if (this.emailService.isVerified()) {
+      try {
+        await this.emailService.sendPasswordResetOtpEmail(
+          user.email,
+          user.firstName,
+          otpCode,
+          OTP_EXPIRES_IN_MINUTES,
+        );
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(
+          `Failed to send password reset OTP to ${user.email}: ${message}`,
+        );
+        throw new ServiceUnavailableException(
+          'Email service unavailable. Please try again in a moment.',
+        );
+      }
+    } else if (this.isProduction()) {
       this.logger.error(
-        `Failed to send password reset OTP to ${user.email}: ${message}`,
+        `Cannot send password reset OTP to ${user.email}: email transporter not verified.`,
       );
       throw new ServiceUnavailableException(
         'Email service unavailable. Please try again in a moment.',
+      );
+    } else {
+      this.logger.warn(
+        `✨ DEV password reset OTP for ${user.email}: ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m). SMTP unavailable; copy from logs to reset.`,
       );
     }
 

@@ -44,6 +44,7 @@ import CartPage from '@/pages/shop/CartPage';
 import CheckoutPage from '@/pages/shop/CheckoutPage';
 import RequestConfirmationPage from '@/pages/shop/RequestConfirmationPage';
 import MyRequestsPage from '@/pages/shop/MyRequestsPage';
+import CustomerProfilePage from '@/pages/shop/ProfilePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function SmartRedirect() {
@@ -498,6 +499,16 @@ export default function AppRouter() {
                         <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
                             <CustomerLayout>
                                 <MyRequestsPage />
+                            </CustomerLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={FRONTEND_ROUTES.SHOP_PROFILE}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
+                            <CustomerLayout>
+                                <CustomerProfilePage />
                             </CustomerLayout>
                         </ProtectedRoute>
                     }

@@ -172,6 +172,16 @@ export class CustomerRequestsService {
 
     if (query.status) {
       qb.andWhere('req.status = :status', { status: query.status });
+    } else if (actor.role === UserRole.CASHIER) {
+      // Cashiers don't need rejected/cancelled/expired noise — they can only
+      // act on pending and accepted (and want to see today's completed).
+      qb.andWhere('req.status IN (:...visibleToCashier)', {
+        visibleToCashier: [
+          CustomerRequestStatus.PENDING,
+          CustomerRequestStatus.ACCEPTED,
+          CustomerRequestStatus.COMPLETED,
+        ],
+      });
     }
 
     if (query.q) {
@@ -206,6 +216,32 @@ export class CustomerRequestsService {
     return this.findById(id);
   }
 
+  async acceptByStaff(id: string, actor: StaffActor): Promise<CustomerRequest> {
+    const req = await this.findById(id);
+    if (actor.role !== UserRole.ADMIN && req.branchId !== actor.branchId) {
+      throw new ForbiddenException('Cannot manage requests for another branch');
+    }
+    if (req.status !== CustomerRequestStatus.PENDING) {
+      throw new BadRequestException('Only pending requests can be accepted');
+    }
+    await this.requestRepo.update(id, {
+      status: CustomerRequestStatus.ACCEPTED,
+    });
+    const updated = await this.findById(id);
+
+    const branch = await this.branchRepo.findOne({
+      where: { id: updated.branchId },
+    });
+    if (branch) {
+      this.notifyBranchCashiers(updated, branch.name).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(`Cashier notification fan-out failed: ${message}`);
+      });
+    }
+
+    return updated;
+  }
+
   async rejectByStaff(id: string, actor: StaffActor): Promise<CustomerRequest> {
     const req = await this.findById(id);
     if (actor.role !== UserRole.ADMIN && req.branchId !== actor.branchId) {
@@ -226,7 +262,10 @@ export class CustomerRequestsService {
     actor: StaffActor,
   ): Promise<{ request: CustomerRequest; transaction: Transaction }> {
     const req = await this.findByCode(code);
-    if (req.status !== CustomerRequestStatus.PENDING) {
+    if (
+      req.status !== CustomerRequestStatus.PENDING &&
+      req.status !== CustomerRequestStatus.ACCEPTED
+    ) {
       throw new ConflictException(
         `Cannot fulfill a request in status "${req.status}"`,
       );
@@ -342,6 +381,39 @@ export class CustomerRequestsService {
       staff.map((s) =>
         this.notifications.create({
           userId: s.id,
+          title,
+          message,
+          type: NotificationType.CUSTOMER_REQUEST,
+          metadata: {
+            requestId: request.id,
+            requestCode: request.requestCode,
+            branchId: request.branchId,
+          },
+        }),
+      ),
+    );
+  }
+
+  private async notifyBranchCashiers(
+    request: CustomerRequest,
+    branchName: string,
+  ): Promise<void> {
+    const cashiers = await this.userRepo.find({
+      where: { branchId: request.branchId, role: UserRole.CASHIER },
+    });
+    if (cashiers.length === 0) return;
+
+    const customerName = request.user
+      ? `${request.user.firstName} ${request.user.lastName}`
+      : (request.guestName ?? 'a customer');
+    const itemCount = request.items?.length ?? 0;
+    const title = 'Pickup ready to fulfill';
+    const message = `${branchName} accepted ${customerName}'s pickup. Code ${request.requestCode}, ${itemCount} item${itemCount === 1 ? '' : 's'}.`;
+
+    await Promise.all(
+      cashiers.map((c) =>
+        this.notifications.create({
+          userId: c.id,
           title,
           message,
           type: NotificationType.CUSTOMER_REQUEST,
