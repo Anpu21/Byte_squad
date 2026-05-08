@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { Search, Plus, Store } from 'lucide-react';
+import { Search, Plus, ShoppingBag, Store } from 'lucide-react';
 import type { RootState } from '@/store';
 import { shopProductsService } from '@/services/shop-products.service';
 import {
@@ -10,6 +11,7 @@ import {
     clearShopCart,
     setBranch,
 } from '@/store/slices/shopCartSlice';
+import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { IShopProduct, ShopStockStatus } from '@/types';
 
 function formatCurrency(amount: number) {
@@ -48,6 +50,15 @@ export default function CatalogPage() {
 
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState<string>('');
+    const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+    const markImageFailed = (productId: string) =>
+        setFailedImages((prev) => {
+            if (prev.has(productId)) return prev;
+            const next = new Set(prev);
+            next.add(productId);
+            return next;
+        });
 
     const { data: branches = [], isLoading: branchesLoading } = useQuery({
         queryKey: ['shop-branches'],
@@ -113,7 +124,7 @@ export default function CatalogPage() {
         if (!branchesLoading && branches.length === 0) {
             return (
                 <div className="max-w-md mx-auto py-16">
-                    <div className="bg-[#111] border border-border rounded-md p-7 text-center">
+                    <div className="bg-surface border border-border rounded-md p-7 text-center">
                         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-2 border border-border mb-4">
                             <Store size={20} className="text-text-1" />
                         </div>
@@ -129,7 +140,7 @@ export default function CatalogPage() {
         }
         return (
             <div className="flex items-center justify-center py-24">
-                <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
             </div>
         );
     }
@@ -153,7 +164,7 @@ export default function CatalogPage() {
                 <select
                     value={branchId}
                     onChange={(e) => handleBranchChange(e.target.value)}
-                    className="bg-[#111] border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-emerald-500"
+                    className="bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-primary"
                 >
                     {branches.map((b) => (
                         <option key={b.id} value={b.id}>
@@ -171,13 +182,13 @@ export default function CatalogPage() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search products…"
-                        className="w-full bg-[#111] border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-text-1 focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-surface border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-text-1 focus:outline-none focus:border-primary"
                     />
                 </div>
                 <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="bg-[#111] border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-emerald-500"
+                    className="bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-primary"
                 >
                     <option value="">All categories</option>
                     {categories.map((c) => (
@@ -190,28 +201,44 @@ export default function CatalogPage() {
 
             {isLoading ? (
                 <div className="flex items-center justify-center py-24">
-                    <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
                 </div>
             ) : productCount === 0 ? (
-                <div className="text-center py-24 text-text-3 text-sm">
-                    No products match your search at this branch.
+                <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <div className="w-12 h-12 rounded-full bg-surface-2 border border-border flex items-center justify-center mb-4">
+                        <ShoppingBag size={20} className="text-text-2" />
+                    </div>
+                    <p className="text-sm font-semibold text-text-1">
+                        No products found
+                    </p>
+                    <p className="text-xs text-text-3 mt-1">
+                        Try a different search or category at this branch.
+                    </p>
                 </div>
             ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                     {products.map((product) => {
                         const out = product.stockStatus === 'out';
+                        const detailHref = FRONTEND_ROUTES.SHOP_PRODUCT_DETAIL.replace(
+                            ':id',
+                            product.id,
+                        );
                         return (
                             <div
                                 key={product.id}
-                                className={`bg-[#111] border border-border rounded-md overflow-hidden hover:border-border-strong transition-colors ${
+                                className={`bg-surface border border-border rounded-md overflow-hidden hover:border-border-strong transition-colors ${
                                     out ? 'opacity-60' : ''
                                 }`}
                             >
-                                <div className="relative aspect-square bg-canvas flex items-center justify-center overflow-hidden">
-                                    {product.imageUrl ? (
+                                <Link
+                                    to={detailHref}
+                                    className="relative block aspect-square bg-canvas flex items-center justify-center overflow-hidden"
+                                >
+                                    {product.imageUrl && !failedImages.has(product.id) ? (
                                         <img
                                             src={product.imageUrl}
                                             alt={product.name}
+                                            onError={() => markImageFailed(product.id)}
                                             className={out ? 'w-full h-full object-cover grayscale' : 'w-full h-full object-cover'}
                                         />
                                     ) : (
@@ -229,14 +256,16 @@ export default function CatalogPage() {
                                         />
                                         {STOCK_LABEL[product.stockStatus]}
                                     </span>
-                                </div>
+                                </Link>
                                 <div className="p-3">
                                     <p className="text-[11px] text-text-3 uppercase tracking-widest">
                                         {product.category}
                                     </p>
-                                    <h3 className="text-sm font-semibold text-text-1 mt-1 line-clamp-2 min-h-[2.5em]">
-                                        {product.name}
-                                    </h3>
+                                    <Link to={detailHref} className="block">
+                                        <h3 className="text-sm font-semibold text-text-1 mt-1 line-clamp-2 min-h-[2.5em] hover:text-primary transition-colors">
+                                            {product.name}
+                                        </h3>
+                                    </Link>
                                     <div className="mt-3 flex items-center justify-between gap-2">
                                         <p className="text-sm font-bold text-text-1">
                                             {formatCurrency(product.sellingPrice)}
@@ -248,7 +277,7 @@ export default function CatalogPage() {
                                             className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors ${
                                                 out
                                                     ? 'bg-surface-2 text-text-3 cursor-not-allowed'
-                                                    : 'bg-primary text-black hover:bg-slate-200'
+                                                    : 'bg-primary text-text-inv hover:bg-primary-hover'
                                             }`}
                                         >
                                             {out ? (

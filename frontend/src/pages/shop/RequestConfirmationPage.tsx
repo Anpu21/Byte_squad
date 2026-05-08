@@ -16,6 +16,7 @@ function formatCurrency(amount: number) {
 
 const STATUS_LABEL: Record<CustomerRequestStatus, string> = {
     pending: 'Awaiting pickup',
+    accepted: 'Accepted — ready for pickup',
     completed: 'Picked up',
     rejected: 'Rejected',
     cancelled: 'Cancelled',
@@ -24,6 +25,7 @@ const STATUS_LABEL: Record<CustomerRequestStatus, string> = {
 
 const STATUS_TONE: Record<CustomerRequestStatus, string> = {
     pending: 'bg-warning-soft text-warning border-warning/40',
+    accepted: 'bg-primary-soft text-primary-soft-text border-primary/40',
     completed: 'bg-accent-soft text-accent-text border-accent/40',
     rejected: 'bg-danger-soft text-danger border-danger/40',
     cancelled: 'bg-slate-500/10 text-text-1 border-slate-500/30',
@@ -64,7 +66,7 @@ export default function RequestConfirmationPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-24">
-                <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
             </div>
         );
     }
@@ -80,7 +82,7 @@ export default function RequestConfirmationPage() {
                 </p>
                 <Link
                     to={FRONTEND_ROUTES.SHOP}
-                    className="inline-block px-4 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-slate-200 transition-colors"
+                    className="inline-block px-4 py-2 bg-primary text-text-inv font-semibold rounded-lg hover:bg-primary-hover transition-colors"
                 >
                     Browse products
                 </Link>
@@ -122,14 +124,14 @@ export default function RequestConfirmationPage() {
                         <a
                             href={qrDataUrl}
                             download={`${request.requestCode}.png`}
-                            className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-slate-900 text-text-1 rounded-lg hover:bg-slate-800 transition-colors"
+                            className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-surface text-text-1 border border-border rounded-lg hover:bg-surface-2 transition-colors"
                         >
                             <Download size={14} /> Download PNG
                         </a>
                     )}
                 </div>
 
-                <div className="bg-[#111] border border-border rounded-md p-6">
+                <div className="bg-surface border border-border rounded-md p-6">
                     <div className="flex items-center justify-between mb-4">
                         <span
                             className={`text-[11px] uppercase tracking-widest px-2 py-1 rounded-full border ${STATUS_TONE[request.status]}`}
@@ -170,7 +172,7 @@ export default function RequestConfirmationPage() {
                                     </span>
                                     <span>
                                         {formatCurrency(
-                                            Number(it.unitPriceSnapshot) * it.quantity,
+                                            it.unitPriceSnapshot * it.quantity,
                                         )}
                                     </span>
                                 </div>
@@ -183,7 +185,7 @@ export default function RequestConfirmationPage() {
                             Estimated total
                         </span>
                         <span className="text-lg font-bold text-text-1">
-                            {formatCurrency(Number(request.estimatedTotal))}
+                            {formatCurrency(request.estimatedTotal)}
                         </span>
                     </div>
 

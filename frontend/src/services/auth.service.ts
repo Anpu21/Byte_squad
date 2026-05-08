@@ -35,4 +35,22 @@ export const authService = {
         });
         return response.data.data;
     },
+
+    requestPasswordReset: async (email: string): Promise<{ message: string }> => {
+        const response = await api.post<IApiResponse<{ message: string }>>('/auth/forgot-password', { email });
+        return response.data.data;
+    },
+
+    resetPassword: async (
+        email: string,
+        otpCode: string,
+        newPassword: string,
+    ): Promise<{ message: string }> => {
+        const response = await api.post<IApiResponse<{ message: string }>>('/auth/reset-password', {
+            email,
+            otpCode,
+            newPassword,
+        });
+        return response.data.data;
+    },
 };

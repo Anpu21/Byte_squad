@@ -7,8 +7,9 @@ import { authService } from '@/services/auth.service';
 import { isValidEmail } from '@/lib/utils';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import Logo from '@/components/ui/Logo';
-import { cn } from '@/lib/utils';
+import OnboardingStepper from '@/components/auth/OnboardingStepper';
 
 interface FieldErrors {
     firstName?: string;
@@ -18,9 +19,6 @@ interface FieldErrors {
     confirmPassword?: string;
     phone?: string;
 }
-
-const inputBase =
-    'w-full h-[42px] px-3 bg-surface border rounded-md text-[13px] text-text-1 placeholder:text-text-3 outline-none transition-colors';
 
 export default function SignupPage() {
     const [firstName, setFirstName] = useState('');
@@ -83,18 +81,18 @@ export default function SignupPage() {
         }
     };
 
-    const inputClass = (hasError?: string) =>
-        cn(
-            inputBase,
-            hasError
-                ? 'border-danger focus:border-danger focus:ring-[3px] focus:ring-danger/20'
-                : 'border-border-strong focus:border-primary focus:ring-[3px] focus:ring-primary/20',
+    const clearError = (field: keyof FieldErrors) =>
+        setErrors((prev) =>
+            prev[field] ? { ...prev, [field]: undefined } : prev,
         );
 
     return (
         <>
             <Logo size={36} />
-            <h1 className="mt-7 text-[28px] font-bold tracking-[-0.02em] text-text-1 leading-tight">
+            <div className="mt-7">
+                <OnboardingStepper currentStep={1} />
+            </div>
+            <h1 className="text-[28px] font-bold tracking-[-0.02em] text-text-1 leading-tight">
                 Create your account
             </h1>
             <p className="text-xs text-text-2 mt-1.5 mb-7">
@@ -103,92 +101,66 @@ export default function SignupPage() {
 
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
                 <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <label className="block text-xs font-medium text-text-2 mb-1.5">
-                            First name
-                        </label>
-                        <input
-                            type="text"
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
-                            placeholder="Jane"
-                            className={inputClass(errors.firstName)}
-                        />
-                        {errors.firstName && (
-                            <p className="mt-1.5 text-xs text-danger font-medium">
-                                {errors.firstName}
-                            </p>
-                        )}
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-text-2 mb-1.5">
-                            Last name
-                        </label>
-                        <input
-                            type="text"
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
-                            placeholder="Doe"
-                            className={inputClass(errors.lastName)}
-                        />
-                        {errors.lastName && (
-                            <p className="mt-1.5 text-xs text-danger font-medium">
-                                {errors.lastName}
-                            </p>
-                        )}
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-xs font-medium text-text-2 mb-1.5">
-                        Email
-                    </label>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@company.com"
-                        className={inputClass(errors.email)}
+                    <Input
+                        label="First name"
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => {
+                            setFirstName(e.target.value);
+                            clearError('firstName');
+                        }}
+                        placeholder="Jane"
+                        error={errors.firstName}
+                        sizeVariant="lg"
                     />
-                    {errors.email && (
-                        <p className="mt-1.5 text-xs text-danger font-medium">
-                            {errors.email}
-                        </p>
-                    )}
-                </div>
-
-                <div>
-                    <label className="block text-xs font-medium text-text-2 mb-1.5">
-                        Phone <span className="text-text-3">(optional)</span>
-                    </label>
-                    <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+94 …"
-                        className={inputClass()}
+                    <Input
+                        label="Last name"
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => {
+                            setLastName(e.target.value);
+                            clearError('lastName');
+                        }}
+                        placeholder="Doe"
+                        error={errors.lastName}
+                        sizeVariant="lg"
                     />
                 </div>
 
-                <div>
-                    <label className="block text-xs font-medium text-text-2 mb-1.5">
-                        Password
-                    </label>
-                    <div
-                        className={cn(
-                            'flex items-center gap-2 h-[42px] px-3 bg-surface border rounded-md transition-colors',
-                            errors.password
-                                ? 'border-danger'
-                                : 'border-border-strong focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/20',
-                        )}
-                    >
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="At least 8 characters"
-                            className="flex-1 bg-transparent outline-none text-[13px] text-text-1 placeholder:text-text-3"
-                        />
+                <Input
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                        setEmail(e.target.value);
+                        clearError('email');
+                    }}
+                    placeholder="you@company.com"
+                    error={errors.email}
+                    sizeVariant="lg"
+                />
+
+                <Input
+                    label="Phone (optional)"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+94 …"
+                    sizeVariant="lg"
+                />
+
+                <Input
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => {
+                        setPassword(e.target.value);
+                        clearError('password');
+                    }}
+                    placeholder="At least 8 characters"
+                    error={errors.password}
+                    sizeVariant="lg"
+                    rightSlot={
                         <button
                             type="button"
                             onClick={() => setShowPassword((s) => !s)}
@@ -197,31 +169,21 @@ export default function SignupPage() {
                         >
                             {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                         </button>
-                    </div>
-                    {errors.password && (
-                        <p className="mt-1.5 text-xs text-danger font-medium">
-                            {errors.password}
-                        </p>
-                    )}
-                </div>
+                    }
+                />
 
-                <div>
-                    <label className="block text-xs font-medium text-text-2 mb-1.5">
-                        Confirm password
-                    </label>
-                    <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter your password"
-                        className={inputClass(errors.confirmPassword)}
-                    />
-                    {errors.confirmPassword && (
-                        <p className="mt-1.5 text-xs text-danger font-medium">
-                            {errors.confirmPassword}
-                        </p>
-                    )}
-                </div>
+                <Input
+                    label="Confirm password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        clearError('confirmPassword');
+                    }}
+                    placeholder="Re-enter your password"
+                    error={errors.confirmPassword}
+                    sizeVariant="lg"
+                />
 
                 <Button
                     type="submit"

@@ -486,6 +486,7 @@ export interface IUserProfile extends IUser {
 
 export type CustomerRequestStatus =
     | 'pending'
+    | 'accepted'
     | 'completed'
     | 'rejected'
     | 'cancelled'
@@ -514,6 +515,7 @@ export interface IShopBranch {
     name: string;
     address: string;
     phone: string;
+    staffCount: number;
 }
 
 export interface ICustomerRequestItem {

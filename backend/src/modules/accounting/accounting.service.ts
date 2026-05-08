@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
@@ -7,6 +12,21 @@ import { Expense } from '@accounting/entities/expense.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
+import { ReviewExpenseDto } from '@accounting/dto/review-expense.dto';
+import { ExpenseStatus } from '@common/enums/expense-status.enum';
+import { UserRole } from '@common/enums/user-roles.enums';
+
+interface RequestUser {
+  id: string;
+  role: UserRole;
+  branchId: string | null;
+}
+
+export interface GetExpensesOptions {
+  branchId?: string;
+  status?: ExpenseStatus;
+  search?: string;
+}
 
 export interface PaginatedLedger {
   items: LedgerEntry[];
@@ -150,11 +170,25 @@ export class AccountingService {
 
   async createExpense(
     dto: CreateExpenseDto,
-    createdBy: string,
+    user: RequestUser,
   ): Promise<Expense> {
+    // Managers can only add expenses to their own branch.
+    // Admins may pick any branch via dto.branchId; fall back to their own.
+    let branchId: string | null;
+    if (user.role === UserRole.MANAGER) {
+      branchId = user.branchId;
+    } else {
+      branchId = dto.branchId ?? user.branchId;
+    }
+    if (!branchId) {
+      throw new ForbiddenException('No branch context available');
+    }
+
     const expense = this.expenseRepository.create({
       ...dto,
-      createdBy,
+      branchId,
+      createdBy: user.id,
+      status: ExpenseStatus.PENDING,
     });
     const saved = await this.expenseRepository.save(expense);
 
@@ -171,19 +205,78 @@ export class AccountingService {
     return saved;
   }
 
-  async deleteExpense(id: string): Promise<void> {
+  async deleteExpense(id: string, user: RequestUser): Promise<void> {
+    const expense = await this.expenseRepository.findOne({ where: { id } });
+    if (!expense) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    if (user.role === UserRole.MANAGER) {
+      if (expense.branchId !== user.branchId) {
+        throw new ForbiddenException(
+          'Cannot delete expenses from another branch',
+        );
+      }
+      if (expense.status !== ExpenseStatus.PENDING) {
+        throw new ForbiddenException(
+          'Only pending expenses can be deleted',
+        );
+      }
+    }
+
     // Also delete any associated ledger entry
     const refPrefix = `EXP-${id.substring(0, 8).toUpperCase()}`;
     await this.ledgerRepository.delete({ referenceNumber: refPrefix });
     await this.expenseRepository.delete(id);
   }
 
-  async getExpenses(branchId: string): Promise<Expense[]> {
-    return this.expenseRepository.find({
-      where: { branchId },
-      relations: ['creator'],
-      order: { createdAt: 'DESC' },
-    });
+  async getExpenses(opts: GetExpensesOptions = {}): Promise<Expense[]> {
+    const qb = this.expenseRepository
+      .createQueryBuilder('expense')
+      .leftJoinAndSelect('expense.creator', 'creator')
+      .leftJoinAndSelect('expense.reviewer', 'reviewer')
+      .leftJoinAndSelect('expense.branch', 'branch')
+      .orderBy('expense.created_at', 'DESC');
+
+    if (opts.branchId) {
+      qb.andWhere('expense.branch_id = :branchId', { branchId: opts.branchId });
+    }
+
+    if (opts.status) {
+      qb.andWhere('expense.status = :status', { status: opts.status });
+    }
+
+    if (opts.search) {
+      qb.andWhere(
+        '(expense.description ILIKE :search OR expense.category ILIKE :search)',
+        { search: `%${opts.search}%` },
+      );
+    }
+
+    return qb.getMany();
+  }
+
+  async reviewExpense(
+    id: string,
+    dto: ReviewExpenseDto,
+    reviewerId: string,
+  ): Promise<Expense> {
+    const expense = await this.expenseRepository.findOne({ where: { id } });
+    if (!expense) {
+      throw new NotFoundException('Expense not found');
+    }
+    if (expense.status !== ExpenseStatus.PENDING) {
+      throw new BadRequestException(
+        `Expense is already ${expense.status} and cannot be reviewed again`,
+      );
+    }
+
+    expense.status = dto.status;
+    expense.reviewedBy = reviewerId;
+    expense.reviewedAt = new Date();
+    expense.reviewNote = dto.note ?? null;
+
+    return this.expenseRepository.save(expense);
   }
 
   async getProfitLoss(

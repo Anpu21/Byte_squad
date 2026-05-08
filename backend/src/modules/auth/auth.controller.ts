@@ -12,6 +12,8 @@ import { SignupDto } from '@auth/dto/signup.dto';
 import { VerifyOtpDto } from '@auth/dto/verify-otp.dto';
 import { ResendOtpDto } from '@auth/dto/resend-otp.dto';
 import { ChangePasswordDto } from '@auth/dto/change-password.dto';
+import { ForgotPasswordDto } from '@auth/dto/forgot-password.dto';
+import { ResetPasswordDto } from '@auth/dto/reset-password.dto';
 import { APP_ROUTES } from '@common/routes/app.routes';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
@@ -49,5 +51,17 @@ export class AuthController {
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(userId, changePasswordDto);
+  }
+
+  @Post(APP_ROUTES.AUTH.FORGOT_PASSWORD)
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.requestPasswordReset(dto);
+  }
+
+  @Post(APP_ROUTES.AUTH.RESET_PASSWORD)
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { X, Trash2, Minus, Plus, ShoppingCart } from 'lucide-react';
@@ -24,6 +24,15 @@ export default function CartDrawer() {
     const items = useSelector((state: RootState) => state.shopCart.items);
     const isOpen = useSelector((state: RootState) => state.shopCart.isCartOpen);
     const total = selectCartTotal(items);
+    const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+    const markImageFailed = (productId: string) =>
+        setFailedImages((prev) => {
+            if (prev.has(productId)) return prev;
+            const next = new Set(prev);
+            next.add(productId);
+            return next;
+        });
 
     useEffect(() => {
         if (!isOpen) return;
@@ -49,7 +58,8 @@ export default function CartDrawer() {
             <div
                 onClick={close}
                 aria-hidden={!isOpen}
-                className={`fixed inset-0 bg-black/50 z-30 transition-opacity ${
+                style={{ background: 'var(--overlay)' }}
+                className={`fixed inset-0 z-30 transition-opacity ${
                     isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
             />
@@ -91,17 +101,18 @@ export default function CartDrawer() {
                             </p>
                         </div>
                     ) : (
-                        <ul className="divide-y divide-white/5">
+                        <ul className="divide-y divide-border">
                             {items.map((item) => (
                                 <li
                                     key={item.productId}
                                     className="flex items-center gap-3 px-5 py-3"
                                 >
-                                    <div className="w-14 h-14 bg-[#111] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-                                        {item.imageUrl ? (
+                                    <div className="w-14 h-14 bg-surface-2 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+                                        {item.imageUrl && !failedImages.has(item.productId) ? (
                                             <img
                                                 src={item.imageUrl}
                                                 alt={item.name}
+                                                onError={() => markImageFailed(item.productId)}
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
@@ -194,7 +205,7 @@ export default function CartDrawer() {
                             <button
                                 type="button"
                                 onClick={goToCheckout}
-                                className="px-3 py-2 text-xs font-semibold bg-primary text-black rounded-lg hover:bg-slate-200 transition-colors"
+                                className="px-3 py-2 text-xs font-semibold bg-primary text-text-inv rounded-lg hover:bg-primary-hover transition-colors"
                             >
                                 Checkout →
                             </button>

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Bell, ArrowRightLeft, Check } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationType } from '@/constants/enums';
 import { FRONTEND_ROUTES } from '@/constants/routes';
@@ -7,8 +8,12 @@ import type { INotification } from '@/types/index';
 import {
     timeAgo,
     typeIcon,
-    groupByDate,
+    typeLabel,
+    typeBadgeColor,
 } from '@/components/notifications/notificationUtils';
+import Card, { CardContent } from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import Segmented from '@/components/ui/Segmented';
 
 type FilterTab = 'all' | 'unread' | NotificationType;
 
@@ -34,119 +39,184 @@ function getFilteredNotifications(
     }
 }
 
-function getFilterCount(
-    notifications: INotification[],
-    filter: FilterTab,
-): number {
-    return getFilteredNotifications(notifications, filter).length;
-}
-
-function NotificationItem({
+function NotificationRow({
     notification,
-    onOpen,
+    isActive,
+    onSelect,
 }: {
     notification: INotification;
-    onOpen: (notification: INotification) => void;
+    isActive: boolean;
+    onSelect: (n: INotification) => void;
 }) {
     return (
-        <div
-            className={`border-b border-border transition-colors ${
-                notification.isRead ? 'opacity-60' : 'bg-surface-2'
-            }`}
+        <button
+            type="button"
+            onClick={() => onSelect(notification)}
+            className={`w-full text-left flex items-start gap-3 px-4 py-3.5 border-l-2 transition-colors ${
+                isActive
+                    ? 'border-l-primary bg-primary-soft/40'
+                    : 'border-l-transparent hover:bg-surface-2'
+            } ${notification.isRead ? '' : 'bg-surface-2/40'}`}
         >
-            <button
-                onClick={() => onOpen(notification)}
-                className="flex items-start gap-4 px-6 py-4 w-full text-left hover:bg-surface-2 transition-colors"
-            >
-                {typeIcon(notification.type)}
-
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                        <p
-                            className={`text-sm font-medium ${
-                                notification.isRead
-                                    ? 'text-text-2'
-                                    : 'text-text-1'
-                            }`}
-                        >
-                            {notification.title}
-                        </p>
-                        {!notification.isRead && (
-                            <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                        )}
-                    </div>
-                    <p className="text-[13px] text-text-3 mt-0.5 leading-relaxed truncate">
-                        {notification.message}
+            {typeIcon(notification.type)}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                    <p
+                        className={`text-sm truncate ${
+                            notification.isRead
+                                ? 'text-text-2 font-medium'
+                                : 'text-text-1 font-semibold'
+                        }`}
+                    >
+                        {notification.title}
                     </p>
+                    {!notification.isRead && (
+                        <span
+                            className="w-2 h-2 rounded-full bg-primary flex-shrink-0"
+                            aria-hidden
+                        />
+                    )}
                 </div>
-
-                <span className="text-[11px] text-text-3 font-medium flex-shrink-0 mt-0.5">
+                <p className="text-[12.5px] text-text-3 mt-0.5 leading-relaxed line-clamp-2">
+                    {notification.message}
+                </p>
+                <p className="text-[11px] text-text-3 mt-1.5">
                     {timeAgo(notification.createdAt)}
-                </span>
+                </p>
+            </div>
+        </button>
+    );
+}
 
-                <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-text-3 flex-shrink-0 mt-1"
-                >
-                    <polyline points="9 18 15 12 9 6" />
-                </svg>
-            </button>
+function StatCell({ label, value }: { label: string; value: string | number }) {
+    return (
+        <div className="rounded-md border border-border bg-surface-2 px-3 py-2.5">
+            <p className="text-[11px] uppercase tracking-widest text-text-3">
+                {label}
+            </p>
+            <p className="text-lg font-semibold text-text-1 mt-0.5 mono">
+                {value}
+            </p>
         </div>
     );
 }
 
-function EmptyState({ filter }: { filter: FilterTab }) {
-    const messages: Record<string, { title: string; subtitle: string }> = {
-        all: {
-            title: 'No notifications yet',
-            subtitle: "You're all set — nothing to see here.",
-        },
-        unread: {
-            title: 'All caught up',
-            subtitle: 'You have no unread notifications.',
-        },
-        [NotificationType.LOW_STOCK]: {
-            title: 'No low stock alerts',
-            subtitle: 'All inventory levels are healthy.',
-        },
-        [NotificationType.SYSTEM]: {
-            title: 'No system notifications',
-            subtitle: 'No system messages at this time.',
-        },
-        [NotificationType.ALERT]: {
-            title: 'No alerts',
-            subtitle: 'Everything is running smoothly.',
-        },
-    };
+function DetailPane({
+    notification,
+    onDismiss,
+}: {
+    notification: INotification;
+    onDismiss: (id: string) => void;
+}) {
+    const navigate = useNavigate();
+    const meta = (notification.metadata ?? {}) as Record<string, unknown>;
 
-    const msg = messages[filter] ?? messages.all;
+    const statDefs: { label: string; key: string }[] = [
+        { label: 'Current stock', key: 'currentStock' },
+        { label: 'Threshold', key: 'threshold' },
+        { label: 'Avg daily sale', key: 'avgDailySale' },
+        { label: 'Days remaining', key: 'daysRemaining' },
+    ];
+
+    const stats = statDefs
+        .filter((s) => meta[s.key] !== undefined && meta[s.key] !== null)
+        .map((s) => ({ ...s, value: String(meta[s.key]) }));
+
+    const branchContext =
+        typeof meta.branch === 'string'
+            ? meta.branch
+            : typeof meta.branchName === 'string'
+              ? meta.branchName
+              : null;
+
+    const isLowStock = notification.type === NotificationType.LOW_STOCK;
 
     return (
-        <div className="flex flex-col items-center justify-center py-16 text-text-3">
-            <svg
-                width="40"
-                height="40"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mb-4 opacity-40"
-            >
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            <p className="text-sm font-medium">{msg.title}</p>
-            <p className="text-xs text-text-3 mt-1">{msg.subtitle}</p>
-        </div>
+        <Card>
+            <CardContent className="p-6 space-y-5">
+                <div className="flex items-center gap-2">
+                    <span
+                        className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${typeBadgeColor(
+                            notification.type,
+                        )}`}
+                    >
+                        {typeLabel(notification.type)}
+                    </span>
+                    <span
+                        className="w-1 h-1 rounded-full bg-text-3"
+                        aria-hidden
+                    />
+                    <span className="text-xs text-text-3">
+                        {timeAgo(notification.createdAt)}
+                    </span>
+                </div>
+
+                <div>
+                    <h2 className="text-xl font-semibold text-text-1 tracking-tight leading-snug">
+                        {notification.title}
+                    </h2>
+                    {branchContext && (
+                        <p className="text-sm text-text-2 mt-1">
+                            Branch: {branchContext}
+                        </p>
+                    )}
+                </div>
+
+                <p className="text-[15px] text-text-1 leading-relaxed whitespace-pre-wrap">
+                    {notification.message}
+                </p>
+
+                {isLowStock && stats.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {stats.map((s) => (
+                            <StatCell
+                                key={s.key}
+                                label={s.label}
+                                value={s.value}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {isLowStock && (
+                        <Button
+                            type="button"
+                            onClick={() =>
+                                navigate(FRONTEND_ROUTES.TRANSFERS_NEW)
+                            }
+                        >
+                            <ArrowRightLeft size={14} />
+                            Create transfer
+                        </Button>
+                    )}
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => onDismiss(notification.id)}
+                        disabled={notification.isRead}
+                    >
+                        <Check size={14} />
+                        {notification.isRead ? 'Dismissed' : 'Dismiss'}
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function DetailEmpty() {
+    return (
+        <Card>
+            <CardContent className="p-10">
+                <div className="flex flex-col items-center justify-center py-16 text-text-3">
+                    <Bell size={40} className="opacity-40 mb-4" />
+                    <p className="text-sm font-medium text-text-2">
+                        Select a notification to view details
+                    </p>
+                </div>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -155,96 +225,122 @@ export default function NotificationsPage() {
         useNotifications();
     const navigate = useNavigate();
     const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+    const [selectedId, setSelectedId] = useState<string | null>(null);
 
-    const filtered = getFilteredNotifications(notifications, activeFilter);
-    const groups = groupByDate(filtered);
+    const filtered = useMemo(
+        () => getFilteredNotifications(notifications, activeFilter),
+        [notifications, activeFilter],
+    );
 
-    const openDetail = (notification: INotification) => {
+    const segmentedOptions = FILTER_TABS.map((tab) => ({
+        value: tab.key,
+        label: `${tab.label} · ${getFilteredNotifications(notifications, tab.key).length}`,
+    }));
+
+    const selected = useMemo(
+        () => filtered.find((n) => n.id === selectedId) ?? null,
+        [filtered, selectedId],
+    );
+
+    const handleSelect = (notification: INotification) => {
+        const isDesktop =
+            typeof window !== 'undefined' && window.innerWidth >= 1024;
+
         if (!notification.isRead) {
             markAsRead(notification.id);
         }
-        navigate(
-            FRONTEND_ROUTES.NOTIFICATION_DETAIL.replace(':id', notification.id),
-        );
+
+        if (isDesktop) {
+            setSelectedId(notification.id);
+        } else {
+            navigate(
+                FRONTEND_ROUTES.NOTIFICATION_DETAIL.replace(
+                    ':id',
+                    notification.id,
+                ),
+            );
+        }
+    };
+
+    const handleDismiss = (id: string) => {
+        markAsRead(id);
     };
 
     return (
         <div className="animate-in fade-in duration-300">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-start justify-between gap-3 mb-5">
                 <div>
                     <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                         Notifications
                     </h1>
                     <p className="text-sm text-text-3 mt-1">
                         {unreadCount > 0
-                            ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
+                            ? `You have ${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`
                             : 'All caught up'}
                     </p>
                 </div>
-
                 {unreadCount > 0 && (
-                    <button
-                        onClick={markAllAsRead}
-                        className="text-sm font-medium text-text-2 hover:text-text-1 px-4 py-2 rounded-lg hover:bg-surface-2 transition-colors"
-                    >
-                        Mark all as read
-                    </button>
+                    <Button variant="secondary" onClick={markAllAsRead}>
+                        Mark all read
+                    </Button>
                 )}
             </div>
 
-            {/* Filter tabs */}
-            <div className="flex items-center gap-1 mb-4 p-1 bg-surface-2 rounded-xl border border-border w-fit">
-                {FILTER_TABS.map((tab) => {
-                    const count = getFilterCount(notifications, tab.key);
-                    const isActive = activeFilter === tab.key;
-                    return (
-                        <button
-                            key={tab.key}
-                            onClick={() => setActiveFilter(tab.key)}
-                            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
-                                isActive
-                                    ? 'bg-primary text-text-inv shadow-sm'
-                                    : 'text-text-2 hover:text-text-1 hover:bg-surface-2'
-                            }`}
-                        >
-                            {tab.label}
-                            <span
-                                className={`text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full ${
-                                    isActive
-                                        ? 'bg-slate-900/10 text-text-3'
-                                        : 'bg-surface-2 text-text-3'
-                                }`}
-                            >
-                                {count}
-                            </span>
-                        </button>
-                    );
-                })}
+            {/* Filter row */}
+            <div className="mb-4">
+                <Segmented<FilterTab>
+                    value={activeFilter}
+                    options={segmentedOptions}
+                    onChange={setActiveFilter}
+                />
             </div>
 
-            {/* Notifications list */}
-            <div className="bg-surface border border-border rounded-md overflow-hidden">
-                {filtered.length === 0 ? (
-                    <EmptyState filter={activeFilter} />
-                ) : (
-                    groups.map((group) => (
-                        <div key={group.label}>
-                            <div className="px-6 py-2.5 bg-surface-2 border-b border-border">
-                                <p className="text-[11px] font-semibold text-text-3 uppercase tracking-wider">
-                                    {group.label}
-                                </p>
-                            </div>
-                            {group.notifications.map((n) => (
-                                <NotificationItem
-                                    key={n.id}
-                                    notification={n}
-                                    onOpen={openDetail}
-                                />
-                            ))}
+            {/* Split view */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Left: list */}
+                <div className="lg:col-span-1">
+                    <Card>
+                        <div className="max-h-[calc(100vh-260px)] overflow-y-auto">
+                            {filtered.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-text-3">
+                                    <Bell
+                                        size={36}
+                                        className="opacity-40 mb-3"
+                                    />
+                                    <p className="text-sm font-medium text-text-2">
+                                        {activeFilter === 'unread'
+                                            ? 'All caught up'
+                                            : 'No notifications'}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-border">
+                                    {filtered.map((n) => (
+                                        <NotificationRow
+                                            key={n.id}
+                                            notification={n}
+                                            isActive={selectedId === n.id}
+                                            onSelect={handleSelect}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    ))
-                )}
+                    </Card>
+                </div>
+
+                {/* Right: detail (desktop only) */}
+                <div className="hidden lg:block lg:col-span-2">
+                    {selected ? (
+                        <DetailPane
+                            notification={selected}
+                            onDismiss={handleDismiss}
+                        />
+                    ) : (
+                        <DetailEmpty />
+                    )}
+                </div>
             </div>
         </div>
     );

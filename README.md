@@ -37,7 +37,7 @@
 
 ## Design System
 
-The frontend is built on a token-first design system based on the [Anthropic Claude Design](https://claude.ai/design) handoff for "Ledger Pro Redesign". Every color, font, radius, and shadow flows through CSS variables defined in [frontend/src/index.css](frontend/src/index.css), and is exposed to Tailwind via the `@theme` directive so pages can write `bg-surface`, `text-text-1`, `border-border-strong` instead of hardcoded hex literals.
+The frontend is built on  Every color, font, radius, and shadow flows through CSS variables defined in [frontend/src/index.css](frontend/src/index.css), and is exposed to Tailwind via the `@theme` directive so pages can write `bg-surface`, `text-text-1`, `border-border-strong` instead of hardcoded hex literals.
 
 ### Theme tokens
 

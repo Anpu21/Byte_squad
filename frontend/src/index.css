@@ -80,6 +80,7 @@
   --shadow-md: 0 6px 18px rgba(25,24,59,.08);
   --shadow-lg: 0 18px 40px rgba(25,24,59,.16);
   --ring: 0 0 0 3px rgba(25,24,59,.18);
+  --overlay: rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="dark"] {
@@ -116,6 +117,7 @@
   --shadow-md: 0 6px 18px rgba(0,0,0,.5);
   --shadow-lg: 0 18px 40px rgba(0,0,0,.6);
   --ring: 0 0 0 3px rgba(161,194,189,.3);
+  --overlay: rgba(8, 7, 24, 0.7);
 }
 
 html, body {
@@ -134,6 +136,30 @@ html, body {
 .shadow-lg-token { box-shadow: var(--shadow-lg); }
 
 input, textarea, select, button { font-family: inherit; }
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-3);
+  opacity: 1;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-2);
+  opacity: 0.85;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset !important;
+  -webkit-text-fill-color: var(--text-1) !important;
+  caret-color: var(--text-1) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
 
 *::-webkit-scrollbar { width: 10px; height: 10px; }
 *::-webkit-scrollbar-track { background: transparent; }

@@ -63,6 +63,17 @@ export class CustomerRequestsController {
     return this.service.cancelByUser(id, userId);
   }
 
+  @Patch(APP_ROUTES.CUSTOMER_REQUESTS.ACCEPT)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  accept(
+    @Param('id') id: string,
+    @CurrentUser()
+    actor: { id: string; role: UserRole; branchId: string | null },
+  ) {
+    return this.service.acceptByStaff(id, actor);
+  }
+
   @Patch(APP_ROUTES.CUSTOMER_REQUESTS.REJECT)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)

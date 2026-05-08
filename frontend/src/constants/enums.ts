@@ -59,3 +59,9 @@ export enum TransferStatus {
     COMPLETED = 'completed',
     CANCELLED = 'cancelled',
 }
+
+export enum ExpenseStatus {
+    PENDING = 'pending',
+    APPROVED = 'approved',
+    REJECTED = 'rejected',
+}

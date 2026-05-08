@@ -64,6 +64,13 @@ export const customerRequestsService = {
         return response.data.data;
     },
 
+    acceptByStaff: async (id: string): Promise<ICustomerRequest> => {
+        const response = await api.patch<IApiResponse<ICustomerRequest>>(
+            `/customer-requests/${id}/accept`,
+        );
+        return response.data.data;
+    },
+
     rejectByStaff: async (id: string): Promise<ICustomerRequest> => {
         const response = await api.patch<IApiResponse<ICustomerRequest>>(
             `/customer-requests/${id}/reject`,
