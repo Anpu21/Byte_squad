@@ -10,6 +10,11 @@ import {
 } from 'recharts';
 import { branchesService } from '@/services/branches.service';
 import type { IMyBranchPerformance } from '@/types';
+import KpiCard from '@/components/ui/KpiCard';
+import Card from '@/components/ui/Card';
+import Pill from '@/components/ui/Pill';
+import EmptyState from '@/components/ui/EmptyState';
+import { Building2, AlertTriangle } from 'lucide-react';
 
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-LK', {
@@ -41,11 +46,11 @@ interface TooltipPayload {
 function ChartTooltip({ active, payload }: TooltipPayload) {
     if (!active || !payload || !payload.length) return null;
     return (
-        <div className="bg-canvas border border-border rounded-xl p-3 shadow-2xl">
+        <div className="bg-surface border border-border rounded-md p-3 shadow-md-token">
             <p className="text-[11px] font-semibold text-text-2 uppercase tracking-wider mb-1">
                 {payload[0].payload.label}
             </p>
-            <p className="text-sm font-bold text-text-1 tabular-nums">
+            <p className="mono text-sm font-bold text-text-1">
                 {formatCurrency(payload[0].value)}
             </p>
         </div>
@@ -81,7 +86,7 @@ export default function BranchPerformancePage() {
                 </p>
                 <button
                     onClick={() => refetch()}
-                    className="px-4 py-2 bg-primary text-text-inv rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors"
+                    className="px-4 py-2 bg-primary text-text-inv rounded-md text-sm font-semibold hover:bg-primary-hover transition-colors"
                 >
                     Retry
                 </button>
@@ -107,173 +112,188 @@ export default function BranchPerformancePage() {
         sales: d.sales,
     }));
 
-    const todayCards = [
-        {
-            title: "Today's Sales",
-            value: formatCurrency(today.sales),
-            sub: `${today.transactions} transactions`,
-        },
-        {
-            title: 'Avg Transaction',
-            value: formatCurrency(today.avgTransaction),
-            sub: 'Today',
-        },
-        {
-            title: 'This Week',
-            value: formatCurrency(week.sales),
-            sub: `${week.transactions} transactions`,
-        },
-        {
-            title: 'Staff',
-            value: String(staff.total),
-            sub: `${staff.byRole.cashier} cashier${staff.byRole.cashier === 1 ? '' : 's'}`,
-        },
-    ];
-
-    const monthCards = [
-        {
-            title: 'Month Revenue',
-            value: formatCurrency(month.revenue),
-            sub: `${month.transactions} txns`,
-            tone: 'default' as const,
-        },
-        {
-            title: 'Month Expenses',
-            value: formatCurrency(month.expenses),
-            sub: 'This month',
-            tone: 'default' as const,
-        },
-        {
-            title: 'Net Profit',
-            value: formatCurrency(month.netProfit),
-            sub: month.netProfit >= 0 ? 'Profitable' : 'Loss',
-            tone: month.netProfit >= 0
-                ? ('positive' as const)
-                : ('negative' as const),
-        },
-        {
-            title: 'Low Stock Alerts',
-            value: String(inventory.lowStockItems),
-            sub: `${inventory.outOfStock} out of stock`,
-            tone:
-                inventory.lowStockItems > 0
-                    ? ('warning' as const)
-                    : ('default' as const),
-        },
-    ];
-
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Header: Branch info */}
-            <div className="bg-surface border border-border rounded-md p-6 mb-6">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Branch header card */}
+            <Card className="p-6 mb-6">
                 <div className="flex items-start justify-between flex-wrap gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-3 flex-wrap mb-2">
                             <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                                 {branch.name}
                             </h1>
-                            {branch.isActive ? (
-                                <span className="inline-flex items-center gap-1.5 text-text-1 text-[13px] bg-surface-2 border border-border rounded-full px-2.5 py-0.5">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                                    Active
-                                </span>
-                            ) : (
-                                <span className="inline-flex items-center gap-1.5 text-text-3 text-[13px] bg-surface-2 border border-border rounded-full px-2.5 py-0.5">
-                                    <span className="w-2 h-2 rounded-full bg-slate-600" />
-                                    Inactive
+                            <Pill tone={branch.isActive ? 'success' : 'neutral'}>
+                                {branch.isActive ? 'Active' : 'Inactive'}
+                            </Pill>
+                        </div>
+                        <p className="text-sm text-text-2">
+                            {branch.address}
+                            {admin && (
+                                <span>
+                                    {' '}· Manager: <span className="text-text-1 font-medium">{admin.name}</span>
                                 </span>
                             )}
-                        </div>
-                        <p className="text-sm text-text-2">{branch.address}</p>
-                        <p className="text-sm text-text-2">{branch.phone}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1">
-                            Branch Admin
                         </p>
-                        {admin ? (
-                            <>
-                                <p className="text-sm font-semibold text-text-1">
-                                    {admin.name}
-                                </p>
-                                <p className="text-xs text-text-3">
-                                    {admin.email}
-                                </p>
-                            </>
-                        ) : (
-                            <p className="text-sm text-warning">
-                                No admin assigned
+                        <p className="text-xs text-text-3 mt-0.5">
+                            {branch.phone}
+                        </p>
+                    </div>
+                </div>
+            </Card>
+
+            {/* KPI cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <KpiCard
+                    label="Today's revenue"
+                    value={formatCurrency(today.sales)}
+                    delta={`${today.transactions} transactions`}
+                    sparkColor="var(--accent)"
+                    sparkData={chartData.map((c) => c.sales).slice(-7) || [1, 2]}
+                />
+                <KpiCard
+                    label="Avg transaction"
+                    value={formatCurrency(today.avgTransaction)}
+                    delta="Today"
+                    sparkColor="var(--primary)"
+                    sparkData={[3, 4, 5, 4, 6, 5, 7]}
+                />
+                <KpiCard
+                    label="This week"
+                    value={formatCurrency(week.sales)}
+                    delta={`${week.transactions} transactions`}
+                    sparkColor="var(--brand-400)"
+                    sparkData={chartData.map((c) => c.sales) || [1, 2]}
+                />
+                <KpiCard
+                    label="Low stock items"
+                    value={String(inventory.lowStockItems)}
+                    delta={`${inventory.outOfStock} out of stock`}
+                    deltaPositive={inventory.lowStockItems === 0}
+                    sparkColor="var(--warning)"
+                    sparkData={[2, 3, 4, 3, 4, 5, 4]}
+                />
+            </div>
+
+            {/* Two-column: Low stock alerts + Staff by role */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                {/* Low stock alerts (2/3) */}
+                <Card className="lg:col-span-2 overflow-hidden">
+                    <div className="p-5 border-b border-border flex items-center justify-between">
+                        <div>
+                            <h3 className="text-[15px] font-semibold text-text-1 tracking-tight">
+                                Low stock alerts
+                            </h3>
+                            <p className="text-xs text-text-2 mt-0.5">
+                                Items at or below threshold
                             </p>
+                        </div>
+                        {lowStockList.length > 0 && (
+                            <Pill tone="danger">{inventory.lowStockItems} total</Pill>
                         )}
                     </div>
-                </div>
-            </div>
+                    {lowStockList.length === 0 ? (
+                        <EmptyState
+                            icon={<AlertTriangle size={20} />}
+                            title="All stock levels healthy"
+                            description="No items are currently below their threshold."
+                        />
+                    ) : (
+                        <div className="divide-y divide-border">
+                            {lowStockList.map((item) => {
+                                const isOut = item.quantity === 0;
+                                return (
+                                    <div
+                                        key={item.productId}
+                                        className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-surface-2 transition-colors"
+                                    >
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[13px] font-medium text-text-1 truncate">
+                                                {item.name}
+                                            </p>
+                                            <p className="text-xs text-text-3 mt-0.5">
+                                                on hand{' '}
+                                                <span
+                                                    className={`mono font-semibold ${
+                                                        isOut
+                                                            ? 'text-danger'
+                                                            : 'text-warning'
+                                                    }`}
+                                                >
+                                                    {item.quantity}
+                                                </span>{' '}
+                                                / {item.threshold}
+                                            </p>
+                                        </div>
+                                        <Pill tone={isOut ? 'danger' : 'warning'}>
+                                            {isOut ? 'Out of stock' : 'Low'}
+                                        </Pill>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </Card>
 
-            {/* Today KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                {todayCards.map((card) => (
-                    <div
-                        key={card.title}
-                        className="bg-surface border border-border rounded-md p-5"
-                    >
-                        <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
-                            {card.title}
-                        </p>
-                        <p className="text-2xl font-bold text-text-1 tracking-tight tabular-nums">
-                            {card.value}
-                        </p>
-                        <p className="text-xs text-text-3 mt-1">{card.sub}</p>
-                    </div>
-                ))}
-            </div>
-
-            {/* Month KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {monthCards.map((card) => {
-                    const valueClass =
-                        card.tone === 'positive'
-                            ? 'text-accent-text'
-                            : card.tone === 'negative'
-                              ? 'text-danger'
-                              : card.tone === 'warning'
-                                ? 'text-warning'
-                                : 'text-text-1';
-                    return (
-                        <div
-                            key={card.title}
-                            className="bg-surface border border-border rounded-md p-5"
-                        >
-                            <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
-                                {card.title}
-                            </p>
-                            <p
-                                className={`text-2xl font-bold tracking-tight tabular-nums ${valueClass}`}
-                            >
-                                {card.value}
-                            </p>
-                            <p className="text-xs text-text-3 mt-1">
-                                {card.sub}
+                {/* Staff by role (1/3) */}
+                <Card className="p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="text-[15px] font-semibold text-text-1 tracking-tight">
+                                Team
+                            </h3>
+                            <p className="text-xs text-text-2 mt-0.5">
+                                {staff.total} member{staff.total === 1 ? '' : 's'}
                             </p>
                         </div>
-                    );
-                })}
+                        <Building2 size={16} className="text-text-3" />
+                    </div>
+                    <div className="space-y-3">
+                        {[
+                            { label: 'Admin', count: staff.byRole.admin },
+                            { label: 'Manager', count: staff.byRole.manager },
+                            { label: 'Cashier', count: staff.byRole.cashier },
+                        ].map((r) => (
+                            <div
+                                key={r.label}
+                                className="flex items-center justify-between"
+                            >
+                                <span className="text-[13px] text-text-2">
+                                    {r.label}
+                                </span>
+                                <span className="mono text-sm font-semibold text-text-1">
+                                    {r.count}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+                        <span className="text-[13px] font-semibold text-text-1">
+                            Total
+                        </span>
+                        <span className="mono text-lg font-bold text-text-1">
+                            {staff.total}
+                        </span>
+                    </div>
+                </Card>
             </div>
 
-            {/* Sales chart (last 7 days) */}
-            <div className="bg-surface border border-border rounded-md p-5 mb-6">
-                <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest">
-                        Sales — Last 7 Days
-                    </h2>
-                    <p className="text-xs text-text-3">
-                        Total: {formatCurrency(week.sales)}
-                    </p>
+            {/* Sales chart */}
+            <Card className="p-5 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 className="text-[15px] font-semibold text-text-1 tracking-tight">
+                            Sales — last 7 days
+                        </h3>
+                        <p className="text-xs text-text-2 mt-0.5">
+                            Total: <span className="mono font-medium text-text-1">{formatCurrency(week.sales)}</span>
+                        </p>
+                    </div>
                 </div>
-                <div className="h-[280px] w-full mt-4">
+                <div className="h-[260px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart
                             data={chartData}
-                            margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
+                            margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
                         >
                             <defs>
                                 <linearGradient
@@ -285,12 +305,12 @@ export default function BranchPerformancePage() {
                                 >
                                     <stop
                                         offset="5%"
-                                        stopColor="#ffffff"
-                                        stopOpacity={0.15}
+                                        stopColor="var(--primary)"
+                                        stopOpacity={0.25}
                                     />
                                     <stop
                                         offset="95%"
-                                        stopColor="#ffffff"
+                                        stopColor="var(--primary)"
                                         stopOpacity={0}
                                     />
                                 </linearGradient>
@@ -298,34 +318,32 @@ export default function BranchPerformancePage() {
                             <CartesianGrid
                                 strokeDasharray="3 3"
                                 vertical={false}
-                                stroke="rgba(255,255,255,0.05)"
+                                stroke="var(--border)"
                             />
                             <XAxis
                                 dataKey="label"
                                 axisLine={false}
                                 tickLine={false}
                                 tick={{
-                                    fill: '#64748b',
+                                    fill: 'var(--text-3)',
                                     fontSize: 11,
-                                    fontWeight: 500,
                                 }}
-                                dy={10}
+                                dy={8}
                             />
                             <YAxis
                                 axisLine={false}
                                 tickLine={false}
                                 tick={{
-                                    fill: '#64748b',
+                                    fill: 'var(--text-3)',
                                     fontSize: 11,
-                                    fontWeight: 500,
                                 }}
-                                tickFormatter={(value: number) => `Rs ${value}`}
-                                dx={-10}
+                                tickFormatter={(value: number) => `${value / 1000}k`}
+                                dx={-4}
                             />
                             <Tooltip
                                 content={<ChartTooltip />}
                                 cursor={{
-                                    stroke: 'rgba(255,255,255,0.2)',
+                                    stroke: 'var(--border-strong)',
                                     strokeWidth: 1,
                                     strokeDasharray: '4 4',
                                 }}
@@ -333,245 +351,158 @@ export default function BranchPerformancePage() {
                             <Area
                                 type="monotone"
                                 dataKey="sales"
-                                stroke="#ffffff"
+                                stroke="var(--primary)"
                                 strokeWidth={2}
                                 fillOpacity={1}
                                 fill="url(#colorBranchSales)"
                                 activeDot={{
                                     r: 4,
-                                    fill: '#0a0a0a',
-                                    stroke: '#ffffff',
+                                    fill: 'var(--primary)',
+                                    stroke: 'var(--surface)',
                                     strokeWidth: 2,
                                 }}
                             />
                         </AreaChart>
                     </ResponsiveContainer>
                 </div>
+            </Card>
+
+            {/* Month KPIs row (compact) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <Card className="p-5">
+                    <p className="text-[11px] uppercase tracking-[0.08em] text-text-3 font-semibold mb-1">
+                        Month revenue
+                    </p>
+                    <p className="mono text-xl font-semibold text-text-1">
+                        {formatCurrency(month.revenue)}
+                    </p>
+                    <p className="text-xs text-text-3 mt-0.5">
+                        {month.transactions} transactions
+                    </p>
+                </Card>
+                <Card className="p-5">
+                    <p className="text-[11px] uppercase tracking-[0.08em] text-text-3 font-semibold mb-1">
+                        Month expenses
+                    </p>
+                    <p className="mono text-xl font-semibold text-text-1">
+                        {formatCurrency(month.expenses)}
+                    </p>
+                    <p className="text-xs text-text-3 mt-0.5">This month</p>
+                </Card>
+                <Card className="p-5">
+                    <p className="text-[11px] uppercase tracking-[0.08em] text-text-3 font-semibold mb-1">
+                        Net profit
+                    </p>
+                    <p
+                        className={`mono text-xl font-semibold ${
+                            month.netProfit >= 0 ? 'text-accent-text' : 'text-danger'
+                        }`}
+                    >
+                        {formatCurrency(month.netProfit)}
+                    </p>
+                    <p className="text-xs text-text-3 mt-0.5">
+                        {month.netProfit >= 0 ? 'Profitable' : 'Loss'}
+                    </p>
+                </Card>
             </div>
 
-            {/* Top Products + Low Stock two columns */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                {/* Top Products */}
-                <div className="bg-surface border border-border rounded-md overflow-hidden">
-                    <div className="p-5 border-b border-border">
-                        <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest">
-                            Top Products — Last 30 Days
-                        </h2>
+            {/* Top products + Recent transactions */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card className="overflow-hidden">
+                    <div className="px-5 py-4 border-b border-border">
+                        <h3 className="text-[15px] font-semibold text-text-1 tracking-tight">
+                            Top products
+                        </h3>
+                        <p className="text-xs text-text-2 mt-0.5">Last 30 days</p>
                     </div>
-                    <div className="overflow-auto">
-                        <table className="w-full text-left border-collapse">
+                    {topProducts.length === 0 ? (
+                        <EmptyState title="No sales data yet" />
+                    ) : (
+                        <table className="w-full text-left">
                             <thead>
-                                <tr className="text-[11px] uppercase tracking-widest text-text-3 border-b border-border">
-                                    <th className="px-5 py-3 font-semibold">
+                                <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 bg-surface-2">
+                                    <th className="px-5 py-2.5 font-semibold">
                                         Product
                                     </th>
-                                    <th className="px-5 py-3 font-semibold text-right">
+                                    <th className="px-5 py-2.5 font-semibold text-right">
                                         Qty
                                     </th>
-                                    <th className="px-5 py-3 font-semibold text-right">
+                                    <th className="px-5 py-2.5 font-semibold text-right">
                                         Revenue
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="text-sm">
-                                {topProducts.length === 0 ? (
-                                    <tr>
-                                        <td
-                                            colSpan={3}
-                                            className="px-5 py-12 text-center text-text-3"
-                                        >
-                                            No sales data yet
+                            <tbody>
+                                {topProducts.map((p) => (
+                                    <tr
+                                        key={p.productId}
+                                        className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors"
+                                    >
+                                        <td className="px-5 py-3 text-[13px] text-text-1 font-medium">
+                                            {p.name}
+                                        </td>
+                                        <td className="px-5 py-3 mono text-[13px] text-text-2 text-right">
+                                            {p.quantity}
+                                        </td>
+                                        <td className="px-5 py-3 mono text-[13px] font-semibold text-text-1 text-right">
+                                            {formatCurrency(p.revenue)}
                                         </td>
                                     </tr>
-                                ) : (
-                                    topProducts.map((p) => (
-                                        <tr
-                                            key={p.productId}
-                                            className="border-b border-border hover:bg-surface-2"
-                                        >
-                                            <td className="px-5 py-3 text-text-1 font-medium">
-                                                {p.name}
-                                            </td>
-                                            <td className="px-5 py-3 text-right text-text-1 tabular-nums">
-                                                {p.quantity}
-                                            </td>
-                                            <td className="px-5 py-3 text-right text-text-1 font-medium tabular-nums">
-                                                {formatCurrency(p.revenue)}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
+                                ))}
                             </tbody>
                         </table>
-                    </div>
-                </div>
+                    )}
+                </Card>
 
-                {/* Low Stock */}
-                <div className="bg-surface border border-border rounded-md overflow-hidden">
-                    <div className="p-5 border-b border-border flex items-center justify-between">
-                        <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest">
-                            Low Stock Items
-                        </h2>
-                        {lowStockList.length > 0 && (
-                            <span className="text-[11px] text-danger font-semibold bg-danger-soft border border-danger/30 rounded-full px-2 py-0.5">
-                                {inventory.lowStockItems} total
-                            </span>
-                        )}
+                <Card className="overflow-hidden">
+                    <div className="px-5 py-4 border-b border-border">
+                        <h3 className="text-[15px] font-semibold text-text-1 tracking-tight">
+                            Recent transactions
+                        </h3>
+                        <p className="text-xs text-text-2 mt-0.5">
+                            Latest at this branch
+                        </p>
                     </div>
-                    <div className="overflow-auto">
-                        <table className="w-full text-left border-collapse">
+                    {recentTransactions.length === 0 ? (
+                        <EmptyState title="No transactions yet" />
+                    ) : (
+                        <table className="w-full text-left">
                             <thead>
-                                <tr className="text-[11px] uppercase tracking-widest text-text-3 border-b border-border">
-                                    <th className="px-5 py-3 font-semibold">
-                                        Product
-                                    </th>
-                                    <th className="px-5 py-3 font-semibold text-right">
-                                        Qty
-                                    </th>
-                                    <th className="px-5 py-3 font-semibold text-right">
-                                        Threshold
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-sm">
-                                {lowStockList.length === 0 ? (
-                                    <tr>
-                                        <td
-                                            colSpan={3}
-                                            className="px-5 py-12 text-center text-text-3"
-                                        >
-                                            All stock levels healthy
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    lowStockList.map((item) => {
-                                        const isOut = item.quantity === 0;
-                                        return (
-                                            <tr
-                                                key={item.productId}
-                                                className="border-b border-border hover:bg-surface-2"
-                                            >
-                                                <td className="px-5 py-3 text-text-1 font-medium">
-                                                    {item.name}
-                                                </td>
-                                                <td
-                                                    className={`px-5 py-3 text-right font-bold tabular-nums ${
-                                                        isOut
-                                                            ? 'text-danger'
-                                                            : 'text-warning'
-                                                    }`}
-                                                >
-                                                    {item.quantity}
-                                                </td>
-                                                <td className="px-5 py-3 text-right text-text-3 tabular-nums">
-                                                    {item.threshold}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            {/* Staff breakdown + Recent transactions */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Staff by role */}
-                <div className="bg-surface border border-border rounded-md p-5">
-                    <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest mb-4">
-                        Staff by Role
-                    </h2>
-                    <div className="space-y-3">
-                        {[
-                            { label: 'Admin', count: staff.byRole.admin },
-                            { label: 'Manager', count: staff.byRole.manager },
-                            { label: 'Cashier', count: staff.byRole.cashier },
-                        ].map((r) => (
-                            <div
-                                key={r.label}
-                                className="flex items-center justify-between border-b border-border pb-2 last:border-0"
-                            >
-                                <span className="text-sm text-text-2">
-                                    {r.label}
-                                </span>
-                                <span className="text-sm font-bold text-text-1 tabular-nums">
-                                    {r.count}
-                                </span>
-                            </div>
-                        ))}
-                        <div className="flex items-center justify-between pt-2">
-                            <span className="text-sm text-text-1 font-semibold">
-                                Total
-                            </span>
-                            <span className="text-lg font-bold text-text-1 tabular-nums">
-                                {staff.total}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Recent transactions */}
-                <div className="lg:col-span-2 bg-surface border border-border rounded-md overflow-hidden">
-                    <div className="p-5 border-b border-border">
-                        <h2 className="text-sm font-bold text-text-1 uppercase tracking-widest">
-                            Recent Transactions
-                        </h2>
-                    </div>
-                    <div className="overflow-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="text-[11px] uppercase tracking-widest text-text-3 border-b border-border">
-                                    <th className="px-5 py-3 font-semibold">
-                                        Txn #
-                                    </th>
-                                    <th className="px-5 py-3 font-semibold">
+                                <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 bg-surface-2">
+                                    <th className="px-5 py-2.5 font-semibold">Tx#</th>
+                                    <th className="px-5 py-2.5 font-semibold">
                                         Cashier
                                     </th>
-                                    <th className="px-5 py-3 font-semibold">
-                                        When
-                                    </th>
-                                    <th className="px-5 py-3 font-semibold text-right">
+                                    <th className="px-5 py-2.5 font-semibold">When</th>
+                                    <th className="px-5 py-2.5 font-semibold text-right">
                                         Total
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="text-sm">
-                                {recentTransactions.length === 0 ? (
-                                    <tr>
-                                        <td
-                                            colSpan={4}
-                                            className="px-5 py-12 text-center text-text-3"
-                                        >
-                                            No transactions yet
+                            <tbody>
+                                {recentTransactions.map((t) => (
+                                    <tr
+                                        key={t.id}
+                                        className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors"
+                                    >
+                                        <td className="px-5 py-3 mono text-xs text-text-1">
+                                            {t.transactionNumber}
+                                        </td>
+                                        <td className="px-5 py-3 text-[13px] text-text-2">
+                                            {t.cashierName}
+                                        </td>
+                                        <td className="px-5 py-3 mono text-xs text-text-3">
+                                            {formatDateTime(t.createdAt)}
+                                        </td>
+                                        <td className="px-5 py-3 mono text-[13px] font-semibold text-text-1 text-right">
+                                            {formatCurrency(t.total)}
                                         </td>
                                     </tr>
-                                ) : (
-                                    recentTransactions.map((t) => (
-                                        <tr
-                                            key={t.id}
-                                            className="border-b border-border hover:bg-surface-2"
-                                        >
-                                            <td className="px-5 py-3 text-text-1 font-mono text-xs">
-                                                {t.transactionNumber}
-                                            </td>
-                                            <td className="px-5 py-3 text-text-1">
-                                                {t.cashierName}
-                                            </td>
-                                            <td className="px-5 py-3 text-text-3 text-xs">
-                                                {formatDateTime(t.createdAt)}
-                                            </td>
-                                            <td className="px-5 py-3 text-right text-text-1 font-medium tabular-nums">
-                                                {formatCurrency(t.total)}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
+                                ))}
                             </tbody>
                         </table>
-                    </div>
-                </div>
+                    )}
+                </Card>
             </div>
         </div>
     );

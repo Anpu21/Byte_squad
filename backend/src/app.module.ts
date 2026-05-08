@@ -27,6 +27,7 @@ import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-r
 import { CustomerRequest } from '@/modules/customer-requests/entities/customer-request.entity';
 import { CustomerRequestItem } from '@/modules/customer-requests/entities/customer-request-item.entity';
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
+import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
 
 import appConfig from '@common/config/app.config';
 
@@ -55,6 +56,7 @@ import appConfig from '@common/config/app.config';
       CustomerRequest,
       CustomerRequestItem,
     ]),
+    CloudinaryModule,
     AuthModule,
     UsersModule,
     BranchesModule,

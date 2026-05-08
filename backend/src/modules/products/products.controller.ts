@@ -7,7 +7,13 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from '@products/products.service';
 import { CreateProductDto } from '@products/dto/create-product.dto';
 import { UpdateProductDto } from '@products/dto/update-product.dto';
@@ -56,6 +62,30 @@ export class ProductsController {
     @Body() updateProductDto: UpdateProductDto,
   ): Promise<Product> {
     return this.productsService.update(id, updateProductDto);
+  }
+
+  @Post(APP_ROUTES.PRODUCTS.IMAGE)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @UseInterceptors(FileInterceptor('image'))
+  uploadImage(
+    @Param('id') id: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }), // 2MB
+          new FileTypeValidator({ fileType: /^image\/(jpeg|png|webp|gif)$/ }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ): Promise<Product> {
+    return this.productsService.setImage(id, file);
+  }
+
+  @Delete(APP_ROUTES.PRODUCTS.IMAGE)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  removeImage(@Param('id') id: string): Promise<Product> {
+    return this.productsService.setImage(id, null);
   }
 
   @Delete(APP_ROUTES.PRODUCTS.BY_ID)

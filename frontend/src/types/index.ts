@@ -514,6 +514,7 @@ export interface IShopBranch {
     name: string;
     address: string;
     phone: string;
+    staffCount: number;
 }
 
 export interface ICustomerRequestItem {

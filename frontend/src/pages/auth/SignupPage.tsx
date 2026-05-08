@@ -9,6 +9,7 @@ import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Logo from '@/components/ui/Logo';
+import OnboardingStepper from '@/components/auth/OnboardingStepper';
 
 interface FieldErrors {
     firstName?: string;
@@ -88,7 +89,10 @@ export default function SignupPage() {
     return (
         <>
             <Logo size={36} />
-            <h1 className="mt-7 text-[28px] font-bold tracking-[-0.02em] text-text-1 leading-tight">
+            <div className="mt-7">
+                <OnboardingStepper currentStep={1} />
+            </div>
+            <h1 className="text-[28px] font-bold tracking-[-0.02em] text-text-1 leading-tight">
                 Create your account
             </h1>
             <p className="text-xs text-text-2 mt-1.5 mb-7">

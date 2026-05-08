@@ -1,22 +1,49 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
-export class EmailService {
+export class EmailService implements OnModuleInit {
   private readonly logger = new Logger(EmailService.name);
   private transporter: nodemailer.Transporter;
+  private verified = false;
 
   constructor(private readonly configService: ConfigService) {
+    const portRaw = this.configService.get<string | number>('MAIL_PORT', 587);
+    const port =
+      typeof portRaw === 'number' ? portRaw : parseInt(String(portRaw), 10);
+
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('MAIL_HOST', 'smtp.gmail.com'),
-      port: this.configService.get<number>('MAIL_PORT', 587),
-      secure: false,
+      port,
+      secure: port === 465, // 465 → SSL/TLS, 587 → STARTTLS
+      requireTLS: port === 587,
+      connectionTimeout: 60_000,
+      greetingTimeout: 60_000,
+      socketTimeout: 60_000,
       auth: {
         user: this.configService.get<string>('MAIL_USERNAME'),
         pass: this.configService.get<string>('MAIL_PASSWORD'),
       },
     });
+  }
+
+  async onModuleInit(): Promise<void> {
+    try {
+      await this.transporter.verify();
+      this.verified = true;
+      this.logger.log('Email transporter verified — SMTP reachable');
+    } catch (error) {
+      this.verified = false;
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        `Email transporter verification failed: ${message}. OTP/welcome emails will fail until this is fixed.`,
+      );
+    }
+  }
+
+  isVerified(): boolean {
+    return this.verified;
   }
 
   async sendWelcomeEmail(

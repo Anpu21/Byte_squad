@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     Building2,
@@ -13,6 +13,7 @@ import {
 import type { ReactNode } from 'react';
 import type { RootState } from '@/store';
 import { useAuth } from '@/hooks/useAuth';
+import { UserRole } from '@/constants/enums';
 import {
     selectCartItemCount,
     toggleCartDrawer,
@@ -53,9 +54,17 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
         navigate(FRONTEND_ROUTES.LOGIN);
     };
 
+    if (
+        isAuthenticated &&
+        user?.role === UserRole.CUSTOMER &&
+        !user.branchId
+    ) {
+        return <Navigate to={FRONTEND_ROUTES.SELECT_BRANCH} replace />;
+    }
+
     return (
         <div className="min-h-screen bg-canvas text-text-1 font-sans flex flex-col">
-            <header className="sticky top-0 z-30 bg-surface border-b border-border">
+            <header className="sticky top-0 z-20 bg-surface border-b border-border">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
                     <Link to={FRONTEND_ROUTES.SHOP} className="flex-shrink-0">
                         <Logo />

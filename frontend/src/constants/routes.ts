@@ -11,6 +11,7 @@ export const FRONTEND_ROUTES = {
     CHANGE_PASSWORD: '/change-password',
     FORGOT_PASSWORD: '/forgot-password',
     RESET_PASSWORD: '/reset-password',
+    SELECT_BRANCH: '/select-branch',
 
     // Dashboard
     DASHBOARD: '/dashboard',

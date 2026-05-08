@@ -27,7 +27,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:admin": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/run-admin-seed.ts",
-    "migrate:roles": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-roles.ts"
+    "migrate:roles": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-roles.ts",
+    "migrate:images": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-images.ts"
   },
   "dependencies": {
     "@nestjs/common": "11.1.14",
@@ -43,6 +44,7 @@
     "bcrypt": "6.0.0",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.3",
+    "cloudinary": "2.10.0",
     "nodemailer": "8.0.2",
     "passport-jwt": "4.0.1",
     "pg": "8.18.0",

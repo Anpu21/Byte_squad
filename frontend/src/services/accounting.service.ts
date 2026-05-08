@@ -1,5 +1,6 @@
 import api from './api';
 import type { IApiResponse } from '@/types';
+import { ExpenseStatus } from '@/constants/enums';
 
 export interface ILedgerEntry {
   id: string;
@@ -62,6 +63,7 @@ export interface IProfitLossData {
 export interface IExpense {
   id: string;
   branchId: string;
+  branch?: { id: string; name: string };
   createdBy: string;
   creator?: { id: string; firstName: string; lastName: string };
   category: string;
@@ -69,16 +71,32 @@ export interface IExpense {
   description: string;
   expenseDate: string;
   receiptUrl: string | null;
+  status: ExpenseStatus;
+  reviewedBy: string | null;
+  reviewer?: { id: string; firstName: string; lastName: string } | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
   createdAt: string;
 }
 
 export interface ICreateExpensePayload {
-  branchId: string;
+  branchId?: string;
   category: string;
   amount: number;
   description: string;
   expenseDate: string;
   receiptUrl?: string;
+}
+
+export interface IGetExpensesParams {
+  branchId?: string;
+  status?: ExpenseStatus;
+  search?: string;
+}
+
+export interface IReviewExpensePayload {
+  status: ExpenseStatus.APPROVED | ExpenseStatus.REJECTED;
+  note?: string;
 }
 
 export const accountingService = {
@@ -104,13 +122,26 @@ export const accountingService = {
   },
 
   // Expenses
-  getExpenses: async (): Promise<IExpense[]> => {
-    const response = await api.get<IApiResponse<IExpense[]>>('/accounting/expenses');
+  getExpenses: async (params?: IGetExpensesParams): Promise<IExpense[]> => {
+    const response = await api.get<IApiResponse<IExpense[]>>('/accounting/expenses', {
+      params,
+    });
     return response.data.data;
   },
 
   createExpense: async (payload: ICreateExpensePayload): Promise<IExpense> => {
     const response = await api.post<IApiResponse<IExpense>>('/accounting/expenses', payload);
+    return response.data.data;
+  },
+
+  reviewExpense: async (
+    id: string,
+    payload: IReviewExpensePayload,
+  ): Promise<IExpense> => {
+    const response = await api.patch<IApiResponse<IExpense>>(
+      `/accounting/expenses/${id}/review`,
+      payload,
+    );
     return response.data.data;
   },
 

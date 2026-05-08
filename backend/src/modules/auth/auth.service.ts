@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   ForbiddenException,
   NotFoundException,
+  ServiceUnavailableException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -79,19 +80,24 @@ export class AuthService {
     });
     this.logger.log(`Customer signup: ${saved.email}`);
 
-    this.emailService
-      .sendOtpEmail(
+    try {
+      await this.emailService.sendOtpEmail(
         saved.email,
         saved.firstName,
         otpCode,
         OTP_EXPIRES_IN_MINUTES,
-      )
-      .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(
-          `Failed to send OTP email to ${saved.email}: ${message}`,
-        );
-      });
+      );
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(
+        `Failed to send OTP email to ${saved.email}: ${message}. Rolling back signup.`,
+      );
+      // Roll back the half-created user so a retry can succeed without 409.
+      await this.usersService.removeByIdInternal(saved.id);
+      throw new ServiceUnavailableException(
+        'Email service unavailable. Please try again in a moment.',
+      );
+    }
 
     return { userId: saved.id };
   }
@@ -258,19 +264,22 @@ export class AuthService {
     );
     await this.usersService.setOtp(user.id, otpCode, otpExpiresAt);
 
-    this.emailService
-      .sendPasswordResetOtpEmail(
+    try {
+      await this.emailService.sendPasswordResetOtpEmail(
         user.email,
         user.firstName,
         otpCode,
         OTP_EXPIRES_IN_MINUTES,
-      )
-      .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(
-          `Failed to send password reset OTP to ${user.email}: ${message}`,
-        );
-      });
+      );
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(
+        `Failed to send password reset OTP to ${user.email}: ${message}`,
+      );
+      throw new ServiceUnavailableException(
+        'Email service unavailable. Please try again in a moment.',
+      );
+    }
 
     this.logger.log(`Password reset OTP issued for ${user.email}`);
     return genericResponse;

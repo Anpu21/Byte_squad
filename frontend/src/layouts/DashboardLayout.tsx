@@ -113,7 +113,7 @@ const NAV_ITEMS: NavItem[] = [
     {
         label: 'Expenses',
         path: FRONTEND_ROUTES.EXPENSES,
-        roles: [UserRole.ADMIN],
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Wallet size={15} />,
         group: 'Accounting',
     },

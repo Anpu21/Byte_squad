@@ -12,6 +12,7 @@ import OtpVerificationPage from '@/pages/auth/OtpVerificationPage';
 import ChangePasswordPage from '@/pages/auth/ChangePasswordPage';
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/auth/ResetPasswordPage';
+import BranchSelectionPage from '@/pages/auth/BranchSelectionPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import CashierDashboardPage from '@/pages/dashboard/CashierDashboardPage';
 import InventoryListPage from '@/pages/inventory/InventoryListPage';
@@ -54,6 +55,9 @@ function SmartRedirect() {
         case UserRole.CASHIER:
             return <Navigate to={FRONTEND_ROUTES.CASHIER_DASHBOARD} replace />;
         case UserRole.CUSTOMER:
+            if (!user.branchId) {
+                return <Navigate to={FRONTEND_ROUTES.SELECT_BRANCH} replace />;
+            }
             return <Navigate to={FRONTEND_ROUTES.SHOP} replace />;
         default:
             return <Navigate to={FRONTEND_ROUTES.DASHBOARD} replace />;
@@ -125,6 +129,18 @@ export default function AppRouter() {
                                 <ResetPasswordPage />
                             </AuthLayout>
                         </PublicRoute>
+                    }
+                />
+
+                {/* Branch selection — protected, customer-only, AuthLayout */}
+                <Route
+                    path={FRONTEND_ROUTES.SELECT_BRANCH}
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
+                            <AuthLayout>
+                                <BranchSelectionPage />
+                            </AuthLayout>
+                        </ProtectedRoute>
                     }
                 />
 
@@ -231,7 +247,9 @@ export default function AppRouter() {
                 <Route
                     path={FRONTEND_ROUTES.EXPENSES}
                     element={
-                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                        <ProtectedRoute
+                            allowedRoles={[UserRole.ADMIN, UserRole.MANAGER]}
+                        >
                             <DashboardLayout>
                                 <ExpensesPage />
                             </DashboardLayout>

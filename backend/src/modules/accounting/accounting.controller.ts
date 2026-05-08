@@ -7,30 +7,35 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
   Query,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AccountingService } from '@accounting/accounting.service';
 import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
+import { ReviewExpenseDto } from '@accounting/dto/review-expense.dto';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Expense } from '@accounting/entities/expense.entity';
+import { ExpenseStatus } from '@common/enums/expense-status.enum';
 
 @Controller(APP_ROUTES.ACCOUNTING.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
 export class AccountingController {
   constructor(private readonly accountingService: AccountingService) {}
 
   // IMPORTANT: ledger/summary must come BEFORE ledger (static before dynamic)
   @Get(APP_ROUTES.ACCOUNTING.LEDGER_SUMMARY)
+  @Roles(UserRole.ADMIN)
   getLedgerSummary(@CurrentUser('branchId') branchId: string) {
     return this.accountingService.getLedgerSummary(branchId);
   }
 
   @Get(APP_ROUTES.ACCOUNTING.LEDGER)
+  @Roles(UserRole.ADMIN)
   getLedger(
     @CurrentUser('branchId') branchId: string,
     @Query('entryType') entryType?: string,
@@ -51,24 +56,65 @@ export class AccountingController {
   }
 
   @Post(APP_ROUTES.ACCOUNTING.EXPENSES)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   createExpense(
     @Body() createExpenseDto: CreateExpenseDto,
-    @CurrentUser('id') userId: string,
+    @CurrentUser() user: { id: string; role: UserRole; branchId: string | null },
   ): Promise<Expense> {
-    return this.accountingService.createExpense(createExpenseDto, userId);
+    return this.accountingService.createExpense(createExpenseDto, user);
   }
 
   @Get(APP_ROUTES.ACCOUNTING.EXPENSES)
-  getExpenses(@CurrentUser('branchId') branchId: string): Promise<Expense[]> {
-    return this.accountingService.getExpenses(branchId);
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  getExpenses(
+    @CurrentUser() user: { role: UserRole; branchId: string | null },
+    @Query('branchId') branchIdQuery?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+  ): Promise<Expense[]> {
+    // Managers always scoped to their own branch; admins can filter by query.
+    const branchId =
+      user.role === UserRole.MANAGER
+        ? (user.branchId ?? undefined)
+        : branchIdQuery || undefined;
+
+    const parsedStatus =
+      status && Object.values(ExpenseStatus).includes(status as ExpenseStatus)
+        ? (status as ExpenseStatus)
+        : undefined;
+
+    if (user.role === UserRole.MANAGER && !user.branchId) {
+      throw new ForbiddenException('Manager has no branch assigned');
+    }
+
+    return this.accountingService.getExpenses({
+      branchId,
+      status: parsedStatus,
+      search,
+    });
+  }
+
+  @Patch(APP_ROUTES.ACCOUNTING.EXPENSE_REVIEW)
+  @Roles(UserRole.ADMIN)
+  reviewExpense(
+    @Param('id') id: string,
+    @Body() dto: ReviewExpenseDto,
+    @CurrentUser('id') reviewerId: string,
+  ): Promise<Expense> {
+    return this.accountingService.reviewExpense(id, dto, reviewerId);
   }
 
   @Delete(APP_ROUTES.ACCOUNTING.EXPENSE_BY_ID)
-  deleteExpense(@Param('id') id: string): Promise<void> {
-    return this.accountingService.deleteExpense(id);
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  deleteExpense(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string; role: UserRole; branchId: string | null },
+  ): Promise<void> {
+    return this.accountingService.deleteExpense(id, user);
   }
 
   @Get(APP_ROUTES.ACCOUNTING.PROFIT_LOSS)
+  @Roles(UserRole.ADMIN)
   getProfitLoss(
     @CurrentUser('branchId') branchId: string,
     @Query('startDate') startDate?: string,

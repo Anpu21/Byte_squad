@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { ChevronLeft, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, ShoppingCart, Store } from 'lucide-react';
+import type { RootState } from '@/store';
 import { shopProductsService } from '@/services/shop-products.service';
-import { addToCart } from '@/store/slices/shopCartSlice';
+import {
+    addToCart,
+    clearShopCart,
+    setBranch,
+} from '@/store/slices/shopCartSlice';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
 function formatCurrency(amount: number) {
@@ -20,17 +25,26 @@ export default function ProductDetailPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [qty, setQty] = useState(1);
+    const [imageFailed, setImageFailed] = useState(false);
+
+    const cartItems = useSelector(
+        (state: RootState) => state.shopCart.items,
+    );
+    const cartBranchId = useSelector(
+        (state: RootState) => state.shopCart.branchId,
+    );
 
     const { data: product, isLoading } = useQuery({
-        queryKey: ['public-product', id],
-        queryFn: () => shopProductsService.getProduct(id!),
+        queryKey: ['public-product', id, cartBranchId],
+        queryFn: () =>
+            shopProductsService.getProduct(id!, cartBranchId ?? undefined),
         enabled: !!id,
     });
 
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-24">
-                <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
             </div>
         );
     }
@@ -43,7 +57,36 @@ export default function ProductDetailPage() {
         );
     }
 
+    const availableIds = product.availableBranches.map((b) => b.id);
+    const isOutEverywhere = availableIds.length === 0;
+    const currentBranchHasIt =
+        !!cartBranchId && availableIds.includes(cartBranchId);
+    const branchSwitchNeeded = !currentBranchHasIt && !isOutEverywhere;
+
+    const targetBranch =
+        product.availableBranches.find((b) => b.id === cartBranchId) ??
+        product.availableBranches[0] ??
+        null;
+
     const handleAdd = () => {
+        if (isOutEverywhere) {
+            toast.error("This product isn't stocked anywhere right now");
+            return;
+        }
+
+        if (branchSwitchNeeded) {
+            if (cartItems.length > 0) {
+                const ok = window.confirm(
+                    `This item is at ${targetBranch?.name ?? 'another branch'}. Switching will clear your cart. Continue?`,
+                );
+                if (!ok) return;
+                dispatch(clearShopCart());
+            }
+            if (targetBranch) {
+                dispatch(setBranch(targetBranch.id));
+            }
+        }
+
         dispatch(
             addToCart({
                 productId: product.id,
@@ -57,8 +100,13 @@ export default function ProductDetailPage() {
     };
 
     const handleBuyNow = () => {
+        const cartCountBefore = cartItems.length;
         handleAdd();
-        navigate(FRONTEND_ROUTES.SHOP_CART);
+        // Only navigate if the add wasn't blocked (cart grew or branch changed without clearing)
+        if (!isOutEverywhere) {
+            navigate(FRONTEND_ROUTES.SHOP_CART);
+        }
+        void cartCountBefore;
     };
 
     return (
@@ -71,11 +119,12 @@ export default function ProductDetailPage() {
             </Link>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="aspect-square bg-[#111] border border-border rounded-md overflow-hidden flex items-center justify-center">
-                    {product.imageUrl ? (
+                <div className="aspect-square bg-surface border border-border rounded-md overflow-hidden flex items-center justify-center">
+                    {product.imageUrl && !imageFailed ? (
                         <img
                             src={product.imageUrl}
                             alt={product.name}
+                            onError={() => setImageFailed(true)}
                             className="w-full h-full object-cover"
                         />
                     ) : (
@@ -100,8 +149,17 @@ export default function ProductDetailPage() {
                         </p>
                     )}
 
-                    <div className="mt-8 flex items-center gap-3">
-                        <div className="flex items-center gap-2 bg-[#111] border border-border rounded-lg p-1">
+                    {branchSwitchNeeded && targetBranch && (
+                        <div className="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-md bg-warning-soft border border-warning/40 text-xs text-warning">
+                            <Store size={13} className="mt-0.5 flex-shrink-0" />
+                            <span>
+                                Available at <b>{targetBranch.name}</b>. Adding will switch your cart to that branch.
+                            </span>
+                        </div>
+                    )}
+
+                    <div className="mt-8 flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-2 bg-surface border border-border rounded-lg p-1">
                             <button
                                 type="button"
                                 onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -123,14 +181,16 @@ export default function ProductDetailPage() {
                         <button
                             type="button"
                             onClick={handleAdd}
-                            className="flex-1 inline-flex items-center justify-center gap-2 bg-[#111] border border-border hover:border-border-strong text-text-1 font-semibold py-2.5 rounded-lg"
+                            disabled={isOutEverywhere}
+                            className="flex-1 inline-flex items-center justify-center gap-2 bg-surface border border-border-strong hover:bg-surface-2 text-text-1 font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <ShoppingCart size={14} /> Add to cart
                         </button>
                         <button
                             type="button"
                             onClick={handleBuyNow}
-                            className="flex-1 bg-primary text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 transition-colors"
+                            disabled={isOutEverywhere}
+                            className="flex-1 bg-primary text-text-inv font-semibold py-2.5 rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Buy now
                         </button>

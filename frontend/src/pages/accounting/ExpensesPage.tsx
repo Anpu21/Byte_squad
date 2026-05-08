@@ -1,7 +1,30 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+    Plus,
+    Trash2,
+    X,
+    Wallet,
+    Search,
+    Check,
+    XCircle,
+    Building2,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { accountingService } from '@/services/accounting.service';
-import type { IExpense, ICreateExpensePayload } from '@/services/accounting.service';
+import type {
+    IExpense,
+    ICreateExpensePayload,
+    IReviewExpensePayload,
+} from '@/services/accounting.service';
+import { adminService } from '@/services/admin.service';
+import type { IBranchWithMeta } from '@/types';
+import { ExpenseStatus, UserRole } from '@/constants/enums';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import Pill from '@/components/ui/Pill';
+import StatusPill from '@/components/ui/StatusPill';
+import EmptyState from '@/components/ui/EmptyState';
+import Spark from '@/components/ui/Spark';
 
 const EXPENSE_CATEGORIES = [
     'Rent',
@@ -15,65 +38,205 @@ const EXPENSE_CATEGORIES = [
     'Miscellaneous',
 ];
 
+type StatusFilter = 'all' | ExpenseStatus;
+
+const STATUS_OPTIONS: { key: StatusFilter; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: ExpenseStatus.PENDING, label: 'Pending' },
+    { key: ExpenseStatus.APPROVED, label: 'Approved' },
+    { key: ExpenseStatus.REJECTED, label: 'Rejected' },
+];
+
+function formatCurrency(amount: number) {
+    return new Intl.NumberFormat('en-LK', {
+        style: 'currency',
+        currency: 'LKR',
+        maximumFractionDigits: 0,
+    }).format(amount);
+}
+
+function monthLabel(date: Date) {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
 export default function ExpensesPage() {
     const { user } = useAuth();
+    const isAdmin = user?.role === UserRole.ADMIN;
+
     const [expenses, setExpenses] = useState<IExpense[]>([]);
+    const [branches, setBranches] = useState<IBranchWithMeta[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+
     const [filterCategory, setFilterCategory] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedStatus, setSelectedStatus] = useState<StatusFilter>('all');
+    const [selectedBranchId, setSelectedBranchId] = useState<string>(''); // '' = all branches (admin)
+
+    const [reviewTarget, setReviewTarget] = useState<{
+        expense: IExpense;
+        action: 'approved' | 'rejected';
+    } | null>(null);
 
     const fetchExpenses = useCallback(() => {
         setIsLoading(true);
         setError(null);
         accountingService
-            .getExpenses()
+            .getExpenses({
+                branchId:
+                    isAdmin && selectedBranchId ? selectedBranchId : undefined,
+                status:
+                    selectedStatus !== 'all' ? selectedStatus : undefined,
+            })
             .then(setExpenses)
             .catch(() => setError('Failed to load expenses'))
             .finally(() => setIsLoading(false));
-    }, []);
+    }, [isAdmin, selectedBranchId, selectedStatus]);
 
     useEffect(() => {
-        const load = async () => {
-            try {
-                const data = await accountingService.getExpenses();
-                setExpenses(data);
-                setError(null);
-            } catch {
-                setError('Failed to load expenses');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        load();
-    }, []);
+        fetchExpenses();
+    }, [fetchExpenses]);
 
-    const filtered = useMemo(
-        () => filterCategory ? expenses.filter((e) => e.category === filterCategory) : expenses,
-        [expenses, filterCategory],
+    useEffect(() => {
+        if (!isAdmin) return;
+        adminService
+            .listBranches()
+            .then(setBranches)
+            .catch(() => {
+                // Non-critical: branch list is for the dropdown only
+            });
+    }, [isAdmin]);
+
+    const filtered = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        return expenses.filter((e) => {
+            if (filterCategory && e.category !== filterCategory) return false;
+            if (
+                q &&
+                !e.description.toLowerCase().includes(q) &&
+                !e.category.toLowerCase().includes(q)
+            ) {
+                return false;
+            }
+            return true;
+        });
+    }, [expenses, filterCategory, searchQuery]);
+
+    const hasActiveFilter =
+        filterCategory !== '' ||
+        searchQuery !== '' ||
+        selectedStatus !== 'all' ||
+        (isAdmin && selectedBranchId !== '');
+
+    const resetFilters = () => {
+        setFilterCategory('');
+        setSearchQuery('');
+        setSelectedStatus('all');
+        setSelectedBranchId('');
+    };
+
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+
+    const thisMonthExpenses = useMemo(
+        () =>
+            expenses.filter((e) => {
+                const d = new Date(e.expenseDate);
+                return (
+                    d.getMonth() === thisMonth && d.getFullYear() === thisYear
+                );
+            }),
+        [expenses, thisMonth, thisYear],
     );
 
-    // Stats
-    const thisMonthTotal = useMemo(() => {
-        const now = new Date();
-        const month = now.getMonth();
-        const year = now.getFullYear();
+    const thisMonthTotal = useMemo(
+        () =>
+            thisMonthExpenses.reduce((sum, e) => sum + Number(e.amount), 0),
+        [thisMonthExpenses],
+    );
+
+    const lastMonthTotal = useMemo(() => {
         return expenses
             .filter((e) => {
                 const d = new Date(e.expenseDate);
-                return d.getMonth() === month && d.getFullYear() === year;
+                return (
+                    d.getMonth() === lastMonth &&
+                    d.getFullYear() === lastMonthYear
+                );
             })
             .reduce((sum, e) => sum + Number(e.amount), 0);
-    }, [expenses]);
+    }, [expenses, lastMonth, lastMonthYear]);
+
+    const monthOverMonthDelta = useMemo(() => {
+        if (lastMonthTotal === 0) return null;
+        return ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100;
+    }, [thisMonthTotal, lastMonthTotal]);
+
+    const largestCategory = useMemo(() => {
+        const tally = new Map<string, number>();
+        for (const e of thisMonthExpenses) {
+            tally.set(
+                e.category,
+                (tally.get(e.category) ?? 0) + Number(e.amount),
+            );
+        }
+        let topName = '';
+        let topAmount = 0;
+        for (const [name, amount] of tally) {
+            if (amount > topAmount) {
+                topName = name;
+                topAmount = amount;
+            }
+        }
+        return topName ? { name: topName, amount: topAmount } : null;
+    }, [thisMonthExpenses]);
 
     const categories = useMemo(
         () => [...new Set(expenses.map((e) => e.category))].sort(),
         [expenses],
     );
 
-    const formatCurrency = (amount: number) =>
-        new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(amount);
+    const last14DaysTotals = useMemo(() => {
+        const buckets: number[] = new Array(14).fill(0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startMs = today.getTime() - 13 * 86400000;
+        for (const e of expenses) {
+            const d = new Date(e.expenseDate);
+            d.setHours(0, 0, 0, 0);
+            const diff = Math.floor((d.getTime() - startMs) / 86400000);
+            if (diff >= 0 && diff < 14) {
+                buckets[diff] += Number(e.amount);
+            }
+        }
+        return buckets;
+    }, [expenses]);
+
+    const deltaIsGood =
+        monthOverMonthDelta !== null && monthOverMonthDelta < 0;
+    const deltaColor =
+        monthOverMonthDelta === null
+            ? 'var(--text-3)'
+            : deltaIsGood
+              ? 'var(--accent)'
+              : 'var(--danger)';
+
+    const pendingCount = useMemo(
+        () => expenses.filter((e) => e.status === ExpenseStatus.PENDING).length,
+        [expenses],
+    );
+    const approvedCount = useMemo(
+        () =>
+            expenses.filter((e) => e.status === ExpenseStatus.APPROVED).length,
+        [expenses],
+    );
+
+    const showBranchOnRow = isAdmin && selectedBranchId === '';
 
     const handleDelete = async () => {
         if (!deleteId) return;
@@ -86,151 +249,641 @@ export default function ExpensesPage() {
         setDeleteId(null);
     };
 
+    const handleReview = async (note: string) => {
+        if (!reviewTarget) return;
+        try {
+            const updated = await accountingService.reviewExpense(
+                reviewTarget.expense.id,
+                {
+                    status:
+                        reviewTarget.action === 'approved'
+                            ? ExpenseStatus.APPROVED
+                            : ExpenseStatus.REJECTED,
+                    note: note || undefined,
+                },
+            );
+            setExpenses((prev) =>
+                prev.map((e) => (e.id === updated.id ? updated : e)),
+            );
+            setReviewTarget(null);
+        } catch {
+            setError('Failed to update expense status');
+        }
+    };
+
+    const branchById = useMemo(() => {
+        const map = new Map<string, string>();
+        for (const b of branches) map.set(b.id, b.name);
+        return map;
+    }, [branches]);
+
+    const branchLabel = (id: string) =>
+        branchById.get(id) ?? id.substring(0, 6);
+
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-1 tracking-tight">Expenses</h1>
-                    <p className="text-sm text-text-2 mt-1">Track and manage your company outgoings</p>
+                    <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
+                        Accounting
+                    </p>
+                    <h1 className="text-3xl font-bold text-text-1 tracking-tight leading-none">
+                        Expenses
+                    </h1>
+                    <p className="text-sm text-text-2 mt-1.5">
+                        {monthLabel(now)}
+                        {isAdmin && (
+                            <>
+                                {' '}
+                                ·{' '}
+                                <span className="text-text-3">
+                                    {selectedBranchId
+                                        ? branchLabel(selectedBranchId)
+                                        : 'All branches'}
+                                </span>
+                            </>
+                        )}
+                    </p>
                 </div>
-                <button
+                <Button
+                    type="button"
                     onClick={() => setShowAddModal(true)}
-                    className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all flex items-center gap-2 self-start sm:self-auto"
+                    disabled={!isAdmin && !user?.branchId}
+                    size="md"
                 >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    Add Expense
-                </button>
+                    <Plus size={14} /> Add expense
+                </Button>
             </div>
 
             {error && (
-                <div className="mb-6 p-4 bg-danger-soft border border-danger/30 rounded-xl text-sm text-danger">
+                <div className="mb-4 px-4 py-2.5 rounded-md bg-danger-soft border border-danger/40 text-sm text-danger">
                     {error}
                 </div>
             )}
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-                <div className="bg-surface border border-border rounded-md p-5">
-                    <p className="text-[13px] font-medium text-text-2 mb-1">This Month</p>
-                    <p className="text-2xl font-bold text-text-1 tracking-tight tabular-nums">{formatCurrency(thisMonthTotal)}</p>
-                </div>
-                <div className="bg-surface border border-border rounded-md p-5">
-                    <p className="text-[13px] font-medium text-text-2 mb-1">Total Expenses</p>
-                    <p className="text-2xl font-bold text-text-1 tracking-tight tabular-nums">{expenses.length}</p>
-                </div>
-                <div className="bg-surface border border-border rounded-md p-5">
-                    <p className="text-[13px] font-medium text-text-2 mb-1">Categories</p>
-                    <p className="text-2xl font-bold text-text-1 tracking-tight">{categories.length}</p>
-                </div>
-            </div>
-
-            {/* Filter */}
-            <div className="mb-4 flex items-center gap-3">
-                <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="h-9 px-3 bg-canvas border border-border text-text-1 text-sm rounded-lg outline-none focus:border-primary/40"
-                >
-                    <option value="">All Categories</option>
-                    {categories.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                    ))}
-                </select>
-                <span className="text-xs text-text-3">
-                    Showing {filtered.length} of {expenses.length}
-                </span>
-            </div>
-
-            {/* Table */}
-            {isLoading ? (
-                <div className="bg-surface border border-border rounded-md overflow-hidden">
-                    {[...Array(5)].map((_, i) => (
-                        <div key={i} className="px-6 py-4 flex items-center gap-4 border-b border-border last:border-0">
-                            <div className="h-4 w-24 bg-surface-2 rounded animate-pulse" />
-                            <div className="h-4 w-32 bg-surface-2 rounded animate-pulse" />
-                            <div className="flex-1" />
-                            <div className="h-4 w-20 bg-surface-2 rounded animate-pulse" />
-                        </div>
-                    ))}
-                </div>
-            ) : filtered.length === 0 ? (
-                <div className="bg-surface border border-border rounded-md shadow-2xl flex flex-col items-center justify-center p-12 text-center min-h-[300px]">
-                    <div className="w-16 h-16 bg-surface-2 border border-border rounded-md flex items-center justify-center mb-6">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-text-1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                        </svg>
-                    </div>
-                    <h3 className="text-lg font-bold text-text-1 mb-2">No expenses recorded</h3>
-                    <p className="text-sm text-text-2 max-w-[280px] mb-6">
-                        {filterCategory
-                            ? `No expenses in "${filterCategory}" category.`
-                            : 'Start tracking your spending by adding your first expense.'}
-                    </p>
-                    {!filterCategory && (
-                        <button
-                            onClick={() => setShowAddModal(true)}
-                            className="h-9 px-5 rounded-lg bg-surface-2 border border-border text-text-1 text-sm font-medium hover:bg-primary-soft transition-colors"
-                        >
-                            Add Expense
-                        </button>
-                    )}
-                </div>
-            ) : (
-                <div className="bg-surface border border-border rounded-md shadow-2xl overflow-hidden">
-                    {/* Table header */}
-                    <div className="grid grid-cols-[1fr_1fr_auto_1fr_auto] gap-4 px-6 py-3 border-b border-border bg-surface-2">
-                        <span className="text-[11px] font-semibold text-text-3 uppercase tracking-wider">Date</span>
-                        <span className="text-[11px] font-semibold text-text-3 uppercase tracking-wider">Category</span>
-                        <span className="text-[11px] font-semibold text-text-3 uppercase tracking-wider text-right">Amount</span>
-                        <span className="text-[11px] font-semibold text-text-3 uppercase tracking-wider">Description</span>
-                        <span className="text-[11px] font-semibold text-text-3 uppercase tracking-wider text-right">Actions</span>
-                    </div>
-                    {filtered.map((expense) => (
-                        <div
-                            key={expense.id}
-                            className="grid grid-cols-[1fr_1fr_auto_1fr_auto] gap-4 px-6 py-3.5 border-b border-border last:border-0 hover:bg-surface-2 transition-colors group"
-                        >
-                            <span className="text-sm text-text-1 tabular-nums">
-                                {new Date(expense.expenseDate).toLocaleDateString('en-GB', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric',
-                                })}
-                            </span>
-                            <span className="text-sm text-text-1">
-                                <span className="inline-flex items-center px-2 py-0.5 bg-surface-2 border border-border rounded-md text-xs font-medium">
-                                    {expense.category}
-                                </span>
-                            </span>
-                            <span className="text-sm font-semibold text-text-1 tabular-nums text-right min-w-[100px]">
-                                {formatCurrency(Number(expense.amount))}
-                            </span>
-                            <span className="text-sm text-text-2 truncate">{expense.description}</span>
-                            <div className="flex items-center justify-end">
-                                <button
-                                    onClick={() => setDeleteId(expense.id)}
-                                    className="p-1.5 text-text-3 hover:text-danger opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-danger-soft"
-                                    title="Delete"
-                                >
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="3 6 5 6 21 6" />
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    </svg>
-                                </button>
+            {/* Two-column body: filter rail + content */}
+            <div className="flex flex-col lg:flex-row gap-5">
+                {/* Left rail */}
+                <aside className="w-full lg:w-60 lg:flex-shrink-0">
+                    <Card className="p-4">
+                        {/* Search */}
+                        <div>
+                            <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
+                                Search
+                            </p>
+                            <div className="relative">
+                                <Search
+                                    size={14}
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3"
+                                />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    placeholder="Description or category"
+                                    className="w-full h-9 pl-9 pr-3 bg-canvas border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/25 placeholder:text-text-3 transition-colors"
+                                />
                             </div>
                         </div>
-                    ))}
-                </div>
-            )}
 
-            {/* Add Expense Modal */}
-            {showAddModal && user && (
+                        {/* Status */}
+                        <div className="border-t border-border pt-4 mt-4">
+                            <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
+                                Status
+                            </p>
+                            <div className="flex flex-col gap-1">
+                                {STATUS_OPTIONS.map((opt) => {
+                                    const selected = selectedStatus === opt.key;
+                                    const count =
+                                        opt.key === 'all'
+                                            ? expenses.length
+                                            : expenses.filter(
+                                                  (e) => e.status === opt.key,
+                                              ).length;
+                                    return (
+                                        <label
+                                            key={opt.key}
+                                            className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-[13px] transition-colors ${
+                                                selected
+                                                    ? 'bg-accent-soft text-accent-text'
+                                                    : 'text-text-1 hover:bg-surface-2'
+                                            }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="status"
+                                                value={opt.key}
+                                                checked={selected}
+                                                onChange={() =>
+                                                    setSelectedStatus(opt.key)
+                                                }
+                                                style={{
+                                                    accentColor:
+                                                        'var(--accent)',
+                                                }}
+                                            />
+                                            <span>{opt.label}</span>
+                                            <span
+                                                className={`ml-auto text-[11px] mono ${
+                                                    selected
+                                                        ? 'text-accent-text/70'
+                                                        : 'text-text-3'
+                                                }`}
+                                            >
+                                                {count}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Branch (admin only) */}
+                        {isAdmin && (
+                            <div className="border-t border-border pt-4 mt-4">
+                                <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
+                                    Branch
+                                </p>
+                                <div className="flex flex-col gap-1">
+                                    <label
+                                        className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-[13px] transition-colors ${
+                                            selectedBranchId === ''
+                                                ? 'bg-accent-soft text-accent-text'
+                                                : 'text-text-1 hover:bg-surface-2'
+                                        }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="branch"
+                                            value=""
+                                            checked={selectedBranchId === ''}
+                                            onChange={() =>
+                                                setSelectedBranchId('')
+                                            }
+                                            style={{
+                                                accentColor: 'var(--accent)',
+                                            }}
+                                        />
+                                        <span>All branches</span>
+                                    </label>
+                                    {branches.map((b) => {
+                                        const selected =
+                                            selectedBranchId === b.id;
+                                        return (
+                                            <label
+                                                key={b.id}
+                                                className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-[13px] transition-colors ${
+                                                    selected
+                                                        ? 'bg-accent-soft text-accent-text'
+                                                        : 'text-text-1 hover:bg-surface-2'
+                                                }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="branch"
+                                                    value={b.id}
+                                                    checked={selected}
+                                                    onChange={() =>
+                                                        setSelectedBranchId(b.id)
+                                                    }
+                                                    style={{
+                                                        accentColor:
+                                                            'var(--accent)',
+                                                    }}
+                                                />
+                                                <span className="truncate">
+                                                    {b.name}
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                    {branches.length === 0 && (
+                                        <p className="text-xs text-text-3 px-2 py-1">
+                                            No branches available
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Category */}
+                        <div className="border-t border-border pt-4 mt-4">
+                            <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
+                                Category
+                            </p>
+                            <div className="flex flex-col gap-1">
+                                <label
+                                    className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-[13px] transition-colors ${
+                                        filterCategory === ''
+                                            ? 'bg-accent-soft text-accent-text'
+                                            : 'text-text-1 hover:bg-surface-2'
+                                    }`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="category"
+                                        value=""
+                                        checked={filterCategory === ''}
+                                        onChange={() => setFilterCategory('')}
+                                        style={{
+                                            accentColor: 'var(--accent)',
+                                        }}
+                                    />
+                                    <span>All</span>
+                                    <span className="ml-auto text-[11px] text-text-3 mono">
+                                        {expenses.length}
+                                    </span>
+                                </label>
+                                {categories.map((c) => {
+                                    const count = expenses.filter(
+                                        (e) => e.category === c,
+                                    ).length;
+                                    const selected = filterCategory === c;
+                                    return (
+                                        <label
+                                            key={c}
+                                            className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-[13px] transition-colors ${
+                                                selected
+                                                    ? 'bg-accent-soft text-accent-text'
+                                                    : 'text-text-1 hover:bg-surface-2'
+                                            }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="category"
+                                                value={c}
+                                                checked={selected}
+                                                onChange={() =>
+                                                    setFilterCategory(c)
+                                                }
+                                                style={{
+                                                    accentColor:
+                                                        'var(--accent)',
+                                                }}
+                                            />
+                                            <span className="truncate">{c}</span>
+                                            <span
+                                                className={`ml-auto text-[11px] mono ${
+                                                    selected
+                                                        ? 'text-accent-text/70'
+                                                        : 'text-text-3'
+                                                }`}
+                                            >
+                                                {count}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                                {categories.length === 0 && (
+                                    <p className="text-xs text-text-3 px-2 py-1">
+                                        No categories yet
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Reset all */}
+                        <div className="border-t border-border pt-4 mt-4">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="w-full"
+                                onClick={resetFilters}
+                                disabled={!hasActiveFilter}
+                            >
+                                Reset all
+                            </Button>
+                        </div>
+                    </Card>
+                </aside>
+
+                {/* Right content */}
+                <div className="flex-1 min-w-0">
+                    {/* Hero KPI panel */}
+                    <Card className="p-6 border-l-2 border-l-accent mb-3">
+                        <div className="flex items-end justify-between gap-4 flex-wrap">
+                            <div>
+                                <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-2">
+                                    Total · {monthLabel(now)}
+                                </p>
+                                <p className="mono text-4xl font-semibold text-text-1 tracking-tight leading-none">
+                                    {formatCurrency(thisMonthTotal)}
+                                </p>
+                            </div>
+                            <div className="flex items-end gap-3">
+                                <div className="w-32">
+                                    <Spark
+                                        data={last14DaysTotals}
+                                        color={deltaColor}
+                                        h={36}
+                                        fill
+                                    />
+                                    <p className="text-[10px] text-text-3 text-right mt-1 uppercase tracking-widest">
+                                        Last 14 days
+                                    </p>
+                                </div>
+                                {monthOverMonthDelta !== null && (
+                                    <div
+                                        className={`inline-flex items-center h-7 px-2.5 rounded-md text-xs font-semibold ${
+                                            deltaIsGood
+                                                ? 'bg-accent-soft text-accent-text'
+                                                : 'bg-danger-soft text-danger'
+                                        }`}
+                                    >
+                                        {monthOverMonthDelta > 0 ? '+' : ''}
+                                        {monthOverMonthDelta.toFixed(1)}%
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* Secondary metrics (compact line) */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-2 mb-5 px-1">
+                        <span>
+                            <span className="text-text-1 font-medium mono">
+                                {expenses.length}
+                            </span>{' '}
+                            entries
+                        </span>
+                        <span className="text-text-3">·</span>
+                        <span className="text-warning">
+                            <span className="font-medium mono">
+                                {pendingCount}
+                            </span>{' '}
+                            pending
+                        </span>
+                        <span className="text-text-3">·</span>
+                        <span className="text-accent-text">
+                            <span className="font-medium mono">
+                                {approvedCount}
+                            </span>{' '}
+                            approved
+                        </span>
+                        {largestCategory && (
+                            <>
+                                <span className="text-text-3">·</span>
+                                <span>
+                                    Top:{' '}
+                                    <span className="text-text-1 font-medium">
+                                        {largestCategory.name}
+                                    </span>{' '}
+                                    <span className="text-text-1 font-medium mono">
+                                        {formatCurrency(largestCategory.amount)}
+                                    </span>
+                                </span>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Active filters chip bar */}
+                    {hasActiveFilter && (
+                        <div className="flex flex-wrap items-center gap-2 mb-4 px-1">
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery('')}
+                                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-accent-soft text-accent-text text-xs font-medium hover:opacity-80 transition-opacity"
+                                >
+                                    <Search size={11} />
+                                    <span>&ldquo;{searchQuery}&rdquo;</span>
+                                    <X size={12} className="opacity-70" />
+                                </button>
+                            )}
+                            {selectedStatus !== 'all' && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedStatus('all')}
+                                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-accent-soft text-accent-text text-xs font-medium hover:opacity-80 transition-opacity capitalize"
+                                >
+                                    <span>{selectedStatus}</span>
+                                    <X size={12} className="opacity-70" />
+                                </button>
+                            )}
+                            {isAdmin && selectedBranchId && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedBranchId('')}
+                                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-accent-soft text-accent-text text-xs font-medium hover:opacity-80 transition-opacity"
+                                >
+                                    <Building2 size={11} />
+                                    <span>{branchLabel(selectedBranchId)}</span>
+                                    <X size={12} className="opacity-70" />
+                                </button>
+                            )}
+                            {filterCategory && (
+                                <button
+                                    type="button"
+                                    onClick={() => setFilterCategory('')}
+                                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-accent-soft text-accent-text text-xs font-medium hover:opacity-80 transition-opacity"
+                                >
+                                    <span>{filterCategory}</span>
+                                    <X size={12} className="opacity-70" />
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={resetFilters}
+                                className="text-xs text-text-3 hover:text-text-1 underline-offset-4 hover:underline transition-colors"
+                            >
+                                Reset all
+                            </button>
+                            <span className="ml-auto text-xs text-text-3">
+                                {filtered.length} of {expenses.length}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* List */}
+                    {isLoading ? (
+                        <ul className="flex flex-col gap-2">
+                            {[...Array(5)].map((_, i) => (
+                                <li
+                                    key={i}
+                                    className="h-14 bg-surface-2 rounded-md animate-pulse"
+                                />
+                            ))}
+                        </ul>
+                    ) : filtered.length === 0 ? (
+                        <Card>
+                            <EmptyState
+                                icon={<Wallet size={20} />}
+                                title="No expenses recorded"
+                                description={
+                                    hasActiveFilter
+                                        ? 'No expenses match the current filters.'
+                                        : 'Start tracking your spending by adding your first expense.'
+                                }
+                                action={
+                                    !hasActiveFilter ? (
+                                        <Button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowAddModal(true)
+                                            }
+                                            disabled={
+                                                !isAdmin && !user?.branchId
+                                            }
+                                            size="md"
+                                        >
+                                            <Plus size={14} /> Add expense
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            onClick={resetFilters}
+                                            size="md"
+                                        >
+                                            Reset filters
+                                        </Button>
+                                    )
+                                }
+                            />
+                        </Card>
+                    ) : (
+                        <ul className="flex flex-col gap-2">
+                            {filtered.map((expense) => {
+                                const date = new Date(expense.expenseDate);
+                                const day = date.toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                });
+                                const mon = date.toLocaleDateString('en-GB', {
+                                    month: 'short',
+                                });
+                                const isPending =
+                                    expense.status === ExpenseStatus.PENDING;
+                                const branchName =
+                                    expense.branch?.name ??
+                                    branchLabel(expense.branchId);
+                                return (
+                                    <li key={expense.id}>
+                                        <Card className="group p-4 hover:border-border-strong hover:bg-surface-2 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex flex-col items-center w-12 flex-shrink-0">
+                                                    <span className="mono text-lg font-semibold text-text-1 leading-none">
+                                                        {day}
+                                                    </span>
+                                                    <span className="text-[11px] uppercase tracking-widest text-text-3 mt-1">
+                                                        {mon}
+                                                    </span>
+                                                </div>
+                                                <div className="flex-shrink-0">
+                                                    <Pill
+                                                        tone="neutral"
+                                                        dot={false}
+                                                    >
+                                                        {expense.category}
+                                                    </Pill>
+                                                </div>
+                                                <div className="flex-shrink-0">
+                                                    <StatusPill
+                                                        status={expense.status}
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm text-text-1 truncate">
+                                                        {expense.description}
+                                                    </p>
+                                                    {showBranchOnRow && (
+                                                        <p className="text-[11px] text-text-3 mt-0.5 inline-flex items-center gap-1">
+                                                            <Building2
+                                                                size={10}
+                                                            />
+                                                            {branchName}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <p className="mono text-base font-semibold text-text-1 whitespace-nowrap">
+                                                    {formatCurrency(
+                                                        Number(expense.amount),
+                                                    )}
+                                                </p>
+
+                                                <div className="flex items-center gap-1 flex-shrink-0">
+                                                    {isAdmin && isPending && (
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setReviewTarget(
+                                                                        {
+                                                                            expense,
+                                                                            action: 'approved',
+                                                                        },
+                                                                    )
+                                                                }
+                                                                className="p-1.5 text-text-3 hover:text-accent-text opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all rounded-md hover:bg-accent-soft"
+                                                                title="Approve"
+                                                                aria-label="Approve"
+                                                            >
+                                                                <Check
+                                                                    size={14}
+                                                                />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setReviewTarget(
+                                                                        {
+                                                                            expense,
+                                                                            action: 'rejected',
+                                                                        },
+                                                                    )
+                                                                }
+                                                                className="p-1.5 text-text-3 hover:text-danger opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all rounded-md hover:bg-danger-soft"
+                                                                title="Reject"
+                                                                aria-label="Reject"
+                                                            >
+                                                                <XCircle
+                                                                    size={14}
+                                                                />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {(isAdmin ||
+                                                        (isPending &&
+                                                            expense.branchId ===
+                                                                user?.branchId)) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setDeleteId(
+                                                                    expense.id,
+                                                                )
+                                                            }
+                                                            className="p-1.5 text-text-3 hover:text-danger opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all rounded-md hover:bg-danger-soft"
+                                                            title="Delete"
+                                                            aria-label="Delete"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {expense.reviewNote && (
+                                                <p className="mt-2 ml-16 text-[12px] text-text-3 italic">
+                                                    Note: {expense.reviewNote}
+                                                </p>
+                                            )}
+                                        </Card>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                </div>
+            </div>
+
+            {showAddModal && (
                 <AddExpenseModal
-                    branchId={user.branchId}
+                    isAdmin={isAdmin}
+                    defaultBranchId={user?.branchId ?? ''}
+                    branches={branches}
                     onClose={() => setShowAddModal(false)}
                     onSaved={() => {
                         setShowAddModal(false);
@@ -239,47 +892,156 @@ export default function ExpensesPage() {
                 />
             )}
 
-            {/* Delete Confirmation Modal */}
             {deleteId && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-surface border border-border rounded-md shadow-2xl p-6 max-w-sm w-full">
-                        <h3 className="text-lg font-bold text-text-1 mb-2">Delete Expense</h3>
-                        <p className="text-sm text-text-2 mb-6">
-                            Are you sure you want to delete this expense? This action cannot be undone.
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+                    style={{ background: 'var(--overlay)' }}
+                >
+                    <Card className="w-full max-w-sm p-6">
+                        <h3 className="text-base font-semibold text-text-1 mb-2">
+                            Delete expense
+                        </h3>
+                        <p className="text-sm text-text-2 mb-5">
+                            Are you sure? This action cannot be undone.
                         </p>
-                        <div className="flex items-center justify-end gap-3">
-                            <button
+                        <div className="flex items-center justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="md"
                                 onClick={() => setDeleteId(null)}
-                                className="h-9 px-4 rounded-lg bg-surface-2 border border-border text-sm text-text-1 font-medium hover:bg-primary-soft transition-colors"
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="danger"
+                                size="md"
                                 onClick={handleDelete}
-                                className="h-9 px-4 rounded-lg bg-danger-soft border border-danger/40 text-sm text-danger font-bold hover:bg-danger-soft transition-colors"
                             >
                                 Delete
-                            </button>
+                            </Button>
                         </div>
-                    </div>
+                    </Card>
                 </div>
+            )}
+
+            {reviewTarget && (
+                <ReviewExpenseModal
+                    expense={reviewTarget.expense}
+                    action={reviewTarget.action}
+                    onCancel={() => setReviewTarget(null)}
+                    onConfirm={handleReview}
+                />
             )}
         </div>
     );
 }
 
+function ReviewExpenseModal({
+    expense,
+    action,
+    onCancel,
+    onConfirm,
+}: {
+    expense: IExpense;
+    action: 'approved' | 'rejected';
+    onCancel: () => void;
+    onConfirm: (note: string) => void;
+}) {
+    const [note, setNote] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const isReject = action === 'rejected';
+
+    const handleSubmit = async () => {
+        setSubmitting(true);
+        try {
+            await onConfirm(note);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+            style={{ background: 'var(--overlay)' }}
+        >
+            <Card className="w-full max-w-md p-6">
+                <h3 className="text-base font-semibold text-text-1 mb-1">
+                    {isReject ? 'Reject expense' : 'Approve expense'}
+                </h3>
+                <p className="text-sm text-text-2 mb-4">
+                    {expense.category} —{' '}
+                    <span className="mono">
+                        {new Intl.NumberFormat('en-LK', {
+                            style: 'currency',
+                            currency: 'LKR',
+                            maximumFractionDigits: 0,
+                        }).format(Number(expense.amount))}
+                    </span>
+                </p>
+
+                <label className="block text-xs font-medium text-text-2 mb-1.5">
+                    Note {isReject ? '(reason)' : '(optional)'}
+                </label>
+                <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder={
+                        isReject
+                            ? 'Why is this being rejected?'
+                            : 'Optional note'
+                    }
+                    rows={3}
+                    className="w-full px-3 py-2 bg-canvas border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/25 placeholder:text-text-3 transition-colors resize-none"
+                />
+
+                <div className="flex items-center justify-end gap-2 mt-5">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="md"
+                        onClick={onCancel}
+                        disabled={submitting}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={isReject ? 'danger' : 'primary'}
+                        size="md"
+                        onClick={handleSubmit}
+                        disabled={submitting}
+                    >
+                        {submitting
+                            ? 'Saving…'
+                            : isReject
+                              ? 'Reject'
+                              : 'Approve'}
+                    </Button>
+                </div>
+            </Card>
+        </div>
+    );
+}
+
 function AddExpenseModal({
-    branchId,
+    isAdmin,
+    defaultBranchId,
+    branches,
     onClose,
     onSaved,
 }: {
-    branchId: string;
+    isAdmin: boolean;
+    defaultBranchId: string;
+    branches: IBranchWithMeta[];
     onClose: () => void;
     onSaved: () => void;
 }) {
     const today = new Date().toISOString().split('T')[0];
     const [form, setForm] = useState<ICreateExpensePayload>({
-        branchId,
+        branchId: defaultBranchId || undefined,
         category: '',
         amount: 0,
         description: '',
@@ -294,10 +1056,18 @@ function AddExpenseModal({
             setError('Please fill all required fields with valid values.');
             return;
         }
+        if (isAdmin && !form.branchId) {
+            setError('Please pick a branch.');
+            return;
+        }
         setSaving(true);
         setError('');
         try {
-            await accountingService.createExpense(form);
+            // Managers don't need to send branchId; backend forces it from JWT.
+            const payload: ICreateExpensePayload = isAdmin
+                ? form
+                : { ...form, branchId: undefined };
+            await accountingService.createExpense(payload);
             onSaved();
         } catch {
             setError('Failed to save expense. Please try again.');
@@ -306,100 +1076,154 @@ function AddExpenseModal({
         }
     };
 
+    const fieldClass =
+        'w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors placeholder:text-text-3';
+
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-md">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+            style={{ background: 'var(--overlay)' }}
+        >
+            <Card className="w-full max-w-md">
                 <div className="p-5 border-b border-border flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-text-1">Add Expense</h2>
-                    <button onClick={onClose} className="p-1.5 text-text-2 hover:text-text-1 rounded-lg hover:bg-surface-2 transition-colors">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
+                    <h2 className="text-base font-semibold text-text-1 tracking-tight">
+                        Add expense
+                    </h2>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-1.5 text-text-2 hover:text-text-1 rounded-md hover:bg-surface-2 transition-colors"
+                        aria-label="Close"
+                    >
+                        <X size={16} />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-5 space-y-4">
+                <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
                     {error && (
-                        <div className="p-3 bg-danger-soft border border-danger/30 rounded-lg text-sm text-danger">
+                        <div className="px-3 py-2 rounded-md bg-danger-soft border border-danger/40 text-xs text-danger font-medium">
                             {error}
                         </div>
                     )}
 
+                    {isAdmin && (
+                        <div>
+                            <label className="block text-xs font-medium text-text-2 mb-1.5">
+                                Branch
+                            </label>
+                            <select
+                                value={form.branchId ?? ''}
+                                onChange={(e) =>
+                                    setForm({
+                                        ...form,
+                                        branchId: e.target.value || undefined,
+                                    })
+                                }
+                                className={fieldClass}
+                            >
+                                <option value="">Select branch</option>
+                                {branches.map((b) => (
+                                    <option key={b.id} value={b.id}>
+                                        {b.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <div>
-                        <label className="block text-xs font-semibold text-text-2 uppercase tracking-wider mb-1.5">
-                            Category *
+                        <label className="block text-xs font-medium text-text-2 mb-1.5">
+                            Category
                         </label>
                         <select
                             value={form.category}
-                            onChange={(e) => setForm({ ...form, category: e.target.value })}
-                            className="w-full h-10 px-3 bg-canvas border border-border text-text-1 text-sm rounded-lg outline-none focus:border-primary/40"
+                            onChange={(e) =>
+                                setForm({ ...form, category: e.target.value })
+                            }
+                            className={fieldClass}
                         >
                             <option value="">Select category</option>
                             {EXPENSE_CATEGORIES.map((c) => (
-                                <option key={c} value={c}>{c}</option>
+                                <option key={c} value={c}>
+                                    {c}
+                                </option>
                             ))}
                         </select>
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-text-2 uppercase tracking-wider mb-1.5">
-                            Amount (LKR) *
+                        <label className="block text-xs font-medium text-text-2 mb-1.5">
+                            Amount (LKR)
                         </label>
                         <input
                             type="number"
                             min="0"
                             step="0.01"
                             value={form.amount || ''}
-                            onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) =>
+                                setForm({
+                                    ...form,
+                                    amount: parseFloat(e.target.value) || 0,
+                                })
+                            }
                             placeholder="0.00"
-                            className="w-full h-10 px-3 bg-canvas border border-border text-text-1 text-sm rounded-lg outline-none focus:border-primary/40 tabular-nums"
+                            className={`${fieldClass} mono`}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-text-2 uppercase tracking-wider mb-1.5">
-                            Description *
+                        <label className="block text-xs font-medium text-text-2 mb-1.5">
+                            Description
                         </label>
                         <input
                             type="text"
                             value={form.description}
-                            onChange={(e) => setForm({ ...form, description: e.target.value })}
+                            onChange={(e) =>
+                                setForm({
+                                    ...form,
+                                    description: e.target.value,
+                                })
+                            }
                             placeholder="What was this expense for?"
-                            className="w-full h-10 px-3 bg-canvas border border-border text-text-1 text-sm rounded-lg outline-none focus:border-primary/40"
+                            className={fieldClass}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-text-2 uppercase tracking-wider mb-1.5">
-                            Date *
+                        <label className="block text-xs font-medium text-text-2 mb-1.5">
+                            Date
                         </label>
                         <input
                             type="date"
                             value={form.expenseDate}
-                            onChange={(e) => setForm({ ...form, expenseDate: e.target.value })}
-                            className="w-full h-10 px-3 bg-canvas border border-border text-text-1 text-sm rounded-lg outline-none focus:border-primary/40"
+                            onChange={(e) =>
+                                setForm({
+                                    ...form,
+                                    expenseDate: e.target.value,
+                                })
+                            }
+                            className={fieldClass}
                         />
                     </div>
 
-                    <div className="flex items-center justify-end gap-3 pt-2">
-                        <button
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                        <Button
                             type="button"
+                            variant="secondary"
+                            size="md"
                             onClick={onClose}
-                            className="h-9 px-4 rounded-lg bg-surface-2 border border-border text-sm text-text-1 font-medium hover:bg-primary-soft transition-colors"
                         >
                             Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={saving}
-                            className="h-9 px-5 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
-                        >
-                            {saving ? 'Saving...' : 'Save Expense'}
-                        </button>
+                        </Button>
+                        <Button type="submit" size="md" disabled={saving}>
+                            {saving ? 'Saving…' : 'Save expense'}
+                        </Button>
                     </div>
                 </form>
-            </div>
+            </Card>
         </div>
     );
 }
+
+// Suppress unused-import warning while we keep IReviewExpensePayload for typing reference.
+export type { IReviewExpensePayload };

@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { ScrollText } from 'lucide-react';
 import { customerRequestsService } from '@/services/customer-requests.service';
+import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { CustomerRequestStatus } from '@/types';
 
 function formatCurrency(amount: number) {
@@ -68,75 +70,157 @@ export default function MyRequestsPage() {
 
             {isLoading ? (
                 <div className="flex items-center justify-center py-24">
-                    <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
                 </div>
             ) : requests.length === 0 ? (
-                <div className="text-center py-24 text-text-3 text-sm">
-                    No requests yet.
+                <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <div className="w-14 h-14 rounded-full bg-surface-2 border border-border flex items-center justify-center mb-4">
+                        <ScrollText size={22} className="text-text-2" />
+                    </div>
+                    <p className="text-sm font-semibold text-text-1">
+                        No requests yet
+                    </p>
+                    <p className="text-xs text-text-3 mt-1">
+                        Your pickup requests will appear here once you check out.
+                    </p>
                 </div>
             ) : (
-                <div className="bg-[#111] border border-border rounded-md overflow-hidden">
-                    <table className="w-full text-left">
-                        <thead className="bg-[#111] border-b border-border">
-                            <tr className="text-[11px] uppercase tracking-widest text-text-3">
-                                <th className="px-4 py-3 font-semibold">Code</th>
-                                <th className="px-4 py-3 font-semibold">Date</th>
-                                <th className="px-4 py-3 font-semibold">Branch</th>
-                                <th className="px-4 py-3 font-semibold">Items</th>
-                                <th className="px-4 py-3 font-semibold text-right">Total</th>
-                                <th className="px-4 py-3 font-semibold">Status</th>
-                                <th className="px-4 py-3 font-semibold w-20"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm">
-                            {requests.map((req) => (
-                                <tr
-                                    key={req.id}
-                                    className="border-b border-border hover:bg-surface-2 transition-colors"
-                                >
-                                    <td className="px-4 py-3">
-                                        <Link
-                                            to={`/shop/requests/${req.requestCode}`}
-                                            className="text-accent-text hover:underline font-mono text-xs"
-                                        >
-                                            {req.requestCode}
-                                        </Link>
-                                    </td>
-                                    <td className="px-4 py-3 text-text-2 text-[13px]">
-                                        {formatDate(req.createdAt)}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-1">
-                                        {req.branch?.name ?? '—'}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-2">
-                                        {req.items.length}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-1 font-medium text-right">
-                                        {formatCurrency(Number(req.estimatedTotal))}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span
-                                            className={`text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full border ${STATUS_TONE[req.status]}`}
-                                        >
-                                            {STATUS_LABEL[req.status]}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {req.status === 'pending' && (
-                                            <button
-                                                type="button"
-                                                onClick={() => onCancel(req.id)}
-                                                className="text-[11px] text-danger hover:underline"
-                                            >
-                                                Cancel
-                                            </button>
-                                        )}
-                                    </td>
+                <>
+                    <div className="hidden sm:block bg-surface border border-border rounded-md overflow-hidden">
+                        <table className="w-full text-left">
+                            <thead className="bg-surface border-b border-border">
+                                <tr className="text-[11px] uppercase tracking-widest text-text-3">
+                                    <th className="px-4 py-3 font-semibold">Code</th>
+                                    <th className="px-4 py-3 font-semibold">Date</th>
+                                    <th className="px-4 py-3 font-semibold">Branch</th>
+                                    <th className="px-4 py-3 font-semibold">Items</th>
+                                    <th className="px-4 py-3 font-semibold text-right">Total</th>
+                                    <th className="px-4 py-3 font-semibold">Status</th>
+                                    <th className="px-4 py-3 font-semibold w-20"></th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="text-sm">
+                                {requests.map((req) => (
+                                    <tr
+                                        key={req.id}
+                                        className="border-b border-border hover:bg-surface-2 transition-colors"
+                                    >
+                                        <td className="px-4 py-3">
+                                            <Link
+                                                to={FRONTEND_ROUTES.SHOP_REQUEST_CONFIRMATION.replace(
+                                                    ':code',
+                                                    req.requestCode,
+                                                )}
+                                                className="text-accent-text hover:underline font-mono text-xs"
+                                            >
+                                                {req.requestCode}
+                                            </Link>
+                                        </td>
+                                        <td className="px-4 py-3 text-text-2 text-[13px]">
+                                            {formatDate(req.createdAt)}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-1">
+                                            {req.branch?.name ?? '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-2">
+                                            {req.items.length}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-1 font-medium text-right">
+                                            {formatCurrency(req.estimatedTotal)}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span
+                                                className={`text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full border ${STATUS_TONE[req.status]}`}
+                                            >
+                                                {STATUS_LABEL[req.status]}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {req.status === 'pending' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onCancel(req.id)}
+                                                    className="text-[11px] text-danger hover:underline"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="sm:hidden flex flex-col gap-3">
+                        {requests.map((req) => (
+                            <div
+                                key={req.id}
+                                className="bg-surface border border-border rounded-md p-4"
+                            >
+                                <div className="flex items-start justify-between gap-3 mb-3">
+                                    <Link
+                                        to={FRONTEND_ROUTES.SHOP_REQUEST_CONFIRMATION.replace(
+                                            ':code',
+                                            req.requestCode,
+                                        )}
+                                        className="text-accent-text hover:underline font-mono text-sm font-semibold"
+                                    >
+                                        {req.requestCode}
+                                    </Link>
+                                    <span
+                                        className={`text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full border ${STATUS_TONE[req.status]}`}
+                                    >
+                                        {STATUS_LABEL[req.status]}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                        <p className="text-text-3 uppercase tracking-widest text-[10px]">
+                                            Date
+                                        </p>
+                                        <p className="text-text-1 mt-0.5">
+                                            {formatDate(req.createdAt)}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-3 uppercase tracking-widest text-[10px]">
+                                            Branch
+                                        </p>
+                                        <p className="text-text-1 mt-0.5 truncate">
+                                            {req.branch?.name ?? '—'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-3 uppercase tracking-widest text-[10px]">
+                                            Items
+                                        </p>
+                                        <p className="text-text-1 mt-0.5">
+                                            {req.items.length}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-3 uppercase tracking-widest text-[10px]">
+                                            Total
+                                        </p>
+                                        <p className="text-text-1 mt-0.5 font-medium">
+                                            {formatCurrency(req.estimatedTotal)}
+                                        </p>
+                                    </div>
+                                </div>
+                                {req.status === 'pending' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => onCancel(req.id)}
+                                        className="mt-3 text-[11px] text-danger hover:underline"
+                                    >
+                                        Cancel request
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </>
             )}
         </div>
     );

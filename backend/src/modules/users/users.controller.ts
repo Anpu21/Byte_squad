@@ -18,6 +18,7 @@ import { UsersService } from '@users/users.service';
 import type { Actor } from '@users/users.service';
 import { CreateUserDto } from '@users/dto/create-user.dto';
 import { UpdateUserDto } from '@users/dto/update-user.dto';
+import { UpdateMyBranchDto } from '@users/dto/update-my-branch.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -44,6 +45,15 @@ export class UsersController {
     @Body() body: { firstName?: string; lastName?: string },
   ): Promise<User | null> {
     return this.usersService.updateProfile(userId, body);
+  }
+
+  @Patch(APP_ROUTES.USERS.MY_BRANCH)
+  @Roles(UserRole.CUSTOMER)
+  updateMyBranch(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateMyBranchDto,
+  ): Promise<User | null> {
+    return this.usersService.updateMyBranch(userId, dto.branchId);
   }
 
   @Post(APP_ROUTES.USERS.PROFILE_AVATAR)

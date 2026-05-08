@@ -8,6 +8,7 @@ import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Logo from '@/components/ui/Logo';
+import OnboardingStepper from '@/components/auth/OnboardingStepper';
 
 interface LocationState {
     email?: string;
@@ -69,7 +70,10 @@ export default function OtpVerificationPage() {
     return (
         <>
             <Logo size={36} />
-            <h1 className="mt-7 text-2xl font-bold tracking-[-0.015em] text-text-1">
+            <div className="mt-7">
+                <OnboardingStepper currentStep={2} />
+            </div>
+            <h1 className="text-2xl font-bold tracking-[-0.015em] text-text-1">
                 Verify your email
             </h1>
             <p className="text-xs text-text-2 mt-1.5 mb-7">
