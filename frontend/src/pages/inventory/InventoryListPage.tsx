@@ -516,7 +516,6 @@ export default function InventoryListPage() {
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-12 h-12 rounded-md bg-surface-2 border border-border overflow-hidden flex items-center justify-center flex-shrink-0">
                                                         {item.product.imageUrl ? (
-                                                            // eslint-disable-next-line @next/next/no-img-element
                                                             <img
                                                                 src={
                                                                     item.product

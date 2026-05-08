@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, ArrowRightLeft, Check } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -231,13 +231,6 @@ export default function NotificationsPage() {
         () => getFilteredNotifications(notifications, activeFilter),
         [notifications, activeFilter],
     );
-
-    // Keep selection valid when filter or list changes.
-    useEffect(() => {
-        if (selectedId && !filtered.find((n) => n.id === selectedId)) {
-            setSelectedId(null);
-        }
-    }, [filtered, selectedId]);
 
     const segmentedOptions = FILTER_TABS.map((tab) => ({
         value: tab.key,

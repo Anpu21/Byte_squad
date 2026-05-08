@@ -237,10 +237,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         return () => document.removeEventListener('mousedown', handler);
     }, [profileOpen]);
 
-    useEffect(() => {
-        setMobileNavOpen(false);
-    }, [location.pathname]);
-
     const handleLogout = () => {
         setProfileOpen(false);
         logout();
@@ -292,6 +288,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                                 key={`${item.path}-${item.label}`}
                                                 to={item.path}
                                                 title={!isExpanded ? item.label : undefined}
+                                                onClick={() => setMobileNavOpen(false)}
                                                 className={cn(
                                                     'relative flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors',
                                                     isActive
@@ -331,6 +328,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <div className="p-3 border-t border-border">
                         <Link
                             to={FRONTEND_ROUTES.PROFILE}
+                            onClick={() => setMobileNavOpen(false)}
                             className={cn(
                                 'flex items-center gap-2 p-2 rounded-md transition-colors',
                                 location.pathname === FRONTEND_ROUTES.PROFILE

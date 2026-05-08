@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     Plus,
     Trash2,
@@ -62,11 +63,8 @@ function monthLabel(date: Date) {
 export default function ExpensesPage() {
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
+    const queryClient = useQueryClient();
 
-    const [expenses, setExpenses] = useState<IExpense[]>([]);
-    const [branches, setBranches] = useState<IBranchWithMeta[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -74,40 +72,52 @@ export default function ExpensesPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<StatusFilter>('all');
     const [selectedBranchId, setSelectedBranchId] = useState<string>(''); // '' = all branches (admin)
+    const [error, setError] = useState<string | null>(null);
 
     const [reviewTarget, setReviewTarget] = useState<{
         expense: IExpense;
         action: 'approved' | 'rejected';
     } | null>(null);
 
-    const fetchExpenses = useCallback(() => {
-        setIsLoading(true);
-        setError(null);
-        accountingService
-            .getExpenses({
+    const expensesQueryKey = useMemo(
+        () =>
+            [
+                'expenses',
+                {
+                    branchId:
+                        isAdmin && selectedBranchId ? selectedBranchId : null,
+                    status: selectedStatus !== 'all' ? selectedStatus : null,
+                },
+            ] as const,
+        [isAdmin, selectedBranchId, selectedStatus],
+    );
+
+    const {
+        data: expenses = [],
+        isLoading,
+        error: queryError,
+    } = useQuery<IExpense[]>({
+        queryKey: expensesQueryKey,
+        queryFn: () =>
+            accountingService.getExpenses({
                 branchId:
                     isAdmin && selectedBranchId ? selectedBranchId : undefined,
                 status:
                     selectedStatus !== 'all' ? selectedStatus : undefined,
-            })
-            .then(setExpenses)
-            .catch(() => setError('Failed to load expenses'))
-            .finally(() => setIsLoading(false));
-    }, [isAdmin, selectedBranchId, selectedStatus]);
+            }),
+    });
 
-    useEffect(() => {
-        fetchExpenses();
-    }, [fetchExpenses]);
+    const { data: branches = [] } = useQuery<IBranchWithMeta[]>({
+        queryKey: ['admin-branches'],
+        queryFn: adminService.listBranches,
+        enabled: isAdmin,
+    });
 
-    useEffect(() => {
-        if (!isAdmin) return;
-        adminService
-            .listBranches()
-            .then(setBranches)
-            .catch(() => {
-                // Non-critical: branch list is for the dropdown only
-            });
-    }, [isAdmin]);
+    const fetchError =
+        error ?? (queryError ? 'Failed to load expenses' : null);
+
+    const invalidateExpenses = () =>
+        queryClient.invalidateQueries({ queryKey: ['expenses'] });
 
     const filtered = useMemo(() => {
         const q = searchQuery.trim().toLowerCase();
@@ -138,21 +148,15 @@ export default function ExpensesPage() {
     };
 
     const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
-    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
 
-    const thisMonthExpenses = useMemo(
-        () =>
-            expenses.filter((e) => {
-                const d = new Date(e.expenseDate);
-                return (
-                    d.getMonth() === thisMonth && d.getFullYear() === thisYear
-                );
-            }),
-        [expenses, thisMonth, thisYear],
-    );
+    const thisMonthExpenses = useMemo(() => {
+        const month = new Date().getMonth();
+        const year = new Date().getFullYear();
+        return expenses.filter((e) => {
+            const d = new Date(e.expenseDate);
+            return d.getMonth() === month && d.getFullYear() === year;
+        });
+    }, [expenses]);
 
     const thisMonthTotal = useMemo(
         () =>
@@ -161,16 +165,17 @@ export default function ExpensesPage() {
     );
 
     const lastMonthTotal = useMemo(() => {
+        const now = new Date();
+        const month = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+        const year =
+            now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
         return expenses
             .filter((e) => {
                 const d = new Date(e.expenseDate);
-                return (
-                    d.getMonth() === lastMonth &&
-                    d.getFullYear() === lastMonthYear
-                );
+                return d.getMonth() === month && d.getFullYear() === year;
             })
             .reduce((sum, e) => sum + Number(e.amount), 0);
-    }, [expenses, lastMonth, lastMonthYear]);
+    }, [expenses]);
 
     const monthOverMonthDelta = useMemo(() => {
         if (lastMonthTotal === 0) return null;
@@ -242,7 +247,7 @@ export default function ExpensesPage() {
         if (!deleteId) return;
         try {
             await accountingService.deleteExpense(deleteId);
-            setExpenses((prev) => prev.filter((e) => e.id !== deleteId));
+            await invalidateExpenses();
         } catch {
             setError('Failed to delete expense');
         }
@@ -252,19 +257,14 @@ export default function ExpensesPage() {
     const handleReview = async (note: string) => {
         if (!reviewTarget) return;
         try {
-            const updated = await accountingService.reviewExpense(
-                reviewTarget.expense.id,
-                {
-                    status:
-                        reviewTarget.action === 'approved'
-                            ? ExpenseStatus.APPROVED
-                            : ExpenseStatus.REJECTED,
-                    note: note || undefined,
-                },
-            );
-            setExpenses((prev) =>
-                prev.map((e) => (e.id === updated.id ? updated : e)),
-            );
+            await accountingService.reviewExpense(reviewTarget.expense.id, {
+                status:
+                    reviewTarget.action === 'approved'
+                        ? ExpenseStatus.APPROVED
+                        : ExpenseStatus.REJECTED,
+                note: note || undefined,
+            });
+            await invalidateExpenses();
             setReviewTarget(null);
         } catch {
             setError('Failed to update expense status');
@@ -316,9 +316,9 @@ export default function ExpensesPage() {
                 </Button>
             </div>
 
-            {error && (
+            {fetchError && (
                 <div className="mb-4 px-4 py-2.5 rounded-md bg-danger-soft border border-danger/40 text-sm text-danger">
-                    {error}
+                    {fetchError}
                 </div>
             )}
 
@@ -887,7 +887,7 @@ export default function ExpensesPage() {
                     onClose={() => setShowAddModal(false)}
                     onSaved={() => {
                         setShowAddModal(false);
-                        fetchExpenses();
+                        void invalidateExpenses();
                     }}
                 />
             )}

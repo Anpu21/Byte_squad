@@ -648,7 +648,6 @@ export default function ProductFormPage() {
                         <CardContent className="space-y-3">
                             <div className="aspect-square w-full max-w-[220px] mx-auto rounded-md border border-border overflow-hidden bg-surface-2 flex items-center justify-center">
                                 {imageUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                         src={imageUrl}
                                         alt="Product"
