@@ -72,7 +72,7 @@ export default function TransferRequestsPage() {
                 </div>
                 <button
                     onClick={() => navigate(FRONTEND_ROUTES.TRANSFERS_NEW)}
-                    className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all flex items-center gap-2 self-start"
+                    className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all flex items-center gap-2 self-start"
                 >
                     <svg
                         width="14"
@@ -112,7 +112,7 @@ export default function TransferRequestsPage() {
                             <span
                                 className={`text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full ${
                                     isActive
-                                        ? 'bg-slate-900/10 text-text-3'
+                                        ? 'bg-surface-2 text-text-3'
                                         : 'bg-surface-2 text-text-3'
                                 }`}
                             >
@@ -240,7 +240,7 @@ export default function TransferRequestsPage() {
                                                             shippingId ===
                                                             item.id
                                                         }
-                                                        className="h-8 px-3 rounded-lg bg-primary text-text-inv text-xs font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
+                                                        className="h-8 px-3 rounded-lg bg-primary text-text-inv text-xs font-bold hover:bg-primary-hover transition-all disabled:opacity-50"
                                                     >
                                                         {shippingId ===
                                                         item.id

@@ -11,6 +11,7 @@ import {
     clearShopCart,
     setBranch,
 } from '@/store/slices/shopCartSlice';
+import { useConfirm } from '@/hooks/useConfirm';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
 function formatCurrency(amount: number) {
@@ -24,6 +25,7 @@ export default function ProductDetailPage() {
     const { id } = useParams<{ id: string }>();
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const confirm = useConfirm();
     const [qty, setQty] = useState(1);
     const [imageFailed, setImageFailed] = useState(false);
 
@@ -68,18 +70,21 @@ export default function ProductDetailPage() {
         product.availableBranches[0] ??
         null;
 
-    const handleAdd = () => {
+    const handleAdd = async (): Promise<boolean> => {
         if (isOutEverywhere) {
             toast.error("This product isn't stocked anywhere right now");
-            return;
+            return false;
         }
 
         if (branchSwitchNeeded) {
             if (cartItems.length > 0) {
-                const ok = window.confirm(
-                    `This item is at ${targetBranch?.name ?? 'another branch'}. Switching will clear your cart. Continue?`,
-                );
-                if (!ok) return;
+                const ok = await confirm({
+                    title: 'Switch branch?',
+                    body: `This item is at ${targetBranch?.name ?? 'another branch'}. Switching will clear your cart.`,
+                    confirmLabel: 'Switch & clear cart',
+                    tone: 'danger',
+                });
+                if (!ok) return false;
                 dispatch(clearShopCart());
             }
             if (targetBranch) {
@@ -97,16 +102,14 @@ export default function ProductDetailPage() {
             }),
         );
         toast.success(`${product.name} × ${qty} added`);
+        return true;
     };
 
-    const handleBuyNow = () => {
-        const cartCountBefore = cartItems.length;
-        handleAdd();
-        // Only navigate if the add wasn't blocked (cart grew or branch changed without clearing)
-        if (!isOutEverywhere) {
+    const handleBuyNow = async () => {
+        const added = await handleAdd();
+        if (added) {
             navigate(FRONTEND_ROUTES.SHOP_CART);
         }
-        void cartCountBefore;
     };
 
     return (

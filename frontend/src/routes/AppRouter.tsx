@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { UserRole } from '@/constants/enums';
@@ -74,6 +75,16 @@ function InventoryByRole() {
     );
 }
 
+// /select-branch is a first-time-setup screen. Customers who already have a
+// branch should manage it from the shop profile instead.
+function FirstSetupOnly({ children }: { children: ReactNode }) {
+    const { user } = useAuth();
+    if (user?.branchId) {
+        return <Navigate to={FRONTEND_ROUTES.SHOP_PROFILE} replace />;
+    }
+    return <>{children}</>;
+}
+
 export default function AppRouter() {
     return (
         <BrowserRouter>
@@ -133,14 +144,17 @@ export default function AppRouter() {
                     }
                 />
 
-                {/* Branch selection — protected, customer-only, AuthLayout */}
+                {/* Branch selection — first-time setup only; existing
+                    customers go through profile to change branches. */}
                 <Route
                     path={FRONTEND_ROUTES.SELECT_BRANCH}
                     element={
                         <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
-                            <AuthLayout>
-                                <BranchSelectionPage />
-                            </AuthLayout>
+                            <FirstSetupOnly>
+                                <AuthLayout>
+                                    <BranchSelectionPage />
+                                </AuthLayout>
+                            </FirstSetupOnly>
                         </ProtectedRoute>
                     }
                 />
@@ -488,7 +502,7 @@ export default function AppRouter() {
                 <Route
                     path={FRONTEND_ROUTES.SHOP_REQUEST_CONFIRMATION}
                     element={
-                        <CustomerLayout>
+                        <CustomerLayout publicMode>
                             <RequestConfirmationPage />
                         </CustomerLayout>
                     }

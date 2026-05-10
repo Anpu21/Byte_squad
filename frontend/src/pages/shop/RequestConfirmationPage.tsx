@@ -28,8 +28,8 @@ const STATUS_TONE: Record<CustomerRequestStatus, string> = {
     accepted: 'bg-primary-soft text-primary-soft-text border-primary/40',
     completed: 'bg-accent-soft text-accent-text border-accent/40',
     rejected: 'bg-danger-soft text-danger border-danger/40',
-    cancelled: 'bg-slate-500/10 text-text-1 border-slate-500/30',
-    expired: 'bg-slate-500/10 text-text-2 border-slate-500/30',
+    cancelled: 'bg-surface-2 text-text-1 border-border',
+    expired: 'bg-surface-2 text-text-2 border-border',
 };
 
 export default function RequestConfirmationPage() {

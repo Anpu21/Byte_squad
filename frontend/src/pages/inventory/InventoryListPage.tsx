@@ -16,6 +16,7 @@ import axios from 'axios';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useInventory } from '@/hooks/useInventory';
 import { useAuth } from '@/hooks/useAuth';
+import { useConfirm } from '@/hooks/useConfirm';
 import { inventoryService } from '@/services/inventory.service';
 import type { IInventoryItem } from '@/services/inventory.service';
 import { formatCurrency } from '@/lib/utils';
@@ -74,8 +75,7 @@ export default function InventoryListPage() {
         refetch,
     } = useInventory();
 
-    const [deleteTarget, setDeleteTarget] = useState<IInventoryItem | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
+    const confirm = useConfirm();
     const [isExporting, setIsExporting] = useState(false);
 
     const hasActiveFilter =
@@ -87,13 +87,17 @@ export default function InventoryListPage() {
         setStockStatus('');
     };
 
-    const handleDelete = async () => {
-        if (!deleteTarget) return;
-        setIsDeleting(true);
+    const handleDelete = async (item: IInventoryItem) => {
+        const ok = await confirm({
+            title: 'Delete product?',
+            body: `Permanently delete "${item.product.name}". This cannot be undone.`,
+            confirmLabel: 'Delete product',
+            tone: 'danger',
+        });
+        if (!ok) return;
         try {
-            await inventoryService.deleteProduct(deleteTarget.productId);
+            await inventoryService.deleteProduct(item.productId);
             toast.success('Product deleted');
-            setDeleteTarget(null);
             refetch();
         } catch (err) {
             const message =
@@ -101,8 +105,6 @@ export default function InventoryListPage() {
                     ? String(err.response.data.message)
                     : 'Failed to delete product';
             toast.error(message);
-        } finally {
-            setIsDeleting(false);
         }
     };
 
@@ -596,9 +598,7 @@ export default function InventoryListPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() =>
-                                                                setDeleteTarget(
-                                                                    item,
-                                                                )
+                                                                handleDelete(item)
                                                             }
                                                             className="p-1.5 text-text-3 hover:text-danger rounded-md hover:bg-danger-soft transition-colors"
                                                             title="Delete"
@@ -671,46 +671,6 @@ export default function InventoryListPage() {
                 </div>
             </div>
 
-            {/* Delete confirmation modal */}
-            {deleteTarget && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-                    style={{ background: 'var(--overlay)' }}
-                >
-                    <Card className="w-full max-w-sm p-6">
-                        <h3 className="text-base font-semibold text-text-1 mb-2">
-                            Delete product
-                        </h3>
-                        <p className="text-sm text-text-2 mb-5">
-                            Are you sure you want to delete{' '}
-                            <span className="text-text-1 font-medium">
-                                {deleteTarget.product.name}
-                            </span>
-                            ? This action cannot be undone.
-                        </p>
-                        <div className="flex items-center justify-end gap-2">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="md"
-                                onClick={() => setDeleteTarget(null)}
-                                disabled={isDeleting}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="danger"
-                                size="md"
-                                onClick={handleDelete}
-                                disabled={isDeleting}
-                            >
-                                {isDeleting ? 'Deleting…' : 'Delete'}
-                            </Button>
-                        </div>
-                    </Card>
-                </div>
-            )}
         </div>
     );
 }

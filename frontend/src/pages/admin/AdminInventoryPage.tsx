@@ -9,6 +9,7 @@ import {
     type IInventoryMatrixBranchColumn,
 } from '@/services/admin.service';
 import { inventoryService } from '@/services/inventory.service';
+import Modal from '@/components/ui/Modal';
 
 interface AdminInventoryPageProps {
     embedded?: boolean;
@@ -158,7 +159,7 @@ export default function AdminInventoryPage({
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                             placeholder="Search product name or barcode…"
-                            className="w-full h-10 px-4 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3"
+                            className="w-full h-10 px-4 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3"
                         />
                     </div>
 
@@ -167,7 +168,7 @@ export default function AdminInventoryPage({
                         <select
                             value={category}
                             onChange={(e) => changeCategory(e.target.value)}
-                            className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
+                            className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all"
                         >
                             <option value="">All categories</option>
                             {categories.map((c) => (
@@ -183,7 +184,7 @@ export default function AdminInventoryPage({
                         onClick={toggleLowStockOnly}
                         className={`h-10 px-4 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                             lowStockOnly
-                                ? 'bg-warning-soft border border-warning/50 text-amber-200'
+                                ? 'bg-warning-soft border border-warning/50 text-warning'
                                 : 'bg-canvas border border-border text-text-2 hover:text-text-1 hover:bg-surface-2'
                         }`}
                     >
@@ -284,7 +285,7 @@ export default function AdminInventoryPage({
                                         key={row.productId}
                                         className="border-b border-border hover:bg-surface-2 transition-colors group"
                                     >
-                                        <td className="px-6 py-4 sticky left-0 bg-surface group-hover:bg-[#141414]">
+                                        <td className="px-6 py-4 sticky left-0 bg-surface group-hover:bg-surface-2">
                                             <button
                                                 onClick={() =>
                                                     navigate(
@@ -311,7 +312,7 @@ export default function AdminInventoryPage({
                                                     ? 'text-text-3'
                                                     : 'bg-danger-soft text-danger'
                                                 : cell.isLowStock
-                                                  ? 'bg-warning-soft text-amber-200'
+                                                  ? 'bg-warning-soft text-warning'
                                                   : 'text-text-1';
                                             return (
                                                 <td
@@ -381,27 +382,17 @@ export default function AdminInventoryPage({
             </div>
 
             {/* Drill-down modal */}
-            {drillDown && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-                    onClick={() => setDrillDown(null)}
-                >
-                    <div
-                        className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="mb-4">
-                            <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1">
-                                {drillDown.branch.name}
-                            </p>
-                            <h3 className="text-lg font-semibold text-text-1">
-                                {drillDown.row.productName}
-                            </h3>
-                            <p className="text-xs text-text-3 mt-1">
-                                {drillDown.row.barcode} ·{' '}
-                                {drillDown.row.category}
-                            </p>
-                        </div>
+            <Modal
+                isOpen={drillDown !== null}
+                onClose={() => setDrillDown(null)}
+                title={drillDown ? `${drillDown.row.productName} · ${drillDown.branch.name}` : ''}
+                maxWidth="md"
+            >
+                {drillDown && (
+                <div>
+                        <p className="text-xs text-text-3 mb-4">
+                            {drillDown.row.barcode} · {drillDown.row.category}
+                        </p>
 
                         <div className="grid grid-cols-2 gap-3 mb-5">
                             <div className="bg-canvas border border-border rounded-xl p-3">
@@ -458,14 +449,14 @@ export default function AdminInventoryPage({
                                         ),
                                     )
                                 }
-                                className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all"
+                                className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all"
                             >
                                 Edit product details
                             </button>
                         </div>
-                    </div>
                 </div>
-            )}
+                )}
+            </Modal>
         </div>
     );
 }

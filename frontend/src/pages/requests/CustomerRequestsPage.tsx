@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { customerRequestsService } from '@/services/customer-requests.service';
 import { useAuth } from '@/hooks/useAuth';
+import { useConfirm } from '@/hooks/useConfirm';
 import { UserRole } from '@/constants/enums';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { CustomerRequestStatus } from '@/types';
@@ -79,6 +80,7 @@ const inputClass =
 
 export default function CustomerRequestsPage() {
     const queryClient = useQueryClient();
+    const confirm = useConfirm();
     const { user } = useAuth();
     const [statusFilter, setStatusFilter] = useState<
         CustomerRequestStatus | ''
@@ -108,7 +110,13 @@ export default function CustomerRequestsPage() {
     };
 
     const onReject = async (id: string) => {
-        if (!window.confirm('Reject this request?')) return;
+        const ok = await confirm({
+            title: 'Reject this request?',
+            body: 'The customer will be notified that their pickup request was declined.',
+            confirmLabel: 'Reject request',
+            tone: 'danger',
+        });
+        if (!ok) return;
         try {
             await customerRequestsService.rejectByStaff(id);
             toast.success('Request rejected');

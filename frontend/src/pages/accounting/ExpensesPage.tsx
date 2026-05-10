@@ -11,6 +11,7 @@ import {
     Building2,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useConfirm } from '@/hooks/useConfirm';
 import { accountingService } from '@/services/accounting.service';
 import type {
     IExpense,
@@ -22,6 +23,7 @@ import type { IBranchWithMeta } from '@/types';
 import { ExpenseStatus, UserRole } from '@/constants/enums';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 import Pill from '@/components/ui/Pill';
 import StatusPill from '@/components/ui/StatusPill';
 import EmptyState from '@/components/ui/EmptyState';
@@ -64,9 +66,9 @@ export default function ExpensesPage() {
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
     const queryClient = useQueryClient();
+    const confirm = useConfirm();
 
     const [showAddModal, setShowAddModal] = useState(false);
-    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const [filterCategory, setFilterCategory] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -243,15 +245,20 @@ export default function ExpensesPage() {
 
     const showBranchOnRow = isAdmin && selectedBranchId === '';
 
-    const handleDelete = async () => {
-        if (!deleteId) return;
+    const handleDelete = async (id: string) => {
+        const ok = await confirm({
+            title: 'Delete expense?',
+            body: 'This action cannot be undone.',
+            confirmLabel: 'Delete expense',
+            tone: 'danger',
+        });
+        if (!ok) return;
         try {
-            await accountingService.deleteExpense(deleteId);
+            await accountingService.deleteExpense(id);
             await invalidateExpenses();
         } catch {
             setError('Failed to delete expense');
         }
-        setDeleteId(null);
     };
 
     const handleReview = async (note: string) => {
@@ -852,9 +859,7 @@ export default function ExpensesPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() =>
-                                                                setDeleteId(
-                                                                    expense.id,
-                                                                )
+                                                                handleDelete(expense.id)
                                                             }
                                                             className="p-1.5 text-text-3 hover:text-danger opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all rounded-md hover:bg-danger-soft"
                                                             title="Delete"
@@ -890,40 +895,6 @@ export default function ExpensesPage() {
                         void invalidateExpenses();
                     }}
                 />
-            )}
-
-            {deleteId && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-                    style={{ background: 'var(--overlay)' }}
-                >
-                    <Card className="w-full max-w-sm p-6">
-                        <h3 className="text-base font-semibold text-text-1 mb-2">
-                            Delete expense
-                        </h3>
-                        <p className="text-sm text-text-2 mb-5">
-                            Are you sure? This action cannot be undone.
-                        </p>
-                        <div className="flex items-center justify-end gap-2">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="md"
-                                onClick={() => setDeleteId(null)}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="danger"
-                                size="md"
-                                onClick={handleDelete}
-                            >
-                                Delete
-                            </Button>
-                        </div>
-                    </Card>
-                </div>
             )}
 
             {reviewTarget && (
@@ -963,14 +934,13 @@ function ReviewExpenseModal({
     };
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-            style={{ background: 'var(--overlay)' }}
+        <Modal
+            isOpen
+            onClose={onCancel}
+            title={isReject ? 'Reject expense' : 'Approve expense'}
+            maxWidth="md"
         >
-            <Card className="w-full max-w-md p-6">
-                <h3 className="text-base font-semibold text-text-1 mb-1">
-                    {isReject ? 'Reject expense' : 'Approve expense'}
-                </h3>
+            <div>
                 <p className="text-sm text-text-2 mb-4">
                     {expense.category} —{' '}
                     <span className="mono">
@@ -1021,8 +991,8 @@ function ReviewExpenseModal({
                               : 'Approve'}
                     </Button>
                 </div>
-            </Card>
-        </div>
+            </div>
+        </Modal>
     );
 }
 
@@ -1080,26 +1050,8 @@ function AddExpenseModal({
         'w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors placeholder:text-text-3';
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-            style={{ background: 'var(--overlay)' }}
-        >
-            <Card className="w-full max-w-md">
-                <div className="p-5 border-b border-border flex items-center justify-between">
-                    <h2 className="text-base font-semibold text-text-1 tracking-tight">
-                        Add expense
-                    </h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="p-1.5 text-text-2 hover:text-text-1 rounded-md hover:bg-surface-2 transition-colors"
-                        aria-label="Close"
-                    >
-                        <X size={16} />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
+        <Modal isOpen onClose={onClose} title="Add expense" maxWidth="md">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {error && (
                         <div className="px-3 py-2 rounded-md bg-danger-soft border border-danger/40 text-xs text-danger font-medium">
                             {error}
@@ -1220,8 +1172,7 @@ function AddExpenseModal({
                         </Button>
                     </div>
                 </form>
-            </Card>
-        </div>
+        </Modal>
     );
 }
 

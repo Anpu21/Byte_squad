@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Logo from '@/components/ui/Logo';
 import OnboardingStepper from '@/components/auth/OnboardingStepper';
+import PasswordStrength from '@/components/auth/PasswordStrength';
 
 interface FieldErrors {
     firstName?: string;
@@ -104,6 +105,7 @@ export default function SignupPage() {
                     <Input
                         label="First name"
                         type="text"
+                        autoComplete="given-name"
                         value={firstName}
                         onChange={(e) => {
                             setFirstName(e.target.value);
@@ -116,6 +118,7 @@ export default function SignupPage() {
                     <Input
                         label="Last name"
                         type="text"
+                        autoComplete="family-name"
                         value={lastName}
                         onChange={(e) => {
                             setLastName(e.target.value);
@@ -130,6 +133,8 @@ export default function SignupPage() {
                 <Input
                     label="Email"
                     type="email"
+                    autoComplete="email"
+                    inputMode="email"
                     value={email}
                     onChange={(e) => {
                         setEmail(e.target.value);
@@ -143,38 +148,45 @@ export default function SignupPage() {
                 <Input
                     label="Phone (optional)"
                     type="tel"
+                    autoComplete="tel"
+                    inputMode="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+94 …"
                     sizeVariant="lg"
                 />
 
-                <Input
-                    label="Password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => {
-                        setPassword(e.target.value);
-                        clearError('password');
-                    }}
-                    placeholder="At least 8 characters"
-                    error={errors.password}
-                    sizeVariant="lg"
-                    rightSlot={
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword((s) => !s)}
-                            className="text-text-3 hover:text-text-1 transition-colors"
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                    }
-                />
+                <div>
+                    <Input
+                        label="Password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        value={password}
+                        onChange={(e) => {
+                            setPassword(e.target.value);
+                            clearError('password');
+                        }}
+                        placeholder="At least 8 characters"
+                        error={errors.password}
+                        sizeVariant="lg"
+                        rightSlot={
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((s) => !s)}
+                                className="text-text-3 hover:text-text-1 transition-colors"
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                            </button>
+                        }
+                    />
+                    {password && <PasswordStrength password={password} />}
+                </div>
 
                 <Input
                     label="Confirm password"
                     type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => {
                         setConfirmPassword(e.target.value);

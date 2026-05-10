@@ -34,8 +34,8 @@ export default function LoginPage() {
         if (!password) {
             newErrors.password = 'Password is required';
             isValid = false;
-        } else if (password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters';
+        } else if (password.length < 8) {
+            newErrors.password = 'Password must be at least 8 characters';
             isValid = false;
         }
 
@@ -83,6 +83,8 @@ export default function LoginPage() {
                     id="login-email"
                     label="Email address"
                     type="email"
+                    autoComplete="username"
+                    inputMode="email"
                     value={email}
                     onChange={(e) => {
                         setEmail(e.target.value);
@@ -115,6 +117,7 @@ export default function LoginPage() {
                     <Input
                         id="login-password"
                         type={showPassword ? 'text' : 'password'}
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => {
                             setPassword(e.target.value);

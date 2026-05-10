@@ -11,8 +11,10 @@ import {
     clearShopCart,
     setBranch,
 } from '@/store/slices/shopCartSlice';
+import { useConfirm } from '@/hooks/useConfirm';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { IShopProduct, ShopStockStatus } from '@/types';
+import ProductImage from '@/components/shop/ProductImage';
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-LK', {
@@ -34,13 +36,14 @@ const STOCK_PILL: Record<ShopStockStatus, string> = {
 };
 
 const STOCK_DOT: Record<ShopStockStatus, string> = {
-    in: 'bg-emerald-400',
-    low: 'bg-amber-400',
-    out: 'bg-rose-400',
+    in: 'bg-accent',
+    low: 'bg-warning',
+    out: 'bg-danger',
 };
 
 export default function CatalogPage() {
     const dispatch = useDispatch();
+    const confirm = useConfirm();
     const branchId = useSelector(
         (state: RootState) => state.shopCart.branchId,
     );
@@ -50,15 +53,6 @@ export default function CatalogPage() {
 
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState<string>('');
-    const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
-
-    const markImageFailed = (productId: string) =>
-        setFailedImages((prev) => {
-            if (prev.has(productId)) return prev;
-            const next = new Set(prev);
-            next.add(productId);
-            return next;
-        });
 
     const { data: branches = [], isLoading: branchesLoading } = useQuery({
         queryKey: ['shop-branches'],
@@ -88,12 +82,15 @@ export default function CatalogPage() {
         [branches, branchId],
     );
 
-    const handleBranchChange = (newId: string) => {
+    const handleBranchChange = async (newId: string) => {
         if (!newId || newId === branchId) return;
         if (cartItemCount > 0) {
-            const ok = window.confirm(
-                'Switching branch will clear your cart. Continue?',
-            );
+            const ok = await confirm({
+                title: 'Switch branch?',
+                body: 'Switching to a different branch will clear your cart. Continue?',
+                confirmLabel: 'Switch & clear cart',
+                tone: 'danger',
+            });
             if (!ok) return;
             dispatch(clearShopCart());
         }
@@ -234,16 +231,13 @@ export default function CatalogPage() {
                                     to={detailHref}
                                     className="relative block aspect-square bg-canvas flex items-center justify-center overflow-hidden"
                                 >
-                                    {product.imageUrl && !failedImages.has(product.id) ? (
-                                        <img
-                                            src={product.imageUrl}
-                                            alt={product.name}
-                                            onError={() => markImageFailed(product.id)}
-                                            className={out ? 'w-full h-full object-cover grayscale' : 'w-full h-full object-cover'}
-                                        />
-                                    ) : (
-                                        <span className="text-text-3 text-xs">No image</span>
-                                    )}
+                                    <ProductImage
+                                        src={product.imageUrl}
+                                        alt={product.name}
+                                        wrapperClassName="absolute inset-0 flex items-center justify-center"
+                                        imgClassName={out ? 'w-full h-full object-cover grayscale' : 'w-full h-full object-cover'}
+                                        fallback={<span className="text-text-3 text-xs">No image</span>}
+                                    />
                                     <span
                                         className={`absolute top-2 right-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-wider ${
                                             STOCK_PILL[product.stockStatus]

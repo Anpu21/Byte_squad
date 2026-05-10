@@ -215,7 +215,7 @@ export default function TransferHistoryPage() {
                             value={from}
                             max={to || undefined}
                             onChange={(e) => setFrom(e.target.value)}
-                            className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
+                            className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all"
                         />
                     </div>
                     {/* Date to */}
@@ -228,7 +228,7 @@ export default function TransferHistoryPage() {
                             value={to}
                             min={from || undefined}
                             onChange={(e) => setTo(e.target.value)}
-                            className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
+                            className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all"
                         />
                     </div>
 
@@ -271,7 +271,7 @@ export default function TransferHistoryPage() {
                                         );
                                     }}
                                     placeholder="Search product or barcode…"
-                                    className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3"
+                                    className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3"
                                 />
                                 {showProductDropdown &&
                                     productResults.length > 0 && (
@@ -314,7 +314,7 @@ export default function TransferHistoryPage() {
                             <select
                                 value={branchId}
                                 onChange={(e) => setBranchId(e.target.value)}
-                                className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all [color-scheme:dark]"
+                                className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all"
                             >
                                 <option value="">All branches</option>
                                 {branches.map((b) => (

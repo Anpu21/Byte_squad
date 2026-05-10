@@ -6,3 +6,4 @@
 .env.*.local
 .claude/settings.*
 .claude/launch.json
+UI_AUDIT.md

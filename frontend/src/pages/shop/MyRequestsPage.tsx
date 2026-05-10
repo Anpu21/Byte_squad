@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { ScrollText } from 'lucide-react';
 import { customerRequestsService } from '@/services/customer-requests.service';
+import { useConfirm } from '@/hooks/useConfirm';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { CustomerRequestStatus } from '@/types';
 
@@ -35,19 +36,27 @@ const STATUS_TONE: Record<CustomerRequestStatus, string> = {
     accepted: 'bg-primary-soft text-primary-soft-text border-primary/40',
     completed: 'bg-accent-soft text-accent-text border-accent/40',
     rejected: 'bg-danger-soft text-danger border-danger/40',
-    cancelled: 'bg-slate-500/10 text-text-2 border-slate-500/30',
-    expired: 'bg-slate-500/10 text-text-2 border-slate-500/30',
+    cancelled: 'bg-surface-2 text-text-2 border-border',
+    expired: 'bg-surface-2 text-text-2 border-border',
 };
 
 export default function MyRequestsPage() {
     const queryClient = useQueryClient();
+    const confirm = useConfirm();
     const { data: requests = [], isLoading } = useQuery({
         queryKey: ['my-customer-requests'],
         queryFn: customerRequestsService.listMine,
     });
 
     const onCancel = async (id: string) => {
-        if (!window.confirm('Cancel this request?')) return;
+        const ok = await confirm({
+            title: 'Cancel this pickup request?',
+            body: "The branch won't fulfill it. You can place a new request any time.",
+            confirmLabel: 'Cancel request',
+            cancelLabel: 'Keep it',
+            tone: 'danger',
+        });
+        if (!ok) return;
         try {
             await customerRequestsService.cancelMine(id);
             toast.success('Request cancelled');

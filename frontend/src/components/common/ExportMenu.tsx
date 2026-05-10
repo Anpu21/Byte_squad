@@ -81,19 +81,19 @@ export default function ExportMenu({
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-surface border border-border rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute right-0 top-full mt-2 w-56 bg-surface border border-border rounded-xl shadow-2xl z-dropdown overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <button
                         type="button"
                         onClick={() => handleSelect('pdf')}
                         className="flex items-start gap-3 px-4 py-3 w-full text-left hover:bg-surface-2 transition-colors border-b border-border"
                     >
-                        <div className="w-8 h-8 rounded-lg bg-danger-soft flex items-center justify-center flex-shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-danger-soft flex items-center justify-center flex-shrink-0 text-danger">
                             <svg
                                 width="16"
                                 height="16"
                                 viewBox="0 0 24 24"
                                 fill="none"
-                                stroke="#f43f5e"
+                                stroke="currentColor"
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -116,13 +116,13 @@ export default function ExportMenu({
                         onClick={() => handleSelect('excel')}
                         className="flex items-start gap-3 px-4 py-3 w-full text-left hover:bg-surface-2 transition-colors"
                     >
-                        <div className="w-8 h-8 rounded-lg bg-accent-soft flex items-center justify-center flex-shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-accent-soft flex items-center justify-center flex-shrink-0 text-accent">
                             <svg
                                 width="16"
                                 height="16"
                                 viewBox="0 0 24 24"
                                 fill="none"
-                                stroke="#10b981"
+                                stroke="currentColor"
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"

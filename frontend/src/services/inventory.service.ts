@@ -45,10 +45,14 @@ export interface IInventoryParams {
 }
 
 export const inventoryService = {
-  getByBranch: async (branchId: string, params?: IInventoryParams): Promise<IPaginatedResponse<IInventoryItem>> => {
+  getByBranch: async (
+    branchId: string,
+    params?: IInventoryParams,
+    options?: { signal?: AbortSignal },
+  ): Promise<IPaginatedResponse<IInventoryItem>> => {
     const response = await api.get<IApiResponse<IPaginatedResponse<IInventoryItem>>>(
       `/inventory/branch/${branchId}`,
-      { params },
+      { params, signal: options?.signal },
     );
     return response.data.data;
   },

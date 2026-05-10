@@ -2,7 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useScanDetection } from '@/hooks/useScanDetection';
+import { useConfirm } from '@/hooks/useConfirm';
 import UniversalScanner from '@/components/Scanner/UniversalScanner';
+import Modal from '@/components/ui/Modal';
 import { inventoryService } from '@/services/inventory.service';
 import { posService } from '@/services/pos.service';
 import { FRONTEND_ROUTES } from '@/constants/routes';
@@ -21,6 +23,7 @@ type PadMode = 'idle' | 'qty' | 'price' | 'disc' | 'custom';
 
 export default function PosPage() {
     const { user } = useAuth();
+    const confirm = useConfirm();
     const [search, setSearch] = useState('');
     const [searchResults, setSearchResults] = useState<IProduct[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -103,29 +106,38 @@ export default function PosPage() {
         enabled: !showPaymentModal && !showCameraScanner,
     });
 
-    // Search with debounce
+    // Search with debounce + abort on next keystroke
     useEffect(() => {
         if (!search.trim()) {
             setSearchResults([]);
             return;
         }
         clearTimeout(debounceRef.current);
+        const controller = new AbortController();
         debounceRef.current = setTimeout(async () => {
-            if (!user) return;
+            if (!user || !user.branchId) return;
             setIsSearching(true);
             try {
-                const result = await inventoryService.getByBranch(user.branchId, {
-                    search: search.trim(),
-                    limit: 12,
-                });
-                setSearchResults((result.items ?? []).map((inv) => inv.product));
-            } catch {
-                setSearchResults([]);
+                const result = await inventoryService.getByBranch(
+                    user.branchId,
+                    { search: search.trim(), limit: 12 },
+                    { signal: controller.signal },
+                );
+                if (!controller.signal.aborted) {
+                    setSearchResults((result.items ?? []).map((inv) => inv.product));
+                }
+            } catch (err) {
+                if ((err as { name?: string })?.name !== 'CanceledError' && !controller.signal.aborted) {
+                    setSearchResults([]);
+                }
             } finally {
-                setIsSearching(false);
+                if (!controller.signal.aborted) setIsSearching(false);
             }
         }, 250);
-        return () => clearTimeout(debounceRef.current);
+        return () => {
+            clearTimeout(debounceRef.current);
+            controller.abort();
+        };
     }, [search, user]);
 
     // Keyboard shortcuts
@@ -186,7 +198,15 @@ export default function PosPage() {
         setCart((prev) => prev.filter((item) => item.product.id !== productId));
     };
 
-    const clearCart = () => {
+    const clearCart = async () => {
+        if (cart.length === 0) return;
+        const ok = await confirm({
+            title: 'Clear current sale?',
+            body: `Remove all ${cart.length} item${cart.length === 1 ? '' : 's'} from the cart. This cannot be undone.`,
+            confirmLabel: 'Clear sale',
+            tone: 'danger',
+        });
+        if (!ok) return;
         setCart([]);
         setError(null);
         setDiscountAmount(0);
@@ -219,8 +239,29 @@ export default function PosPage() {
         }
     };
 
+    // Synchronous in-flight guard that beats React state lag — prevents a
+    // double-fire from a fast Enter-key press before `isCheckingOut` updates.
+    const checkoutInFlightRef = useRef(false);
+
+    // Fresh idempotency key per payment-modal session. Generated once when
+    // the modal opens; reused across retries within the same attempt so the
+    // backend can safely de-dupe a network retry.
+    const idempotencyKeyRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (showPaymentModal) {
+            idempotencyKeyRef.current =
+                typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                    ? crypto.randomUUID()
+                    : `pos-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        } else {
+            idempotencyKeyRef.current = null;
+        }
+    }, [showPaymentModal]);
+
     const handleCheckout = async () => {
         if (cart.length === 0) return;
+        if (checkoutInFlightRef.current) return;
+        checkoutInFlightRef.current = true;
         setIsCheckingOut(true);
         setError(null);
 
@@ -239,7 +280,10 @@ export default function PosPage() {
         };
 
         try {
-            const transaction = await posService.createTransaction(payload);
+            const transaction = await posService.createTransaction(
+                payload,
+                idempotencyKeyRef.current ?? undefined,
+            );
             setLastTransaction({
                 transactionNumber: transaction.transactionNumber,
                 total: Number(transaction.total),
@@ -248,10 +292,14 @@ export default function PosPage() {
             setShowPaymentModal(false);
             setDiscountAmount(0);
             setCashTendered('');
+            // Return focus to the search input so the cashier can scan the next sale
+            // immediately. Wait one frame so the modal's own focus restore runs first.
+            requestAnimationFrame(() => searchInputRef.current?.focus());
         } catch {
             setError('Failed to complete sale. Please try again.');
         } finally {
             setIsCheckingOut(false);
+            checkoutInFlightRef.current = false;
         }
     };
 
@@ -264,23 +312,31 @@ export default function PosPage() {
     };
 
     return (
-        <div className="h-[calc(100vh-6rem)] flex gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="h-[calc(100dvh-6.5rem)] lg:h-[calc(100dvh-7.5rem)] flex gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
             {/* Left Column */}
             <div className="flex-1 flex flex-col gap-4 min-w-0">
 
                 {/* Status bars */}
-                {scanStatus && (
-                    <div className="px-4 py-2 bg-surface-2 border border-border rounded-xl text-sm text-text-1 font-medium animate-in fade-in duration-200">
-                        {scanStatus}
-                    </div>
-                )}
-                {pendingQty && (
-                    <div className="px-4 py-2 bg-primary-soft border border-border-strong rounded-xl text-sm text-text-1 font-bold animate-in fade-in duration-200 flex items-center justify-between">
-                        <span>Quantity: {pendingQty}x — Now scan or select a product</span>
-                        <button onClick={() => setPendingQty(null)} className="text-text-2 hover:text-text-1 text-xs underline">Cancel</button>
-                    </div>
-                )}
+                <div role="status" aria-live="polite" aria-atomic="true" className="contents">
+                    {scanStatus && (
+                        <div className="px-4 py-2 bg-surface-2 border border-border rounded-xl text-sm text-text-1 font-medium animate-in fade-in duration-200">
+                            {scanStatus}
+                        </div>
+                    )}
+                    {pendingQty && (
+                        <div className="px-4 py-2 bg-primary-soft border border-border-strong rounded-xl text-sm text-text-1 font-bold animate-in fade-in duration-200 flex items-center justify-between">
+                            <span>Quantity: {pendingQty}x — Now scan or select a product</span>
+                            <button
+                                onClick={() => setPendingQty(null)}
+                                aria-label="Cancel pending quantity"
+                                className="text-text-2 hover:text-text-1 text-xs underline"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    )}
+                </div>
 
                 {/* Search Bar + Scan Button */}
                 <div className="flex gap-3">
@@ -294,7 +350,7 @@ export default function PosPage() {
                             ref={searchInputRef}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full h-14 pl-12 pr-24 bg-surface border border-border rounded-md text-lg text-text-1 outline-none focus:border-primary/40 focus:ring-[3px] focus:ring-white/10 transition-all placeholder:text-text-3 shadow-xl"
+                            className="w-full h-14 pl-12 pr-24 bg-surface border border-border rounded-md text-lg text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3 shadow-xl"
                             placeholder="Scan barcode or search product..."
                             autoFocus
                         />
@@ -408,128 +464,284 @@ export default function PosPage() {
                 </div>
             </div>
 
-            {/* Right Column: Cart + Calculator */}
-            <div className="w-[420px] bg-surface border border-border rounded-md shadow-2xl flex flex-col flex-shrink-0">
+            {/* Right Column: Cart (invoice table) → Totals → Calculator → Checkout */}
+            <div className="w-[440px] bg-surface border border-border rounded-md shadow-md-token flex flex-col flex-shrink-0">
 
-                {/* Cart Header */}
-                <div className="h-12 px-4 border-b border-border flex items-center justify-between bg-surface-2">
+                {/* Header */}
+                <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
+                    <div>
+                        <p className="text-[10px] uppercase tracking-[0.12em] text-text-3 font-semibold">Point of Sale</p>
+                        <h2 className="text-base font-bold text-text-1 tracking-tight mt-0.5">Current sale</h2>
+                    </div>
                     <div className="flex items-center gap-2">
-                        <h2 className="text-sm font-bold text-text-1 tracking-tight">Current Sale</h2>
                         {totalItems > 0 && (
-                            <span className="text-[10px] font-bold bg-primary text-text-inv rounded-full w-5 h-5 flex items-center justify-center">{totalItems}</span>
+                            <span className="text-[11px] font-semibold bg-primary-soft text-primary-soft-text rounded-full px-2 py-0.5 tabular-nums">
+                                {totalItems} {totalItems === 1 ? 'item' : 'items'}
+                            </span>
+                        )}
+                        {cart.length > 0 && (
+                            <button
+                                onClick={clearCart}
+                                className="text-[11px] font-semibold text-text-3 hover:text-danger uppercase tracking-wider transition-colors focus:outline-none focus:ring-[3px] focus:ring-danger/20 rounded px-1"
+                            >
+                                Clear
+                            </button>
                         )}
                     </div>
-                    {cart.length > 0 && (
-                        <button onClick={clearCart} className="text-[11px] font-semibold text-text-3 hover:text-text-1 uppercase tracking-wider transition-colors">Clear</button>
-                    )}
                 </div>
 
-                {/* Cart Items */}
+                {/* Invoice table — Product / Qty / Price */}
                 {cart.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center p-4 min-h-[120px]">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-text-1/10 mb-2" strokeWidth="1">
-                            <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
-                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                        </svg>
-                        <p className="text-xs text-text-3">Cart is empty</p>
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 min-h-[160px] text-center">
+                        <div className="w-12 h-12 rounded-full bg-surface-2 border border-border flex items-center justify-center mb-3">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-text-3" strokeWidth="1.5">
+                                <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                            </svg>
+                        </div>
+                        <p className="text-sm font-medium text-text-2">Cart is empty</p>
+                        <p className="text-xs text-text-3 mt-1">Scan a barcode or search to add products.</p>
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-y-auto p-2 space-y-0.5 min-h-[100px]">
-                        {cart.map((item) => (
-                            <div key={item.product.id} className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-surface-2 group transition-colors">
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-medium text-text-1 truncate">
-                                        {item.isCustom && <span className="text-text-3 mr-1">[Custom]</span>}
-                                        {item.product.name}
-                                    </p>
-                                    <p className="text-[10px] text-text-3 tabular-nums">{formatCurrency(item.unitPrice)} each</p>
-                                </div>
-                                <div className="flex items-center gap-0.5">
-                                    <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                        className="w-6 h-6 rounded bg-surface-2 border border-border text-text-2 hover:text-text-1 hover:bg-primary-soft transition-colors flex items-center justify-center text-xs font-bold">-</button>
-                                    <input type="number" min="1" value={item.quantity}
-                                        onChange={(e) => updateQuantity(item.product.id, parseInt(e.target.value) || 1)}
-                                        className="w-8 h-6 text-center bg-transparent text-text-1 text-xs font-semibold tabular-nums outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                                    <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                        className="w-6 h-6 rounded bg-surface-2 border border-border text-text-2 hover:text-text-1 hover:bg-primary-soft transition-colors flex items-center justify-center text-xs font-bold">+</button>
-                                </div>
-                                <p className="text-xs font-semibold text-text-1 tabular-nums w-16 text-right">{formatCurrency(item.lineTotal)}</p>
-                                <button onClick={() => removeFromCart(item.product.id)}
-                                    className="p-0.5 text-text-3 hover:text-text-1 opacity-0 group-hover:opacity-100 transition-all">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                                </button>
-                            </div>
-                        ))}
+                    <div className="flex-1 overflow-y-auto min-h-[140px]">
+                        <table className="w-full text-left border-collapse">
+                            <thead className="sticky top-0 bg-surface z-[1]">
+                                <tr className="text-[10px] uppercase tracking-[0.1em] text-text-3 border-b border-border">
+                                    <th className="px-5 py-2 font-semibold">Product</th>
+                                    <th className="px-2 py-2 font-semibold text-center w-[88px]">Qty</th>
+                                    <th className="px-5 py-2 font-semibold text-right w-[96px]">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {cart.map((item) => (
+                                    <tr
+                                        key={item.product.id}
+                                        className="border-b border-border last:border-b-0 hover:bg-surface-2 group transition-colors align-top"
+                                    >
+                                        <td className="px-5 py-3 min-w-0">
+                                            <div className="flex items-start gap-2">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-[13px] font-medium text-text-1 truncate leading-tight">
+                                                        {item.isCustom && (
+                                                            <span className="text-text-3 mr-1 text-[10px] uppercase tracking-wider">Custom</span>
+                                                        )}
+                                                        {item.product.name}
+                                                    </p>
+                                                    <p className="text-[11px] text-text-3 mono mt-0.5 truncate">
+                                                        {item.isCustom ? '—' : (item.product.barcode || item.product.id.slice(0, 10))}
+                                                        <span className="ml-2 text-text-3">{formatCurrency(item.unitPrice)} ea</span>
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={() => removeFromCart(item.product.id)}
+                                                    aria-label={`Remove ${item.product.name}`}
+                                                    className="p-1 -mt-0.5 -mr-1 rounded text-text-3 hover:text-danger hover:bg-danger-soft opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all focus:outline-none focus:ring-[3px] focus:ring-danger/20"
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td className="px-1 py-3 text-center align-middle">
+                                            <div className="inline-flex items-center gap-0.5 bg-canvas border border-border rounded-md p-0.5">
+                                                <button
+                                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                                    aria-label="Decrease quantity"
+                                                    className="w-6 h-6 rounded text-text-2 hover:text-text-1 hover:bg-primary-soft transition-colors flex items-center justify-center text-sm font-bold leading-none"
+                                                >
+                                                    −
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={item.quantity}
+                                                    onChange={(e) => {
+                                                        const v = e.target.value;
+                                                        if (v === '') return;
+                                                        const n = parseInt(v, 10);
+                                                        if (!Number.isNaN(n)) updateQuantity(item.product.id, n);
+                                                    }}
+                                                    aria-label={`Quantity for ${item.product.name}`}
+                                                    className="w-7 h-6 text-center bg-transparent text-text-1 text-[13px] font-semibold tabular-nums outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                />
+                                                <button
+                                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                                    aria-label="Increase quantity"
+                                                    className="w-6 h-6 rounded text-text-2 hover:text-text-1 hover:bg-primary-soft transition-colors flex items-center justify-center text-sm font-bold leading-none"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td className="px-5 py-3 text-right tabular-nums align-middle">
+                                            <span className="text-[13px] font-semibold text-text-1">
+                                                {formatCurrency(item.lineTotal)}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
 
-                {/* Calculator Pad */}
-                <div className="border-t border-border bg-canvas/80">
-                    {/* Mode buttons */}
-                    <div className="grid grid-cols-4 gap-1 p-2 pb-1">
-                        {([
-                            { mode: 'qty' as PadMode, label: 'QTY', title: 'Set quantity before adding product' },
-                            { mode: 'disc' as PadMode, label: 'DISC', title: 'Apply discount to bill' },
-                            { mode: 'custom' as PadMode, label: 'CUSTOM', title: 'Add custom item' },
-                        ] as const).map((btn) => (
-                            <button
-                                key={btn.mode}
-                                onClick={() => {
-                                    if (padMode === btn.mode) { setPadMode('idle'); setPadValue(''); setCustomName(''); }
-                                    else { setPadMode(btn.mode); setPadValue(''); setCustomName(''); }
-                                }}
-                                title={btn.title}
-                                className={`h-8 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-                                    padMode === btn.mode
-                                        ? 'bg-primary text-text-inv shadow-[0_2px_8px_rgba(255,255,255,0.15)]'
-                                        : 'bg-surface-2 border border-border text-text-2 hover:text-text-1 hover:bg-primary-soft'
-                                }`}
+                {/* Status banners */}
+                {(error || lastTransaction) && (
+                    <div className="px-5 pt-3 space-y-2">
+                        {error && (
+                            <div
+                                role="alert"
+                                aria-live="assertive"
+                                className="p-2.5 bg-danger-soft border border-danger/30 rounded-md text-xs text-danger flex items-start gap-2"
                             >
-                                {btn.label}
-                            </button>
-                        ))}
-                        {padMode === 'disc' && (
-                            <button
-                                onClick={() => setDiscountType(discountType === 'fixed' ? 'percentage' : 'fixed')}
-                                className="h-8 rounded-lg text-[10px] font-bold bg-surface-2 border border-border text-text-2 hover:text-text-1 hover:bg-primary-soft transition-all"
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
+                                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                <span className="flex-1">{error}</span>
+                            </div>
+                        )}
+                        {lastTransaction && (
+                            <div
+                                role="status"
+                                aria-live="polite"
+                                className="p-2.5 bg-accent-soft border border-accent/30 rounded-md flex items-start gap-2"
                             >
-                                {discountType === 'fixed' ? 'LKR' : '%'}
-                            </button>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 flex-shrink-0 text-accent-text">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold text-accent-text">
+                                        Sale complete · {lastTransaction.transactionNumber}
+                                    </p>
+                                    <p className="text-[11px] text-text-2 mono mt-0.5">
+                                        {formatCurrency(lastTransaction.total)}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setLastTransaction(null)}
+                                    aria-label="Dismiss"
+                                    className="p-0.5 text-text-3 hover:text-text-1 -mt-0.5 -mr-0.5 rounded focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                                >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                            </div>
                         )}
                     </div>
+                )}
 
-                    {/* Pad display + numpad (visible when a mode is active) */}
+                {/* Totals card */}
+                <div className="px-5 py-4 border-t border-border bg-surface-2/40 space-y-2">
+                    <div className="flex items-center justify-between text-[13px]">
+                        <span className="text-text-2">Subtotal</span>
+                        <span className="text-text-1 tabular-nums mono">{formatCurrency(subtotal)}</span>
+                    </div>
+                    {discountValue > 0 && (
+                        <div className="flex items-center justify-between text-[13px]">
+                            <span className="flex items-center gap-1.5 text-text-2">
+                                Total Discount
+                                {discountType === 'percentage' && discountAmount > 0 && (
+                                    <span className="text-[10px] font-semibold text-text-3 bg-canvas border border-border rounded px-1 py-0.5 mono">
+                                        −{discountAmount}%
+                                    </span>
+                                )}
+                                <button
+                                    onClick={() => setDiscountAmount(0)}
+                                    aria-label="Clear discount"
+                                    className="p-0.5 -ml-0.5 text-text-3 hover:text-danger rounded focus:outline-none focus:ring-[2px] focus:ring-danger/20"
+                                >
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                            </span>
+                            <span className="text-danger tabular-nums mono">−{formatCurrency(discountValue)}</span>
+                        </div>
+                    )}
+                    <div className="pt-2 border-t border-border flex items-end justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-3 pb-0.5">
+                            Total · LKR
+                        </span>
+                        <span className="text-2xl font-bold text-text-1 tabular-nums tracking-tight leading-none mono">
+                            {formatCurrency(total).replace('LKR', '').trim()}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Calculator pad — compact mode strip + numpad only when active */}
+                <div className="border-t border-border">
+                    <div className="grid grid-cols-3 gap-1 p-2">
+                        {([
+                            { mode: 'qty' as PadMode, label: 'Qty', title: 'Set quantity before adding product' },
+                            { mode: 'disc' as PadMode, label: 'Discount', title: 'Apply discount to bill' },
+                            { mode: 'custom' as PadMode, label: 'Custom item', title: 'Add custom item' },
+                        ] as const).map((btn) => {
+                            const active = padMode === btn.mode;
+                            return (
+                                <button
+                                    key={btn.mode}
+                                    onClick={() => {
+                                        if (active) { setPadMode('idle'); setPadValue(''); setCustomName(''); }
+                                        else { setPadMode(btn.mode); setPadValue(''); setCustomName(''); }
+                                    }}
+                                    title={btn.title}
+                                    aria-pressed={active}
+                                    className={`h-8 rounded-md text-[11px] font-semibold tracking-wide transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20 ${
+                                        active
+                                            ? 'bg-primary text-text-inv'
+                                            : 'bg-surface-2 border border-border text-text-2 hover:text-text-1 hover:bg-primary-soft'
+                                    }`}
+                                >
+                                    {btn.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
                     {padMode !== 'idle' && (
                         <div className="px-2 pb-2">
-                            <p className="text-[10px] font-semibold text-text-3 uppercase tracking-wider mb-1 px-1">{modeLabel[padMode]}</p>
+                            <div className="flex items-center justify-between h-6 mb-1.5 px-1">
+                                <p className="text-[10px] font-semibold text-text-3 uppercase tracking-wider">{modeLabel[padMode]}</p>
+                                {padMode === 'disc' ? (
+                                    <button
+                                        onClick={() => setDiscountType(discountType === 'fixed' ? 'percentage' : 'fixed')}
+                                        className="text-[10px] font-semibold text-text-2 hover:text-text-1 px-2 py-0.5 rounded bg-surface-2 border border-border transition-colors focus:outline-none focus:ring-[2px] focus:ring-primary/20"
+                                    >
+                                        Switch to {discountType === 'fixed' ? '%' : 'LKR'}
+                                    </button>
+                                ) : (
+                                    <span aria-hidden="true" className="invisible text-[10px] px-2 py-0.5">placeholder</span>
+                                )}
+                            </div>
 
-                            {/* Custom item name input */}
                             {padMode === 'custom' && (
                                 <input
                                     value={customName}
                                     onChange={(e) => setCustomName(e.target.value)}
-                                    placeholder="Item name..."
-                                    className="w-full h-8 px-3 mb-1 bg-surface-2 border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary/40 placeholder:text-text-3"
+                                    placeholder="Item name…"
+                                    aria-label="Custom item name"
+                                    className="w-full h-9 px-3 mb-1.5 bg-canvas border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 placeholder:text-text-3 transition-colors"
                                 />
                             )}
 
-                            {/* Display */}
-                            <div className="h-10 px-3 bg-surface-2 border border-border rounded-lg flex items-center justify-end mb-1.5">
-                                <span className="text-lg font-bold text-text-1 tabular-nums tracking-tight">
+                            <div className="h-10 px-3 bg-canvas border border-border rounded-md flex items-center justify-end mb-1.5">
+                                <span className="text-lg font-bold text-text-1 tabular-nums tracking-tight mono">
                                     {padMode === 'disc' && discountType === 'percentage' && padValue ? `${padValue}%` : padValue || '0'}
                                 </span>
                             </div>
 
-                            {/* Numpad grid */}
                             <div className="grid grid-cols-4 gap-1">
                                 {['7','8','9','C','4','5','6','.','1','2','3',''].map((key, i) => (
                                     key ? (
                                         <button
                                             key={key + i}
                                             onClick={() => padPress(key)}
-                                            className={`h-9 rounded-lg text-sm font-bold transition-all ${
+                                            aria-label={key === 'C' ? 'Clear' : `Digit ${key}`}
+                                            className={`h-9 rounded-md text-sm font-bold transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20 ${
                                                 key === 'C'
-                                                    ? 'bg-primary-soft text-text-1 hover:bg-primary-soft'
+                                                    ? 'bg-danger-soft text-danger hover:bg-danger-soft border border-danger/30'
                                                     : 'bg-surface-2 border border-border text-text-1 hover:bg-primary-soft'
                                             }`}
                                         >
@@ -539,82 +751,49 @@ export default function PosPage() {
                                 ))}
                                 <button
                                     onClick={() => padPress('0')}
-                                    className="h-9 rounded-lg text-sm font-bold bg-surface-2 border border-border text-text-1 hover:bg-primary-soft transition-all col-span-2"
+                                    aria-label="Digit 0"
+                                    className="h-9 rounded-md text-sm font-bold bg-surface-2 border border-border text-text-1 hover:bg-primary-soft transition-colors col-span-2 focus:outline-none focus:ring-[3px] focus:ring-primary/20"
                                 >
                                     0
                                 </button>
                                 <button
                                     onClick={padConfirm}
-                                    className="h-9 rounded-lg text-sm font-bold bg-primary text-text-inv hover:shadow-[0_2px_8px_rgba(255,255,255,0.15)] transition-all col-span-2"
+                                    className="h-9 rounded-md text-sm font-bold bg-primary text-text-inv hover:bg-primary-hover transition-colors col-span-2 focus:outline-none focus:ring-[3px] focus:ring-primary/30"
                                 >
-                                    {padMode === 'qty' ? 'SET QTY' : padMode === 'disc' ? 'APPLY' : 'ADD'}
+                                    {padMode === 'qty' ? 'Set qty' : padMode === 'disc' ? 'Apply' : 'Add'}
                                 </button>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* Checkout Footer */}
-                <div className="p-4 border-t border-border bg-canvas/50">
-                    {error && (
-                        <div className="mb-2 p-2 bg-danger-soft border border-danger/30 rounded-lg text-xs text-danger">{error}</div>
-                    )}
-                    {lastTransaction && (
-                        <div className="mb-2 p-2.5 bg-surface-2 border border-border rounded-lg">
-                            <p className="text-xs font-semibold text-text-1 mb-0.5">Sale Complete</p>
-                            <p className="text-[11px] text-text-2">{lastTransaction.transactionNumber} — {formatCurrency(lastTransaction.total)}</p>
-                            <button onClick={() => setLastTransaction(null)} className="text-[10px] text-text-3 hover:text-text-1 mt-0.5 underline">Dismiss</button>
-                        </div>
-                    )}
-
-                    <div className="space-y-1.5 mb-3">
-                        <div className="flex justify-between text-xs text-text-2">
-                            <span>Subtotal</span>
-                            <span className="text-text-1 tabular-nums font-medium">{formatCurrency(subtotal)}</span>
-                        </div>
-                        {discountValue > 0 && (
-                            <div className="flex justify-between text-xs text-text-2">
-                                <span className="flex items-center gap-1">
-                                    Discount
-                                    <button onClick={() => { setDiscountAmount(0); }} className="text-text-3 hover:text-text-1">
-                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                                    </button>
-                                </span>
-                                <span className="text-text-1 tabular-nums font-medium">-{formatCurrency(discountValue)}</span>
-                            </div>
-                        )}
-                        <div className="pt-2 mt-1 border-t border-dashed border-border flex justify-between items-end">
-                            <span className="text-xs font-medium text-text-1">Total</span>
-                            <span className="text-xl font-bold text-text-1 tabular-nums tracking-tight leading-none">{formatCurrency(total)}</span>
-                        </div>
-                    </div>
-
+                {/* Complete Sale */}
+                <div className="p-3 border-t border-border bg-surface">
                     <button
                         onClick={() => { setShowPaymentModal(true); setCashTendered(''); }}
                         disabled={cart.length === 0}
-                        className="w-full h-11 rounded-xl bg-primary text-text-inv text-sm font-bold hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                        className="w-full h-12 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-[3px] focus:ring-primary/30"
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
                         </svg>
-                        Complete Sale
-                        <kbd className="ml-1 inline-flex items-center justify-center h-5 px-1.5 rounded bg-slate-200 text-[9px] font-bold text-text-3">F12</kbd>
+                        <span>Complete Sale</span>
+                        {cart.length > 0 && (
+                            <span className="tabular-nums mono opacity-90">· {formatCurrency(total)}</span>
+                        )}
+                        <kbd className="ml-1 inline-flex items-center justify-center h-5 px-1.5 rounded bg-text-inv/10 text-[10px] font-bold">F12</kbd>
                     </button>
                 </div>
             </div>
 
             {/* Payment Modal */}
-            {showPaymentModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-md">
-                        <div className="p-5 border-b border-border flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-text-1">Complete Sale</h2>
-                            <button onClick={() => setShowPaymentModal(false)} className="p-1.5 text-text-2 hover:text-text-1 rounded-lg hover:bg-surface-2 transition-colors">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                            </button>
-                        </div>
-
-                        <div className="p-5">
+            <Modal
+                isOpen={showPaymentModal}
+                onClose={() => setShowPaymentModal(false)}
+                title="Complete Sale"
+                maxWidth="md"
+            >
+                <div>
                             {/* Order Summary */}
                             <div className="mb-5 p-4 bg-surface-2 rounded-xl border border-border">
                                 <div className="flex justify-between text-sm mb-1">
@@ -646,7 +825,7 @@ export default function PosPage() {
                                         onClick={() => { setPaymentMethod(method.value); setCashTendered(''); }}
                                         className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
                                             paymentMethod === method.value
-                                                ? 'bg-primary text-text-inv border-white shadow-[0_4px_12px_rgba(255,255,255,0.15)]'
+                                                ? 'bg-primary text-text-inv border-primary'
                                                 : 'bg-surface-2 text-text-2 border-border hover:border-border-strong hover:text-text-1'
                                         }`}
                                     >
@@ -667,7 +846,7 @@ export default function PosPage() {
                                         value={cashTendered}
                                         onChange={(e) => setCashTendered(e.target.value)}
                                         placeholder={total.toFixed(2)}
-                                        className="w-full h-12 px-4 bg-canvas border border-border rounded-lg text-xl text-text-1 font-bold tabular-nums outline-none focus:border-primary/40 placeholder:text-text-3 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        className="w-full h-12 px-4 bg-canvas border border-border rounded-lg text-xl text-text-1 font-bold tabular-nums outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 placeholder:text-text-3 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         autoFocus
                                     />
                                     {/* Quick cash buttons */}
@@ -701,31 +880,31 @@ export default function PosPage() {
                             <button
                                 onClick={handleCheckout}
                                 disabled={isCheckingOut || (paymentMethod === 'cash' && !!cashTendered && parseFloat(cashTendered) < total)}
-                                className="w-full h-12 rounded-xl bg-primary text-text-inv text-sm font-bold hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                className="w-full h-12 rounded-xl bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {isCheckingOut ? (
-                                    <><div className="w-4 h-4 border-2 border-slate-400 border-t-slate-900 rounded-full animate-spin" />Processing...</>
+                                    <><div className="w-4 h-4 border-2 border-border-strong border-t-primary rounded-full animate-spin" />Processing...</>
                                 ) : (
                                     <>Confirm {formatCurrency(total)}</>
                                 )}
                             </button>
-                        </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Camera Scanner Modal */}
-            {showCameraScanner && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                    <div className="w-full max-w-lg mx-4 animate-in fade-in zoom-in-95 duration-200">
-                        <UniversalScanner onScanSuccess={(scannedBarcode) => { handleBarcodeScan(scannedBarcode); setShowCameraScanner(false); }} />
-                        <button type="button" onClick={() => setShowCameraScanner(false)}
-                            className="mt-3 w-full h-10 rounded-xl border border-border bg-surface text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors">
-                            Close Scanner
-                        </button>
-                    </div>
-                </div>
-            )}
+            <Modal
+                isOpen={showCameraScanner}
+                onClose={() => setShowCameraScanner(false)}
+                title="Scan barcode"
+                maxWidth="lg"
+            >
+                <UniversalScanner
+                    onScanSuccess={(scannedBarcode) => {
+                        handleBarcodeScan(scannedBarcode);
+                        setShowCameraScanner(false);
+                    }}
+                />
+            </Modal>
         </div>
     );
 }

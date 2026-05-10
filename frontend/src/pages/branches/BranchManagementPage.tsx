@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '@/services/admin.service';
+import { useConfirm } from '@/hooks/useConfirm';
+import Modal from '@/components/ui/Modal';
 import type {
     IBranchWithMeta,
     IBranchCreatePayload,
@@ -53,22 +55,13 @@ function BranchModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-md overflow-hidden">
-                <div className="flex items-center justify-between p-6 border-b border-border">
-                    <h2 className="text-lg font-bold text-text-1">
-                        {isEdit ? 'Edit Branch' : 'Create Branch'}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-1.5 text-text-3 hover:text-text-1 rounded-md hover:bg-primary-soft transition-colors"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                    </button>
-                </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <Modal
+            isOpen
+            onClose={onClose}
+            title={isEdit ? 'Edit Branch' : 'Create Branch'}
+            maxWidth="md"
+        >
+            <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
                             Name
@@ -78,7 +71,7 @@ function BranchModal({
                             required
                             value={form.name}
                             onChange={(e) => setForm({ ...form, name: e.target.value })}
-                            className="w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
+                            className="w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors"
                         />
                     </div>
                     <div>
@@ -90,7 +83,7 @@ function BranchModal({
                             required
                             value={form.address}
                             onChange={(e) => setForm({ ...form, address: e.target.value })}
-                            className="w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
+                            className="w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors"
                         />
                     </div>
                     <div>
@@ -101,7 +94,7 @@ function BranchModal({
                             type="text"
                             value={form.phone}
                             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                            className="w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
+                            className="w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors"
                         />
                     </div>
                     <div className="flex gap-3 pt-2">
@@ -115,14 +108,13 @@ function BranchModal({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 h-9 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
+                            className="flex-1 h-9 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all disabled:opacity-50"
                         >
                             {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Branch'}
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+        </Modal>
     );
 }
 
@@ -134,6 +126,7 @@ export default function BranchManagementPage({
     embedded = false,
 }: BranchManagementPageProps = {}) {
     const queryClient = useQueryClient();
+    const confirm = useConfirm();
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<EditingBranch>(null);
 
@@ -198,7 +191,7 @@ export default function BranchManagementPage({
                 )}
                 <button
                     onClick={openCreate}
-                    className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 transition-all self-start sm:self-auto"
+                    className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all self-start sm:self-auto"
                 >
                     + Create Branch
                 </button>
@@ -208,7 +201,7 @@ export default function BranchManagementPage({
                 <div className="overflow-auto">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-20">
-                            <div className="w-6 h-6 border-2 border-border-strong border-t-white rounded-full animate-spin" />
+                            <div className="w-6 h-6 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
@@ -255,12 +248,12 @@ export default function BranchManagementPage({
                                             <td className="px-6 py-4">
                                                 {b.isActive ? (
                                                     <span className="inline-flex items-center gap-1.5 text-text-1 text-[13px]">
-                                                        <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                                                        <span className="w-2 h-2 rounded-full bg-primary" />
                                                         Active
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center gap-1.5 text-text-3 text-[13px]">
-                                                        <span className="w-2 h-2 rounded-full bg-slate-600" />
+                                                        <span className="w-2 h-2 rounded-full bg-text-3" />
                                                         Inactive
                                                     </span>
                                                 )}
@@ -279,8 +272,14 @@ export default function BranchManagementPage({
                                                     {b.isActive ? 'Deactivate' : 'Activate'}
                                                 </button>
                                                 <button
-                                                    onClick={() => {
-                                                        if (confirm(`Delete branch "${b.name}"? This will fail if the branch has any users or transactions.`)) {
+                                                    onClick={async () => {
+                                                        const ok = await confirm({
+                                                            title: 'Delete branch?',
+                                                            body: `Delete branch "${b.name}". This will fail if the branch has any users or transactions.`,
+                                                            confirmLabel: 'Delete branch',
+                                                            tone: 'danger',
+                                                        });
+                                                        if (ok) {
                                                             deleteMutation.mutate(b.id);
                                                         }
                                                     }}

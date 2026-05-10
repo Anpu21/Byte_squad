@@ -51,6 +51,12 @@ interface NavItem {
     roles: UserRole[];
     icon: ReactNode;
     group: NavGroup;
+    pathByRole?: Partial<Record<UserRole, string>>;
+}
+
+function resolveNavPath(item: NavItem, role?: UserRole): string {
+    if (role && item.pathByRole?.[role]) return item.pathByRole[role]!;
+    return item.path;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -134,14 +140,15 @@ const NAV_ITEMS: NavItem[] = [
     {
         label: 'Transfers',
         path: FRONTEND_ROUTES.TRANSFERS,
-        roles: [UserRole.MANAGER],
+        pathByRole: { [UserRole.ADMIN]: FRONTEND_ROUTES.ADMIN_TRANSFERS },
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Truck size={15} />,
         group: 'Inventory',
     },
     {
         label: 'Transfer History',
         path: FRONTEND_ROUTES.TRANSFER_HISTORY,
-        roles: [UserRole.MANAGER],
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <History size={15} />,
         group: 'Inventory',
     },
@@ -165,20 +172,6 @@ const NAV_ITEMS: NavItem[] = [
         roles: [UserRole.ADMIN],
         icon: <GitCompareArrows size={15} />,
         group: 'Branches',
-    },
-    {
-        label: 'Transfers',
-        path: FRONTEND_ROUTES.ADMIN_TRANSFERS,
-        roles: [UserRole.ADMIN],
-        icon: <Truck size={15} />,
-        group: 'Inventory',
-    },
-    {
-        label: 'Transfer History',
-        path: FRONTEND_ROUTES.TRANSFER_HISTORY,
-        roles: [UserRole.ADMIN],
-        icon: <History size={15} />,
-        group: 'Inventory',
     },
     {
         label: 'Notifications',
@@ -228,13 +221,49 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     useEffect(() => {
         if (!profileOpen) return;
-        const handler = (e: MouseEvent) => {
+        const onMouse = (e: MouseEvent) => {
             if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
                 setProfileOpen(false);
             }
         };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        const getMenuItems = () =>
+            Array.from(
+                profileRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ??
+                    [],
+            );
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setProfileOpen(false);
+                return;
+            }
+            const items = getMenuItems();
+            if (items.length === 0) return;
+            const currentIdx = items.findIndex((el) => el === document.activeElement);
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const next = currentIdx < 0 ? 0 : (currentIdx + 1) % items.length;
+                items[next]?.focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const next =
+                    currentIdx <= 0 ? items.length - 1 : currentIdx - 1;
+                items[next]?.focus();
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                items[0]?.focus();
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                items[items.length - 1]?.focus();
+            }
+        };
+        document.addEventListener('mousedown', onMouse);
+        document.addEventListener('keydown', onKey);
+        // Auto-focus the first menu item when opened.
+        requestAnimationFrame(() => getMenuItems()[0]?.focus());
+        return () => {
+            document.removeEventListener('mousedown', onMouse);
+            document.removeEventListener('keydown', onKey);
+        };
     }, [profileOpen]);
 
     const handleLogout = () => {
@@ -244,9 +273,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     return (
         <div className="min-h-screen flex bg-canvas text-text-1 font-sans">
+            <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-modal focus:px-3 focus:py-2 focus:rounded-md focus:bg-primary focus:text-text-inv focus:text-sm focus:font-medium focus:shadow-md-token focus:outline-none focus:ring-[3px] focus:ring-primary/30"
+            >
+                Skip to main content
+            </a>
             {mobileNavOpen && (
                 <div
-                    className="md:hidden fixed inset-0 z-30"
+                    className="md:hidden fixed inset-0 z-overlay"
                     style={{ background: 'var(--overlay)' }}
                     onClick={() => setMobileNavOpen(false)}
                     aria-hidden="true"
@@ -282,11 +317,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 )}
                                 <div className="space-y-0.5">
                                     {items.map((item) => {
-                                        const isActive = location.pathname === item.path;
+                                        const itemPath = resolveNavPath(item, user?.role);
+                                        const isActive = location.pathname === itemPath;
                                         return (
                                             <Link
-                                                key={`${item.path}-${item.label}`}
-                                                to={item.path}
+                                                key={`${itemPath}-${item.label}`}
+                                                to={itemPath}
                                                 title={!isExpanded ? item.label : undefined}
                                                 onClick={() => setMobileNavOpen(false)}
                                                 className={cn(
@@ -307,10 +343,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                                 {isExpanded && (
                                                     <>
                                                         <span className="flex-1 truncate">{item.label}</span>
-                                                        {item.path === FRONTEND_ROUTES.NOTIFICATIONS &&
+                                                        {itemPath === FRONTEND_ROUTES.NOTIFICATIONS &&
                                                             unreadCount > 0 && (
-                                                                <span className="ml-auto text-[10px] font-bold bg-primary text-text-inv rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
-                                                                    {unreadCount}
+                                                                <span
+                                                                    className="ml-auto text-[10px] font-bold bg-primary text-text-inv rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1"
+                                                                    aria-label={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}
+                                                                >
+                                                                    {unreadCount > 99 ? '99+' : unreadCount}
                                                                 </span>
                                                             )}
                                                     </>
@@ -424,8 +463,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             <div className="relative" ref={profileRef}>
                                 <button
                                     onClick={() => setProfileOpen((s) => !s)}
-                                    className="p-1 rounded-full hover:bg-surface-2 transition-colors"
+                                    className="p-1 rounded-full hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
                                     aria-label="Open user menu"
+                                    aria-haspopup="menu"
+                                    aria-expanded={profileOpen}
                                 >
                                     <Avatar
                                         name={`${user.firstName} ${user.lastName}`}
@@ -433,7 +474,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                     />
                                 </button>
                                 {profileOpen && (
-                                    <div className="absolute right-0 top-full mt-2 w-56 bg-surface border border-border rounded-md shadow-md-token overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                                    <div
+                                        role="menu"
+                                        aria-label="User menu"
+                                        className="absolute right-0 top-full mt-2 w-56 bg-surface border border-border rounded-md shadow-md-token overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 z-dropdown"
+                                    >
                                         <div className="px-4 py-3 border-b border-border">
                                             <p className="text-[13px] font-semibold text-text-1 truncate">
                                                 {user.firstName} {user.lastName}
@@ -443,18 +488,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                             </p>
                                         </div>
                                         <button
+                                            role="menuitem"
                                             onClick={() => {
                                                 setProfileOpen(false);
                                                 navigate(FRONTEND_ROUTES.PROFILE);
                                             }}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors"
+                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:bg-surface-2"
                                         >
                                             <UserCog size={14} /> Profile
                                         </button>
-                                        <div className="h-px bg-border" />
+                                        <div className="h-px bg-border" role="separator" />
                                         <button
+                                            role="menuitem"
                                             onClick={handleLogout}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-danger hover:bg-danger-soft transition-colors"
+                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-danger hover:bg-danger-soft transition-colors focus:outline-none focus:bg-danger-soft"
                                         >
                                             <LogOut size={14} /> Logout
                                         </button>
@@ -465,7 +512,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+                <main id="main-content" className="flex-1 overflow-y-auto p-6 lg:p-8">
                     <div className="max-w-7xl mx-auto">{children}</div>
                 </main>
             </div>
