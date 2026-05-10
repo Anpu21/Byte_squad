@@ -10,6 +10,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import * as crypto from 'crypto';
+import * as QRCode from 'qrcode';
+import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { CustomerRequest } from '@/modules/customer-requests/entities/customer-request.entity';
 import { CustomerRequestItem } from '@/modules/customer-requests/entities/customer-request-item.entity';
 import { CreateCustomerRequestDto } from '@/modules/customer-requests/dto/create-customer-request.dto';
@@ -27,6 +29,7 @@ import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { NotificationType } from '@common/enums/notification.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { NotificationsService } from '@notifications/notifications.service';
+import { NotificationsGateway } from '@notifications/notifications.gateway';
 
 const REQUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -57,7 +60,32 @@ export class CustomerRequestsService {
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepo: Repository<LedgerEntry>,
     private readonly notifications: NotificationsService,
+    private readonly notificationsGateway: NotificationsGateway,
+    private readonly cloudinary: CloudinaryService,
   ) {}
+
+  private async generateAndStoreQrCode(
+    request: CustomerRequest,
+  ): Promise<string | null> {
+    try {
+      const buffer = await QRCode.toBuffer(request.requestCode, {
+        width: 512,
+        margin: 1,
+        errorCorrectionLevel: 'M',
+      });
+      const { url } = await this.cloudinary.uploadBuffer(buffer, {
+        folder: 'ledgerpro/qr-codes',
+        publicId: request.id,
+      });
+      return url;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(
+        `QR upload failed for ${request.requestCode}: ${message} — falling back to client-side rendering`,
+      );
+      return null;
+    }
+  }
 
   async create(
     dto: CreateCustomerRequestDto,
@@ -112,9 +140,23 @@ export class CustomerRequestsService {
       `Customer request ${saved.requestCode} created at ${branch.name}`,
     );
 
+    const qrCodeUrl = await this.generateAndStoreQrCode(saved);
+    if (qrCodeUrl) {
+      saved.qrCodeUrl = qrCodeUrl;
+      await this.requestRepo.update(saved.id, { qrCodeUrl });
+    }
+
     this.notifyBranchStaff(saved, branch.name).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Notification fan-out failed: ${message}`);
+    });
+
+    // Live broadcast so manager / cashier dashboards refetch immediately
+    // instead of waiting for the 30-second poll.
+    this.notificationsGateway.broadcast('customer-request:created', {
+      branchId: saved.branchId,
+      requestId: saved.id,
+      requestCode: saved.requestCode,
     });
 
     return this.findById(saved.id);
@@ -155,6 +197,17 @@ export class CustomerRequestsService {
     actor: StaffActor,
     query: ListCustomerRequestsQueryDto,
   ): Promise<CustomerRequest[]> {
+    // Defensive: a manager/cashier without a branch assignment would otherwise
+    // produce SQL like `branch_id = NULL` which silently returns zero rows
+    // and looks like "no requests yet" in the UI.  Surface the data problem
+    // instead of hiding it.
+    if (actor.role !== UserRole.ADMIN && !actor.branchId) {
+      this.logger.warn(
+        `Staff ${actor.id} (${actor.role}) has no branchId — returning empty list. Assign a branch in user management.`,
+      );
+      return [];
+    }
+
     const qb = this.requestRepo
       .createQueryBuilder('req')
       .leftJoinAndSelect('req.items', 'items')
@@ -191,7 +244,11 @@ export class CustomerRequestsService {
       );
     }
 
-    return qb.getMany();
+    const rows = await qb.getMany();
+    this.logger.debug(
+      `listForStaff actor=${actor.id} role=${actor.role} branchId=${actor.branchId ?? 'ALL'} status=${query.status ?? 'ANY'} q=${query.q ?? '-'} → ${rows.length} rows`,
+    );
+    return rows;
   }
 
   async listForUser(userId: string): Promise<CustomerRequest[]> {

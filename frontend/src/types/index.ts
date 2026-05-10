@@ -542,6 +542,7 @@ export interface ICustomerRequest {
     guestName: string | null;
     note: string | null;
     fulfilledTransactionId: string | null;
+    qrCodeUrl: string | null;
     items: ICustomerRequestItem[];
     createdAt: string;
     updatedAt: string;

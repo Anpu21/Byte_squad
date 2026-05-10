@@ -42,7 +42,14 @@ export default function RequestConfirmationPage() {
         enabled: !!code,
     });
 
+    // Prefer the Cloudinary-stored URL the backend produced at request creation.
+    // Only fall back to client-side rendering for legacy rows that have no URL.
+    const storedQr = request?.qrCodeUrl ?? null;
     useEffect(() => {
+        if (storedQr) {
+            setQrDataUrl(storedQr);
+            return;
+        }
         if (!code) return;
         let cancelled = false;
         QRCode.toDataURL(code, {
@@ -61,7 +68,7 @@ export default function RequestConfirmationPage() {
         return () => {
             cancelled = true;
         };
-    }, [code]);
+    }, [code, storedQr]);
 
     if (isLoading) {
         return (
