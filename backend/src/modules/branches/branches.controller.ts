@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { BranchesService } from '@branches/branches.service';
-import type { MyBranchPerformance } from '@branches/branches.service';
+import type { MyBranchPerformance } from '@branches/types';
 import { CreateBranchDto } from '@branches/dto/create-branch.dto';
 import { UpdateBranchDto } from '@branches/dto/update-branch.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';

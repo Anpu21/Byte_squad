@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import {
-    inventoryService,
-    type IProduct,
-} from '@/services/inventory.service';
+import { inventoryService } from '@/services/inventory.service';
 import { stockTransfersService } from '@/services/stock-transfers.service';
+import type { IProduct } from '@/types';
 
 interface FormErrors {
     productId?: string;
@@ -20,6 +18,7 @@ export default function NewTransferRequestPage() {
     const [products, setProducts] = useState<IProduct[]>([]);
     const [productsLoading, setProductsLoading] = useState(true);
     const [productSearch, setProductSearch] = useState('');
+    const [visibleCount, setVisibleCount] = useState(50);
     const [selectedProductId, setSelectedProductId] = useState<string>('');
 
     const [requestedQuantity, setRequestedQuantity] = useState('');
@@ -47,17 +46,27 @@ export default function NewTransferRequestPage() {
         };
     }, []);
 
-    const filteredProducts = useMemo(() => {
+    // Reset pagination when the search term changes so users see fresh results.
+    useEffect(() => {
+        setVisibleCount(50);
+    }, [productSearch]);
+
+    const matchedProducts = useMemo(() => {
         const term = productSearch.trim().toLowerCase();
-        if (!term) return products.slice(0, 50);
-        return products
-            .filter(
-                (p) =>
-                    p.name.toLowerCase().includes(term) ||
-                    p.barcode.toLowerCase().includes(term),
-            )
-            .slice(0, 50);
+        if (!term) return products;
+        return products.filter(
+            (p) =>
+                p.name.toLowerCase().includes(term) ||
+                p.barcode.toLowerCase().includes(term),
+        );
     }, [products, productSearch]);
+
+    const filteredProducts = useMemo(
+        () => matchedProducts.slice(0, visibleCount),
+        [matchedProducts, visibleCount],
+    );
+
+    const remainingCount = Math.max(0, matchedProducts.length - visibleCount);
 
     const selectedProduct = useMemo(
         () => products.find((p) => p.id === selectedProductId) ?? null,
@@ -142,9 +151,9 @@ export default function NewTransferRequestPage() {
                         placeholder="Search by name or barcode…"
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
-                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3"
+                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3"
                     />
-                    <div className="mt-3 max-h-60 overflow-y-auto bg-canvas border border-border rounded-xl divide-y divide-white/5">
+                    <div className="mt-3 max-h-60 overflow-y-auto bg-canvas border border-border rounded-xl divide-y divide-border">
                         {productsLoading ? (
                             <div className="p-4 text-sm text-text-3">
                                 Loading products…
@@ -154,37 +163,52 @@ export default function NewTransferRequestPage() {
                                 No products match your search.
                             </div>
                         ) : (
-                            filteredProducts.map((p) => {
-                                const isActive = selectedProductId === p.id;
-                                return (
-                                    <button
-                                        key={p.id}
-                                        type="button"
-                                        onClick={() =>
-                                            setSelectedProductId(p.id)
-                                        }
-                                        className={`w-full text-left px-4 py-3 transition-colors ${
-                                            isActive
-                                                ? 'bg-primary-soft'
-                                                : 'hover:bg-surface-2'
-                                        }`}
-                                    >
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div>
-                                                <p className="text-sm font-medium text-text-1">
-                                                    {p.name}
-                                                </p>
-                                                <p className="text-[11px] text-text-3 font-mono mt-0.5">
-                                                    {p.barcode}
-                                                </p>
+                            <>
+                                {filteredProducts.map((p) => {
+                                    const isActive = selectedProductId === p.id;
+                                    return (
+                                        <button
+                                            key={p.id}
+                                            type="button"
+                                            onClick={() =>
+                                                setSelectedProductId(p.id)
+                                            }
+                                            className={`w-full text-left px-4 py-3 transition-colors ${
+                                                isActive
+                                                    ? 'bg-primary-soft'
+                                                    : 'hover:bg-surface-2'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div>
+                                                    <p className="text-sm font-medium text-text-1">
+                                                        {p.name}
+                                                    </p>
+                                                    <p className="text-[11px] text-text-3 font-mono mt-0.5">
+                                                        {p.barcode}
+                                                    </p>
+                                                </div>
+                                                <span className="text-[11px] text-text-3">
+                                                    {p.category}
+                                                </span>
                                             </div>
-                                            <span className="text-[11px] text-text-3">
-                                                {p.category}
-                                            </span>
-                                        </div>
+                                        </button>
+                                    );
+                                })}
+                                {remainingCount > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setVisibleCount((n) => n + 50)}
+                                        className="w-full text-center px-4 py-3 text-xs font-semibold text-primary hover:bg-surface-2 transition-colors"
+                                    >
+                                        Show {Math.min(50, remainingCount)} more
+                                        <span className="text-text-3 font-normal">
+                                            {' '}
+                                            ({remainingCount} remaining)
+                                        </span>
                                     </button>
-                                );
-                            })
+                                )}
+                            </>
                         )}
                     </div>
                     {selectedProduct && (
@@ -211,9 +235,9 @@ export default function NewTransferRequestPage() {
                         min={1}
                         value={requestedQuantity}
                         onChange={(e) => setRequestedQuantity(e.target.value)}
-                        className={`w-full h-11 px-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 ${
+                        className={`w-full h-11 px-4 bg-canvas border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3 ${
                             errors.requestedQuantity
-                                ? 'border-red-500/50'
+                                ? 'border-danger'
                                 : 'border-border'
                         }`}
                         placeholder="e.g. 50"
@@ -234,7 +258,7 @@ export default function NewTransferRequestPage() {
                         onChange={(e) => setRequestReason(e.target.value)}
                         rows={3}
                         maxLength={500}
-                        className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 resize-none"
+                        className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3 resize-none"
                         placeholder="Why does your branch need this transfer?"
                     />
                     <p className="text-[11px] text-text-3 mt-1">
@@ -254,7 +278,7 @@ export default function NewTransferRequestPage() {
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="h-10 px-5 rounded-xl bg-primary text-text-inv text-sm font-bold hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+                        className="h-10 px-5 rounded-xl bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-colors disabled:opacity-50"
                     >
                         {isSubmitting ? 'Submitting…' : 'Submit request'}
                     </button>

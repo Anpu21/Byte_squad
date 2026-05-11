@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_GUARD } from '@nestjs/core';
 import { getDatabaseConfig } from '@common/config/database.config';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { AuthModule } from '@auth/auth.module';
 import { UsersModule } from '@users/users.module';
 import { BranchesModule } from '@branches/branches.module';
@@ -20,6 +22,7 @@ import { Product } from '@products/entities/product.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { Notification } from '@notifications/entities/notification.entity';
@@ -49,6 +52,7 @@ import appConfig from '@common/config/app.config';
       Inventory,
       Transaction,
       TransactionItem,
+      IdempotencyKey,
       LedgerEntry,
       Expense,
       Notification,
@@ -70,6 +74,6 @@ import appConfig from '@common/config/app.config';
     CustomerRequestsModule,
     ShopModule,
   ],
-  providers: [AdminSeedService],
+  providers: [AdminSeedService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
 export class AppModule {}

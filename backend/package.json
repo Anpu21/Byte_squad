@@ -21,6 +21,7 @@
     "start:debug": "nest start --debug --watch -e \"node -r ./tsconfig-paths-bootstrap.js\"",
     "start:prod": "node -r ./tsconfig-paths-bootstrap.js dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "verify": "pnpm run lint && pnpm run test && pnpm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -28,7 +29,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:admin": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/run-admin-seed.ts",
     "migrate:roles": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-roles.ts",
-    "migrate:images": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-images.ts"
+    "migrate:images": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-images.ts",
+    "prepare": "cd .. && husky"
   },
   "dependencies": {
     "@nestjs/common": "11.1.14",
@@ -48,6 +50,7 @@
     "nodemailer": "8.0.2",
     "passport-jwt": "4.0.1",
     "pg": "8.18.0",
+    "qrcode": "1.5.4",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "socket.io": "4.8.3",
@@ -66,12 +69,15 @@
     "@types/node": "22.19.11",
     "@types/nodemailer": "7.0.11",
     "@types/passport-jwt": "4.0.1",
+    "@types/qrcode": "1.5.6",
     "@types/supertest": "6.0.3",
     "eslint": "9.39.3",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.5",
     "globals": "16.5.0",
+    "husky": "9.1.7",
     "jest": "30.2.0",
+    "lint-staged": "17.0.4",
     "prettier": "3.8.1",
     "source-map-support": "0.5.21",
     "supertest": "7.2.2",
@@ -92,6 +98,21 @@
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1",
+      "^@/(.*?)(?:\\.js)?$": "<rootDir>/$1",
+      "^@common/(.*?)(?:\\.js)?$": "<rootDir>/common/$1",
+      "^@auth/(.*?)(?:\\.js)?$": "<rootDir>/modules/auth/$1",
+      "^@accounting/(.*?)(?:\\.js)?$": "<rootDir>/modules/accounting/$1",
+      "^@admin-portal/(.*?)(?:\\.js)?$": "<rootDir>/modules/admin-portal/$1",
+      "^@branches/(.*?)(?:\\.js)?$": "<rootDir>/modules/branches/$1",
+      "^@inventory/(.*?)(?:\\.js)?$": "<rootDir>/modules/inventory/$1",
+      "^@notifications/(.*?)(?:\\.js)?$": "<rootDir>/modules/notifications/$1",
+      "^@pos/(.*?)(?:\\.js)?$": "<rootDir>/modules/pos/$1",
+      "^@products/(.*?)(?:\\.js)?$": "<rootDir>/modules/products/$1",
+      "^@stock-transfers/(.*?)(?:\\.js)?$": "<rootDir>/modules/stock-transfers/$1",
+      "^@users/(.*?)(?:\\.js)?$": "<rootDir>/modules/users/$1"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

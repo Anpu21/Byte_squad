@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, UserPlus, MoreHorizontal, X } from 'lucide-react';
+import { Search, UserPlus, MoreHorizontal } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { userService } from '@/services/user.service';
 import { UserRole } from '@/constants/enums';
+import { useConfirm } from '@/hooks/useConfirm';
 import type { IUser, IBranch, IUserCreatePayload } from '@/types';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar';
+import Modal from '@/components/ui/Modal';
 import Pill from '@/components/ui/Pill';
 
 function CreateUserModal({
@@ -58,25 +60,8 @@ function CreateUserModal({
         'w-full h-9 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/25 transition-colors';
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: 'var(--overlay)' }}
-        >
-            <div className="bg-surface border border-border rounded-md shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between p-5 border-b border-border">
-                    <h2 className="text-base font-semibold text-text-1">
-                        Invite user
-                    </h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="p-1.5 text-text-3 hover:text-text-1 rounded-md hover:bg-surface-2 transition-colors"
-                    >
-                        <X size={16} />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <Modal isOpen onClose={onClose} title="Invite user" maxWidth="md">
+            <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
@@ -190,8 +175,7 @@ function CreateUserModal({
                         </Button>
                     </div>
                 </form>
-            </div>
-        </div>
+        </Modal>
     );
 }
 
@@ -220,6 +204,7 @@ function StatusBadge({ user }: { user: IUser }) {
 
 export default function UserManagementPage() {
     const queryClient = useQueryClient();
+    const confirm = useConfirm();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -468,19 +453,16 @@ export default function UserManagementPage() {
                                                         )}
                                                         <button
                                                             type="button"
-                                                            onClick={() => {
-                                                                if (
-                                                                    confirm(
-                                                                        `Reset password for ${user.firstName} ${user.lastName}? A new temporary password will be emailed and they'll need to change it on next login.`,
-                                                                    )
-                                                                ) {
-                                                                    resetPasswordMutation.mutate(
-                                                                        user.id,
-                                                                    );
+                                                            onClick={async () => {
+                                                                setOpenMenuId(null);
+                                                                const ok = await confirm({
+                                                                    title: 'Reset password?',
+                                                                    body: `Reset password for ${user.firstName} ${user.lastName}? A new temporary password will be emailed and they'll need to change it on next login.`,
+                                                                    confirmLabel: 'Reset password',
+                                                                });
+                                                                if (ok) {
+                                                                    resetPasswordMutation.mutate(user.id);
                                                                 }
-                                                                setOpenMenuId(
-                                                                    null,
-                                                                );
                                                             }}
                                                             className="w-full text-left px-4 py-2 text-sm text-text-1 hover:bg-surface-2 transition-colors"
                                                         >
@@ -488,19 +470,17 @@ export default function UserManagementPage() {
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            onClick={() => {
-                                                                if (
-                                                                    confirm(
-                                                                        `Delete ${user.firstName} ${user.lastName}?`,
-                                                                    )
-                                                                ) {
-                                                                    deleteMutation.mutate(
-                                                                        user.id,
-                                                                    );
+                                                            onClick={async () => {
+                                                                setOpenMenuId(null);
+                                                                const ok = await confirm({
+                                                                    title: 'Delete user?',
+                                                                    body: `Permanently delete ${user.firstName} ${user.lastName}. This can't be undone.`,
+                                                                    confirmLabel: 'Delete user',
+                                                                    tone: 'danger',
+                                                                });
+                                                                if (ok) {
+                                                                    deleteMutation.mutate(user.id);
                                                                 }
-                                                                setOpenMenuId(
-                                                                    null,
-                                                                );
                                                             }}
                                                             className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-danger-soft transition-colors"
                                                         >

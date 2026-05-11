@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     AlertCircle,
     Camera,
     Check,
-    ChevronRight,
     Loader2,
     MapPin,
     ShieldCheck,
@@ -16,14 +14,15 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { profileService } from '@/services/profile.service';
 import { authService } from '@/services/auth.service';
+import { userService } from '@/services/user.service';
+import { shopProductsService } from '@/services/shop-products.service';
 import { useAuth } from '@/hooks/useAuth';
-import { setUser } from '@/store/slices/authSlice';
-import { FRONTEND_ROUTES } from '@/constants/routes';
+import { setUser, setUserBranch } from '@/store/slices/authSlice';
+import { clearShopCart } from '@/store/slices/shopCartSlice';
 import Avatar from '@/components/ui/Avatar';
 import type { IUserProfile } from '@/types';
 
 export default function CustomerProfilePage() {
-    const navigate = useNavigate();
     const dispatch = useDispatch();
     const queryClient = useQueryClient();
     const { user } = useAuth();
@@ -77,6 +76,37 @@ export default function CustomerProfilePage() {
         },
         onError: () =>
             toast.error('Could not upload avatar. Max 2MB, images only.'),
+    });
+
+    // Branch picker — same query key as BranchSelectionPage so React Query dedupes.
+    const { data: branches = [], isLoading: branchesLoading } = useQuery({
+        queryKey: ['shop-branches-with-staff'],
+        queryFn: shopProductsService.listBranches,
+    });
+    const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+    useEffect(() => {
+        if (profile?.branch?.id) setSelectedBranchId(profile.branch.id);
+    }, [profile?.branch?.id]);
+
+    const updateBranchMutation = useMutation({
+        mutationFn: (branchId: string) => userService.updateMyBranch(branchId),
+        onSuccess: (_data, branchId) => {
+            dispatch(setUserBranch(branchId));
+            // Stale prices/availability — drop any cart items from the old branch.
+            dispatch(clearShopCart());
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            toast.success('Pickup branch updated');
+        },
+        onError: (err: unknown) => {
+            if (axios.isAxiosError(err)) {
+                const data = err.response?.data as
+                    | { message?: string }
+                    | undefined;
+                toast.error(data?.message ?? 'Could not update branch');
+            } else {
+                toast.error('Could not update branch');
+            }
+        },
     });
 
     const [currentPassword, setCurrentPassword] = useState('');
@@ -304,7 +334,7 @@ export default function CustomerProfilePage() {
                                 Pickup branch
                             </h2>
                         </header>
-                        <div className="px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div className="px-6 py-5 space-y-4">
                             <div className="min-w-0">
                                 {branch ? (
                                     <>
@@ -329,16 +359,74 @@ export default function CustomerProfilePage() {
                                     </>
                                 )}
                             </div>
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    navigate(FRONTEND_ROUTES.SELECT_BRANCH)
-                                }
-                                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border-strong text-sm font-medium text-text-1 bg-surface hover:bg-surface-2 transition-colors"
-                            >
-                                {branch ? 'Change branch' : 'Select branch'}
-                                <ChevronRight size={14} />
-                            </button>
+
+                            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                                <div className="flex-1 min-w-0">
+                                    <label
+                                        htmlFor="branch-picker"
+                                        className="block text-xs font-medium text-text-2 mb-1.5"
+                                    >
+                                        {branch ? 'Change branch' : 'Choose a branch'}
+                                    </label>
+                                    <select
+                                        id="branch-picker"
+                                        value={selectedBranchId}
+                                        onChange={(e) =>
+                                            setSelectedBranchId(e.target.value)
+                                        }
+                                        disabled={
+                                            branchesLoading ||
+                                            updateBranchMutation.isPending
+                                        }
+                                        className="w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {branchesLoading ? (
+                                            <option value="">Loading branches…</option>
+                                        ) : (
+                                            <>
+                                                {!selectedBranchId && (
+                                                    <option value="">
+                                                        Select a branch…
+                                                    </option>
+                                                )}
+                                                {branches.map((b) => (
+                                                    <option key={b.id} value={b.id}>
+                                                        {b.name}
+                                                    </option>
+                                                ))}
+                                            </>
+                                        )}
+                                    </select>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        selectedBranchId &&
+                                        updateBranchMutation.mutate(selectedBranchId)
+                                    }
+                                    disabled={
+                                        !selectedBranchId ||
+                                        selectedBranchId === branch?.id ||
+                                        updateBranchMutation.isPending
+                                    }
+                                    className="inline-flex items-center justify-center gap-1.5 h-[38px] px-4 rounded-md bg-primary text-text-inv text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-[3px] focus:ring-primary/30"
+                                >
+                                    {updateBranchMutation.isPending ? (
+                                        <>
+                                            <Loader2
+                                                size={14}
+                                                className="animate-spin"
+                                            />
+                                            Saving…
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check size={14} />
+                                            Save branch
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </section>
 

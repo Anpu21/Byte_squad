@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ScrollText } from 'lucide-react';
+import { Eye, ScrollText } from 'lucide-react';
 import { customerRequestsService } from '@/services/customer-requests.service';
+import { useConfirm } from '@/hooks/useConfirm';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import RequestDetailsModal from '@/components/shop/RequestDetailsModal';
 import type { CustomerRequestStatus } from '@/types';
 
 function formatCurrency(amount: number) {
@@ -35,19 +38,32 @@ const STATUS_TONE: Record<CustomerRequestStatus, string> = {
     accepted: 'bg-primary-soft text-primary-soft-text border-primary/40',
     completed: 'bg-accent-soft text-accent-text border-accent/40',
     rejected: 'bg-danger-soft text-danger border-danger/40',
-    cancelled: 'bg-slate-500/10 text-text-2 border-slate-500/30',
-    expired: 'bg-slate-500/10 text-text-2 border-slate-500/30',
+    cancelled: 'bg-surface-2 text-text-2 border-border',
+    expired: 'bg-surface-2 text-text-2 border-border',
 };
 
 export default function MyRequestsPage() {
     const queryClient = useQueryClient();
+    const confirm = useConfirm();
     const { data: requests = [], isLoading } = useQuery({
         queryKey: ['my-customer-requests'],
         queryFn: customerRequestsService.listMine,
     });
+    const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
+        null,
+    );
+    const selectedRequest =
+        requests.find((r) => r.id === selectedRequestId) ?? null;
 
     const onCancel = async (id: string) => {
-        if (!window.confirm('Cancel this request?')) return;
+        const ok = await confirm({
+            title: 'Cancel this pickup request?',
+            body: "The branch won't fulfill it. You can place a new request any time.",
+            confirmLabel: 'Cancel request',
+            cancelLabel: 'Keep it',
+            tone: 'danger',
+        });
+        if (!ok) return;
         try {
             await customerRequestsService.cancelMine(id);
             toast.success('Request cancelled');
@@ -66,7 +82,8 @@ export default function MyRequestsPage() {
                     My pickup requests
                 </h1>
                 <p className="text-sm text-text-2 mt-1">
-                    Past and pending requests. Click any row to view its QR.
+                    Past and pending requests. Tap "View" to see the QR and
+                    full order details without leaving this page.
                 </p>
             </div>
 
@@ -98,7 +115,7 @@ export default function MyRequestsPage() {
                                     <th className="px-4 py-3 font-semibold">Items</th>
                                     <th className="px-4 py-3 font-semibold text-right">Total</th>
                                     <th className="px-4 py-3 font-semibold">Status</th>
-                                    <th className="px-4 py-3 font-semibold w-20"></th>
+                                    <th className="px-4 py-3 font-semibold w-32"></th>
                                 </tr>
                             </thead>
                             <tbody className="text-sm">
@@ -138,15 +155,32 @@ export default function MyRequestsPage() {
                                             </span>
                                         </td>
                                         <td className="px-4 py-3">
-                                            {req.status === 'pending' && (
+                                            <div className="flex items-center justify-end gap-3">
                                                 <button
                                                     type="button"
-                                                    onClick={() => onCancel(req.id)}
-                                                    className="text-[11px] text-danger hover:underline"
+                                                    onClick={() =>
+                                                        setSelectedRequestId(
+                                                            req.id,
+                                                        )
+                                                    }
+                                                    aria-label={`View pickup request ${req.requestCode}`}
+                                                    className="inline-flex items-center gap-1 text-[11px] font-medium text-text-2 hover:text-text-1 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20 rounded px-1"
                                                 >
-                                                    Cancel
+                                                    <Eye size={12} />
+                                                    View
                                                 </button>
-                                            )}
+                                                {req.status === 'pending' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            onCancel(req.id)
+                                                        }
+                                                        className="text-[11px] text-danger hover:underline"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -210,20 +244,38 @@ export default function MyRequestsPage() {
                                         </p>
                                     </div>
                                 </div>
-                                {req.status === 'pending' && (
+                                <div className="mt-3 flex items-center gap-4">
                                     <button
                                         type="button"
-                                        onClick={() => onCancel(req.id)}
-                                        className="mt-3 text-[11px] text-danger hover:underline"
+                                        onClick={() =>
+                                            setSelectedRequestId(req.id)
+                                        }
+                                        aria-label={`View pickup request ${req.requestCode}`}
+                                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-text-1 hover:text-primary transition-colors"
                                     >
-                                        Cancel request
+                                        <Eye size={13} /> View QR & details
                                     </button>
-                                )}
+                                    {req.status === 'pending' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => onCancel(req.id)}
+                                            className="text-[12px] text-danger hover:underline"
+                                        >
+                                            Cancel request
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
                 </>
             )}
+
+            <RequestDetailsModal
+                isOpen={!!selectedRequestId}
+                onClose={() => setSelectedRequestId(null)}
+                request={selectedRequest}
+            />
         </div>
     );
 }

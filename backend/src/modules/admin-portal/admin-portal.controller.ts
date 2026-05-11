@@ -7,7 +7,7 @@ import type {
   UserWithBranch,
   BranchComparisonResponse,
   InventoryMatrixResponse,
-} from '@admin-portal/admin-portal.service';
+} from '@admin-portal/types';
 import { BranchComparisonDto } from '@admin-portal/dto/branch-comparison.dto';
 import { InventoryMatrixQueryDto } from '@admin-portal/dto/inventory-matrix-query.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';

@@ -471,7 +471,7 @@ export class AdminSeedService implements OnModuleInit {
     private readonly cloudinary: CloudinaryService,
   ) {}
 
-  async onModuleInit(): Promise<void> {
+  onModuleInit(): void {
     // Run the seed in the background so Cloudinary or any slow step never
     // blocks Nest from calling app.listen(). The critical rows (branches +
     // users) finish in seconds, well before a real login attempt arrives;

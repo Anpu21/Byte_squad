@@ -31,9 +31,14 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        // 401 → log the user out (existing behavior)
+        // 401 → log the user out (existing behavior).
+        // Skip the dispatch when there was no token to begin with so anonymous
+        // visitors (e.g. someone opening a shared pickup-confirmation link) don't
+        // trip the auth-state machine on every request.
         if (error.response?.status === 401) {
-            store.dispatch(logout());
+            if (localStorage.getItem('ledgerpro_token')) {
+                store.dispatch(logout());
+            }
             return Promise.reject(error);
         }
 

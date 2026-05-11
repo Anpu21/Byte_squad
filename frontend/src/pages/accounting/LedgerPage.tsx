@@ -1,10 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { accountingService } from '@/services/accounting.service';
-import type {
-    ILedgerEntry,
-    ILedgerSummary,
-} from '@/services/accounting.service';
+import type { ILedgerEntry, ILedgerSummary } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency } from '@/lib/utils';
 import {

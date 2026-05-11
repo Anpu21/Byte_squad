@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Trash2, Minus, Plus, ShoppingCart } from 'lucide-react';
@@ -9,6 +8,7 @@ import {
     selectCartTotal,
 } from '@/store/slices/shopCartSlice';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import ProductImage from '@/components/shop/ProductImage';
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-LK', {
@@ -22,15 +22,6 @@ export default function CartPage() {
     const navigate = useNavigate();
     const items = useSelector((state: RootState) => state.shopCart.items);
     const total = selectCartTotal(items);
-    const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
-
-    const markImageFailed = (productId: string) =>
-        setFailedImages((prev) => {
-            if (prev.has(productId)) return prev;
-            const next = new Set(prev);
-            next.add(productId);
-            return next;
-        });
 
     if (items.length === 0) {
         return (
@@ -66,18 +57,7 @@ export default function CartPage() {
                         key={item.productId}
                         className="flex items-center gap-4 p-4 border-b border-border last:border-0"
                     >
-                        <div className="w-16 h-16 bg-canvas rounded-lg overflow-hidden flex items-center justify-center">
-                            {item.imageUrl && !failedImages.has(item.productId) ? (
-                                <img
-                                    src={item.imageUrl}
-                                    alt={item.name}
-                                    onError={() => markImageFailed(item.productId)}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <span className="text-text-3 text-[10px]">No image</span>
-                            )}
-                        </div>
+                        <ProductImage src={item.imageUrl} alt={item.name} />
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-text-1 line-clamp-1">
                                 {item.name}
@@ -98,11 +78,15 @@ export default function CartPage() {
                                     )
                                 }
                                 disabled={item.quantity <= 1}
-                                className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-2 hover:bg-primary-soft disabled:opacity-30"
+                                aria-label={`Decrease quantity of ${item.name}`}
+                                className="w-9 h-9 flex items-center justify-center rounded-lg bg-surface-2 hover:bg-primary-soft disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                <Minus size={12} />
+                                <Minus size={14} />
                             </button>
-                            <span className="text-sm font-semibold text-text-1 min-w-[2ch] text-center">
+                            <span
+                                className="text-sm font-semibold text-text-1 min-w-[2ch] text-center"
+                                aria-live="polite"
+                            >
                                 {item.quantity}
                             </span>
                             <button
@@ -115,9 +99,10 @@ export default function CartPage() {
                                         }),
                                     )
                                 }
-                                className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-2 hover:bg-primary-soft"
+                                aria-label={`Increase quantity of ${item.name}`}
+                                className="w-9 h-9 flex items-center justify-center rounded-lg bg-surface-2 hover:bg-primary-soft transition-colors"
                             >
-                                <Plus size={12} />
+                                <Plus size={14} />
                             </button>
                         </div>
                         <p className="text-sm font-bold text-text-1 min-w-[80px] text-right">

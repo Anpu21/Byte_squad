@@ -103,7 +103,7 @@ export default function ProfilePage() {
         };
         if (role === UserRole.ADMIN) {
             return (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-primary text-text-inv uppercase tracking-widest shadow-[0_2px_10px_rgba(255,255,255,0.1)]">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-primary text-text-inv uppercase tracking-widest">
                     {labels[role]}
                 </span>
             );
@@ -118,7 +118,7 @@ export default function ProfilePage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-[60vh]">
-                <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
             </div>
         );
     }
@@ -180,12 +180,12 @@ export default function ProfilePage() {
                             <span className="text-text-1 font-medium flex items-center gap-1.5">
                                 {profile?.isVerified ? (
                                     <>
-                                        <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                                        <span className="w-2 h-2 rounded-full bg-primary" />
                                         Verified
                                     </>
                                 ) : (
                                     <>
-                                        <span className="w-2 h-2 rounded-full bg-amber-400/60" />
+                                        <span className="w-2 h-2 rounded-full bg-warning" />
                                         <span className="text-warning">Pending</span>
                                     </>
                                 )}
@@ -244,7 +244,8 @@ export default function ProfilePage() {
                                     <input
                                         value={firstName}
                                         onChange={(e) => setFirstName(e.target.value)}
-                                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all"
+                                        autoComplete="given-name"
+                                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all"
                                     />
                                 </div>
                                 <div>
@@ -254,7 +255,8 @@ export default function ProfilePage() {
                                     <input
                                         value={lastName}
                                         onChange={(e) => setLastName(e.target.value)}
-                                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all"
+                                        autoComplete="family-name"
+                                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all"
                                     />
                                 </div>
                                 <div>
@@ -283,7 +285,7 @@ export default function ProfilePage() {
                             <button
                                 onClick={() => updateProfileMutation.mutate({ firstName, lastName })}
                                 disabled={updateProfileMutation.isPending}
-                                className="h-9 px-5 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                                className="h-9 px-5 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all disabled:opacity-50"
                             >
                                 {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
                             </button>
@@ -308,11 +310,12 @@ export default function ProfilePage() {
                                 </label>
                                 <input
                                     type="password"
+                                    autoComplete="current-password"
                                     value={currentPassword}
                                     onChange={(e) => setCurrentPassword(e.target.value)}
                                     required
                                     placeholder="••••••••"
-                                    className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3"
+                                    className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3"
                                 />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -322,12 +325,13 @@ export default function ProfilePage() {
                                     </label>
                                     <input
                                         type="password"
+                                        autoComplete="new-password"
                                         value={newPassword}
                                         onChange={(e) => setNewPassword(e.target.value)}
                                         required
                                         minLength={8}
                                         placeholder="Min 8 characters"
-                                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3"
+                                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3"
                                     />
                                 </div>
                                 <div>
@@ -336,11 +340,12 @@ export default function ProfilePage() {
                                     </label>
                                     <input
                                         type="password"
+                                        autoComplete="new-password"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         required
                                         placeholder="Re-enter password"
-                                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3"
+                                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3"
                                     />
                                 </div>
                             </div>

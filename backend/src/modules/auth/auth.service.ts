@@ -275,7 +275,8 @@ export class AuthService {
 
     // Generic response to avoid revealing whether an account exists
     const genericResponse = {
-      message: 'If an account exists for that email, a reset code has been sent',
+      message:
+        'If an account exists for that email, a reset code has been sent',
     };
 
     if (!user) {

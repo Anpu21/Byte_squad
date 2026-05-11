@@ -3,14 +3,15 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 import { ChevronLeft, Plus, Minus, ShoppingCart, Store } from 'lucide-react';
 import type { RootState } from '@/store';
 import { shopProductsService } from '@/services/shop-products.service';
-import {
-    addToCart,
-    clearShopCart,
-    setBranch,
-} from '@/store/slices/shopCartSlice';
+import { userService } from '@/services/user.service';
+import { addToCart, clearShopCart } from '@/store/slices/shopCartSlice';
+import { setUserBranch } from '@/store/slices/authSlice';
+import { useAuth } from '@/hooks/useAuth';
+import { useConfirm } from '@/hooks/useConfirm';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
 function formatCurrency(amount: number) {
@@ -24,20 +25,20 @@ export default function ProductDetailPage() {
     const { id } = useParams<{ id: string }>();
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const confirm = useConfirm();
     const [qty, setQty] = useState(1);
     const [imageFailed, setImageFailed] = useState(false);
 
+    const { user } = useAuth();
     const cartItems = useSelector(
         (state: RootState) => state.shopCart.items,
     );
-    const cartBranchId = useSelector(
-        (state: RootState) => state.shopCart.branchId,
-    );
+    const userBranchId = user?.branchId ?? null;
 
     const { data: product, isLoading } = useQuery({
-        queryKey: ['public-product', id, cartBranchId],
+        queryKey: ['public-product', id, userBranchId],
         queryFn: () =>
-            shopProductsService.getProduct(id!, cartBranchId ?? undefined),
+            shopProductsService.getProduct(id!, userBranchId ?? undefined),
         enabled: !!id,
     });
 
@@ -60,30 +61,48 @@ export default function ProductDetailPage() {
     const availableIds = product.availableBranches.map((b) => b.id);
     const isOutEverywhere = availableIds.length === 0;
     const currentBranchHasIt =
-        !!cartBranchId && availableIds.includes(cartBranchId);
+        !!userBranchId && availableIds.includes(userBranchId);
     const branchSwitchNeeded = !currentBranchHasIt && !isOutEverywhere;
 
     const targetBranch =
-        product.availableBranches.find((b) => b.id === cartBranchId) ??
+        product.availableBranches.find((b) => b.id === userBranchId) ??
         product.availableBranches[0] ??
         null;
 
-    const handleAdd = () => {
+    const handleAdd = async (): Promise<boolean> => {
         if (isOutEverywhere) {
             toast.error("This product isn't stocked anywhere right now");
-            return;
+            return false;
         }
 
         if (branchSwitchNeeded) {
             if (cartItems.length > 0) {
-                const ok = window.confirm(
-                    `This item is at ${targetBranch?.name ?? 'another branch'}. Switching will clear your cart. Continue?`,
-                );
-                if (!ok) return;
+                const ok = await confirm({
+                    title: 'Switch pickup branch?',
+                    body: `This item is at ${targetBranch?.name ?? 'another branch'}. Switching will clear your cart and update your profile pickup branch.`,
+                    confirmLabel: 'Switch & clear cart',
+                    tone: 'danger',
+                });
+                if (!ok) return false;
                 dispatch(clearShopCart());
             }
             if (targetBranch) {
-                dispatch(setBranch(targetBranch.id));
+                try {
+                    await userService.updateMyBranch(targetBranch.id);
+                    dispatch(setUserBranch(targetBranch.id));
+                } catch (err: unknown) {
+                    if (axios.isAxiosError(err)) {
+                        const data = err.response?.data as
+                            | { message?: string }
+                            | undefined;
+                        toast.error(
+                            data?.message ?? 'Could not switch branch',
+                        );
+                    } else {
+                        toast.error('Could not switch branch');
+                    }
+                    return false;
+                }
             }
         }
 
@@ -97,16 +116,14 @@ export default function ProductDetailPage() {
             }),
         );
         toast.success(`${product.name} × ${qty} added`);
+        return true;
     };
 
-    const handleBuyNow = () => {
-        const cartCountBefore = cartItems.length;
-        handleAdd();
-        // Only navigate if the add wasn't blocked (cart grew or branch changed without clearing)
-        if (!isOutEverywhere) {
+    const handleBuyNow = async () => {
+        const added = await handleAdd();
+        if (added) {
             navigate(FRONTEND_ROUTES.SHOP_CART);
         }
-        void cartCountBefore;
     };
 
     return (

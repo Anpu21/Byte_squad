@@ -3,6 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
 import { Readable } from 'stream';
 
+function toError(value: unknown, fallback: string): Error {
+  if (value instanceof Error) return value;
+  if (typeof value === 'object' && value !== null && 'message' in value) {
+    const msg = (value as { message: unknown }).message;
+    if (typeof msg === 'string' && msg.length > 0) return new Error(msg);
+  }
+  return new Error(fallback);
+}
+
 export interface CloudinaryUploadOptions {
   folder: string;
   publicId: string;
@@ -62,12 +71,44 @@ export class CloudinaryService {
           transformation: [{ quality: 'auto', fetch_format: 'auto' }],
         },
         (error, result?: UploadApiResponse) => {
-          if (error) return reject(error);
+          if (error) return reject(toError(error, 'Cloudinary upload failed'));
           if (!result) return reject(new Error('No result from Cloudinary'));
           resolve({ url: result.secure_url, publicId: result.public_id });
         },
       );
       Readable.from(file.buffer).pipe(uploadStream);
+    });
+  }
+
+  /**
+   * Upload an arbitrary image buffer (e.g. a server-generated QR code PNG).
+   * Same transformation pipeline as `uploadImage`, but doesn't require a
+   * Multer file shape — useful when the source is generated in-memory.
+   */
+  async uploadBuffer(
+    buffer: Buffer,
+    opts: CloudinaryUploadOptions,
+  ): Promise<CloudinaryUploadResult> {
+    if (!this.enabled) {
+      throw new Error('Cloudinary is not configured');
+    }
+
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: opts.folder,
+          public_id: opts.publicId,
+          overwrite: true,
+          resource_type: 'image',
+          transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+        },
+        (error, result?: UploadApiResponse) => {
+          if (error) return reject(toError(error, 'Cloudinary upload failed'));
+          if (!result) return reject(new Error('No result from Cloudinary'));
+          resolve({ url: result.secure_url, publicId: result.public_id });
+        },
+      );
+      Readable.from(buffer).pipe(uploadStream);
     });
   }
 

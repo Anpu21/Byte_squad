@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { accountingService } from '@/services/accounting.service';
-import type { IProfitLossData } from '@/services/accounting.service';
+import type { IProfitLossData } from '@/types';
 import Card from '@/components/ui/Card';
 import Segmented from '@/components/ui/Segmented';
 import EmptyState from '@/components/ui/EmptyState';
