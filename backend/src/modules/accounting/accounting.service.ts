@@ -218,9 +218,7 @@ export class AccountingService {
         );
       }
       if (expense.status !== ExpenseStatus.PENDING) {
-        throw new ForbiddenException(
-          'Only pending expenses can be deleted',
-        );
+        throw new ForbiddenException('Only pending expenses can be deleted');
       }
     }
 

@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual } from 'typeorm';
+import { Repository, MoreThanOrEqual, QueryFailedError } from 'typeorm';
 import { Transaction } from '@pos/entities/transaction.entity.js';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
@@ -85,11 +86,15 @@ export interface CashierTransactionsSummary {
 
 @Injectable()
 export class PosService {
+  private readonly logger = new Logger(PosService.name);
+
   constructor(
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
     @InjectRepository(TransactionItem)
     private readonly transactionItemRepository: Repository<TransactionItem>,
+    @InjectRepository(IdempotencyKey)
+    private readonly idempotencyRepository: Repository<IdempotencyKey>,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepository: Repository<LedgerEntry>,
   ) {}
@@ -98,7 +103,25 @@ export class PosService {
     dto: CreateTransactionDto,
     cashierId: string,
     branchId: string,
+    idempotencyKey?: string,
   ): Promise<Transaction> {
+    const trimmedKey = idempotencyKey?.trim();
+    if (trimmedKey) {
+      const existing = await this.idempotencyRepository.findOne({
+        where: { cashierId, key: trimmedKey },
+      });
+      if (existing) {
+        this.logger.log(
+          `Idempotency replay: cashier=${cashierId} key=${trimmedKey} → txn=${existing.transactionId}`,
+        );
+        const replay = await this.findById(existing.transactionId);
+        if (!replay) {
+          throw new NotFoundException('Original transaction no longer exists');
+        }
+        return replay;
+      }
+    }
+
     const transactionNumber = `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
     const transaction = this.transactionRepository.create({
@@ -124,7 +147,6 @@ export class PosService {
 
     const saved = await this.transactionRepository.save(transaction);
 
-    // Create a CREDIT ledger entry for this sale
     if (Number(saved.total) > 0) {
       const ledgerEntry = this.ledgerRepository.create({
         branchId: saved.branchId,
@@ -135,6 +157,32 @@ export class PosService {
         transactionId: saved.id,
       });
       await this.ledgerRepository.save(ledgerEntry);
+    }
+
+    if (trimmedKey) {
+      try {
+        await this.idempotencyRepository.insert({
+          key: trimmedKey,
+          cashierId,
+          transactionId: saved.id,
+        });
+      } catch (err) {
+        // Concurrent retry beat us to the insert. Return the row that won
+        // the race, not our just-created duplicate.
+        if (err instanceof QueryFailedError) {
+          const winning = await this.idempotencyRepository.findOne({
+            where: { cashierId, key: trimmedKey },
+          });
+          if (winning && winning.transactionId !== saved.id) {
+            this.logger.warn(
+              `Idempotency race: cashier=${cashierId} key=${trimmedKey} kept=${winning.transactionId} discarded=${saved.id}`,
+            );
+            const replay = await this.findById(winning.transactionId);
+            if (replay) return replay;
+          }
+        }
+        throw err;
+      }
     }
 
     return saved;

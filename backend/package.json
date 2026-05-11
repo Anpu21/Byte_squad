@@ -96,6 +96,21 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1",
+      "^@/(.*?)(?:\\.js)?$": "<rootDir>/$1",
+      "^@common/(.*?)(?:\\.js)?$": "<rootDir>/common/$1",
+      "^@auth/(.*?)(?:\\.js)?$": "<rootDir>/modules/auth/$1",
+      "^@accounting/(.*?)(?:\\.js)?$": "<rootDir>/modules/accounting/$1",
+      "^@admin-portal/(.*?)(?:\\.js)?$": "<rootDir>/modules/admin-portal/$1",
+      "^@branches/(.*?)(?:\\.js)?$": "<rootDir>/modules/branches/$1",
+      "^@inventory/(.*?)(?:\\.js)?$": "<rootDir>/modules/inventory/$1",
+      "^@notifications/(.*?)(?:\\.js)?$": "<rootDir>/modules/notifications/$1",
+      "^@pos/(.*?)(?:\\.js)?$": "<rootDir>/modules/pos/$1",
+      "^@products/(.*?)(?:\\.js)?$": "<rootDir>/modules/products/$1",
+      "^@stock-transfers/(.*?)(?:\\.js)?$": "<rootDir>/modules/stock-transfers/$1",
+      "^@users/(.*?)(?:\\.js)?$": "<rootDir>/modules/users/$1"
+    },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

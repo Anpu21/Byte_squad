@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Headers,
+} from '@nestjs/common';
 import { PosService } from '@pos/pos.service.js';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -56,11 +64,13 @@ export class PosController {
     @Body() createTransactionDto: CreateTransactionDto,
     @CurrentUser('id') cashierId: string,
     @CurrentUser('branchId') branchId: string,
+    @Headers('x-idempotency-key') idempotencyKey?: string,
   ): Promise<Transaction> {
     return this.posService.createTransaction(
       createTransactionDto,
       cashierId,
       branchId,
+      idempotencyKey,
     );
   }
 

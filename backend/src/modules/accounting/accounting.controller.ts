@@ -59,7 +59,8 @@ export class AccountingController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   createExpense(
     @Body() createExpenseDto: CreateExpenseDto,
-    @CurrentUser() user: { id: string; role: UserRole; branchId: string | null },
+    @CurrentUser()
+    user: { id: string; role: UserRole; branchId: string | null },
   ): Promise<Expense> {
     return this.accountingService.createExpense(createExpenseDto, user);
   }
@@ -108,7 +109,8 @@ export class AccountingController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   deleteExpense(
     @Param('id') id: string,
-    @CurrentUser() user: { id: string; role: UserRole; branchId: string | null },
+    @CurrentUser()
+    user: { id: string; role: UserRole; branchId: string | null },
   ): Promise<void> {
     return this.accountingService.deleteExpense(id, user);
   }
