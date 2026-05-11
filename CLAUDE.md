@@ -23,6 +23,7 @@ Before any non-trivial task, **load and apply** these Claude Code skills through
 - **`ui-ux-pro-max`** — every frontend change (component, layout, modal, form, page). Use it for visual hierarchy, spacing, motion, accessibility, and dark-mode parity.
 - **`everything-claude-code`** — React patterns, TypeScript idioms, NestJS architecture, Docker, testing, refactor heuristics.
 - **`frontend-design`** (if installed) — design tokens and component primitives.
+- **`llm-council`** (.claude/skills) — for making critical thinking before implmeation use this skills and provide proper implemention plan
 
 At the start of a task, briefly state which skills apply and why. Re-check applicability when scope shifts.
 
