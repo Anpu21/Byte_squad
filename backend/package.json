@@ -21,6 +21,7 @@
     "start:debug": "nest start --debug --watch -e \"node -r ./tsconfig-paths-bootstrap.js\"",
     "start:prod": "node -r ./tsconfig-paths-bootstrap.js dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "verify": "pnpm run lint && pnpm run test && pnpm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",

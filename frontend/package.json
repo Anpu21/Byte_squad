@@ -9,6 +9,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "verify": "pnpm run typecheck && pnpm run lint && pnpm run build",
     "preview": "vite preview"
   },
   "pnpm": {

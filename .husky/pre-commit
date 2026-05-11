@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# Pre-commit: run lint-staged across both packages.
+# Bypass: `git commit --no-verify` (only for genuine emergencies — see Rules.md §0).
+pnpm exec lint-staged

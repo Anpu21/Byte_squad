@@ -130,6 +130,61 @@ const REPLACEMENTS = [
 
     // round-2xl bumped to round-md to match design unless explicitly larger
     [/rounded-2xl/g, 'rounded-md'],
+
+    // ── Phase 2 additions (May 2026 audit) ────────────────────────────────
+
+    // Z-index scale — Rules.md §5. Only the layers that map cleanly:
+    //   z-50  → modal (most dangerous; collides with --z-modal)
+    //   z-40  → overlay
+    //   z-30  → dropdown
+    // Leave z-10/z-20 alone — they're often legitimate internal stacking
+    // contexts within a single component (image overlays, sticky table heads).
+    [/(?<![\w-])z-50\b/g, 'z-modal'],
+    [/(?<![\w-])z-40\b/g, 'z-overlay'],
+    [/(?<![\w-])z-30\b/g, 'z-dropdown'],
+
+    // White-glow hover shadows — invisible in light mode. Strip them.
+    // Caller usually has a hover bg already; if not, prefer hover:bg-primary-hover.
+    [/hover:shadow-\[0_4px_12px_rgba\(255,255,255,0\.\d+\)\]/g, 'hover:bg-primary-hover'],
+    [/hover:shadow-\[0_8px_24px_rgba\(255,255,255,0\.\d+\)\]/g, 'hover:bg-primary-hover'],
+
+    // Hover translate-up — micro-jitter that shifts layout. Just drop it.
+    [/hover:-translate-y-0\.5/g, ''],
+
+    // Radio dot color — invisible in light mode.
+    [/accent-white\b/g, 'accent-[var(--primary)]'],
+
+    // Force native picker into dark scheme — wrong when app is in light mode.
+    [/\[color-scheme:dark\]/g, ''],
+
+    // Slate-as-neutral backgrounds (inactive dots, neutral pills).
+    [/bg-slate-600\b/g, 'bg-text-3'],
+    [/bg-slate-500\b/g, 'bg-text-3'],
+    [/bg-slate-200\b/g, 'bg-surface-2'],
+    [/bg-slate-100\b/g, 'bg-surface-2'],
+    [/bg-slate-500\/10/g, 'bg-surface-2'],
+    [/bg-slate-500\/20/g, 'bg-surface-2'],
+    [/bg-slate-500\/30/g, 'bg-surface-2'],
+    [/bg-slate-900\/10/g, 'bg-surface-2'],
+    [/border-slate-500\/30/g, 'border-border'],
+    [/border-slate-400\b/g, 'border-border-strong'],
+    [/border-t-slate-900\b/g, 'border-t-primary'],
+    [/border-t-white\b/g, 'border-t-primary'],
+
+    // Status pill mid-tones not yet covered above
+    [/bg-emerald-400\b/g, 'bg-accent'],
+    [/bg-rose-400\b/g, 'bg-danger'],
+    [/bg-amber-400\b/g, 'bg-warning'],
+    [/border-red-500\/50/g, 'border-danger'],
+    [/border-rose-500\/40/g, 'border-danger'],
+
+    // Dividers
+    [/divide-white\/5/g, 'divide-border'],
+    [/divide-white\/10/g, 'divide-border'],
+
+    // text-amber for warning labels
+    [/text-amber-200/g, 'text-warning'],
+    [/text-amber-100/g, 'text-warning'],
 ];
 
 const TARGET_DIRS = ['src/pages', 'src/components'];
