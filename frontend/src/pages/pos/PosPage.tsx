@@ -8,7 +8,7 @@ import Modal from '@/components/ui/Modal';
 import { inventoryService } from '@/services/inventory.service';
 import { posService } from '@/services/pos.service';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import type { IProduct } from '@/services/inventory.service';
+import type { IProduct } from '@/types';
 import type { ICreateTransactionPayload } from '@/services/pos.service';
 
 interface CartItem {

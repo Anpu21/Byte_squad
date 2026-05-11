@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BranchesService } from '@branches/branches.service';
 import { BranchesController } from '@branches/branches.controller';
+import { BranchesRepository } from '@branches/branches.repository';
 import { Branch } from '@branches/entities/branch.entity';
 import { User } from '@users/entities/user.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
@@ -21,7 +22,7 @@ import { Expense } from '@accounting/entities/expense.entity';
     ]),
   ],
   controllers: [BranchesController],
-  providers: [BranchesService],
-  exports: [BranchesService],
+  providers: [BranchesService, BranchesRepository],
+  exports: [BranchesService, BranchesRepository],
 })
 export class BranchesModule {}

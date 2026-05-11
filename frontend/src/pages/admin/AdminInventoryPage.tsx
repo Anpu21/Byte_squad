@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import {
-    adminService,
-    type IInventoryMatrixCell,
-    type IInventoryMatrixResponse,
-    type IInventoryMatrixRow,
-    type IInventoryMatrixBranchColumn,
-} from '@/services/admin.service';
+import { adminService } from '@/services/admin.service';
 import { inventoryService } from '@/services/inventory.service';
+import type {
+    IInventoryMatrixCell,
+    IInventoryMatrixResponse,
+    IInventoryMatrixRow,
+    IInventoryMatrixBranchColumn,
+} from '@/types';
 import Modal from '@/components/ui/Modal';
 
 interface AdminInventoryPageProps {

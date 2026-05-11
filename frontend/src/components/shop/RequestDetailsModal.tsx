@@ -42,29 +42,26 @@ export default function RequestDetailsModal({
     onClose,
     request,
 }: RequestDetailsModalProps) {
-    const [fallbackQr, setFallbackQr] = useState<string | null>(null);
+    const [fallback, setFallback] = useState<{ code: string; url: string } | null>(null);
 
     // If the backend never stored a QR (legacy rows or Cloudinary disabled),
     // generate one client-side from the request code so we always have a QR
     // to render.
     useEffect(() => {
-        if (!isOpen || !request) return;
-        if (request.qrCodeUrl) {
-            setFallbackQr(null);
-            return;
-        }
+        if (!isOpen || !request || request.qrCodeUrl) return;
+        const requestCode = request.requestCode;
         let cancelled = false;
-        QRCode.toDataURL(request.requestCode, {
+        QRCode.toDataURL(requestCode, {
             width: 512,
             margin: 2,
             color: { dark: '#000000', light: '#ffffff' },
             errorCorrectionLevel: 'M',
         })
             .then((url) => {
-                if (!cancelled) setFallbackQr(url);
+                if (!cancelled) setFallback({ code: requestCode, url });
             })
             .catch(() => {
-                if (!cancelled) setFallbackQr(null);
+                if (!cancelled) setFallback(null);
             });
         return () => {
             cancelled = true;
@@ -73,7 +70,9 @@ export default function RequestDetailsModal({
 
     if (!request) return null;
 
-    const qrSrc = request.qrCodeUrl ?? fallbackQr;
+    const qrSrc =
+        request.qrCodeUrl ??
+        (fallback?.code === request.requestCode ? fallback.url : null);
     const fullPagePath = FRONTEND_ROUTES.SHOP_REQUEST_CONFIRMATION.replace(
         ':code',
         request.requestCode,

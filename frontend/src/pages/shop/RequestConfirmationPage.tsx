@@ -34,7 +34,7 @@ const STATUS_TONE: Record<CustomerRequestStatus, string> = {
 
 export default function RequestConfirmationPage() {
     const { code } = useParams<{ code: string }>();
-    const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+    const [generated, setGenerated] = useState<{ code: string; url: string } | null>(null);
 
     const { data: request, isLoading, error } = useQuery({
         queryKey: ['customer-request-by-code', code],
@@ -46,11 +46,7 @@ export default function RequestConfirmationPage() {
     // Only fall back to client-side rendering for legacy rows that have no URL.
     const storedQr = request?.qrCodeUrl ?? null;
     useEffect(() => {
-        if (storedQr) {
-            setQrDataUrl(storedQr);
-            return;
-        }
-        if (!code) return;
+        if (storedQr || !code) return;
         let cancelled = false;
         QRCode.toDataURL(code, {
             width: 512,
@@ -59,16 +55,20 @@ export default function RequestConfirmationPage() {
             errorCorrectionLevel: 'M',
         })
             .then((url) => {
-                if (!cancelled) setQrDataUrl(url);
+                if (!cancelled) setGenerated({ code, url });
             })
             .catch((err) => {
                 console.error('QR render failed', err);
-                if (!cancelled) setQrDataUrl(null);
+                if (!cancelled) setGenerated(null);
             });
         return () => {
             cancelled = true;
         };
     }, [code, storedQr]);
+
+    const qrDataUrl =
+        storedQr ??
+        (generated && generated.code === code ? generated.url : null);
 
     if (isLoading) {
         return (

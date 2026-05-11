@@ -1,9 +1,166 @@
+/* eslint-disable @typescript-eslint/unbound-method */
+import { Test } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
 import { PosService } from './pos.service';
+import { PosRepository } from './pos.repository';
+import { AccountingRepository } from '@accounting/accounting.repository';
+import { Transaction } from './entities/transaction.entity';
+import { IdempotencyKey } from './entities/idempotency-key.entity';
+import { TransactionType } from '@common/enums/transaction.enum';
+import { DiscountType } from '@common/enums/discount.enum';
+import { PaymentMethod } from '@common/enums/payment-method';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
 
-// Smoke test scaffold (Rules.md §12).
-describe('PosService', () => {
-  it('is importable as a class', () => {
-    expect(PosService).toBeDefined();
-    expect(typeof PosService).toBe('function');
+describe('PosService.createTransaction (idempotency)', () => {
+  let service: PosService;
+  let pos: jest.Mocked<PosRepository>;
+  let accounting: jest.Mocked<AccountingRepository>;
+
+  const baseDto: CreateTransactionDto = {
+    type: TransactionType.SALE,
+    paymentMethod: PaymentMethod.CASH,
+    discountAmount: 0,
+    discountType: DiscountType.NONE,
+    items: [
+      {
+        productId: 'p1',
+        quantity: 1,
+        unitPrice: 10,
+        discountAmount: 0,
+        discountType: DiscountType.NONE,
+      },
+    ],
+  };
+
+  beforeEach(async () => {
+    const posMock: Partial<jest.Mocked<PosRepository>> = {
+      createAndSaveTransaction: jest.fn(),
+      findTransactionById: jest.fn(),
+      findTransactionsByBranch: jest.fn(),
+      findTransactionsForCashierSince: jest.fn(),
+      findRecentForCashier: jest.fn(),
+      findTransactionsSince: jest.fn(),
+      findRecent: jest.fn(),
+      findRecentWithBranch: jest.fn(),
+      periodAggregateForBranch: jest.fn(),
+      periodAggregateSystem: jest.fn(),
+      findRecentScopedTransactions: jest.fn(),
+      topProductsSince: jest.fn(),
+      countActiveProducts: jest.fn(),
+      countLowStockItems: jest.fn(),
+      countAllUsers: jest.fn(),
+      countActiveBranches: jest.fn(),
+      findIdempotencyKey: jest.fn(),
+      insertIdempotencyKey: jest.fn(),
+    };
+    const accountingMock: Partial<jest.Mocked<AccountingRepository>> = {
+      createLedgerEntry: jest.fn(),
+    };
+
+    const module = await Test.createTestingModule({
+      providers: [
+        PosService,
+        { provide: PosRepository, useValue: posMock },
+        { provide: AccountingRepository, useValue: accountingMock },
+      ],
+    }).compile();
+
+    service = module.get(PosService);
+    pos = module.get(PosRepository);
+    accounting = module.get(AccountingRepository);
+  });
+
+  it('returns the original transaction when the same idempotency key replays', async () => {
+    pos.findIdempotencyKey.mockResolvedValue({
+      transactionId: 'txn-existing',
+    } as IdempotencyKey);
+    pos.findTransactionById.mockResolvedValue({
+      id: 'txn-existing',
+    } as Transaction);
+
+    const result = await service.createTransaction(
+      baseDto,
+      'cashier-1',
+      'branch-1',
+      'idem-key',
+    );
+    expect(result.id).toBe('txn-existing');
+    expect(pos.createAndSaveTransaction).not.toHaveBeenCalled();
+    expect(accounting.createLedgerEntry).not.toHaveBeenCalled();
+  });
+
+  it('throws NotFoundException when the idempotency key points at a missing transaction', async () => {
+    pos.findIdempotencyKey.mockResolvedValue({
+      transactionId: 'gone',
+    } as IdempotencyKey);
+    pos.findTransactionById.mockResolvedValue(null);
+
+    await expect(
+      service.createTransaction(baseDto, 'cashier-1', 'branch-1', 'idem-key'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('persists the idempotency row alongside a new transaction', async () => {
+    pos.findIdempotencyKey.mockResolvedValueOnce(null);
+    pos.createAndSaveTransaction.mockResolvedValue({
+      id: 'txn-new',
+      total: 10,
+      transactionNumber: 'TXN-X',
+      branchId: 'branch-1',
+    } as Transaction);
+    pos.insertIdempotencyKey.mockResolvedValue(undefined);
+
+    await service.createTransaction(
+      baseDto,
+      'cashier-1',
+      'branch-1',
+      'idem-key',
+    );
+    expect(pos.insertIdempotencyKey).toHaveBeenCalledWith({
+      key: 'idem-key',
+      cashierId: 'cashier-1',
+      transactionId: 'txn-new',
+    });
+    expect(accounting.createLedgerEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 10 }),
+    );
+  });
+
+  it('falls back to the race-winning transaction on unique-violation', async () => {
+    pos.findIdempotencyKey.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      transactionId: 'txn-winner',
+    } as IdempotencyKey);
+    pos.createAndSaveTransaction.mockResolvedValue({
+      id: 'txn-loser',
+      total: 0,
+      transactionNumber: 'TXN-L',
+      branchId: 'branch-1',
+    } as Transaction);
+    const violation = new QueryFailedError('insert', [], new Error('dup key'));
+    pos.insertIdempotencyKey.mockRejectedValue(violation);
+    pos.findTransactionById.mockResolvedValue({
+      id: 'txn-winner',
+    } as Transaction);
+
+    const result = await service.createTransaction(
+      baseDto,
+      'cashier-1',
+      'branch-1',
+      'idem-key',
+    );
+    expect(result.id).toBe('txn-winner');
+  });
+
+  it('skips ledger entry when the transaction total is zero', async () => {
+    pos.createAndSaveTransaction.mockResolvedValue({
+      id: 'txn-zero',
+      total: 0,
+      transactionNumber: 'TXN-0',
+      branchId: 'branch-1',
+    } as Transaction);
+
+    await service.createTransaction(baseDto, 'cashier-1', 'branch-1');
+    expect(accounting.createLedgerEntry).not.toHaveBeenCalled();
   });
 });

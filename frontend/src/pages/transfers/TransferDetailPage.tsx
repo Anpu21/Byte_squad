@@ -5,12 +5,12 @@ import axios from 'axios';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { TransferStatus, UserRole } from '@/constants/enums';
 import { useAuth } from '@/hooks/useAuth';
-import {
-    stockTransfersService,
-    type IStockTransferRequest,
-    type ITransferSourceOption,
-    type ITransferUserSummary,
-} from '@/services/stock-transfers.service';
+import { stockTransfersService } from '@/services/stock-transfers.service';
+import type {
+    IStockTransferRequest,
+    ITransferSourceOption,
+    ITransferUserSummary,
+} from '@/types';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
 import Modal from '@/components/ui/Modal';
 

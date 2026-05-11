@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import { timeAgo, typeIcon } from './notificationUtils';
+import { timeAgo } from './notificationUtils';
+import NotificationIcon from './NotificationIcon';
 
 export default function NotificationDropdown() {
     const { notifications, unreadCount, markAsRead, markAllAsRead } =
@@ -96,7 +97,7 @@ export default function NotificationDropdown() {
                                     }`}
                                 >
                                     <div className="scale-[0.85] origin-top-left -mr-1">
-                                        {typeIcon(n.type)}
+                                        <NotificationIcon type={n.type} />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">

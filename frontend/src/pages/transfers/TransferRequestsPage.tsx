@@ -5,10 +5,8 @@ import axios from 'axios';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { TransferStatus } from '@/constants/enums';
 import { useStockTransfers } from '@/hooks/useStockTransfers';
-import {
-    stockTransfersService,
-    type IStockTransferRequest,
-} from '@/services/stock-transfers.service';
+import { stockTransfersService } from '@/services/stock-transfers.service';
+import type { IStockTransferRequest } from '@/types';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
 
 type ScopeTab = 'my-requests' | 'incoming';

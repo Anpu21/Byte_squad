@@ -18,7 +18,7 @@ import { useInventory } from '@/hooks/useInventory';
 import { useAuth } from '@/hooks/useAuth';
 import { useConfirm } from '@/hooks/useConfirm';
 import { inventoryService } from '@/services/inventory.service';
-import type { IInventoryItem } from '@/services/inventory.service';
+import type { IInventoryWithProduct as IInventoryItem } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import {
     exportData,

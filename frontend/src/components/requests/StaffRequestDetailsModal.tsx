@@ -32,26 +32,23 @@ export default function StaffRequestDetailsModal({
     onReject,
     actionPending = false,
 }: StaffRequestDetailsModalProps) {
-    const [fallbackQr, setFallbackQr] = useState<string | null>(null);
+    const [fallback, setFallback] = useState<{ code: string; url: string } | null>(null);
 
     useEffect(() => {
-        if (!isOpen || !request) return;
-        if (request.qrCodeUrl) {
-            setFallbackQr(null);
-            return;
-        }
+        if (!isOpen || !request || request.qrCodeUrl) return;
+        const requestCode = request.requestCode;
         let cancelled = false;
-        QRCode.toDataURL(request.requestCode, {
+        QRCode.toDataURL(requestCode, {
             width: 320,
             margin: 1,
             color: { dark: '#000000', light: '#ffffff' },
             errorCorrectionLevel: 'M',
         })
             .then((url) => {
-                if (!cancelled) setFallbackQr(url);
+                if (!cancelled) setFallback({ code: requestCode, url });
             })
             .catch(() => {
-                if (!cancelled) setFallbackQr(null);
+                if (!cancelled) setFallback(null);
             });
         return () => {
             cancelled = true;
@@ -60,7 +57,9 @@ export default function StaffRequestDetailsModal({
 
     if (!request) return null;
 
-    const qrSrc = request.qrCodeUrl ?? fallbackQr;
+    const qrSrc =
+        request.qrCodeUrl ??
+        (fallback?.code === request.requestCode ? fallback.url : null);
     const customerName = request.user
         ? `${request.user.firstName} ${request.user.lastName}`
         : (request.guestName ?? 'Guest');

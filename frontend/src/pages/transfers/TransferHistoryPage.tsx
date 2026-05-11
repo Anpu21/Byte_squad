@@ -4,10 +4,9 @@ import { FRONTEND_ROUTES } from '@/constants/routes';
 import { TransferStatus, UserRole } from '@/constants/enums';
 import { useAuth } from '@/hooks/useAuth';
 import { useTransferHistory } from '@/hooks/useStockTransfers';
-import { inventoryService, type IProduct } from '@/services/inventory.service';
+import { inventoryService } from '@/services/inventory.service';
 import { adminService } from '@/services/admin.service';
-import type { IBranchWithMeta } from '@/types';
-import type { IStockTransferRequest } from '@/services/stock-transfers.service';
+import type { IBranchWithMeta, IProduct, IStockTransferRequest } from '@/types';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
 
 const HISTORY_STATUSES: { key: TransferStatus; label: string }[] = [

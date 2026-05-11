@@ -50,16 +50,19 @@ export default function Modal({
 
     // Defer unmount so the close animation can play before the node disappears.
     // Mirrors the 200ms duration on the panel/backdrop animation classes.
-    const [mounted, setMounted] = useState(isOpen);
+    const [shouldRender, setShouldRender] = useState(isOpen);
+
+    // Adjust during render so an open transition is reflected immediately
+    // without going through an effect.
+    if (isOpen && !shouldRender) {
+        setShouldRender(true);
+    }
+
     useEffect(() => {
-        if (isOpen) {
-            setMounted(true);
-            return;
-        }
-        if (!mounted) return;
-        const t = setTimeout(() => setMounted(false), 200);
+        if (isOpen) return;
+        const t = setTimeout(() => setShouldRender(false), 200);
         return () => clearTimeout(t);
-    }, [isOpen, mounted]);
+    }, [isOpen]);
 
     // Body scroll lock + ESC handler + focus trap, all gated on isOpen
     // (not `mounted`, so the trap releases as soon as close starts).
@@ -120,7 +123,7 @@ export default function Modal({
         };
     }, [isOpen, onClose]);
 
-    if (!mounted) return null;
+    if (!shouldRender) return null;
 
     return (
         <div

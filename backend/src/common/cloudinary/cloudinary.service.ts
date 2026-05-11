@@ -3,6 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
 import { Readable } from 'stream';
 
+function toError(value: unknown, fallback: string): Error {
+  if (value instanceof Error) return value;
+  if (typeof value === 'object' && value !== null && 'message' in value) {
+    const msg = (value as { message: unknown }).message;
+    if (typeof msg === 'string' && msg.length > 0) return new Error(msg);
+  }
+  return new Error(fallback);
+}
+
 export interface CloudinaryUploadOptions {
   folder: string;
   publicId: string;
@@ -62,7 +71,7 @@ export class CloudinaryService {
           transformation: [{ quality: 'auto', fetch_format: 'auto' }],
         },
         (error, result?: UploadApiResponse) => {
-          if (error) return reject(error);
+          if (error) return reject(toError(error, 'Cloudinary upload failed'));
           if (!result) return reject(new Error('No result from Cloudinary'));
           resolve({ url: result.secure_url, publicId: result.public_id });
         },
@@ -94,7 +103,7 @@ export class CloudinaryService {
           transformation: [{ quality: 'auto', fetch_format: 'auto' }],
         },
         (error, result?: UploadApiResponse) => {
-          if (error) return reject(error);
+          if (error) return reject(toError(error, 'Cloudinary upload failed'));
           if (!result) return reject(new Error('No result from Cloudinary'));
           resolve({ url: result.secure_url, publicId: result.public_id });
         },

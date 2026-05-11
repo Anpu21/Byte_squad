@@ -2,10 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { TransferStatus } from '@/constants/enums';
-import {
-    stockTransfersService,
-    type IStockTransferRequest,
-} from '@/services/stock-transfers.service';
+import { stockTransfersService } from '@/services/stock-transfers.service';
+import type { IStockTransferRequest } from '@/types';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
 
 type StatusFilter = 'all' | TransferStatus;

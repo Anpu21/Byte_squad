@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { store } from '@/store/index';
 import AppRouter from '@/routes/AppRouter';
-import { ConfirmProvider } from '@/hooks/useConfirm';
+import { ConfirmProvider } from '@/hooks/ConfirmProvider';
 
 const queryClient = new QueryClient({
     defaultOptions: {

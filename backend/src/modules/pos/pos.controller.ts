@@ -20,7 +20,7 @@ import type {
   CashierDashboardData,
   AdminDashboardData,
   CashierTransactionsSummary,
-} from '@pos/pos.service';
+} from '@pos/types';
 
 @Controller(APP_ROUTES.POS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)

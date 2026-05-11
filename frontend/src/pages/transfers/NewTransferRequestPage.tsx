@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import {
-    inventoryService,
-    type IProduct,
-} from '@/services/inventory.service';
+import { inventoryService } from '@/services/inventory.service';
 import { stockTransfersService } from '@/services/stock-transfers.service';
+import type { IProduct } from '@/types';
 
 interface FormErrors {
     productId?: string;
