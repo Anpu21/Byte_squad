@@ -1,4 +1,15 @@
 #!/usr/bin/env sh
-# Pre-commit: run lint-staged across both packages.
+# Pre-commit: single lint-staged invocation from git root.
+# Lint-staged auto-discovers `.lintstagedrc.cjs` in backend/ and frontend/
+# and applies each package's config to its own staged files. Tasks run with
+# cwd set to the config file's directory, so each package's own ESLint setup
+# is used.
+#
+# A single invocation (instead of one per package) avoids the git-stash
+# conflict that occurs when lint-staged is invoked twice in the same hook.
+#
 # Bypass: `git commit --no-verify` (only for genuine emergencies — see Rules.md §0).
-pnpm exec lint-staged
+set -e
+
+# Use backend's installed lint-staged binary; frontend's would be equivalent.
+node "./backend/node_modules/lint-staged/bin/lint-staged.js"
