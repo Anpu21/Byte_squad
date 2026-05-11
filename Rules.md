@@ -21,6 +21,8 @@ Claude Code must load and actively apply these skills throughout every task on t
 - **`everything-claude-code`** — React patterns, TypeScript idioms, NestJS architecture, Docker, testing, refactor heuristics.
 - **`frontend-design`** (if available) — design tokens, component primitives, responsive behavior.
 
+- **`llm-council`** (.claude/skills) — for making critical thinking before implmeation use this skills and provide proper implemention plan this skills must use other skills during the plan implemenation
+
 At the start of any non-trivial task, list which skills apply and why. Re-check skill applicability when scope changes mid-task.
 
 ---
