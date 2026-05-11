@@ -22,6 +22,7 @@ import InventoryToolbar, {
     type ActiveFilter,
     type InventoryView,
 } from './inventory/InventoryToolbar';
+import ProductInventoryCard from './inventory/ProductInventoryCard';
 
 interface AdminInventoryPageProps {
     embedded?: boolean;
@@ -263,202 +264,99 @@ export default function AdminInventoryPage({
                 onClearAll={clearAllFilters}
             />
 
-            <Card>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-border text-[11px] uppercase tracking-widest text-text-3 bg-canvas/50">
-                                <th className="px-6 py-4 font-semibold whitespace-nowrap sticky left-0 bg-canvas z-10">
-                                    Product
-                                </th>
-                                {branches.map((b) => (
-                                    <th
-                                        key={b.id}
-                                        className="px-4 py-4 font-semibold text-right whitespace-nowrap"
-                                    >
-                                        {b.name}
-                                        {!b.isActive && (
-                                            <span className="ml-1 text-[9px] text-text-3">
-                                                (inactive)
-                                            </span>
-                                        )}
-                                    </th>
+            {isLoading ? (
+                <div className="flex flex-col gap-2">
+                    {[...Array(5)].map((_, i) => (
+                        <div
+                            key={i}
+                            className="bg-surface border border-border rounded-md shadow-xs p-4"
+                        >
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1">
+                                    <div className="h-4 w-48 bg-surface-2 rounded animate-pulse" />
+                                    <div className="h-3 w-32 bg-surface-2 rounded animate-pulse mt-2" />
+                                </div>
+                                <div className="h-5 w-20 bg-surface-2 rounded animate-pulse" />
+                            </div>
+                            <div className="border-t border-border mt-3 pt-3 flex gap-2">
+                                {[...Array(3)].map((__, j) => (
+                                    <div
+                                        key={j}
+                                        className="h-7 w-24 bg-surface-2 rounded animate-pulse"
+                                    />
                                 ))}
-                                <th className="px-4 py-4 font-semibold text-right whitespace-nowrap">
-                                    Total
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm">
-                            {isLoading ? (
-                                [...Array(5)].map((_, i) => (
-                                    <tr
-                                        key={i}
-                                        className="border-b border-border"
-                                    >
-                                        <td className="px-6 py-4 sticky left-0 bg-surface">
-                                            <div className="h-5 w-40 bg-surface-2 rounded animate-pulse" />
-                                        </td>
-                                        {[...Array(branches.length || 3)].map(
-                                            (__, j) => (
-                                                <td
-                                                    key={j}
-                                                    className="px-4 py-4 text-right"
-                                                >
-                                                    <div className="h-5 w-12 bg-surface-2 rounded animate-pulse ml-auto" />
-                                                </td>
-                                            ),
-                                        )}
-                                        <td className="px-4 py-4 text-right">
-                                            <div className="h-5 w-12 bg-surface-2 rounded animate-pulse ml-auto" />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : visibleRows.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan={branches.length + 2}
-                                        className="p-8"
-                                    >
-                                        <EmptyState
-                                            icon={<Package size={20} />}
-                                            title={
-                                                error
-                                                    ? 'Could not load inventory'
-                                                    : 'No products match'
-                                            }
-                                            description={
-                                                error
-                                                    ? error
-                                                    : activeFilters.length > 0
-                                                      ? 'Try widening your filters or clear all to see everything.'
-                                                      : 'No products in the catalog yet.'
-                                            }
-                                            action={
-                                                error ? (
-                                                    <Button
-                                                        onClick={fetchMatrix}
-                                                    >
-                                                        Retry
-                                                    </Button>
-                                                ) : activeFilters.length > 0 ? (
-                                                    <Button
-                                                        variant="secondary"
-                                                        onClick={clearAllFilters}
-                                                    >
-                                                        Reset filters
-                                                    </Button>
-                                                ) : null
-                                            }
-                                        />
-                                    </td>
-                                </tr>
-                            ) : (
-                                visibleRows.map((row) => (
-                                    <tr
-                                        key={row.productId}
-                                        className="border-b border-border hover:bg-surface-2 transition-colors group"
-                                    >
-                                        <td className="px-6 py-4 sticky left-0 bg-surface group-hover:bg-surface-2">
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    navigate(
-                                                        FRONTEND_ROUTES.INVENTORY_EDIT.replace(
-                                                            ':productId',
-                                                            row.productId,
-                                                        ),
-                                                    )
-                                                }
-                                                className="text-left"
-                                            >
-                                                <div className="text-text-1 font-medium hover:text-text-1 transition-colors">
-                                                    {row.productName}
-                                                </div>
-                                                <div className="text-[11px] text-text-3 mt-0.5">
-                                                    {row.barcode} ·{' '}
-                                                    {row.category}
-                                                </div>
-                                            </button>
-                                        </td>
-                                        {row.cells.map((cell) => {
-                                            const tint = cell.isOutOfStock
-                                                ? cell.inventoryId === null
-                                                    ? 'text-text-3'
-                                                    : 'bg-danger-soft text-danger'
-                                                : cell.isLowStock
-                                                  ? 'bg-warning-soft text-warning'
-                                                  : 'text-text-1';
-                                            return (
-                                                <td
-                                                    key={cell.branchId}
-                                                    onClick={() =>
-                                                        handleCellClick(
-                                                            row,
-                                                            cell,
-                                                        )
-                                                    }
-                                                    className={`px-4 py-4 text-right tabular-nums font-medium cursor-pointer ${tint}`}
-                                                >
-                                                    {cell.inventoryId ===
-                                                    null ? (
-                                                        <span title="No inventory record">
-                                                            —
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center gap-1.5">
-                                                            {(cell.isLowStock ||
-                                                                cell.isOutOfStock) && (
-                                                                <span className="text-xs">
-                                                                    ⚠
-                                                                </span>
-                                                            )}
-                                                            {cell.quantity}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                            );
-                                        })}
-                                        <td className="px-4 py-4 text-right tabular-nums font-semibold text-text-1">
-                                            {row.totalQuantity}
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {!isLoading && visibleRows.length > 0 && totalPages > 1 && (
-                    <div className="p-4 border-t border-border flex items-center justify-between text-xs text-text-3 bg-canvas/50">
-                        <span>
-                            Page {matrix?.page ?? page} of {totalPages}
-                        </span>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() =>
-                                    updateParams({ page: page - 1 })
-                                }
-                                disabled={page === 1}
-                            >
-                                Previous
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() =>
-                                    updateParams({ page: page + 1 })
-                                }
-                                disabled={page === totalPages}
-                            >
-                                Next
-                            </Button>
+                            </div>
                         </div>
+                    ))}
+                </div>
+            ) : visibleRows.length === 0 ? (
+                <Card>
+                    <EmptyState
+                        icon={<Package size={20} />}
+                        title={
+                            error
+                                ? 'Could not load inventory'
+                                : 'No products match'
+                        }
+                        description={
+                            error
+                                ? error
+                                : activeFilters.length > 0
+                                  ? 'Try widening your filters or clear all to see everything.'
+                                  : 'No products in the catalog yet.'
+                        }
+                        action={
+                            error ? (
+                                <Button onClick={fetchMatrix}>Retry</Button>
+                            ) : activeFilters.length > 0 ? (
+                                <Button
+                                    variant="secondary"
+                                    onClick={clearAllFilters}
+                                >
+                                    Reset filters
+                                </Button>
+                            ) : null
+                        }
+                    />
+                </Card>
+            ) : (
+                <div className="flex flex-col gap-2">
+                    {visibleRows.map((row) => (
+                        <ProductInventoryCard
+                            key={row.productId}
+                            row={row}
+                            branches={branches}
+                            onCellClick={handleCellClick}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {!isLoading && visibleRows.length > 0 && totalPages > 1 && (
+                <div className="mt-4 px-4 py-3 bg-surface border border-border rounded-md flex items-center justify-between text-xs text-text-3">
+                    <span>
+                        Page {matrix?.page ?? page} of {totalPages}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => updateParams({ page: page - 1 })}
+                            disabled={page === 1}
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => updateParams({ page: page + 1 })}
+                            disabled={page === totalPages}
+                        >
+                            Next
+                        </Button>
                     </div>
-                )}
-            </Card>
+                </div>
+            )}
 
             <Modal
                 isOpen={drillDown !== null}
