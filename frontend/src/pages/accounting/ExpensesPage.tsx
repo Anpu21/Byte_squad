@@ -11,14 +11,10 @@ import {
     Building2,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useConfirm } from '@/hooks/useConfirm';
 import { accountingService } from '@/services/accounting.service';
-import type {
-    IExpense,
-    ICreateExpensePayload,
-    IReviewExpensePayload,
-} from '@/services/accounting.service';
 import { adminService } from '@/services/admin.service';
-import type { IBranchWithMeta } from '@/types';
+import type { IExpense, IBranchWithMeta } from '@/types';
 import { ExpenseStatus, UserRole } from '@/constants/enums';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -26,18 +22,8 @@ import Pill from '@/components/ui/Pill';
 import StatusPill from '@/components/ui/StatusPill';
 import EmptyState from '@/components/ui/EmptyState';
 import Spark from '@/components/ui/Spark';
-
-const EXPENSE_CATEGORIES = [
-    'Rent',
-    'Utilities',
-    'Salaries',
-    'Supplies',
-    'Marketing',
-    'Insurance',
-    'Maintenance',
-    'Transportation',
-    'Miscellaneous',
-];
+import AddExpenseModal from './AddExpenseModal';
+import ReviewExpenseModal from './ReviewExpenseModal';
 
 type StatusFilter = 'all' | ExpenseStatus;
 
@@ -64,9 +50,9 @@ export default function ExpensesPage() {
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
     const queryClient = useQueryClient();
+    const confirm = useConfirm();
 
     const [showAddModal, setShowAddModal] = useState(false);
-    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const [filterCategory, setFilterCategory] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -243,15 +229,20 @@ export default function ExpensesPage() {
 
     const showBranchOnRow = isAdmin && selectedBranchId === '';
 
-    const handleDelete = async () => {
-        if (!deleteId) return;
+    const handleDelete = async (id: string) => {
+        const ok = await confirm({
+            title: 'Delete expense?',
+            body: 'This action cannot be undone.',
+            confirmLabel: 'Delete expense',
+            tone: 'danger',
+        });
+        if (!ok) return;
         try {
-            await accountingService.deleteExpense(deleteId);
+            await accountingService.deleteExpense(id);
             await invalidateExpenses();
         } catch {
             setError('Failed to delete expense');
         }
-        setDeleteId(null);
     };
 
     const handleReview = async (note: string) => {
@@ -852,9 +843,7 @@ export default function ExpensesPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() =>
-                                                                setDeleteId(
-                                                                    expense.id,
-                                                                )
+                                                                handleDelete(expense.id)
                                                             }
                                                             className="p-1.5 text-text-3 hover:text-danger opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all rounded-md hover:bg-danger-soft"
                                                             title="Delete"
@@ -892,40 +881,6 @@ export default function ExpensesPage() {
                 />
             )}
 
-            {deleteId && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-                    style={{ background: 'var(--overlay)' }}
-                >
-                    <Card className="w-full max-w-sm p-6">
-                        <h3 className="text-base font-semibold text-text-1 mb-2">
-                            Delete expense
-                        </h3>
-                        <p className="text-sm text-text-2 mb-5">
-                            Are you sure? This action cannot be undone.
-                        </p>
-                        <div className="flex items-center justify-end gap-2">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="md"
-                                onClick={() => setDeleteId(null)}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="danger"
-                                size="md"
-                                onClick={handleDelete}
-                            >
-                                Delete
-                            </Button>
-                        </div>
-                    </Card>
-                </div>
-            )}
-
             {reviewTarget && (
                 <ReviewExpenseModal
                     expense={reviewTarget.expense}
@@ -938,292 +893,3 @@ export default function ExpensesPage() {
     );
 }
 
-function ReviewExpenseModal({
-    expense,
-    action,
-    onCancel,
-    onConfirm,
-}: {
-    expense: IExpense;
-    action: 'approved' | 'rejected';
-    onCancel: () => void;
-    onConfirm: (note: string) => void;
-}) {
-    const [note, setNote] = useState('');
-    const [submitting, setSubmitting] = useState(false);
-    const isReject = action === 'rejected';
-
-    const handleSubmit = async () => {
-        setSubmitting(true);
-        try {
-            await onConfirm(note);
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-            style={{ background: 'var(--overlay)' }}
-        >
-            <Card className="w-full max-w-md p-6">
-                <h3 className="text-base font-semibold text-text-1 mb-1">
-                    {isReject ? 'Reject expense' : 'Approve expense'}
-                </h3>
-                <p className="text-sm text-text-2 mb-4">
-                    {expense.category} —{' '}
-                    <span className="mono">
-                        {new Intl.NumberFormat('en-LK', {
-                            style: 'currency',
-                            currency: 'LKR',
-                            maximumFractionDigits: 0,
-                        }).format(Number(expense.amount))}
-                    </span>
-                </p>
-
-                <label className="block text-xs font-medium text-text-2 mb-1.5">
-                    Note {isReject ? '(reason)' : '(optional)'}
-                </label>
-                <textarea
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder={
-                        isReject
-                            ? 'Why is this being rejected?'
-                            : 'Optional note'
-                    }
-                    rows={3}
-                    className="w-full px-3 py-2 bg-canvas border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/25 placeholder:text-text-3 transition-colors resize-none"
-                />
-
-                <div className="flex items-center justify-end gap-2 mt-5">
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        size="md"
-                        onClick={onCancel}
-                        disabled={submitting}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        type="button"
-                        variant={isReject ? 'danger' : 'primary'}
-                        size="md"
-                        onClick={handleSubmit}
-                        disabled={submitting}
-                    >
-                        {submitting
-                            ? 'Saving…'
-                            : isReject
-                              ? 'Reject'
-                              : 'Approve'}
-                    </Button>
-                </div>
-            </Card>
-        </div>
-    );
-}
-
-function AddExpenseModal({
-    isAdmin,
-    defaultBranchId,
-    branches,
-    onClose,
-    onSaved,
-}: {
-    isAdmin: boolean;
-    defaultBranchId: string;
-    branches: IBranchWithMeta[];
-    onClose: () => void;
-    onSaved: () => void;
-}) {
-    const today = new Date().toISOString().split('T')[0];
-    const [form, setForm] = useState<ICreateExpensePayload>({
-        branchId: defaultBranchId || undefined,
-        category: '',
-        amount: 0,
-        description: '',
-        expenseDate: today,
-    });
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!form.category || !form.description || form.amount <= 0) {
-            setError('Please fill all required fields with valid values.');
-            return;
-        }
-        if (isAdmin && !form.branchId) {
-            setError('Please pick a branch.');
-            return;
-        }
-        setSaving(true);
-        setError('');
-        try {
-            // Managers don't need to send branchId; backend forces it from JWT.
-            const payload: ICreateExpensePayload = isAdmin
-                ? form
-                : { ...form, branchId: undefined };
-            await accountingService.createExpense(payload);
-            onSaved();
-        } catch {
-            setError('Failed to save expense. Please try again.');
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const fieldClass =
-        'w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors placeholder:text-text-3';
-
-    return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-            style={{ background: 'var(--overlay)' }}
-        >
-            <Card className="w-full max-w-md">
-                <div className="p-5 border-b border-border flex items-center justify-between">
-                    <h2 className="text-base font-semibold text-text-1 tracking-tight">
-                        Add expense
-                    </h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="p-1.5 text-text-2 hover:text-text-1 rounded-md hover:bg-surface-2 transition-colors"
-                        aria-label="Close"
-                    >
-                        <X size={16} />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
-                    {error && (
-                        <div className="px-3 py-2 rounded-md bg-danger-soft border border-danger/40 text-xs text-danger font-medium">
-                            {error}
-                        </div>
-                    )}
-
-                    {isAdmin && (
-                        <div>
-                            <label className="block text-xs font-medium text-text-2 mb-1.5">
-                                Branch
-                            </label>
-                            <select
-                                value={form.branchId ?? ''}
-                                onChange={(e) =>
-                                    setForm({
-                                        ...form,
-                                        branchId: e.target.value || undefined,
-                                    })
-                                }
-                                className={fieldClass}
-                            >
-                                <option value="">Select branch</option>
-                                {branches.map((b) => (
-                                    <option key={b.id} value={b.id}>
-                                        {b.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-
-                    <div>
-                        <label className="block text-xs font-medium text-text-2 mb-1.5">
-                            Category
-                        </label>
-                        <select
-                            value={form.category}
-                            onChange={(e) =>
-                                setForm({ ...form, category: e.target.value })
-                            }
-                            className={fieldClass}
-                        >
-                            <option value="">Select category</option>
-                            {EXPENSE_CATEGORIES.map((c) => (
-                                <option key={c} value={c}>
-                                    {c}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-medium text-text-2 mb-1.5">
-                            Amount (LKR)
-                        </label>
-                        <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={form.amount || ''}
-                            onChange={(e) =>
-                                setForm({
-                                    ...form,
-                                    amount: parseFloat(e.target.value) || 0,
-                                })
-                            }
-                            placeholder="0.00"
-                            className={`${fieldClass} mono`}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-medium text-text-2 mb-1.5">
-                            Description
-                        </label>
-                        <input
-                            type="text"
-                            value={form.description}
-                            onChange={(e) =>
-                                setForm({
-                                    ...form,
-                                    description: e.target.value,
-                                })
-                            }
-                            placeholder="What was this expense for?"
-                            className={fieldClass}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-medium text-text-2 mb-1.5">
-                            Date
-                        </label>
-                        <input
-                            type="date"
-                            value={form.expenseDate}
-                            onChange={(e) =>
-                                setForm({
-                                    ...form,
-                                    expenseDate: e.target.value,
-                                })
-                            }
-                            className={fieldClass}
-                        />
-                    </div>
-
-                    <div className="flex items-center justify-end gap-2 pt-2">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            size="md"
-                            onClick={onClose}
-                        >
-                            Cancel
-                        </Button>
-                        <Button type="submit" size="md" disabled={saving}>
-                            {saving ? 'Saving…' : 'Save expense'}
-                        </Button>
-                    </div>
-                </form>
-            </Card>
-        </div>
-    );
-}
-
-// Suppress unused-import warning while we keep IReviewExpensePayload for typing reference.
-export type { IReviewExpensePayload };

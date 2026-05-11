@@ -87,7 +87,7 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                             </>
                         ) : (
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-600"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-text-3"></span>
                         )}
                     </span>
                     <span className="text-[11px] text-text-2 font-medium uppercase tracking-wider">

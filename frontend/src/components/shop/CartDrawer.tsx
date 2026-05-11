@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { X, Trash2, Minus, Plus, ShoppingCart } from 'lucide-react';
@@ -10,6 +10,7 @@ import {
     selectCartTotal,
 } from '@/store/slices/shopCartSlice';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import ProductImage from '@/components/shop/ProductImage';
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-LK', {
@@ -18,29 +19,72 @@ function formatCurrency(amount: number) {
     }).format(amount);
 }
 
+const FOCUSABLE_SELECTOR =
+    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export default function CartDrawer() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const items = useSelector((state: RootState) => state.shopCart.items);
     const isOpen = useSelector((state: RootState) => state.shopCart.isCartOpen);
     const total = selectCartTotal(items);
-    const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
-    const markImageFailed = (productId: string) =>
-        setFailedImages((prev) => {
-            if (prev.has(productId)) return prev;
-            const next = new Set(prev);
-            next.add(productId);
-            return next;
-        });
+    const panelRef = useRef<HTMLDivElement>(null);
+    const previousActiveRef = useRef<HTMLElement | null>(null);
 
+    // Body scroll lock + initial focus + focus restore + ESC + focus trap.
     useEffect(() => {
         if (!isOpen) return;
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') dispatch(closeCartDrawer());
+
+        previousActiveRef.current = document.activeElement as HTMLElement | null;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        const focusFrame = requestAnimationFrame(() => {
+            const panel = panelRef.current;
+            if (!panel) return;
+            const first = panel.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+            (first ?? panel).focus();
+        });
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                dispatch(closeCartDrawer());
+                return;
+            }
+            if (e.key !== 'Tab' || !panelRef.current) return;
+            const focusables = Array.from(
+                panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+            );
+            if (focusables.length === 0) {
+                e.preventDefault();
+                panelRef.current.focus();
+                return;
+            }
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            const active = document.activeElement;
+            if (e.shiftKey && (active === first || !panelRef.current.contains(active))) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && active === last) {
+                e.preventDefault();
+                first.focus();
+            }
         };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            cancelAnimationFrame(focusFrame);
+            document.removeEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = previousOverflow;
+            const previous = previousActiveRef.current;
+            if (previous && document.contains(previous)) {
+                previous.focus();
+            }
+        };
     }, [isOpen, dispatch]);
 
     const close = () => dispatch(closeCartDrawer());
@@ -57,15 +101,21 @@ export default function CartDrawer() {
         <>
             <div
                 onClick={close}
-                aria-hidden={!isOpen}
+                aria-hidden="true"
                 style={{ background: 'var(--overlay)' }}
-                className={`fixed inset-0 z-30 transition-opacity ${
+                className={`fixed inset-0 z-overlay transition-opacity ${
                     isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
             />
             <aside
+                ref={panelRef}
+                tabIndex={-1}
+                role="dialog"
+                aria-modal="true"
                 aria-label="Shopping cart"
-                className={`fixed top-0 right-0 h-screen w-full sm:w-[400px] bg-canvas border-l border-border z-40 flex flex-col transform transition-transform duration-300 ${
+                aria-hidden={!isOpen}
+                {...(!isOpen && { inert: '' as unknown as boolean })}
+                className={`fixed top-0 right-0 h-screen w-full sm:w-[400px] bg-canvas border-l border-border z-modal flex flex-col transform transition-transform duration-300 outline-none ${
                     isOpen ? 'translate-x-0' : 'translate-x-full'
                 }`}
             >
@@ -80,7 +130,7 @@ export default function CartDrawer() {
                     <button
                         type="button"
                         onClick={close}
-                        className="p-1.5 rounded-lg hover:bg-surface-2 text-text-2 hover:text-text-1"
+                        className="p-1.5 rounded-lg hover:bg-surface-2 text-text-2 hover:text-text-1 focus:outline-none focus:ring-[3px] focus:ring-primary/20"
                         aria-label="Close cart"
                     >
                         <X size={18} />
@@ -107,20 +157,11 @@ export default function CartDrawer() {
                                     key={item.productId}
                                     className="flex items-center gap-3 px-5 py-3"
                                 >
-                                    <div className="w-14 h-14 bg-surface-2 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-                                        {item.imageUrl && !failedImages.has(item.productId) ? (
-                                            <img
-                                                src={item.imageUrl}
-                                                alt={item.name}
-                                                onError={() => markImageFailed(item.productId)}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <span className="text-text-3 text-[10px]">
-                                                No image
-                                            </span>
-                                        )}
-                                    </div>
+                                    <ProductImage
+                                        src={item.imageUrl}
+                                        alt={item.name}
+                                        wrapperClassName="w-14 h-14 bg-surface-2 rounded-lg overflow-hidden flex items-center justify-center shrink-0"
+                                    />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-semibold text-text-1 line-clamp-2 leading-tight">
                                             {item.name}
@@ -140,11 +181,15 @@ export default function CartDrawer() {
                                                     )
                                                 }
                                                 disabled={item.quantity <= 1}
-                                                className="w-6 h-6 flex items-center justify-center rounded bg-surface-2 hover:bg-primary-soft disabled:opacity-30"
+                                                aria-label={`Decrease quantity of ${item.name}`}
+                                                className="w-9 h-9 flex items-center justify-center rounded-md bg-surface-2 hover:bg-primary-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
                                             >
-                                                <Minus size={11} />
+                                                <Minus size={14} />
                                             </button>
-                                            <span className="text-xs font-semibold text-text-1 min-w-[1.5ch] text-center">
+                                            <span
+                                                className="text-sm font-semibold text-text-1 min-w-[2ch] text-center tabular-nums"
+                                                aria-live="polite"
+                                            >
                                                 {item.quantity}
                                             </span>
                                             <button
@@ -157,11 +202,12 @@ export default function CartDrawer() {
                                                         }),
                                                     )
                                                 }
-                                                className="w-6 h-6 flex items-center justify-center rounded bg-surface-2 hover:bg-primary-soft"
+                                                aria-label={`Increase quantity of ${item.name}`}
+                                                className="w-9 h-9 flex items-center justify-center rounded-md bg-surface-2 hover:bg-primary-soft transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
                                             >
-                                                <Plus size={11} />
+                                                <Plus size={14} />
                                             </button>
-                                            <span className="ml-auto text-xs font-bold text-text-1">
+                                            <span className="ml-auto text-xs font-bold text-text-1 tabular-nums">
                                                 {formatCurrency(
                                                     item.sellingPrice * item.quantity,
                                                 )}
@@ -173,10 +219,10 @@ export default function CartDrawer() {
                                         onClick={() =>
                                             dispatch(removeFromCart(item.productId))
                                         }
-                                        className="p-1.5 rounded-lg hover:bg-danger-soft text-text-3 hover:text-danger transition-colors self-start"
-                                        aria-label="Remove"
+                                        className="p-2 rounded-md hover:bg-danger-soft text-text-3 hover:text-danger transition-colors self-start focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                                        aria-label={`Remove ${item.name} from cart`}
                                     >
-                                        <Trash2 size={13} />
+                                        <Trash2 size={14} />
                                     </button>
                                 </li>
                             ))}
@@ -190,7 +236,7 @@ export default function CartDrawer() {
                             <span className="text-[11px] uppercase tracking-widest text-text-3">
                                 Estimated total
                             </span>
-                            <span className="text-lg font-bold text-text-1">
+                            <span className="text-lg font-bold text-text-1 tabular-nums">
                                 {formatCurrency(total)}
                             </span>
                         </div>
@@ -198,14 +244,14 @@ export default function CartDrawer() {
                             <button
                                 type="button"
                                 onClick={goToCart}
-                                className="px-3 py-2 text-xs font-semibold bg-surface-2 text-text-1 rounded-lg hover:bg-primary-soft transition-colors"
+                                className="px-3 py-2 text-xs font-semibold bg-surface-2 text-text-1 rounded-lg hover:bg-primary-soft transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
                             >
                                 View full cart
                             </button>
                             <button
                                 type="button"
                                 onClick={goToCheckout}
-                                className="px-3 py-2 text-xs font-semibold bg-primary text-text-inv rounded-lg hover:bg-primary-hover transition-colors"
+                                className="px-3 py-2 text-xs font-semibold bg-primary text-text-inv rounded-lg hover:bg-primary-hover transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
                             >
                                 Checkout →
                             </button>

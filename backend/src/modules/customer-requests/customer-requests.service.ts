@@ -7,19 +7,20 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
 import * as crypto from 'crypto';
+import * as QRCode from 'qrcode';
+import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { CustomerRequest } from '@/modules/customer-requests/entities/customer-request.entity';
-import { CustomerRequestItem } from '@/modules/customer-requests/entities/customer-request-item.entity';
+import { CustomerRequestsRepository } from '@/modules/customer-requests/customer-requests.repository';
 import { CreateCustomerRequestDto } from '@/modules/customer-requests/dto/create-customer-request.dto';
 import { FulfillCustomerRequestDto } from '@/modules/customer-requests/dto/fulfill-customer-request.dto';
 import { ListCustomerRequestsQueryDto } from '@/modules/customer-requests/dto/list-customer-requests-query.dto';
-import { Product } from '@products/entities/product.entity';
-import { Branch } from '@branches/entities/branch.entity';
-import { User } from '@users/entities/user.entity';
+import { ProductsRepository } from '@products/products.repository';
+import { BranchesRepository } from '@branches/branches.repository';
+import { UsersRepository } from '@users/users.repository';
+import { PosRepository } from '@pos/pos.repository';
+import { AccountingRepository } from '@accounting/accounting.repository';
 import { Transaction } from '@pos/entities/transaction.entity';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { CustomerRequestStatus } from '@common/enums/customer-request.enum';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { DiscountType } from '@common/enums/discount.enum';
@@ -27,6 +28,7 @@ import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { NotificationType } from '@common/enums/notification.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { NotificationsService } from '@notifications/notifications.service';
+import { NotificationsGateway } from '@notifications/notifications.gateway';
 
 const REQUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -42,52 +44,65 @@ export class CustomerRequestsService {
   private readonly logger = new Logger(CustomerRequestsService.name);
 
   constructor(
-    @InjectRepository(CustomerRequest)
-    private readonly requestRepo: Repository<CustomerRequest>,
-    @InjectRepository(CustomerRequestItem)
-    private readonly requestItemRepo: Repository<CustomerRequestItem>,
-    @InjectRepository(Product)
-    private readonly productRepo: Repository<Product>,
-    @InjectRepository(Branch)
-    private readonly branchRepo: Repository<Branch>,
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
-    @InjectRepository(Transaction)
-    private readonly transactionRepo: Repository<Transaction>,
-    @InjectRepository(LedgerEntry)
-    private readonly ledgerRepo: Repository<LedgerEntry>,
+    private readonly requests: CustomerRequestsRepository,
+    private readonly products: ProductsRepository,
+    private readonly branches: BranchesRepository,
+    private readonly users: UsersRepository,
+    private readonly pos: PosRepository,
+    private readonly accounting: AccountingRepository,
     private readonly notifications: NotificationsService,
+    private readonly notificationsGateway: NotificationsGateway,
+    private readonly cloudinary: CloudinaryService,
   ) {}
+
+  private async generateAndStoreQrCode(
+    request: CustomerRequest,
+  ): Promise<string | null> {
+    try {
+      const buffer = await QRCode.toBuffer(request.requestCode, {
+        width: 512,
+        margin: 1,
+        errorCorrectionLevel: 'M',
+      });
+      const { url } = await this.cloudinary.uploadBuffer(buffer, {
+        folder: 'ledgerpro/qr-codes',
+        publicId: request.id,
+      });
+      return url;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(
+        `QR upload failed for ${request.requestCode}: ${message} — falling back to client-side rendering`,
+      );
+      return null;
+    }
+  }
 
   async create(
     dto: CreateCustomerRequestDto,
     userId: string,
   ): Promise<CustomerRequest> {
-    const branch = await this.branchRepo.findOne({
-      where: { id: dto.branchId, isActive: true },
-    });
-    if (!branch) {
+    const branch = await this.branches.findById(dto.branchId);
+    if (!branch || !branch.isActive) {
       throw new BadRequestException('Branch not found or inactive');
     }
 
     const productIds = dto.items.map((i) => i.productId);
-    const products = await this.productRepo.find({
-      where: { id: In(productIds), isActive: true },
-    });
+    const products = await this.products.findActiveByIds(productIds);
     if (products.length !== new Set(productIds).size) {
       throw new BadRequestException('Some products are unavailable');
     }
     const byId = new Map(products.map((p) => [p.id, p]));
 
     let estimatedTotal = 0;
-    const itemEntities: CustomerRequestItem[] = dto.items.map((it) => {
+    const itemEntities = dto.items.map((it) => {
       const product = byId.get(it.productId);
       if (!product) {
         throw new BadRequestException(`Product ${it.productId} not found`);
       }
       const unitPriceSnapshot = Number(product.sellingPrice);
       estimatedTotal += unitPriceSnapshot * it.quantity;
-      return this.requestItemRepo.create({
+      return this.requests.buildItem({
         productId: product.id,
         quantity: it.quantity,
         unitPriceSnapshot,
@@ -96,7 +111,7 @@ export class CustomerRequestsService {
 
     const requestCode = await this.generateUniqueCode();
 
-    const request = this.requestRepo.create({
+    const saved = await this.requests.createAndSave({
       requestCode,
       userId,
       branchId: dto.branchId,
@@ -106,34 +121,41 @@ export class CustomerRequestsService {
       note: dto.note ?? null,
       items: itemEntities,
     });
-
-    const saved = await this.requestRepo.save(request);
     this.logger.log(
       `Customer request ${saved.requestCode} created at ${branch.name}`,
     );
+
+    const qrCodeUrl = await this.generateAndStoreQrCode(saved);
+    if (qrCodeUrl) {
+      saved.qrCodeUrl = qrCodeUrl;
+      await this.requests.setQrCodeUrl(saved.id, qrCodeUrl);
+    }
 
     this.notifyBranchStaff(saved, branch.name).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Notification fan-out failed: ${message}`);
     });
 
+    // Live broadcast so manager / cashier dashboards refetch immediately
+    // instead of waiting for the 30-second poll.
+    this.notificationsGateway.broadcast('customer-request:created', {
+      branchId: saved.branchId,
+      requestId: saved.id,
+      requestCode: saved.requestCode,
+    });
+
     return this.findById(saved.id);
   }
 
   async findByCode(code: string): Promise<CustomerRequest> {
-    const req = await this.requestRepo.findOne({
-      where: { requestCode: code },
-      relations: ['items', 'items.product', 'branch', 'user'],
-    });
+    const req = await this.requests.findByCode(code);
     if (!req) {
       throw new NotFoundException('Request not found');
     }
     if (req.status === CustomerRequestStatus.PENDING) {
       const ageMs = Date.now() - new Date(req.createdAt).getTime();
       if (ageMs > REQUEST_TTL_MS) {
-        await this.requestRepo.update(req.id, {
-          status: CustomerRequestStatus.EXPIRED,
-        });
+        await this.requests.updateStatus(req.id, CustomerRequestStatus.EXPIRED);
         req.status = CustomerRequestStatus.EXPIRED;
       }
     }
@@ -141,10 +163,7 @@ export class CustomerRequestsService {
   }
 
   async findById(id: string): Promise<CustomerRequest> {
-    const req = await this.requestRepo.findOne({
-      where: { id },
-      relations: ['items', 'items.product', 'branch', 'user'],
-    });
+    const req = await this.requests.findById(id);
     if (!req) {
       throw new NotFoundException('Request not found');
     }
@@ -155,51 +174,33 @@ export class CustomerRequestsService {
     actor: StaffActor,
     query: ListCustomerRequestsQueryDto,
   ): Promise<CustomerRequest[]> {
-    const qb = this.requestRepo
-      .createQueryBuilder('req')
-      .leftJoinAndSelect('req.items', 'items')
-      .leftJoinAndSelect('items.product', 'product')
-      .leftJoinAndSelect('req.branch', 'branch')
-      .leftJoinAndSelect('req.user', 'user')
-      .orderBy('req.createdAt', 'DESC')
-      .take(query.limit ?? 200);
-
-    if (actor.role !== UserRole.ADMIN) {
-      qb.andWhere('req.branch_id = :branchId', { branchId: actor.branchId });
-    } else if (query.branchId) {
-      qb.andWhere('req.branch_id = :branchId', { branchId: query.branchId });
-    }
-
-    if (query.status) {
-      qb.andWhere('req.status = :status', { status: query.status });
-    } else if (actor.role === UserRole.CASHIER) {
-      // Cashiers don't need rejected/cancelled/expired noise — they can only
-      // act on pending and accepted (and want to see today's completed).
-      qb.andWhere('req.status IN (:...visibleToCashier)', {
-        visibleToCashier: [
-          CustomerRequestStatus.PENDING,
-          CustomerRequestStatus.ACCEPTED,
-          CustomerRequestStatus.COMPLETED,
-        ],
-      });
-    }
-
-    if (query.q) {
-      qb.andWhere(
-        "(LOWER(req.request_code) LIKE LOWER(:q) OR LOWER(COALESCE(req.guest_name, '')) LIKE LOWER(:q))",
-        { q: `%${query.q}%` },
+    // Defensive: a manager/cashier without a branch assignment would otherwise
+    // produce SQL like `branch_id = NULL` which silently returns zero rows
+    // and looks like "no requests yet" in the UI. Surface the data problem
+    // instead of hiding it.
+    if (actor.role !== UserRole.ADMIN && !actor.branchId) {
+      this.logger.warn(
+        `Staff ${actor.id} (${actor.role}) has no branchId — returning empty list. Assign a branch in user management.`,
       );
+      return [];
     }
 
-    return qb.getMany();
+    const rows = await this.requests.listForStaff({
+      actorRole: actor.role,
+      actorBranchId: actor.branchId,
+      branchId: query.branchId ?? null,
+      status: query.status ?? null,
+      q: query.q ?? null,
+      limit: query.limit ?? 200,
+    });
+    this.logger.debug(
+      `listForStaff actor=${actor.id} role=${actor.role} branchId=${actor.branchId ?? 'ALL'} status=${query.status ?? 'ANY'} q=${query.q ?? '-'} → ${rows.length} rows`,
+    );
+    return rows;
   }
 
   async listForUser(userId: string): Promise<CustomerRequest[]> {
-    return this.requestRepo.find({
-      where: { userId },
-      relations: ['items', 'items.product', 'branch'],
-      order: { createdAt: 'DESC' },
-    });
+    return this.requests.listForUser(userId);
   }
 
   async cancelByUser(id: string, userId: string): Promise<CustomerRequest> {
@@ -210,9 +211,7 @@ export class CustomerRequestsService {
     if (req.status !== CustomerRequestStatus.PENDING) {
       throw new BadRequestException('Only pending requests can be cancelled');
     }
-    await this.requestRepo.update(id, {
-      status: CustomerRequestStatus.CANCELLED,
-    });
+    await this.requests.updateStatus(id, CustomerRequestStatus.CANCELLED);
     return this.findById(id);
   }
 
@@ -224,14 +223,10 @@ export class CustomerRequestsService {
     if (req.status !== CustomerRequestStatus.PENDING) {
       throw new BadRequestException('Only pending requests can be accepted');
     }
-    await this.requestRepo.update(id, {
-      status: CustomerRequestStatus.ACCEPTED,
-    });
+    await this.requests.updateStatus(id, CustomerRequestStatus.ACCEPTED);
     const updated = await this.findById(id);
 
-    const branch = await this.branchRepo.findOne({
-      where: { id: updated.branchId },
-    });
+    const branch = await this.branches.findById(updated.branchId);
     if (branch) {
       this.notifyBranchCashiers(updated, branch.name).catch((err: unknown) => {
         const message = err instanceof Error ? err.message : String(err);
@@ -250,9 +245,7 @@ export class CustomerRequestsService {
     if (req.status !== CustomerRequestStatus.PENDING) {
       throw new BadRequestException('Only pending requests can be rejected');
     }
-    await this.requestRepo.update(id, {
-      status: CustomerRequestStatus.REJECTED,
-    });
+    await this.requests.updateStatus(id, CustomerRequestStatus.REJECTED);
     return this.findById(id);
   }
 
@@ -287,9 +280,7 @@ export class CustomerRequestsService {
     }
 
     const productIds = effective.map((i) => i.productId);
-    const products = await this.productRepo.find({
-      where: { id: In(productIds), isActive: true },
-    });
+    const products = await this.products.findActiveByIds(productIds);
     if (products.length !== new Set(productIds).size) {
       throw new BadRequestException('Some products are no longer available');
     }
@@ -321,7 +312,7 @@ export class CustomerRequestsService {
       .substring(2, 7)
       .toUpperCase()}`;
 
-    const transaction = this.transactionRepo.create({
+    const savedTx = await this.pos.createAndSaveTransaction({
       transactionNumber,
       branchId: req.branchId,
       cashierId: actor.id,
@@ -334,10 +325,9 @@ export class CustomerRequestsService {
       paymentMethod: dto.paymentMethod,
       items: txItems,
     });
-    const savedTx = await this.transactionRepo.save(transaction);
 
     if (total > 0) {
-      const ledgerEntry = this.ledgerRepo.create({
+      await this.accounting.createLedgerEntry({
         branchId: savedTx.branchId,
         entryType: LedgerEntryType.CREDIT,
         amount: savedTx.total,
@@ -345,11 +335,9 @@ export class CustomerRequestsService {
         referenceNumber: savedTx.transactionNumber,
         transactionId: savedTx.id,
       });
-      await this.ledgerRepo.save(ledgerEntry);
     }
 
-    await this.requestRepo.update(req.id, {
-      status: CustomerRequestStatus.COMPLETED,
+    await this.requests.updateStatus(req.id, CustomerRequestStatus.COMPLETED, {
       fulfilledTransactionId: savedTx.id,
     });
 
@@ -363,12 +351,9 @@ export class CustomerRequestsService {
     request: CustomerRequest,
     branchName: string,
   ): Promise<void> {
-    const staff = await this.userRepo.find({
-      where: [
-        { branchId: request.branchId, role: UserRole.MANAGER },
-        { branchId: request.branchId, role: UserRole.ADMIN },
-      ],
-    });
+    const staff = await this.users.findManagersAndAdminsForBranches([
+      request.branchId,
+    ]);
 
     const customerName = request.user
       ? `${request.user.firstName} ${request.user.lastName}`
@@ -398,9 +383,10 @@ export class CustomerRequestsService {
     request: CustomerRequest,
     branchName: string,
   ): Promise<void> {
-    const cashiers = await this.userRepo.find({
-      where: { branchId: request.branchId, role: UserRole.CASHIER },
-    });
+    const cashiers = await this.users.findByBranchAndRole(
+      request.branchId,
+      UserRole.CASHIER,
+    );
     if (cashiers.length === 0) return;
 
     const customerName = request.user
@@ -434,9 +420,7 @@ export class CustomerRequestsService {
       for (let i = 0; i < 8; i++) {
         code += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
       }
-      const exists = await this.requestRepo.findOne({
-        where: { requestCode: code },
-      });
+      const exists = await this.requests.existsByCode(code);
       if (!exists) return code;
     }
     throw new InternalServerErrorException(

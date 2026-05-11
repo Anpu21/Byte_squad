@@ -5,13 +5,14 @@ import axios from 'axios';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { TransferStatus, UserRole } from '@/constants/enums';
 import { useAuth } from '@/hooks/useAuth';
-import {
-    stockTransfersService,
-    type IStockTransferRequest,
-    type ITransferSourceOption,
-    type ITransferUserSummary,
-} from '@/services/stock-transfers.service';
+import { stockTransfersService } from '@/services/stock-transfers.service';
+import type {
+    IStockTransferRequest,
+    ITransferSourceOption,
+    ITransferUserSummary,
+} from '@/types';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
+import Modal from '@/components/ui/Modal';
 
 function fullName(user: ITransferUserSummary | null): string {
     if (!user) return '—';
@@ -377,13 +378,13 @@ export default function TransferDetailPage() {
                             <>
                                 <button
                                     onClick={openApprove}
-                                    className="h-10 px-5 rounded-xl bg-primary text-text-inv text-sm font-bold hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 transition-all"
+                                    className="h-10 px-5 rounded-xl bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all"
                                 >
                                     Approve
                                 </button>
                                 <button
                                     onClick={() => setActiveAction('reject')}
-                                    className="h-10 px-5 rounded-xl bg-danger-soft border border-danger/40 text-danger text-sm font-medium hover:bg-rose-500/25 transition-colors"
+                                    className="h-10 px-5 rounded-xl bg-danger-soft border border-danger/40 text-danger text-sm font-medium hover:bg-danger-soft transition-colors"
                                 >
                                     Reject
                                 </button>
@@ -392,7 +393,7 @@ export default function TransferDetailPage() {
                         {canShip && (
                             <button
                                 onClick={() => setActiveAction('ship')}
-                                className="h-10 px-5 rounded-xl bg-primary text-text-inv text-sm font-bold hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 transition-all"
+                                className="h-10 px-5 rounded-xl bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all"
                             >
                                 Mark Shipped
                             </button>
@@ -400,7 +401,7 @@ export default function TransferDetailPage() {
                         {canReceive && (
                             <button
                                 onClick={() => setActiveAction('receive')}
-                                className="h-10 px-5 rounded-xl bg-accent-soft border border-accent/40 text-accent-text text-sm font-medium hover:bg-emerald-500/25 transition-colors"
+                                className="h-10 px-5 rounded-xl bg-accent-soft border border-accent/40 text-accent-text text-sm font-medium hover:bg-accent-soft transition-colors"
                             >
                                 Mark Received
                             </button>
@@ -418,12 +419,13 @@ export default function TransferDetailPage() {
             )}
 
             {/* Approve modal */}
-            {activeAction === 'approve' && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-lg font-semibold text-text-1 mb-1">
-                            Approve transfer
-                        </h3>
+            <Modal
+                isOpen={activeAction === 'approve'}
+                onClose={closeModal}
+                title="Approve transfer"
+                maxWidth="2xl"
+            >
+                <div>
                         <p className="text-xs text-text-3 mb-4">
                             Pick a source branch with enough stock and confirm
                             the quantity.
@@ -500,7 +502,7 @@ export default function TransferDetailPage() {
                                                             disabled={
                                                                 disabled
                                                             }
-                                                            className="accent-white"
+                                                            className="accent-[var(--primary)]"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-3 text-text-1">
@@ -540,7 +542,7 @@ export default function TransferDetailPage() {
                                 onChange={(e) =>
                                     setApprovedQuantityStr(e.target.value)
                                 }
-                                className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all"
+                                className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all"
                             />
                             <p className="text-[11px] text-text-3 mt-1">
                                 Requested: {transfer.requestedQuantity} unit(s)
@@ -559,7 +561,7 @@ export default function TransferDetailPage() {
                                 rows={2}
                                 maxLength={500}
                                 placeholder="e.g. Please ship before Friday — store running out."
-                                className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 resize-none"
+                                className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3 resize-none"
                             />
                             <p className="text-[11px] text-text-3 mt-1">
                                 Sent to both source and destination branch
@@ -578,24 +580,24 @@ export default function TransferDetailPage() {
                             <button
                                 onClick={handleApproveSubmit}
                                 disabled={submitting || !chosenSourceId}
-                                className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50"
+                                className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all disabled:opacity-50"
                             >
                                 {submitting
                                     ? 'Approving…'
                                     : 'Confirm approval'}
                             </button>
                         </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Reject modal */}
-            {activeAction === 'reject' && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-lg font-semibold text-text-1 mb-2">
-                            Reject transfer
-                        </h3>
+            <Modal
+                isOpen={activeAction === 'reject'}
+                onClose={closeModal}
+                title="Reject transfer"
+                maxWidth="md"
+            >
+                <div>
                         <p className="text-xs text-text-3 mb-4">
                             The requesting branch will see this reason.
                         </p>
@@ -607,7 +609,7 @@ export default function TransferDetailPage() {
                             rows={3}
                             maxLength={500}
                             placeholder="Reason for rejection…"
-                            className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-all placeholder:text-text-3 resize-none"
+                            className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3 resize-none"
                         />
                         <div className="flex items-center justify-end gap-3 mt-4">
                             <button
@@ -620,28 +622,32 @@ export default function TransferDetailPage() {
                             <button
                                 onClick={handleRejectSubmit}
                                 disabled={submitting}
-                                className="h-9 px-4 rounded-lg bg-danger-soft border border-danger/40 text-danger text-sm font-medium hover:bg-rose-500/30 transition-colors disabled:opacity-50"
+                                className="h-9 px-4 rounded-lg bg-danger-soft border border-danger/40 text-danger text-sm font-medium hover:bg-danger-soft transition-colors disabled:opacity-50"
                             >
                                 {submitting ? 'Rejecting…' : 'Reject transfer'}
                             </button>
                         </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Cancel / Ship / Receive confirmation modals */}
-            {(activeAction === 'cancel' ||
-                activeAction === 'ship' ||
-                activeAction === 'receive') && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-surface border border-border rounded-md shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-lg font-semibold text-text-1 mb-2">
-                            {activeAction === 'cancel'
-                                ? 'Cancel transfer'
-                                : activeAction === 'ship'
-                                  ? 'Mark transfer as shipped'
-                                  : 'Mark transfer as received'}
-                        </h3>
+            <Modal
+                isOpen={
+                    activeAction === 'cancel' ||
+                    activeAction === 'ship' ||
+                    activeAction === 'receive'
+                }
+                onClose={closeModal}
+                title={
+                    activeAction === 'cancel'
+                        ? 'Cancel transfer'
+                        : activeAction === 'ship'
+                          ? 'Mark transfer as shipped'
+                          : 'Mark transfer as received'
+                }
+                maxWidth="md"
+            >
+                <div>
                         <p className="text-sm text-text-2 mb-6">
                             {activeAction === 'cancel'
                                 ? 'This will void the transfer. No inventory will move.'
@@ -669,18 +675,17 @@ export default function TransferDetailPage() {
                                 disabled={submitting}
                                 className={`h-9 px-4 rounded-lg text-sm font-bold transition-all disabled:opacity-50 ${
                                     activeAction === 'cancel'
-                                        ? 'bg-danger-soft border border-danger/40 text-danger hover:bg-rose-500/30'
+                                        ? 'bg-danger-soft border border-danger/40 text-danger hover:bg-danger-soft'
                                         : activeAction === 'receive'
                                           ? 'bg-accent-soft border border-accent/40 text-accent-text hover:bg-accent-soft'
-                                          : 'bg-primary text-text-inv hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)]'
+                                          : 'bg-primary text-text-inv hover:bg-primary-hover'
                                 }`}
                             >
                                 {submitting ? 'Working…' : 'Confirm'}
                             </button>
                         </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
         </div>
     );
 }

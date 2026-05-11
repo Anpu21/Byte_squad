@@ -4,28 +4,26 @@ import { CustomerRequest } from '@/modules/customer-requests/entities/customer-r
 import { CustomerRequestItem } from '@/modules/customer-requests/entities/customer-request-item.entity';
 import { CustomerRequestsService } from '@/modules/customer-requests/customer-requests.service';
 import { CustomerRequestsController } from '@/modules/customer-requests/customer-requests.controller';
-import { Product } from '@products/entities/product.entity';
-import { Branch } from '@branches/entities/branch.entity';
-import { User } from '@users/entities/user.entity';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+import { CustomerRequestsRepository } from '@/modules/customer-requests/customer-requests.repository';
+import { ProductsModule } from '@products/products.module';
+import { BranchesModule } from '@branches/branches.module';
+import { UsersModule } from '@users/users.module';
+import { PosModule } from '@pos/pos.module';
+import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      CustomerRequest,
-      CustomerRequestItem,
-      Product,
-      Branch,
-      User,
-      Transaction,
-      LedgerEntry,
-    ]),
+    TypeOrmModule.forFeature([CustomerRequest, CustomerRequestItem]),
+    ProductsModule,
+    BranchesModule,
+    UsersModule,
+    PosModule,
+    AccountingModule,
     NotificationsModule,
   ],
   controllers: [CustomerRequestsController],
-  providers: [CustomerRequestsService],
-  exports: [CustomerRequestsService],
+  providers: [CustomerRequestsService, CustomerRequestsRepository],
+  exports: [CustomerRequestsService, CustomerRequestsRepository],
 })
 export class CustomerRequestsModule {}

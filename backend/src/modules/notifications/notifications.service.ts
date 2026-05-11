@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Notification } from '@notifications/entities/notification.entity';
+import { NotificationsRepository } from '@notifications/notifications.repository';
 import { NotificationType } from '@common/enums/notification.enum';
 
 interface CreateNotificationPayload {
@@ -14,40 +13,28 @@ interface CreateNotificationPayload {
 
 @Injectable()
 export class NotificationsService {
-  constructor(
-    @InjectRepository(Notification)
-    private readonly notificationRepository: Repository<Notification>,
-  ) {}
+  constructor(private readonly notifications: NotificationsRepository) {}
 
   async create(payload: CreateNotificationPayload): Promise<Notification> {
-    const notification = this.notificationRepository.create(payload);
-    return this.notificationRepository.save(notification);
+    return this.notifications.createAndSave(payload);
   }
 
   async findByUser(userId: string): Promise<Notification[]> {
-    return this.notificationRepository.find({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-    });
+    return this.notifications.findByUser(userId);
   }
 
   async findOneByUser(
     id: string,
     userId: string,
   ): Promise<Notification | null> {
-    return this.notificationRepository.findOne({
-      where: { id, userId },
-    });
+    return this.notifications.findOneForUser(id, userId);
   }
 
   async markAsRead(id: string): Promise<void> {
-    await this.notificationRepository.update(id, { isRead: true });
+    await this.notifications.markRead(id);
   }
 
   async markAllAsRead(userId: string): Promise<void> {
-    await this.notificationRepository.update(
-      { userId, isRead: false },
-      { isRead: true },
-    );
+    await this.notifications.markAllReadForUser(userId);
   }
 }

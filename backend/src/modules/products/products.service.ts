@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Product } from '@products/entities/product.entity';
+import { ProductsRepository } from '@products/products.repository';
 import { CreateProductDto } from '@products/dto/create-product.dto';
 import { UpdateProductDto } from '@products/dto/update-product.dto';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
@@ -11,52 +10,44 @@ const CLOUDINARY_FOLDER = 'ledgerpro/products';
 @Injectable()
 export class ProductsService {
   constructor(
-    @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>,
+    private readonly products: ProductsRepository,
     private readonly cloudinary: CloudinaryService,
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    const product = this.productRepository.create(createProductDto);
-    return this.productRepository.save(product);
+    return this.products.createAndSave(createProductDto);
   }
 
   async findAll(): Promise<Product[]> {
-    return this.productRepository.find({ where: { isActive: true } });
+    return this.products.findActive();
   }
 
   async findById(id: string): Promise<Product | null> {
-    return this.productRepository.findOne({ where: { id } });
+    return this.products.findById(id);
   }
 
   async findByBarcode(barcode: string): Promise<Product | null> {
-    return this.productRepository.findOne({ where: { barcode } });
+    return this.products.findByBarcode(barcode);
   }
 
   async update(
     id: string,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
-    const product = await this.productRepository.findOne({ where: { id } });
+    const product = await this.products.findById(id);
     if (!product) {
       throw new NotFoundException(`Product with ID "${id}" not found`);
     }
     Object.assign(product, updateProductDto);
-    return this.productRepository.save(product);
+    return this.products.save(product);
   }
 
   async getCategories(): Promise<string[]> {
-    const results = await this.productRepository
-      .createQueryBuilder('product')
-      .select('product.category', 'category')
-      .where('product.is_active = :isActive', { isActive: true })
-      .distinct(true)
-      .getRawMany();
-    return results.map((r: { category: string }) => r.category);
+    return this.products.listDistinctActiveCategories();
   }
 
   async remove(id: string): Promise<void> {
-    await this.productRepository.update(id, { isActive: false });
+    await this.products.setActive(id, false);
   }
 
   /**
@@ -68,7 +59,7 @@ export class ProductsService {
     id: string,
     file: Express.Multer.File | null,
   ): Promise<Product> {
-    const product = await this.productRepository.findOne({ where: { id } });
+    const product = await this.products.findById(id);
     if (!product) {
       throw new NotFoundException(`Product with ID "${id}" not found`);
     }
@@ -91,8 +82,8 @@ export class ProductsService {
         : null;
     }
 
-    await this.productRepository.update(id, { imageUrl });
-    const refreshed = await this.productRepository.findOne({ where: { id } });
+    await this.products.update(id, { imageUrl });
+    const refreshed = await this.products.findById(id);
     return refreshed!;
   }
 }

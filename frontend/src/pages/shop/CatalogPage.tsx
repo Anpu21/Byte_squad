@@ -1,18 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 import { Search, Plus, ShoppingBag, Store } from 'lucide-react';
 import type { RootState } from '@/store';
 import { shopProductsService } from '@/services/shop-products.service';
-import {
-    addToCart,
-    clearShopCart,
-    setBranch,
-} from '@/store/slices/shopCartSlice';
+import { userService } from '@/services/user.service';
+import { addToCart, clearShopCart } from '@/store/slices/shopCartSlice';
+import { setUserBranch } from '@/store/slices/authSlice';
+import { useAuth } from '@/hooks/useAuth';
+import { useConfirm } from '@/hooks/useConfirm';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { IShopProduct, ShopStockStatus } from '@/types';
+import ProductImage from '@/components/shop/ProductImage';
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-LK', {
@@ -34,31 +36,23 @@ const STOCK_PILL: Record<ShopStockStatus, string> = {
 };
 
 const STOCK_DOT: Record<ShopStockStatus, string> = {
-    in: 'bg-emerald-400',
-    low: 'bg-amber-400',
-    out: 'bg-rose-400',
+    in: 'bg-accent',
+    low: 'bg-warning',
+    out: 'bg-danger',
 };
 
 export default function CatalogPage() {
     const dispatch = useDispatch();
-    const branchId = useSelector(
-        (state: RootState) => state.shopCart.branchId,
-    );
+    const confirm = useConfirm();
+    const { user } = useAuth();
+    // Pickup branch is the customer's profile branch — single source of truth.
+    const branchId = user?.branchId ?? null;
     const cartItemCount = useSelector(
         (state: RootState) => state.shopCart.items.length,
     );
 
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState<string>('');
-    const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
-
-    const markImageFailed = (productId: string) =>
-        setFailedImages((prev) => {
-            if (prev.has(productId)) return prev;
-            const next = new Set(prev);
-            next.add(productId);
-            return next;
-        });
 
     const { data: branches = [], isLoading: branchesLoading } = useQuery({
         queryKey: ['shop-branches'],
@@ -88,17 +82,32 @@ export default function CatalogPage() {
         [branches, branchId],
     );
 
-    const handleBranchChange = (newId: string) => {
+    const handleBranchChange = async (newId: string) => {
         if (!newId || newId === branchId) return;
         if (cartItemCount > 0) {
-            const ok = window.confirm(
-                'Switching branch will clear your cart. Continue?',
-            );
+            const ok = await confirm({
+                title: 'Switch pickup branch?',
+                body: 'Switching to a different branch will clear your cart and update your profile pickup branch. Continue?',
+                confirmLabel: 'Switch & clear cart',
+                tone: 'danger',
+            });
             if (!ok) return;
             dispatch(clearShopCart());
         }
-        dispatch(setBranch(newId));
-        setCategory('');
+        try {
+            await userService.updateMyBranch(newId);
+            dispatch(setUserBranch(newId));
+            setCategory('');
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                const data = err.response?.data as
+                    | { message?: string }
+                    | undefined;
+                toast.error(data?.message ?? 'Could not switch branch');
+            } else {
+                toast.error('Could not switch branch');
+            }
+        }
     };
 
     const handleAdd = (product: IShopProduct) => {
@@ -114,33 +123,28 @@ export default function CatalogPage() {
         toast.success(`${product.name} added`);
     };
 
-    useEffect(() => {
-        if (!branchId && branches.length > 0) {
-            dispatch(setBranch(branches[0].id));
-        }
-    }, [branchId, branches, dispatch]);
-
     if (!branchId) {
-        if (!branchesLoading && branches.length === 0) {
-            return (
-                <div className="max-w-md mx-auto py-16">
-                    <div className="bg-surface border border-border rounded-md p-7 text-center">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-2 border border-border mb-4">
-                            <Store size={20} className="text-text-1" />
-                        </div>
-                        <h1 className="text-xl font-bold text-text-1 tracking-tight mb-1">
-                            No branches available
-                        </h1>
-                        <p className="text-sm text-text-2">
-                            Please check back later.
-                        </p>
-                    </div>
-                </div>
-            );
-        }
+        // Customer reached the catalog without a profile pickup branch.
+        // CustomerLayout normally redirects branchless customers to
+        // /select-branch, but defend against the edge case where the
+        // catalog renders before that redirect.
+        return <Navigate to={FRONTEND_ROUTES.SELECT_BRANCH} replace />;
+    }
+
+    if (!branchesLoading && branches.length === 0) {
         return (
-            <div className="flex items-center justify-center py-24">
-                <div className="w-8 h-8 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
+            <div className="max-w-md mx-auto py-16">
+                <div className="bg-surface border border-border rounded-md p-7 text-center">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-2 border border-border mb-4">
+                        <Store size={20} className="text-text-1" />
+                    </div>
+                    <h1 className="text-xl font-bold text-text-1 tracking-tight mb-1">
+                        No branches available
+                    </h1>
+                    <p className="text-sm text-text-2">
+                        Please check back later.
+                    </p>
+                </div>
             </div>
         );
     }
@@ -234,16 +238,13 @@ export default function CatalogPage() {
                                     to={detailHref}
                                     className="relative block aspect-square bg-canvas flex items-center justify-center overflow-hidden"
                                 >
-                                    {product.imageUrl && !failedImages.has(product.id) ? (
-                                        <img
-                                            src={product.imageUrl}
-                                            alt={product.name}
-                                            onError={() => markImageFailed(product.id)}
-                                            className={out ? 'w-full h-full object-cover grayscale' : 'w-full h-full object-cover'}
-                                        />
-                                    ) : (
-                                        <span className="text-text-3 text-xs">No image</span>
-                                    )}
+                                    <ProductImage
+                                        src={product.imageUrl}
+                                        alt={product.name}
+                                        wrapperClassName="absolute inset-0 flex items-center justify-center"
+                                        imgClassName={out ? 'w-full h-full object-cover grayscale' : 'w-full h-full object-cover'}
+                                        fallback={<span className="text-text-3 text-xs">No image</span>}
+                                    />
                                     <span
                                         className={`absolute top-2 right-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-wider ${
                                             STOCK_PILL[product.stockStatus]

@@ -64,6 +64,9 @@ export class CustomerRequest {
   @Column({ type: 'uuid', name: 'fulfilled_transaction_id', nullable: true })
   fulfilledTransactionId!: string | null;
 
+  @Column({ type: 'varchar', name: 'qr_code_url', nullable: true })
+  qrCodeUrl!: string | null;
+
   @OneToMany(() => CustomerRequestItem, (item) => item.request, {
     cascade: true,
   })

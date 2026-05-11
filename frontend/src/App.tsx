@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { store } from '@/store/index';
 import AppRouter from '@/routes/AppRouter';
+import { ConfirmProvider } from '@/hooks/ConfirmProvider';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -17,7 +18,9 @@ function App() {
     return (
         <Provider store={store}>
             <QueryClientProvider client={queryClient}>
-                <AppRouter />
+                <ConfirmProvider>
+                    <AppRouter />
+                </ConfirmProvider>
                 <Toaster
                     position="top-right"
                     gutter={10}

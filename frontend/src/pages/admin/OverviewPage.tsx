@@ -12,13 +12,13 @@ function formatCurrency(amount: number) {
 function alertTone(type: IOverviewAlert['type']): string {
     switch (type) {
         case 'critical_low_stock':
-            return 'text-danger border-danger/40 bg-red-500/5';
+            return 'text-danger border-danger/40 bg-danger-soft';
         case 'no_admin':
-            return 'text-warning border-warning/40 bg-amber-500/5';
+            return 'text-warning border-warning/40 bg-warning-soft';
         case 'no_transactions':
-            return 'text-info border-info/40 bg-sky-500/5';
+            return 'text-info border-info/40 bg-info-soft';
         case 'inactive_branch':
-            return 'text-text-2 border-slate-500/30 bg-slate-500/5';
+            return 'text-text-2 border-border bg-surface-2';
     }
 }
 
@@ -36,7 +36,7 @@ export default function OverviewPage({ embedded = false }: OverviewPageProps = {
     if (isLoading || !data) {
         return (
             <div className="flex items-center justify-center h-[60vh]">
-                <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
             </div>
         );
     }
@@ -171,12 +171,12 @@ export default function OverviewPage({ embedded = false }: OverviewPageProps = {
                                         <td className="px-5 py-3">
                                             {b.isActive ? (
                                                 <span className="inline-flex items-center gap-1.5 text-text-1 text-[13px]">
-                                                    <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                                                    <span className="w-2 h-2 rounded-full bg-primary" />
                                                     Active
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center gap-1.5 text-text-3 text-[13px]">
-                                                    <span className="w-2 h-2 rounded-full bg-slate-600" />
+                                                    <span className="w-2 h-2 rounded-full bg-text-3" />
                                                     Inactive
                                                 </span>
                                             )}

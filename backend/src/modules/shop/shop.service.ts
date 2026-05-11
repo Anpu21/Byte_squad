@@ -7,31 +7,15 @@ import { Inventory } from '@inventory/entities/inventory.entity';
 import { User } from '@users/entities/user.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 
-export type StockStatus = 'in' | 'low' | 'out';
+import {
+  StockStatus,
+  ShopProductBranchRef,
+  ShopProduct,
+  ShopBranch,
+} from '@/modules/shop/types';
 
-export interface ShopProductBranchRef {
-  id: string;
-  name: string;
-}
-
-export interface ShopProduct {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  sellingPrice: number;
-  imageUrl: string | null;
-  stockStatus: StockStatus;
-  availableBranches: ShopProductBranchRef[];
-}
-
-export interface ShopBranch {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
-  staffCount: number;
-}
+// Re-export so existing callers that imported these from this file keep working.
+export type { StockStatus, ShopProductBranchRef, ShopProduct, ShopBranch };
 
 interface ListProductsQuery {
   branchId: string;

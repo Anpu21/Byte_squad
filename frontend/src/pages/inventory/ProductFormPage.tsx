@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import UniversalScanner from '@/components/Scanner/UniversalScanner';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 import Pill from '@/components/ui/Pill';
 
 interface FormErrors {
@@ -29,6 +30,16 @@ interface FormErrors {
     lowStockThreshold?: string;
     general?: string;
 }
+
+const FIELD_FOCUS_ORDER: (keyof FormErrors)[] = [
+    'name',
+    'category',
+    'barcode',
+    'sellingPrice',
+    'costPrice',
+    'initialStock',
+    'lowStockThreshold',
+];
 
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-LK', {
@@ -151,9 +162,38 @@ export default function ProductFormPage() {
         return Object.keys(newErrors).length === 0;
     };
 
+    const focusFirstInvalid = (newErrors: FormErrors) => {
+        const firstKey = FIELD_FOCUS_ORDER.find((k) => newErrors[k]);
+        if (!firstKey) return;
+        requestAnimationFrame(() => {
+            const form = document.getElementById('product-form');
+            const el = form?.querySelector<HTMLElement>(`[name="${firstKey}"]`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.focus({ preventScroll: true });
+            }
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validate()) return;
+        if (!validate()) {
+            // re-derive the errors snapshot used by validate to focus first invalid
+            const snapshot: FormErrors = {};
+            if (!name.trim()) snapshot.name = '1';
+            if (!category.trim()) snapshot.category = '1';
+            if (!barcode.trim()) snapshot.barcode = '1';
+            if (isNaN(parseFloat(sellingPrice)) || parseFloat(sellingPrice) < 0) snapshot.sellingPrice = '1';
+            if (isNaN(parseFloat(costPrice)) || parseFloat(costPrice) < 0) snapshot.costPrice = '1';
+            if (!isEditMode) {
+                const qty = parseInt(initialStock, 10);
+                if (initialStock !== '' && (isNaN(qty) || qty < 0)) snapshot.initialStock = '1';
+                const threshold = parseInt(lowStockThreshold, 10);
+                if (isNaN(threshold) || threshold < 1) snapshot.lowStockThreshold = '1';
+            }
+            focusFirstInvalid(snapshot);
+            return;
+        }
 
         setIsSubmitting(true);
         setErrors({});
@@ -351,8 +391,10 @@ export default function ProductFormPage() {
                                     Name
                                 </label>
                                 <input
+                                    name="name"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
+                                    aria-invalid={!!errors.name}
                                     className={`w-full h-[38px] px-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
                                         errors.name
                                             ? 'border-danger'
@@ -372,9 +414,11 @@ export default function ProductFormPage() {
                                     Category
                                 </label>
                                 <input
+                                    name="category"
                                     value={category}
                                     onChange={(e) => setCategory(e.target.value)}
                                     list="category-list"
+                                    aria-invalid={!!errors.category}
                                     className={`w-full h-[38px] px-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
                                         errors.category
                                             ? 'border-danger'
@@ -401,8 +445,10 @@ export default function ProductFormPage() {
                                 <div className="flex gap-2">
                                     <div className="relative flex-1">
                                         <input
+                                            name="barcode"
                                             value={barcode}
                                             onChange={(e) => setBarcode(e.target.value)}
+                                            aria-invalid={!!errors.barcode}
                                             onBlur={() => {
                                                 if (
                                                     barcode.trim().length >= 4 &&
@@ -488,6 +534,7 @@ export default function ProductFormPage() {
                                         Rs
                                     </span>
                                     <input
+                                        name="sellingPrice"
                                         type="number"
                                         step="0.01"
                                         min="0"
@@ -495,6 +542,7 @@ export default function ProductFormPage() {
                                         onChange={(e) =>
                                             setSellingPrice(e.target.value)
                                         }
+                                        aria-invalid={!!errors.sellingPrice}
                                         className={`w-full h-[38px] pl-9 pr-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
                                             errors.sellingPrice
                                                 ? 'border-danger'
@@ -519,6 +567,7 @@ export default function ProductFormPage() {
                                         Rs
                                     </span>
                                     <input
+                                        name="costPrice"
                                         type="number"
                                         step="0.01"
                                         min="0"
@@ -580,6 +629,7 @@ export default function ProductFormPage() {
                                         Initial stock quantity
                                     </label>
                                     <input
+                                        name="initialStock"
                                         type="number"
                                         min="0"
                                         step="1"
@@ -587,6 +637,7 @@ export default function ProductFormPage() {
                                         onChange={(e) =>
                                             setInitialStock(e.target.value)
                                         }
+                                        aria-invalid={!!errors.initialStock}
                                         className={`w-full h-[38px] px-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
                                             errors.initialStock
                                                 ? 'border-danger'
@@ -608,6 +659,7 @@ export default function ProductFormPage() {
                                         Low-stock threshold
                                     </label>
                                     <input
+                                        name="lowStockThreshold"
                                         type="number"
                                         min="1"
                                         step="1"
@@ -615,6 +667,7 @@ export default function ProductFormPage() {
                                         onChange={(e) =>
                                             setLowStockThreshold(e.target.value)
                                         }
+                                        aria-invalid={!!errors.lowStockThreshold}
                                         className={`w-full h-[38px] px-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
                                             errors.lowStockThreshold
                                                 ? 'border-danger'
@@ -752,30 +805,19 @@ export default function ProductFormPage() {
                 </div>
             </form>
 
-            {showCameraScanner && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-                    style={{ background: 'var(--overlay)' }}
-                >
-                    <div className="w-full max-w-lg animate-in fade-in zoom-in-95 duration-200">
-                        <UniversalScanner
-                            onScanSuccess={(scannedBarcode) => {
-                                lookupBarcode(scannedBarcode);
-                                setShowCameraScanner(false);
-                            }}
-                        />
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            size="md"
-                            onClick={() => setShowCameraScanner(false)}
-                            className="w-full mt-3"
-                        >
-                            Close scanner
-                        </Button>
-                    </div>
-                </div>
-            )}
+            <Modal
+                isOpen={showCameraScanner}
+                onClose={() => setShowCameraScanner(false)}
+                title="Scan barcode"
+                maxWidth="lg"
+            >
+                <UniversalScanner
+                    onScanSuccess={(scannedBarcode) => {
+                        lookupBarcode(scannedBarcode);
+                        setShowCameraScanner(false);
+                    }}
+                />
+            </Modal>
         </div>
     );
 }

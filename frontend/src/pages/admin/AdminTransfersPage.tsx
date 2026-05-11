@@ -2,10 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { TransferStatus } from '@/constants/enums';
-import {
-    stockTransfersService,
-    type IStockTransferRequest,
-} from '@/services/stock-transfers.service';
+import { stockTransfersService } from '@/services/stock-transfers.service';
+import type { IStockTransferRequest } from '@/types';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
 
 type StatusFilter = 'all' | TransferStatus;
@@ -134,7 +132,7 @@ export default function AdminTransfersPage() {
                             <span
                                 className={`text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full ${
                                     isActive
-                                        ? 'bg-slate-900/10 text-text-3'
+                                        ? 'bg-surface-2 text-text-3'
                                         : 'bg-surface-2 text-text-3'
                                 }`}
                             >
@@ -258,7 +256,7 @@ export default function AdminTransfersPage() {
                                                     }}
                                                     className={`h-8 px-3 rounded-lg text-xs font-bold transition-all ${
                                                         isPending
-                                                            ? 'bg-primary text-text-inv hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)]'
+                                                            ? 'bg-primary text-text-inv hover:bg-primary-hover'
                                                             : 'border border-border text-text-1 hover:bg-surface-2'
                                                     }`}
                                                 >

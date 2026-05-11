@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { inventoryService } from '@/services/inventory.service';
-import type { IInventoryItem } from '@/services/inventory.service';
+import type { IInventoryWithProduct as IInventoryItem } from '@/types';
 
 export function useInventory() {
   const { user } = useAuth();

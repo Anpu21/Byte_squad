@@ -5,10 +5,10 @@ import api from '@/services/api';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { INotification } from '@/types/index';
 import {
-    typeIcon,
     typeLabel,
     typeBadgeColor,
 } from '@/components/notifications/notificationUtils';
+import NotificationIcon from '@/components/notifications/NotificationIcon';
 
 type LoadState =
     | { status: 'loading' }
@@ -187,7 +187,7 @@ export default function NotificationDetailPage() {
                 <article className="bg-surface border border-border rounded-md overflow-hidden">
                     <div className="px-8 pt-8 pb-6 border-b border-border">
                         <div className="flex items-start gap-4">
-                            {typeIcon(state.notification.type)}
+                            <NotificationIcon type={state.notification.type} />
                             <div className="flex-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-2 mb-2">
                                     <span

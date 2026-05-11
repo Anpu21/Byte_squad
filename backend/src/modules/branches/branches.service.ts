@@ -2,8 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Branch } from '@branches/entities/branch.entity';
+import { BranchesRepository } from '@branches/branches.repository';
 import { CreateBranchDto } from '@branches/dto/create-branch.dto';
 import { UpdateBranchDto } from '@branches/dto/update-branch.dto';
+// TODO Phase C6 / C8 / C4 / C5 — replace these cross-module borrowings with
+// the corresponding *Repository classes once those modules migrate.
 import { User } from '@users/entities/user.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
@@ -12,101 +15,43 @@ import { Expense } from '@accounting/entities/expense.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { TransactionType } from '@common/enums/transaction.enum';
 
-export interface MyBranchInfo {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
-  isActive: boolean;
-  createdAt: Date;
-}
+import {
+  MyBranchInfo,
+  MyBranchAdmin,
+  MyBranchTodayKpis,
+  MyBranchDailyPoint,
+  MyBranchWeekKpis,
+  MyBranchMonthKpis,
+  MyBranchStaff,
+  MyBranchInventory,
+  MyBranchTopProduct,
+  MyBranchLowStockItem,
+  MyBranchRecentTransaction,
+  MyBranchPerformance,
+} from '@branches/types';
 
-export interface MyBranchAdmin {
-  name: string;
-  email: string;
-}
-
-export interface MyBranchTodayKpis {
-  sales: number;
-  transactions: number;
-  avgTransaction: number;
-}
-
-export interface MyBranchDailyPoint {
-  date: string;
-  sales: number;
-  transactions: number;
-}
-
-export interface MyBranchWeekKpis {
-  sales: number;
-  transactions: number;
-  dailyBreakdown: MyBranchDailyPoint[];
-}
-
-export interface MyBranchMonthKpis {
-  revenue: number;
-  expenses: number;
-  netProfit: number;
-  transactions: number;
-}
-
-export interface MyBranchStaff {
-  total: number;
-  byRole: {
-    admin: number;
-    manager: number;
-    cashier: number;
-  };
-}
-
-export interface MyBranchInventory {
-  totalProducts: number;
-  activeProducts: number;
-  lowStockItems: number;
-  outOfStock: number;
-}
-
-export interface MyBranchTopProduct {
-  productId: string;
-  name: string;
-  quantity: number;
-  revenue: number;
-}
-
-export interface MyBranchLowStockItem {
-  productId: string;
-  name: string;
-  quantity: number;
-  threshold: number;
-}
-
-export interface MyBranchRecentTransaction {
-  id: string;
-  transactionNumber: string;
-  total: number;
-  cashierName: string;
-  createdAt: Date;
-}
-
-export interface MyBranchPerformance {
-  branch: MyBranchInfo;
-  admin: MyBranchAdmin | null;
-  today: MyBranchTodayKpis;
-  week: MyBranchWeekKpis;
-  month: MyBranchMonthKpis;
-  staff: MyBranchStaff;
-  inventory: MyBranchInventory;
-  topProducts: MyBranchTopProduct[];
-  lowStockList: MyBranchLowStockItem[];
-  recentTransactions: MyBranchRecentTransaction[];
-}
+// Re-export so existing consumers that imported these from this file
+// keep working without a broad rename. New code should import from
+// '@branches/types' directly.
+export type {
+  MyBranchInfo,
+  MyBranchAdmin,
+  MyBranchTodayKpis,
+  MyBranchDailyPoint,
+  MyBranchWeekKpis,
+  MyBranchMonthKpis,
+  MyBranchStaff,
+  MyBranchInventory,
+  MyBranchTopProduct,
+  MyBranchLowStockItem,
+  MyBranchRecentTransaction,
+  MyBranchPerformance,
+};
 
 @Injectable()
 export class BranchesService {
   constructor(
-    @InjectRepository(Branch)
-    private readonly branchRepository: Repository<Branch>,
+    private readonly branches: BranchesRepository,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Transaction)
@@ -120,25 +65,24 @@ export class BranchesService {
   ) {}
 
   async create(createBranchDto: CreateBranchDto): Promise<Branch> {
-    const branch = this.branchRepository.create(createBranchDto);
-    return this.branchRepository.save(branch);
+    return this.branches.createAndSave(createBranchDto);
   }
 
   async findAll(): Promise<Branch[]> {
-    return this.branchRepository.find();
+    return this.branches.findAll();
   }
 
   async findById(id: string): Promise<Branch | null> {
-    return this.branchRepository.findOne({ where: { id } });
+    return this.branches.findById(id);
   }
 
   async update(id: string, dto: UpdateBranchDto): Promise<Branch> {
-    const branch = await this.branchRepository.findOne({ where: { id } });
+    const branch = await this.branches.findById(id);
     if (!branch) {
       throw new NotFoundException('Branch not found');
     }
-    await this.branchRepository.update(id, dto);
-    const updated = await this.branchRepository.findOne({ where: { id } });
+    await this.branches.update(id, dto);
+    const updated = await this.branches.findById(id);
     if (!updated) {
       throw new NotFoundException('Branch not found');
     }
@@ -146,26 +90,24 @@ export class BranchesService {
   }
 
   async toggleActive(id: string): Promise<Branch> {
-    const branch = await this.branchRepository.findOne({ where: { id } });
+    const branch = await this.branches.findById(id);
     if (!branch) {
       throw new NotFoundException('Branch not found');
     }
     branch.isActive = !branch.isActive;
-    return this.branchRepository.save(branch);
+    return this.branches.save(branch);
   }
 
   async remove(id: string): Promise<void> {
-    const branch = await this.branchRepository.findOne({ where: { id } });
+    const branch = await this.branches.findById(id);
     if (!branch) {
       throw new NotFoundException('Branch not found');
     }
-    await this.branchRepository.delete(id);
+    await this.branches.delete(id);
   }
 
   async getMyPerformance(branchId: string): Promise<MyBranchPerformance> {
-    const branch = await this.branchRepository.findOne({
-      where: { id: branchId },
-    });
+    const branch = await this.branches.findById(branchId);
     if (!branch) {
       throw new NotFoundException('Branch not found');
     }
