@@ -18,6 +18,7 @@ import { userService } from '@/services/user.service';
 import { shopProductsService } from '@/services/shop-products.service';
 import { useAuth } from '@/hooks/useAuth';
 import { setUser, setUserBranch } from '@/store/slices/authSlice';
+import { clearShopCart } from '@/store/slices/shopCartSlice';
 import Avatar from '@/components/ui/Avatar';
 import type { IUserProfile } from '@/types';
 
@@ -91,6 +92,8 @@ export default function CustomerProfilePage() {
         mutationFn: (branchId: string) => userService.updateMyBranch(branchId),
         onSuccess: (_data, branchId) => {
             dispatch(setUserBranch(branchId));
+            // Stale prices/availability — drop any cart items from the old branch.
+            dispatch(clearShopCart());
             queryClient.invalidateQueries({ queryKey: ['profile'] });
             toast.success('Pickup branch updated');
         },

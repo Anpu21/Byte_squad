@@ -11,6 +11,7 @@ import {
 } from '@/store/slices/shopCartSlice';
 import { shopProductsService } from '@/services/shop-products.service';
 import { customerRequestsService } from '@/services/customer-requests.service';
+import { useAuth } from '@/hooks/useAuth';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
 function formatCurrency(amount: number) {
@@ -23,10 +24,13 @@ function formatCurrency(amount: number) {
 export default function CheckoutPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const items = useSelector((state: RootState) => state.shopCart.items);
-    const branchId = useSelector(
-        (state: RootState) => state.shopCart.branchId,
-    );
+    // The customer's profile pickup branch is the single source of truth.
+    // Anything else (including a previously saved cart-level branchId) would
+    // route the request to the wrong branch and leave the matching manager
+    // unable to find it.
+    const branchId = user?.branchId ?? null;
     const total = selectCartTotal(items);
 
     const { data: branches = [] } = useQuery({

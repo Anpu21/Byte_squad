@@ -10,7 +10,6 @@ export interface ShopCartItem {
 
 interface ShopCartState {
     items: ShopCartItem[];
-    branchId: string | null;
     isCartOpen: boolean;
 }
 
@@ -19,17 +18,12 @@ const STORAGE_KEY = 'ledgerpro_shop_cart';
 function loadInitial(): ShopCartState {
     try {
         const json = localStorage.getItem(STORAGE_KEY);
-        if (!json) return { items: [], branchId: null, isCartOpen: false };
-        const parsed = JSON.parse(json) as {
-            items?: ShopCartItem[];
-            branchId?: string | null;
-        };
+        if (!json) return { items: [], isCartOpen: false };
+        const parsed = JSON.parse(json) as { items?: ShopCartItem[] };
         const items = Array.isArray(parsed.items) ? parsed.items : [];
-        const branchId =
-            typeof parsed.branchId === 'string' ? parsed.branchId : null;
-        return { items, branchId, isCartOpen: false };
+        return { items, isCartOpen: false };
     } catch {
-        return { items: [], branchId: null, isCartOpen: false };
+        return { items: [], isCartOpen: false };
     }
 }
 
@@ -81,9 +75,6 @@ const shopCartSlice = createSlice({
                 item.quantity = Math.max(1, Math.floor(action.payload.quantity));
             }
         },
-        setBranch(state, action: PayloadAction<string | null>) {
-            state.branchId = action.payload;
-        },
         openCartDrawer(state) {
             state.isCartOpen = true;
         },
@@ -103,7 +94,6 @@ export const {
     addToCart,
     removeFromCart,
     setQuantity,
-    setBranch,
     openCartDrawer,
     closeCartDrawer,
     toggleCartDrawer,
@@ -120,8 +110,8 @@ export function selectCartItemCount(items: ShopCartItem[]): number {
 
 export function persistShopCart(state: ShopCartState): void {
     try {
-        const { items, branchId } = state;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, branchId }));
+        const { items } = state;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ items }));
     } catch {
         // localStorage full / disabled — silently ignore
     }

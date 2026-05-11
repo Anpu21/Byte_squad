@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { customerRequestsService } from '@/services/customer-requests.service';
 import { getNotificationSocket } from '@/services/socket.service';
+import { profileService } from '@/services/profile.service';
 import { useAuth } from '@/hooks/useAuth';
 import { useConfirm } from '@/hooks/useConfirm';
 import { UserRole } from '@/constants/enums';
@@ -101,6 +102,15 @@ export default function CustomerRequestsPage() {
         refetchInterval: 30000,
     });
 
+    // Diagnostic: which branch is the backend filtering to? Pulled from the
+    // staff member's profile so a wrong branch assignment is visible at a
+    // glance (vs the silent "0 rows" symptom that prompted this fix).
+    const { data: profile } = useQuery({
+        queryKey: ['profile'],
+        queryFn: profileService.getProfile,
+        enabled: user?.role !== UserRole.ADMIN,
+    });
+
     const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
         null,
     );
@@ -177,6 +187,10 @@ export default function CustomerRequestsPage() {
     const subtitle = isAdmin
         ? 'Pickup requests across all branches. Auto-refreshes every 30 seconds.'
         : 'Pickup requests at your branch. Auto-refreshes every 30 seconds.';
+    const filterBranchName = profile?.branch?.name ?? null;
+    const filterBranchShortId = user?.branchId
+        ? user.branchId.slice(0, 8)
+        : null;
 
     const kpis = useMemo(() => {
         let pending = 0;
@@ -200,11 +214,25 @@ export default function CustomerRequestsPage() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header */}
             <div className="flex items-start justify-between gap-3 mb-6">
-                <div>
+                <div className="min-w-0">
                     <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                         Customer Requests
                     </h1>
                     <p className="text-sm text-text-2 mt-1">{subtitle}</p>
+                    {!isAdmin && user?.branchId && (
+                        <p className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-text-2 bg-surface-2 border border-border rounded-full px-2.5 py-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                            Showing for:{' '}
+                            <span className="text-text-1 font-semibold">
+                                {filterBranchName ?? 'your branch'}
+                            </span>
+                            {filterBranchShortId && (
+                                <span className="text-text-3 mono">
+                                    · {filterBranchShortId}…
+                                </span>
+                            )}
+                        </p>
+                    )}
                 </div>
                 {isCashier && (
                     <Link to={FRONTEND_ROUTES.SCAN_REQUEST}>

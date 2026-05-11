@@ -3,14 +3,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 import { ChevronLeft, Plus, Minus, ShoppingCart, Store } from 'lucide-react';
 import type { RootState } from '@/store';
 import { shopProductsService } from '@/services/shop-products.service';
-import {
-    addToCart,
-    clearShopCart,
-    setBranch,
-} from '@/store/slices/shopCartSlice';
+import { userService } from '@/services/user.service';
+import { addToCart, clearShopCart } from '@/store/slices/shopCartSlice';
+import { setUserBranch } from '@/store/slices/authSlice';
+import { useAuth } from '@/hooks/useAuth';
 import { useConfirm } from '@/hooks/useConfirm';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
@@ -29,17 +29,16 @@ export default function ProductDetailPage() {
     const [qty, setQty] = useState(1);
     const [imageFailed, setImageFailed] = useState(false);
 
+    const { user } = useAuth();
     const cartItems = useSelector(
         (state: RootState) => state.shopCart.items,
     );
-    const cartBranchId = useSelector(
-        (state: RootState) => state.shopCart.branchId,
-    );
+    const userBranchId = user?.branchId ?? null;
 
     const { data: product, isLoading } = useQuery({
-        queryKey: ['public-product', id, cartBranchId],
+        queryKey: ['public-product', id, userBranchId],
         queryFn: () =>
-            shopProductsService.getProduct(id!, cartBranchId ?? undefined),
+            shopProductsService.getProduct(id!, userBranchId ?? undefined),
         enabled: !!id,
     });
 
@@ -62,11 +61,11 @@ export default function ProductDetailPage() {
     const availableIds = product.availableBranches.map((b) => b.id);
     const isOutEverywhere = availableIds.length === 0;
     const currentBranchHasIt =
-        !!cartBranchId && availableIds.includes(cartBranchId);
+        !!userBranchId && availableIds.includes(userBranchId);
     const branchSwitchNeeded = !currentBranchHasIt && !isOutEverywhere;
 
     const targetBranch =
-        product.availableBranches.find((b) => b.id === cartBranchId) ??
+        product.availableBranches.find((b) => b.id === userBranchId) ??
         product.availableBranches[0] ??
         null;
 
@@ -79,8 +78,8 @@ export default function ProductDetailPage() {
         if (branchSwitchNeeded) {
             if (cartItems.length > 0) {
                 const ok = await confirm({
-                    title: 'Switch branch?',
-                    body: `This item is at ${targetBranch?.name ?? 'another branch'}. Switching will clear your cart.`,
+                    title: 'Switch pickup branch?',
+                    body: `This item is at ${targetBranch?.name ?? 'another branch'}. Switching will clear your cart and update your profile pickup branch.`,
                     confirmLabel: 'Switch & clear cart',
                     tone: 'danger',
                 });
@@ -88,7 +87,22 @@ export default function ProductDetailPage() {
                 dispatch(clearShopCart());
             }
             if (targetBranch) {
-                dispatch(setBranch(targetBranch.id));
+                try {
+                    await userService.updateMyBranch(targetBranch.id);
+                    dispatch(setUserBranch(targetBranch.id));
+                } catch (err: unknown) {
+                    if (axios.isAxiosError(err)) {
+                        const data = err.response?.data as
+                            | { message?: string }
+                            | undefined;
+                        toast.error(
+                            data?.message ?? 'Could not switch branch',
+                        );
+                    } else {
+                        toast.error('Could not switch branch');
+                    }
+                    return false;
+                }
             }
         }
 
