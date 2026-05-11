@@ -1,214 +1,442 @@
 import { useState, useEffect } from 'react';
 import { accountingService } from '@/services/accounting.service';
-import type { IProfitLossData } from '@/services/accounting.service';
+import type { IProfitLossData } from '@/types';
+import Card from '@/components/ui/Card';
+import Segmented from '@/components/ui/Segmented';
+import EmptyState from '@/components/ui/EmptyState';
+
+type PeriodKey = 'week' | 'month' | 'quarter' | 'ytd' | 'custom';
+
+function formatCurrency(amount: number) {
+    return new Intl.NumberFormat('en-LK', {
+        style: 'currency',
+        currency: 'LKR',
+        maximumFractionDigits: 0,
+    }).format(amount);
+}
+
+function formatPercent(value: number) {
+    return `${value.toFixed(1)}%`;
+}
+
+function toIso(d: Date) {
+    return d.toISOString().split('T')[0];
+}
+
+function formatDateRangeLabel(start: string, end: string): string {
+    const s = new Date(start);
+    const e = new Date(end);
+    const sameYear = s.getFullYear() === e.getFullYear();
+    const sopts: Intl.DateTimeFormatOptions = sameYear
+        ? { month: 'short', day: 'numeric' }
+        : { month: 'short', day: 'numeric', year: 'numeric' };
+    return `${s.toLocaleDateString('en-US', sopts)} – ${e.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+}
+
+function rangeForPeriod(period: PeriodKey): { start: string; end: string } {
+    const now = new Date();
+    const today = toIso(now);
+    if (period === 'week') {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 6);
+        return { start: toIso(start), end: today };
+    }
+    if (period === 'month') {
+        return {
+            start: toIso(new Date(now.getFullYear(), now.getMonth(), 1)),
+            end: today,
+        };
+    }
+    if (period === 'quarter') {
+        const q = Math.floor(now.getMonth() / 3);
+        return {
+            start: toIso(new Date(now.getFullYear(), q * 3, 1)),
+            end: today,
+        };
+    }
+    if (period === 'ytd') {
+        return {
+            start: toIso(new Date(now.getFullYear(), 0, 1)),
+            end: today,
+        };
+    }
+    return { start: today, end: today };
+}
 
 export default function ProfitLossPage() {
     const [data, setData] = useState<IProfitLossData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Date range — default to current month
-    const now = new Date();
-    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString().split('T')[0];
-    const today = now.toISOString().split('T')[0];
-
-    const [startDate, setStartDate] = useState(firstOfMonth);
-    const [endDate, setEndDate] = useState(today);
+    const initial = rangeForPeriod('month');
+    const [period, setPeriod] = useState<PeriodKey>('month');
+    const [startDate, setStartDate] = useState(initial.start);
+    const [endDate, setEndDate] = useState(initial.end);
 
     useEffect(() => {
         let cancelled = false;
         const load = async () => {
             try {
-                const result = await accountingService.getProfitLoss(startDate, endDate);
-                if (!cancelled) { setData(result); setError(null); }
+                setIsLoading(true);
+                const result = await accountingService.getProfitLoss(
+                    startDate,
+                    endDate,
+                );
+                if (!cancelled) {
+                    setData(result);
+                    setError(null);
+                }
             } catch {
-                if (!cancelled) setError('Failed to load profit & loss data');
+                if (!cancelled)
+                    setError('Failed to load profit & loss data');
             } finally {
                 if (!cancelled) setIsLoading(false);
             }
         };
         load();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [startDate, endDate]);
 
-    const formatCurrency = (amount: number) =>
-        new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(amount);
+    const handlePeriodChange = (next: PeriodKey) => {
+        setPeriod(next);
+        if (next !== 'custom') {
+            const r = rangeForPeriod(next);
+            setStartDate(r.start);
+            setEndDate(r.end);
+        }
+    };
 
-    const formatPercent = (value: number) => `${value.toFixed(1)}%`;
+    const periodOptions: { label: string; value: PeriodKey }[] = [
+        { label: 'Week', value: 'week' },
+        { label: 'Month', value: 'month' },
+        { label: 'Quarter', value: 'quarter' },
+        { label: 'YTD', value: 'ytd' },
+    ];
+
+    const inputClass =
+        'h-9 px-3 bg-surface border border-border-strong text-text-1 text-sm rounded-md outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors';
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Profit & Loss</h1>
-                    <p className="text-sm text-slate-400 mt-1">Revenue, costs, and profitability overview</p>
+                    <h1 className="text-2xl font-bold text-text-1 tracking-tight">
+                        Profit &amp; Loss
+                    </h1>
+                    <p className="text-xs text-text-2 mt-1">
+                        {formatDateRangeLabel(startDate, endDate)}
+                    </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Segmented
+                        value={period === 'custom' ? 'month' : period}
+                        options={periodOptions}
+                        onChange={handlePeriodChange}
+                    />
                     <input
                         type="date"
                         value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="h-9 px-3 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg outline-none focus:border-white/30"
+                        onChange={(e) => {
+                            setStartDate(e.target.value);
+                            setPeriod('custom');
+                        }}
+                        className={inputClass}
                     />
-                    <span className="text-slate-500 text-sm">to</span>
+                    <span className="text-text-3 text-sm">to</span>
                     <input
                         type="date"
                         value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="h-9 px-3 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg outline-none focus:border-white/30"
+                        onChange={(e) => {
+                            setEndDate(e.target.value);
+                            setPeriod('custom');
+                        }}
+                        className={inputClass}
                     />
                 </div>
             </div>
 
             {error && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
+                <div className="mb-4 px-4 py-2.5 rounded-md bg-danger-soft border border-danger/40 text-sm text-danger">
                     {error}
                 </div>
             )}
 
             {isLoading ? (
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {[...Array(4)].map((_, i) => (
-                        <div key={i} className="bg-[#111111] border border-white/10 rounded-2xl p-6">
-                            <div className="h-6 w-40 bg-white/5 rounded animate-pulse mb-4" />
+                        <Card key={i} className="p-6">
+                            <div className="h-5 w-40 bg-surface-2 rounded animate-pulse mb-4" />
                             <div className="space-y-3">
-                                <div className="h-5 w-full bg-white/5 rounded animate-pulse" />
-                                <div className="h-5 w-3/4 bg-white/5 rounded animate-pulse" />
+                                <div className="h-4 w-full bg-surface-2 rounded animate-pulse" />
+                                <div className="h-4 w-3/4 bg-surface-2 rounded animate-pulse" />
                             </div>
-                        </div>
+                        </Card>
                     ))}
                 </div>
             ) : data ? (
-                <div className="space-y-6">
-                    {/* Summary Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <SummaryCard
-                            label="Net Revenue"
-                            value={formatCurrency(data.revenue.netRevenue)}
-                            sub={`${data.revenue.totalTransactions} transactions`}
-                        />
-                        <SummaryCard
-                            label="Gross Profit"
-                            value={formatCurrency(data.grossProfit)}
-                            sub={`${formatPercent(data.grossMargin)} margin`}
-                        />
-                        <SummaryCard
-                            label="Total Expenses"
-                            value={formatCurrency(data.expenses.total)}
-                            sub={`${data.expenses.byCategory.length} categories`}
-                        />
-                        <SummaryCard
-                            label="Net Profit"
-                            value={formatCurrency(data.netProfit)}
-                            sub={`${formatPercent(data.netMargin)} margin`}
-                            highlight
-                        />
+                <>
+                    {/* Summary KPIs */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <Card className="p-5">
+                            <p className="text-[11px] uppercase tracking-[0.08em] text-text-3 font-semibold mb-1">
+                                Net revenue
+                            </p>
+                            <p className="mono text-xl font-semibold text-text-1">
+                                {formatCurrency(data.revenue.netRevenue)}
+                            </p>
+                            <p className="text-xs text-text-3 mt-1">
+                                {data.revenue.totalTransactions} transactions
+                            </p>
+                        </Card>
+                        <Card className="p-5">
+                            <p className="text-[11px] uppercase tracking-[0.08em] text-text-3 font-semibold mb-1">
+                                Gross profit
+                            </p>
+                            <p className="mono text-xl font-semibold text-text-1">
+                                {formatCurrency(data.grossProfit)}
+                            </p>
+                            <p className="text-xs text-text-3 mt-1">
+                                {formatPercent(data.grossMargin)} margin
+                            </p>
+                        </Card>
+                        <Card className="p-5">
+                            <p className="text-[11px] uppercase tracking-[0.08em] text-text-3 font-semibold mb-1">
+                                Total expenses
+                            </p>
+                            <p className="mono text-xl font-semibold text-text-1">
+                                {formatCurrency(data.expenses.total)}
+                            </p>
+                            <p className="text-xs text-text-3 mt-1">
+                                {data.expenses.byCategory.length} categories
+                            </p>
+                        </Card>
+                        <Card className="p-5 border-2 border-primary/30">
+                            <p className="text-[11px] uppercase tracking-[0.08em] text-text-3 font-semibold mb-1">
+                                Net profit
+                            </p>
+                            <p
+                                className={`mono text-xl font-semibold ${
+                                    data.netProfit >= 0
+                                        ? 'text-accent-text'
+                                        : 'text-danger'
+                                }`}
+                            >
+                                {formatCurrency(data.netProfit)}
+                            </p>
+                            <p className="text-xs text-text-3 mt-1">
+                                {formatPercent(data.netMargin)} margin
+                            </p>
+                        </Card>
                     </div>
 
-                    {/* P&L Statement */}
-                    <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-                        <div className="p-5 border-b border-white/10 bg-white/[0.02]">
-                            <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Income Statement</h2>
+                    {/* Statement */}
+                    <Card className="overflow-hidden">
+                        <div className="px-5 py-4 border-b border-border bg-surface-2">
+                            <h2 className="text-[15px] font-semibold text-text-1 tracking-tight">
+                                Statement
+                            </h2>
+                            <p className="text-xs text-text-2 mt-0.5">
+                                Income statement for the selected period
+                            </p>
                         </div>
 
-                        <div className="divide-y divide-white/5">
-                            {/* Revenue Section */}
+                        <div className="divide-y divide-border">
                             <Section title="Revenue">
-                                <Row label="Total Sales" value={formatCurrency(data.revenue.totalSales)} />
-                                <Row label="Discounts Given" value={`-${formatCurrency(data.revenue.totalDiscounts)}`} dim />
-                                <Row label="Tax Collected" value={formatCurrency(data.revenue.totalTax)} dim />
-                                <Row label="Net Revenue" value={formatCurrency(data.revenue.netRevenue)} bold />
+                                <Row
+                                    label="Total sales"
+                                    value={formatCurrency(
+                                        data.revenue.totalSales,
+                                    )}
+                                />
+                                <Row
+                                    label="Discounts given"
+                                    value={`−${formatCurrency(data.revenue.totalDiscounts)}`}
+                                    dim
+                                />
+                                <Row
+                                    label="Tax collected"
+                                    value={formatCurrency(
+                                        data.revenue.totalTax,
+                                    )}
+                                    dim
+                                />
+                                <Row
+                                    label="Net revenue"
+                                    value={formatCurrency(
+                                        data.revenue.netRevenue,
+                                    )}
+                                    bold
+                                />
                             </Section>
 
-                            {/* COGS Section */}
-                            <Section title="Cost of Goods Sold">
-                                <Row label={`Product Costs (${data.costOfGoodsSold.itemsSold} items sold)`} value={formatCurrency(data.costOfGoodsSold.totalCOGS)} />
-                                <Row label="Total COGS" value={`-${formatCurrency(data.costOfGoodsSold.totalCOGS)}`} bold />
+                            <Section title="Cost of goods sold">
+                                <Row
+                                    label={`Product costs · ${data.costOfGoodsSold.itemsSold} items sold`}
+                                    value={formatCurrency(
+                                        data.costOfGoodsSold.totalCOGS,
+                                    )}
+                                />
+                                <Row
+                                    label="Total COGS"
+                                    value={`−${formatCurrency(data.costOfGoodsSold.totalCOGS)}`}
+                                    bold
+                                />
                             </Section>
 
-                            {/* Gross Profit */}
-                            <div className="px-6 py-4 flex items-center justify-between bg-white/[0.02]">
-                                <span className="text-sm font-bold text-white">Gross Profit</span>
-                                <div className="text-right">
-                                    <span className="text-sm font-bold tabular-nums text-white">
-                                        {formatCurrency(data.grossProfit)}
-                                    </span>
-                                    <span className="text-[11px] text-slate-500 ml-2">({formatPercent(data.grossMargin)})</span>
-                                </div>
-                            </div>
+                            <SubtotalRow
+                                label="Gross profit"
+                                value={formatCurrency(data.grossProfit)}
+                                trailing={`(${formatPercent(data.grossMargin)})`}
+                            />
 
-                            {/* Expenses Section */}
-                            <Section title="Operating Expenses">
+                            <Section title="Operating expenses">
                                 {data.expenses.byCategory.length > 0 ? (
                                     data.expenses.byCategory.map((cat) => (
-                                        <Row key={cat.category} label={cat.category} value={formatCurrency(cat.amount)} />
+                                        <Row
+                                            key={cat.category}
+                                            label={cat.category}
+                                            value={`−${formatCurrency(cat.amount)}`}
+                                        />
                                     ))
                                 ) : (
-                                    <Row label="No expenses recorded" value="-" dim />
+                                    <Row
+                                        label="No expenses recorded"
+                                        value="—"
+                                        dim
+                                    />
                                 )}
-                                <Row label="Total Expenses" value={`-${formatCurrency(data.expenses.total)}`} bold />
+                                <Row
+                                    label="Total operating expenses"
+                                    value={`−${formatCurrency(data.expenses.total)}`}
+                                    bold
+                                />
                             </Section>
 
-                            {/* Net Profit */}
-                            <div className="px-6 py-5 flex items-center justify-between bg-white/[0.04]">
-                                <span className="text-base font-bold text-white">Net Profit</span>
-                                <div className="text-right">
-                                    <span className="text-base font-bold tabular-nums text-white">
-                                        {formatCurrency(data.netProfit)}
-                                    </span>
-                                    <span className="text-xs text-slate-500 ml-2">({formatPercent(data.netMargin)})</span>
-                                </div>
-                            </div>
+                            <SubtotalRow
+                                label="Net profit"
+                                value={formatCurrency(data.netProfit)}
+                                trailing={`(${formatPercent(data.netMargin)})`}
+                                emphasize
+                                positive={data.netProfit >= 0}
+                            />
                         </div>
-                    </div>
-                </div>
-            ) : null}
+                    </Card>
+                </>
+            ) : (
+                <Card>
+                    <EmptyState
+                        title="No data yet"
+                        description="Once sales and expenses are recorded for this period they'll show up here."
+                    />
+                </Card>
+            )}
         </div>
     );
 }
 
-function SummaryCard({ label, value, sub, highlight }: {
-    label: string;
-    value: string;
-    sub: string;
-    highlight?: boolean;
+function Section({
+    title,
+    children,
+}: {
+    title: string;
+    children: React.ReactNode;
 }) {
     return (
-        <div className={`bg-[#111111] border rounded-2xl p-5 ${highlight ? 'border-white/20' : 'border-white/10'}`}>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">{label}</p>
-            <p className="text-xl font-bold tabular-nums text-white">{value}</p>
-            <p className="text-[11px] text-slate-500 mt-1">{sub}</p>
-        </div>
-    );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-    return (
-        <div className="py-2">
-            <div className="px-6 py-3">
-                <h3 className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">{title}</h3>
+        <div className="py-1">
+            <div className="px-5 py-2.5">
+                <h3 className="text-[11px] uppercase tracking-[0.08em] text-text-3 font-semibold">
+                    {title}
+                </h3>
             </div>
             {children}
         </div>
     );
 }
 
-function Row({ label, value, bold, dim }: {
+function Row({
+    label,
+    value,
+    bold,
+    dim,
+}: {
     label: string;
     value: string;
     bold?: boolean;
     dim?: boolean;
 }) {
     return (
-        <div className="px-6 py-2.5 flex items-center justify-between">
-            <span className={`text-sm ${bold ? 'font-semibold text-slate-200' : dim ? 'text-slate-500' : 'text-slate-400'}`}>
+        <div className="px-5 py-2 flex items-center justify-between">
+            <span
+                className={`text-[13px] ${
+                    bold
+                        ? 'font-semibold text-text-1'
+                        : dim
+                          ? 'text-text-3'
+                          : 'text-text-2'
+                }`}
+            >
                 {label}
             </span>
-            <span className={`text-sm tabular-nums ${bold ? 'font-semibold text-white' : dim ? 'text-slate-500' : 'text-slate-300'}`}>
+            <span
+                className={`mono text-[13px] ${
+                    bold
+                        ? 'font-semibold text-text-1'
+                        : dim
+                          ? 'text-text-3'
+                          : 'text-text-1'
+                }`}
+            >
                 {value}
             </span>
+        </div>
+    );
+}
+
+function SubtotalRow({
+    label,
+    value,
+    trailing,
+    emphasize,
+    positive = true,
+}: {
+    label: string;
+    value: string;
+    trailing?: string;
+    emphasize?: boolean;
+    positive?: boolean;
+}) {
+    return (
+        <div
+            className={`px-5 py-3.5 flex items-center justify-between ${
+                emphasize ? 'bg-primary-soft' : 'bg-surface-2'
+            }`}
+        >
+            <span
+                className={`${
+                    emphasize ? 'text-base' : 'text-[14px]'
+                } font-semibold text-text-1`}
+            >
+                {label}
+            </span>
+            <div className="text-right">
+                <span
+                    className={`mono ${
+                        emphasize ? 'text-base' : 'text-[14px]'
+                    } font-bold ${
+                        emphasize && !positive ? 'text-danger' : 'text-text-1'
+                    }`}
+                >
+                    {value}
+                </span>
+                {trailing && (
+                    <span className="text-[11px] text-text-3 ml-2">
+                        {trailing}
+                    </span>
+                )}
+            </div>
         </div>
     );
 }

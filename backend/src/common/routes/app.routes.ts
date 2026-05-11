@@ -9,8 +9,12 @@ export const APP_ROUTES = {
   AUTH: {
     BASE: `${API_PREFIX}/auth`,
     LOGIN: 'login',
+    SIGNUP: 'signup',
     VERIFY_OTP: 'verify-otp',
+    RESEND_OTP: 'resend-otp',
     CHANGE_PASSWORD: 'change-password',
+    FORGOT_PASSWORD: 'forgot-password',
+    RESET_PASSWORD: 'reset-password',
     REFRESH: 'refresh',
   },
 
@@ -19,6 +23,7 @@ export const APP_ROUTES = {
     BASE: `${API_PREFIX}/users`,
     PROFILE: 'profile',
     PROFILE_AVATAR: 'profile/avatar',
+    MY_BRANCH: 'me/branch',
     BY_ID: ':id',
     RESEND_CREDENTIALS: ':id/resend-credentials',
     RESET_PASSWORD: ':id/reset-password',
@@ -29,6 +34,7 @@ export const APP_ROUTES = {
     BASE: `${API_PREFIX}/branches`,
     BY_ID: ':id',
     TOGGLE_ACTIVE: ':id/toggle-active',
+    MY_PERFORMANCE: 'my-performance',
   },
 
   // Products
@@ -37,6 +43,7 @@ export const APP_ROUTES = {
     CATEGORIES: 'categories',
     BY_ID: ':id',
     BY_BARCODE: 'barcode/:barcode',
+    IMAGE: ':id/image',
   },
 
   // Inventory
@@ -54,6 +61,8 @@ export const APP_ROUTES = {
     TRANSACTION_BY_ID: 'transactions/:id',
     DAILY_REPORT: 'daily-report',
     MY_DASHBOARD: 'my-dashboard',
+    MY_TRANSACTIONS: 'my-transactions',
+    ALL_TRANSACTIONS: 'all-transactions',
     ADMIN_DASHBOARD: 'admin-dashboard',
   },
 
@@ -64,24 +73,63 @@ export const APP_ROUTES = {
     LEDGER_SUMMARY: 'ledger/summary',
     EXPENSES: 'expenses',
     EXPENSE_BY_ID: 'expenses/:id',
+    EXPENSE_REVIEW: 'expenses/:id/review',
     PROFIT_LOSS: 'profit-loss',
   },
 
   // Notifications
   NOTIFICATIONS: {
     BASE: `${API_PREFIX}/notifications`,
+    BY_ID: ':id',
     MARK_READ: ':id/read',
     MARK_ALL_READ: 'read-all',
   },
 
-  // Super Admin
-  SUPER_ADMIN: {
-    BASE: `${API_PREFIX}/super-admin`,
+  // Admin Portal (system-wide endpoints — admin role only)
+  ADMIN_PORTAL: {
+    BASE: `${API_PREFIX}/admin`,
     OVERVIEW: 'overview',
     BRANCHES: 'branches',
     ADMINS: 'admins',
     COMPARISON: 'comparison',
     USERS: 'users',
+    INVENTORY_MATRIX: 'inventory/matrix',
+  },
+
+  // Storefront catalog (CUSTOMER role only)
+  SHOP: {
+    BASE: `${API_PREFIX}/shop`,
+    PRODUCTS: 'products',
+    PRODUCT_BY_ID: 'products/:id',
+    CATEGORIES: 'products/categories',
+    BRANCHES: 'branches',
+  },
+
+  // Customer pickup requests (cart → request → QR → fulfill at counter)
+  CUSTOMER_REQUESTS: {
+    BASE: `${API_PREFIX}/customer-requests`,
+    MINE: 'mine',
+    BY_CODE: 'code/:code',
+    BY_ID: ':id',
+    CANCEL: ':id/cancel',
+    ACCEPT: ':id/accept',
+    REJECT: ':id/reject',
+    FULFILL: 'code/:code/fulfill',
+  },
+
+  // Stock Transfers (inter-branch stock movement)
+  STOCK_TRANSFERS: {
+    BASE: `${API_PREFIX}/stock-transfers`,
+    MY_REQUESTS: 'my-requests',
+    INCOMING: 'incoming',
+    HISTORY: 'history',
+    BY_ID: ':id',
+    SOURCE_OPTIONS: ':id/source-options',
+    APPROVE: ':id/approve',
+    REJECT: ':id/reject',
+    CANCEL: ':id/cancel',
+    SHIP: ':id/ship',
+    RECEIVE: ':id/receive',
   },
 } as const;
 

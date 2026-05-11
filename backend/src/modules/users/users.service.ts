@@ -5,16 +5,19 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
 import { User } from '@users/entities/user.entity';
+import { UsersRepository } from '@users/users.repository';
+import { BranchesRepository } from '@branches/branches.repository';
 import { CreateUserDto } from '@users/dto/create-user.dto';
 import { UpdateUserDto } from '@users/dto/update-user.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { EmailService } from '../email/email.service';
+import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
+import randomPasswordGenerator from '@/common/utils/random-password-generator';
+
+const AVATAR_CLOUDINARY_FOLDER = 'ledgerpro/avatars';
 
 export interface Actor {
   id: string;
@@ -22,9 +25,9 @@ export interface Actor {
   branchId: string;
 }
 
-const STAFF_ROLES: UserRole[] = [
+const ASSIGNABLE_ROLES: UserRole[] = [
+  UserRole.ADMIN,
   UserRole.MANAGER,
-  UserRole.ACCOUNTANT,
   UserRole.CASHIER,
 ];
 
@@ -33,35 +36,25 @@ export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly users: UsersRepository,
+    private readonly branches: BranchesRepository,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
   async create(createUserDto: CreateUserDto, actor: Actor): Promise<User> {
-    // Admins always create within their own branch — ignore any client override
-    if (actor.role === UserRole.ADMIN) {
-      createUserDto.branchId = actor.branchId;
-    }
     this.assertCanCreate(actor, createUserDto);
 
-    // Check if email already exists
-    const existingUser = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
-    });
+    const existingUser = await this.users.findByEmail(createUserDto.email);
     if (existingUser) {
       throw new ConflictException('A user with this email already exists');
     }
 
-    // Generate secure temp password
-    const tempPassword = this.generateTempPassword();
-
-    // Hash the temp password
+    const tempPassword = randomPasswordGenerator();
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(tempPassword, salt);
 
-    // Calculate temp password expiry
     const expiresInHours = this.configService.get<number>(
       'TEMP_PASSWORD_EXPIRES_HOURS',
       24,
@@ -69,21 +62,17 @@ export class UsersService {
     const otpExpiresAt = new Date();
     otpExpiresAt.setHours(otpExpiresAt.getHours() + expiresInHours);
 
-    // Create user with hashed temp password
-    const user = this.userRepository.create({
+    const savedUser = await this.users.createAndSave({
       ...createUserDto,
       passwordHash,
       isFirstLogin: true,
       isVerified: false,
       otpExpiresAt,
     });
-
-    const savedUser = await this.userRepository.save(user);
     this.logger.log(
       `User created: ${savedUser.email} (role: ${savedUser.role})`,
     );
 
-    // Send welcome email with temp password (non-blocking)
     this.emailService
       .sendWelcomeEmail(
         savedUser.email,
@@ -98,81 +87,145 @@ export class UsersService {
         );
       });
 
-    // Return user without passwordHash
     return this.stripPassword(savedUser);
   }
 
   async findAll(actor: Actor): Promise<User[]> {
-    const where =
-      actor.role === UserRole.SUPER_ADMIN
-        ? {}
-        : { branchId: actor.branchId };
-    const users = await this.userRepository.find({
-      where,
-      relations: ['branch'],
-    });
+    const users = await this.users.findAllScoped(
+      actor.role === UserRole.ADMIN ? null : actor.branchId,
+    );
     return users.map((user) => this.stripPassword(user));
   }
 
   async findById(id: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      relations: ['branch'],
-    });
+    const user = await this.users.findByIdWithBranch(id);
     if (!user) return null;
     return this.stripPassword(user);
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { email } });
+    return this.users.findByEmail(email);
   }
 
   async findByIdWithPassword(id: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { id } });
+    return this.users.findById(id);
   }
 
   async updatePassword(id: string, passwordHash: string): Promise<void> {
-    await this.userRepository.update(id, {
+    await this.users.update(id, {
       passwordHash,
       isFirstLogin: false,
       isVerified: true,
+      otpCode: null,
       otpExpiresAt: null,
     });
   }
 
   async touchLastLogin(id: string): Promise<void> {
-    await this.userRepository.update(id, { lastLoginAt: new Date() });
+    await this.users.update(id, { lastLoginAt: new Date() });
+  }
+
+  async createCustomerAccount(data: {
+    email: string;
+    passwordHash: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    otpCode: string;
+    otpExpiresAt: Date;
+  }): Promise<User> {
+    return this.users.createAndSave({
+      email: data.email,
+      passwordHash: data.passwordHash,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      role: UserRole.CUSTOMER,
+      branchId: null,
+      isFirstLogin: false,
+      isVerified: false,
+      otpCode: data.otpCode,
+      otpExpiresAt: data.otpExpiresAt,
+    });
+  }
+
+  async setOtp(id: string, otpCode: string, otpExpiresAt: Date): Promise<void> {
+    await this.users.update(id, { otpCode, otpExpiresAt });
+  }
+
+  async markVerified(id: string): Promise<void> {
+    await this.users.update(id, {
+      isVerified: true,
+      otpCode: null,
+      otpExpiresAt: null,
+    });
   }
 
   async updateProfile(
     id: string,
-    data: { firstName?: string; lastName?: string },
+    data: { firstName?: string; lastName?: string; phone?: string | null },
   ): Promise<User | null> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.users.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
     const updateData: Partial<User> = {};
     if (data.firstName) updateData.firstName = data.firstName;
     if (data.lastName) updateData.lastName = data.lastName;
+    if (data.phone !== undefined) {
+      const trimmed = data.phone?.trim();
+      updateData.phone = trimmed && trimmed.length > 0 ? trimmed : null;
+    }
     if (Object.keys(updateData).length > 0) {
-      await this.userRepository.update(id, updateData);
+      await this.users.update(id, updateData);
     }
     return this.findById(id);
+  }
+
+  async updateMyBranch(userId: string, branchId: string): Promise<User | null> {
+    const user = await this.users.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (user.role !== UserRole.CUSTOMER) {
+      throw new ForbiddenException(
+        'Only customers can pick their branch through this endpoint',
+      );
+    }
+
+    const branch = await this.branches.findById(branchId);
+    if (!branch || !branch.isActive) {
+      throw new NotFoundException('Branch not found or inactive');
+    }
+
+    await this.users.update(userId, { branchId });
+    this.logger.log(`Customer ${user.email} selected branch ${branch.name}`);
+    return this.findById(userId);
   }
 
   async updateAvatar(
     id: string,
     file: Express.Multer.File,
   ): Promise<User | null> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.users.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    // Store as base64 data URL for dev; in production, upload to cloud storage
-    const base64 = file.buffer.toString('base64');
-    const avatarUrl = `data:${file.mimetype};base64,${base64}`;
-    await this.userRepository.update(id, { avatarUrl });
+
+    let avatarUrl: string;
+    if (this.cloudinary.isEnabled()) {
+      const { url } = await this.cloudinary.uploadImage(file, {
+        folder: AVATAR_CLOUDINARY_FOLDER,
+        publicId: id,
+      });
+      avatarUrl = url;
+    } else {
+      // Fallback for dev environments without Cloudinary credentials.
+      const base64 = file.buffer.toString('base64');
+      avatarUrl = `data:${file.mimetype};base64,${base64}`;
+    }
+
+    await this.users.update(id, { avatarUrl });
     return this.findById(id);
   }
 
@@ -181,7 +234,7 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     actor: Actor,
   ): Promise<User | null> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.users.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -192,7 +245,7 @@ export class UsersService {
     }
     if (
       updateUserDto.branchId !== undefined &&
-      actor.role !== UserRole.SUPER_ADMIN &&
+      actor.role !== UserRole.ADMIN &&
       updateUserDto.branchId !== actor.branchId
     ) {
       throw new ForbiddenException(
@@ -200,32 +253,39 @@ export class UsersService {
       );
     }
 
-    await this.userRepository.update(id, updateUserDto);
+    await this.users.update(id, updateUserDto);
     return this.findById(id);
   }
 
   async remove(id: string, actor: Actor): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.users.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
     this.assertCanManage(actor, user);
-    await this.userRepository.delete(id);
+    await this.users.delete(id);
+  }
+
+  /**
+   * Internal: hard-delete a user row without RBAC checks. Used by AuthService
+   * to roll back a half-created customer signup when the OTP email fails.
+   * Do not expose via HTTP.
+   */
+  async removeByIdInternal(id: string): Promise<void> {
+    await this.users.delete(id);
   }
 
   async resendCredentials(id: string, actor: Actor): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.users.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
     this.assertCanManage(actor, user);
 
-    // Generate new temp password
-    const tempPassword = this.generateTempPassword();
+    const tempPassword = randomPasswordGenerator();
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(tempPassword, salt);
 
-    // Reset expiry
     const expiresInHours = this.configService.get<number>(
       'TEMP_PASSWORD_EXPIRES_HOURS',
       24,
@@ -233,7 +293,7 @@ export class UsersService {
     const otpExpiresAt = new Date();
     otpExpiresAt.setHours(otpExpiresAt.getHours() + expiresInHours);
 
-    await this.userRepository.update(id, {
+    await this.users.update(id, {
       passwordHash,
       isFirstLogin: true,
       isVerified: false,
@@ -252,86 +312,36 @@ export class UsersService {
 
   private assertCanCreate(actor: Actor, dto: CreateUserDto): void {
     this.assertRoleAssignable(actor, dto.role);
-    if (
-      actor.role === UserRole.ADMIN &&
-      dto.branchId !== actor.branchId
-    ) {
-      throw new ForbiddenException(
-        'Admins can only create users within their own branch',
-      );
+    if (actor.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Not allowed to create users');
     }
   }
 
   private assertCanManage(actor: Actor, target: User): void {
-    if (actor.role === UserRole.SUPER_ADMIN) return;
     if (actor.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Not allowed to manage users');
     }
-    if (target.branchId !== actor.branchId) {
+    if (target.id === actor.id) {
       throw new ForbiddenException(
-        'Admins can only manage users within their own branch',
+        'You cannot manage your own account through this endpoint',
       );
-    }
-    if (
-      target.role === UserRole.ADMIN ||
-      target.role === UserRole.SUPER_ADMIN
-    ) {
-      throw new ForbiddenException('Admins cannot manage admin accounts');
     }
   }
 
   private assertRoleAssignable(actor: Actor, role: UserRole): void {
-    if (actor.role === UserRole.SUPER_ADMIN) {
-      if (role === UserRole.SUPER_ADMIN) {
-        throw new ForbiddenException(
-          'SUPER_ADMIN accounts cannot be created via this endpoint',
-        );
-      }
-      return;
+    if (actor.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Not allowed to create users');
     }
-    if (actor.role === UserRole.ADMIN) {
-      if (!STAFF_ROLES.includes(role)) {
-        throw new ForbiddenException(
-          'Admins can only create manager, accountant, or cashier accounts',
-        );
-      }
-      return;
+    if (!ASSIGNABLE_ROLES.includes(role)) {
+      throw new ForbiddenException(
+        'Admins can only create admin, manager, or cashier accounts',
+      );
     }
-    throw new ForbiddenException('Not allowed to create users');
   }
 
   private stripPassword(user: User): User {
     const result = { ...user };
     delete (result as Partial<User>).passwordHash;
     return result;
-  }
-
-  private generateTempPassword(): string {
-    const length = 12;
-    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-    const lowercase = 'abcdefghjkmnpqrstuvwxyz';
-    const digits = '23456789';
-    const symbols = '@#$%&*!';
-
-    // Ensure at least one of each type
-    let password = '';
-    password += uppercase[crypto.randomInt(uppercase.length)];
-    password += lowercase[crypto.randomInt(lowercase.length)];
-    password += digits[crypto.randomInt(digits.length)];
-    password += symbols[crypto.randomInt(symbols.length)];
-
-    // Fill remaining with random mix
-    const allChars = uppercase + lowercase + digits + symbols;
-    for (let i = password.length; i < length; i++) {
-      password += allChars[crypto.randomInt(allChars.length)];
-    }
-
-    // Shuffle the password
-    const arr = password.split('');
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = crypto.randomInt(i + 1);
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr.join('');
   }
 }

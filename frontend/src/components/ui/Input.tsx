@@ -1,61 +1,120 @@
-import { forwardRef, type InputHTMLAttributes, useId } from 'react';
+import {
+    forwardRef,
+    useId,
+    type InputHTMLAttributes,
+    type ReactNode,
+} from 'react';
 import { cn } from '@/lib/utils';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
+    leftIcon?: ReactNode;
+    rightSlot?: ReactNode;
+    /** md = 38px (default), lg = 42px */
+    sizeVariant?: 'md' | 'lg';
 }
 
+const HEIGHT: Record<NonNullable<InputProps['sizeVariant']>, string> = {
+    md: 'h-[38px]',
+    lg: 'h-[42px]',
+};
+
 const Input = forwardRef<HTMLInputElement, InputProps>(
-    ({ label, error, className, id, ...props }, ref) => {
-        // Auto-generate a unique ID for accessibility if one isn't provided
+    (
+        {
+            label,
+            error,
+            leftIcon,
+            rightSlot,
+            sizeVariant = 'md',
+            className,
+            id,
+            ...props
+        },
+        ref,
+    ) => {
         const uniqueId = useId();
         const inputId = id || uniqueId;
+        const hasAdornments = !!leftIcon || !!rightSlot;
+        const heightClass = HEIGHT[sizeVariant];
+
+        const borderClass = error
+            ? 'border-danger'
+            : 'border-border-strong hover:border-text-3';
+        const focusClass = error
+            ? 'focus-within:border-danger focus-within:ring-[3px] focus-within:ring-danger/30'
+            : 'focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/30';
+
+        const wrapperClass = cn(
+            'flex items-center gap-2 px-3 bg-surface border rounded-md transition-colors',
+            heightClass,
+            borderClass,
+            focusClass,
+        );
+
+        const standaloneInputClass = cn(
+            'w-full px-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors duration-150 placeholder:text-text-3 disabled:opacity-50 disabled:cursor-not-allowed',
+            heightClass,
+            error
+                ? 'border-danger focus:border-danger focus:ring-[3px] focus:ring-danger/30'
+                : 'border-border-strong hover:border-text-3 focus:border-primary focus:ring-[3px] focus:ring-primary/30',
+        );
+
+        const innerInputClass =
+            'flex-1 bg-transparent outline-none text-[13px] text-text-1 placeholder:text-text-3 disabled:opacity-50 disabled:cursor-not-allowed min-w-0';
 
         return (
             <div className="w-full">
-                {/* Standardized Uppercase Label */}
                 {label && (
                     <label
                         htmlFor={inputId}
-                        className="block text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-[1px]"
+                        className="block text-xs font-medium text-text-2 mb-1.5"
                     >
                         {label}
                     </label>
                 )}
-                
-                <div className="relative">
+
+                {hasAdornments ? (
+                    <div className={wrapperClass}>
+                        {leftIcon && (
+                            <span className="text-text-3 flex-shrink-0 inline-flex items-center">
+                                {leftIcon}
+                            </span>
+                        )}
+                        <input
+                            ref={ref}
+                            id={inputId}
+                            aria-invalid={!!error}
+                            className={cn(innerInputClass, className)}
+                            {...props}
+                        />
+                        {rightSlot && (
+                            <span className="flex-shrink-0 inline-flex items-center">
+                                {rightSlot}
+                            </span>
+                        )}
+                    </div>
+                ) : (
                     <input
                         ref={ref}
                         id={inputId}
                         aria-invalid={!!error}
-                        className={cn(
-                            // Base input styles
-                            'w-full h-11 px-4 bg-[#0a0a0a] border rounded-xl text-sm text-slate-200 outline-none transition-all duration-200 placeholder:text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed',
-                            
-                            // Dynamic state styling (Error vs Default)
-                            error 
-                                ? 'border-rose-500/50 focus:border-rose-500 focus:ring-[3px] focus:ring-rose-500/20' 
-                                : 'border-white/10 focus:border-white focus:ring-[3px] focus:ring-white/20 hover:border-white/20',
-                            
-                            // User overrides
-                            className
-                        )}
+                        className={cn(standaloneInputClass, className)}
                         {...props}
                     />
-                </div>
+                )}
 
-                {/* Standardized Animated Error Message */}
                 {error && (
-                    <p className="mt-2 text-[12px] text-rose-400 flex items-center gap-1.5 font-medium animate-in fade-in slide-in-from-top-1 duration-200">
-                        <svg 
-                            width="14" 
-                            height="14" 
-                            viewBox="0 0 24 24" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            strokeWidth="2" 
-                            strokeLinecap="round" 
+                    <p className="mt-1.5 text-xs text-danger flex items-center gap-1.5 font-medium animate-in fade-in slide-in-from-top-1 duration-200">
+                        <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
                             strokeLinejoin="round"
                         >
                             <circle cx="12" cy="12" r="10"></circle>

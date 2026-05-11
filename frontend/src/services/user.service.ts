@@ -30,8 +30,19 @@ export const userService = {
     await api.post(`/users/${id}/resend-credentials`);
   },
 
+  resetPassword: async (id: string): Promise<void> => {
+    await api.post(`/users/${id}/reset-password`);
+  },
+
   getBranches: async (): Promise<IBranch[]> => {
     const response = await api.get<IApiResponse<IBranch[]>>('/branches');
+    return response.data.data;
+  },
+
+  updateMyBranch: async (branchId: string): Promise<IUser> => {
+    const response = await api.patch<IApiResponse<IUser>>('/users/me/branch', {
+      branchId,
+    });
     return response.data.data;
   },
 };

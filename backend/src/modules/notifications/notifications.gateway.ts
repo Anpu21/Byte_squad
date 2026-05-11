@@ -48,4 +48,14 @@ export class NotificationsGateway
   sendToUser(userId: string, payload: NotificationPayload): void {
     this.server.to(userId).emit('notification', payload);
   }
+
+  /**
+   * Broadcast an arbitrary domain event to every connected client on the
+   * /notifications namespace. Used for live list refetches (e.g.
+   * `customer-request:created`) so frontends can invalidate cached queries
+   * the instant something changes server-side.
+   */
+  broadcast(event: string, payload: unknown): void {
+    this.server.emit(event, payload);
+  }
 }

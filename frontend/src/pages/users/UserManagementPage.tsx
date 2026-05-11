@@ -1,36 +1,32 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Search, UserPlus, MoreHorizontal } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { userService } from '@/services/user.service';
 import { UserRole } from '@/constants/enums';
-import { useAuth } from '@/hooks/useAuth';
+import { useConfirm } from '@/hooks/useConfirm';
 import type { IUser, IBranch, IUserCreatePayload } from '@/types';
-import toast from 'react-hot-toast';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import Avatar from '@/components/ui/Avatar';
+import Modal from '@/components/ui/Modal';
+import Pill from '@/components/ui/Pill';
 
 function CreateUserModal({
     branches,
-    currentUserRole,
-    currentUserBranchId,
     onClose,
     onCreated,
 }: {
     branches: IBranch[];
-    currentUserRole: UserRole;
-    currentUserBranchId: string;
     onClose: () => void;
     onCreated: () => void;
 }) {
-    // Admins can only create non-admin staff within their own branch.
-    const isAdmin = currentUserRole === UserRole.ADMIN;
-    const defaultBranchId = isAdmin
-        ? currentUserBranchId
-        : branches[0]?.id || '';
-
     const [form, setForm] = useState<IUserCreatePayload>({
         email: '',
         firstName: '',
         lastName: '',
         role: UserRole.CASHIER,
-        branchId: defaultBranchId,
+        branchId: branches[0]?.id || '',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,13 +35,19 @@ function CreateUserModal({
         setIsSubmitting(true);
         try {
             await userService.create(form);
-            toast.success('User created! A welcome email with login credentials has been sent.');
+            toast.success(
+                'User created. A welcome email with login credentials has been sent.',
+            );
             onCreated();
             onClose();
         } catch (err: unknown) {
             if (err && typeof err === 'object' && 'response' in err) {
-                const axiosErr = err as { response?: { data?: { message?: string } } };
-                toast.error(axiosErr.response?.data?.message || 'Failed to create user');
+                const axiosErr = err as {
+                    response?: { data?: { message?: string } };
+                };
+                toast.error(
+                    axiosErr.response?.data?.message || 'Failed to create user',
+                );
             } else {
                 toast.error('Failed to create user');
             }
@@ -54,123 +56,160 @@ function CreateUserModal({
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between p-6 border-b border-white/10">
-                    <h2 className="text-lg font-bold text-white">Create New User</h2>
-                    <button
-                        onClick={onClose}
-                        className="p-1.5 text-slate-500 hover:text-white rounded-md hover:bg-white/10 transition-colors"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                    </button>
-                </div>
+    const inputClass =
+        'w-full h-9 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/25 transition-colors';
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+    return (
+        <Modal isOpen onClose={onClose} title="Invite user" maxWidth="md">
+            <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1.5">First Name</label>
+                            <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
+                                First name
+                            </label>
                             <input
                                 type="text"
                                 required
                                 value={form.firstName}
-                                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                                className="w-full h-9 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
+                                onChange={(e) =>
+                                    setForm({ ...form, firstName: e.target.value })
+                                }
+                                className={inputClass}
                             />
                         </div>
                         <div>
-                            <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1.5">Last Name</label>
+                            <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
+                                Last name
+                            </label>
                             <input
                                 type="text"
                                 required
                                 value={form.lastName}
-                                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                                className="w-full h-9 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
+                                onChange={(e) =>
+                                    setForm({ ...form, lastName: e.target.value })
+                                }
+                                className={inputClass}
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1.5">Email</label>
+                        <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
+                            Email
+                        </label>
                         <input
                             type="email"
                             required
                             value={form.email}
-                            onChange={(e) => setForm({ ...form, email: e.target.value })}
-                            className="w-full h-9 px-3 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors"
+                            onChange={(e) =>
+                                setForm({ ...form, email: e.target.value })
+                            }
+                            className={inputClass}
                             placeholder="user@company.com"
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1.5">Role</label>
+                            <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
+                                Role
+                            </label>
                             <select
                                 value={form.role}
-                                onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
-                                className="w-full h-9 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg px-3 outline-none focus:border-white/30 cursor-pointer"
+                                onChange={(e) =>
+                                    setForm({
+                                        ...form,
+                                        role: e.target.value as UserRole,
+                                    })
+                                }
+                                className={`${inputClass} cursor-pointer`}
                             >
                                 <option value={UserRole.CASHIER}>Cashier</option>
-                                <option value={UserRole.ACCOUNTANT}>Accountant</option>
                                 <option value={UserRole.MANAGER}>Manager</option>
-                                {!isAdmin && (
-                                    <option value={UserRole.ADMIN}>Admin</option>
-                                )}
+                                <option value={UserRole.ADMIN}>Admin</option>
                             </select>
                         </div>
                         <div>
-                            <label className="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1.5">Branch</label>
+                            <label className="block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
+                                Branch
+                            </label>
                             <select
                                 value={form.branchId}
-                                onChange={(e) => setForm({ ...form, branchId: e.target.value })}
-                                disabled={isAdmin}
-                                className="w-full h-9 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg px-3 outline-none focus:border-white/30 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                                onChange={(e) =>
+                                    setForm({ ...form, branchId: e.target.value })
+                                }
+                                className={`${inputClass} cursor-pointer`}
                             >
                                 {branches.map((branch) => (
-                                    <option key={branch.id} value={branch.id}>{branch.name}</option>
+                                    <option key={branch.id} value={branch.id}>
+                                        {branch.name}
+                                    </option>
                                 ))}
                             </select>
                         </div>
                     </div>
 
-                    <div className="bg-white/5 border border-white/10 rounded-lg p-3 mt-2">
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            A temporary password will be auto-generated and sent to the user's email. They must change it on first login.
+                    <div className="bg-surface-2 border border-border rounded-md p-3">
+                        <p className="text-xs text-text-2 leading-relaxed">
+                            A temporary password will be auto-generated and sent
+                            to the user&apos;s email. They must change it on first
+                            login.
                         </p>
                     </div>
 
-                    <div className="flex gap-3 pt-2">
-                        <button
+                    <div className="flex gap-2 pt-1">
+                        <Button
                             type="button"
+                            variant="secondary"
                             onClick={onClose}
-                            className="flex-1 h-9 rounded-lg border border-white/10 text-slate-300 text-sm font-medium hover:bg-white/5 transition-colors"
+                            className="flex-1"
                         >
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 h-9 rounded-lg bg-white text-slate-900 text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1"
                         >
-                            {isSubmitting ? 'Creating...' : 'Create User'}
-                        </button>
+                            {isSubmitting ? 'Creating…' : 'Send invite'}
+                        </Button>
                     </div>
                 </form>
-            </div>
-        </div>
+        </Modal>
     );
+}
+
+const ROLE_LABELS: Record<string, string> = {
+    [UserRole.ADMIN]: 'Admin',
+    [UserRole.MANAGER]: 'Manager',
+    [UserRole.CASHIER]: 'Cashier',
+};
+
+function RolePill({ role }: { role: string }) {
+    if (role === UserRole.ADMIN) {
+        return <Pill tone="primary">Admin</Pill>;
+    }
+    if (role === UserRole.MANAGER) {
+        return <Pill tone="info">Manager</Pill>;
+    }
+    return <Pill tone="neutral">{ROLE_LABELS[role] || role}</Pill>;
+}
+
+function StatusBadge({ user }: { user: IUser }) {
+    if (!user.isVerified) {
+        return <Pill tone="warning">Invited</Pill>;
+    }
+    return <Pill tone="success">Active</Pill>;
 }
 
 export default function UserManagementPage() {
     const queryClient = useQueryClient();
-    const { user: currentUser } = useAuth();
+    const confirm = useConfirm();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState<string>('all');
     const [branchFilter, setBranchFilter] = useState<string>('all');
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
     const { data: users = [], isLoading } = useQuery({
         queryKey: ['users'],
@@ -197,142 +236,148 @@ export default function UserManagementPage() {
         onError: () => toast.error('Failed to resend credentials'),
     });
 
-    // Filter users
-    const filteredUsers = users.filter((user: IUser) => {
-        const matchesSearch =
-            !searchQuery ||
-            `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase());
-
-        const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-
-        const matchesBranch = branchFilter === 'all' || user.branchId === branchFilter;
-
-        return matchesSearch && matchesRole && matchesBranch;
+    const resetPasswordMutation = useMutation({
+        mutationFn: userService.resetPassword,
+        onSuccess: () =>
+            toast.success('Password reset — new credentials sent via email'),
+        onError: () => toast.error('Failed to reset password'),
     });
 
-    const getRoleBadge = (role: string) => {
-        if (role === UserRole.ADMIN) {
-            return <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-white text-slate-900 uppercase tracking-widest shadow-[0_2px_10px_rgba(255,255,255,0.1)]">Admin</span>;
-        }
-        const labels: Record<string, string> = {
-            [UserRole.MANAGER]: 'Manager',
-            [UserRole.ACCOUNTANT]: 'Accountant',
-            [UserRole.CASHIER]: 'Cashier',
-        };
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-transparent text-slate-300 border border-white/20">{labels[role] || role}</span>;
-    };
+    const filteredUsers = useMemo(() => {
+        const q = searchQuery.toLowerCase();
+        return users.filter((user: IUser) => {
+            const matchesSearch =
+                !q ||
+                `${user.firstName} ${user.lastName}`.toLowerCase().includes(q) ||
+                user.email.toLowerCase().includes(q);
+            const matchesRole =
+                roleFilter === 'all' || user.role === roleFilter;
+            const matchesBranch =
+                branchFilter === 'all' || user.branchId === branchFilter;
+            return matchesSearch && matchesRole && matchesBranch;
+        });
+    }, [users, searchQuery, roleFilter, branchFilter]);
 
-    const getStatusIndicator = (user: IUser) => {
-        if (!user.isVerified) {
-            return (
-                <span className="flex items-center gap-1.5 text-amber-400 text-[13px]">
-                    <span className="w-2 h-2 rounded-full bg-amber-400/60"></span>
-                    Pending
-                </span>
-            );
-        }
-        return (
-            <span className="flex items-center gap-1.5 text-white font-medium text-[13px]">
-                <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
-                Verified
-            </span>
-        );
-    };
+    const activeCount = users.filter((u: IUser) => u.isVerified).length;
 
-    const getBranchName = (branchId: string) => {
+    const getBranchName = (branchId: string | null) => {
+        if (!branchId) return '—';
         const branch = branches.find((b: IBranch) => b.id === branchId);
         return branch?.name || '—';
     };
 
-    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const selectClass =
+        'h-9 bg-canvas border border-border text-text-1 text-sm rounded-md px-3 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/25 cursor-pointer transition-colors';
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="animate-in fade-in duration-500">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">User Management</h1>
-                    <p className="text-sm text-slate-400 mt-1">Manage team members, roles, and branch access</p>
+                    <h1 className="text-2xl font-bold text-text-1 tracking-tight">
+                        Users
+                    </h1>
+                    <p className="text-sm text-text-2 mt-1">
+                        {activeCount} active{' '}
+                        {activeCount === 1 ? 'member' : 'members'} ·{' '}
+                        {users.length} total
+                    </p>
                 </div>
 
-                <button
+                <Button
                     onClick={() => setShowCreateModal(true)}
-                    className="h-9 px-4 rounded-lg bg-white text-slate-900 text-sm font-bold hover:shadow-[0_4px_12px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 transition-all flex items-center gap-2 self-start sm:self-auto"
+                    disabled={branches.length === 0}
                 >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-                        <line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
-                    </svg>
-                    Create User
-                </button>
+                    <UserPlus size={14} />
+                    Invite user
+                </Button>
             </div>
 
-            {/* Main Content Card */}
-            <div className="bg-[#111111] border border-white/10 rounded-2xl shadow-2xl flex flex-col">
-
-                {/* Table Controls */}
-                <div className="p-5 border-b border-white/10 flex flex-col sm:flex-row items-center gap-4 justify-between bg-white/[0.02] rounded-t-2xl">
-                    <div className="relative w-full sm:w-80">
-                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
-                        </svg>
+            {/* Filter row */}
+            <Card className="mb-4">
+                <div className="p-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+                    <div className="relative w-full sm:max-w-xs">
+                        <Search
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3"
+                            size={14}
+                        />
                         <input
                             type="text"
-                            placeholder="Search by name or email..."
+                            placeholder="Search name or email…"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full h-9 pl-9 pr-4 bg-[#0a0a0a] border border-white/10 rounded-lg text-sm text-slate-200 outline-none focus:border-white focus:ring-[3px] focus:ring-white/20 transition-colors placeholder:text-slate-600"
+                            className="w-full h-9 pl-9 pr-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/25 placeholder:text-text-3 transition-colors"
                         />
                     </div>
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="flex items-center gap-3">
                         <select
                             value={roleFilter}
                             onChange={(e) => setRoleFilter(e.target.value)}
-                            className="h-9 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg px-3 outline-none focus:border-white/30 cursor-pointer"
+                            className={selectClass}
                         >
-                            <option value="all">All Roles</option>
+                            <option value="all">All roles</option>
                             <option value={UserRole.ADMIN}>Admin</option>
                             <option value={UserRole.MANAGER}>Manager</option>
-                            <option value={UserRole.ACCOUNTANT}>Accountant</option>
                             <option value={UserRole.CASHIER}>Cashier</option>
                         </select>
                         <select
                             value={branchFilter}
                             onChange={(e) => setBranchFilter(e.target.value)}
-                            className="h-9 bg-[#0a0a0a] border border-white/10 text-slate-300 text-sm rounded-lg px-3 outline-none focus:border-white/30 cursor-pointer"
+                            className={selectClass}
                         >
-                            <option value="all">All Branches</option>
+                            <option value="all">All branches</option>
                             {branches.map((branch: IBranch) => (
-                                <option key={branch.id} value={branch.id}>{branch.name}</option>
+                                <option key={branch.id} value={branch.id}>
+                                    {branch.name}
+                                </option>
                             ))}
                         </select>
                     </div>
                 </div>
+            </Card>
 
-                {/* Users Table */}
+            {/* Users table */}
+            <Card>
                 <div className="overflow-auto max-h-[calc(100vh-320px)]">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-20">
-                            <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                            <div className="w-6 h-6 border-2 border-border border-t-primary rounded-full animate-spin" />
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-white/10 text-[11px] uppercase tracking-widest text-slate-500 bg-[#111111]">
-                                    <th className="px-6 py-4 font-semibold whitespace-nowrap sticky top-0 bg-[#111111] z-[1]">User</th>
-                                    <th className="px-6 py-4 font-semibold whitespace-nowrap sticky top-0 bg-[#111111] z-[1]">Role</th>
-                                    <th className="px-6 py-4 font-semibold whitespace-nowrap sticky top-0 bg-[#111111] z-[1]">Status</th>
-                                    <th className="px-6 py-4 font-semibold whitespace-nowrap sticky top-0 bg-[#111111] z-[1]">Branch</th>
-                                    <th className="px-6 py-4 font-semibold whitespace-nowrap sticky top-0 bg-[#111111] z-[1]">Created</th>
-                                    <th className="px-6 py-4 font-semibold text-center sticky top-0 bg-[#111111] z-[1]"></th>
+                            <thead className="sticky top-0 bg-surface-2 z-[1]">
+                                <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 border-b border-border">
+                                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
+                                        User
+                                    </th>
+                                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
+                                        Email
+                                    </th>
+                                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
+                                        Role
+                                    </th>
+                                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
+                                        Branch
+                                    </th>
+                                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
+                                        Status
+                                    </th>
+                                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
+                                        Joined
+                                    </th>
+                                    <th className="px-5 py-2.5 font-semibold text-right" />
                                 </tr>
                             </thead>
                             <tbody className="text-sm">
                                 {filteredUsers.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-16 text-center text-slate-500">
-                                            {searchQuery || roleFilter !== 'all' || branchFilter !== 'all'
+                                        <td
+                                            colSpan={7}
+                                            className="px-5 py-16 text-center text-text-3"
+                                        >
+                                            {searchQuery ||
+                                            roleFilter !== 'all' ||
+                                            branchFilter !== 'all'
                                                 ? 'No users match your filters'
                                                 : 'No users found'}
                                         </td>
@@ -341,57 +386,105 @@ export default function UserManagementPage() {
                                     filteredUsers.map((user: IUser) => (
                                         <tr
                                             key={user.id}
-                                            className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group cursor-default"
+                                            className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors group"
                                         >
-                                            <td className="px-6 py-4">
+                                            <td className="px-5 py-3">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 flex-shrink-0 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white shadow-inner">
-                                                        {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-slate-200 font-medium">{user.firstName} {user.lastName}</span>
-                                                        <span className="text-[11px] text-slate-500">{user.email}</span>
-                                                    </div>
+                                                    <Avatar
+                                                        name={`${user.firstName} ${user.lastName}`}
+                                                        src={user.avatarUrl ?? undefined}
+                                                        size={32}
+                                                    />
+                                                    <span className="text-text-1 font-medium">
+                                                        {user.firstName}{' '}
+                                                        {user.lastName}
+                                                    </span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">{getRoleBadge(user.role)}</td>
-                                            <td className="px-6 py-4">{getStatusIndicator(user)}</td>
-                                            <td className="px-6 py-4 text-slate-400">{getBranchName(user.branchId)}</td>
-                                            <td className="px-6 py-4 text-slate-500 text-[13px]">
-                                                {new Date(user.createdAt).toLocaleDateString()}
+                                            <td className="px-5 py-3 text-text-2 text-[13px]">
+                                                {user.email}
                                             </td>
-                                            <td className="px-6 py-4 text-center relative">
+                                            <td className="px-5 py-3">
+                                                <RolePill role={user.role} />
+                                            </td>
+                                            <td className="px-5 py-3 text-text-2 text-[13px]">
+                                                {getBranchName(user.branchId)}
+                                            </td>
+                                            <td className="px-5 py-3">
+                                                <StatusBadge user={user} />
+                                            </td>
+                                            <td className="px-5 py-3 text-text-3 text-[13px]">
+                                                {new Date(
+                                                    user.createdAt,
+                                                ).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-5 py-3 text-right relative">
                                                 <button
-                                                    onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}
-                                                    className="p-1.5 text-slate-500 hover:text-white rounded-md hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setOpenMenuId(
+                                                            openMenuId === user.id
+                                                                ? null
+                                                                : user.id,
+                                                        )
+                                                    }
+                                                    className="p-1.5 text-text-3 hover:text-text-1 rounded-md hover:bg-surface-2 transition-colors"
+                                                    aria-label="Actions"
                                                 >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" />
-                                                    </svg>
+                                                    <MoreHorizontal size={16} />
                                                 </button>
                                                 {openMenuId === user.id && (
-                                                    <div className="absolute right-6 top-12 z-10 w-48 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl py-1">
+                                                    <div className="absolute right-3 top-10 z-10 w-48 bg-surface border border-border rounded-md shadow-xl py-1">
                                                         {!user.isVerified && (
                                                             <button
+                                                                type="button"
                                                                 onClick={() => {
-                                                                    resendMutation.mutate(user.id);
-                                                                    setOpenMenuId(null);
+                                                                    resendMutation.mutate(
+                                                                        user.id,
+                                                                    );
+                                                                    setOpenMenuId(
+                                                                        null,
+                                                                    );
                                                                 }}
-                                                                className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                                                                className="w-full text-left px-4 py-2 text-sm text-text-1 hover:bg-surface-2 transition-colors"
                                                             >
-                                                                Resend Credentials
+                                                                Resend credentials
                                                             </button>
                                                         )}
                                                         <button
-                                                            onClick={() => {
-                                                                if (confirm(`Delete ${user.firstName} ${user.lastName}?`)) {
+                                                            type="button"
+                                                            onClick={async () => {
+                                                                setOpenMenuId(null);
+                                                                const ok = await confirm({
+                                                                    title: 'Reset password?',
+                                                                    body: `Reset password for ${user.firstName} ${user.lastName}? A new temporary password will be emailed and they'll need to change it on next login.`,
+                                                                    confirmLabel: 'Reset password',
+                                                                });
+                                                                if (ok) {
+                                                                    resetPasswordMutation.mutate(user.id);
+                                                                }
+                                                            }}
+                                                            className="w-full text-left px-4 py-2 text-sm text-text-1 hover:bg-surface-2 transition-colors"
+                                                        >
+                                                            Reset password
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={async () => {
+                                                                setOpenMenuId(null);
+                                                                const ok = await confirm({
+                                                                    title: 'Delete user?',
+                                                                    body: `Permanently delete ${user.firstName} ${user.lastName}. This can't be undone.`,
+                                                                    confirmLabel: 'Delete user',
+                                                                    tone: 'danger',
+                                                                });
+                                                                if (ok) {
                                                                     deleteMutation.mutate(user.id);
                                                                 }
-                                                                setOpenMenuId(null);
                                                             }}
-                                                            className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                                                            className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-danger-soft transition-colors"
                                                         >
-                                                            Delete User
+                                                            Delete user
                                                         </button>
                                                     </div>
                                                 )}
@@ -403,21 +496,20 @@ export default function UserManagementPage() {
                         </table>
                     )}
                 </div>
-
-                {/* Footer */}
-                <div className="p-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-500 bg-[#0a0a0a]/50 rounded-b-2xl">
-                    <span>Showing {filteredUsers.length} of {users.length} users</span>
+                <div className="px-5 py-3 border-t border-border flex items-center justify-between text-xs text-text-3 bg-surface-2">
+                    <span>
+                        Showing {filteredUsers.length} of {users.length} users
+                    </span>
                 </div>
-            </div>
+            </Card>
 
-            {/* Create User Modal */}
-            {showCreateModal && branches.length > 0 && currentUser && (
+            {showCreateModal && branches.length > 0 && (
                 <CreateUserModal
                     branches={branches}
-                    currentUserRole={currentUser.role as UserRole}
-                    currentUserBranchId={currentUser.branchId}
                     onClose={() => setShowCreateModal(false)}
-                    onCreated={() => queryClient.invalidateQueries({ queryKey: ['users'] })}
+                    onCreated={() =>
+                        queryClient.invalidateQueries({ queryKey: ['users'] })
+                    }
                 />
             )}
         </div>

@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_GUARD } from '@nestjs/core';
 import { getDatabaseConfig } from '@common/config/database.config';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { AuthModule } from '@auth/auth.module';
 import { UsersModule } from '@users/users.module';
 import { BranchesModule } from '@branches/branches.module';
@@ -10,17 +12,25 @@ import { InventoryModule } from '@inventory/inventory.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
-import { SuperAdminModule } from '@super-admin/super-admin.module';
+import { AdminPortalModule } from '@admin-portal/admin-portal.module';
+import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
+import { CustomerRequestsModule } from '@/modules/customer-requests/customer-requests.module';
+import { ShopModule } from '@/modules/shop/shop.module';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { Notification } from '@notifications/entities/notification.entity';
+import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
+import { CustomerRequest } from '@/modules/customer-requests/entities/customer-request.entity';
+import { CustomerRequestItem } from '@/modules/customer-requests/entities/customer-request-item.entity';
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
+import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
 
 import appConfig from '@common/config/app.config';
 
@@ -42,10 +52,15 @@ import appConfig from '@common/config/app.config';
       Inventory,
       Transaction,
       TransactionItem,
+      IdempotencyKey,
       LedgerEntry,
       Expense,
       Notification,
+      StockTransferRequest,
+      CustomerRequest,
+      CustomerRequestItem,
     ]),
+    CloudinaryModule,
     AuthModule,
     UsersModule,
     BranchesModule,
@@ -54,8 +69,11 @@ import appConfig from '@common/config/app.config';
     PosModule,
     AccountingModule,
     NotificationsModule,
-    SuperAdminModule,
+    AdminPortalModule,
+    StockTransfersModule,
+    CustomerRequestsModule,
+    ShopModule,
   ],
-  providers: [AdminSeedService],
+  providers: [AdminSeedService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
 export class AppModule {}
