@@ -6,7 +6,7 @@ import { inventoryService } from '@/services/inventory.service';
 import { queryKeys } from '@/lib/queryKeys';
 
 const SEARCH_DEBOUNCE_MS = 300;
-const PAGE_LIMIT = 10;
+export const INVENTORY_PAGE_LIMIT = 10;
 
 export function useInventory() {
     const { user } = useAuth();
@@ -42,7 +42,7 @@ export function useInventory() {
         category: category || undefined,
         stockStatus: stockStatus || undefined,
         page,
-        limit: PAGE_LIMIT,
+        limit: INVENTORY_PAGE_LIMIT,
     };
 
     const inventoryQuery = useInventoryByBranchQuery(user?.branchId, params);
