@@ -6,38 +6,37 @@ import { ProductTypeahead } from './ProductTypeahead';
 const INPUT_CLASS =
     'w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all';
 
+export interface TransferHistoryFilterValues {
+    selectedStatuses: TransferStatus[];
+    from: string;
+    to: string;
+    selectedProduct: IProduct | null;
+    branchId: string;
+}
+
+export interface TransferHistoryFilterActions {
+    toggleStatus: (status: TransferStatus) => void;
+    setFrom: (v: string) => void;
+    setTo: (v: string) => void;
+    selectProduct: (id: string) => void;
+    clearProduct: () => void;
+    setBranchId: (v: string) => void;
+}
+
 interface TransferHistoryFiltersProps {
     isAdmin: boolean;
-    selectedStatuses: TransferStatus[];
-    onToggleStatus: (status: TransferStatus) => void;
-    from: string;
-    setFrom: (v: string) => void;
-    to: string;
-    setTo: (v: string) => void;
+    filters: TransferHistoryFilterValues;
+    actions: TransferHistoryFilterActions;
     products: IProduct[];
-    selectedProduct: IProduct | null;
-    onSelectProduct: (id: string) => void;
-    onClearProduct: () => void;
     branches: IBranchWithMeta[];
-    branchId: string;
-    setBranchId: (v: string) => void;
 }
 
 export function TransferHistoryFilters({
     isAdmin,
-    selectedStatuses,
-    onToggleStatus,
-    from,
-    setFrom,
-    to,
-    setTo,
+    filters,
+    actions,
     products,
-    selectedProduct,
-    onSelectProduct,
-    onClearProduct,
     branches,
-    branchId,
-    setBranchId,
 }: TransferHistoryFiltersProps) {
     return (
         <div className="bg-surface border border-border rounded-md p-5 mb-6 space-y-4">
@@ -46,12 +45,12 @@ export function TransferHistoryFilters({
                     Status
                 </span>
                 {HISTORY_STATUSES.map((s) => {
-                    const isSelected = selectedStatuses.includes(s.key);
+                    const isSelected = filters.selectedStatuses.includes(s.key);
                     return (
                         <button
                             key={s.key}
                             type="button"
-                            onClick={() => onToggleStatus(s.key)}
+                            onClick={() => actions.toggleStatus(s.key)}
                             className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
                                 isSelected
                                     ? 'bg-primary text-text-inv shadow-sm'
@@ -76,9 +75,9 @@ export function TransferHistoryFilters({
                     <input
                         id="th-from"
                         type="date"
-                        value={from}
-                        max={to || undefined}
-                        onChange={(e) => setFrom(e.target.value)}
+                        value={filters.from}
+                        max={filters.to || undefined}
+                        onChange={(e) => actions.setFrom(e.target.value)}
                         className={INPUT_CLASS}
                     />
                 </div>
@@ -92,9 +91,9 @@ export function TransferHistoryFilters({
                     <input
                         id="th-to"
                         type="date"
-                        value={to}
-                        min={from || undefined}
-                        onChange={(e) => setTo(e.target.value)}
+                        value={filters.to}
+                        min={filters.from || undefined}
+                        onChange={(e) => actions.setTo(e.target.value)}
                         className={INPUT_CLASS}
                     />
                 </div>
@@ -104,9 +103,9 @@ export function TransferHistoryFilters({
                     </span>
                     <ProductTypeahead
                         products={products}
-                        selectedProduct={selectedProduct}
-                        onSelect={onSelectProduct}
-                        onClear={onClearProduct}
+                        selectedProduct={filters.selectedProduct}
+                        onSelect={actions.selectProduct}
+                        onClear={actions.clearProduct}
                     />
                 </div>
                 {isAdmin && (
@@ -119,8 +118,8 @@ export function TransferHistoryFilters({
                         </label>
                         <select
                             id="th-branch"
-                            value={branchId}
-                            onChange={(e) => setBranchId(e.target.value)}
+                            value={filters.branchId}
+                            onChange={(e) => actions.setBranchId(e.target.value)}
                             className={INPUT_CLASS}
                         >
                             <option value="">All branches</option>

@@ -19,19 +19,23 @@ export function TransferHistoryPage() {
 
             <TransferHistoryFilters
                 isAdmin={p.isAdmin}
-                selectedStatuses={f.selectedStatuses}
-                onToggleStatus={f.toggleStatus}
-                from={f.from}
-                setFrom={f.setFrom}
-                to={f.to}
-                setTo={f.setTo}
+                filters={{
+                    selectedStatuses: f.selectedStatuses,
+                    from: f.from,
+                    to: f.to,
+                    selectedProduct: p.selectedProduct,
+                    branchId: f.branchId,
+                }}
+                actions={{
+                    toggleStatus: f.toggleStatus,
+                    setFrom: f.setFrom,
+                    setTo: f.setTo,
+                    selectProduct: f.setProductId,
+                    clearProduct: () => f.setProductId(''),
+                    setBranchId: f.setBranchId,
+                }}
                 products={p.products}
-                selectedProduct={p.selectedProduct}
-                onSelectProduct={f.setProductId}
-                onClearProduct={() => f.setProductId('')}
                 branches={p.branches}
-                branchId={f.branchId}
-                setBranchId={f.setBranchId}
             />
 
             <TransferHistoryTable

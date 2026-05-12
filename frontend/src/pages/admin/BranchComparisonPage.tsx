@@ -41,14 +41,18 @@ export function BranchComparisonPage({
 
             <BranchComparisonFilters
                 branches={p.branches}
-                selectedIds={p.selectedIds}
-                onToggleBranch={p.toggleBranch}
-                startDate={p.startDate}
-                setStartDate={p.setStartDate}
-                endDate={p.endDate}
-                setEndDate={p.setEndDate}
+                filters={{
+                    selectedIds: p.selectedIds,
+                    startDate: p.startDate,
+                    endDate: p.endDate,
+                }}
+                actions={{
+                    toggleBranch: p.toggleBranch,
+                    setStartDate: p.setStartDate,
+                    setEndDate: p.setEndDate,
+                    run: p.handleRun,
+                }}
                 isFetching={p.isFetching}
-                onRun={p.handleRun}
             />
 
             {!p.submitted && (

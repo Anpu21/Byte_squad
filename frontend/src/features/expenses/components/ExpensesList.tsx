@@ -10,8 +10,6 @@ interface ExpensesListProps {
     isLoading: boolean;
     hasActiveFilter: boolean;
     canAdd: boolean;
-    isAdmin: boolean;
-    currentUserBranchId: string | null | undefined;
     showBranch: boolean;
     branchLabel: (id: string) => string;
     onAdd: () => void;
@@ -26,8 +24,6 @@ export function ExpensesList({
     isLoading,
     hasActiveFilter,
     canAdd,
-    isAdmin,
-    currentUserBranchId,
     showBranch,
     branchLabel,
     onAdd,
@@ -92,8 +88,6 @@ export function ExpensesList({
                 <li key={expense.id}>
                     <ExpenseRow
                         expense={expense}
-                        isAdmin={isAdmin}
-                        currentUserBranchId={currentUserBranchId}
                         showBranch={showBranch}
                         branchLabel={branchLabel}
                         onApprove={onApprove}

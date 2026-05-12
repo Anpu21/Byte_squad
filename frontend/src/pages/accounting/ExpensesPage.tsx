@@ -64,8 +64,6 @@ export function ExpensesPage() {
                         isLoading={p.isLoading}
                         hasActiveFilter={filters.hasActiveFilter}
                         canAdd={p.canAdd}
-                        isAdmin={p.isAdmin}
-                        currentUserBranchId={p.user?.branchId}
                         showBranch={p.isAdmin && filters.selectedBranchId === ''}
                         branchLabel={p.branchLabel}
                         onAdd={() => p.setShowAddModal(true)}

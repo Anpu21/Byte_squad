@@ -2,14 +2,14 @@ import { Building2, Check, Trash2, XCircle } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Pill from '@/components/ui/Pill';
 import StatusPill from '@/components/ui/StatusPill';
-import { ExpenseStatus } from '@/constants/enums';
+import { ExpenseStatus, UserRole } from '@/constants/enums';
+import { useAppSelector } from '@/store/hooks';
+import { selectCurrentUser } from '@/store/selectors/auth';
 import type { IExpense } from '@/types';
 import { formatCurrencyWhole } from '../lib/format';
 
 interface ExpenseRowProps {
     expense: IExpense;
-    isAdmin: boolean;
-    currentUserBranchId: string | null | undefined;
     showBranch: boolean;
     branchLabel: (id: string) => string;
     onApprove: (expense: IExpense) => void;
@@ -19,14 +19,16 @@ interface ExpenseRowProps {
 
 export function ExpenseRow({
     expense,
-    isAdmin,
-    currentUserBranchId,
     showBranch,
     branchLabel,
     onApprove,
     onReject,
     onDelete,
 }: ExpenseRowProps) {
+    const user = useAppSelector(selectCurrentUser);
+    const isAdmin = user?.role === UserRole.ADMIN;
+    const currentUserBranchId = user?.branchId;
+
     const date = new Date(expense.expenseDate);
     const day = date.toLocaleDateString('en-GB', { day: '2-digit' });
     const mon = date.toLocaleDateString('en-GB', { month: 'short' });

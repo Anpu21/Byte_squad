@@ -3,16 +3,24 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import type { IBranch } from '@/types';
 
+export interface BranchComparisonFilterValues {
+    selectedIds: string[];
+    startDate: string;
+    endDate: string;
+}
+
+export interface BranchComparisonFilterActions {
+    toggleBranch: (id: string) => void;
+    setStartDate: (v: string) => void;
+    setEndDate: (v: string) => void;
+    run: () => void;
+}
+
 interface BranchComparisonFiltersProps {
     branches: IBranch[];
-    selectedIds: string[];
-    onToggleBranch: (id: string) => void;
-    startDate: string;
-    setStartDate: (v: string) => void;
-    endDate: string;
-    setEndDate: (v: string) => void;
+    filters: BranchComparisonFilterValues;
+    actions: BranchComparisonFilterActions;
     isFetching: boolean;
-    onRun: () => void;
 }
 
 const INPUT_CLASS =
@@ -20,14 +28,9 @@ const INPUT_CLASS =
 
 export function BranchComparisonFilters({
     branches,
-    selectedIds,
-    onToggleBranch,
-    startDate,
-    setStartDate,
-    endDate,
-    setEndDate,
+    filters,
+    actions,
     isFetching,
-    onRun,
 }: BranchComparisonFiltersProps) {
     return (
         <Card className="p-5 mb-6">
@@ -43,12 +46,14 @@ export function BranchComparisonFilters({
                             </p>
                         ) : (
                             branches.map((b) => {
-                                const active = selectedIds.includes(b.id);
+                                const active = filters.selectedIds.includes(
+                                    b.id,
+                                );
                                 return (
                                     <button
                                         key={b.id}
                                         type="button"
-                                        onClick={() => onToggleBranch(b.id)}
+                                        onClick={() => actions.toggleBranch(b.id)}
                                         aria-pressed={active}
                                         className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium border transition-colors ${
                                             active
@@ -78,8 +83,8 @@ export function BranchComparisonFilters({
                         <input
                             id="bc-start"
                             type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
+                            value={filters.startDate}
+                            onChange={(e) => actions.setStartDate(e.target.value)}
                             className={INPUT_CLASS}
                         />
                     </div>
@@ -93,16 +98,18 @@ export function BranchComparisonFilters({
                         <input
                             id="bc-end"
                             type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
+                            value={filters.endDate}
+                            onChange={(e) => actions.setEndDate(e.target.value)}
                             className={INPUT_CLASS}
                         />
                     </div>
                     <div className="flex items-end">
                         <Button
                             type="button"
-                            onClick={onRun}
-                            disabled={selectedIds.length < 1 || isFetching}
+                            onClick={actions.run}
+                            disabled={
+                                filters.selectedIds.length < 1 || isFetching
+                            }
                             className="w-full"
                         >
                             <GitCompareArrows size={14} />
