@@ -1,22 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import QRCode from 'qrcode';
-import { Download, ExternalLink, MapPin } from 'lucide-react';
+import { ExternalLink, MapPin } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { CustomerRequestStatus, ICustomerRequest } from '@/types';
+import { ShopRequestQrPanel } from './ShopRequestQrPanel';
+import { ShopRequestItemsList } from './ShopRequestItemsList';
 
 interface RequestDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
     request: ICustomerRequest | null;
-}
-
-function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('en-LK', {
-        style: 'currency',
-        currency: 'LKR',
-    }).format(amount);
 }
 
 const STATUS_LABEL: Record<CustomerRequestStatus, string> = {
@@ -37,7 +32,7 @@ const STATUS_TONE: Record<CustomerRequestStatus, string> = {
     expired: 'bg-surface-2 text-text-2 border-border',
 };
 
-export default function RequestDetailsModal({
+export function RequestDetailsModal({
     isOpen,
     onClose,
     request,
@@ -86,37 +81,11 @@ export default function RequestDetailsModal({
             maxWidth="2xl"
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* QR panel */}
-                <div className="bg-primary rounded-md p-5 flex flex-col items-center">
-                    {qrSrc ? (
-                        <img
-                            src={qrSrc}
-                            alt={`QR code for request ${request.requestCode}`}
-                            className="w-48 h-48 bg-surface rounded-md"
-                        />
-                    ) : (
-                        <div className="w-48 h-48 flex items-center justify-center text-xs text-text-inv/70">
-                            Generating QR…
-                        </div>
-                    )}
-                    <p className="mt-3 text-[10px] uppercase tracking-widest text-text-inv/70">
-                        Code
-                    </p>
-                    <p className="font-mono text-base font-bold text-text-inv mt-0.5">
-                        {request.requestCode}
-                    </p>
-                    {qrSrc && (
-                        <a
-                            href={qrSrc}
-                            download={`${request.requestCode}.png`}
-                            className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-surface text-text-1 border border-border rounded-md hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/30"
-                        >
-                            <Download size={12} /> Download QR
-                        </a>
-                    )}
-                </div>
+                <ShopRequestQrPanel
+                    qrSrc={qrSrc}
+                    requestCode={request.requestCode}
+                />
 
-                {/* Details panel */}
                 <div className="flex flex-col">
                     <div className="flex items-center justify-between mb-3">
                         <span
@@ -148,53 +117,11 @@ export default function RequestDetailsModal({
                         </div>
                     )}
 
-                    <div className="border-t border-border pt-3 flex-1 overflow-y-auto max-h-[240px]">
-                        <p className="text-[10px] uppercase tracking-widest text-text-3 mb-2">
-                            Items
-                        </p>
-                        <ul className="divide-y divide-border">
-                            {request.items.map((item) => (
-                                <li
-                                    key={item.id}
-                                    className="flex items-center justify-between gap-3 py-2"
-                                >
-                                    <div className="min-w-0">
-                                        <p className="text-[13px] text-text-1 truncate">
-                                            {item.product?.name ?? 'Item'}
-                                        </p>
-                                        <p className="text-[11px] text-text-3">
-                                            {formatCurrency(
-                                                item.unitPriceSnapshot,
-                                            )}{' '}
-                                            × {item.quantity}
-                                        </p>
-                                    </div>
-                                    <p className="text-[13px] font-medium text-text-1 tabular-nums whitespace-nowrap">
-                                        {formatCurrency(
-                                            item.unitPriceSnapshot *
-                                                item.quantity,
-                                        )}
-                                    </p>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div className="border-t border-border mt-3 pt-3 flex items-center justify-between">
-                        <p className="text-xs text-text-3">Estimated total</p>
-                        <p className="text-base font-bold text-text-1 tabular-nums">
-                            {formatCurrency(request.estimatedTotal)}
-                        </p>
-                    </div>
-
-                    {request.note && (
-                        <div className="mt-3 px-3 py-2 rounded-md bg-surface-2 border border-border text-[12px] text-text-2">
-                            <span className="font-semibold text-text-1">
-                                Note:{' '}
-                            </span>
-                            {request.note}
-                        </div>
-                    )}
+                    <ShopRequestItemsList
+                        items={request.items}
+                        estimatedTotal={request.estimatedTotal}
+                        note={request.note}
+                    />
 
                     <Link
                         to={fullPagePath}

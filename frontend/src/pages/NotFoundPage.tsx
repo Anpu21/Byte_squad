@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
-export default function NotFoundPage() {
+export function NotFoundPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
 
