@@ -6,8 +6,17 @@ interface OtpCodeFieldProps {
     value: string;
     onChange: (next: string) => void;
     error?: string;
+    hint?: string;
     length?: number;
+    size?: 'md' | 'lg';
+    autoFocus?: boolean;
+    required?: boolean;
 }
+
+const SIZES = {
+    md: 'h-12 text-xl',
+    lg: 'h-14 text-2xl',
+} as const;
 
 export function OtpCodeField({
     id = 'otp-code',
@@ -15,7 +24,11 @@ export function OtpCodeField({
     value,
     onChange,
     error,
+    hint,
     length = 6,
+    size = 'md',
+    autoFocus = false,
+    required = false,
 }: OtpCodeFieldProps) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [focused, setFocused] = useState(false);
@@ -48,6 +61,8 @@ export function OtpCodeField({
                     }
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
+                    required={required}
+                    autoFocus={autoFocus}
                     aria-label={`${length}-digit verification code`}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-text"
                 />
@@ -58,7 +73,7 @@ export function OtpCodeField({
                         return (
                             <div
                                 key={i}
-                                className={`flex-1 h-12 mono text-xl font-semibold flex items-center justify-center rounded-md border bg-surface text-text-1 transition-colors ${
+                                className={`flex-1 ${SIZES[size]} mono font-semibold flex items-center justify-center rounded-md border bg-surface text-text-1 transition-colors ${
                                     isActive
                                         ? 'border-primary ring-[3px] ring-primary/30'
                                         : isFilled
@@ -74,6 +89,9 @@ export function OtpCodeField({
             </div>
             {error && (
                 <p className="mt-1.5 text-xs text-danger font-medium">{error}</p>
+            )}
+            {hint && !error && (
+                <p className="caption text-xs text-text-2 mt-2">{hint}</p>
             )}
         </div>
     );
