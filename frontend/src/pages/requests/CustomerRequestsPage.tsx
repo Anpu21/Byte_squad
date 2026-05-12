@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useConfirm } from '@/hooks/useConfirm';
 import { UserRole } from '@/constants/enums';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import { queryKeys } from '@/lib/queryKeys';
 import type { CustomerRequestStatus } from '@/types';
 import KpiCard from '@/components/ui/KpiCard';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -106,7 +107,7 @@ export default function CustomerRequestsPage() {
     // staff member's profile so a wrong branch assignment is visible at a
     // glance (vs the silent "0 rows" symptom that prompted this fix).
     const { data: profile } = useQuery({
-        queryKey: ['profile'],
+        queryKey: queryKeys.profile.self(),
         queryFn: profileService.getProfile,
         enabled: user?.role !== UserRole.ADMIN,
     });

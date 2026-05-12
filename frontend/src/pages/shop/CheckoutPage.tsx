@@ -13,6 +13,7 @@ import { shopProductsService } from '@/services/shop-products.service';
 import { customerRequestsService } from '@/services/customer-requests.service';
 import { useAuth } from '@/hooks/useAuth';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import { queryKeys } from '@/lib/queryKeys';
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-LK', {
@@ -34,7 +35,7 @@ export default function CheckoutPage() {
     const total = selectCartTotal(items);
 
     const { data: branches = [] } = useQuery({
-        queryKey: ['shop-branches'],
+        queryKey: queryKeys.shop.branches(),
         queryFn: shopProductsService.listBranches,
     });
 

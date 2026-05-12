@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { adminService } from '@/services/admin.service';
 import { userService } from '@/services/user.service';
+import { queryKeys } from '@/lib/queryKeys';
 import type { IBranchComparisonEntry } from '@/types';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -56,7 +57,7 @@ export default function BranchComparisonPage({
     embedded = false,
 }: BranchComparisonPageProps = {}) {
     const { data: branches = [] } = useQuery({
-        queryKey: ['branches'],
+        queryKey: queryKeys.branches.all(),
         queryFn: userService.getBranches,
     });
 

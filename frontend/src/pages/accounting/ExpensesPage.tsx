@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useConfirm } from '@/hooks/useConfirm';
 import { accountingService } from '@/services/accounting.service';
 import { adminService } from '@/services/admin.service';
+import { queryKeys } from '@/lib/queryKeys';
 import type { IExpense, IBranchWithMeta } from '@/types';
 import { ExpenseStatus, UserRole } from '@/constants/enums';
 import Card from '@/components/ui/Card';
@@ -94,7 +95,7 @@ export default function ExpensesPage() {
     });
 
     const { data: branches = [] } = useQuery<IBranchWithMeta[]>({
-        queryKey: ['admin-branches'],
+        queryKey: queryKeys.admin.branches(),
         queryFn: adminService.listBranches,
         enabled: isAdmin,
     });

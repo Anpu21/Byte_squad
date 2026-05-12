@@ -13,6 +13,7 @@ import { setUserBranch } from '@/store/slices/authSlice';
 import { useAuth } from '@/hooks/useAuth';
 import { useConfirm } from '@/hooks/useConfirm';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import { queryKeys } from '@/lib/queryKeys';
 import type { IShopProduct, ShopStockStatus } from '@/types';
 import ProductImage from '@/components/shop/ProductImage';
 
@@ -55,7 +56,7 @@ export default function CatalogPage() {
     const [category, setCategory] = useState<string>('');
 
     const { data: branches = [], isLoading: branchesLoading } = useQuery({
-        queryKey: ['shop-branches'],
+        queryKey: queryKeys.shop.branches(),
         queryFn: shopProductsService.listBranches,
     });
 

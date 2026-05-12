@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '@/services/admin.service';
+import { queryKeys } from '@/lib/queryKeys';
 import { useConfirm } from '@/hooks/useConfirm';
 import Modal from '@/components/ui/Modal';
 import type {
@@ -131,13 +132,13 @@ export default function BranchManagementPage({
     const [editing, setEditing] = useState<EditingBranch>(null);
 
     const { data: branches = [], isLoading } = useQuery({
-        queryKey: ['admin-branches'],
+        queryKey: queryKeys.admin.branches(),
         queryFn: adminService.listBranches,
     });
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: ['admin-branches'] });
-        queryClient.invalidateQueries({ queryKey: ['admin-overview'] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.admin.branches() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.admin.overview() });
     };
 
     const toggleMutation = useMutation({

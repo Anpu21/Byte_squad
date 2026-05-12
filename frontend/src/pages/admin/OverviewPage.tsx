@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminService } from '@/services/admin.service';
+import { queryKeys } from '@/lib/queryKeys';
 import type { IOverviewResponse, IOverviewAlert } from '@/types';
 
 function formatCurrency(amount: number) {
@@ -28,7 +29,7 @@ interface OverviewPageProps {
 
 export default function OverviewPage({ embedded = false }: OverviewPageProps = {}) {
     const { data, isLoading } = useQuery<IOverviewResponse>({
-        queryKey: ['admin-overview'],
+        queryKey: queryKeys.admin.overview(),
         queryFn: adminService.getOverview,
         refetchInterval: 30000,
     });

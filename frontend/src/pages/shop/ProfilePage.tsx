@@ -16,6 +16,7 @@ import { profileService } from '@/services/profile.service';
 import { authService } from '@/services/auth.service';
 import { userService } from '@/services/user.service';
 import { shopProductsService } from '@/services/shop-products.service';
+import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/hooks/useAuth';
 import { setUser, setUserBranch } from '@/store/slices/authSlice';
 import { clearShopCart } from '@/store/slices/shopCartSlice';
@@ -29,7 +30,7 @@ export default function CustomerProfilePage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { data: profile, isLoading } = useQuery<IUserProfile>({
-        queryKey: ['profile'],
+        queryKey: queryKeys.profile.self(),
         queryFn: profileService.getProfile,
     });
 
@@ -94,7 +95,7 @@ export default function CustomerProfilePage() {
             dispatch(setUserBranch(branchId));
             // Stale prices/availability — drop any cart items from the old branch.
             dispatch(clearShopCart());
-            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.profile.self() });
             toast.success('Pickup branch updated');
         },
         onError: (err: unknown) => {

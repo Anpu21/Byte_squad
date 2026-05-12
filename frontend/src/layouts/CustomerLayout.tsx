@@ -21,6 +21,7 @@ import {
     toggleCartDrawer,
 } from '@/store/slices/shopCartSlice';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import { queryKeys } from '@/lib/queryKeys';
 import { profileService } from '@/services/profile.service';
 import CartDrawer from '@/components/shop/CartDrawer';
 import Logo from '@/components/ui/Logo';
@@ -46,7 +47,7 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
     const menuRef = useRef<HTMLDivElement>(null);
 
     const { data: profile } = useQuery({
-        queryKey: ['profile'],
+        queryKey: queryKeys.profile.self(),
         queryFn: profileService.getProfile,
         enabled: isAuthenticated && user?.role === UserRole.CUSTOMER,
         staleTime: 60_000,

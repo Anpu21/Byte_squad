@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, UserPlus, MoreHorizontal } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { userService } from '@/services/user.service';
+import { queryKeys } from '@/lib/queryKeys';
 import { UserRole } from '@/constants/enums';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { IUser, IBranch, IUserCreatePayload } from '@/types';
@@ -217,7 +218,7 @@ export default function UserManagementPage() {
     });
 
     const { data: branches = [] } = useQuery({
-        queryKey: ['branches'],
+        queryKey: queryKeys.branches.all(),
         queryFn: userService.getBranches,
     });
 

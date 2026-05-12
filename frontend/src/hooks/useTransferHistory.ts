@@ -1,77 +1,59 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { stockTransfersService } from '@/services/stock-transfers.service';
-import type {
-    IStockTransferRequest,
-    IListTransferHistoryParams,
-} from '@/types';
+import { queryKeys } from '@/lib/queryKeys';
+import type { IListTransferHistoryParams } from '@/types';
 
 interface UseTransferHistoryOptions {
     initialFilters?: IListTransferHistoryParams;
     autoFetch?: boolean;
 }
 
+const PAGE_LIMIT = 20;
+
 export function useTransferHistory({
     initialFilters,
     autoFetch = true,
 }: UseTransferHistoryOptions = {}) {
-    const [items, setItems] = useState<IStockTransferRequest[]>([]);
-    const [total, setTotal] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
+    const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
     const [filters, setFilters] = useState<IListTransferHistoryParams>(
         initialFilters ?? {},
     );
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
-    const fetcher = useCallback(
-        async (queryParams: IListTransferHistoryParams) => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const result = await stockTransfersService.getHistory(
-                    queryParams,
-                );
-                setItems(result.items ?? []);
-                setTotal(result.total ?? 0);
-                setTotalPages(result.totalPages ?? 0);
-            } catch {
-                setError('Failed to load transfer history');
-            } finally {
-                setIsLoading(false);
-            }
-        },
-        [],
-    );
+    const fullParams: IListTransferHistoryParams = {
+        ...filters,
+        page,
+        limit: PAGE_LIMIT,
+    };
 
-    useEffect(() => {
-        if (autoFetch) {
-            fetcher({ ...filters, page, limit: 20 });
-        }
-    }, [autoFetch, fetcher, filters, page]);
+    const query = useQuery({
+        queryKey: queryKeys.stockTransfers.history(fullParams),
+        queryFn: () => stockTransfersService.getHistory(fullParams),
+        enabled: autoFetch,
+    });
 
-    const updateFilters = useCallback(
-        (next: IListTransferHistoryParams) => {
-            setFilters(next);
-            setPage(1);
-        },
-        [],
-    );
+    const updateFilters = useCallback((next: IListTransferHistoryParams) => {
+        setFilters(next);
+        setPage(1);
+    }, []);
 
-    const refetch = useCallback(() => {
-        fetcher({ ...filters, page, limit: 20 });
-    }, [fetcher, filters, page]);
+    const refetch = () => {
+        queryClient.invalidateQueries({
+            queryKey: queryKeys.stockTransfers.history(fullParams),
+        });
+    };
 
     return {
-        items,
-        total,
-        totalPages,
+        items: query.data?.items ?? [],
+        total: query.data?.total ?? 0,
+        totalPages: query.data?.totalPages ?? 0,
         page,
         setPage,
         filters,
         updateFilters,
-        isLoading,
-        error,
+        isLoading: query.isLoading,
+        error: query.error ? 'Failed to load transfer history' : null,
         refetch,
     };
 }

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { profileService } from '@/services/profile.service';
 import { authService } from '@/services/auth.service';
+import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import type { IUserProfile } from '@/types';
@@ -13,7 +14,7 @@ export default function ProfilePage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { data: profile, isLoading } = useQuery<IUserProfile>({
-        queryKey: ['profile'],
+        queryKey: queryKeys.profile.self(),
         queryFn: profileService.getProfile,
     });
 
@@ -32,7 +33,7 @@ export default function ProfilePage() {
         mutationFn: (data: { firstName?: string; lastName?: string }) =>
             profileService.updateProfile(data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.profile.self() });
             toast.success('Profile updated');
         },
         onError: () => toast.error('Failed to update profile'),
@@ -41,7 +42,7 @@ export default function ProfilePage() {
     const avatarMutation = useMutation({
         mutationFn: (file: File) => profileService.uploadAvatar(file),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.profile.self() });
             toast.success('Avatar updated');
         },
         onError: () => toast.error('Failed to upload avatar. Max 2MB, images only.'),
