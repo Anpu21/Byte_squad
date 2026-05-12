@@ -1,7 +1,7 @@
 import type { IExpense } from '@/types';
 import { ExpenseStatus } from '@/constants/enums';
 import type { StatusFilter } from '../types/status-filter.type';
-import ExpenseRadioRow from './ExpenseRadioRow';
+import { ExpenseRadioRow } from './ExpenseRadioRow';
 
 interface ExpenseStatusFilterProps {
     expenses: IExpense[];
@@ -16,7 +16,7 @@ const STATUS_OPTIONS: { key: StatusFilter; label: string }[] = [
     { key: ExpenseStatus.REJECTED, label: 'Rejected' },
 ];
 
-export default function ExpenseStatusFilter({
+export function ExpenseStatusFilter({
     expenses,
     selected,
     onChange,

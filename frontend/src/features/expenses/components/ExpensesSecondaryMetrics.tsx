@@ -7,7 +7,7 @@ interface ExpensesSecondaryMetricsProps {
     largestCategory: { name: string; amount: number } | null;
 }
 
-export default function ExpensesSecondaryMetrics({
+export function ExpensesSecondaryMetrics({
     total,
     pendingCount,
     approvedCount,

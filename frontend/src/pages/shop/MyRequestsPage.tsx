@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import toast from 'react-hot-toast';
 import { Eye, ScrollText } from 'lucide-react';
 import { customerRequestsService } from '@/services/customer-requests.service';
 import { useConfirm } from '@/hooks/useConfirm';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import RequestDetailsModal from '@/components/shop/RequestDetailsModal';
+import { RequestDetailsModal } from '@/components/shop/RequestDetailsModal';
 import type { CustomerRequestStatus } from '@/types';
 
 function formatCurrency(amount: number) {
@@ -46,7 +47,7 @@ export default function MyRequestsPage() {
     const queryClient = useQueryClient();
     const confirm = useConfirm();
     const { data: requests = [], isLoading } = useQuery({
-        queryKey: ['my-customer-requests'],
+        queryKey: queryKeys.customerRequests.my(),
         queryFn: customerRequestsService.listMine,
     });
     const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
@@ -68,7 +69,7 @@ export default function MyRequestsPage() {
             await customerRequestsService.cancelMine(id);
             toast.success('Request cancelled');
             await queryClient.invalidateQueries({
-                queryKey: ['my-customer-requests'],
+                queryKey: queryKeys.customerRequests.my(),
             });
         } catch {
             toast.error('Could not cancel');

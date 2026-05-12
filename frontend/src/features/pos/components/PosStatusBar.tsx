@@ -4,7 +4,7 @@ interface PosStatusBarProps {
     onCancelPendingQty: () => void;
 }
 
-export default function PosStatusBar({
+export function PosStatusBar({
     scanStatus,
     pendingQty,
     onCancelPendingQty,

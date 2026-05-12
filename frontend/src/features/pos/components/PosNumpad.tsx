@@ -28,7 +28,7 @@ const MODE_LABEL: Record<PadMode, string> = {
 
 const NUMERIC_KEYS = ['7', '8', '9', 'C', '4', '5', '6', '.', '1', '2', '3', ''] as const;
 
-export default function PosNumpad({
+export function PosNumpad({
     padMode,
     padValue,
     customName,

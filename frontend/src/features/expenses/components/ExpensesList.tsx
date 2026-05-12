@@ -3,7 +3,7 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
 import type { IExpense } from '@/types';
-import ExpenseRow from './ExpenseRow';
+import { ExpenseRow } from './ExpenseRow';
 
 interface ExpensesListProps {
     expenses: IExpense[];
@@ -21,7 +21,7 @@ interface ExpensesListProps {
     onDelete: (id: string) => void;
 }
 
-export default function ExpensesList({
+export function ExpensesList({
     expenses,
     isLoading,
     hasActiveFilter,

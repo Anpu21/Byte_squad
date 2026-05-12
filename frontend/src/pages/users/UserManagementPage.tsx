@@ -213,7 +213,7 @@ export default function UserManagementPage() {
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
     const { data: users = [], isLoading } = useQuery({
-        queryKey: ['users'],
+        queryKey: queryKeys.users.all(),
         queryFn: userService.getAll,
     });
 
@@ -225,7 +225,7 @@ export default function UserManagementPage() {
     const deleteMutation = useMutation({
         mutationFn: userService.delete,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['users'] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.users.all() });
             toast.success('User deleted');
         },
         onError: () => toast.error('Failed to delete user'),
@@ -509,7 +509,7 @@ export default function UserManagementPage() {
                     branches={branches}
                     onClose={() => setShowCreateModal(false)}
                     onCreated={() =>
-                        queryClient.invalidateQueries({ queryKey: ['users'] })
+                        queryClient.invalidateQueries({ queryKey: queryKeys.users.all() })
                     }
                 />
             )}

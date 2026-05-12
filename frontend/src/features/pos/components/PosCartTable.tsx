@@ -8,7 +8,7 @@ interface PosCartTableProps {
     onRemove: (productId: string) => void;
 }
 
-export default function PosCartTable({
+export function PosCartTable({
     cart,
     onUpdateQuantity,
     onRemove,

@@ -12,7 +12,7 @@ interface PosProductGridProps {
     onSelectProduct: (product: IProduct) => void;
 }
 
-export default function PosProductGrid({
+export function PosProductGrid({
     results,
     isSearching,
     cart,

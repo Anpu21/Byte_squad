@@ -10,7 +10,7 @@ interface RequestStatusActionsProps {
     onReject: (id: string) => void | Promise<void>;
 }
 
-export default function RequestStatusActions({
+export function RequestStatusActions({
     requestId,
     isPending,
     canReview,

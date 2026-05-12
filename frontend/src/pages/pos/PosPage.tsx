@@ -7,12 +7,12 @@ import { usePosNumpad } from '@/features/pos/hooks/usePosNumpad';
 import { usePosCheckout } from '@/features/pos/hooks/usePosCheckout';
 import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
 import { usePosKeyboardShortcuts } from '@/features/pos/hooks/usePosKeyboardShortcuts';
-import PosSearchBar from '@/features/pos/components/PosSearchBar';
-import PosStatusBar from '@/features/pos/components/PosStatusBar';
-import PosProductGrid from '@/features/pos/components/PosProductGrid';
-import PosCartPanel from '@/features/pos/components/PosCartPanel';
-import PosPaymentModal from '@/features/pos/components/PosPaymentModal';
-import PosCameraScannerModal from '@/features/pos/components/PosCameraScannerModal';
+import { PosSearchBar } from '@/features/pos/components/PosSearchBar';
+import { PosStatusBar } from '@/features/pos/components/PosStatusBar';
+import { PosProductGrid } from '@/features/pos/components/PosProductGrid';
+import { PosCartPanel } from '@/features/pos/components/PosCartPanel';
+import { PosPaymentModal } from '@/features/pos/components/PosPaymentModal';
+import { PosCameraScannerModal } from '@/features/pos/components/PosCameraScannerModal';
 
 export function PosPage() {
     const { user } = useAuth();

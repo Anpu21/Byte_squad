@@ -2,10 +2,10 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import type { IBranchWithMeta, IExpense } from '@/types';
 import type { ExpensesFiltersState } from '../hooks/useExpensesFilters';
-import ExpenseSearchFilter from './ExpenseSearchFilter';
-import ExpenseStatusFilter from './ExpenseStatusFilter';
-import ExpenseBranchFilter from './ExpenseBranchFilter';
-import ExpenseCategoryFilter from './ExpenseCategoryFilter';
+import { ExpenseSearchFilter } from './ExpenseSearchFilter';
+import { ExpenseStatusFilter } from './ExpenseStatusFilter';
+import { ExpenseBranchFilter } from './ExpenseBranchFilter';
+import { ExpenseCategoryFilter } from './ExpenseCategoryFilter';
 
 interface ExpensesFilterRailProps {
     filters: ExpensesFiltersState;
@@ -15,7 +15,7 @@ interface ExpensesFilterRailProps {
     isAdmin: boolean;
 }
 
-export default function ExpensesFilterRail({
+export function ExpensesFilterRail({
     filters,
     expenses,
     categories,

@@ -23,7 +23,7 @@ import {
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { queryKeys } from '@/lib/queryKeys';
 import { profileService } from '@/services/profile.service';
-import CartDrawer from '@/components/shop/CartDrawer';
+import { CartDrawer } from '@/components/shop/CartDrawer';
 import Logo from '@/components/ui/Logo';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import Avatar from '@/components/ui/Avatar';

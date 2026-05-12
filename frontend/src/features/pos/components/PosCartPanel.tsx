@@ -3,8 +3,8 @@ import { formatCurrency } from '@/lib/utils';
 import type { usePosCart } from '../hooks/usePosCart';
 import type { usePosCheckout } from '../hooks/usePosCheckout';
 import type { usePosNumpad } from '../hooks/usePosNumpad';
-import PosCartTable from './PosCartTable';
-import PosNumpad from './PosNumpad';
+import { PosCartTable } from './PosCartTable';
+import { PosNumpad } from './PosNumpad';
 
 interface PosCartPanelProps {
     cart: ReturnType<typeof usePosCart>;
@@ -13,7 +13,7 @@ interface PosCartPanelProps {
     onClearCart: () => void;
 }
 
-export default function PosCartPanel({
+export function PosCartPanel({
     cart,
     checkout,
     numpad,

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import { Receipt } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { posService } from '@/services/pos.service';
@@ -37,7 +38,7 @@ export default function CashierDashboardPage() {
     const navigate = useNavigate();
 
     const { data, isLoading } = useQuery<ICashierDashboard>({
-        queryKey: ['cashier-dashboard'],
+        queryKey: queryKeys.cashierDashboard(),
         queryFn: posService.getCashierDashboard,
         refetchInterval: 30000,
     });

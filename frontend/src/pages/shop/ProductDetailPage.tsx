@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import axios from 'axios';
@@ -36,7 +37,7 @@ export default function ProductDetailPage() {
     const userBranchId = user?.branchId ?? null;
 
     const { data: product, isLoading } = useQuery({
-        queryKey: ['public-product', id, userBranchId],
+        queryKey: queryKeys.shop.publicProduct(id ?? '', userBranchId),
         queryFn: () =>
             shopProductsService.getProduct(id!, userBranchId ?? undefined),
         enabled: !!id,

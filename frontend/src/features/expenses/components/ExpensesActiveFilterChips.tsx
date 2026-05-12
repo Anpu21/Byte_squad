@@ -27,7 +27,7 @@ function Chip({ children, onClear }: ChipProps) {
     );
 }
 
-export default function ExpensesActiveFilterChips({
+export function ExpensesActiveFilterChips({
     filters,
     isAdmin,
     visibleCount,

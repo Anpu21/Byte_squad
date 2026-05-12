@@ -11,7 +11,7 @@ interface PosSearchBarProps {
     inputRef: RefObject<HTMLInputElement | null>;
 }
 
-export default function PosSearchBar({
+export function PosSearchBar({
     value,
     onChange,
     onClear,

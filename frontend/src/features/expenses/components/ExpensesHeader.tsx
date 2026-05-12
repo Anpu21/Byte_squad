@@ -9,7 +9,7 @@ interface ExpensesHeaderProps {
     onAdd: () => void;
 }
 
-export default function ExpensesHeader({
+export function ExpensesHeader({
     isAdmin,
     canAdd,
     selectedBranchLabel,

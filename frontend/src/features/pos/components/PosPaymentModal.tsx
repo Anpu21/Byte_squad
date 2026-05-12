@@ -18,7 +18,7 @@ const METHODS: { value: PaymentMethod; label: string; Icon: React.ComponentType<
 
 const QUICK_CASH = [100, 500, 1000, 5000];
 
-export default function PosPaymentModal({ cart, checkout }: PosPaymentModalProps) {
+export function PosPaymentModal({ cart, checkout }: PosPaymentModalProps) {
     const cashShort =
         checkout.paymentMethod === 'cash' &&
         checkout.cashTendered !== '' &&

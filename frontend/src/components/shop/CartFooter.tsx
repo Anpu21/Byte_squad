@@ -6,7 +6,7 @@ interface CartFooterProps {
     onCheckout: () => void;
 }
 
-export default function CartFooter({
+export function CartFooter({
     total,
     onViewCart,
     onCheckout,

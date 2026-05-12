@@ -5,7 +5,7 @@ interface ExpenseSearchFilterProps {
     onChange: (value: string) => void;
 }
 
-export default function ExpenseSearchFilter({
+export function ExpenseSearchFilter({
     value,
     onChange,
 }: ExpenseSearchFilterProps) {

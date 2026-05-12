@@ -7,7 +7,7 @@ interface ExpenseRadioRowProps {
     onChange: (value: string) => void;
 }
 
-export default function ExpenseRadioRow({
+export function ExpenseRadioRow({
     name,
     value,
     selected,

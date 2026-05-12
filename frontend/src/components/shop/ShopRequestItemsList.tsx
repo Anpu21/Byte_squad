@@ -7,7 +7,7 @@ interface ShopRequestItemsListProps {
     note?: string | null;
 }
 
-export default function ShopRequestItemsList({
+export function ShopRequestItemsList({
     items,
     estimatedTotal,
     note,

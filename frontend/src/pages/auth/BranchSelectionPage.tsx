@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { ArrowRight } from 'lucide-react';
@@ -19,7 +20,7 @@ export default function BranchSelectionPage() {
     const [submitting, setSubmitting] = useState(false);
 
     const { data: branches = [], isLoading, isError } = useQuery({
-        queryKey: ['shop-branches-with-staff'],
+        queryKey: queryKeys.shop.branchesWithStaff(),
         queryFn: shopProductsService.listBranches,
     });
 

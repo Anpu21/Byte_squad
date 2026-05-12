@@ -91,7 +91,7 @@ export default function BranchComparisonPage({
     };
 
     const { data: comparison, isLoading, isFetching } = useQuery({
-        queryKey: ['admin-comparison', submitted],
+        queryKey: queryKeys.admin.comparison(submitted),
         queryFn: () => adminService.compareBranches(submitted!),
         enabled: submitted !== null,
     });

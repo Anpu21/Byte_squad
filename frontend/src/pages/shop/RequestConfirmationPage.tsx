@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import { Download, MapPin, Package } from 'lucide-react';
 import QRCode from 'qrcode';
 import { customerRequestsService } from '@/services/customer-requests.service';
@@ -37,7 +38,7 @@ export default function RequestConfirmationPage() {
     const [generated, setGenerated] = useState<{ code: string; url: string } | null>(null);
 
     const { data: request, isLoading, error } = useQuery({
-        queryKey: ['customer-request-by-code', code],
+        queryKey: queryKeys.customerRequests.byCode(code ?? ''),
         queryFn: () => customerRequestsService.findByCode(code!),
         enabled: !!code,
     });

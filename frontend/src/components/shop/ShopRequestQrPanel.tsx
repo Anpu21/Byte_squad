@@ -5,7 +5,7 @@ interface ShopRequestQrPanelProps {
     requestCode: string;
 }
 
-export default function ShopRequestQrPanel({
+export function ShopRequestQrPanel({
     qrSrc,
     requestCode,
 }: ShopRequestQrPanelProps) {

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import { Calendar, CalendarDays, Download, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
@@ -60,7 +61,7 @@ export default function TransactionsPage() {
     const isAdmin = user?.role === UserRole.ADMIN;
 
     const { data, isLoading } = useQuery<ICashierTransactionsSummary>({
-        queryKey: ['transactions-summary', isAdmin ? 'system' : 'self'],
+        queryKey: queryKeys.transactions.summary(isAdmin ? 'system' : 'self'),
         queryFn: isAdmin ? posService.getAllTransactions : posService.getMyTransactions,
         refetchInterval: 30000,
     });

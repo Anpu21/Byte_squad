@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import {
     AreaChart,
     Area,
@@ -60,7 +61,7 @@ function ChartTooltip({ active, payload }: TooltipPayload) {
 export default function BranchPerformancePage() {
     const { data, isLoading, isError, error, refetch } =
         useQuery<IMyBranchPerformance>({
-            queryKey: ['my-branch-performance'],
+            queryKey: queryKeys.branch.myPerformance(),
             queryFn: branchesService.getMyPerformance,
             refetchInterval: 30000,
         });

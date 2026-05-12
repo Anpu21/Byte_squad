@@ -1,5 +1,5 @@
 import type { IBranchWithMeta } from '@/types';
-import ExpenseRadioRow from './ExpenseRadioRow';
+import { ExpenseRadioRow } from './ExpenseRadioRow';
 
 interface ExpenseBranchFilterProps {
     branches: IBranchWithMeta[];
@@ -7,7 +7,7 @@ interface ExpenseBranchFilterProps {
     onChange: (value: string) => void;
 }
 
-export default function ExpenseBranchFilter({
+export function ExpenseBranchFilter({
     branches,
     selected,
     onChange,

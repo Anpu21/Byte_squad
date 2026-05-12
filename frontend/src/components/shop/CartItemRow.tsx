@@ -12,7 +12,7 @@ interface CartItemRowProps {
     item: ShopCartItem;
 }
 
-export default function CartItemRow({ item }: CartItemRowProps) {
+export function CartItemRow({ item }: CartItemRowProps) {
     const dispatch = useDispatch();
     const lineTotal = item.sellingPrice * item.quantity;
 

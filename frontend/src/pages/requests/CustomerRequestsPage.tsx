@@ -28,7 +28,7 @@ import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import StatusPill from '@/components/ui/StatusPill';
 import EmptyState from '@/components/ui/EmptyState';
-import StaffRequestDetailsModal from '@/components/requests/StaffRequestDetailsModal';
+import { StaffRequestDetailsModal } from '@/components/requests/StaffRequestDetailsModal';
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-LK', {
@@ -94,7 +94,7 @@ export default function CustomerRequestsPage() {
     const [search, setSearch] = useState('');
 
     const { data: requests = [], isLoading } = useQuery({
-        queryKey: ['customer-requests', { statusFilter, search }],
+        queryKey: queryKeys.customerRequests.list({ statusFilter, search }),
         queryFn: () =>
             customerRequestsService.listForStaff({
                 status: statusFilter || undefined,
@@ -130,7 +130,7 @@ export default function CustomerRequestsPage() {
                 payload.branchId === user?.branchId
             ) {
                 queryClient.invalidateQueries({
-                    queryKey: ['customer-requests'],
+                    queryKey: queryKeys.customerRequests.all(),
                 });
             }
         };
@@ -146,7 +146,7 @@ export default function CustomerRequestsPage() {
             await customerRequestsService.acceptByStaff(id);
             toast.success('Request accepted');
             await queryClient.invalidateQueries({
-                queryKey: ['customer-requests'],
+                queryKey: queryKeys.customerRequests.all(),
             });
             setSelectedRequestId(null);
         } catch {
@@ -169,7 +169,7 @@ export default function CustomerRequestsPage() {
             await customerRequestsService.rejectByStaff(id);
             toast.success('Request rejected');
             await queryClient.invalidateQueries({
-                queryKey: ['customer-requests'],
+                queryKey: queryKeys.customerRequests.all(),
             });
             setSelectedRequestId(null);
         } catch {

@@ -44,7 +44,10 @@ export function usePosCart() {
         (name: string, price: number, qty = 1) => {
             if (!name.trim() || price <= 0) return;
             const customProduct: IProduct = {
-                id: `custom-${Date.now()}`,
+                id:
+                    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                        ? `custom-${crypto.randomUUID()}`
+                        : `custom-${Date.now()}-${Math.random().toString(36).slice(2)}`,
                 name: name.trim(),
                 barcode: '',
                 description: 'Custom item',

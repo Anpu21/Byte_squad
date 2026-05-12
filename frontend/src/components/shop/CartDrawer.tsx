@@ -8,13 +8,13 @@ import {
     selectCartTotal,
 } from '@/store/slices/shopCartSlice';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import CartItemRow from '@/components/shop/CartItemRow';
-import CartFooter from '@/components/shop/CartFooter';
+import { CartItemRow } from '@/components/shop/CartItemRow';
+import { CartFooter } from '@/components/shop/CartFooter';
 
 const FOCUSABLE_SELECTOR =
     'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export default function CartDrawer() {
+export function CartDrawer() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const items = useSelector((state: RootState) => state.shopCart.items);

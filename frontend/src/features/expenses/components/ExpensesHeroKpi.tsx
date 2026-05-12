@@ -8,7 +8,7 @@ interface ExpensesHeroKpiProps {
     last14DaysTotals: number[];
 }
 
-export default function ExpensesHeroKpi({
+export function ExpensesHeroKpi({
     thisMonthTotal,
     monthOverMonthDelta,
     last14DaysTotals,

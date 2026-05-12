@@ -7,7 +7,7 @@ interface PosCameraScannerModalProps {
     onScan: (barcode: string) => void;
 }
 
-export default function PosCameraScannerModal({
+export function PosCameraScannerModal({
     isOpen,
     onClose,
     onScan,

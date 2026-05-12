@@ -5,8 +5,8 @@ import { ExternalLink, MapPin } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { CustomerRequestStatus, ICustomerRequest } from '@/types';
-import ShopRequestQrPanel from './ShopRequestQrPanel';
-import ShopRequestItemsList from './ShopRequestItemsList';
+import { ShopRequestQrPanel } from './ShopRequestQrPanel';
+import { ShopRequestItemsList } from './ShopRequestItemsList';
 
 interface RequestDetailsModalProps {
     isOpen: boolean;
@@ -32,7 +32,7 @@ const STATUS_TONE: Record<CustomerRequestStatus, string> = {
     expired: 'bg-surface-2 text-text-2 border-border',
 };
 
-export default function RequestDetailsModal({
+export function RequestDetailsModal({
     isOpen,
     onClose,
     request,

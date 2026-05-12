@@ -17,7 +17,7 @@ interface ExpenseRowProps {
     onDelete: (id: string) => void;
 }
 
-export default function ExpenseRow({
+export function ExpenseRow({
     expense,
     isAdmin,
     currentUserBranchId,

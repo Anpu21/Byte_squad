@@ -4,8 +4,8 @@ import { Mail, MapPin, Phone, User } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import StatusPill from '@/components/ui/StatusPill';
 import type { ICustomerRequest } from '@/types';
-import RequestItemsList from './RequestItemsList';
-import RequestStatusActions from './RequestStatusActions';
+import { RequestItemsList } from './RequestItemsList';
+import { RequestStatusActions } from './RequestStatusActions';
 
 interface StaffRequestDetailsModalProps {
     isOpen: boolean;
@@ -17,7 +17,7 @@ interface StaffRequestDetailsModalProps {
     actionPending?: boolean;
 }
 
-export default function StaffRequestDetailsModal({
+export function StaffRequestDetailsModal({
     isOpen,
     onClose,
     request,

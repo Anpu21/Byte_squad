@@ -81,7 +81,7 @@ export default function CustomerProfilePage() {
 
     // Branch picker — same query key as BranchSelectionPage so React Query dedupes.
     const { data: branches = [], isLoading: branchesLoading } = useQuery({
-        queryKey: ['shop-branches-with-staff'],
+        queryKey: queryKeys.shop.branchesWithStaff(),
         queryFn: shopProductsService.listBranches,
     });
     const [selectedBranchId, setSelectedBranchId] = useState<string>('');

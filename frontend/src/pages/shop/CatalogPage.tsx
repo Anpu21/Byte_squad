@@ -61,12 +61,12 @@ export default function CatalogPage() {
     });
 
     const { data: categories = [] } = useQuery({
-        queryKey: ['shop-categories'],
+        queryKey: queryKeys.shop.categories(),
         queryFn: shopProductsService.getCategories,
     });
 
     const { data: products = [], isLoading } = useQuery({
-        queryKey: ['shop-products', { branchId, category, search }],
+        queryKey: queryKeys.shop.products({ branchId, category, search }),
         queryFn: () =>
             shopProductsService.listProducts({
                 branchId: branchId!,

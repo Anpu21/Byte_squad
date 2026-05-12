@@ -2,12 +2,14 @@
  * Centralized TanStack Query key factory.
  *
  * Rules.md §6 mandates a single source of truth for query keys per feature.
- * This file is the migration target. PR 1 includes the keys we use now;
- * future PRs will migrate the remaining inline keys (CatalogPage, MyRequests,
- * Expenses, etc.) into this same factory.
+ * Every cross-component query key in the app should live here.
  */
 
-import type { IInventoryParams, IListTransfersParams, IListTransferHistoryParams } from '@/types';
+import type {
+    IInventoryParams,
+    IListTransfersParams,
+    IListTransferHistoryParams,
+} from '@/types';
 
 export interface AdminInventoryMatrixFilters {
     search?: string;
@@ -23,6 +25,9 @@ export const queryKeys = {
             ['admin', 'inventory-matrix', filters] as const,
         overview: () => ['admin', 'overview'] as const,
         branches: () => ['admin', 'branches'] as const,
+        comparison: (submitted: unknown) =>
+            ['admin', 'comparison', submitted] as const,
+        dashboard: () => ['admin', 'dashboard'] as const,
     },
     inventory: {
         all: () => ['inventory'] as const,
@@ -51,6 +56,11 @@ export const queryKeys = {
     },
     shop: {
         branches: () => ['shop', 'branches'] as const,
+        branchesWithStaff: () => ['shop', 'branches-with-staff'] as const,
+        categories: () => ['shop', 'categories'] as const,
+        products: (params: unknown) => ['shop', 'products', params] as const,
+        publicProduct: (id: string, branchId: string | null) =>
+            ['shop', 'public-product', id, branchId] as const,
     },
     profile: {
         self: () => ['profile'] as const,
@@ -62,5 +72,24 @@ export const queryKeys = {
     },
     product: {
         byId: (id: string) => ['product', 'by-id', id] as const,
+    },
+    users: {
+        all: () => ['users'] as const,
+    },
+    customerRequests: {
+        all: () => ['customer-requests'] as const,
+        list: (filters: { statusFilter: string; search: string }) =>
+            ['customer-requests', filters] as const,
+        my: () => ['my-customer-requests'] as const,
+        byCode: (code: string) =>
+            ['customer-request-by-code', code] as const,
+    },
+    cashierDashboard: () => ['cashier-dashboard'] as const,
+    transactions: {
+        summary: (scope: string) =>
+            ['transactions-summary', scope] as const,
+    },
+    branch: {
+        myPerformance: () => ['my-branch-performance'] as const,
     },
 } as const;

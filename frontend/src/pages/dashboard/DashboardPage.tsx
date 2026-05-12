@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import {
     AlertTriangle,
     Download,
@@ -43,7 +44,7 @@ export default function DashboardPage() {
     const isAdmin = user?.role === UserRole.ADMIN;
 
     const { data, isLoading } = useQuery<IAdminDashboard>({
-        queryKey: ['admin-dashboard'],
+        queryKey: queryKeys.admin.dashboard(),
         queryFn: posService.getAdminDashboard,
         refetchInterval: 30000,
     });

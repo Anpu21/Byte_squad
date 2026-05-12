@@ -1,5 +1,5 @@
 import type { IExpense } from '@/types';
-import ExpenseRadioRow from './ExpenseRadioRow';
+import { ExpenseRadioRow } from './ExpenseRadioRow';
 
 interface ExpenseCategoryFilterProps {
     expenses: IExpense[];
@@ -8,7 +8,7 @@ interface ExpenseCategoryFilterProps {
     onChange: (value: string) => void;
 }
 
-export default function ExpenseCategoryFilter({
+export function ExpenseCategoryFilter({
     expenses,
     categories,
     selected,
