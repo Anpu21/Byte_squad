@@ -1,33 +1,26 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { X, Trash2, Minus, Plus, ShoppingCart } from 'lucide-react';
-import type { RootState } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { X, ShoppingCart } from 'lucide-react';
+import { closeCartDrawer } from '@/store/slices/shopCartSlice';
 import {
-    closeCartDrawer,
-    removeFromCart,
-    setQuantity,
-    selectCartTotal,
-} from '@/store/slices/shopCartSlice';
+    selectShopCartItems,
+    selectShopCartIsOpen,
+    selectShopCartTotal,
+} from '@/store/selectors/shopCart';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import ProductImage from '@/components/shop/ProductImage';
-
-function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('en-LK', {
-        style: 'currency',
-        currency: 'LKR',
-    }).format(amount);
-}
+import { CartItemRow } from '@/components/shop/CartItemRow';
+import { CartFooter } from '@/components/shop/CartFooter';
 
 const FOCUSABLE_SELECTOR =
     'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export default function CartDrawer() {
-    const dispatch = useDispatch();
+export function CartDrawer() {
+    const dispatch = useAppDispatch();
     const navigate = useNavigate();
-    const items = useSelector((state: RootState) => state.shopCart.items);
-    const isOpen = useSelector((state: RootState) => state.shopCart.isCartOpen);
-    const total = selectCartTotal(items);
+    const items = useAppSelector(selectShopCartItems);
+    const isOpen = useAppSelector(selectShopCartIsOpen);
+    const total = useAppSelector(selectShopCartTotal);
 
     const panelRef = useRef<HTMLDivElement>(null);
     const previousActiveRef = useRef<HTMLElement | null>(null);
@@ -114,7 +107,7 @@ export default function CartDrawer() {
                 aria-modal="true"
                 aria-label="Shopping cart"
                 aria-hidden={!isOpen}
-                {...(!isOpen && { inert: '' as unknown as boolean })}
+                inert={!isOpen}
                 className={`fixed top-0 right-0 h-screen w-full sm:w-[400px] bg-canvas border-l border-border z-modal flex flex-col transform transition-transform duration-300 outline-none ${
                     isOpen ? 'translate-x-0' : 'translate-x-full'
                 }`}
@@ -153,110 +146,18 @@ export default function CartDrawer() {
                     ) : (
                         <ul className="divide-y divide-border">
                             {items.map((item) => (
-                                <li
-                                    key={item.productId}
-                                    className="flex items-center gap-3 px-5 py-3"
-                                >
-                                    <ProductImage
-                                        src={item.imageUrl}
-                                        alt={item.name}
-                                        wrapperClassName="w-14 h-14 bg-surface-2 rounded-lg overflow-hidden flex items-center justify-center shrink-0"
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-text-1 line-clamp-2 leading-tight">
-                                            {item.name}
-                                        </p>
-                                        <p className="text-xs text-text-3 mt-1">
-                                            {formatCurrency(item.sellingPrice)} each
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    dispatch(
-                                                        setQuantity({
-                                                            productId: item.productId,
-                                                            quantity: item.quantity - 1,
-                                                        }),
-                                                    )
-                                                }
-                                                disabled={item.quantity <= 1}
-                                                aria-label={`Decrease quantity of ${item.name}`}
-                                                className="w-9 h-9 flex items-center justify-center rounded-md bg-surface-2 hover:bg-primary-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
-                                            >
-                                                <Minus size={14} />
-                                            </button>
-                                            <span
-                                                className="text-sm font-semibold text-text-1 min-w-[2ch] text-center tabular-nums"
-                                                aria-live="polite"
-                                            >
-                                                {item.quantity}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    dispatch(
-                                                        setQuantity({
-                                                            productId: item.productId,
-                                                            quantity: item.quantity + 1,
-                                                        }),
-                                                    )
-                                                }
-                                                aria-label={`Increase quantity of ${item.name}`}
-                                                className="w-9 h-9 flex items-center justify-center rounded-md bg-surface-2 hover:bg-primary-soft transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
-                                            >
-                                                <Plus size={14} />
-                                            </button>
-                                            <span className="ml-auto text-xs font-bold text-text-1 tabular-nums">
-                                                {formatCurrency(
-                                                    item.sellingPrice * item.quantity,
-                                                )}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            dispatch(removeFromCart(item.productId))
-                                        }
-                                        className="p-2 rounded-md hover:bg-danger-soft text-text-3 hover:text-danger transition-colors self-start focus:outline-none focus:ring-[3px] focus:ring-primary/20"
-                                        aria-label={`Remove ${item.name} from cart`}
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                </li>
+                                <CartItemRow key={item.productId} item={item} />
                             ))}
                         </ul>
                     )}
                 </div>
 
                 {items.length > 0 && (
-                    <footer className="border-t border-border px-5 py-4 space-y-3 bg-canvas">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[11px] uppercase tracking-widest text-text-3">
-                                Estimated total
-                            </span>
-                            <span className="text-lg font-bold text-text-1 tabular-nums">
-                                {formatCurrency(total)}
-                            </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                onClick={goToCart}
-                                className="px-3 py-2 text-xs font-semibold bg-surface-2 text-text-1 rounded-lg hover:bg-primary-soft transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
-                            >
-                                View full cart
-                            </button>
-                            <button
-                                type="button"
-                                onClick={goToCheckout}
-                                className="px-3 py-2 text-xs font-semibold bg-primary text-text-inv rounded-lg hover:bg-primary-hover transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
-                            >
-                                Checkout →
-                            </button>
-                        </div>
-                    </footer>
+                    <CartFooter
+                        total={total}
+                        onViewCart={goToCart}
+                        onCheckout={goToCheckout}
+                    />
                 )}
             </aside>
         </>

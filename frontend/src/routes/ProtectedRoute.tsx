@@ -26,7 +26,7 @@ export default function ProtectedRoute({
 
     // Role-based gate: if allowedRoles is set, the user must match one of them
     if (allowedRoles && user && !allowedRoles.includes(user.role as UserRole)) {
-        return <Navigate to="/" replace />;
+        return <Navigate to={FRONTEND_ROUTES.ROOT} replace />;
     }
 
     return <>{children}</>;

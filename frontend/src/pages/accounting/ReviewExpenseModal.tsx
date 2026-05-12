@@ -10,7 +10,7 @@ interface ReviewExpenseModalProps {
     onConfirm: (note: string) => void;
 }
 
-export default function ReviewExpenseModal({
+export function ReviewExpenseModal({
     expense,
     action,
     onCancel,
