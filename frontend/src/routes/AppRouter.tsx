@@ -18,7 +18,7 @@ import DashboardPage from '@/pages/dashboard/DashboardPage';
 import CashierDashboardPage from '@/pages/dashboard/CashierDashboardPage';
 import InventoryListPage from '@/pages/inventory/InventoryListPage';
 import ProductFormPage from '@/pages/inventory/ProductFormPage';
-import PosPage from '@/pages/pos/PosPage';
+import { PosPage } from '@/pages/pos/PosPage';
 import TransactionsPage from '@/pages/pos/TransactionsPage';
 import LedgerPage from '@/pages/accounting/LedgerPage';
 import ExpensesPage from '@/pages/accounting/ExpensesPage';

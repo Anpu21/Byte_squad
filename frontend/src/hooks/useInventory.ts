@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
+import { useInventoryByBranchQuery } from './useInventoryByBranchQuery';
 import { inventoryService } from '@/services/inventory.service';
 import { queryKeys } from '@/lib/queryKeys';
 
@@ -44,13 +45,7 @@ export function useInventory() {
         limit: PAGE_LIMIT,
     };
 
-    const branchId = user?.branchId ?? '';
-
-    const inventoryQuery = useQuery({
-        queryKey: queryKeys.inventory.byBranch(branchId, params),
-        queryFn: () => inventoryService.getByBranch(branchId, params),
-        enabled: Boolean(branchId),
-    });
+    const inventoryQuery = useInventoryByBranchQuery(user?.branchId, params);
 
     const categoriesQuery = useQuery({
         queryKey: queryKeys.inventory.categories(),
