@@ -1,4 +1,4 @@
-import { useDispatch } from 'react-redux';
+import { useAppDispatch } from '@/store/hooks';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import {
     removeFromCart,
@@ -13,7 +13,7 @@ interface CartItemRowProps {
 }
 
 export function CartItemRow({ item }: CartItemRowProps) {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const lineTotal = item.sellingPrice * item.quantity;
 
     return (

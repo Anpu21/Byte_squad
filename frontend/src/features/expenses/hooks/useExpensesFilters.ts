@@ -1,4 +1,7 @@
 import { useCallback, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setSelectedBranch } from '@/store/slices/adminContextSlice';
+import { selectSelectedBranchId } from '@/store/selectors/adminContext';
 import type { StatusFilter } from '../types/status-filter.type';
 
 export interface ExpensesFiltersState {
@@ -15,10 +18,20 @@ export interface ExpensesFiltersState {
 }
 
 export function useExpensesFilters(isAdmin: boolean): ExpensesFiltersState {
+    const dispatch = useAppDispatch();
+    const pinnedBranchId = useAppSelector(selectSelectedBranchId);
+    const selectedBranchId = pinnedBranchId ?? '';
+
     const [filterCategory, setFilterCategory] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<StatusFilter>('all');
-    const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+
+    const setSelectedBranchId = useCallback(
+        (value: string) => {
+            dispatch(setSelectedBranch(value || null));
+        },
+        [dispatch],
+    );
 
     const hasActiveFilter =
         filterCategory !== '' ||
@@ -30,8 +43,8 @@ export function useExpensesFilters(isAdmin: boolean): ExpensesFiltersState {
         setFilterCategory('');
         setSearchQuery('');
         setSelectedStatus('all');
-        setSelectedBranchId('');
-    }, []);
+        dispatch(setSelectedBranch(null));
+    }, [dispatch]);
 
     return {
         filterCategory,

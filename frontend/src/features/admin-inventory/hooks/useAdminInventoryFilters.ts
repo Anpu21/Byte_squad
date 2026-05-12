@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import type { AppDispatch, RootState } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSelectedBranch } from '@/store/slices/adminContextSlice';
+import { selectSelectedBranchId } from '@/store/selectors/adminContext';
 import type { StockKey } from '../types/stock-key.type';
 import type { AdminInventoryMatrixFilters } from '@/lib/queryKeys';
 import { PAGE_LIMIT } from '../constants';
@@ -36,10 +36,8 @@ function parseStockStatus(raw: string | null): '' | StockKey {
 
 export function useAdminInventoryFilters(): AdminInventoryFiltersState {
     const [searchParams, setSearchParams] = useSearchParams();
-    const dispatch = useDispatch<AppDispatch>();
-    const pinnedBranchId = useSelector(
-        (s: RootState) => s.adminContext.selectedBranchId,
-    );
+    const dispatch = useAppDispatch();
+    const pinnedBranchId = useAppSelector(selectSelectedBranchId);
 
     const search = searchParams.get('q') ?? '';
     // URL ?branch= wins; otherwise fall back to admin's pinned branch in Redux.

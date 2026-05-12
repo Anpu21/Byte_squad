@@ -1,26 +1,24 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useDispatch, useSelector } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import type { RootState } from '@/store';
 import { shopProductsService } from '@/services/shop-products.service';
 import { userService } from '@/services/user.service';
 import { addToCart, clearShopCart } from '@/store/slices/shopCartSlice';
 import { setUserBranch } from '@/store/slices/authSlice';
+import { selectShopCartItemCount } from '@/store/selectors/shopCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useConfirm } from '@/hooks/useConfirm';
 import { queryKeys } from '@/lib/queryKeys';
 import type { IShopProduct } from '@/types';
 
 export function useCatalogPage() {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const confirm = useConfirm();
     const { user } = useAuth();
     const branchId = user?.branchId ?? null;
-    const cartItemCount = useSelector(
-        (state: RootState) => state.shopCart.items.length,
-    );
+    const cartItemCount = useAppSelector(selectShopCartItemCount);
 
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('');

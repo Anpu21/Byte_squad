@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import type { RootState } from '@/store';
+import { clearShopCart } from '@/store/slices/shopCartSlice';
 import {
-    clearShopCart,
-    selectCartTotal,
-} from '@/store/slices/shopCartSlice';
+    selectShopCartItems,
+    selectShopCartTotal,
+} from '@/store/selectors/shopCart';
 import { shopProductsService } from '@/services/shop-products.service';
 import { customerRequestsService } from '@/services/customer-requests.service';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,12 +16,12 @@ import { queryKeys } from '@/lib/queryKeys';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
 export function useCheckout() {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const items = useSelector((state: RootState) => state.shopCart.items);
+    const items = useAppSelector(selectShopCartItems);
     const branchId = user?.branchId ?? null;
-    const total = selectCartTotal(items);
+    const total = useAppSelector(selectShopCartTotal);
 
     const { data: branches = [] } = useQuery({
         queryKey: queryKeys.shop.branches(),

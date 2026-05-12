@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useQuery } from '@tanstack/react-query';
 import {
     ChevronDown,
@@ -13,13 +13,10 @@ import {
     UserRound,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import type { RootState } from '@/store';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import {
-    selectCartItemCount,
-    toggleCartDrawer,
-} from '@/store/slices/shopCartSlice';
+import { toggleCartDrawer } from '@/store/slices/shopCartSlice';
+import { selectShopCartItemCount } from '@/store/selectors/shopCart';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { queryKeys } from '@/lib/queryKeys';
 import { profileService } from '@/services/profile.service';
@@ -39,10 +36,9 @@ interface CustomerLayoutProps {
 
 export default function CustomerLayout({ children, publicMode = false }: CustomerLayoutProps) {
     const navigate = useNavigate();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const { user, isAuthenticated, logout } = useAuth();
-    const cartItems = useSelector((state: RootState) => state.shopCart.items);
-    const cartCount = selectCartItemCount(cartItems);
+    const cartCount = useAppSelector(selectShopCartItemCount);
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 

@@ -1,21 +1,20 @@
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import type { RootState } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { removeFromCart, setQuantity } from '@/store/slices/shopCartSlice';
 import {
-    removeFromCart,
-    setQuantity,
-    selectCartTotal,
-} from '@/store/slices/shopCartSlice';
+    selectShopCartItems,
+    selectShopCartTotal,
+} from '@/store/selectors/shopCart';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { CartItemRow } from '@/features/shop-cart/components/CartItemRow';
 import { CartTotalBar } from '@/features/shop-cart/components/CartTotalBar';
 import { EmptyCart } from '@/features/shop-cart/components/EmptyCart';
 
 export function CartPage() {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const navigate = useNavigate();
-    const items = useSelector((state: RootState) => state.shopCart.items);
-    const total = selectCartTotal(items);
+    const items = useAppSelector(selectShopCartItems);
+    const total = useAppSelector(selectShopCartTotal);
 
     if (items.length === 0) return <EmptyCart />;
 

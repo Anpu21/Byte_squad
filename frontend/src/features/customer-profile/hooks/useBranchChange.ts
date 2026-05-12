@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useDispatch } from 'react-redux';
+import { useAppDispatch } from '@/store/hooks';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { userService } from '@/services/user.service';
@@ -11,7 +11,7 @@ import { clearShopCart } from '@/store/slices/shopCartSlice';
 import type { IUserProfile } from '@/types';
 
 export function useBranchChange(profile: IUserProfile | undefined) {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const queryClient = useQueryClient();
     const [selectedBranchId, setSelectedBranchId] = useState('');
     const [hydratedBranchId, setHydratedBranchId] = useState<string | null>(null);

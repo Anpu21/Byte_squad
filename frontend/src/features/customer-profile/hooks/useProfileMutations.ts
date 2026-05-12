@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useDispatch } from 'react-redux';
+import { useAppDispatch } from '@/store/hooks';
 import toast from 'react-hot-toast';
 import { profileService } from '@/services/profile.service';
 import { queryKeys } from '@/lib/queryKeys';
@@ -13,7 +13,7 @@ interface UpdatePayload {
 
 export function useProfileMutations() {
     const queryClient = useQueryClient();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const updateProfileMutation = useMutation({
         mutationFn: (data: UpdatePayload) => profileService.updateProfile(data),

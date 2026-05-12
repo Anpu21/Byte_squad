@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setSelectedBranch } from '@/store/slices/adminContextSlice';
+import { selectSelectedBranchId } from '@/store/selectors/adminContext';
 import type { TransferStatus } from '@/constants/enums';
 import { useTransferHistory } from '@/hooks/useTransferHistory';
 import {
@@ -7,13 +10,23 @@ import {
 } from '../lib/statuses';
 
 export function useTransferHistoryFilters(isAdmin: boolean) {
+    const dispatch = useAppDispatch();
+    const pinnedBranchId = useAppSelector(selectSelectedBranchId);
+    const branchId = pinnedBranchId ?? '';
+
     const [selectedStatuses, setSelectedStatuses] = useState<TransferStatus[]>(
         DEFAULT_HISTORY_STATUSES,
     );
     const [from, setFrom] = useState('');
     const [to, setTo] = useState('');
     const [productId, setProductId] = useState('');
-    const [branchId, setBranchId] = useState('');
+
+    const setBranchId = useCallback(
+        (value: string) => {
+            dispatch(setSelectedBranch(value || null));
+        },
+        [dispatch],
+    );
 
     const transferHistory = useTransferHistory();
 
@@ -46,7 +59,7 @@ export function useTransferHistoryFilters(isAdmin: boolean) {
         setFrom('');
         setTo('');
         setProductId('');
-        setBranchId('');
+        dispatch(setSelectedBranch(null));
     };
 
     const hasActiveFilters =

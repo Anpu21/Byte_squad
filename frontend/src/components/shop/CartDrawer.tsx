@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { X, ShoppingCart } from 'lucide-react';
-import type { RootState } from '@/store';
+import { closeCartDrawer } from '@/store/slices/shopCartSlice';
 import {
-    closeCartDrawer,
-    selectCartTotal,
-} from '@/store/slices/shopCartSlice';
+    selectShopCartItems,
+    selectShopCartIsOpen,
+    selectShopCartTotal,
+} from '@/store/selectors/shopCart';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { CartItemRow } from '@/components/shop/CartItemRow';
 import { CartFooter } from '@/components/shop/CartFooter';
@@ -15,11 +16,11 @@ const FOCUSABLE_SELECTOR =
     'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function CartDrawer() {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const navigate = useNavigate();
-    const items = useSelector((state: RootState) => state.shopCart.items);
-    const isOpen = useSelector((state: RootState) => state.shopCart.isCartOpen);
-    const total = selectCartTotal(items);
+    const items = useAppSelector(selectShopCartItems);
+    const isOpen = useAppSelector(selectShopCartIsOpen);
+    const total = useAppSelector(selectShopCartTotal);
 
     const panelRef = useRef<HTMLDivElement>(null);
     const previousActiveRef = useRef<HTMLElement | null>(null);
