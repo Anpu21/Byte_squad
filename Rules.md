@@ -23,6 +23,8 @@ Claude Code must load and actively apply these skills throughout every task on t
 
 - **`llm-council`** (.claude/skills) — for making critical thinking before implmeation use this skills and provide proper implemention plan this skills must use other skills during the plan implemenation
 
+- **superpowers** Superpowers is a complete software development methodology for your coding agents, built on top of a set of composable skills and some initial instructions that make sure your agent uses them help to devlop a better software.
+
 At the start of any non-trivial task, list which skills apply and why. Re-check skill applicability when scope changes mid-task.
 
 ---
@@ -174,7 +176,13 @@ Always use these from `frontend/src/components/ui/` instead of building inline:
 ## 6. State management rules
 
 - **Server state → TanStack Query.** Query keys are cross-component contracts; document them in a `queryKeys.ts` file per feature and import from there. Never duplicate query key strings.
-- **Session-critical client state → Redux Toolkit.** Auth, shopping cart. That's it.
+- **Session-critical & cross-page client state → Redux Toolkit.** Allowed slices:
+  - `auth` — session, current user, role
+  - `cart` — POS cart (cashier)
+  - `shopCart` — customer storefront cart
+  - `adminContext` — admin's working context (e.g. `selectedBranchId`) shared across admin pages so the admin doesn't reselect their branch on every navigation. Hydrated from localStorage; URL params on individual pages take precedence when present.
+
+  Adding a new slice requires an amendment to this section with a one-sentence justification.
 - **Local UI state → `useState`.** Don't reach for Redux for a modal-open boolean.
 - **Form state → `react-hook-form`.** Not Redux, not `useState`.
 - **Derived state is computed, not stored.** If you can compute it from props or other state, do.
@@ -455,10 +463,22 @@ frontend/src/features/<feature>/
 - `console.log` in committed code
 - Missing branch filter on non-admin queries
 - New entities without a repository class
+- Page file over 120 lines or component file over 200 lines (without an exception comment justifying it)
 
 ---
 
-## 17. When you're stuck
+## 17. Page and component size
+
+- **Component files ≤ 200 lines** (imports + types + helpers + JSX combined). When a component grows past 200, extract the next-obvious sub-component before adding more.
+- **Page files ≤ 120 lines.** Pages are orchestrators: they compose components, wire props, and host top-level effects. They do not contain inline layout markup, business logic, or filter handling.
+- **Helpers and constants over 30 lines** move to a sibling file (`<name>.helpers.ts`, `<name>.constants.ts`).
+- **Hooks over 80 lines** move to their own file under `<feature>/hooks/` (per feature) or `frontend/src/hooks/` (global).
+- **Group by feature.** A page's components, hooks, types, and helpers live together under `frontend/src/features/<feature>/`. Pages stay in `frontend/src/pages/` and only orchestrate.
+- **Why:** a reviewer can hold a 200-line file in their head. Mega-pages are where bugs hide and where merge conflicts pile up. Boring beats clever (§2.5).
+
+---
+
+## 18. When you're stuck
 
 - **Backend change needed?** Ask the user before modifying backend code from a frontend task.
 - **Schema change needed?** Document the ALTER TABLE in the PR. `DB_SYNC=true` is dev-only.

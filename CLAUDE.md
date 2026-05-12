@@ -24,6 +24,7 @@ Before any non-trivial task, **load and apply** these Claude Code skills through
 - **`everything-claude-code`** — React patterns, TypeScript idioms, NestJS architecture, Docker, testing, refactor heuristics.
 - **`frontend-design`** (if installed) — design tokens and component primitives.
 - **`llm-council`** (.claude/skills) — for making critical thinking before implmeation use this skills and provide proper implemention plan
+- **superpowers** Superpowers is a complete software development methodology for your coding agents, built on top of a set of composable skills and some initial instructions that make sure your agent uses them.
 
 At the start of a task, briefly state which skills apply and why. Re-check applicability when scope shifts.
 

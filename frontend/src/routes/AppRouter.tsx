@@ -30,7 +30,7 @@ import NotificationDetailPage from '@/pages/notifications/NotificationDetailPage
 import BranchManagementPage from '@/pages/branches/BranchManagementPage';
 import BranchPerformancePage from '@/pages/branches/BranchPerformancePage';
 import BranchComparisonPage from '@/pages/admin/BranchComparisonPage';
-import AdminInventoryPage from '@/pages/admin/AdminInventoryPage';
+import { AdminInventoryPage } from '@/pages/admin/AdminInventoryPage';
 import TransferRequestsPage from '@/pages/transfers/TransferRequestsPage';
 import NewTransferRequestPage from '@/pages/transfers/NewTransferRequestPage';
 import TransferHistoryPage from '@/pages/transfers/TransferHistoryPage';

@@ -2,22 +2,31 @@ import { configureStore } from '@reduxjs/toolkit';
 import cartReducer from './slices/cartSlice';
 import authReducer from './slices/authSlice';
 import shopCartReducer, { persistShopCart } from './slices/shopCartSlice';
+import adminContextReducer, {
+    persistAdminContext,
+} from './slices/adminContextSlice';
 
 export const store = configureStore({
     reducer: {
         cart: cartReducer,
         auth: authReducer,
         shopCart: shopCartReducer,
+        adminContext: adminContextReducer,
     },
 });
 
 // Persist the customer's shop cart so a guest's selections survive reloads.
 let lastShopCart = store.getState().shopCart;
+let lastAdminContext = store.getState().adminContext;
 store.subscribe(() => {
-    const next = store.getState().shopCart;
-    if (next !== lastShopCart) {
-        lastShopCart = next;
-        persistShopCart(next);
+    const state = store.getState();
+    if (state.shopCart !== lastShopCart) {
+        lastShopCart = state.shopCart;
+        persistShopCart(state.shopCart);
+    }
+    if (state.adminContext !== lastAdminContext) {
+        lastAdminContext = state.adminContext;
+        persistAdminContext(state.adminContext);
     }
 });
 
