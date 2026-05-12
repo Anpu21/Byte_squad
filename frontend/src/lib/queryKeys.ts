@@ -71,6 +71,7 @@ export const queryKeys = {
             ['expenses', filters] as const,
     },
     product: {
+        all: () => ['product'] as const,
         byId: (id: string) => ['product', 'by-id', id] as const,
     },
     users: {
@@ -102,5 +103,9 @@ export const queryKeys = {
             limit: number;
         }) => ['ledger', 'entries', filters] as const,
         summary: () => ['ledger', 'summary'] as const,
+    },
+    accounting: {
+        profitLoss: (startDate: string, endDate: string) =>
+            ['accounting', 'profit-loss', startDate, endDate] as const,
     },
 } as const;
