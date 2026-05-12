@@ -13,21 +13,10 @@ interface ShopCartState {
     isCartOpen: boolean;
 }
 
-const STORAGE_KEY = 'ledgerpro_shop_cart';
-
-function loadInitial(): ShopCartState {
-    try {
-        const json = localStorage.getItem(STORAGE_KEY);
-        if (!json) return { items: [], isCartOpen: false };
-        const parsed = JSON.parse(json) as { items?: ShopCartItem[] };
-        const items = Array.isArray(parsed.items) ? parsed.items : [];
-        return { items, isCartOpen: false };
-    } catch {
-        return { items: [], isCartOpen: false };
-    }
-}
-
-const initialState: ShopCartState = loadInitial();
+const initialState: ShopCartState = {
+    items: [],
+    isCartOpen: false,
+};
 
 const shopCartSlice = createSlice({
     name: 'shopCart',
@@ -99,22 +88,5 @@ export const {
     toggleCartDrawer,
     clearShopCart,
 } = shopCartSlice.actions;
-
-export function selectCartTotal(items: ShopCartItem[]): number {
-    return items.reduce((sum, item) => sum + item.sellingPrice * item.quantity, 0);
-}
-
-export function selectCartItemCount(items: ShopCartItem[]): number {
-    return items.reduce((sum, item) => sum + item.quantity, 0);
-}
-
-export function persistShopCart(state: ShopCartState): void {
-    try {
-        const { items } = state;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ items }));
-    } catch {
-        // localStorage full / disabled — silently ignore
-    }
-}
 
 export default shopCartSlice.reducer;

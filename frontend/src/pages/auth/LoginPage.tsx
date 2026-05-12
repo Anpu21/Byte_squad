@@ -1,72 +1,14 @@
-import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import axios from 'axios';
-import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { isValidEmail } from '@/lib/utils';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Mail } from 'lucide-react';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Logo from '@/components/ui/Logo';
+import { useLoginForm } from '@/features/login/hooks/useLoginForm';
+import { LoginPasswordField } from '@/features/login/components/LoginPasswordField';
 
-export default function LoginPage() {
-    const [email, setEmail] = useState<string>('');
-    const [password, setPassword] = useState<string>('');
-    const [showPassword, setShowPassword] = useState<boolean>(false);
-    const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-
-    const { login, isLoading } = useAuth();
-    const navigate = useNavigate();
-
-    const validateForm = () => {
-        const newErrors: { email?: string; password?: string } = {};
-        let isValid = true;
-
-        if (!email) {
-            newErrors.email = 'Email address is required';
-            isValid = false;
-        } else if (isValidEmail(email) === false) {
-            newErrors.email = 'Please enter a valid email address';
-            isValid = false;
-        }
-
-        if (!password) {
-            newErrors.password = 'Password is required';
-            isValid = false;
-        } else if (password.length < 8) {
-            newErrors.password = 'Password must be at least 8 characters';
-            isValid = false;
-        }
-
-        setErrors(newErrors);
-        return isValid;
-    };
-
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!validateForm()) return;
-
-        try {
-            await login(email, password);
-            toast.success('Successfully logged in!');
-            navigate('/');
-        } catch (error) {
-            console.error('Login failed:', error);
-            if (axios.isAxiosError(error)) {
-                if (error.response?.status === 403) {
-                    toast('Verify your email first', { icon: '📧' });
-                    navigate(FRONTEND_ROUTES.OTP_VERIFICATION, { state: { email } });
-                    return;
-                }
-                if (error.response?.data?.message) {
-                    toast.error(String(error.response.data.message));
-                    return;
-                }
-            }
-            toast.error('Invalid email or password');
-        }
-    };
+export function LoginPage() {
+    const p = useLoginForm();
 
     return (
         <>
@@ -78,69 +20,39 @@ export default function LoginPage() {
                 Sign in to your Ledger Pro workspace.
             </p>
 
-            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+            <form
+                onSubmit={p.handleSubmit}
+                noValidate
+                className="flex flex-col gap-4"
+            >
                 <Input
                     id="login-email"
                     label="Email address"
                     type="email"
                     autoComplete="username"
                     inputMode="email"
-                    value={email}
+                    value={p.email}
                     onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (errors.email) {
-                            setErrors((prev) => ({ ...prev, email: undefined }));
-                        }
+                        p.setEmail(e.target.value);
+                        p.clearError('email');
                     }}
                     placeholder="you@company.com"
-                    error={errors.email}
+                    error={p.errors.email}
                     leftIcon={<Mail size={15} />}
                     sizeVariant="lg"
                 />
 
-                <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                        <label
-                            htmlFor="login-password"
-                            className="text-xs font-medium text-text-2"
-                        >
-                            Password
-                        </label>
-                        <button
-                            type="button"
-                            onClick={() => navigate(FRONTEND_ROUTES.FORGOT_PASSWORD)}
-                            className="text-xs font-medium text-primary hover:opacity-80 transition-opacity"
-                        >
-                            Forgot?
-                        </button>
-                    </div>
-                    <Input
-                        id="login-password"
-                        type={showPassword ? 'text' : 'password'}
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => {
-                            setPassword(e.target.value);
-                            if (errors.password) {
-                                setErrors((prev) => ({ ...prev, password: undefined }));
-                            }
-                        }}
-                        placeholder="Enter your password"
-                        error={errors.password}
-                        leftIcon={<Lock size={15} />}
-                        rightSlot={
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="text-text-3 hover:text-text-1 transition-colors"
-                                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                            >
-                                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                            </button>
-                        }
-                        sizeVariant="lg"
-                    />
-                </div>
+                <LoginPasswordField
+                    value={p.password}
+                    onChange={(v) => {
+                        p.setPassword(v);
+                        p.clearError('password');
+                    }}
+                    error={p.errors.password}
+                    showPassword={p.showPassword}
+                    onToggle={p.toggleShowPassword}
+                    onForgot={p.goForgot}
+                />
 
                 <label className="flex items-center gap-2 text-xs text-text-2 cursor-pointer">
                     <input
@@ -151,9 +63,14 @@ export default function LoginPage() {
                     Keep me signed in for 30 days
                 </label>
 
-                <Button type="submit" size="lg" disabled={isLoading} className="w-full mt-1">
-                    {isLoading ? 'Signing in…' : 'Sign in'}
-                    {!isLoading && <ArrowRight size={14} />}
+                <Button
+                    type="submit"
+                    size="lg"
+                    disabled={p.isLoading}
+                    className="w-full mt-1"
+                >
+                    {p.isLoading ? 'Signing in…' : 'Sign in'}
+                    {!p.isLoading && <ArrowRight size={14} />}
                 </Button>
 
                 <div className="flex items-center gap-3 my-2">
@@ -162,7 +79,12 @@ export default function LoginPage() {
                     <div className="flex-1 h-px bg-border" />
                 </div>
 
-                <Button type="button" variant="secondary" size="lg" className="w-full">
+                <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    className="w-full"
+                >
                     Continue with Google
                 </Button>
 

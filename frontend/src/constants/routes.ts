@@ -4,6 +4,9 @@
  */
 
 export const FRONTEND_ROUTES = {
+    // Root fallback (smart-redirect handler)
+    ROOT: '/',
+
     // Auth
     LOGIN: '/login',
     SIGNUP: '/signup',

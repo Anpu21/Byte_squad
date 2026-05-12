@@ -24,7 +24,7 @@ interface AddExpenseModalProps {
     onSaved: () => void;
 }
 
-export default function AddExpenseModal({
+export function AddExpenseModal({
     isAdmin,
     defaultBranchId,
     branches,

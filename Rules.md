@@ -23,6 +23,8 @@ Claude Code must load and actively apply these skills throughout every task on t
 
 - **`llm-council`** (.claude/skills) — for making critical thinking before implmeation use this skills and provide proper implemention plan this skills must use other skills during the plan implemenation
 
+- **superpowers** Superpowers is a complete software development methodology for your coding agents, built on top of a set of composable skills and some initial instructions that make sure your agent uses them help to devlop a better software.
+
 At the start of any non-trivial task, list which skills apply and why. Re-check skill applicability when scope changes mid-task.
 
 ---
@@ -169,15 +171,62 @@ Always use these from `frontend/src/components/ui/` instead of building inline:
 - **`<Link>` and `useNavigate()` only.** Never `window.location.href = …`, never `<a href="/internal-route">`.
 - **`<a href>` is only for external URLs or download links.** Include `target="_blank" rel="noopener noreferrer"` for `target="_blank"`.
 
+### Routing (data-driven)
+
+- Routes are defined as **data** in `src/routes/routes.config.tsx` and rendered via `.map()` in `AppRouter`. Don't add nested `<Route>` JSX directly in `AppRouter`.
+- Each entry: `{ path, element, guard?, allowedRoles?, layout?, innerWrap? }`. Defaults: `guard: 'protected'`, `layout: 'none'`.
+- Layouts and guards are looked up via `Record<Layout, Wrapper>` in `buildRouteElement.tsx` — adding a new layout means adding a row to the lookup table, not a new switch case.
+- The path string for every route lives in `FRONTEND_ROUTES` (single source of truth). Same on the backend (`APP_ROUTES`).
+- Route metadata (page titles, breadcrumbs) lives separately in `src/routes/routeMeta.ts`. Behavior and presentation are split by file so they can change on different cadences.
+- Helper components used only by the router (`SmartRedirect`, `InventoryByRole`, `FirstSetupOnly`) get their own files — files exporting non-component data must not also export components (react-refresh requirement).
+
 ---
 
 ## 6. State management rules
 
 - **Server state → TanStack Query.** Query keys are cross-component contracts; document them in a `queryKeys.ts` file per feature and import from there. Never duplicate query key strings.
-- **Session-critical client state → Redux Toolkit.** Auth, shopping cart. That's it.
+- **Session-critical & cross-page client state → Redux Toolkit.** Allowed slices:
+  - `auth` — session, current user, role
+  - `cart` — POS cart (cashier)
+  - `shopCart` — customer storefront cart
+  - `adminContext` — admin's working context (e.g. `selectedBranchId`) shared across admin pages so the admin doesn't reselect their branch on every navigation.
+
+  Adding a new slice requires an amendment to this section with a one-sentence justification.
 - **Local UI state → `useState`.** Don't reach for Redux for a modal-open boolean.
 - **Form state → `react-hook-form`.** Not Redux, not `useState`.
 - **Derived state is computed, not stored.** If you can compute it from props or other state, do.
+
+### Typed hooks
+
+- Use `useAppDispatch` and `useAppSelector` from `@/store/hooks` — never raw `useDispatch` / `useSelector` from `react-redux`. The typed wrappers infer `RootState` and `AppDispatch` so you don't repeat them per call-site.
+
+### Selectors
+
+- Derived state belongs in a **memoized selector** via `createSelector` (`@reduxjs/toolkit`), placed under `src/store/selectors/<slice>.ts`.
+- Plain selectors (no derivation) can be exported as `(state: RootState) => state.x.y` from the same file.
+- **Never** inline `useAppSelector((state: RootState) => state.x.y)` in components — import the named selector instead. Inline selectors duplicate logic and skip memoization.
+
+### Reducers are pure
+
+- No `localStorage.setItem`, network calls, navigation, or other side effects inside reducers.
+- Persistence is the job of `redux-persist`, not reducers.
+
+### Persistence (redux-persist)
+
+- Whitelist: `auth`, `shopCart`, `adminContext`. POS `cart` is **session-scoped** — it clears on reload by design (the register starts fresh each shift).
+- `<PersistGate>` in `App.tsx` gates app render on rehydration so axios always has the latest auth token before any request fires.
+- Adding a slice to the whitelist requires justification (does it survive a reload?).
+- Legacy localStorage keys (pre-redux-persist) are migrated once via `src/store/migrations.ts`.
+
+### Don't lift page-local state to Redux
+
+- Filters used only on one page, modal-open state, form drafts, and pagination stay in `useState` (or a feature-scoped super-hook). Redux is for state that's shared across pages or persisted.
+- If a filter component has 8+ props, group them into `filters` + `actions` objects rather than adding a new slice. The shared-state test is "does another page need to read this?", not "is the interface noisy?".
+
+### Prefer reading global state at the consumer
+
+- Components that need `user` / `isAdmin` / `branchId` should call `useAppSelector(selectCurrentUser)` directly rather than receiving them as props drilled from a parent. Same for any other global slice.
+- Exception: a presentational component that takes role-derived flags from its parent for testability or to avoid coupling — fine if intentional, but document why.
 
 ---
 
@@ -444,7 +493,7 @@ frontend/src/features/<feature>/
 
 - `any` (without justification comment)
 - `as unknown as Foo`
-- `window.confirm()` / `window.alert()` / `window.prompt()`
+- `window.confirm()` / `window.alert()` / `window.prompt()` (use `useConfirm()`)
 - `window.location.href = ...` for SPA navigation
 - Raw color values (`#abc`, `text-slate-*`, etc.)
 - Inline modal `<div>` instead of `<Modal>`
@@ -455,10 +504,33 @@ frontend/src/features/<feature>/
 - `console.log` in committed code
 - Missing branch filter on non-admin queries
 - New entities without a repository class
+- Page file over 120 lines or component file over 200 lines (without an exception comment justifying it)
+- Raw `useDispatch` / `useSelector` from `react-redux` (use `useAppDispatch` / `useAppSelector` from `@/store/hooks`)
+- Inline `useAppSelector((state: RootState) => …)` in components (use a named selector from `src/store/selectors/<slice>.ts`)
+- `localStorage.setItem` / `removeItem` inside a Redux reducer (use redux-persist)
+- Hand-rolled `store.subscribe(() => localStorage.setItem(...))` persistence (use redux-persist whitelist)
+- Inline query keys `useQuery({ queryKey: ['foo', id], ... })` instead of `queryKeys.foo.byId(id)`
+- Hand-rolled fetch hooks (`useState<T[]>([]) + useEffect(() => api.get(...).then(setState))`) instead of `useQuery`
+- Adding nested `<Route>` JSX directly in `AppRouter` instead of pushing a row to `routes.config.tsx`
+- Components with 8+ individual filter props (group into `filters` + `actions` bag objects)
+- Drilling `user` / `isAdmin` / `branchId` through 2+ component layers instead of reading from Redux at the consumer
+- Default-exporting page components (use named exports; route table imports them by name)
+- Exporting both components and non-component data from the same file (breaks react-refresh — split into two files)
 
 ---
 
-## 17. When you're stuck
+## 17. Page and component size
+
+- **Component files ≤ 200 lines** (imports + types + helpers + JSX combined). When a component grows past 200, extract the next-obvious sub-component before adding more.
+- **Page files ≤ 120 lines.** Pages are orchestrators: they compose components, wire props, and host top-level effects. They do not contain inline layout markup, business logic, or filter handling.
+- **Helpers and constants over 30 lines** move to a sibling file (`<name>.helpers.ts`, `<name>.constants.ts`).
+- **Hooks over 80 lines** move to their own file under `<feature>/hooks/` (per feature) or `frontend/src/hooks/` (global).
+- **Group by feature.** A page's components, hooks, types, and helpers live together under `frontend/src/features/<feature>/`. Pages stay in `frontend/src/pages/` and only orchestrate.
+- **Why:** a reviewer can hold a 200-line file in their head. Mega-pages are where bugs hide and where merge conflicts pile up. Boring beats clever (§2.5).
+
+---
+
+## 18. When you're stuck
 
 - **Backend change needed?** Ask the user before modifying backend code from a frontend task.
 - **Schema change needed?** Document the ALTER TABLE in the PR. `DB_SYNC=true` is dev-only.
