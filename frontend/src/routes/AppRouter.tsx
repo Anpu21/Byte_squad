@@ -21,7 +21,7 @@ import ProductFormPage from '@/pages/inventory/ProductFormPage';
 import { PosPage } from '@/pages/pos/PosPage';
 import TransactionsPage from '@/pages/pos/TransactionsPage';
 import LedgerPage from '@/pages/accounting/LedgerPage';
-import ExpensesPage from '@/pages/accounting/ExpensesPage';
+import { ExpensesPage } from '@/pages/accounting/ExpensesPage';
 import ProfitLossPage from '@/pages/accounting/ProfitLossPage';
 import UserManagementPage from '@/pages/users/UserManagementPage';
 import ProfilePage from '@/pages/users/ProfilePage';
