@@ -57,4 +57,7 @@ export const queryKeys = {
         list: (filters: { branchId: string | null; status: string | null }) =>
             ['expenses', filters] as const,
     },
+    product: {
+        byId: (id: string) => ['product', 'by-id', id] as const,
+    },
 } as const;
