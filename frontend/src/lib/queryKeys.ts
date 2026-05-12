@@ -37,6 +37,7 @@ export const queryKeys = {
     },
     notifications: {
         list: () => ['notifications', 'list'] as const,
+        byId: (id: string) => ['notifications', 'by-id', id] as const,
     },
     stockTransfers: {
         myRequests: (params?: IListTransfersParams) =>
@@ -50,6 +51,7 @@ export const queryKeys = {
         byId: (id: string) => ['stock-transfers', 'by-id', id] as const,
         sourceOptions: (id: string) =>
             ['stock-transfers', 'source-options', id] as const,
+        counts: () => ['stock-transfers', 'counts'] as const,
     },
     branches: {
         all: () => ['branches'] as const,
