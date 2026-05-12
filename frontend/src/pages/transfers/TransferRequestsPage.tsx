@@ -27,7 +27,7 @@ function formatTimeAgo(iso: string): string {
     return `${days}d ago`;
 }
 
-export default function TransferRequestsPage() {
+export function TransferRequestsPage() {
     const navigate = useNavigate();
     const [tab, setTab] = useState<ScopeTab>('my-requests');
     const [shippingId, setShippingId] = useState<string | null>(null);

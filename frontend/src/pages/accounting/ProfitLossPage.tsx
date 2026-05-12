@@ -6,7 +6,7 @@ import { ProfitLossSummaryKpis } from '@/features/profit-loss/components/ProfitL
 import { ProfitLossStatement } from '@/features/profit-loss/components/ProfitLossStatement';
 import { ProfitLossSkeleton } from '@/features/profit-loss/components/ProfitLossSkeleton';
 
-export default function ProfitLossPage() {
+export function ProfitLossPage() {
     const p = useProfitLossPage();
 
     return (

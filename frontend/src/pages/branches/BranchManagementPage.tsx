@@ -123,7 +123,7 @@ interface BranchManagementPageProps {
     embedded?: boolean;
 }
 
-export default function BranchManagementPage({
+export function BranchManagementPage({
     embedded = false,
 }: BranchManagementPageProps = {}) {
     const queryClient = useQueryClient();

@@ -22,7 +22,7 @@ function formatCurrency(amount: number) {
     }).format(amount);
 }
 
-export default function CheckoutPage() {
+export function CheckoutPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user } = useAuth();

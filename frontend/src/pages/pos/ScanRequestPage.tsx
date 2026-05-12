@@ -21,7 +21,7 @@ function formatCurrency(amount: number) {
     }).format(amount);
 }
 
-export default function ScanRequestPage() {
+export function ScanRequestPage() {
     const navigate = useNavigate();
     const manualInputRef = useRef<HTMLInputElement>(null);
     const [request, setRequest] = useState<ICustomerRequest | null>(null);

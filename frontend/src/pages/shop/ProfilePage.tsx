@@ -10,7 +10,7 @@ import { PersonalInfoForm } from '@/features/customer-profile/components/Persona
 import { BranchPickerSection } from '@/features/customer-profile/components/BranchPickerSection';
 import { PasswordChangeForm } from '@/features/customer-profile/components/PasswordChangeForm';
 
-export default function CustomerProfilePage() {
+export function CustomerProfilePage() {
     const { user } = useAuth();
     const profileQuery = useProfileQuery();
     const profile = profileQuery.data;

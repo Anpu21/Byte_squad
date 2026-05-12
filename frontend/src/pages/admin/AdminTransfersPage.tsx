@@ -29,7 +29,7 @@ function formatTimeAgo(iso: string): string {
     return `${days}d ago`;
 }
 
-export default function AdminTransfersPage() {
+export function AdminTransfersPage() {
     const navigate = useNavigate();
 
     const [filter, setFilter] = useState<StatusFilter>(

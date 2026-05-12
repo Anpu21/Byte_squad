@@ -42,7 +42,7 @@ const STOCK_DOT: Record<ShopStockStatus, string> = {
     out: 'bg-danger',
 };
 
-export default function CatalogPage() {
+export function CatalogPage() {
     const dispatch = useDispatch();
     const confirm = useConfirm();
     const { user } = useAuth();

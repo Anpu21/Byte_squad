@@ -33,7 +33,7 @@ const STATUS_TONE: Record<CustomerRequestStatus, string> = {
     expired: 'bg-surface-2 text-text-2 border-border',
 };
 
-export default function RequestConfirmationPage() {
+export function RequestConfirmationPage() {
     const { code } = useParams<{ code: string }>();
     const [generated, setGenerated] = useState<{ code: string; url: string } | null>(null);
 

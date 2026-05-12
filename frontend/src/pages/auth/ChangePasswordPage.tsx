@@ -10,7 +10,7 @@ import Card, { CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import Input from '@/components/ui/Input';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
-export default function ChangePasswordPage() {
+export function ChangePasswordPage() {
     const navigate = useNavigate();
     const { logout } = useAuth();
     const [currentPassword, setCurrentPassword] = useState('');

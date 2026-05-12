@@ -20,7 +20,7 @@ interface FormErrors {
     confirmPassword?: string;
 }
 
-export default function ResetPasswordPage() {
+export function ResetPasswordPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const initialEmail = (location.state as LocationState | null)?.email ?? '';

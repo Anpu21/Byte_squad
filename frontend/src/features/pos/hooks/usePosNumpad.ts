@@ -3,7 +3,7 @@ import type { PadMode } from '../types/pad-mode.type';
 
 interface UsePosNumpadOptions {
     onConfirmDiscount: (amount: number) => void;
-    onConfirmCustomItem: (name: string, price: number) => void;
+    onConfirmCustomItem: (name: string, price: number, qty?: number) => void;
 }
 
 export function usePosNumpad({
@@ -43,7 +43,8 @@ export function usePosNumpad({
             onConfirmDiscount(val);
             resetPad();
         } else if (padMode === 'custom') {
-            onConfirmCustomItem(customName, val);
+            // Honor pendingQty if the cashier set one before switching to custom mode.
+            onConfirmCustomItem(customName, val, pendingQty ?? 1);
             setPendingQty(null);
             resetPad();
         }
@@ -51,6 +52,7 @@ export function usePosNumpad({
         padMode,
         padValue,
         customName,
+        pendingQty,
         onConfirmDiscount,
         onConfirmCustomItem,
         resetPad,

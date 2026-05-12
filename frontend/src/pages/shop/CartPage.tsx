@@ -17,7 +17,7 @@ function formatCurrency(amount: number) {
     }).format(amount);
 }
 
-export default function CartPage() {
+export function CartPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const items = useSelector((state: RootState) => state.shopCart.items);

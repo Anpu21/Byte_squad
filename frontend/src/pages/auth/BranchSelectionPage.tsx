@@ -13,7 +13,7 @@ import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';
 import OnboardingStepper from '@/components/auth/OnboardingStepper';
 
-export default function BranchSelectionPage() {
+export function BranchSelectionPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [selectedId, setSelectedId] = useState<string | null>(null);

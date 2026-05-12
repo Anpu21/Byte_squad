@@ -14,7 +14,7 @@ interface LocationState {
     email?: string;
 }
 
-export default function OtpVerificationPage() {
+export function OtpVerificationPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const initialEmail = (location.state as LocationState | null)?.email ?? '';

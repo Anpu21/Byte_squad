@@ -8,7 +8,7 @@ import { UserRole } from '@/constants/enums';
 import type { IUserProfile } from '@/types';
 import toast from 'react-hot-toast';
 
-export default function ProfilePage() {
+export function ProfilePage() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);

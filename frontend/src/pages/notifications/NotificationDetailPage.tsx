@@ -55,7 +55,7 @@ function MetadataView({ metadata }: { metadata: Record<string, unknown> }) {
     );
 }
 
-export default function NotificationDetailPage() {
+export function NotificationDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [fetchState, setFetchState] = useState<LoadState>({

@@ -4,7 +4,7 @@ import { UserFilters } from '@/features/user-management/components/UserFilters';
 import { UserTable } from '@/features/user-management/components/UserTable';
 import { CreateUserModal } from '@/features/user-management/components/CreateUserModal';
 
-export default function UserManagementPage() {
+export function UserManagementPage() {
     const p = useUserManagementPage();
 
     return (

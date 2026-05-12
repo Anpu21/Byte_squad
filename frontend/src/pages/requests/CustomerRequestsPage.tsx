@@ -5,7 +5,7 @@ import { NoBranchWarning } from '@/features/customer-requests/components/NoBranc
 import { CustomerRequestsKpis } from '@/features/customer-requests/components/CustomerRequestsKpis';
 import { CustomerRequestsTable } from '@/features/customer-requests/components/CustomerRequestsTable';
 
-export default function CustomerRequestsPage() {
+export function CustomerRequestsPage() {
     const p = useCustomerRequestsPage();
 
     return (

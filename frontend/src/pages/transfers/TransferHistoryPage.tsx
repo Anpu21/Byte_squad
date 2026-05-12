@@ -3,7 +3,7 @@ import { TransferHistoryHeader } from '@/features/transfer-history/components/Tr
 import { TransferHistoryFilters } from '@/features/transfer-history/components/TransferHistoryFilters';
 import { TransferHistoryTable } from '@/features/transfer-history/components/TransferHistoryTable';
 
-export default function TransferHistoryPage() {
+export function TransferHistoryPage() {
     const p = useTransferHistoryPage();
     const f = p.filters;
     const th = f.transferHistory;

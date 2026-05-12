@@ -12,7 +12,7 @@ interface BranchComparisonPageProps {
     embedded?: boolean;
 }
 
-export default function BranchComparisonPage({
+export function BranchComparisonPage({
     embedded = false,
 }: BranchComparisonPageProps = {}) {
     const p = useBranchComparisonPage();

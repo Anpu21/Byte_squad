@@ -21,7 +21,7 @@ interface FieldErrors {
     phone?: string;
 }
 
-export default function SignupPage() {
+export function SignupPage() {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');

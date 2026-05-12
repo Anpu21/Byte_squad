@@ -12,7 +12,7 @@ interface FormErrors {
     requestedQuantity?: string;
 }
 
-export default function NewTransferRequestPage() {
+export function NewTransferRequestPage() {
     const navigate = useNavigate();
 
     const [products, setProducts] = useState<IProduct[]>([]);

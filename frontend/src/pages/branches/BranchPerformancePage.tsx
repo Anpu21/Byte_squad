@@ -14,7 +14,7 @@ import { formatDateShort } from '@/features/branch-performance/lib/format';
 
 const REFETCH_INTERVAL_MS = 30000;
 
-export default function BranchPerformancePage() {
+export function BranchPerformancePage() {
     const { data, isLoading, isError, error, refetch } =
         useQuery<IMyBranchPerformance>({
             queryKey: queryKeys.branch.myPerformance(),

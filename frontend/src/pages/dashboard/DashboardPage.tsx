@@ -11,7 +11,7 @@ import { posService } from '@/services/pos.service';
 import type { IAdminDashboard, ITopProduct, ITransaction } from '@/types';
 import { UserRole } from '@/constants/enums';
 import { useAuth } from '@/hooks/useAuth';
-import OverviewPage from '@/pages/admin/OverviewPage';
+import { OverviewPage } from '@/pages/admin/OverviewPage';
 import KpiCard from '@/components/ui/KpiCard';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -39,7 +39,7 @@ function formatDayShort(date: string) {
     return d.toLocaleDateString('en-US', { weekday: 'short' });
 }
 
-export default function DashboardPage() {
+export function DashboardPage() {
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
 

@@ -56,7 +56,7 @@ function downloadCsv(rows: ICashierTransactionRow[], scope: string) {
     URL.revokeObjectURL(url);
 }
 
-export default function TransactionsPage() {
+export function TransactionsPage() {
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
 

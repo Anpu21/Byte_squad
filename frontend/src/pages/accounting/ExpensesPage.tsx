@@ -5,8 +5,8 @@ import { ExpensesHeroKpi } from '@/features/expenses/components/ExpensesHeroKpi'
 import { ExpensesSecondaryMetrics } from '@/features/expenses/components/ExpensesSecondaryMetrics';
 import { ExpensesActiveFilterChips } from '@/features/expenses/components/ExpensesActiveFilterChips';
 import { ExpensesList } from '@/features/expenses/components/ExpensesList';
-import AddExpenseModal from './AddExpenseModal';
-import ReviewExpenseModal from './ReviewExpenseModal';
+import { AddExpenseModal } from './AddExpenseModal';
+import { ReviewExpenseModal } from './ReviewExpenseModal';
 
 export function ExpensesPage() {
     const p = useExpensesPage();

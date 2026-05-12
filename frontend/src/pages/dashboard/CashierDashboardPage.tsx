@@ -33,7 +33,7 @@ function formatDayShort(date: string) {
     return d.toLocaleDateString('en-US', { weekday: 'short' });
 }
 
-export default function CashierDashboardPage() {
+export function CashierDashboardPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
 

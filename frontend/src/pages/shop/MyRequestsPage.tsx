@@ -43,7 +43,7 @@ const STATUS_TONE: Record<CustomerRequestStatus, string> = {
     expired: 'bg-surface-2 text-text-2 border-border',
 };
 
-export default function MyRequestsPage() {
+export function MyRequestsPage() {
     const queryClient = useQueryClient();
     const confirm = useConfirm();
     const { data: requests = [], isLoading } = useQuery({

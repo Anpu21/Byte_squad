@@ -22,7 +22,7 @@ function formatCurrency(amount: number) {
     }).format(amount);
 }
 
-export default function ProductDetailPage() {
+export function ProductDetailPage() {
     const { id } = useParams<{ id: string }>();
     const dispatch = useDispatch();
     const navigate = useNavigate();

@@ -27,7 +27,7 @@ interface OverviewPageProps {
     embedded?: boolean;
 }
 
-export default function OverviewPage({ embedded = false }: OverviewPageProps = {}) {
+export function OverviewPage({ embedded = false }: OverviewPageProps = {}) {
     const { data, isLoading } = useQuery<IOverviewResponse>({
         queryKey: queryKeys.admin.overview(),
         queryFn: adminService.getOverview,

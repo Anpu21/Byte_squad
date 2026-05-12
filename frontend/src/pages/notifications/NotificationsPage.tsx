@@ -220,7 +220,7 @@ function DetailEmpty() {
     );
 }
 
-export default function NotificationsPage() {
+export function NotificationsPage() {
     const { notifications, unreadCount, markAsRead, markAllAsRead } =
         useNotifications();
     const navigate = useNavigate();
