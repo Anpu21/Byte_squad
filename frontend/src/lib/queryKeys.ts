@@ -92,4 +92,15 @@ export const queryKeys = {
     branch: {
         myPerformance: () => ['my-branch-performance'] as const,
     },
+    ledger: {
+        entries: (filters: {
+            entryType?: string;
+            startDate?: string;
+            endDate?: string;
+            search?: string;
+            page: number;
+            limit: number;
+        }) => ['ledger', 'entries', filters] as const,
+        summary: () => ['ledger', 'summary'] as const,
+    },
 } as const;

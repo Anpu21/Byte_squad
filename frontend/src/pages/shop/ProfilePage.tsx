@@ -1,175 +1,25 @@
-import { useEffect, useRef, useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-    AlertCircle,
-    Camera,
-    Check,
-    Loader2,
-    MapPin,
-    ShieldCheck,
-    UserRound,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-import axios from 'axios';
-import { profileService } from '@/services/profile.service';
-import { authService } from '@/services/auth.service';
-import { userService } from '@/services/user.service';
-import { shopProductsService } from '@/services/shop-products.service';
-import { queryKeys } from '@/lib/queryKeys';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { setUser, setUserBranch } from '@/store/slices/authSlice';
-import { clearShopCart } from '@/store/slices/shopCartSlice';
-import Avatar from '@/components/ui/Avatar';
-import type { IUserProfile } from '@/types';
+import { useProfileQuery } from '@/features/customer-profile/hooks/useProfileQuery';
+import { useProfileMutations } from '@/features/customer-profile/hooks/useProfileMutations';
+import { usePersonalInfo } from '@/features/customer-profile/hooks/usePersonalInfo';
+import { useBranchChange } from '@/features/customer-profile/hooks/useBranchChange';
+import { usePasswordChange } from '@/features/customer-profile/hooks/usePasswordChange';
+import { AvatarCard } from '@/features/customer-profile/components/AvatarCard';
+import { PersonalInfoForm } from '@/features/customer-profile/components/PersonalInfoForm';
+import { BranchPickerSection } from '@/features/customer-profile/components/BranchPickerSection';
+import { PasswordChangeForm } from '@/features/customer-profile/components/PasswordChangeForm';
 
 export default function CustomerProfilePage() {
-    const dispatch = useDispatch();
-    const queryClient = useQueryClient();
     const { user } = useAuth();
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const profileQuery = useProfileQuery();
+    const profile = profileQuery.data;
+    const personal = usePersonalInfo(profile);
+    const { updateProfile, uploadAvatar } = useProfileMutations();
+    const branch = useBranchChange(profile);
+    const password = usePasswordChange();
 
-    const { data: profile, isLoading } = useQuery<IUserProfile>({
-        queryKey: queryKeys.profile.self(),
-        queryFn: profileService.getProfile,
-    });
-
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [phone, setPhone] = useState('');
-    const [hydrated, setHydrated] = useState(false);
-
-    useEffect(() => {
-        if (profile && !hydrated) {
-            setFirstName(profile.firstName);
-            setLastName(profile.lastName);
-            setPhone(profile.phone ?? '');
-            setHydrated(true);
-        }
-    }, [profile, hydrated]);
-
-    const updateProfileMutation = useMutation({
-        mutationFn: (data: {
-            firstName: string;
-            lastName: string;
-            phone: string | null;
-        }) => profileService.updateProfile(data),
-        onSuccess: (next) => {
-            queryClient.setQueryData(['profile'], next);
-            dispatch(
-                setUser({
-                    firstName: next.firstName,
-                    lastName: next.lastName,
-                    phone: next.phone,
-                }),
-            );
-            toast.success('Profile updated');
-        },
-        onError: () => toast.error('Could not update profile'),
-    });
-
-    const avatarMutation = useMutation({
-        mutationFn: (file: File) => profileService.uploadAvatar(file),
-        onSuccess: (next) => {
-            queryClient.setQueryData(['profile'], next);
-            dispatch(setUser({ avatarUrl: next.avatarUrl }));
-            toast.success('Avatar updated');
-        },
-        onError: () =>
-            toast.error('Could not upload avatar. Max 2MB, images only.'),
-    });
-
-    // Branch picker — same query key as BranchSelectionPage so React Query dedupes.
-    const { data: branches = [], isLoading: branchesLoading } = useQuery({
-        queryKey: queryKeys.shop.branchesWithStaff(),
-        queryFn: shopProductsService.listBranches,
-    });
-    const [selectedBranchId, setSelectedBranchId] = useState<string>('');
-    useEffect(() => {
-        if (profile?.branch?.id) setSelectedBranchId(profile.branch.id);
-    }, [profile?.branch?.id]);
-
-    const updateBranchMutation = useMutation({
-        mutationFn: (branchId: string) => userService.updateMyBranch(branchId),
-        onSuccess: (_data, branchId) => {
-            dispatch(setUserBranch(branchId));
-            // Stale prices/availability — drop any cart items from the old branch.
-            dispatch(clearShopCart());
-            queryClient.invalidateQueries({ queryKey: queryKeys.profile.self() });
-            toast.success('Pickup branch updated');
-        },
-        onError: (err: unknown) => {
-            if (axios.isAxiosError(err)) {
-                const data = err.response?.data as
-                    | { message?: string }
-                    | undefined;
-                toast.error(data?.message ?? 'Could not update branch');
-            } else {
-                toast.error('Could not update branch');
-            }
-        },
-    });
-
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [pwError, setPwError] = useState<string | null>(null);
-    const [pwSubmitting, setPwSubmitting] = useState(false);
-
-    const handlePersonalSave = (e: React.FormEvent) => {
-        e.preventDefault();
-        const trimmedPhone = phone.trim();
-        updateProfileMutation.mutate({
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            phone: trimmedPhone.length > 0 ? trimmedPhone : null,
-        });
-    };
-
-    const handleAvatarPick = () => fileInputRef.current?.click();
-
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        avatarMutation.mutate(file);
-        e.target.value = '';
-    };
-
-    const handlePasswordSave = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setPwError(null);
-
-        if (newPassword.length < 8) {
-            setPwError('New password must be at least 8 characters');
-            return;
-        }
-        if (newPassword !== confirmPassword) {
-            setPwError('Passwords do not match');
-            return;
-        }
-
-        setPwSubmitting(true);
-        try {
-            await authService.changePassword(currentPassword, newPassword);
-            toast.success('Password updated');
-            setCurrentPassword('');
-            setNewPassword('');
-            setConfirmPassword('');
-        } catch (err: unknown) {
-            if (axios.isAxiosError(err)) {
-                const data = err.response?.data as
-                    | { message?: string }
-                    | undefined;
-                setPwError(data?.message ?? 'Failed to change password');
-            } else {
-                setPwError('An unexpected error occurred');
-            }
-        } finally {
-            setPwSubmitting(false);
-        }
-    };
-
-    if (isLoading) {
+    if (profileQuery.isLoading) {
         return (
             <div className="flex items-center justify-center py-24">
                 <Loader2 className="animate-spin text-text-3" size={28} />
@@ -182,9 +32,17 @@ export default function CustomerProfilePage() {
         : user
           ? `${user.firstName} ${user.lastName}`
           : '';
-
     const avatarSrc = profile?.avatarUrl ?? user?.avatarUrl ?? undefined;
-    const branch = profile?.branch;
+
+    const handlePersonalSave = (e: React.FormEvent) => {
+        e.preventDefault();
+        const trimmedPhone = personal.phone.trim();
+        updateProfile.mutate({
+            firstName: personal.firstName.trim(),
+            lastName: personal.lastName.trim(),
+            phone: trimmedPhone.length > 0 ? trimmedPhone : null,
+        });
+    };
 
     return (
         <div className="max-w-5xl mx-auto">
@@ -201,347 +59,48 @@ export default function CustomerProfilePage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
-                {/* Avatar column */}
-                <aside className="lg:sticky lg:top-24 self-start">
-                    <div className="bg-surface border border-border rounded-md p-6 flex flex-col items-center text-center">
-                        <div className="relative mb-4">
-                            <Avatar
-                                name={displayName}
-                                src={avatarSrc}
-                                size={120}
-                                className="ring-4 ring-surface-2"
-                            />
-                            <button
-                                type="button"
-                                onClick={handleAvatarPick}
-                                disabled={avatarMutation.isPending}
-                                className="absolute bottom-1 right-1 inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary text-text-inv border-2 border-surface shadow-md-token hover:bg-primary-hover transition-colors disabled:opacity-60"
-                                aria-label="Change avatar"
-                            >
-                                {avatarMutation.isPending ? (
-                                    <Loader2 size={14} className="animate-spin" />
-                                ) : (
-                                    <Camera size={14} />
-                                )}
-                            </button>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp,image/gif"
-                                className="hidden"
-                                onChange={handleAvatarChange}
-                            />
-                        </div>
-                        <p className="text-base font-semibold text-text-1 truncate max-w-full">
-                            {displayName}
-                        </p>
-                        <p className="text-xs text-text-2 mt-1 truncate max-w-full">
-                            {profile?.email}
-                        </p>
-                        <button
-                            type="button"
-                            onClick={handleAvatarPick}
-                            disabled={avatarMutation.isPending}
-                            className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-medium text-text-2 hover:text-text-1 transition-colors disabled:opacity-60"
-                        >
-                            <Camera size={12} />
-                            Upload photo
-                        </button>
-                        <p className="mt-2 text-[10.5px] text-text-3">
-                            JPG, PNG or WebP · max 2MB
-                        </p>
-                    </div>
-                </aside>
+                <AvatarCard
+                    displayName={displayName}
+                    email={profile?.email}
+                    avatarSrc={avatarSrc}
+                    isUploading={uploadAvatar.isPending}
+                    onUpload={(file) => uploadAvatar.mutate(file)}
+                />
 
-                {/* Form columns */}
                 <div className="space-y-6">
-                    {/* Personal info */}
-                    <form
+                    <PersonalInfoForm
+                        firstName={personal.firstName}
+                        setFirstName={personal.setFirstName}
+                        lastName={personal.lastName}
+                        setLastName={personal.setLastName}
+                        email={profile?.email}
+                        phone={personal.phone}
+                        setPhone={personal.setPhone}
+                        isSubmitting={updateProfile.isPending}
                         onSubmit={handlePersonalSave}
-                        className="bg-surface border border-border rounded-md overflow-hidden"
-                    >
-                        <header className="px-6 py-4 border-b border-border flex items-center gap-2">
-                            <UserRound size={15} className="text-text-2" />
-                            <h2 className="text-sm font-semibold text-text-1">
-                                Personal info
-                            </h2>
-                        </header>
-                        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
-                            <Field label="First name">
-                                <input
-                                    value={firstName}
-                                    onChange={(e) =>
-                                        setFirstName(e.target.value)
-                                    }
-                                    required
-                                    className={inputClass}
-                                />
-                            </Field>
-                            <Field label="Last name">
-                                <input
-                                    value={lastName}
-                                    onChange={(e) =>
-                                        setLastName(e.target.value)
-                                    }
-                                    required
-                                    className={inputClass}
-                                />
-                            </Field>
-                            <Field label="Email" hint="Managed by your account">
-                                <input
-                                    value={profile?.email ?? ''}
-                                    disabled
-                                    className={`${inputClass} text-text-3 cursor-not-allowed`}
-                                />
-                            </Field>
-                            <Field label="Phone">
-                                <input
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                    placeholder="+94 7X XXX XXXX"
-                                    className={inputClass}
-                                />
-                            </Field>
-                        </div>
-                        <footer className="px-6 py-4 border-t border-border bg-surface-2 flex justify-end">
-                            <button
-                                type="submit"
-                                disabled={updateProfileMutation.isPending}
-                                className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-primary text-text-inv text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-60"
-                            >
-                                {updateProfileMutation.isPending ? (
-                                    <>
-                                        <Loader2
-                                            size={14}
-                                            className="animate-spin"
-                                        />
-                                        Saving…
-                                    </>
-                                ) : (
-                                    <>
-                                        <Check size={14} />
-                                        Save changes
-                                    </>
-                                )}
-                            </button>
-                        </footer>
-                    </form>
-
-                    {/* Branch */}
-                    <section className="bg-surface border border-border rounded-md overflow-hidden">
-                        <header className="px-6 py-4 border-b border-border flex items-center gap-2">
-                            <MapPin size={15} className="text-text-2" />
-                            <h2 className="text-sm font-semibold text-text-1">
-                                Pickup branch
-                            </h2>
-                        </header>
-                        <div className="px-6 py-5 space-y-4">
-                            <div className="min-w-0">
-                                {branch ? (
-                                    <>
-                                        <p className="text-base font-semibold text-text-1 truncate">
-                                            {branch.name}
-                                        </p>
-                                        {branch.address && (
-                                            <p className="text-xs text-text-2 mt-1">
-                                                {branch.address}
-                                            </p>
-                                        )}
-                                    </>
-                                ) : (
-                                    <>
-                                        <p className="text-sm font-medium text-text-1">
-                                            No branch selected
-                                        </p>
-                                        <p className="text-xs text-text-2 mt-1">
-                                            Pick a branch to start placing
-                                            pickup orders.
-                                        </p>
-                                    </>
-                                )}
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-                                <div className="flex-1 min-w-0">
-                                    <label
-                                        htmlFor="branch-picker"
-                                        className="block text-xs font-medium text-text-2 mb-1.5"
-                                    >
-                                        {branch ? 'Change branch' : 'Choose a branch'}
-                                    </label>
-                                    <select
-                                        id="branch-picker"
-                                        value={selectedBranchId}
-                                        onChange={(e) =>
-                                            setSelectedBranchId(e.target.value)
-                                        }
-                                        disabled={
-                                            branchesLoading ||
-                                            updateBranchMutation.isPending
-                                        }
-                                        className="w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {branchesLoading ? (
-                                            <option value="">Loading branches…</option>
-                                        ) : (
-                                            <>
-                                                {!selectedBranchId && (
-                                                    <option value="">
-                                                        Select a branch…
-                                                    </option>
-                                                )}
-                                                {branches.map((b) => (
-                                                    <option key={b.id} value={b.id}>
-                                                        {b.name}
-                                                    </option>
-                                                ))}
-                                            </>
-                                        )}
-                                    </select>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        selectedBranchId &&
-                                        updateBranchMutation.mutate(selectedBranchId)
-                                    }
-                                    disabled={
-                                        !selectedBranchId ||
-                                        selectedBranchId === branch?.id ||
-                                        updateBranchMutation.isPending
-                                    }
-                                    className="inline-flex items-center justify-center gap-1.5 h-[38px] px-4 rounded-md bg-primary text-text-inv text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-[3px] focus:ring-primary/30"
-                                >
-                                    {updateBranchMutation.isPending ? (
-                                        <>
-                                            <Loader2
-                                                size={14}
-                                                className="animate-spin"
-                                            />
-                                            Saving…
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Check size={14} />
-                                            Save branch
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Security */}
-                    <form
-                        onSubmit={handlePasswordSave}
-                        className="bg-surface border border-border rounded-md overflow-hidden"
-                    >
-                        <header className="px-6 py-4 border-b border-border flex items-center gap-2">
-                            <ShieldCheck size={15} className="text-text-2" />
-                            <h2 className="text-sm font-semibold text-text-1">
-                                Security
-                            </h2>
-                        </header>
-                        <div className="p-6 space-y-5">
-                            {pwError && (
-                                <div className="flex items-start gap-2 rounded-md bg-danger-soft border border-danger/40 px-3 py-2 text-[12.5px] text-danger">
-                                    <AlertCircle
-                                        size={14}
-                                        className="mt-0.5 flex-shrink-0"
-                                    />
-                                    <span>{pwError}</span>
-                                </div>
-                            )}
-                            <Field label="Current password">
-                                <input
-                                    type="password"
-                                    value={currentPassword}
-                                    onChange={(e) =>
-                                        setCurrentPassword(e.target.value)
-                                    }
-                                    required
-                                    className={inputClass}
-                                    placeholder="••••••••"
-                                />
-                            </Field>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <Field
-                                    label="New password"
-                                    hint="At least 8 characters"
-                                >
-                                    <input
-                                        type="password"
-                                        value={newPassword}
-                                        onChange={(e) =>
-                                            setNewPassword(e.target.value)
-                                        }
-                                        required
-                                        minLength={8}
-                                        className={inputClass}
-                                    />
-                                </Field>
-                                <Field label="Confirm new password">
-                                    <input
-                                        type="password"
-                                        value={confirmPassword}
-                                        onChange={(e) =>
-                                            setConfirmPassword(e.target.value)
-                                        }
-                                        required
-                                        className={inputClass}
-                                    />
-                                </Field>
-                            </div>
-                        </div>
-                        <footer className="px-6 py-4 border-t border-border bg-surface-2 flex justify-end">
-                            <button
-                                type="submit"
-                                disabled={pwSubmitting}
-                                className="inline-flex items-center gap-2 h-9 px-4 rounded-md border border-border-strong bg-surface text-sm font-medium text-text-1 hover:bg-surface-2 transition-colors disabled:opacity-60"
-                            >
-                                {pwSubmitting ? (
-                                    <>
-                                        <Loader2
-                                            size={14}
-                                            className="animate-spin"
-                                        />
-                                        Updating…
-                                    </>
-                                ) : (
-                                    'Update password'
-                                )}
-                            </button>
-                        </footer>
-                    </form>
+                    />
+                    <BranchPickerSection
+                        branch={profile?.branch}
+                        branches={branch.branches}
+                        branchesLoading={branch.branchesLoading}
+                        selectedBranchId={branch.selectedBranchId}
+                        setSelectedBranchId={branch.setSelectedBranchId}
+                        isSaving={branch.updateBranchMutation.isPending}
+                        onSave={(id) => branch.updateBranchMutation.mutate(id)}
+                    />
+                    <PasswordChangeForm
+                        currentPassword={password.currentPassword}
+                        setCurrentPassword={password.setCurrentPassword}
+                        newPassword={password.newPassword}
+                        setNewPassword={password.setNewPassword}
+                        confirmPassword={password.confirmPassword}
+                        setConfirmPassword={password.setConfirmPassword}
+                        error={password.error}
+                        submitting={password.submitting}
+                        onSubmit={password.submit}
+                    />
                 </div>
             </div>
         </div>
-    );
-}
-
-const inputClass =
-    'w-full h-10 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors placeholder:text-text-3 disabled:bg-surface-2';
-
-function Field({
-    label,
-    hint,
-    children,
-}: {
-    label: string;
-    hint?: string;
-    children: React.ReactNode;
-}) {
-    return (
-        <label className="block">
-            <span className="block text-[11px] font-semibold text-text-2 uppercase tracking-[1px] mb-1.5">
-                {label}
-            </span>
-            {children}
-            {hint && (
-                <span className="block text-[10.5px] text-text-3 mt-1">
-                    {hint}
-                </span>
-            )}
-        </label>
     );
 }
