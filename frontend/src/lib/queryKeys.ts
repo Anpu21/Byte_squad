@@ -42,6 +42,9 @@ export const queryKeys = {
             ['stock-transfers', 'all', params ?? {}] as const,
         history: (params?: IListTransferHistoryParams) =>
             ['stock-transfers', 'history', params ?? {}] as const,
+        byId: (id: string) => ['stock-transfers', 'by-id', id] as const,
+        sourceOptions: (id: string) =>
+            ['stock-transfers', 'source-options', id] as const,
     },
     branches: {
         all: () => ['branches'] as const,

@@ -34,7 +34,7 @@ import { AdminInventoryPage } from '@/pages/admin/AdminInventoryPage';
 import TransferRequestsPage from '@/pages/transfers/TransferRequestsPage';
 import NewTransferRequestPage from '@/pages/transfers/NewTransferRequestPage';
 import TransferHistoryPage from '@/pages/transfers/TransferHistoryPage';
-import TransferDetailPage from '@/pages/transfers/TransferDetailPage';
+import { TransferDetailPage } from '@/pages/transfers/TransferDetailPage';
 import AdminTransfersPage from '@/pages/admin/AdminTransfersPage';
 import CustomerRequestsPage from '@/pages/requests/CustomerRequestsPage';
 import ScanRequestPage from '@/pages/pos/ScanRequestPage';
