@@ -9,6 +9,7 @@ import {
     Search,
     ScrollText,
     ShoppingCart,
+    Sparkles,
     User,
     UserRound,
 } from 'lucide-react';
@@ -24,6 +25,7 @@ import { CartDrawer } from '@/components/shop/CartDrawer';
 import Logo from '@/components/ui/Logo';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import Avatar from '@/components/ui/Avatar';
+import { LoyaltyHeaderBadge } from '@/features/loyalty/components/LoyaltyHeaderBadge';
 
 interface CustomerLayoutProps {
     children: ReactNode;
@@ -163,6 +165,10 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
                             </Link>
                         )}
 
+                        {isAuthenticated && user?.role === UserRole.CUSTOMER && (
+                            <LoyaltyHeaderBadge />
+                        )}
+
                         <ThemeToggle />
 
                         <button
@@ -224,6 +230,14 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
                                             onClick={() => setMenuOpen(false)}
                                         >
                                             <ScrollText size={14} /> My Orders
+                                        </Link>
+                                        <Link
+                                            role="menuitem"
+                                            to={FRONTEND_ROUTES.SHOP_REWARDS}
+                                            className="flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:bg-surface-2"
+                                            onClick={() => setMenuOpen(false)}
+                                        >
+                                            <Sparkles size={14} /> Rewards
                                         </Link>
                                         <button
                                             role="menuitem"

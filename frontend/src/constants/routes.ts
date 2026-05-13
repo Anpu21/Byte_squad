@@ -70,6 +70,7 @@ export const FRONTEND_ROUTES = {
     SHOP_MY_ORDERS: '/shop/my-orders',
     SHOP_MY_ORDERS_LEGACY: '/shop/my-requests',
     SHOP_PROFILE: '/shop/profile',
+    SHOP_REWARDS: '/shop/rewards',
 
     // Cashier scan + shared customer orders view
     SCAN_ORDER: '/pos/scan-order',
