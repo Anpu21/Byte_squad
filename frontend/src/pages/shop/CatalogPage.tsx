@@ -6,6 +6,7 @@ import { CategoryChips } from '@/features/shop-catalog/components/CategoryChips'
 import { ProductGrid } from '@/features/shop-catalog/components/ProductGrid';
 import { NoBranchesCard } from '@/features/shop-catalog/components/NoBranchesCard';
 import { RecommendedProductsSection } from '@/features/shop-catalog/components/RecommendedProductsSection';
+import { BuyAgainSection } from '@/features/shop-catalog/components/BuyAgainSection';
 
 export function CatalogPage() {
     const p = useCatalogPage();
@@ -48,12 +49,19 @@ export function CatalogPage() {
             />
 
             {!p.search && !p.category && (
-                <RecommendedProductsSection
-                    title="Recommended for you"
-                    products={p.recommendedProducts}
-                    onAdd={p.handleAdd}
-                    onBranchSelect={p.handleBranchChange}
-                />
+                <>
+                    <BuyAgainSection
+                        products={p.buyAgainProducts}
+                        onAdd={p.handleAdd}
+                        onBranchSelect={p.handleBranchChange}
+                    />
+                    <RecommendedProductsSection
+                        title="Recommended for you"
+                        products={p.recommendedProducts}
+                        onAdd={p.handleAdd}
+                        onBranchSelect={p.handleBranchChange}
+                    />
+                </>
             )}
 
             <ProductGrid

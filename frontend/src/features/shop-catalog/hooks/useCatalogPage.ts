@@ -11,6 +11,7 @@ import { selectShopCartItemCount } from '@/store/selectors/shopCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useConfirm } from '@/hooks/useConfirm';
 import { queryKeys } from '@/lib/queryKeys';
+import { useBuyAgain } from './useBuyAgain';
 import type { IShopProduct } from '@/types';
 
 export function useCatalogPage() {
@@ -61,6 +62,17 @@ export function useCatalogPage() {
     const categories = categoriesQuery.data ?? [];
     const products = productsQuery.data ?? [];
     const recommendedProducts = recommendedQuery.data ?? [];
+
+    const excludeRecommendedIds = useMemo(
+        () => recommendedProducts.map((p) => p.id),
+        [recommendedProducts],
+    );
+    const buyAgainProducts = useBuyAgain({
+        catalog: products,
+        excludeIds: excludeRecommendedIds,
+        enabled: Boolean(branchId),
+        limit: 4,
+    });
 
     const currentBranch = useMemo(
         () => branches.find((b) => b.id === branchId) ?? null,
@@ -115,6 +127,7 @@ export function useCatalogPage() {
         categories,
         products,
         recommendedProducts,
+        buyAgainProducts,
         productCount: products.length,
         isLoading: productsQuery.isLoading,
         currentBranch,
