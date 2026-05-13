@@ -1,26 +1,32 @@
+import { type RefObject } from 'react';
 import { AlertCircle, Check, CreditCard, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import type { IProduct } from '@/types';
 import type { usePosCart } from '../hooks/usePosCart';
 import type { usePosCheckout } from '../hooks/usePosCheckout';
-import type { usePosNumpad } from '../hooks/usePosNumpad';
 import { PosCartTable } from './PosCartTable';
-import { PosNumpad } from './PosNumpad';
 
 interface PosCartPanelProps {
     cart: ReturnType<typeof usePosCart>;
     checkout: ReturnType<typeof usePosCheckout>;
-    numpad: ReturnType<typeof usePosNumpad>;
-    onClearCart: () => void;
+    branchId: string | null | undefined;
+    onOpenCamera: () => void;
+    inputRef: RefObject<HTMLInputElement | null>;
+    onSelectProduct: (product: IProduct) => void;
 }
 
 export function PosCartPanel({
     cart,
     checkout,
-    numpad,
-    onClearCart,
+    branchId,
+    onOpenCamera,
+    inputRef,
+    onSelectProduct,
 }: PosCartPanelProps) {
+    const isEmpty = cart.cart.length === 0;
+
     return (
-        <div className="w-[440px] bg-surface border border-border rounded-md shadow-md-token flex flex-col flex-shrink-0">
+        <div className="flex-1 min-h-0 min-w-0 bg-surface border border-border rounded-md shadow-md-token flex flex-col">
             <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
                 <div>
                     <p className="text-[10px] uppercase tracking-[0.12em] text-text-3 font-semibold">
@@ -30,28 +36,24 @@ export function PosCartPanel({
                         Current sale
                     </h2>
                 </div>
-                <div className="flex items-center gap-2">
-                    {cart.totalItems > 0 && (
-                        <span className="text-[11px] font-semibold bg-primary-soft text-primary-soft-text rounded-full px-2 py-0.5 tabular-nums">
-                            {cart.totalItems} {cart.totalItems === 1 ? 'item' : 'items'}
-                        </span>
-                    )}
-                    {cart.cart.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={onClearCart}
-                            className="text-[11px] font-semibold text-text-3 hover:text-danger uppercase tracking-wider transition-colors focus:outline-none focus:ring-[3px] focus:ring-danger/20 rounded px-1"
-                        >
-                            Clear
-                        </button>
-                    )}
-                </div>
+                {cart.totalItems > 0 && (
+                    <span className="text-[11px] font-semibold bg-primary-soft text-primary-soft-text rounded-full px-2 py-0.5 tabular-nums">
+                        {cart.totalItems} {cart.totalItems === 1 ? 'item' : 'items'}
+                    </span>
+                )}
             </div>
 
             <PosCartTable
                 cart={cart.cart}
                 onUpdateQuantity={cart.updateQuantity}
                 onRemove={cart.removeFromCart}
+                onSetItemDiscount={cart.setItemDiscount}
+                totalDiscount={cart.totalDiscount}
+                total={cart.total}
+                branchId={branchId}
+                onSelectProduct={onSelectProduct}
+                onOpenCamera={onOpenCamera}
+                inputRef={inputRef}
             />
 
             {(checkout.error || checkout.lastTransaction) && (
@@ -98,72 +100,16 @@ export function PosCartPanel({
                 </div>
             )}
 
-            <div className="px-5 py-4 border-t border-border bg-surface-2/40 space-y-2">
-                <div className="flex items-center justify-between text-[13px]">
-                    <span className="text-text-2">Subtotal</span>
-                    <span className="text-text-1 tabular-nums mono">
-                        {formatCurrency(cart.subtotal)}
-                    </span>
-                </div>
-                {cart.discountValue > 0 && (
-                    <div className="flex items-center justify-between text-[13px]">
-                        <span className="flex items-center gap-1.5 text-text-2">
-                            Total Discount
-                            {cart.discountType === 'percentage' && cart.discountAmount > 0 && (
-                                <span className="text-[10px] font-semibold text-text-3 bg-canvas border border-border rounded px-1 py-0.5 mono">
-                                    −{cart.discountAmount}%
-                                </span>
-                            )}
-                            <button
-                                type="button"
-                                onClick={() => cart.setDiscountAmount(0)}
-                                aria-label="Clear discount"
-                                className="p-0.5 -ml-0.5 text-text-3 hover:text-danger rounded focus:outline-none focus:ring-[2px] focus:ring-danger/20"
-                            >
-                                <X size={10} strokeWidth={3} />
-                            </button>
-                        </span>
-                        <span className="text-danger tabular-nums mono">
-                            −{formatCurrency(cart.discountValue)}
-                        </span>
-                    </div>
-                )}
-                <div className="pt-2 border-t border-border flex items-end justify-between">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-3 pb-0.5">
-                        Total · LKR
-                    </span>
-                    <span className="text-2xl font-bold text-text-1 tabular-nums tracking-tight leading-none mono">
-                        {formatCurrency(cart.total).replace('LKR', '').trim()}
-                    </span>
-                </div>
-            </div>
-
-            <PosNumpad
-                padMode={numpad.padMode}
-                padValue={numpad.padValue}
-                customName={numpad.customName}
-                onCustomNameChange={numpad.setCustomName}
-                onToggleMode={numpad.toggleMode}
-                onPadPress={numpad.padPress}
-                onPadConfirm={numpad.padConfirm}
-                discountType={cart.discountType}
-                onToggleDiscountType={() =>
-                    cart.setDiscountType(
-                        cart.discountType === 'fixed' ? 'percentage' : 'fixed',
-                    )
-                }
-            />
-
             <div className="p-3 border-t border-border bg-surface">
                 <button
                     type="button"
                     onClick={checkout.openPaymentModal}
-                    disabled={cart.cart.length === 0}
+                    disabled={isEmpty}
                     className="w-full h-12 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-[3px] focus:ring-primary/30"
                 >
                     <CreditCard size={15} strokeWidth={2.5} />
-                    <span>Complete Sale</span>
-                    {cart.cart.length > 0 && (
+                    <span>Pay</span>
+                    {!isEmpty && (
                         <span className="tabular-nums mono opacity-90">
                             · {formatCurrency(cart.total)}
                         </span>
