@@ -506,23 +506,23 @@ export class AdminSeedService implements OnModuleInit {
       '+94112987654',
     );
 
-    // 2. Users — admins, branch managers, cashiers
+    // 2. Users — admins (not tied to any branch), branch managers, cashiers
     const admin = await this.ensureUser({
       email: defaults.adminEmail,
       password: defaults.adminPassword,
       firstName: defaults.adminFirstName,
       lastName: defaults.adminLastName,
       role: UserRole.ADMIN,
-      branchId: mainBranch.id,
+      branchId: null,
     });
 
     await this.ensureUser({
       email: 'admin2@ledgerpro.com',
       password: 'Admin@123',
-      firstName: 'Downtown',
+      firstName: 'System',
       lastName: 'Admin',
       role: UserRole.ADMIN,
-      branchId: downtownBranch.id,
+      branchId: null,
     });
 
     const mainManager = await this.ensureUser({
@@ -651,16 +651,27 @@ export class AdminSeedService implements OnModuleInit {
     firstName: string;
     lastName: string;
     role: UserRole;
-    branchId: string;
+    branchId: string | null;
   }): Promise<User> {
     let user = await this.userRepository.findOne({
       where: { email: data.email },
     });
 
     if (user) {
+      const patch: Partial<User> = {};
       if (user.isFirstLogin) {
-        await this.userRepository.update(user.id, { isFirstLogin: false });
+        patch.isFirstLogin = false;
         user.isFirstLogin = false;
+      }
+      // Heal stale branchId for seed-managed accounts. Admins should always
+      // have branchId === null (they oversee all branches); managers and
+      // cashiers should stay pinned to their seeded branch.
+      if ((user.branchId ?? null) !== data.branchId) {
+        patch.branchId = data.branchId;
+        user.branchId = data.branchId;
+      }
+      if (Object.keys(patch).length > 0) {
+        await this.userRepository.update(user.id, patch);
       }
       return user;
     }

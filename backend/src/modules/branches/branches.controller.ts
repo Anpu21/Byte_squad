@@ -49,8 +49,10 @@ export class BranchesController {
 
   // Must be declared before :id routes so Nest does not treat
   // "my-performance" as an :id path param.
+  // Manager-only: admins are not tied to a single branch — they use the
+  // cross-branch /admin/overview and /admin/comparison views instead.
   @Get(APP_ROUTES.BRANCHES.MY_PERFORMANCE)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.MANAGER)
   getMyPerformance(
     @CurrentUser('branchId') branchId: string,
   ): Promise<MyBranchPerformance> {

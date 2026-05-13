@@ -29,7 +29,7 @@ import { NotificationsGateway } from '@notifications/notifications.gateway';
 
 interface ActorContext {
   id: string;
-  branchId: string;
+  branchId: string | null;
   role: UserRole;
 }
 
@@ -78,14 +78,34 @@ export class StockTransfersService {
       throw new NotFoundException('Product not found');
     }
 
-    const destBranch = await this.branches.findById(actor.branchId);
+    // Managers default to their own branch as the destination. Admins are
+    // not tied to a branch, so they must say explicitly which branch the
+    // transfer is being requested for.
+    let destinationBranchId: string;
+    if (actor.role === UserRole.ADMIN) {
+      if (!dto.destinationBranchId) {
+        throw new BadRequestException(
+          'destinationBranchId is required when an admin creates a transfer',
+        );
+      }
+      destinationBranchId = dto.destinationBranchId;
+    } else {
+      if (!actor.branchId) {
+        throw new BadRequestException(
+          'Your account is not associated with a branch',
+        );
+      }
+      destinationBranchId = actor.branchId;
+    }
+
+    const destBranch = await this.branches.findById(destinationBranchId);
     if (!destBranch) {
-      throw new NotFoundException('Your branch could not be found');
+      throw new NotFoundException('Destination branch could not be found');
     }
 
     const saved = await this.transfers.create({
       productId: dto.productId,
-      destinationBranchId: actor.branchId,
+      destinationBranchId,
       requestedQuantity: dto.requestedQuantity,
       requestReason: dto.requestReason ?? null,
       status: TransferStatus.PENDING,
@@ -600,4 +620,3 @@ export class StockTransfersService {
     });
   }
 }
-

@@ -83,10 +83,12 @@ export class StockTransfersRepository {
   }
 
   async listMyRequests(filter: ListMineFilter): Promise<PaginatedTransfersRaw> {
-    const qb = this.baseListQb().where(
-      'transfer.destination_branch_id = :branchId',
-      { branchId: filter.branchId },
-    );
+    const qb = this.baseListQb();
+    if (filter.branchId !== null) {
+      qb.where('transfer.destination_branch_id = :branchId', {
+        branchId: filter.branchId,
+      });
+    }
     if (filter.status) {
       qb.andWhere('transfer.status = :status', { status: filter.status });
     }
@@ -100,13 +102,15 @@ export class StockTransfersRepository {
   async listIncoming(
     filter: ListIncomingFilter,
   ): Promise<PaginatedTransfersRaw> {
-    const qb = this.baseListQb()
-      .where('transfer.source_branch_id = :branchId', {
+    const qb = this.baseListQb().where(
+      'transfer.status IN (:...statuses)',
+      { statuses: [TransferStatus.APPROVED, TransferStatus.IN_TRANSIT] },
+    );
+    if (filter.branchId !== null) {
+      qb.andWhere('transfer.source_branch_id = :branchId', {
         branchId: filter.branchId,
-      })
-      .andWhere('transfer.status IN (:...statuses)', {
-        statuses: [TransferStatus.APPROVED, TransferStatus.IN_TRANSIT],
       });
+    }
     if (filter.status) {
       qb.andWhere('transfer.status = :status', { status: filter.status });
     }
@@ -155,4 +159,3 @@ export class StockTransfersRepository {
     return { items, total };
   }
 }
-

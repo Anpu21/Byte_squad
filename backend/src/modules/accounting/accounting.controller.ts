@@ -28,16 +28,19 @@ export class AccountingController {
   constructor(private readonly accountingService: AccountingService) {}
 
   // IMPORTANT: ledger/summary must come BEFORE ledger (static before dynamic)
+  // Admin-only endpoints. Admins are not tied to a branch, so an optional
+  // ?branchId= query narrows the result; omitting it returns cross-branch
+  // totals.
   @Get(APP_ROUTES.ACCOUNTING.LEDGER_SUMMARY)
   @Roles(UserRole.ADMIN)
-  getLedgerSummary(@CurrentUser('branchId') branchId: string) {
-    return this.accountingService.getLedgerSummary(branchId);
+  getLedgerSummary(@Query('branchId') branchId?: string) {
+    return this.accountingService.getLedgerSummary(branchId ?? null);
   }
 
   @Get(APP_ROUTES.ACCOUNTING.LEDGER)
   @Roles(UserRole.ADMIN)
   getLedger(
-    @CurrentUser('branchId') branchId: string,
+    @Query('branchId') branchId?: string,
     @Query('entryType') entryType?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -45,7 +48,7 @@ export class AccountingController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.accountingService.getLedgerEntries(branchId, {
+    return this.accountingService.getLedgerEntries(branchId ?? null, {
       entryType,
       startDate,
       endDate,
@@ -118,7 +121,7 @@ export class AccountingController {
   @Get(APP_ROUTES.ACCOUNTING.PROFIT_LOSS)
   @Roles(UserRole.ADMIN)
   getProfitLoss(
-    @CurrentUser('branchId') branchId: string,
+    @Query('branchId') branchId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
@@ -130,6 +133,7 @@ export class AccountingController {
         .toISOString()
         .split('T')[0];
     const end = endDate || now.toISOString().split('T')[0];
-    return this.accountingService.getProfitLoss(branchId, start, end);
+    // Admins not tied to a branch — omit ?branchId= for cross-branch P&L.
+    return this.accountingService.getProfitLoss(branchId ?? null, start, end);
   }
 }

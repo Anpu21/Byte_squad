@@ -31,9 +31,10 @@ export class AccountingRepository {
   }
 
   async listLedger(opts: ListLedgerOptions): Promise<PagedLedger> {
-    const qb = this.ledgerRepo
-      .createQueryBuilder('le')
-      .where('le.branch_id = :branchId', { branchId: opts.branchId });
+    const qb = this.ledgerRepo.createQueryBuilder('le');
+    if (opts.branchId !== null) {
+      qb.where('le.branch_id = :branchId', { branchId: opts.branchId });
+    }
 
     if (opts.entryType && opts.entryType !== 'all') {
       qb.andWhere('le.entry_type = :entryType', { entryType: opts.entryType });
@@ -70,8 +71,10 @@ export class AccountingRepository {
     };
   }
 
-  async getLedgerSummary(branchId: string): Promise<LedgerSummaryRaw> {
-    const result = await this.ledgerRepo
+  async getLedgerSummary(
+    branchId: string | null,
+  ): Promise<LedgerSummaryRaw> {
+    const qb = this.ledgerRepo
       .createQueryBuilder('le')
       .select(
         `SUM(CASE WHEN le.entry_type = 'credit' THEN le.amount ELSE 0 END)`,
@@ -81,13 +84,15 @@ export class AccountingRepository {
         `SUM(CASE WHEN le.entry_type = 'debit' THEN le.amount ELSE 0 END)`,
         'totalDebits',
       )
-      .addSelect('COUNT(*)', 'entryCount')
-      .where('le.branch_id = :branchId', { branchId })
-      .getRawOne<{
-        totalCredits: string | null;
-        totalDebits: string | null;
-        entryCount: string;
-      }>();
+      .addSelect('COUNT(*)', 'entryCount');
+    if (branchId !== null) {
+      qb.where('le.branch_id = :branchId', { branchId });
+    }
+    const result = await qb.getRawOne<{
+      totalCredits: string | null;
+      totalDebits: string | null;
+      entryCount: string;
+    }>();
 
     return {
       totalCredits: Number(result?.totalCredits ?? 0),
@@ -136,12 +141,15 @@ export class AccountingRepository {
   }
 
   async findExpensesInRange(
-    branchId: string,
+    branchId: string | null,
     start: Date,
     end: Date,
   ): Promise<Expense[]> {
     return this.expenseRepo.find({
-      where: { branchId, expenseDate: Between(start, end) },
+      where:
+        branchId !== null
+          ? { branchId, expenseDate: Between(start, end) }
+          : { expenseDate: Between(start, end) },
     });
   }
 }

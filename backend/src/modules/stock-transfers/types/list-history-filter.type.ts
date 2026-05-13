@@ -3,7 +3,8 @@ import { UserRole } from '@common/enums/user-roles.enums';
 
 export interface ListHistoryFilter {
   actorRole: UserRole;
-  actorBranchId: string;
+  // null for admins (the repo only reads this for non-admin actors).
+  actorBranchId: string | null;
   branchId?: string;
   productId?: string;
   from?: string;

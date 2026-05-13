@@ -25,7 +25,14 @@ export function useInventoryListPage() {
     };
 
     const handleExport = async (format: ExportFormat) => {
-        if (!user?.branchId) return;
+        if (!user?.branchId) {
+            // Admins are not tied to a branch — point them at the cross-branch
+            // matrix view instead of letting the export silently no-op.
+            toast.error(
+                'This export is per-branch. Use the admin inventory matrix at /admin/inventory for a cross-branch view.',
+            );
+            return;
+        }
         try {
             setIsExporting(true);
             await exportInventoryRows({
