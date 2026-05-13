@@ -100,14 +100,15 @@ export const APP_ROUTES = {
   SHOP: {
     BASE: `${API_PREFIX}/shop`,
     PRODUCTS: 'products',
+    RECOMMENDED_PRODUCTS: 'recommended',
     PRODUCT_BY_ID: 'products/:id',
     CATEGORIES: 'products/categories',
     BRANCHES: 'branches',
   },
 
-  // Customer pickup requests (cart → request → QR → fulfill at counter)
-  CUSTOMER_REQUESTS: {
-    BASE: `${API_PREFIX}/customer-requests`,
+  // Customer pickup orders (cart -> order -> QR -> fulfill at counter)
+  CUSTOMER_ORDERS: {
+    BASE: `${API_PREFIX}/customer-orders`,
     MINE: 'mine',
     BY_CODE: 'code/:code',
     BY_ID: ':id',
@@ -115,6 +116,13 @@ export const APP_ROUTES = {
     ACCEPT: ':id/accept',
     REJECT: ':id/reject',
     FULFILL: 'code/:code/fulfill',
+    PAYHERE_NOTIFY: 'payhere/notify',
+  },
+
+  // Customer loyalty
+  LOYALTY: {
+    BASE: `${API_PREFIX}/loyalty`,
+    MINE: 'me',
   },
 
   // Stock Transfers (inter-branch stock movement)

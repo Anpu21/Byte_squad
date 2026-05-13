@@ -155,11 +155,11 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
                     <div className="flex items-center gap-1 ml-auto">
                         {isAuthenticated && user && (
                             <Link
-                                to={FRONTEND_ROUTES.SHOP_MY_REQUESTS}
+                                to={FRONTEND_ROUTES.SHOP_MY_ORDERS}
                                 className="hidden sm:inline-flex items-center gap-2 h-9 px-3 text-[13px] font-medium rounded-md bg-surface text-text-1 border border-border-strong hover:bg-surface-2 transition-colors"
                             >
                                 <ScrollText size={14} />
-                                <span>My Requests</span>
+                                <span>My Orders</span>
                             </Link>
                         )}
 
@@ -219,11 +219,11 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
                                         </Link>
                                         <Link
                                             role="menuitem"
-                                            to={FRONTEND_ROUTES.SHOP_MY_REQUESTS}
+                                            to={FRONTEND_ROUTES.SHOP_MY_ORDERS}
                                             className="flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:bg-surface-2"
                                             onClick={() => setMenuOpen(false)}
                                         >
-                                            <ScrollText size={14} /> My Requests
+                                            <ScrollText size={14} /> My Orders
                                         </Link>
                                         <button
                                             role="menuitem"

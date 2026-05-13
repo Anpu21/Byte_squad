@@ -90,14 +90,14 @@ const NAV_ITEMS: NavItem[] = [
     },
     {
         label: 'Scan Pickup',
-        path: FRONTEND_ROUTES.SCAN_REQUEST,
+        path: FRONTEND_ROUTES.SCAN_ORDER,
         roles: [UserRole.CASHIER],
         icon: <ScanLine size={15} />,
         group: 'Operations',
     },
     {
-        label: 'Customer Requests',
-        path: FRONTEND_ROUTES.CUSTOMER_REQUESTS,
+        label: 'Customer Orders',
+        path: FRONTEND_ROUTES.CUSTOMER_ORDERS,
         roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
         icon: <ShoppingCart size={15} />,
         group: 'People',

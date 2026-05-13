@@ -10,10 +10,15 @@ import {
     selectShopCartTotal,
 } from '@/store/selectors/shopCart';
 import { shopProductsService } from '@/services/shop-products.service';
-import { customerRequestsService } from '@/services/customer-requests.service';
+import { customerOrdersService } from '@/services/customer-orders.service';
+import { loyaltyService } from '@/services/loyalty.service';
 import { useAuth } from '@/hooks/useAuth';
 import { queryKeys } from '@/lib/queryKeys';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import type {
+    CustomerOrderPaymentMode,
+    IPayhereCheckoutPayload,
+} from '@/types';
 
 export function useCheckout() {
     const dispatch = useAppDispatch();
@@ -34,8 +39,25 @@ export function useCheckout() {
     );
 
     const [note, setNote] = useState('');
+    const [paymentMode, setPaymentMode] =
+        useState<CustomerOrderPaymentMode>('manual');
+    const [loyaltyPointsToRedeem, setLoyaltyPointsToRedeem] = useState(0);
+    const [payherePayload, setPayherePayload] =
+        useState<IPayhereCheckoutPayload | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const { data: loyalty } = useQuery({
+        queryKey: queryKeys.loyalty.mine(),
+        queryFn: loyaltyService.getMine,
+    });
+
+    const availablePoints = loyalty?.pointsBalance ?? 0;
+    const maxRedeemable = Math.min(availablePoints, Math.floor(total * 0.2));
+    const redeemingPoints = Math.min(loyaltyPointsToRedeem, maxRedeemable);
+    const loyaltyDiscount = redeemingPoints;
+    const finalTotal = Math.max(0, total - loyaltyDiscount);
+    const expectedPoints = Math.floor(finalTotal / 100);
 
     useEffect(() => {
         if (items.length > 0 && !branchId) {
@@ -53,20 +75,30 @@ export function useCheckout() {
         setError(null);
         setSubmitting(true);
         try {
-            const request = await customerRequestsService.create({
+            const result = await customerOrdersService.create({
                 branchId,
                 items: items.map((i) => ({
                     productId: i.productId,
                     quantity: i.quantity,
                 })),
                 note: note.trim() || undefined,
+                paymentMode,
+                loyaltyPointsToRedeem: redeemingPoints,
             });
-            toast.success('Pickup request created');
+            toast.success(
+                paymentMode === 'online'
+                    ? 'Redirecting to PayHere'
+                    : 'Pickup order created',
+            );
             dispatch(clearShopCart());
+            if (result.payment) {
+                setPayherePayload(result.payment);
+                return;
+            }
             navigate(
-                FRONTEND_ROUTES.SHOP_REQUEST_CONFIRMATION.replace(
+                FRONTEND_ROUTES.SHOP_ORDER_CONFIRMATION.replace(
                     ':code',
-                    request.requestCode,
+                    result.order.orderCode,
                 ),
             );
         } catch (err: unknown) {
@@ -77,9 +109,9 @@ export function useCheckout() {
                 const msg = Array.isArray(data?.message)
                     ? data.message.join(', ')
                     : data?.message;
-                setError(msg ?? 'Could not submit request');
+                setError(msg ?? 'Could not submit order');
             } else {
-                setError('Could not submit request');
+                setError('Could not submit order');
             }
         } finally {
             setSubmitting(false);
@@ -91,8 +123,19 @@ export function useCheckout() {
         branchId,
         branch,
         total,
+        availablePoints,
+        maxRedeemable,
+        redeemingPoints,
+        loyaltyPointsToRedeem,
+        setLoyaltyPointsToRedeem,
+        loyaltyDiscount,
+        finalTotal,
+        expectedPoints,
         note,
         setNote,
+        paymentMode,
+        setPaymentMode,
+        payherePayload,
         submitting,
         error,
         onSubmit,

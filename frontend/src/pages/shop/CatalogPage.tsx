@@ -4,6 +4,7 @@ import { useCatalogPage } from '@/features/shop-catalog/hooks/useCatalogPage';
 import { CatalogFilters } from '@/features/shop-catalog/components/CatalogFilters';
 import { ProductGrid } from '@/features/shop-catalog/components/ProductGrid';
 import { NoBranchesCard } from '@/features/shop-catalog/components/NoBranchesCard';
+import { RecommendedProductsSection } from '@/features/shop-catalog/components/RecommendedProductsSection';
 
 export function CatalogPage() {
     const p = useCatalogPage();
@@ -41,6 +42,15 @@ export function CatalogPage() {
                 setCategory={p.setCategory}
                 categories={p.categories}
             />
+
+            {!p.search && !p.category && (
+                <RecommendedProductsSection
+                    title="Recommended for you"
+                    products={p.recommendedProducts}
+                    onAdd={p.handleAdd}
+                    onBranchSelect={p.handleBranchChange}
+                />
+            )}
 
             <ProductGrid
                 products={p.products}

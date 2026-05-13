@@ -44,12 +44,23 @@ export function useCatalogPage() {
         enabled: Boolean(branchId),
     });
 
+    const recommendedQuery = useQuery({
+        queryKey: queryKeys.shop.recommended({ branchId, limit: 4 }),
+        queryFn: () =>
+            shopProductsService.listRecommended({
+                branchId: branchId!,
+                limit: 4,
+            }),
+        enabled: Boolean(branchId),
+    });
+
     const branches = useMemo(
         () => branchesQuery.data ?? [],
         [branchesQuery.data],
     );
     const categories = categoriesQuery.data ?? [];
     const products = productsQuery.data ?? [];
+    const recommendedProducts = recommendedQuery.data ?? [];
 
     const currentBranch = useMemo(
         () => branches.find((b) => b.id === branchId) ?? null,
@@ -103,6 +114,7 @@ export function useCatalogPage() {
         branchesLoading: branchesQuery.isLoading,
         categories,
         products,
+        recommendedProducts,
         productCount: products.length,
         isLoading: productsQuery.isLoading,
         currentBranch,

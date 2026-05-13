@@ -61,6 +61,8 @@ export const queryKeys = {
         branchesWithStaff: () => ['shop', 'branches-with-staff'] as const,
         categories: () => ['shop', 'categories'] as const,
         products: (params: unknown) => ['shop', 'products', params] as const,
+        recommended: (params: unknown) =>
+            ['shop', 'recommended', params] as const,
         publicProduct: (id: string, branchId: string | null) =>
             ['shop', 'public-product', id, branchId] as const,
     },
@@ -79,13 +81,16 @@ export const queryKeys = {
     users: {
         all: () => ['users'] as const,
     },
-    customerRequests: {
-        all: () => ['customer-requests'] as const,
+    customerOrders: {
+        all: () => ['customer-orders'] as const,
         list: (filters: { statusFilter: string; search: string }) =>
-            ['customer-requests', filters] as const,
-        my: () => ['my-customer-requests'] as const,
+            ['customer-orders', filters] as const,
+        my: () => ['my-customer-orders'] as const,
         byCode: (code: string) =>
-            ['customer-request-by-code', code] as const,
+            ['customer-order-by-code', code] as const,
+    },
+    loyalty: {
+        mine: () => ['loyalty', 'mine'] as const,
     },
     cashierDashboard: () => ['cashier-dashboard'] as const,
     transactions: {
@@ -111,3 +116,4 @@ export const queryKeys = {
             ['accounting', 'profit-loss', startDate, endDate] as const,
     },
 } as const;
+

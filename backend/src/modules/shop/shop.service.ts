@@ -5,7 +5,9 @@ import { Product } from '@products/entities/product.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { User } from '@users/entities/user.entity';
+import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
+import { TransactionType } from '@common/enums/transaction.enum';
 
 import {
   StockStatus,
@@ -21,6 +23,13 @@ interface ListProductsQuery {
   branchId: string;
   category?: string;
   search?: string;
+}
+
+interface ListRecommendedQuery {
+  branchId: string;
+  productId?: string;
+  category?: string;
+  limit?: number;
 }
 
 interface ProductWithStockRow {
@@ -40,6 +49,11 @@ interface OtherBranchRow {
   branch_name: string;
 }
 
+interface TopSellerRow {
+  productId: string;
+  totalQuantity: string;
+}
+
 @Injectable()
 export class ShopService {
   constructor(
@@ -51,6 +65,8 @@ export class ShopService {
     private readonly inventoryRepo: Repository<Inventory>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(TransactionItem)
+    private readonly transactionItemRepo: Repository<TransactionItem>,
   ) {}
 
   async listProducts(query: ListProductsQuery): Promise<ShopProduct[]> {
@@ -123,6 +139,51 @@ export class ShopService {
       .orderBy('p.category', 'ASC')
       .getRawMany<{ category: string }>();
     return rows.map((r) => r.category).filter((c): c is string => Boolean(c));
+  }
+
+  async listRecommended(
+    query: ListRecommendedQuery,
+  ): Promise<ShopProduct[]> {
+    const limit = query.limit ?? 8;
+    const contextProduct = query.productId
+      ? await this.productRepo.findOne({
+          where: { id: query.productId, isActive: true },
+        })
+      : null;
+    const category = query.category ?? contextProduct?.category ?? null;
+    const availableProducts = (await this.listProducts({ branchId: query.branchId }))
+      .filter((product) => product.stockStatus !== 'out')
+      .filter((product) => product.id !== query.productId);
+
+    const topSellerRows = await this.transactionItemRepo
+      .createQueryBuilder('ti')
+      .select('ti.product_id', 'productId')
+      .addSelect('SUM(ti.quantity)', 'totalQuantity')
+      .innerJoin('ti.transaction', 'txn')
+      .where('txn.branch_id = :branchId', { branchId: query.branchId })
+      .andWhere('txn.type = :type', { type: TransactionType.SALE })
+      .groupBy('ti.product_id')
+      .orderBy('SUM(ti.quantity)', 'DESC')
+      .limit(50)
+      .getRawMany<TopSellerRow>();
+    const topSellerRank = new Map<string, number>();
+    topSellerRows.forEach((row, index) => {
+      topSellerRank.set(row.productId, 500 - index);
+    });
+
+    return availableProducts
+      .map((product) => ({
+        product,
+        score:
+          (category && product.category === category ? 1000 : 0) +
+          (topSellerRank.get(product.id) ?? 0),
+      }))
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.product.name.localeCompare(b.product.name);
+      })
+      .slice(0, limit)
+      .map((entry) => entry.product);
   }
 
   async getProduct(id: string, branchId?: string): Promise<ShopProduct> {

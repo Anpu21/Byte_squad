@@ -4,11 +4,17 @@ import type { ShopCartItem } from '@/store/slices/shopCartSlice';
 interface CheckoutOrderSummaryProps {
     items: ShopCartItem[];
     total: number;
+    loyaltyDiscount: number;
+    finalTotal: number;
+    expectedPoints: number;
 }
 
 export function CheckoutOrderSummary({
     items,
     total,
+    loyaltyDiscount,
+    finalTotal,
+    expectedPoints,
 }: CheckoutOrderSummaryProps) {
     return (
         <div className="bg-surface border border-border rounded-md p-5">
@@ -30,13 +36,28 @@ export function CheckoutOrderSummary({
                     </div>
                 ))}
             </div>
-            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                <span className="text-xs uppercase tracking-widest text-text-3">
-                    Estimated total
-                </span>
-                <span className="text-lg font-bold text-text-1">
-                    {formatCurrency(total)}
-                </span>
+            <div className="mt-3 pt-3 border-t border-border space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                    <span className="text-text-2">Subtotal</span>
+                    <span className="text-text-1">{formatCurrency(total)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                    <span className="text-text-2">Loyalty discount</span>
+                    <span className="text-accent">
+                        -{formatCurrency(loyaltyDiscount)}
+                    </span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <span className="text-xs uppercase tracking-widest text-text-3">
+                        Final total
+                    </span>
+                    <span className="text-lg font-bold text-text-1">
+                        {formatCurrency(finalTotal)}
+                    </span>
+                </div>
+                <p className="text-[11px] text-text-3">
+                    Earn {expectedPoints} point{expectedPoints === 1 ? '' : 's'} after pickup completion.
+                </p>
             </div>
         </div>
     );

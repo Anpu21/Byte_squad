@@ -59,7 +59,7 @@ export function PosSearchBar({
                 <Camera size={24} strokeWidth={1.5} />
             </button>
             <Link
-                to={FRONTEND_ROUTES.SCAN_REQUEST}
+                to={FRONTEND_ROUTES.SCAN_ORDER}
                 className="h-14 px-4 flex-shrink-0 bg-surface border border-border rounded-md flex items-center gap-2 text-text-1 hover:text-text-1 hover:border-border-strong hover:bg-surface-2 transition-all shadow-xl text-sm font-semibold"
                 title="Scan a customer pickup QR"
             >

@@ -155,3 +155,4 @@ export class StockTransfersRepository {
     return { items, total };
   }
 }
+

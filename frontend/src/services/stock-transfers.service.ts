@@ -120,3 +120,4 @@ export const stockTransfersService = {
     return response.data.data
   },
 }
+

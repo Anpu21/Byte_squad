@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Navigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { UserRole } from '@/constants/enums';
 import { LoginPage } from '@/pages/auth/LoginPage';
@@ -28,17 +29,18 @@ import { NewTransferRequestPage } from '@/pages/transfers/NewTransferRequestPage
 import { TransferHistoryPage } from '@/pages/transfers/TransferHistoryPage';
 import { TransferDetailPage } from '@/pages/transfers/TransferDetailPage';
 import { AdminTransfersPage } from '@/pages/admin/AdminTransfersPage';
-import { CustomerRequestsPage } from '@/pages/requests/CustomerRequestsPage';
-import { ScanRequestPage } from '@/pages/pos/ScanRequestPage';
+import { CustomerOrdersPage } from '@/pages/orders/CustomerOrdersPage';
+import { ScanOrderPage } from '@/pages/pos/ScanOrderPage';
 import { CatalogPage } from '@/pages/shop/CatalogPage';
 import { ProductDetailPage } from '@/pages/shop/ProductDetailPage';
 import { CartPage } from '@/pages/shop/CartPage';
 import { CheckoutPage } from '@/pages/shop/CheckoutPage';
-import { RequestConfirmationPage } from '@/pages/shop/RequestConfirmationPage';
-import { MyRequestsPage } from '@/pages/shop/MyRequestsPage';
+import { OrderConfirmationPage } from '@/pages/shop/OrderConfirmationPage';
+import { MyOrdersPage } from '@/pages/shop/MyOrdersPage';
 import { CustomerProfilePage } from '@/pages/shop/ProfilePage';
 import { InventoryByRole } from './InventoryByRole';
 import { FirstSetupOnly } from './FirstSetupOnly';
+import { LegacyOrderConfirmationRedirect } from './LegacyOrderConfirmationRedirect';
 
 export type Guard = 'public' | 'protected' | 'none';
 export type Layout =
@@ -249,18 +251,24 @@ export const ROUTES: RouteDef[] = [
         layout: 'dashboard',
     },
 
-    // ─── Cashier — scan pickup request ───
+    // ─── Cashier — scan pickup order ───
     {
-        path: FRONTEND_ROUTES.SCAN_REQUEST,
-        element: <ScanRequestPage />,
+        path: FRONTEND_ROUTES.SCAN_ORDER,
+        element: <ScanOrderPage />,
+        allowedRoles: [UserRole.CASHIER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.SCAN_ORDER_LEGACY,
+        element: <Navigate to={FRONTEND_ROUTES.SCAN_ORDER} replace />,
         allowedRoles: [UserRole.CASHIER],
         layout: 'dashboard',
     },
 
-    // ─── Customer requests — staff (admin / manager / cashier) ───
+    // ─── Customer orders — staff (admin / manager / cashier) ───
     {
-        path: FRONTEND_ROUTES.CUSTOMER_REQUESTS,
-        element: <CustomerRequestsPage />,
+        path: FRONTEND_ROUTES.CUSTOMER_ORDERS,
+        element: <CustomerOrdersPage />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
         layout: 'dashboard',
     },
@@ -292,14 +300,26 @@ export const ROUTES: RouteDef[] = [
     },
     // Public confirmation — anyone with the code can view (the QR is the credential)
     {
-        path: FRONTEND_ROUTES.SHOP_REQUEST_CONFIRMATION,
-        element: <RequestConfirmationPage />,
+        path: FRONTEND_ROUTES.SHOP_ORDER_CONFIRMATION,
+        element: <OrderConfirmationPage />,
         guard: 'none',
         layout: 'customer-public',
     },
     {
-        path: FRONTEND_ROUTES.SHOP_MY_REQUESTS,
-        element: <MyRequestsPage />,
+        path: FRONTEND_ROUTES.SHOP_ORDER_CONFIRMATION_LEGACY,
+        element: <LegacyOrderConfirmationRedirect />,
+        guard: 'none',
+        layout: 'customer-public',
+    },
+    {
+        path: FRONTEND_ROUTES.SHOP_MY_ORDERS,
+        element: <MyOrdersPage />,
+        allowedRoles: [UserRole.CUSTOMER],
+        layout: 'customer',
+    },
+    {
+        path: FRONTEND_ROUTES.SHOP_MY_ORDERS_LEGACY,
+        element: <Navigate to={FRONTEND_ROUTES.SHOP_MY_ORDERS} replace />,
         allowedRoles: [UserRole.CUSTOMER],
         layout: 'customer',
     },

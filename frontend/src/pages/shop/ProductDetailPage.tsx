@@ -5,6 +5,7 @@ import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useProductDetail } from '@/features/product-detail/hooks/useProductDetail';
 import { ProductDetailImage } from '@/features/product-detail/components/ProductImage';
 import { ProductDetailActions } from '@/features/product-detail/components/ProductDetailActions';
+import { RecommendedProductsSection } from '@/features/shop-catalog/components/RecommendedProductsSection';
 
 export function ProductDetailPage() {
     const p = useProductDetail();
@@ -76,6 +77,15 @@ export function ProductDetailPage() {
                         disabled={p.isOutEverywhere}
                     />
                 </div>
+            </div>
+
+            <div className="mt-10">
+                <RecommendedProductsSection
+                    title="You may also like"
+                    products={p.recommendedProducts}
+                    onAdd={p.handleAddRecommended}
+                    onBranchSelect={() => undefined}
+                />
             </div>
         </div>
     );
