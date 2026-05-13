@@ -40,9 +40,9 @@ export function BranchPickerSection({
                             <p className="text-base font-semibold text-text-1 truncate">
                                 {branch.name}
                             </p>
-                            {branch.address && (
+                            {branch.addressLine1 && (
                                 <p className="text-xs text-text-2 mt-1">
-                                    {branch.address}
+                                    {branch.addressLine1}
                                 </p>
                             )}
                         </>
