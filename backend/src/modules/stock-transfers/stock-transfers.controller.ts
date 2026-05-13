@@ -144,3 +144,4 @@ export class StockTransfersController {
     return this.stockTransfersService.receive(id, actor);
   }
 }
+

@@ -64,6 +64,53 @@ export class InventoryRepository {
       .getCount();
   }
 
+  async decrementStock(
+    productId: string,
+    branchId: string,
+    quantity: number,
+  ): Promise<boolean> {
+    const result = await this.repo
+      .createQueryBuilder()
+      .update(Inventory)
+      .set({ quantity: () => `"quantity" - ${quantity}` })
+      .where('product_id = :productId', { productId })
+      .andWhere('branch_id = :branchId', { branchId })
+      .andWhere('quantity >= :quantity', { quantity })
+      .execute();
+    return Number(result.affected ?? 0) > 0;
+  }
+
+  async decrementStockBatch(
+    branchId: string,
+    items: { productId: string; quantity: number }[],
+  ): Promise<{ ok: boolean; failedProductId: string | null }> {
+    let failedProductId: string | null = null;
+    try {
+      await this.repo.manager.transaction(async (manager) => {
+        for (const item of items) {
+          const result = await manager
+            .createQueryBuilder()
+            .update(Inventory)
+            .set({ quantity: () => `"quantity" - ${item.quantity}` })
+            .where('product_id = :productId', { productId: item.productId })
+            .andWhere('branch_id = :branchId', { branchId })
+            .andWhere('quantity >= :quantity', { quantity: item.quantity })
+            .execute();
+          if (Number(result.affected ?? 0) === 0) {
+            failedProductId = item.productId;
+            throw new Error('INSUFFICIENT_STOCK');
+          }
+        }
+      });
+      return { ok: true, failedProductId: null };
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === 'INSUFFICIENT_STOCK') {
+        return { ok: false, failedProductId };
+      }
+      throw err;
+    }
+  }
+
   async countLowStockForBranch(branchId: string): Promise<number> {
     return this.repo
       .createQueryBuilder('inv')

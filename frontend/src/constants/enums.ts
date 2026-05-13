@@ -37,6 +37,7 @@ export enum PaymentMethod {
     CASH = 'cash',
     CARD = 'card',
     MOBILE = 'mobile',
+    ONLINE = 'online',
 }
 
 export enum LedgerEntryType {
@@ -49,6 +50,7 @@ export enum NotificationType {
     SYSTEM = 'system',
     ALERT = 'alert',
     STOCK_TRANSFER = 'stock_transfer',
+    CUSTOMER_ORDER = 'customer_order',
 }
 
 export enum TransferStatus {

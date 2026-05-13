@@ -55,3 +55,4 @@ export function useTransferRequestsPage() {
             navigate(FRONTEND_ROUTES.TRANSFER_DETAIL.replace(':id', id)),
     };
 }
+

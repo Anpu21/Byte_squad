@@ -239,3 +239,4 @@ describe('StockTransfersService', () => {
     expect(users.findAllByRole).toHaveBeenCalledWith(UserRole.ADMIN);
   });
 });
+
