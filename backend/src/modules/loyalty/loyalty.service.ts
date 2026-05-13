@@ -40,7 +40,10 @@ export class LoyaltyService {
     userId: string,
     query: ListLoyaltyHistoryQueryDto,
   ): Promise<LoyaltyHistoryResponse> {
-    const limit = Math.min(Math.max(query.limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT);
+    const limit = Math.min(
+      Math.max(query.limit ?? DEFAULT_LIMIT, 1),
+      MAX_LIMIT,
+    );
     const offset = Math.max(query.offset ?? 0, 0);
 
     const { rows, total } = await this.loyalty.listEntries(
