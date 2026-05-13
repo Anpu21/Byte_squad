@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useCatalogPage } from '@/features/shop-catalog/hooks/useCatalogPage';
 import { CatalogFilters } from '@/features/shop-catalog/components/CatalogFilters';
@@ -30,14 +30,18 @@ export function CatalogPage() {
                     <span className="text-text-1 font-medium">
                         {p.currentBranch?.name ?? '…'}
                     </span>
-                    . Switch any time.
+                    . Change your pickup branch{' '}
+                    <Link
+                        to={FRONTEND_ROUTES.SHOP_PROFILE}
+                        className="text-primary hover:underline font-medium"
+                    >
+                        in your profile
+                    </Link>
+                    .
                 </p>
             </div>
 
             <CatalogFilters
-                branches={p.branches}
-                branchId={p.branchId}
-                onBranchChange={p.handleBranchChange}
                 search={p.search}
                 setSearch={p.setSearch}
             />

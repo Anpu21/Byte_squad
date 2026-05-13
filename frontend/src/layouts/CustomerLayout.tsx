@@ -3,7 +3,6 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useQuery } from '@tanstack/react-query';
 import {
-    ChevronDown,
     LogOut,
     MapPin,
     Search,
@@ -131,18 +130,17 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
                     <button
                         type="button"
                         onClick={() => navigate(FRONTEND_ROUTES.SHOP_PROFILE)}
-                        className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-soft text-primary-soft-text text-xs font-medium hover:opacity-90 transition-opacity max-w-[240px]"
+                        className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-soft text-primary-soft-text text-xs font-medium hover:opacity-90 transition-opacity max-w-[240px]"
                         title={
                             branchName
-                                ? `Pickup at ${branchName} — open profile to change`
+                                ? 'Pickup branch — click to change in profile'
                                 : 'Open profile to set your pickup branch'
                         }
                     >
                         <MapPin size={13} />
                         <span className="truncate">
-                            {branchName ?? 'Select branch'}
+                            {branchName ?? 'Set pickup branch'}
                         </span>
-                        <ChevronDown size={12} className="flex-shrink-0" />
                     </button>
 
                     <div className="hidden md:flex items-center flex-1 max-w-[420px] h-[36px] px-3 bg-surface-2 border border-border rounded-md gap-2">
