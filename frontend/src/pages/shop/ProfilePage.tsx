@@ -9,6 +9,7 @@ import { AvatarCard } from '@/features/customer-profile/components/AvatarCard';
 import { PersonalInfoForm } from '@/features/customer-profile/components/PersonalInfoForm';
 import { BranchPickerSection } from '@/features/customer-profile/components/BranchPickerSection';
 import { PasswordChangeForm } from '@/features/customer-profile/components/PasswordChangeForm';
+import { LoyaltyProfileCard } from '@/features/loyalty/components/LoyaltyProfileCard';
 
 export function CustomerProfilePage() {
     const { user } = useAuth();
@@ -68,6 +69,7 @@ export function CustomerProfilePage() {
                 />
 
                 <div className="space-y-6">
+                    <LoyaltyProfileCard />
                     <PersonalInfoForm
                         firstName={personal.firstName}
                         setFirstName={personal.setFirstName}
