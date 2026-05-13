@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import { timeAgo, typeIcon } from './notificationUtils';
+import { timeAgo } from './notificationUtils';
+import NotificationIcon from './NotificationIcon';
 
 export default function NotificationDropdown() {
     const { notifications, unreadCount, markAsRead, markAllAsRead } =
@@ -48,13 +49,16 @@ export default function NotificationDropdown() {
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full mt-2 w-[380px] bg-surface border border-border rounded-md shadow-md-token z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="fixed inset-x-2 top-14 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[380px] sm:max-w-[calc(100vw-1rem)] bg-surface border border-border rounded-md shadow-md-token z-dropdown overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                         <p className="text-sm font-semibold text-text-1">
                             Notifications
                             {unreadCount > 0 && (
-                                <span className="ml-2 text-[11px] font-bold bg-primary-soft text-primary-soft-text rounded-full px-1.5 py-0.5">
-                                    {unreadCount}
+                                <span
+                                    className="ml-2 text-[11px] font-bold bg-primary-soft text-primary-soft-text rounded-full px-1.5 py-0.5"
+                                    aria-label={`${unreadCount} unread`}
+                                >
+                                    {unreadCount > 99 ? '99+' : unreadCount}
                                 </span>
                             )}
                         </p>
@@ -93,7 +97,7 @@ export default function NotificationDropdown() {
                                     }`}
                                 >
                                     <div className="scale-[0.85] origin-top-left -mr-1">
-                                        {typeIcon(n.type)}
+                                        <NotificationIcon type={n.type} />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">

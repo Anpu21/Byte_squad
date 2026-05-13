@@ -80,6 +80,16 @@
   --shadow-md: 0 6px 18px rgba(25,24,59,.08);
   --shadow-lg: 0 18px 40px rgba(25,24,59,.16);
   --ring: 0 0 0 3px rgba(25,24,59,.18);
+  --overlay: rgba(0, 0, 0, 0.5);
+
+  /* Layered z-index scale — keep stacking predictable across the app.
+     Use the matching utility (z-sticky, z-dropdown, z-overlay, z-modal, z-toast)
+     instead of raw z-N numbers in components. */
+  --z-sticky: 20;
+  --z-dropdown: 30;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-toast: 60;
 }
 
 [data-theme="dark"] {
@@ -116,6 +126,7 @@
   --shadow-md: 0 6px 18px rgba(0,0,0,.5);
   --shadow-lg: 0 18px 40px rgba(0,0,0,.6);
   --ring: 0 0 0 3px rgba(161,194,189,.3);
+  --overlay: rgba(8, 7, 24, 0.7);
 }
 
 html, body {
@@ -133,9 +144,66 @@ html, body {
 .shadow-md-token { box-shadow: var(--shadow-md); }
 .shadow-lg-token { box-shadow: var(--shadow-lg); }
 
+.z-sticky { z-index: var(--z-sticky); }
+.z-dropdown { z-index: var(--z-dropdown); }
+.z-overlay { z-index: var(--z-overlay); }
+.z-modal { z-index: var(--z-modal); }
+.z-toast { z-index: var(--z-toast); }
+
 input, textarea, select, button { font-family: inherit; }
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-3);
+  opacity: 1;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-2);
+  opacity: 0.85;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset !important;
+  -webkit-text-fill-color: var(--text-1) !important;
+  caret-color: var(--text-1) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
 
 *::-webkit-scrollbar { width: 10px; height: 10px; }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 6px; border: 2px solid var(--canvas); }
 *::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+/* 404 page floating animations */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(2deg); }
+}
+@keyframes float-delayed {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(10px) rotate(-2deg); }
+}
+.animate-float { animation: float-slow 6s ease-in-out infinite; }
+.animate-float-delayed { animation: float-delayed 7s ease-in-out infinite 1s; }
+
+/*
+ * Honor user's reduced-motion preference globally.
+ * Tailwind 4 emits animations through `animate-in`, `slide-in-*`, `fade-in`,
+ * `zoom-in-*`, `duration-*`, etc.  This block neutralizes all of them, plus
+ * any transition/transform animations, when the OS-level setting is on.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

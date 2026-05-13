@@ -5,9 +5,11 @@ import {
   UnauthorizedException,
   ForbiddenException,
   NotFoundException,
+  ServiceUnavailableException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { UsersService } from '@users/users.service';
@@ -16,6 +18,8 @@ import { SignupDto } from '@auth/dto/signup.dto';
 import { VerifyOtpDto } from '@auth/dto/verify-otp.dto';
 import { ResendOtpDto } from '@auth/dto/resend-otp.dto';
 import { ChangePasswordDto } from '@auth/dto/change-password.dto';
+import { ForgotPasswordDto } from '@auth/dto/forgot-password.dto';
+import { ResetPasswordDto } from '@auth/dto/reset-password.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { EmailService } from '@/modules/email/email.service';
 
@@ -50,7 +54,15 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
   ) {}
+
+  private isProduction(): boolean {
+    return (
+      (this.configService.get<string>('NODE_ENV') ?? 'development') ===
+      'production'
+    );
+  }
 
   async signup(dto: SignupDto): Promise<{ userId: string }> {
     const existing = await this.usersService.findByEmail(
@@ -77,19 +89,40 @@ export class AuthService {
     });
     this.logger.log(`Customer signup: ${saved.email}`);
 
-    this.emailService
-      .sendOtpEmail(
-        saved.email,
-        saved.firstName,
-        otpCode,
-        OTP_EXPIRES_IN_MINUTES,
-      )
-      .catch((err: unknown) => {
+    if (this.emailService.isVerified()) {
+      try {
+        await this.emailService.sendOtpEmail(
+          saved.email,
+          saved.firstName,
+          otpCode,
+          OTP_EXPIRES_IN_MINUTES,
+        );
+      } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         this.logger.error(
-          `Failed to send OTP email to ${saved.email}: ${message}`,
+          `Failed to send OTP email to ${saved.email}: ${message}. Rolling back signup.`,
         );
-      });
+        // Roll back the half-created user so a retry can succeed without 409.
+        await this.usersService.removeByIdInternal(saved.id);
+        throw new ServiceUnavailableException(
+          'Email service unavailable. Please try again in a moment.',
+        );
+      }
+    } else if (this.isProduction()) {
+      this.logger.error(
+        `Cannot send OTP to ${saved.email}: email transporter not verified. Rolling back signup.`,
+      );
+      await this.usersService.removeByIdInternal(saved.id);
+      throw new ServiceUnavailableException(
+        'Email service unavailable. Please try again in a moment.',
+      );
+    } else {
+      // Dev fallback: SMTP unreachable. Log the OTP so the developer can copy
+      // it from the container logs and continue verification.
+      this.logger.warn(
+        `✨ DEV OTP for ${saved.email}: ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m). SMTP unavailable; copy from logs to verify.`,
+      );
+    }
 
     return { userId: saved.id };
   }
@@ -232,6 +265,86 @@ export class AuthService {
       this.logger.error(`Login error for ${loginDto.email}: ${message}`, stack);
       throw error;
     }
+  }
+
+  async requestPasswordReset(
+    dto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    const email = dto.email.toLowerCase();
+    const user = await this.usersService.findByEmail(email);
+
+    // Generic response to avoid revealing whether an account exists
+    const genericResponse = {
+      message:
+        'If an account exists for that email, a reset code has been sent',
+    };
+
+    if (!user) {
+      this.logger.warn(`Password reset requested for unknown email: ${email}`);
+      return genericResponse;
+    }
+
+    const otpCode = this.generateOtp();
+    const otpExpiresAt = new Date(
+      Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
+    );
+    await this.usersService.setOtp(user.id, otpCode, otpExpiresAt);
+
+    if (this.emailService.isVerified()) {
+      try {
+        await this.emailService.sendPasswordResetOtpEmail(
+          user.email,
+          user.firstName,
+          otpCode,
+          OTP_EXPIRES_IN_MINUTES,
+        );
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(
+          `Failed to send password reset OTP to ${user.email}: ${message}`,
+        );
+        throw new ServiceUnavailableException(
+          'Email service unavailable. Please try again in a moment.',
+        );
+      }
+    } else if (this.isProduction()) {
+      this.logger.error(
+        `Cannot send password reset OTP to ${user.email}: email transporter not verified.`,
+      );
+      throw new ServiceUnavailableException(
+        'Email service unavailable. Please try again in a moment.',
+      );
+    } else {
+      this.logger.warn(
+        `✨ DEV password reset OTP for ${user.email}: ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m). SMTP unavailable; copy from logs to reset.`,
+      );
+    }
+
+    this.logger.log(`Password reset OTP issued for ${user.email}`);
+    return genericResponse;
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+    const email = dto.email.toLowerCase();
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new BadRequestException('Invalid or expired reset code');
+    }
+    if (!user.otpCode || !user.otpExpiresAt) {
+      throw new BadRequestException('Invalid or expired reset code');
+    }
+    if (new Date() > user.otpExpiresAt) {
+      throw new BadRequestException('Invalid or expired reset code');
+    }
+    if (user.otpCode !== dto.otpCode) {
+      throw new BadRequestException('Invalid or expired reset code');
+    }
+
+    const passwordHash = await this.hashPassword(dto.newPassword);
+    await this.usersService.updatePassword(user.id, passwordHash);
+
+    this.logger.log(`Password reset completed for ${user.email}`);
+    return { message: 'Password has been reset successfully' };
   }
 
   async changePassword(

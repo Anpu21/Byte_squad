@@ -13,6 +13,7 @@ const STATUS_MAP: Record<string, { tone: PillTone; label: string }> = {
     in_stock: { tone: 'success', label: 'In stock' },
 
     pending: { tone: 'warning', label: 'Pending' },
+    accepted: { tone: 'primary', label: 'Accepted' },
     low: { tone: 'warning', label: 'Low' },
     away: { tone: 'warning', label: 'Away' },
     invited: { tone: 'neutral', label: 'Invited' },
@@ -25,6 +26,7 @@ const STATUS_MAP: Record<string, { tone: PillTone; label: string }> = {
     failed: { tone: 'danger', label: 'Failed' },
     cancelled: { tone: 'neutral', label: 'Cancelled' },
     canceled: { tone: 'neutral', label: 'Cancelled' },
+    expired: { tone: 'neutral', label: 'Expired' },
     void: { tone: 'neutral', label: 'Voided' },
     voided: { tone: 'neutral', label: 'Voided' },
 

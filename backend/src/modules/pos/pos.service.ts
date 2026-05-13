@@ -1,132 +1,139 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual } from 'typeorm';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
 import { Transaction } from '@pos/entities/transaction.entity.js';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+import { PosRepository } from '@pos/pos.repository';
+import { AccountingRepository } from '@accounting/accounting.repository';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
-import { TransactionType } from '@common/enums/transaction.enum';
+import { DiscountType } from '@common/enums/discount.enum';
 
-export interface DailyBreakdown {
-  date: string;
-  totalSales: number;
-  transactionCount: number;
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
 }
 
-export interface TopProduct {
-  productId: string;
-  productName: string;
-  totalQuantity: number;
-  totalRevenue: number;
+// A line discount may be either a percentage of the line base (qty × unitPrice)
+// or a fixed money amount; treating the percentage value as money produces
+// totals that are right at qty=1 by coincidence and wrong everywhere else.
+function computeLineTotal(
+  unitPrice: number,
+  quantity: number,
+  discountAmount: number,
+  discountType: DiscountType,
+): number {
+  const base = unitPrice * quantity;
+  if (discountAmount <= 0) return round2(base);
+  const off =
+    discountType === DiscountType.PERCENTAGE
+      ? base * (discountAmount / 100)
+      : discountAmount;
+  return round2(Math.max(0, base - off));
 }
+import {
+  DailyBreakdown,
+  TopProduct,
+  AdminDashboardData,
+  CashierDashboardData,
+  CashierPeriodStats,
+  CashierTransactionRow,
+  CashierTransactionsSummary,
+} from '@pos/types';
 
-export interface AdminDashboardData {
-  today: {
-    totalSales: number;
-    transactionCount: number;
-    averageSale: number;
-  };
-  week: {
-    totalSales: number;
-    transactionCount: number;
-  };
-  month: {
-    totalRevenue: number;
-    transactionCount: number;
-  };
-  stats: {
-    activeProducts: number;
-    lowStockItems: number;
-    totalUsers: number;
-    totalBranches: number;
-  };
-  dailyBreakdown: DailyBreakdown[];
-  topProducts: TopProduct[];
-  recentTransactions: Transaction[];
-}
-
-export interface CashierDashboardData {
-  today: {
-    totalSales: number;
-    transactionCount: number;
-    averageSale: number;
-  };
-  week: {
-    totalSales: number;
-    transactionCount: number;
-  };
-  dailyBreakdown: DailyBreakdown[];
-  recentTransactions: Transaction[];
-}
-
-export interface CashierPeriodStats {
-  totalSales: number;
-  transactionCount: number;
-}
-
-export interface CashierTransactionRow {
-  id: string;
-  transactionNumber: string;
-  total: number;
-  itemCount: number;
-  cashierName: string;
-  branchName?: string | null;
-  createdAt: Date;
-}
-
-export interface CashierTransactionsSummary {
-  scope: 'cashier' | 'branch' | 'system';
-  today: CashierPeriodStats;
-  month: CashierPeriodStats;
-  year: CashierPeriodStats;
-  recentTransactions: CashierTransactionRow[];
-}
+// Re-export so existing consumers that imported these from '@pos/pos.service'
+// keep working without a broad rename. New code should import from '@pos/types'.
+export type {
+  DailyBreakdown,
+  TopProduct,
+  AdminDashboardData,
+  CashierDashboardData,
+  CashierPeriodStats,
+  CashierTransactionRow,
+  CashierTransactionsSummary,
+};
 
 @Injectable()
 export class PosService {
+  private readonly logger = new Logger(PosService.name);
+
   constructor(
-    @InjectRepository(Transaction)
-    private readonly transactionRepository: Repository<Transaction>,
-    @InjectRepository(TransactionItem)
-    private readonly transactionItemRepository: Repository<TransactionItem>,
-    @InjectRepository(LedgerEntry)
-    private readonly ledgerRepository: Repository<LedgerEntry>,
+    private readonly pos: PosRepository,
+    private readonly accounting: AccountingRepository,
   ) {}
 
   async createTransaction(
     dto: CreateTransactionDto,
     cashierId: string,
     branchId: string,
+    idempotencyKey?: string,
   ): Promise<Transaction> {
+    const trimmedKey = idempotencyKey?.trim();
+    if (trimmedKey) {
+      const existing = await this.pos.findIdempotencyKey(cashierId, trimmedKey);
+      if (existing) {
+        this.logger.log(
+          `Idempotency replay: cashier=${cashierId} key=${trimmedKey} → txn=${existing.transactionId}`,
+        );
+        const replay = await this.findById(existing.transactionId);
+        if (!replay) {
+          throw new NotFoundException('Original transaction no longer exists');
+        }
+        return replay;
+      }
+    }
+
     const transactionNumber = `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    const transaction = this.transactionRepository.create({
+    const items = dto.items.map((item) => {
+      const discountAmount = item.discountAmount ?? 0;
+      const discountType = item.discountType ?? DiscountType.NONE;
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        discountAmount,
+        discountType,
+        lineTotal: computeLineTotal(
+          item.unitPrice,
+          item.quantity,
+          discountAmount,
+          discountType,
+        ),
+      };
+    });
+
+    const subtotal = round2(
+      items.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0),
+    );
+    const afterLineDiscounts = round2(
+      items.reduce((sum, it) => sum + it.lineTotal, 0),
+    );
+
+    const cartDiscountAmount = dto.discountAmount ?? 0;
+    const cartDiscountType = dto.discountType ?? DiscountType.NONE;
+    const cartDiscountValue =
+      cartDiscountAmount > 0
+        ? cartDiscountType === DiscountType.PERCENTAGE
+          ? round2(afterLineDiscounts * (cartDiscountAmount / 100))
+          : round2(cartDiscountAmount)
+        : 0;
+
+    const total = round2(Math.max(0, afterLineDiscounts - cartDiscountValue));
+
+    const saved = await this.pos.createAndSaveTransaction({
       transactionNumber,
       branchId,
       cashierId,
       type: dto.type,
-      subtotal: 0,
-      discountAmount: dto.discountAmount ?? 0,
-      discountType: dto.discountType,
+      subtotal,
+      discountAmount: cartDiscountAmount,
+      discountType: cartDiscountType,
       taxAmount: 0,
-      total: 0,
+      total,
       paymentMethod: dto.paymentMethod,
-      items: dto.items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        discountAmount: item.discountAmount ?? 0,
-        discountType: item.discountType,
-        lineTotal: item.unitPrice * item.quantity - (item.discountAmount ?? 0),
-      })),
+      items,
     });
 
-    const saved = await this.transactionRepository.save(transaction);
-
-    // Create a CREDIT ledger entry for this sale
     if (Number(saved.total) > 0) {
-      const ledgerEntry = this.ledgerRepository.create({
+      await this.accounting.createLedgerEntry({
         branchId: saved.branchId,
         entryType: LedgerEntryType.CREDIT,
         amount: saved.total,
@@ -134,25 +141,44 @@ export class PosService {
         referenceNumber: saved.transactionNumber,
         transactionId: saved.id,
       });
-      await this.ledgerRepository.save(ledgerEntry);
+    }
+
+    if (trimmedKey) {
+      try {
+        await this.pos.insertIdempotencyKey({
+          key: trimmedKey,
+          cashierId,
+          transactionId: saved.id,
+        });
+      } catch (err) {
+        // Concurrent retry beat us to the insert. Return the row that won
+        // the race, not our just-created duplicate.
+        if (err instanceof QueryFailedError) {
+          const winning = await this.pos.findIdempotencyKey(
+            cashierId,
+            trimmedKey,
+          );
+          if (winning && winning.transactionId !== saved.id) {
+            this.logger.warn(
+              `Idempotency race: cashier=${cashierId} key=${trimmedKey} kept=${winning.transactionId} discarded=${saved.id}`,
+            );
+            const replay = await this.findById(winning.transactionId);
+            if (replay) return replay;
+          }
+        }
+        throw err;
+      }
     }
 
     return saved;
   }
 
   async findAll(branchId: string): Promise<Transaction[]> {
-    return this.transactionRepository.find({
-      where: { branchId },
-      relations: ['items', 'items.product', 'cashier'],
-      order: { createdAt: 'DESC' },
-    });
+    return this.pos.findTransactionsByBranch(branchId);
   }
 
   async findById(id: string): Promise<Transaction | null> {
-    return this.transactionRepository.findOne({
-      where: { id },
-      relations: ['items', 'items.product', 'cashier'],
-    });
+    return this.pos.findTransactionById(id);
   }
 
   async getCashierDashboard(
@@ -160,25 +186,18 @@ export class PosService {
     branchId: string,
   ): Promise<CashierDashboardData> {
     const now = new Date();
-
-    // Start of today (midnight)
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
 
-    // Start of 7 days ago
     const weekStart = new Date(now);
     weekStart.setDate(weekStart.getDate() - 6);
     weekStart.setHours(0, 0, 0, 0);
 
-    // Today's transactions for this cashier
-    const todayTransactions = await this.transactionRepository.find({
-      where: {
-        cashierId,
-        branchId,
-        createdAt: MoreThanOrEqual(todayStart),
-      },
-    });
-
+    const todayTransactions = await this.pos.findTransactionsForCashierSince(
+      cashierId,
+      branchId,
+      todayStart,
+    );
     const todayTotalSales = todayTransactions.reduce(
       (sum, t) => sum + Number(t.total),
       0,
@@ -186,29 +205,22 @@ export class PosService {
     const todayCount = todayTransactions.length;
     const todayAvg = todayCount > 0 ? todayTotalSales / todayCount : 0;
 
-    // This week's transactions
-    const weekTransactions = await this.transactionRepository.find({
-      where: {
-        cashierId,
-        branchId,
-        createdAt: MoreThanOrEqual(weekStart),
-      },
-    });
-
+    const weekTransactions = await this.pos.findTransactionsForCashierSince(
+      cashierId,
+      branchId,
+      weekStart,
+    );
     const weekTotalSales = weekTransactions.reduce(
       (sum, t) => sum + Number(t.total),
       0,
     );
 
-    // Daily breakdown for chart (last 7 days)
     const dailyMap = new Map<string, { totalSales: number; count: number }>();
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
-      dailyMap.set(key, { totalSales: 0, count: 0 });
+      dailyMap.set(d.toISOString().split('T')[0], { totalSales: 0, count: 0 });
     }
-
     for (const t of weekTransactions) {
       const key = new Date(t.createdAt).toISOString().split('T')[0];
       const entry = dailyMap.get(key);
@@ -218,22 +230,20 @@ export class PosService {
       }
     }
 
-    const dailyBreakdown: DailyBreakdown[] = [];
-    for (const [date, data] of dailyMap) {
-      dailyBreakdown.push({
+    const dailyBreakdown: DailyBreakdown[] = Array.from(
+      dailyMap,
+      ([date, data]) => ({
         date,
         totalSales: Math.round(data.totalSales * 100) / 100,
         transactionCount: data.count,
-      });
-    }
+      }),
+    );
 
-    // Recent 10 transactions
-    const recentTransactions = await this.transactionRepository.find({
-      where: { cashierId, branchId },
-      relations: ['items'],
-      order: { createdAt: 'DESC' },
-      take: 10,
-    });
+    const recentTransactions = await this.pos.findRecentForCashier(
+      cashierId,
+      branchId,
+      10,
+    );
 
     return {
       today: {
@@ -252,7 +262,6 @@ export class PosService {
 
   async getAdminDashboard(): Promise<AdminDashboardData> {
     const now = new Date();
-
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
 
@@ -262,27 +271,17 @@ export class PosService {
 
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Today's sales (all branches)
-    const todayTxns = await this.transactionRepository.find({
-      where: { createdAt: MoreThanOrEqual(todayStart) },
-    });
+    const todayTxns = await this.pos.findTransactionsSince(todayStart);
     const todaySales = todayTxns.reduce((s, t) => s + Number(t.total), 0);
     const todayCount = todayTxns.length;
     const todayAvg = todayCount > 0 ? todaySales / todayCount : 0;
 
-    // This week
-    const weekTxns = await this.transactionRepository.find({
-      where: { createdAt: MoreThanOrEqual(weekStart) },
-    });
+    const weekTxns = await this.pos.findTransactionsSince(weekStart);
     const weekSales = weekTxns.reduce((s, t) => s + Number(t.total), 0);
 
-    // This month
-    const monthTxns = await this.transactionRepository.find({
-      where: { createdAt: MoreThanOrEqual(monthStart) },
-    });
+    const monthTxns = await this.pos.findTransactionsSince(monthStart);
     const monthRevenue = monthTxns.reduce((s, t) => s + Number(t.total), 0);
 
-    // Daily breakdown (last 7 days)
     const dailyMap = new Map<string, { totalSales: number; count: number }>();
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
@@ -297,72 +296,32 @@ export class PosService {
         entry.count += 1;
       }
     }
-    const dailyBreakdown: DailyBreakdown[] = [];
-    for (const [date, data] of dailyMap) {
-      dailyBreakdown.push({
+    const dailyBreakdown: DailyBreakdown[] = Array.from(
+      dailyMap,
+      ([date, data]) => ({
         date,
         totalSales: Math.round(data.totalSales * 100) / 100,
         transactionCount: data.count,
-      });
-    }
+      }),
+    );
 
-    // Top selling products (from transaction items in last 30 days)
-    const topProductsRaw = await this.transactionItemRepository
-      .createQueryBuilder('ti')
-      .select('ti.product_id', 'productId')
-      .addSelect('p.name', 'productName')
-      .addSelect('SUM(ti.quantity)', 'totalQuantity')
-      .addSelect('SUM(ti.line_total)', 'totalRevenue')
-      .innerJoin('ti.product', 'p')
-      .innerJoin('ti.transaction', 't')
-      .where('t.created_at >= :monthStart', { monthStart })
-      .groupBy('ti.product_id')
-      .addGroupBy('p.name')
-      .orderBy('SUM(ti.line_total)', 'DESC')
-      .limit(5)
-      .getRawMany<{
-        productId: string;
-        productName: string;
-        totalQuantity: string;
-        totalRevenue: string;
-      }>();
-
+    const topProductsRaw = await this.pos.topProductsSince(monthStart, 5);
     const topProducts: TopProduct[] = topProductsRaw.map((r) => ({
       productId: r.productId,
       productName: r.productName,
-      totalQuantity: Number(r.totalQuantity),
-      totalRevenue: Math.round(Number(r.totalRevenue) * 100) / 100,
+      totalQuantity: r.totalQuantity,
+      totalRevenue: Math.round(r.totalRevenue * 100) / 100,
     }));
 
-    // Recent transactions (all branches)
-    const recentTransactions = await this.transactionRepository.find({
-      relations: ['items', 'cashier'],
-      order: { createdAt: 'DESC' },
-      take: 10,
-    });
+    const recentTransactions = await this.pos.findRecent(10);
 
-    // Counts — use raw queries for efficiency
-    const activeProducts = await this.transactionItemRepository.manager
-      .query<
-        { count: string }[]
-      >(`SELECT COUNT(*) as count FROM products WHERE is_active = true`)
-      .then((r: { count: string }[]) => Number(r[0].count));
-
-    const lowStockItems = await this.transactionItemRepository.manager
-      .query<
-        { count: string }[]
-      >(`SELECT COUNT(*) as count FROM inventory WHERE quantity <= low_stock_threshold`)
-      .then((r: { count: string }[]) => Number(r[0].count));
-
-    const totalUsers = await this.transactionItemRepository.manager
-      .query<{ count: string }[]>(`SELECT COUNT(*) as count FROM users`)
-      .then((r: { count: string }[]) => Number(r[0].count));
-
-    const totalBranches = await this.transactionItemRepository.manager
-      .query<
-        { count: string }[]
-      >(`SELECT COUNT(*) as count FROM branches WHERE is_active = true`)
-      .then((r: { count: string }[]) => Number(r[0].count));
+    const [activeProducts, lowStockItems, totalUsers, totalBranches] =
+      await Promise.all([
+        this.pos.countActiveProducts(),
+        this.pos.countLowStockItems(),
+        this.pos.countAllUsers(),
+        this.pos.countActiveBranches(),
+      ]);
 
     return {
       today: {
@@ -395,46 +354,23 @@ export class PosService {
     cashierId: string | null,
   ): Promise<CashierTransactionsSummary> {
     const now = new Date();
-
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
-
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
     const yearStart = new Date(now.getFullYear(), 0, 1);
 
-    const periodAgg = (start: Date) => {
-      const qb = this.transactionRepository
-        .createQueryBuilder('txn')
-        .select('COALESCE(SUM(txn.total), 0)', 'total')
-        .addSelect('COUNT(txn.id)', 'count')
-        .where('txn.branch_id = :branchId', { branchId })
-        .andWhere('txn.type = :type', { type: TransactionType.SALE })
-        .andWhere('txn.created_at >= :start', { start });
-
-      if (cashierId) {
-        qb.andWhere('txn.cashier_id = :cashierId', { cashierId });
-      }
-
-      return qb.getRawOne<{ total: string; count: string }>();
-    };
-
-    const recentWhere = cashierId ? { cashierId, branchId } : { branchId };
-
     const [todayAgg, monthAgg, yearAgg, recentTxns] = await Promise.all([
-      periodAgg(todayStart),
-      periodAgg(monthStart),
-      periodAgg(yearStart),
-      this.transactionRepository.find({
-        where: recentWhere,
-        relations: ['items', 'cashier'],
-        order: { createdAt: 'DESC' },
-      }),
+      this.pos.periodAggregateForBranch(branchId, todayStart, cashierId),
+      this.pos.periodAggregateForBranch(branchId, monthStart, cashierId),
+      this.pos.periodAggregateForBranch(branchId, yearStart, cashierId),
+      this.pos.findRecentScopedTransactions(
+        cashierId ? { cashierId, branchId } : { branchId },
+      ),
     ]);
 
-    const toStats = (agg: { total: string; count: string } | undefined) => ({
-      totalSales: Math.round(Number(agg?.total ?? 0) * 100) / 100,
-      transactionCount: Number(agg?.count ?? 0),
+    const toStats = (agg: { total: number; count: number }) => ({
+      totalSales: Math.round(agg.total * 100) / 100,
+      transactionCount: agg.count,
     });
 
     return {
@@ -457,37 +393,21 @@ export class PosService {
 
   async getAllTransactionsSummary(): Promise<CashierTransactionsSummary> {
     const now = new Date();
-
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
-
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
     const yearStart = new Date(now.getFullYear(), 0, 1);
 
-    const periodAgg = (start: Date) =>
-      this.transactionRepository
-        .createQueryBuilder('txn')
-        .select('COALESCE(SUM(txn.total), 0)', 'total')
-        .addSelect('COUNT(txn.id)', 'count')
-        .where('txn.type = :type', { type: TransactionType.SALE })
-        .andWhere('txn.created_at >= :start', { start })
-        .getRawOne<{ total: string; count: string }>();
-
     const [todayAgg, monthAgg, yearAgg, recentTxns] = await Promise.all([
-      periodAgg(todayStart),
-      periodAgg(monthStart),
-      periodAgg(yearStart),
-      this.transactionRepository.find({
-        relations: ['items', 'cashier', 'branch'],
-        order: { createdAt: 'DESC' },
-        take: 200,
-      }),
+      this.pos.periodAggregateSystem(todayStart),
+      this.pos.periodAggregateSystem(monthStart),
+      this.pos.periodAggregateSystem(yearStart),
+      this.pos.findRecentWithBranch(200),
     ]);
 
-    const toStats = (agg: { total: string; count: string } | undefined) => ({
-      totalSales: Math.round(Number(agg?.total ?? 0) * 100) / 100,
-      transactionCount: Number(agg?.count ?? 0),
+    const toStats = (agg: { total: number; count: number }) => ({
+      totalSales: Math.round(agg.total * 100) / 100,
+      transactionCount: agg.count,
     });
 
     return {

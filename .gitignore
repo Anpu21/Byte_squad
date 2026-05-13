@@ -4,5 +4,10 @@
 .env.production
 .env.local
 .env.*.local
-.claude/settings.*
+.claude/settings.local.*
 .claude/launch.json
+UI_AUDIT.md
+.claude/commands
+.claude/scripts
+ecosystem.config.cjs
+node_modules

@@ -24,7 +24,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
 
     [FRONTEND_ROUTES.POS]: { title: 'Point of Sale', crumbs: ['Operations', 'POS'] },
     [FRONTEND_ROUTES.TRANSACTIONS]: { title: 'Transactions', crumbs: ['Operations', 'Transactions'] },
-    [FRONTEND_ROUTES.SCAN_REQUEST]: { title: 'Scan pickup request', crumbs: ['POS', 'Scan pickup'] },
+    [FRONTEND_ROUTES.SCAN_ORDER]: { title: 'Scan pickup order', crumbs: ['POS', 'Scan pickup'] },
 
     [FRONTEND_ROUTES.LEDGER]: { title: 'General ledger', crumbs: ['Accounting', 'Ledger'] },
     [FRONTEND_ROUTES.EXPENSES]: { title: 'Expenses', crumbs: ['Accounting', 'Expenses'] },
@@ -51,9 +51,9 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.SHOP_PRODUCT_DETAIL]: { title: 'Product', crumbs: ['Shop', 'Product'] },
     [FRONTEND_ROUTES.SHOP_CART]: { title: 'Your cart', crumbs: ['Shop', 'Cart'] },
     [FRONTEND_ROUTES.SHOP_CHECKOUT]: { title: 'Checkout', crumbs: ['Shop', 'Checkout'] },
-    [FRONTEND_ROUTES.SHOP_REQUEST_CONFIRMATION]: { title: 'Order placed', crumbs: ['Shop', 'Confirmation'] },
-    [FRONTEND_ROUTES.SHOP_MY_REQUESTS]: { title: 'My requests', crumbs: ['Shop', 'My requests'] },
-    [FRONTEND_ROUTES.CUSTOMER_REQUESTS]: { title: 'Customer requests', crumbs: ['People', 'Customer requests'] },
+    [FRONTEND_ROUTES.SHOP_ORDER_CONFIRMATION]: { title: 'Order placed', crumbs: ['Shop', 'Confirmation'] },
+    [FRONTEND_ROUTES.SHOP_MY_ORDERS]: { title: 'My orders', crumbs: ['Shop', 'My orders'] },
+    [FRONTEND_ROUTES.CUSTOMER_ORDERS]: { title: 'Customer orders', crumbs: ['People', 'Customer orders'] },
 };
 
 const DYNAMIC_SEGMENT = /:[A-Za-z_][A-Za-z0-9_]*/g;

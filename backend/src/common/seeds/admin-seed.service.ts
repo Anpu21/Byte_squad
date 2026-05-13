@@ -20,6 +20,8 @@ import { Notification } from '@notifications/entities/notification.entity';
 import { NotificationType } from '@common/enums/notification.enum';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
+import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
+import { pickSeedImageUrl } from '@common/seeds/seed-product-images';
 
 interface SeedDefaults {
   adminEmail: string;
@@ -466,10 +468,18 @@ export class AdminSeedService implements OnModuleInit {
     @InjectRepository(StockTransferRequest)
     private readonly stockTransferRepository: Repository<StockTransferRequest>,
     private readonly configService: ConfigService,
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
-  async onModuleInit(): Promise<void> {
-    await this.seed();
+  onModuleInit(): void {
+    // Run the seed in the background so Cloudinary or any slow step never
+    // blocks Nest from calling app.listen(). The critical rows (branches +
+    // users) finish in seconds, well before a real login attempt arrives;
+    // image uploads and transaction history can finish at their own pace.
+    void this.seed().catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Background seed failed: ${message}`);
+    });
   }
 
   async seed(): Promise<void> {
@@ -478,38 +488,41 @@ export class AdminSeedService implements OnModuleInit {
 
     // 1. Branches — three so the inter-branch transfer flow can be demoed end-to-end.
     const mainBranch = await this.ensureBranch(
+      'BR001',
       defaults.branchName,
       defaults.branchAddress,
       defaults.branchPhone,
     );
     const downtownBranch = await this.ensureBranch(
+      'BR002',
       'Downtown Branch',
       '45 Commerce Street, Downtown',
       '+94112345678',
     );
     const suburbanBranch = await this.ensureBranch(
+      'BR003',
       'Suburban Branch',
       '88 Garden Avenue, Suburb',
       '+94112987654',
     );
 
-    // 2. Users — admins, branch managers, cashiers
+    // 2. Users — admins (not tied to any branch), branch managers, cashiers
     const admin = await this.ensureUser({
       email: defaults.adminEmail,
       password: defaults.adminPassword,
       firstName: defaults.adminFirstName,
       lastName: defaults.adminLastName,
       role: UserRole.ADMIN,
-      branchId: mainBranch.id,
+      branchId: null,
     });
 
     await this.ensureUser({
       email: 'admin2@ledgerpro.com',
       password: 'Admin@123',
-      firstName: 'Downtown',
+      firstName: 'System',
       lastName: 'Admin',
       role: UserRole.ADMIN,
-      branchId: downtownBranch.id,
+      branchId: null,
     });
 
     const mainManager = await this.ensureUser({
@@ -609,16 +622,23 @@ export class AdminSeedService implements OnModuleInit {
   // ── Branch ─────────────────────────────────────────────
 
   private async ensureBranch(
+    code: string,
     name: string,
-    address: string,
+    addressLine1: string,
     phone: string,
   ): Promise<Branch> {
     let branch = await this.branchRepository.findOne({ where: { name } });
     if (!branch) {
       branch = await this.branchRepository.save(
-        this.branchRepository.create({ name, address, phone, isActive: true }),
+        this.branchRepository.create({
+          code,
+          name,
+          addressLine1,
+          phone,
+          isActive: true,
+        }),
       );
-      this.logger.log(`Branch "${name}" created.`);
+      this.logger.log(`Branch "${name}" (${code}) created.`);
     }
     return branch;
   }
@@ -631,16 +651,27 @@ export class AdminSeedService implements OnModuleInit {
     firstName: string;
     lastName: string;
     role: UserRole;
-    branchId: string;
+    branchId: string | null;
   }): Promise<User> {
     let user = await this.userRepository.findOne({
       where: { email: data.email },
     });
 
     if (user) {
+      const patch: Partial<User> = {};
       if (user.isFirstLogin) {
-        await this.userRepository.update(user.id, { isFirstLogin: false });
+        patch.isFirstLogin = false;
         user.isFirstLogin = false;
+      }
+      // Heal stale branchId for seed-managed accounts. Admins should always
+      // have branchId === null (they oversee all branches); managers and
+      // cashiers should stay pinned to their seeded branch.
+      if ((user.branchId ?? null) !== data.branchId) {
+        patch.branchId = data.branchId;
+        user.branchId = data.branchId;
+      }
+      if (Object.keys(patch).length > 0) {
+        await this.userRepository.update(user.id, patch);
       }
       return user;
     }
@@ -669,7 +700,19 @@ export class AdminSeedService implements OnModuleInit {
   private async ensureProducts(): Promise<Product[]> {
     const products: Product[] = [];
     let createdCount = 0;
+
+    // Round-robin index per category for deterministic image assignment.
+    const indexInCategory = new Map<string, number>();
+
+    let imagesUploaded = 0;
+    let imagesKept = 0;
+    let imagesFailed = 0;
+    const cloudinaryEnabled = this.cloudinary.isEnabled();
+
     for (const p of SUPERMARKET_PRODUCTS) {
+      const idx = indexInCategory.get(p.category) ?? 0;
+      indexInCategory.set(p.category, idx + 1);
+
       let product = await this.productRepository.findOne({
         where: { barcode: p.barcode },
       });
@@ -679,10 +722,66 @@ export class AdminSeedService implements OnModuleInit {
         );
         createdCount++;
       }
+
+      // Resolve the desired image URL for this product.
+      const sourceUrl = pickSeedImageUrl(p.category, idx);
+      if (!sourceUrl) {
+        products.push(product);
+        continue;
+      }
+
+      const expectedPublicIdFragment = `ledgerpro/products/${product.id}`;
+      const alreadyMigrated =
+        cloudinaryEnabled &&
+        product.imageUrl?.startsWith('https://res.cloudinary.com/') &&
+        product.imageUrl.includes(expectedPublicIdFragment);
+
+      if (alreadyMigrated) {
+        imagesKept++;
+        products.push(product);
+        continue;
+      }
+
+      let resolvedImageUrl: string | null = null;
+      if (cloudinaryEnabled) {
+        try {
+          const { url } = await this.uploadWithTimeout(sourceUrl, product.id);
+          resolvedImageUrl = url;
+          imagesUploaded++;
+        } catch (err) {
+          imagesFailed++;
+          const message = err instanceof Error ? err.message : String(err);
+          this.logger.warn(
+            `Seed image upload failed for "${p.name}" (${sourceUrl}): ${message}`,
+          );
+          // Fall back to the raw Unsplash URL so the storefront still has something.
+          resolvedImageUrl = sourceUrl;
+        }
+      } else {
+        resolvedImageUrl = sourceUrl;
+      }
+
+      if (resolvedImageUrl && resolvedImageUrl !== product.imageUrl) {
+        await this.productRepository.update(product.id, {
+          imageUrl: resolvedImageUrl,
+        });
+        product.imageUrl = resolvedImageUrl;
+      }
+
       products.push(product);
     }
+
     if (createdCount > 0) {
       this.logger.log(`${createdCount} supermarket products created.`);
+    }
+    if (cloudinaryEnabled) {
+      this.logger.log(
+        `Seed images via Cloudinary — uploaded: ${imagesUploaded}, kept: ${imagesKept}, failed: ${imagesFailed}.`,
+      );
+    } else {
+      this.logger.log(
+        `Cloudinary disabled — seeded ${SUPERMARKET_PRODUCTS.length} products with direct Unsplash URLs.`,
+      );
     }
     return products;
   }
@@ -1243,6 +1342,28 @@ export class AdminSeedService implements OnModuleInit {
   }
 
   // ── Helpers ────────────────────────────────────────────
+
+  private async uploadWithTimeout(
+    sourceUrl: string,
+    productId: string,
+    timeoutMs = 10_000,
+  ): Promise<{ url: string; publicId: string }> {
+    return Promise.race([
+      this.cloudinary.uploadImageFromUrl(sourceUrl, {
+        folder: 'ledgerpro/products',
+        publicId: productId,
+      }),
+      new Promise<{ url: string; publicId: string }>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error(`Cloudinary upload timed out after ${timeoutMs}ms`),
+            ),
+          timeoutMs,
+        ),
+      ),
+    ]);
+  }
 
   private shuffleArray<T>(arr: T[]): T[] {
     for (let i = arr.length - 1; i > 0; i--) {

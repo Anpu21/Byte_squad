@@ -21,13 +21,15 @@
     "start:debug": "nest start --debug --watch -e \"node -r ./tsconfig-paths-bootstrap.js\"",
     "start:prod": "node -r ./tsconfig-paths-bootstrap.js dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "verify": "pnpm run lint && pnpm run test && pnpm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:admin": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/run-admin-seed.ts",
-    "migrate:roles": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-roles.ts"
+    "migrate:roles": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-roles.ts",
+    "migrate:images": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-images.ts"
   },
   "dependencies": {
     "@nestjs/common": "11.1.14",
@@ -43,9 +45,11 @@
     "bcrypt": "6.0.0",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.3",
+    "cloudinary": "2.10.0",
     "nodemailer": "8.0.2",
     "passport-jwt": "4.0.1",
     "pg": "8.18.0",
+    "qrcode": "1.5.4",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "socket.io": "4.8.3",
@@ -64,6 +68,7 @@
     "@types/node": "22.19.11",
     "@types/nodemailer": "7.0.11",
     "@types/passport-jwt": "4.0.1",
+    "@types/qrcode": "1.5.6",
     "@types/supertest": "6.0.3",
     "eslint": "9.39.3",
     "eslint-config-prettier": "10.1.8",
@@ -90,6 +95,21 @@
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1",
+      "^@/(.*?)(?:\\.js)?$": "<rootDir>/$1",
+      "^@common/(.*?)(?:\\.js)?$": "<rootDir>/common/$1",
+      "^@auth/(.*?)(?:\\.js)?$": "<rootDir>/modules/auth/$1",
+      "^@accounting/(.*?)(?:\\.js)?$": "<rootDir>/modules/accounting/$1",
+      "^@admin-portal/(.*?)(?:\\.js)?$": "<rootDir>/modules/admin-portal/$1",
+      "^@branches/(.*?)(?:\\.js)?$": "<rootDir>/modules/branches/$1",
+      "^@inventory/(.*?)(?:\\.js)?$": "<rootDir>/modules/inventory/$1",
+      "^@notifications/(.*?)(?:\\.js)?$": "<rootDir>/modules/notifications/$1",
+      "^@pos/(.*?)(?:\\.js)?$": "<rootDir>/modules/pos/$1",
+      "^@products/(.*?)(?:\\.js)?$": "<rootDir>/modules/products/$1",
+      "^@stock-transfers/(.*?)(?:\\.js)?$": "<rootDir>/modules/stock-transfers/$1",
+      "^@users/(.*?)(?:\\.js)?$": "<rootDir>/modules/users/$1"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

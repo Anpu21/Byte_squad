@@ -1,250 +1,62 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useNotifications } from '@/hooks/useNotifications';
-import { NotificationType } from '@/constants/enums';
-import { FRONTEND_ROUTES } from '@/constants/routes';
-import type { INotification } from '@/types/index';
-import {
-    timeAgo,
-    typeIcon,
-    groupByDate,
-} from '@/components/notifications/notificationUtils';
+import Button from '@/components/ui/Button';
+import Segmented from '@/components/ui/Segmented';
+import { useNotificationsPage } from '@/features/notifications/hooks/useNotificationsPage';
+import { NotificationList } from '@/features/notifications/components/NotificationList';
+import { NotificationDetailPane } from '@/features/notifications/components/NotificationDetailPane';
+import { NotificationDetailEmpty } from '@/features/notifications/components/NotificationDetailEmpty';
+import type { FilterTab } from '@/features/notifications/lib/filter-tabs';
 
-type FilterTab = 'all' | 'unread' | NotificationType;
-
-const FILTER_TABS: { key: FilterTab; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'unread', label: 'Unread' },
-    { key: NotificationType.LOW_STOCK, label: 'Low Stock' },
-    { key: NotificationType.SYSTEM, label: 'System' },
-    { key: NotificationType.ALERT, label: 'Alert' },
-];
-
-function getFilteredNotifications(
-    notifications: INotification[],
-    filter: FilterTab,
-): INotification[] {
-    switch (filter) {
-        case 'all':
-            return notifications;
-        case 'unread':
-            return notifications.filter((n) => !n.isRead);
-        default:
-            return notifications.filter((n) => n.type === filter);
-    }
-}
-
-function getFilterCount(
-    notifications: INotification[],
-    filter: FilterTab,
-): number {
-    return getFilteredNotifications(notifications, filter).length;
-}
-
-function NotificationItem({
-    notification,
-    onOpen,
-}: {
-    notification: INotification;
-    onOpen: (notification: INotification) => void;
-}) {
-    return (
-        <div
-            className={`border-b border-border transition-colors ${
-                notification.isRead ? 'opacity-60' : 'bg-surface-2'
-            }`}
-        >
-            <button
-                onClick={() => onOpen(notification)}
-                className="flex items-start gap-4 px-6 py-4 w-full text-left hover:bg-surface-2 transition-colors"
-            >
-                {typeIcon(notification.type)}
-
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                        <p
-                            className={`text-sm font-medium ${
-                                notification.isRead
-                                    ? 'text-text-2'
-                                    : 'text-text-1'
-                            }`}
-                        >
-                            {notification.title}
-                        </p>
-                        {!notification.isRead && (
-                            <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                        )}
-                    </div>
-                    <p className="text-[13px] text-text-3 mt-0.5 leading-relaxed truncate">
-                        {notification.message}
-                    </p>
-                </div>
-
-                <span className="text-[11px] text-text-3 font-medium flex-shrink-0 mt-0.5">
-                    {timeAgo(notification.createdAt)}
-                </span>
-
-                <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-text-3 flex-shrink-0 mt-1"
-                >
-                    <polyline points="9 18 15 12 9 6" />
-                </svg>
-            </button>
-        </div>
-    );
-}
-
-function EmptyState({ filter }: { filter: FilterTab }) {
-    const messages: Record<string, { title: string; subtitle: string }> = {
-        all: {
-            title: 'No notifications yet',
-            subtitle: "You're all set — nothing to see here.",
-        },
-        unread: {
-            title: 'All caught up',
-            subtitle: 'You have no unread notifications.',
-        },
-        [NotificationType.LOW_STOCK]: {
-            title: 'No low stock alerts',
-            subtitle: 'All inventory levels are healthy.',
-        },
-        [NotificationType.SYSTEM]: {
-            title: 'No system notifications',
-            subtitle: 'No system messages at this time.',
-        },
-        [NotificationType.ALERT]: {
-            title: 'No alerts',
-            subtitle: 'Everything is running smoothly.',
-        },
-    };
-
-    const msg = messages[filter] ?? messages.all;
-
-    return (
-        <div className="flex flex-col items-center justify-center py-16 text-text-3">
-            <svg
-                width="40"
-                height="40"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mb-4 opacity-40"
-            >
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            <p className="text-sm font-medium">{msg.title}</p>
-            <p className="text-xs text-text-3 mt-1">{msg.subtitle}</p>
-        </div>
-    );
-}
-
-export default function NotificationsPage() {
-    const { notifications, unreadCount, markAsRead, markAllAsRead } =
-        useNotifications();
-    const navigate = useNavigate();
-    const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
-
-    const filtered = getFilteredNotifications(notifications, activeFilter);
-    const groups = groupByDate(filtered);
-
-    const openDetail = (notification: INotification) => {
-        if (!notification.isRead) {
-            markAsRead(notification.id);
-        }
-        navigate(
-            FRONTEND_ROUTES.NOTIFICATION_DETAIL.replace(':id', notification.id),
-        );
-    };
+export function NotificationsPage() {
+    const p = useNotificationsPage();
 
     return (
         <div className="animate-in fade-in duration-300">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-start justify-between gap-3 mb-5">
                 <div>
                     <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                         Notifications
                     </h1>
                     <p className="text-sm text-text-3 mt-1">
-                        {unreadCount > 0
-                            ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
+                        {p.unreadCount > 0
+                            ? `You have ${p.unreadCount} unread notification${p.unreadCount === 1 ? '' : 's'}`
                             : 'All caught up'}
                     </p>
                 </div>
-
-                {unreadCount > 0 && (
-                    <button
-                        onClick={markAllAsRead}
-                        className="text-sm font-medium text-text-2 hover:text-text-1 px-4 py-2 rounded-lg hover:bg-surface-2 transition-colors"
-                    >
-                        Mark all as read
-                    </button>
+                {p.unreadCount > 0 && (
+                    <Button variant="secondary" onClick={p.markAllAsRead}>
+                        Mark all read
+                    </Button>
                 )}
             </div>
 
-            {/* Filter tabs */}
-            <div className="flex items-center gap-1 mb-4 p-1 bg-surface-2 rounded-xl border border-border w-fit">
-                {FILTER_TABS.map((tab) => {
-                    const count = getFilterCount(notifications, tab.key);
-                    const isActive = activeFilter === tab.key;
-                    return (
-                        <button
-                            key={tab.key}
-                            onClick={() => setActiveFilter(tab.key)}
-                            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
-                                isActive
-                                    ? 'bg-primary text-text-inv shadow-sm'
-                                    : 'text-text-2 hover:text-text-1 hover:bg-surface-2'
-                            }`}
-                        >
-                            {tab.label}
-                            <span
-                                className={`text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full ${
-                                    isActive
-                                        ? 'bg-slate-900/10 text-text-3'
-                                        : 'bg-surface-2 text-text-3'
-                                }`}
-                            >
-                                {count}
-                            </span>
-                        </button>
-                    );
-                })}
+            <div className="mb-4">
+                <Segmented<FilterTab>
+                    value={p.activeFilter}
+                    options={p.segmentedOptions}
+                    onChange={p.setActiveFilter}
+                />
             </div>
 
-            {/* Notifications list */}
-            <div className="bg-surface border border-border rounded-md overflow-hidden">
-                {filtered.length === 0 ? (
-                    <EmptyState filter={activeFilter} />
-                ) : (
-                    groups.map((group) => (
-                        <div key={group.label}>
-                            <div className="px-6 py-2.5 bg-surface-2 border-b border-border">
-                                <p className="text-[11px] font-semibold text-text-3 uppercase tracking-wider">
-                                    {group.label}
-                                </p>
-                            </div>
-                            {group.notifications.map((n) => (
-                                <NotificationItem
-                                    key={n.id}
-                                    notification={n}
-                                    onOpen={openDetail}
-                                />
-                            ))}
-                        </div>
-                    ))
-                )}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-1">
+                    <NotificationList
+                        notifications={p.filtered}
+                        selectedId={p.selectedId}
+                        activeFilter={p.activeFilter}
+                        onSelect={p.handleSelect}
+                    />
+                </div>
+
+                <div className="hidden lg:block lg:col-span-2">
+                    {p.selected ? (
+                        <NotificationDetailPane
+                            notification={p.selected}
+                            onDismiss={p.handleDismiss}
+                        />
+                    ) : (
+                        <NotificationDetailEmpty />
+                    )}
+                </div>
             </div>
         </div>
     );

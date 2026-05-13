@@ -1,7 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-    BarChart3,
     Bell,
     Boxes,
     Building2,
@@ -15,7 +14,6 @@ import {
     ScanLine,
     ScrollText,
     Search,
-    Settings,
     ShoppingCart,
     Truck,
     UserCog,
@@ -53,6 +51,12 @@ interface NavItem {
     roles: UserRole[];
     icon: ReactNode;
     group: NavGroup;
+    pathByRole?: Partial<Record<UserRole, string>>;
+}
+
+function resolveNavPath(item: NavItem, role?: UserRole): string {
+    if (role && item.pathByRole?.[role]) return item.pathByRole[role]!;
+    return item.path;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -86,14 +90,14 @@ const NAV_ITEMS: NavItem[] = [
     },
     {
         label: 'Scan Pickup',
-        path: FRONTEND_ROUTES.SCAN_REQUEST,
+        path: FRONTEND_ROUTES.SCAN_ORDER,
         roles: [UserRole.CASHIER],
         icon: <ScanLine size={15} />,
         group: 'Operations',
     },
     {
-        label: 'Customer Requests',
-        path: FRONTEND_ROUTES.CUSTOMER_REQUESTS,
+        label: 'Customer Orders',
+        path: FRONTEND_ROUTES.CUSTOMER_ORDERS,
         roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
         icon: <ShoppingCart size={15} />,
         group: 'People',
@@ -115,7 +119,7 @@ const NAV_ITEMS: NavItem[] = [
     {
         label: 'Expenses',
         path: FRONTEND_ROUTES.EXPENSES,
-        roles: [UserRole.ADMIN],
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Wallet size={15} />,
         group: 'Accounting',
     },
@@ -136,14 +140,15 @@ const NAV_ITEMS: NavItem[] = [
     {
         label: 'Transfers',
         path: FRONTEND_ROUTES.TRANSFERS,
-        roles: [UserRole.MANAGER],
+        pathByRole: { [UserRole.ADMIN]: FRONTEND_ROUTES.ADMIN_TRANSFERS },
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Truck size={15} />,
         group: 'Inventory',
     },
     {
         label: 'Transfer History',
         path: FRONTEND_ROUTES.TRANSFER_HISTORY,
-        roles: [UserRole.MANAGER],
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <History size={15} />,
         group: 'Inventory',
     },
@@ -169,20 +174,6 @@ const NAV_ITEMS: NavItem[] = [
         group: 'Branches',
     },
     {
-        label: 'Transfers',
-        path: FRONTEND_ROUTES.ADMIN_TRANSFERS,
-        roles: [UserRole.ADMIN],
-        icon: <Truck size={15} />,
-        group: 'Inventory',
-    },
-    {
-        label: 'Transfer History',
-        path: FRONTEND_ROUTES.TRANSFER_HISTORY,
-        roles: [UserRole.ADMIN],
-        icon: <History size={15} />,
-        group: 'Inventory',
-    },
-    {
         label: 'Notifications',
         path: FRONTEND_ROUTES.NOTIFICATIONS,
         roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
@@ -204,12 +195,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const { user, logout } = useAuth();
     const { unreadCount } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
     const location = useLocation();
     const navigate = useNavigate();
     const crumbs = useBreadcrumbs();
+    const isExpanded = sidebarOpen || mobileNavOpen;
 
     const filteredNavItems = NAV_ITEMS.filter((item) =>
         user ? item.roles.includes(user.role as UserRole) : false,
@@ -228,13 +221,49 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     useEffect(() => {
         if (!profileOpen) return;
-        const handler = (e: MouseEvent) => {
+        const onMouse = (e: MouseEvent) => {
             if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
                 setProfileOpen(false);
             }
         };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        const getMenuItems = () =>
+            Array.from(
+                profileRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ??
+                    [],
+            );
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setProfileOpen(false);
+                return;
+            }
+            const items = getMenuItems();
+            if (items.length === 0) return;
+            const currentIdx = items.findIndex((el) => el === document.activeElement);
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const next = currentIdx < 0 ? 0 : (currentIdx + 1) % items.length;
+                items[next]?.focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const next =
+                    currentIdx <= 0 ? items.length - 1 : currentIdx - 1;
+                items[next]?.focus();
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                items[0]?.focus();
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                items[items.length - 1]?.focus();
+            }
+        };
+        document.addEventListener('mousedown', onMouse);
+        document.addEventListener('keydown', onKey);
+        // Auto-focus the first menu item when opened.
+        requestAnimationFrame(() => getMenuItems()[0]?.focus());
+        return () => {
+            document.removeEventListener('mousedown', onMouse);
+            document.removeEventListener('keydown', onKey);
+        };
     }, [profileOpen]);
 
     const handleLogout = () => {
@@ -244,14 +273,31 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     return (
         <div className="min-h-screen flex bg-canvas text-text-1 font-sans">
+            <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-modal focus:px-3 focus:py-2 focus:rounded-md focus:bg-primary focus:text-text-inv focus:text-sm focus:font-medium focus:shadow-md-token focus:outline-none focus:ring-[3px] focus:ring-primary/30"
+            >
+                Skip to main content
+            </a>
+            {mobileNavOpen && (
+                <div
+                    className="md:hidden fixed inset-0 z-overlay"
+                    style={{ background: 'var(--overlay)' }}
+                    onClick={() => setMobileNavOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
             <aside
                 className={cn(
-                    'transition-[width] duration-200 bg-surface border-r border-border flex flex-col flex-shrink-0',
-                    sidebarOpen ? 'w-[240px]' : 'w-[68px]',
+                    'bg-surface border-r border-border flex flex-col flex-shrink-0 z-40',
+                    'fixed inset-y-0 left-0 w-[280px] transition-transform duration-200',
+                    mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
+                    'md:relative md:translate-x-0 md:transition-[width] md:w-auto',
+                    sidebarOpen ? 'md:w-[240px]' : 'md:w-[68px]',
                 )}
             >
                 <div className="h-16 flex items-center px-4 border-b border-border">
-                    {sidebarOpen ? (
+                    {isExpanded ? (
                         <Logo size={28} />
                     ) : (
                         <Logo size={28} label={false} />
@@ -264,25 +310,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         if (items.length === 0) return null;
                         return (
                             <div key={group} className="mb-2">
-                                {sidebarOpen && (
+                                {isExpanded && (
                                     <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-text-3 px-3 pt-3 pb-1.5">
                                         {group}
                                     </div>
                                 )}
                                 <div className="space-y-0.5">
                                     {items.map((item) => {
-                                        const isActive = location.pathname === item.path;
+                                        const itemPath = resolveNavPath(item, user?.role);
+                                        const isActive = location.pathname === itemPath;
                                         return (
                                             <Link
-                                                key={`${item.path}-${item.label}`}
-                                                to={item.path}
-                                                title={!sidebarOpen ? item.label : undefined}
+                                                key={`${itemPath}-${item.label}`}
+                                                to={itemPath}
+                                                title={!isExpanded ? item.label : undefined}
+                                                onClick={() => setMobileNavOpen(false)}
                                                 className={cn(
                                                     'relative flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors',
                                                     isActive
                                                         ? 'bg-primary-soft text-primary-soft-text'
                                                         : 'text-text-2 hover:bg-surface-2 hover:text-text-1',
-                                                    !sidebarOpen && 'justify-center px-0',
+                                                    !isExpanded && 'justify-center px-0',
                                                 )}
                                             >
                                                 {isActive && (
@@ -292,13 +340,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                                     />
                                                 )}
                                                 <span className="flex-shrink-0">{item.icon}</span>
-                                                {sidebarOpen && (
+                                                {isExpanded && (
                                                     <>
                                                         <span className="flex-1 truncate">{item.label}</span>
-                                                        {item.path === FRONTEND_ROUTES.NOTIFICATIONS &&
+                                                        {itemPath === FRONTEND_ROUTES.NOTIFICATIONS &&
                                                             unreadCount > 0 && (
-                                                                <span className="ml-auto text-[10px] font-bold bg-primary text-text-inv rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
-                                                                    {unreadCount}
+                                                                <span
+                                                                    className="ml-auto text-[10px] font-bold bg-primary text-text-inv rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1"
+                                                                    aria-label={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}
+                                                                >
+                                                                    {unreadCount > 99 ? '99+' : unreadCount}
                                                                 </span>
                                                             )}
                                                     </>
@@ -316,19 +367,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <div className="p-3 border-t border-border">
                         <Link
                             to={FRONTEND_ROUTES.PROFILE}
+                            onClick={() => setMobileNavOpen(false)}
                             className={cn(
                                 'flex items-center gap-2 p-2 rounded-md transition-colors',
                                 location.pathname === FRONTEND_ROUTES.PROFILE
                                     ? 'bg-surface-2'
                                     : 'hover:bg-surface-2',
-                                !sidebarOpen && 'justify-center',
+                                !isExpanded && 'justify-center',
                             )}
                         >
                             <Avatar
                                 name={`${user.firstName} ${user.lastName}`}
                                 size={32}
                             />
-                            {sidebarOpen && (
+                            {isExpanded && (
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[13px] font-semibold text-text-1 truncate">
                                         {user.firstName} {user.lastName}
@@ -338,7 +390,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                     </p>
                                 </div>
                             )}
-                            {sidebarOpen && (
+                            {isExpanded && (
                                 <ChevronRight size={14} className="text-text-3" />
                             )}
                         </Link>
@@ -349,7 +401,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex-1 flex flex-col min-w-0">
                 <header className="h-14 border-b border-border bg-surface flex items-center px-4 gap-3 sticky top-0 z-20">
                     <button
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        onClick={() => {
+                            if (window.matchMedia('(max-width: 767px)').matches) {
+                                setMobileNavOpen((m) => !m);
+                            } else {
+                                setSidebarOpen((s) => !s);
+                            }
+                        }}
                         className="p-1.5 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors flex-shrink-0"
                         aria-label="Toggle sidebar"
                     >
@@ -405,8 +463,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             <div className="relative" ref={profileRef}>
                                 <button
                                     onClick={() => setProfileOpen((s) => !s)}
-                                    className="p-1 rounded-full hover:bg-surface-2 transition-colors"
+                                    className="p-1 rounded-full hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
                                     aria-label="Open user menu"
+                                    aria-haspopup="menu"
+                                    aria-expanded={profileOpen}
                                 >
                                     <Avatar
                                         name={`${user.firstName} ${user.lastName}`}
@@ -414,7 +474,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                     />
                                 </button>
                                 {profileOpen && (
-                                    <div className="absolute right-0 top-full mt-2 w-56 bg-surface border border-border rounded-md shadow-md-token overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                                    <div
+                                        role="menu"
+                                        aria-label="User menu"
+                                        className="absolute right-0 top-full mt-2 w-56 bg-surface border border-border rounded-md shadow-md-token overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 z-dropdown"
+                                    >
                                         <div className="px-4 py-3 border-b border-border">
                                             <p className="text-[13px] font-semibold text-text-1 truncate">
                                                 {user.firstName} {user.lastName}
@@ -424,30 +488,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                             </p>
                                         </div>
                                         <button
+                                            role="menuitem"
                                             onClick={() => {
                                                 setProfileOpen(false);
                                                 navigate(FRONTEND_ROUTES.PROFILE);
                                             }}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors"
+                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:bg-surface-2"
                                         >
                                             <UserCog size={14} /> Profile
                                         </button>
+                                        <div className="h-px bg-border" role="separator" />
                                         <button
-                                            onClick={() => setProfileOpen(false)}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors"
-                                        >
-                                            <Settings size={14} /> Settings
-                                        </button>
-                                        <button
-                                            onClick={() => setProfileOpen(false)}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors"
-                                        >
-                                            <BarChart3 size={14} /> Activity
-                                        </button>
-                                        <div className="h-px bg-border" />
-                                        <button
+                                            role="menuitem"
                                             onClick={handleLogout}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-danger hover:bg-danger-soft transition-colors"
+                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-danger hover:bg-danger-soft transition-colors focus:outline-none focus:bg-danger-soft"
                                         >
                                             <LogOut size={14} /> Logout
                                         </button>
@@ -458,7 +512,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+                <main id="main-content" className="flex-1 overflow-y-auto p-6 lg:p-8">
                     <div className="max-w-7xl mx-auto">{children}</div>
                 </main>
             </div>

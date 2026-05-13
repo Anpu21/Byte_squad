@@ -1,58 +1,48 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+import { Between, Repository } from 'typeorm';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { Expense } from '@accounting/entities/expense.entity';
+import { AccountingRepository } from '@accounting/accounting.repository';
+// TODO Phase C8 — replace these cross-module borrowings with PosRepository /
+// TransactionItemsRepository once POS migrates.
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
+import { ReviewExpenseDto } from '@accounting/dto/review-expense.dto';
+import { ExpenseStatus } from '@common/enums/expense-status.enum';
+import { UserRole } from '@common/enums/user-roles.enums';
 
-export interface PaginatedLedger {
-  items: LedgerEntry[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+interface RequestUser {
+  id: string;
+  role: UserRole;
+  branchId: string | null;
 }
 
-export interface LedgerSummary {
-  totalCredits: number;
-  totalDebits: number;
-  netBalance: number;
-  entryCount: number;
-}
+import {
+  GetExpensesOptions,
+  PaginatedLedger,
+  LedgerSummary,
+  ProfitLossData,
+} from '@accounting/types';
 
-export interface ProfitLossData {
-  period: { startDate: string; endDate: string };
-  revenue: {
-    totalSales: number;
-    totalTransactions: number;
-    totalDiscounts: number;
-    totalTax: number;
-    netRevenue: number;
-  };
-  costOfGoodsSold: {
-    totalCOGS: number;
-    itemsSold: number;
-  };
-  grossProfit: number;
-  grossMargin: number;
-  expenses: {
-    total: number;
-    byCategory: { category: string; amount: number }[];
-  };
-  netProfit: number;
-  netMargin: number;
-}
+// Re-export so existing callers that imported these from this file keep working.
+export type {
+  GetExpensesOptions,
+  PaginatedLedger,
+  LedgerSummary,
+  ProfitLossData,
+};
 
 @Injectable()
 export class AccountingService {
   constructor(
-    @InjectRepository(LedgerEntry)
-    private readonly ledgerRepository: Repository<LedgerEntry>,
-    @InjectRepository(Expense)
-    private readonly expenseRepository: Repository<Expense>,
+    private readonly accounting: AccountingRepository,
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
     @InjectRepository(TransactionItem)
@@ -60,7 +50,7 @@ export class AccountingService {
   ) {}
 
   async getLedgerEntries(
-    branchId: string,
+    branchId: string | null,
     options?: {
       entryType?: string;
       startDate?: string;
@@ -70,124 +60,123 @@ export class AccountingService {
       limit?: number;
     },
   ): Promise<PaginatedLedger> {
-    const page = options?.page ?? 1;
-    const limit = options?.limit ?? 20;
-
-    const qb = this.ledgerRepository
-      .createQueryBuilder('le')
-      .where('le.branch_id = :branchId', { branchId });
-
-    if (options?.entryType && options.entryType !== 'all') {
-      qb.andWhere('le.entry_type = :entryType', {
-        entryType: options.entryType,
-      });
-    }
-
-    if (options?.startDate) {
-      const start = new Date(options.startDate);
-      start.setHours(0, 0, 0, 0);
-      qb.andWhere('le.created_at >= :start', { start });
-    }
-
-    if (options?.endDate) {
-      const end = new Date(options.endDate);
-      end.setHours(23, 59, 59, 999);
-      qb.andWhere('le.created_at <= :end', { end });
-    }
-
-    if (options?.search) {
-      qb.andWhere(
-        '(le.description ILIKE :search OR le.reference_number ILIKE :search)',
-        { search: `%${options.search}%` },
-      );
-    }
-
-    qb.orderBy('le.created_at', 'DESC');
-
-    const [items, total] = await qb
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      items,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return this.accounting.listLedger({
+      branchId,
+      entryType: options?.entryType,
+      startDate: options?.startDate,
+      endDate: options?.endDate,
+      search: options?.search,
+      page: options?.page ?? 1,
+      limit: options?.limit ?? 20,
+    });
   }
 
-  async getLedgerSummary(branchId: string): Promise<LedgerSummary> {
-    const result = await this.ledgerRepository
-      .createQueryBuilder('le')
-      .select(
-        `SUM(CASE WHEN le.entry_type = 'credit' THEN le.amount ELSE 0 END)`,
-        'totalCredits',
-      )
-      .addSelect(
-        `SUM(CASE WHEN le.entry_type = 'debit' THEN le.amount ELSE 0 END)`,
-        'totalDebits',
-      )
-      .addSelect('COUNT(*)', 'entryCount')
-      .where('le.branch_id = :branchId', { branchId })
-      .getRawOne<{
-        totalCredits: string | null;
-        totalDebits: string | null;
-        entryCount: string;
-      }>();
-
-    const totalCredits = Number(result?.totalCredits ?? 0);
-    const totalDebits = Number(result?.totalDebits ?? 0);
-
+  async getLedgerSummary(branchId: string | null): Promise<LedgerSummary> {
+    const result = await this.accounting.getLedgerSummary(branchId);
     return {
-      totalCredits: Math.round(totalCredits * 100) / 100,
-      totalDebits: Math.round(totalDebits * 100) / 100,
-      netBalance: Math.round((totalCredits - totalDebits) * 100) / 100,
-      entryCount: Number(result?.entryCount ?? 0),
+      totalCredits: Math.round(result.totalCredits * 100) / 100,
+      totalDebits: Math.round(result.totalDebits * 100) / 100,
+      netBalance:
+        Math.round((result.totalCredits - result.totalDebits) * 100) / 100,
+      entryCount: result.entryCount,
     };
   }
 
   async createExpense(
     dto: CreateExpenseDto,
-    createdBy: string,
+    user: RequestUser,
   ): Promise<Expense> {
-    const expense = this.expenseRepository.create({
-      ...dto,
-      createdBy,
-    });
-    const saved = await this.expenseRepository.save(expense);
+    // Managers can only add expenses to their own branch; the dto.branchId
+    // is ignored. Admins are not tied to a branch, so they MUST pass
+    // dto.branchId to say which branch the expense is for.
+    let branchId: string;
+    if (user.role === UserRole.MANAGER) {
+      if (!user.branchId) {
+        throw new ForbiddenException('Manager is not assigned to a branch');
+      }
+      branchId = user.branchId;
+    } else {
+      if (!dto.branchId) {
+        throw new BadRequestException(
+          'branchId is required when an admin creates an expense',
+        );
+      }
+      branchId = dto.branchId;
+    }
 
-    // Create a DEBIT ledger entry for this expense
-    const ledgerEntry = this.ledgerRepository.create({
+    const saved = await this.accounting.createExpense({
+      ...dto,
+      branchId,
+      createdBy: user.id,
+      status: ExpenseStatus.PENDING,
+    });
+
+    await this.accounting.createLedgerEntry({
       branchId: saved.branchId,
       entryType: LedgerEntryType.DEBIT,
       amount: saved.amount,
       description: `Expense: ${saved.category} — ${saved.description}`,
       referenceNumber: `EXP-${saved.id.substring(0, 8).toUpperCase()}`,
     });
-    await this.ledgerRepository.save(ledgerEntry);
 
     return saved;
   }
 
-  async deleteExpense(id: string): Promise<void> {
-    // Also delete any associated ledger entry
+  async deleteExpense(id: string, user: RequestUser): Promise<void> {
+    const expense = await this.accounting.findExpenseById(id);
+    if (!expense) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    if (user.role === UserRole.MANAGER) {
+      if (expense.branchId !== user.branchId) {
+        throw new ForbiddenException(
+          'Cannot delete expenses from another branch',
+        );
+      }
+      if (expense.status !== ExpenseStatus.PENDING) {
+        throw new ForbiddenException('Only pending expenses can be deleted');
+      }
+    }
+
     const refPrefix = `EXP-${id.substring(0, 8).toUpperCase()}`;
-    await this.ledgerRepository.delete({ referenceNumber: refPrefix });
-    await this.expenseRepository.delete(id);
+    await this.accounting.deleteLedgerByReference(refPrefix);
+    await this.accounting.deleteExpense(id);
   }
 
-  async getExpenses(branchId: string): Promise<Expense[]> {
-    return this.expenseRepository.find({
-      where: { branchId },
-      relations: ['creator'],
-      order: { createdAt: 'DESC' },
+  async getExpenses(opts: GetExpensesOptions = {}): Promise<Expense[]> {
+    return this.accounting.listExpenses({
+      branchId: opts.branchId,
+      status: opts.status,
+      search: opts.search,
     });
   }
 
+  async reviewExpense(
+    id: string,
+    dto: ReviewExpenseDto,
+    reviewerId: string,
+  ): Promise<Expense> {
+    const expense = await this.accounting.findExpenseById(id);
+    if (!expense) {
+      throw new NotFoundException('Expense not found');
+    }
+    if (expense.status !== ExpenseStatus.PENDING) {
+      throw new BadRequestException(
+        `Expense is already ${expense.status} and cannot be reviewed again`,
+      );
+    }
+
+    expense.status = dto.status;
+    expense.reviewedBy = reviewerId;
+    expense.reviewedAt = new Date();
+    expense.reviewNote = dto.note ?? null;
+
+    return this.accounting.saveExpense(expense);
+  }
+
   async getProfitLoss(
-    branchId: string,
+    branchId: string | null,
     startDate: string,
     endDate: string,
   ): Promise<ProfitLossData> {
@@ -196,12 +185,13 @@ export class AccountingService {
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
-    // Revenue: sum of all transactions in the period
+    // Revenue: sum of all transactions in the period.
+    // branchId === null means "across all branches" (admin cross-branch view).
     const transactions = await this.transactionRepository.find({
-      where: {
-        branchId,
-        createdAt: Between(start, end),
-      },
+      where:
+        branchId !== null
+          ? { branchId, createdAt: Between(start, end) }
+          : { createdAt: Between(start, end) },
     });
 
     const totalSales = transactions.reduce(
@@ -219,15 +209,20 @@ export class AccountingService {
     const netRevenue = totalSales;
 
     // COGS: sum of (costPrice × quantity) for all items sold
-    const cogsResult = await this.transactionItemRepository
+    const cogsQb = this.transactionItemRepository
       .createQueryBuilder('ti')
       .select('SUM(p.cost_price * ti.quantity)', 'totalCOGS')
       .addSelect('SUM(ti.quantity)', 'itemsSold')
       .innerJoin('ti.transaction', 't')
       .innerJoin('ti.product', 'p')
-      .where('t.branch_id = :branchId', { branchId })
-      .andWhere('t.created_at BETWEEN :start AND :end', { start, end })
-      .getRawOne<{ totalCOGS: string | null; itemsSold: string | null }>();
+      .where('t.created_at BETWEEN :start AND :end', { start, end });
+    if (branchId !== null) {
+      cogsQb.andWhere('t.branch_id = :branchId', { branchId });
+    }
+    const cogsResult = await cogsQb.getRawOne<{
+      totalCOGS: string | null;
+      itemsSold: string | null;
+    }>();
 
     const totalCOGS = Number(cogsResult?.totalCOGS ?? 0);
     const itemsSold = Number(cogsResult?.itemsSold ?? 0);
@@ -237,12 +232,11 @@ export class AccountingService {
     const grossMargin = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
 
     // Expenses in the period
-    const expenses = await this.expenseRepository.find({
-      where: {
-        branchId,
-        expenseDate: Between(start, end),
-      },
-    });
+    const expenses = await this.accounting.findExpensesInRange(
+      branchId,
+      start,
+      end,
+    );
 
     const totalExpenses = expenses.reduce(
       (sum, e) => sum + Number(e.amount),
@@ -262,7 +256,6 @@ export class AccountingService {
       }))
       .sort((a, b) => b.amount - a.amount);
 
-    // Net profit
     const netProfit = grossProfit - totalExpenses;
     const netMargin = netRevenue > 0 ? (netProfit / netRevenue) * 100 : 0;
 

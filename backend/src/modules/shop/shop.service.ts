@@ -4,36 +4,32 @@ import { Repository } from 'typeorm';
 import { Product } from '@products/entities/product.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
+import { User } from '@users/entities/user.entity';
+import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { UserRole } from '@common/enums/user-roles.enums';
+import { TransactionType } from '@common/enums/transaction.enum';
 
-export type StockStatus = 'in' | 'low' | 'out';
+import {
+  StockStatus,
+  ShopProductBranchRef,
+  ShopProduct,
+  ShopBranch,
+} from '@/modules/shop/types';
 
-export interface ShopProductBranchRef {
-  id: string;
-  name: string;
-}
-
-export interface ShopProduct {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  sellingPrice: number;
-  imageUrl: string | null;
-  stockStatus: StockStatus;
-  availableBranches: ShopProductBranchRef[];
-}
-
-export interface ShopBranch {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
-}
+// Re-export so existing callers that imported these from this file keep working.
+export type { StockStatus, ShopProductBranchRef, ShopProduct, ShopBranch };
 
 interface ListProductsQuery {
   branchId: string;
   category?: string;
   search?: string;
+}
+
+interface ListRecommendedQuery {
+  branchId: string;
+  productId?: string;
+  category?: string;
+  limit?: number;
 }
 
 interface ProductWithStockRow {
@@ -53,6 +49,11 @@ interface OtherBranchRow {
   branch_name: string;
 }
 
+interface TopSellerRow {
+  productId: string;
+  totalQuantity: string;
+}
+
 @Injectable()
 export class ShopService {
   constructor(
@@ -62,6 +63,10 @@ export class ShopService {
     private readonly branchRepo: Repository<Branch>,
     @InjectRepository(Inventory)
     private readonly inventoryRepo: Repository<Inventory>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    @InjectRepository(TransactionItem)
+    private readonly transactionItemRepo: Repository<TransactionItem>,
   ) {}
 
   async listProducts(query: ListProductsQuery): Promise<ShopProduct[]> {
@@ -136,6 +141,51 @@ export class ShopService {
     return rows.map((r) => r.category).filter((c): c is string => Boolean(c));
   }
 
+  async listRecommended(query: ListRecommendedQuery): Promise<ShopProduct[]> {
+    const limit = query.limit ?? 8;
+    const contextProduct = query.productId
+      ? await this.productRepo.findOne({
+          where: { id: query.productId, isActive: true },
+        })
+      : null;
+    const category = query.category ?? contextProduct?.category ?? null;
+    const availableProducts = (
+      await this.listProducts({ branchId: query.branchId })
+    )
+      .filter((product) => product.stockStatus !== 'out')
+      .filter((product) => product.id !== query.productId);
+
+    const topSellerRows = await this.transactionItemRepo
+      .createQueryBuilder('ti')
+      .select('ti.product_id', 'productId')
+      .addSelect('SUM(ti.quantity)', 'totalQuantity')
+      .innerJoin('ti.transaction', 'txn')
+      .where('txn.branch_id = :branchId', { branchId: query.branchId })
+      .andWhere('txn.type = :type', { type: TransactionType.SALE })
+      .groupBy('ti.product_id')
+      .orderBy('SUM(ti.quantity)', 'DESC')
+      .limit(50)
+      .getRawMany<TopSellerRow>();
+    const topSellerRank = new Map<string, number>();
+    topSellerRows.forEach((row, index) => {
+      topSellerRank.set(row.productId, 500 - index);
+    });
+
+    return availableProducts
+      .map((product) => ({
+        product,
+        score:
+          (category && product.category === category ? 1000 : 0) +
+          (topSellerRank.get(product.id) ?? 0),
+      }))
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.product.name.localeCompare(b.product.name);
+      })
+      .slice(0, limit)
+      .map((entry) => entry.product);
+  }
+
   async getProduct(id: string, branchId?: string): Promise<ShopProduct> {
     const product = await this.productRepo.findOne({
       where: { id, isActive: true },
@@ -177,11 +227,29 @@ export class ShopService {
       where: { isActive: true },
       order: { name: 'ASC' },
     });
+
+    const staffRows = await this.userRepo
+      .createQueryBuilder('u')
+      .select('u.branch_id', 'branchId')
+      .addSelect('COUNT(u.id)', 'count')
+      .where('u.role IN (:...roles)', {
+        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
+      })
+      .andWhere('u.branch_id IS NOT NULL')
+      .groupBy('u.branch_id')
+      .getRawMany<{ branchId: string; count: string }>();
+
+    const countByBranch = new Map<string, number>();
+    for (const row of staffRows) {
+      countByBranch.set(row.branchId, Number(row.count));
+    }
+
     return branches.map((b) => ({
       id: b.id,
       name: b.name,
-      address: b.address,
+      address: b.addressLine1,
       phone: b.phone,
+      staffCount: countByBranch.get(b.id) ?? 0,
     }));
   }
 

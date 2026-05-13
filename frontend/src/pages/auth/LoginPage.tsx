@@ -1,81 +1,14 @@
-import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import axios from 'axios';
-import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { isValidEmail } from '@/lib/utils';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Mail } from 'lucide-react';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import Logo from '@/components/ui/Logo';
+import { useLoginForm } from '@/features/login/hooks/useLoginForm';
+import { LoginPasswordField } from '@/features/login/components/LoginPasswordField';
 
-export default function LoginPage() {
-    const [email, setEmail] = useState<string>('');
-    const [password, setPassword] = useState<string>('');
-    const [showPassword, setShowPassword] = useState<boolean>(false);
-    const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-
-    const { login, isLoading } = useAuth();
-    const navigate = useNavigate();
-
-    const validateForm = () => {
-        const newErrors: { email?: string; password?: string } = {};
-        let isValid = true;
-
-        if (!email) {
-            newErrors.email = 'Email address is required';
-            isValid = false;
-        } else if (isValidEmail(email) === false) {
-            newErrors.email = 'Please enter a valid email address';
-            isValid = false;
-        }
-
-        if (!password) {
-            newErrors.password = 'Password is required';
-            isValid = false;
-        } else if (password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters';
-            isValid = false;
-        }
-
-        setErrors(newErrors);
-        return isValid;
-    };
-
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!validateForm()) return;
-
-        try {
-            await login(email, password);
-            toast.success('Successfully logged in!');
-            navigate('/');
-        } catch (error) {
-            console.error('Login failed:', error);
-            if (axios.isAxiosError(error)) {
-                if (error.response?.status === 403) {
-                    toast('Verify your email first', { icon: '📧' });
-                    navigate(FRONTEND_ROUTES.OTP_VERIFICATION, { state: { email } });
-                    return;
-                }
-                if (error.response?.data?.message) {
-                    toast.error(String(error.response.data.message));
-                    return;
-                }
-            }
-            toast.error('Invalid email or password');
-        }
-    };
-
-    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEmail(e.target.value);
-        if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-    };
-
-    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setPassword(e.target.value);
-        if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
-    };
+export function LoginPage() {
+    const p = useLoginForm();
 
     return (
         <>
@@ -87,84 +20,39 @@ export default function LoginPage() {
                 Sign in to your Ledger Pro workspace.
             </p>
 
-            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-                <div>
-                    <label
-                        htmlFor="login-email"
-                        className="block text-xs font-medium text-text-2 mb-1.5"
-                    >
-                        Email address
-                    </label>
-                    <div
-                        className={`flex items-center gap-2 h-[42px] px-3 bg-surface border rounded-md transition-colors ${
-                            errors.email
-                                ? 'border-danger'
-                                : 'border-border-strong focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/20'
-                        }`}
-                    >
-                        <Mail size={15} className="text-text-3 flex-shrink-0" />
-                        <input
-                            id="login-email"
-                            type="email"
-                            value={email}
-                            onChange={handleEmailChange}
-                            placeholder="you@company.com"
-                            className="flex-1 bg-transparent outline-none text-[13px] text-text-1 placeholder:text-text-3"
-                        />
-                    </div>
-                    {errors.email && (
-                        <p className="mt-1.5 text-xs text-danger font-medium">
-                            {errors.email}
-                        </p>
-                    )}
-                </div>
+            <form
+                onSubmit={p.handleSubmit}
+                noValidate
+                className="flex flex-col gap-4"
+            >
+                <Input
+                    id="login-email"
+                    label="Email address"
+                    type="email"
+                    autoComplete="username"
+                    inputMode="email"
+                    value={p.email}
+                    onChange={(e) => {
+                        p.setEmail(e.target.value);
+                        p.clearError('email');
+                    }}
+                    placeholder="you@company.com"
+                    error={p.errors.email}
+                    leftIcon={<Mail size={15} />}
+                    sizeVariant="lg"
+                />
 
-                <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                        <label
-                            htmlFor="login-password"
-                            className="text-xs font-medium text-text-2"
-                        >
-                            Password
-                        </label>
-                        <button
-                            type="button"
-                            className="text-xs font-medium text-primary hover:opacity-80 transition-opacity"
-                        >
-                            Forgot?
-                        </button>
-                    </div>
-                    <div
-                        className={`flex items-center gap-2 h-[42px] px-3 bg-surface border rounded-md transition-colors ${
-                            errors.password
-                                ? 'border-danger'
-                                : 'border-border-strong focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/20'
-                        }`}
-                    >
-                        <Lock size={15} className="text-text-3 flex-shrink-0" />
-                        <input
-                            id="login-password"
-                            type={showPassword ? 'text' : 'password'}
-                            value={password}
-                            onChange={handlePasswordChange}
-                            placeholder="Enter your password"
-                            className="flex-1 bg-transparent outline-none text-[13px] text-text-1 placeholder:text-text-3"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="text-text-3 hover:text-text-1 transition-colors"
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                    </div>
-                    {errors.password && (
-                        <p className="mt-1.5 text-xs text-danger font-medium">
-                            {errors.password}
-                        </p>
-                    )}
-                </div>
+                <LoginPasswordField
+                    value={p.password}
+                    onChange={(v) => {
+                        p.setPassword(v);
+                        p.clearError('password');
+                    }}
+                    error={p.errors.password}
+                    showPassword={p.showPassword}
+                    onToggle={p.toggleShowPassword}
+                    onForgot={p.goForgot}
+                />
 
                 <label className="flex items-center gap-2 text-xs text-text-2 cursor-pointer">
                     <input
@@ -175,9 +63,14 @@ export default function LoginPage() {
                     Keep me signed in for 30 days
                 </label>
 
-                <Button type="submit" size="lg" disabled={isLoading} className="w-full mt-1">
-                    {isLoading ? 'Signing in…' : 'Sign in'}
-                    {!isLoading && <ArrowRight size={14} />}
+                <Button
+                    type="submit"
+                    size="lg"
+                    disabled={p.isLoading}
+                    className="w-full mt-1"
+                >
+                    {p.isLoading ? 'Signing in…' : 'Sign in'}
+                    {!p.isLoading && <ArrowRight size={14} />}
                 </Button>
 
                 <div className="flex items-center gap-3 my-2">
@@ -186,7 +79,12 @@ export default function LoginPage() {
                     <div className="flex-1 h-px bg-border" />
                 </div>
 
-                <Button type="button" variant="secondary" size="lg" className="w-full">
+                <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    className="w-full"
+                >
                     Continue with Google
                 </Button>
 

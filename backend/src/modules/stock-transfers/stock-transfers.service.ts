@@ -4,13 +4,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
-import { Branch } from '@branches/entities/branch.entity';
-import { Product } from '@products/entities/product.entity';
 import { User } from '@users/entities/user.entity';
+import { StockTransfersRepository } from '@stock-transfers/stock-transfers.repository';
+import { ProductsRepository } from '@products/products.repository';
+import { BranchesRepository } from '@branches/branches.repository';
+import { InventoryRepository } from '@inventory/inventory.repository';
+import { UsersRepository } from '@users/users.repository';
 import { CreateTransferRequestDto } from '@stock-transfers/dto/create-transfer-request.dto';
 import { ApproveTransferDto } from '@stock-transfers/dto/approve-transfer.dto';
 import { RejectTransferDto } from '@stock-transfers/dto/reject-transfer.dto';
@@ -27,51 +29,41 @@ import { NotificationsGateway } from '@notifications/notifications.gateway';
 
 interface ActorContext {
   id: string;
-  branchId: string;
+  branchId: string | null;
   role: UserRole;
 }
 
-export interface SourceOption {
-  branchId: string;
-  branchName: string;
-  isActive: boolean;
-  currentQuantity: number;
-  lowStockThreshold: number | null;
-}
+import { SourceOption, PaginatedTransfers } from '@stock-transfers/types';
 
-export interface PaginatedTransfers {
-  items: StockTransferRequest[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
+// Re-export so existing callers that imported these from this file keep working.
+export type { SourceOption, PaginatedTransfers };
 
-const TRANSFER_RELATIONS = [
-  'product',
-  'destinationBranch',
-  'sourceBranch',
-  'requestedBy',
-  'reviewedBy',
-  'shippedBy',
-  'receivedBy',
-];
+function paginate<T>(
+  raw: { items: T[]; total: number },
+  page: number,
+  limit: number,
+): PaginatedTransfers {
+  return {
+    items: raw.items as StockTransferRequest[],
+    total: raw.total,
+    page,
+    limit,
+    totalPages: Math.ceil(raw.total / limit) || 1,
+  };
+}
 
 @Injectable()
 export class StockTransfersService {
   constructor(
-    @InjectRepository(StockTransferRequest)
-    private readonly transferRepo: Repository<StockTransferRequest>,
-    @InjectRepository(Inventory)
-    private readonly inventoryRepo: Repository<Inventory>,
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
-    @InjectRepository(Branch)
-    private readonly branchRepo: Repository<Branch>,
-    @InjectRepository(Product)
-    private readonly productRepo: Repository<Product>,
+    private readonly transfers: StockTransfersRepository,
+    private readonly products: ProductsRepository,
+    private readonly branches: BranchesRepository,
+    private readonly inventory: InventoryRepository,
+    private readonly users: UsersRepository,
     private readonly notificationsService: NotificationsService,
     private readonly notificationsGateway: NotificationsGateway,
+    // Service-level transactions still need a DataSource — repos run in
+    // the OUTER transaction's EntityManager via manager.getRepository().
     private readonly dataSource: DataSource,
   ) {}
 
@@ -81,34 +73,46 @@ export class StockTransfersService {
     dto: CreateTransferRequestDto,
     actor: ActorContext,
   ): Promise<StockTransferRequest> {
-    const product = await this.productRepo.findOne({
-      where: { id: dto.productId },
-    });
+    const product = await this.products.findById(dto.productId);
     if (!product) {
       throw new NotFoundException('Product not found');
     }
 
-    const destBranch = await this.branchRepo.findOne({
-      where: { id: actor.branchId },
-    });
-    if (!destBranch) {
-      throw new NotFoundException('Your branch could not be found');
+    // Managers default to their own branch as the destination. Admins are
+    // not tied to a branch, so they must say explicitly which branch the
+    // transfer is being requested for.
+    let destinationBranchId: string;
+    if (actor.role === UserRole.ADMIN) {
+      if (!dto.destinationBranchId) {
+        throw new BadRequestException(
+          'destinationBranchId is required when an admin creates a transfer',
+        );
+      }
+      destinationBranchId = dto.destinationBranchId;
+    } else {
+      if (!actor.branchId) {
+        throw new BadRequestException(
+          'Your account is not associated with a branch',
+        );
+      }
+      destinationBranchId = actor.branchId;
     }
 
-    const draft = this.transferRepo.create({
+    const destBranch = await this.branches.findById(destinationBranchId);
+    if (!destBranch) {
+      throw new NotFoundException('Destination branch could not be found');
+    }
+
+    const saved = await this.transfers.create({
       productId: dto.productId,
-      destinationBranchId: actor.branchId,
+      destinationBranchId,
       requestedQuantity: dto.requestedQuantity,
       requestReason: dto.requestReason ?? null,
       status: TransferStatus.PENDING,
       requestedByUserId: actor.id,
     });
-    const saved = await this.transferRepo.save(draft);
 
-    // Notify all admins
-    const admins = await this.userRepo.find({
-      where: { role: UserRole.ADMIN },
-    });
+    const admins = await this.users.findAllByRole(UserRole.ADMIN);
     const message = `${destBranch.name} requests ${dto.requestedQuantity} unit(s) of ${product.name}`;
     await Promise.all(
       admins.map((admin) =>
@@ -134,44 +138,14 @@ export class StockTransfersService {
   ): Promise<PaginatedTransfers> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-
-    const qb = this.transferRepo
-      .createQueryBuilder('transfer')
-      .leftJoinAndSelect('transfer.product', 'product')
-      .leftJoinAndSelect('transfer.destinationBranch', 'destinationBranch')
-      .leftJoinAndSelect('transfer.sourceBranch', 'sourceBranch')
-      .leftJoinAndSelect('transfer.requestedBy', 'requestedBy')
-      .leftJoinAndSelect('transfer.reviewedBy', 'reviewedBy')
-      .leftJoinAndSelect('transfer.shippedBy', 'shippedBy')
-      .leftJoinAndSelect('transfer.receivedBy', 'receivedBy')
-      .orderBy('transfer.createdAt', 'DESC');
-
-    if (query.status) {
-      qb.andWhere('transfer.status = :status', { status: query.status });
-    }
-    if (query.destinationBranchId) {
-      qb.andWhere('transfer.destination_branch_id = :destId', {
-        destId: query.destinationBranchId,
-      });
-    }
-    if (query.sourceBranchId) {
-      qb.andWhere('transfer.source_branch_id = :srcId', {
-        srcId: query.sourceBranchId,
-      });
-    }
-
-    const [items, total] = await qb
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      items,
-      total,
+    const raw = await this.transfers.listForAdmin({
+      status: query.status,
+      destinationBranchId: query.destinationBranchId,
+      sourceBranchId: query.sourceBranchId,
       page,
       limit,
-      totalPages: Math.ceil(total / limit) || 1,
-    };
+    });
+    return paginate(raw, page, limit);
   }
 
   async listMyRequests(
@@ -180,37 +154,13 @@ export class StockTransfersService {
   ): Promise<PaginatedTransfers> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-
-    const qb = this.transferRepo
-      .createQueryBuilder('transfer')
-      .leftJoinAndSelect('transfer.product', 'product')
-      .leftJoinAndSelect('transfer.destinationBranch', 'destinationBranch')
-      .leftJoinAndSelect('transfer.sourceBranch', 'sourceBranch')
-      .leftJoinAndSelect('transfer.requestedBy', 'requestedBy')
-      .leftJoinAndSelect('transfer.reviewedBy', 'reviewedBy')
-      .leftJoinAndSelect('transfer.shippedBy', 'shippedBy')
-      .leftJoinAndSelect('transfer.receivedBy', 'receivedBy')
-      .where('transfer.destination_branch_id = :branchId', {
-        branchId: actor.branchId,
-      })
-      .orderBy('transfer.createdAt', 'DESC');
-
-    if (query.status) {
-      qb.andWhere('transfer.status = :status', { status: query.status });
-    }
-
-    const [items, total] = await qb
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      items,
-      total,
+    const raw = await this.transfers.listMyRequests({
+      branchId: actor.branchId,
+      status: query.status,
       page,
       limit,
-      totalPages: Math.ceil(total / limit) || 1,
-    };
+    });
+    return paginate(raw, page, limit);
   }
 
   async listIncoming(
@@ -219,40 +169,13 @@ export class StockTransfersService {
   ): Promise<PaginatedTransfers> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-
-    const qb = this.transferRepo
-      .createQueryBuilder('transfer')
-      .leftJoinAndSelect('transfer.product', 'product')
-      .leftJoinAndSelect('transfer.destinationBranch', 'destinationBranch')
-      .leftJoinAndSelect('transfer.sourceBranch', 'sourceBranch')
-      .leftJoinAndSelect('transfer.requestedBy', 'requestedBy')
-      .leftJoinAndSelect('transfer.reviewedBy', 'reviewedBy')
-      .leftJoinAndSelect('transfer.shippedBy', 'shippedBy')
-      .leftJoinAndSelect('transfer.receivedBy', 'receivedBy')
-      .where('transfer.source_branch_id = :branchId', {
-        branchId: actor.branchId,
-      })
-      .andWhere('transfer.status IN (:...statuses)', {
-        statuses: [TransferStatus.APPROVED, TransferStatus.IN_TRANSIT],
-      })
-      .orderBy('transfer.createdAt', 'DESC');
-
-    if (query.status) {
-      qb.andWhere('transfer.status = :status', { status: query.status });
-    }
-
-    const [items, total] = await qb
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      items,
-      total,
+    const raw = await this.transfers.listIncoming({
+      branchId: actor.branchId,
+      status: query.status,
       page,
       limit,
-      totalPages: Math.ceil(total / limit) || 1,
-    };
+    });
+    return paginate(raw, page, limit);
   }
 
   async listHistory(
@@ -261,65 +184,23 @@ export class StockTransfersService {
   ): Promise<PaginatedTransfers> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-
     const statuses =
       query.status && query.status.length > 0
         ? query.status
         : HISTORY_TERMINAL_STATUSES;
 
-    const qb = this.transferRepo
-      .createQueryBuilder('transfer')
-      .leftJoinAndSelect('transfer.product', 'product')
-      .leftJoinAndSelect('transfer.destinationBranch', 'destinationBranch')
-      .leftJoinAndSelect('transfer.sourceBranch', 'sourceBranch')
-      .leftJoinAndSelect('transfer.requestedBy', 'requestedBy')
-      .leftJoinAndSelect('transfer.reviewedBy', 'reviewedBy')
-      .leftJoinAndSelect('transfer.shippedBy', 'shippedBy')
-      .leftJoinAndSelect('transfer.receivedBy', 'receivedBy')
-      .where('transfer.status IN (:...statuses)', { statuses })
-      .orderBy('transfer.createdAt', 'DESC');
-
-    // Managers are auto-scoped to their own branch (source OR destination).
-    // Admins see everything by default, with optional branchId filter.
-    if (actor.role !== UserRole.ADMIN) {
-      qb.andWhere(
-        '(transfer.source_branch_id = :actorBranchId OR transfer.destination_branch_id = :actorBranchId)',
-        { actorBranchId: actor.branchId },
-      );
-    } else if (query.branchId) {
-      qb.andWhere(
-        '(transfer.source_branch_id = :branchId OR transfer.destination_branch_id = :branchId)',
-        { branchId: query.branchId },
-      );
-    }
-
-    if (query.productId) {
-      qb.andWhere('transfer.product_id = :productId', {
-        productId: query.productId,
-      });
-    }
-    if (query.from) {
-      qb.andWhere('transfer.created_at >= :from', { from: query.from });
-    }
-    if (query.to) {
-      // Treat `to` as inclusive end-of-day.
-      const endOfDay = new Date(query.to);
-      endOfDay.setUTCHours(23, 59, 59, 999);
-      qb.andWhere('transfer.created_at <= :to', { to: endOfDay });
-    }
-
-    const [items, total] = await qb
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      items,
-      total,
+    const raw = await this.transfers.listHistory({
+      actorRole: actor.role,
+      actorBranchId: actor.branchId,
+      branchId: query.branchId,
+      productId: query.productId,
+      from: query.from,
+      to: query.to,
+      statuses,
       page,
       limit,
-      totalPages: Math.ceil(total / limit) || 1,
-    };
+    });
+    return paginate(raw, page, limit);
   }
 
   async findById(
@@ -328,8 +209,6 @@ export class StockTransfersService {
   ): Promise<StockTransferRequest> {
     const transfer = await this.findByIdOrThrow(id);
 
-    // Admins see everything; managers/cashiers only see transfers
-    // where their branch is source or destination.
     if (actor.role !== UserRole.ADMIN) {
       const allowed =
         transfer.destinationBranchId === actor.branchId ||
@@ -343,17 +222,12 @@ export class StockTransfersService {
 
   async getSourceOptions(id: string): Promise<SourceOption[]> {
     const transfer = await this.findByIdOrThrow(id);
-
-    const branches = await this.branchRepo.find({
-      order: { name: 'ASC' },
-    });
-
-    const inventoryRows = await this.inventoryRepo.find({
-      where: {
-        productId: transfer.productId,
-        branchId: In(branches.map((b) => b.id)),
-      },
-    });
+    const branches = await this.branches.findAllSortedByName();
+    const branchIds = branches.map((b) => b.id);
+    const inventoryRows = await this.inventory.findByProductInBranches(
+      transfer.productId,
+      branchIds,
+    );
     const inventoryByBranch = new Map(
       inventoryRows.map((row) => [row.branchId, row]),
     );
@@ -371,8 +245,6 @@ export class StockTransfersService {
         };
       });
 
-    // Sort by surplus (current quantity) descending so the best options
-    // surface first.
     options.sort((a, b) => b.currentQuantity - a.currentQuantity);
     return options;
   }
@@ -399,9 +271,7 @@ export class StockTransfersService {
       );
     }
 
-    const sourceBranch = await this.branchRepo.findOne({
-      where: { id: dto.sourceBranchId },
-    });
+    const sourceBranch = await this.branches.findById(dto.sourceBranchId);
     if (!sourceBranch) {
       throw new NotFoundException('Source branch not found');
     }
@@ -409,13 +279,12 @@ export class StockTransfersService {
       throw new BadRequestException('Source branch is inactive');
     }
 
-    // Advisory check — the binding check happens at ship time.
-    const sourceInventory = await this.inventoryRepo.findOne({
-      where: {
-        productId: transfer.productId,
-        branchId: dto.sourceBranchId,
-      },
-    });
+    // Advisory check — the binding check happens at ship time inside a
+    // pessimistic lock.
+    const sourceInventory = await this.inventory.findByProductAndBranch(
+      transfer.productId,
+      dto.sourceBranchId,
+    );
     if (!sourceInventory || sourceInventory.quantity < dto.approvedQuantity) {
       throw new BadRequestException(
         'Source branch does not currently have enough stock to fulfill this transfer',
@@ -429,11 +298,10 @@ export class StockTransfersService {
     transfer.approvalNote = trimmedNote ? trimmedNote : null;
     transfer.reviewedByUserId = actor.id;
     transfer.reviewedAt = new Date();
-    await this.transferRepo.save(transfer);
+    await this.transfers.save(transfer);
 
     const updated = await this.findByIdOrThrow(id);
 
-    // Notify source branch managers + destination branch managers
     const recipients = await this.collectBranchManagers([
       dto.sourceBranchId,
       transfer.destinationBranchId,
@@ -480,7 +348,7 @@ export class StockTransfersService {
     transfer.rejectionReason = dto.rejectionReason;
     transfer.reviewedByUserId = actor.id;
     transfer.reviewedAt = new Date();
-    await this.transferRepo.save(transfer);
+    await this.transfers.save(transfer);
 
     const updated = await this.findByIdOrThrow(id);
 
@@ -520,7 +388,7 @@ export class StockTransfersService {
     transfer.status = TransferStatus.CANCELLED;
     transfer.reviewedByUserId = actor.id;
     transfer.reviewedAt = new Date();
-    await this.transferRepo.save(transfer);
+    await this.transfers.save(transfer);
 
     const updated = await this.findByIdOrThrow(id);
 
@@ -574,7 +442,8 @@ export class StockTransfersService {
 
     await this.dataSource.transaction(async (manager) => {
       // Pessimistic lock on the source inventory row to prevent races
-      // with concurrent POS sales or restocks.
+      // with concurrent POS sales or restocks. Repo-class methods can't
+      // accept the outer EntityManager yet, so this uses raw access.
       const sourceInventory = await manager
         .getRepository(Inventory)
         .createQueryBuilder('inv')
@@ -715,10 +584,7 @@ export class StockTransfersService {
   // ── Internals ─────────────────────────────────────────────────────────────
 
   private async findByIdOrThrow(id: string): Promise<StockTransferRequest> {
-    const transfer = await this.transferRepo.findOne({
-      where: { id },
-      relations: TRANSFER_RELATIONS,
-    });
+    const transfer = await this.transfers.findById(id);
     if (!transfer) {
       throw new NotFoundException('Transfer request not found');
     }
@@ -728,12 +594,7 @@ export class StockTransfersService {
   private async collectBranchManagers(branchIds: string[]): Promise<User[]> {
     const ids = branchIds.filter((id): id is string => Boolean(id));
     if (ids.length === 0) return [];
-    return this.userRepo.find({
-      where: {
-        branchId: In(ids),
-        role: In([UserRole.ADMIN, UserRole.MANAGER]),
-      },
-    });
+    return this.users.findManagersAndAdminsForBranches(ids);
   }
 
   private async notifyUser(

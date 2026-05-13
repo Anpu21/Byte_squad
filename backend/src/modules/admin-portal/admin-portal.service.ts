@@ -1,167 +1,74 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Branch } from '@branches/entities/branch.entity';
-import { User } from '@users/entities/user.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Product } from '@products/entities/product.entity';
 import { Expense } from '@accounting/entities/expense.entity';
+import { BranchesRepository } from '@branches/branches.repository';
+import { UsersRepository } from '@users/users.repository';
+import { InventoryRepository } from '@inventory/inventory.repository';
 import { InventoryMatrixQueryDto } from '@admin-portal/dto/inventory-matrix-query.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { TransactionType } from '@common/enums/transaction.enum';
 
-export interface BranchPerformance {
-  branchId: string;
-  branchName: string;
-  isActive: boolean;
-  todaySales: number;
-  todayTransactions: number;
-  staffCount: number;
-  activeProducts: number;
-  lowStockItems: number;
-  adminName: string | null;
-}
+// Documented Rules.md §7 exception: admin-portal owns no entity of its own —
+// it composes cross-domain reporting that doesn't naturally fit any single
+// domain repo. Simple read-by-id / count-by-branch operations go through the
+// extracted repos below; bespoke aggregations (sales × products × expenses
+// joined for per-branch comparison) stay inline with @InjectRepository on
+// Transaction / TransactionItem / Product / Expense to avoid bloating those
+// repos with admin-only reporting helpers.
 
-export interface OverviewSummary {
-  totalRevenueToday: number;
-  totalTransactionsToday: number;
-  activeBranches: number;
-  inactiveBranches: number;
-  totalStaff: number;
-}
+import {
+  BranchPerformance,
+  OverviewSummary,
+  OverviewAlert,
+  OverviewResponse,
+  BranchWithMeta,
+  AdminWithBranch,
+  UserWithBranch,
+  TopProduct,
+  BranchComparisonEntry,
+  BranchComparisonResponse,
+  InventoryMatrixBranchColumn,
+  InventoryMatrixCell,
+  InventoryMatrixRow,
+  InventoryMatrixResponse,
+} from '@admin-portal/types';
 
-export interface OverviewAlert {
-  type:
-    | 'no_admin'
-    | 'no_transactions'
-    | 'critical_low_stock'
-    | 'inactive_branch';
-  branchId: string;
-  branchName: string;
-  message: string;
-}
-
-export interface OverviewResponse {
-  summary: OverviewSummary;
-  branches: BranchPerformance[];
-  alerts: OverviewAlert[];
-}
-
-export interface BranchWithMeta {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  adminName: string | null;
-  adminEmail: string | null;
-  staffCount: number;
-}
-
-export interface AdminWithBranch {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  branchId: string | null;
-  branchName: string | null;
-  isVerified: boolean;
-  lastLoginAt: Date | null;
-  createdAt: Date;
-}
-
-export interface UserWithBranch {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  branchId: string | null;
-  branchName: string | null;
-  isVerified: boolean;
-  lastLoginAt: Date | null;
-  createdAt: Date;
-}
-
-export interface TopProduct {
-  productId: string;
-  productName: string;
-  quantity: number;
-  revenue: number;
-}
-
-export interface BranchComparisonEntry {
-  branchId: string;
-  branchName: string;
-  revenue: number;
-  expenses: number;
-  expenseRatio: number;
-  transactionCount: number;
-  avgTransactionValue: number;
-  staffCount: number;
-  revenuePerStaff: number;
-  topProducts: TopProduct[];
-}
-
-export interface BranchComparisonResponse {
-  startDate: string;
-  endDate: string;
-  branches: BranchComparisonEntry[];
-}
-
-export interface InventoryMatrixBranchColumn {
-  id: string;
-  name: string;
-  isActive: boolean;
-}
-
-export interface InventoryMatrixCell {
-  branchId: string;
-  inventoryId: string | null;
-  quantity: number;
-  lowStockThreshold: number | null;
-  isLowStock: boolean;
-  isOutOfStock: boolean;
-  lastRestockedAt: Date | null;
-}
-
-export interface InventoryMatrixRow {
-  productId: string;
-  productName: string;
-  barcode: string;
-  category: string;
-  sellingPrice: number;
-  cells: InventoryMatrixCell[];
-  totalQuantity: number;
-}
-
-export interface InventoryMatrixResponse {
-  branches: InventoryMatrixBranchColumn[];
-  rows: InventoryMatrixRow[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
+// Re-export so existing consumers that imported these from this file
+// keep working without a broad rename. New code should import from
+// '@admin-portal/types' directly.
+export type {
+  BranchPerformance,
+  OverviewSummary,
+  OverviewAlert,
+  OverviewResponse,
+  BranchWithMeta,
+  AdminWithBranch,
+  UserWithBranch,
+  TopProduct,
+  BranchComparisonEntry,
+  BranchComparisonResponse,
+  InventoryMatrixBranchColumn,
+  InventoryMatrixCell,
+  InventoryMatrixRow,
+  InventoryMatrixResponse,
+};
 
 @Injectable()
 export class AdminPortalService {
   constructor(
-    @InjectRepository(Branch)
-    private readonly branchRepo: Repository<Branch>,
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    private readonly branches: BranchesRepository,
+    private readonly users: UsersRepository,
+    private readonly inventory: InventoryRepository,
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
     @InjectRepository(TransactionItem)
     private readonly transactionItemRepo: Repository<TransactionItem>,
-    @InjectRepository(Inventory)
-    private readonly inventoryRepo: Repository<Inventory>,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
     @InjectRepository(Expense)
@@ -169,8 +76,7 @@ export class AdminPortalService {
   ) {}
 
   async getOverview(): Promise<OverviewResponse> {
-    const branches = await this.branchRepo.find({ order: { name: 'ASC' } });
-
+    const branches = await this.branches.findAllSortedByName();
     const { start: todayStart, end: todayEnd } = this.getTodayRange();
 
     const performance = await Promise.all(
@@ -194,28 +100,34 @@ export class AdminPortalService {
   }
 
   async listBranchesWithMeta(): Promise<BranchWithMeta[]> {
-    const branches = await this.branchRepo.find({ order: { name: 'ASC' } });
+    const branches = await this.branches.findAllSortedByName();
 
     return Promise.all(
       branches.map(async (branch) => {
-        const [admin, staffCount] = await Promise.all([
-          this.userRepo.findOne({
-            where: { branchId: branch.id, role: UserRole.ADMIN },
-            order: { createdAt: 'ASC' },
-          }),
-          this.userRepo.count({ where: { branchId: branch.id } }),
+        const [manager, staffCount] = await Promise.all([
+          this.users.findFirstByBranchAndRole(branch.id, UserRole.MANAGER),
+          this.users.countByBranch(branch.id),
         ]);
 
         return {
           id: branch.id,
+          code: branch.code,
           name: branch.name,
-          address: branch.address,
+          addressLine1: branch.addressLine1,
+          addressLine2: branch.addressLine2,
+          city: branch.city,
+          state: branch.state,
+          country: branch.country,
+          postalCode: branch.postalCode,
           phone: branch.phone,
+          email: branch.email,
           isActive: branch.isActive,
           createdAt: branch.createdAt,
           updatedAt: branch.updatedAt,
-          adminName: admin ? `${admin.firstName} ${admin.lastName}` : null,
-          adminEmail: admin ? admin.email : null,
+          managerName: manager
+            ? `${manager.firstName} ${manager.lastName}`
+            : null,
+          managerEmail: manager ? manager.email : null,
           staffCount,
         };
       }),
@@ -223,11 +135,7 @@ export class AdminPortalService {
   }
 
   async listAllUsers(): Promise<UserWithBranch[]> {
-    const users = await this.userRepo.find({
-      relations: ['branch'],
-      order: { createdAt: 'DESC' },
-    });
-
+    const users = await this.users.findAllWithBranch();
     return users.map((u) => ({
       id: u.id,
       email: u.email,
@@ -254,10 +162,7 @@ export class AdminPortalService {
       throw new BadRequestException('startDate must be before endDate');
     }
 
-    const branches = await this.branchRepo.find({
-      where: { id: In(branchIds) },
-    });
-
+    const branches = await this.branches.findByIds(branchIds);
     if (branches.length === 0) {
       throw new BadRequestException('No matching branches found');
     }
@@ -282,11 +187,7 @@ export class AdminPortalService {
   }
 
   async listAdmins(): Promise<AdminWithBranch[]> {
-    const admins = await this.userRepo.find({
-      where: { role: UserRole.ADMIN },
-      relations: ['branch'],
-      order: { createdAt: 'ASC' },
-    });
+    const admins = await this.users.findAllByRoleWithBranch(UserRole.ADMIN);
 
     return admins.map((admin) => ({
       id: admin.id,
@@ -309,7 +210,7 @@ export class AdminPortalService {
     const limit = query.limit ?? 25;
     const offset = (page - 1) * limit;
 
-    const branches = await this.branchRepo.find({ order: { name: 'ASC' } });
+    const branches = await this.branches.findAllSortedByName();
     const branchColumns: InventoryMatrixBranchColumn[] = branches.map((b) => ({
       id: b.id,
       name: b.name,
@@ -334,8 +235,7 @@ export class AdminPortalService {
 
     // When `lowStockOnly` is set we cannot reliably paginate at the SQL layer
     // because the flag depends on per-branch thresholds in the inventory rows.
-    // The callable workload is small (a few thousand products max), so we
-    // fetch the full filtered product list and post-filter + paginate in JS.
+    // Fetch the full filtered product list and post-filter + paginate in JS.
     let products: Product[];
     let total = 0;
 
@@ -362,9 +262,7 @@ export class AdminPortalService {
     }
 
     const productIds = products.map((p) => p.id);
-    const inventoryRows = await this.inventoryRepo.find({
-      where: { productId: In(productIds) },
-    });
+    const inventoryRows = await this.inventory.findByProductIds(productIds);
 
     // productId -> branchId -> Inventory
     const inventoryByProduct = new Map<string, Map<string, Inventory>>();
@@ -450,7 +348,7 @@ export class AdminPortalService {
     todayStart: Date,
     todayEnd: Date,
   ): Promise<BranchPerformance> {
-    const [salesAgg, staffCount, activeProducts, lowStockItems, adminUser] =
+    const [salesAgg, staffCount, activeProducts, lowStockItems, managerUser] =
       await Promise.all([
         this.transactionRepo
           .createQueryBuilder('txn')
@@ -463,21 +361,10 @@ export class AdminPortalService {
             end: todayEnd,
           })
           .getRawOne<{ total: string; count: string }>(),
-        this.userRepo.count({ where: { branchId: branch.id } }),
-        this.inventoryRepo
-          .createQueryBuilder('inv')
-          .where('inv.branch_id = :branchId', { branchId: branch.id })
-          .andWhere('inv.quantity > 0')
-          .getCount(),
-        this.inventoryRepo
-          .createQueryBuilder('inv')
-          .where('inv.branch_id = :branchId', { branchId: branch.id })
-          .andWhere('inv.quantity <= inv.low_stock_threshold')
-          .getCount(),
-        this.userRepo.findOne({
-          where: { branchId: branch.id, role: UserRole.ADMIN },
-          order: { createdAt: 'ASC' },
-        }),
+        this.users.countByBranch(branch.id),
+        this.inventory.countActiveForBranch(branch.id),
+        this.inventory.countLowStockForBranch(branch.id),
+        this.users.findFirstByBranchAndRole(branch.id, UserRole.MANAGER),
       ]);
 
     return {
@@ -489,8 +376,8 @@ export class AdminPortalService {
       staffCount,
       activeProducts,
       lowStockItems,
-      adminName: adminUser
-        ? `${adminUser.firstName} ${adminUser.lastName}`
+      managerName: managerUser
+        ? `${managerUser.firstName} ${managerUser.lastName}`
         : null,
     };
   }
@@ -521,7 +408,7 @@ export class AdminPortalService {
           end: endDate,
         })
         .getRawOne<{ total: string }>(),
-      this.userRepo.count({ where: { branchId: branch.id } }),
+      this.users.countByBranch(branch.id),
       this.transactionItemRepo
         .createQueryBuilder('item')
         .innerJoin('item.transaction', 'txn')
@@ -585,12 +472,12 @@ export class AdminPortalService {
         });
         continue;
       }
-      if (!p.adminName) {
+      if (!p.managerName) {
         alerts.push({
-          type: 'no_admin',
+          type: 'no_manager',
           branchId: p.branchId,
           branchName: p.branchName,
-          message: `${p.branchName} has no admin assigned`,
+          message: `${p.branchName} has no manager assigned`,
         });
       }
       if (p.todayTransactions === 0) {

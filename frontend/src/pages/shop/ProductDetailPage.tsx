@@ -1,65 +1,31 @@
-import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useDispatch } from 'react-redux';
-import toast from 'react-hot-toast';
-import { ChevronLeft, Plus, Minus, ShoppingCart } from 'lucide-react';
-import { shopProductsService } from '@/services/shop-products.service';
-import { addToCart } from '@/store/slices/shopCartSlice';
+import { Link } from 'react-router-dom';
+import { ChevronLeft, Store, Flame } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import { useProductDetail } from '@/features/product-detail/hooks/useProductDetail';
+import { ProductDetailImage } from '@/features/product-detail/components/ProductImage';
+import { ProductDetailActions } from '@/features/product-detail/components/ProductDetailActions';
+import { StickyAddToCartBar } from '@/features/product-detail/components/StickyAddToCartBar';
+import { RecommendedProductsSection } from '@/features/shop-catalog/components/RecommendedProductsSection';
 
-function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('en-LK', {
-        style: 'currency',
-        currency: 'LKR',
-    }).format(amount);
-}
+export function ProductDetailPage() {
+    const p = useProductDetail();
 
-export default function ProductDetailPage() {
-    const { id } = useParams<{ id: string }>();
-    const dispatch = useDispatch();
-    const navigate = useNavigate();
-    const [qty, setQty] = useState(1);
-
-    const { data: product, isLoading } = useQuery({
-        queryKey: ['public-product', id],
-        queryFn: () => shopProductsService.getProduct(id!),
-        enabled: !!id,
-    });
-
-    if (isLoading) {
+    if (p.isLoading) {
         return (
             <div className="flex items-center justify-center py-24">
-                <div className="w-8 h-8 border-2 border-border-strong border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border-strong border-t-primary rounded-full animate-spin" />
             </div>
         );
     }
 
-    if (!product) {
+    if (!p.product) {
         return (
             <div className="text-center py-24 text-text-3 text-sm">
                 Product not found.
             </div>
         );
     }
-
-    const handleAdd = () => {
-        dispatch(
-            addToCart({
-                productId: product.id,
-                name: product.name,
-                sellingPrice: product.sellingPrice,
-                imageUrl: product.imageUrl,
-                quantity: qty,
-            }),
-        );
-        toast.success(`${product.name} × ${qty} added`);
-    };
-
-    const handleBuyNow = () => {
-        handleAdd();
-        navigate(FRONTEND_ROUTES.SHOP_CART);
-    };
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -71,72 +37,71 @@ export default function ProductDetailPage() {
             </Link>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="aspect-square bg-[#111] border border-border rounded-md overflow-hidden flex items-center justify-center">
-                    {product.imageUrl ? (
-                        <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <span className="text-text-3 text-sm">No image</span>
-                    )}
-                </div>
+                <ProductDetailImage
+                    src={p.product.imageUrl}
+                    alt={p.product.name}
+                />
 
                 <div>
                     <p className="text-[11px] uppercase tracking-widest text-text-3">
-                        {product.category}
+                        {p.product.category}
                     </p>
                     <h1 className="text-2xl font-bold text-text-1 tracking-tight mt-2">
-                        {product.name}
+                        {p.product.name}
                     </h1>
                     <p className="text-3xl font-bold text-text-1 mt-4">
-                        {formatCurrency(product.sellingPrice)}
+                        {formatCurrency(p.product.sellingPrice)}
                     </p>
 
-                    {product.description && (
-                        <p className="mt-4 text-sm text-text-2 leading-relaxed">
-                            {product.description}
+                    {p.product.stockStatus === 'low' && (
+                        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-warning">
+                            <Flame size={13} aria-hidden="true" />
+                            Limited stock — order soon
                         </p>
                     )}
 
-                    <div className="mt-8 flex items-center gap-3">
-                        <div className="flex items-center gap-2 bg-[#111] border border-border rounded-lg p-1">
-                            <button
-                                type="button"
-                                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-surface-2"
-                            >
-                                <Minus size={14} />
-                            </button>
-                            <span className="font-semibold text-text-1 min-w-[2ch] text-center">
-                                {qty}
+                    {p.product.description && (
+                        <p className="mt-4 text-sm text-text-2 leading-relaxed">
+                            {p.product.description}
+                        </p>
+                    )}
+
+                    {p.branchSwitchNeeded && p.targetBranch && (
+                        <div className="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-md bg-warning-soft border border-warning/40 text-xs text-warning">
+                            <Store size={13} className="mt-0.5 flex-shrink-0" />
+                            <span>
+                                Available at <b>{p.targetBranch.name}</b>.
+                                Adding will switch your cart to that branch.
                             </span>
-                            <button
-                                type="button"
-                                onClick={() => setQty((q) => q + 1)}
-                                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-surface-2"
-                            >
-                                <Plus size={14} />
-                            </button>
                         </div>
-                        <button
-                            type="button"
-                            onClick={handleAdd}
-                            className="flex-1 inline-flex items-center justify-center gap-2 bg-[#111] border border-border hover:border-border-strong text-text-1 font-semibold py-2.5 rounded-lg"
-                        >
-                            <ShoppingCart size={14} /> Add to cart
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleBuyNow}
-                            className="flex-1 bg-primary text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 transition-colors"
-                        >
-                            Buy now
-                        </button>
-                    </div>
+                    )}
+
+                    <ProductDetailActions
+                        qty={p.qty}
+                        onIncrement={p.increment}
+                        onDecrement={p.decrement}
+                        onAdd={p.handleAdd}
+                        onBuyNow={p.handleBuyNow}
+                        disabled={p.isOutEverywhere}
+                    />
                 </div>
             </div>
+
+            <div className="mt-10 pb-24 sm:pb-0">
+                <RecommendedProductsSection
+                    title="You may also like"
+                    products={p.recommendedProducts}
+                    onAdd={p.handleAddRecommended}
+                    onBranchSelect={() => undefined}
+                />
+            </div>
+
+            <StickyAddToCartBar
+                name={p.product.name}
+                sellingPrice={p.product.sellingPrice}
+                onAdd={p.handleAdd}
+                disabled={p.isOutEverywhere}
+            />
         </div>
     );
 }

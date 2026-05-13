@@ -2,16 +2,19 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PosService } from '@pos/pos.service';
 import { PosController } from '@pos/pos.controller';
+import { PosRepository } from '@pos/pos.repository';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
+import { AccountingModule } from '@accounting/accounting.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction, TransactionItem, LedgerEntry]),
+    TypeOrmModule.forFeature([Transaction, TransactionItem, IdempotencyKey]),
+    AccountingModule,
   ],
   controllers: [PosController],
-  providers: [PosService],
-  exports: [PosService],
+  providers: [PosService, PosRepository],
+  exports: [PosService, PosRepository],
 })
 export class PosModule {}

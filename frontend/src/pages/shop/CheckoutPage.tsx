@@ -1,56 +1,14 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import toast from 'react-hot-toast';
-import type { RootState } from '@/store';
-import {
-    clearShopCart,
-    selectCartTotal,
-} from '@/store/slices/shopCartSlice';
-import { shopProductsService } from '@/services/shop-products.service';
-import { customerRequestsService } from '@/services/customer-requests.service';
-import { FRONTEND_ROUTES } from '@/constants/routes';
+import { useCheckout } from '@/features/checkout/hooks/useCheckout';
+import { CheckoutBranchCard } from '@/features/checkout/components/CheckoutBranchCard';
+import { CheckoutOrderSummary } from '@/features/checkout/components/CheckoutOrderSummary';
+import { LoyaltyPointsInput } from '@/features/checkout/components/LoyaltyPointsInput';
+import { Button } from '@/components/ui';
+import Segmented from '@/components/ui/Segmented';
 
-function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('en-LK', {
-        style: 'currency',
-        currency: 'LKR',
-    }).format(amount);
-}
+export function CheckoutPage() {
+    const p = useCheckout();
 
-export default function CheckoutPage() {
-    const dispatch = useDispatch();
-    const navigate = useNavigate();
-    const items = useSelector((state: RootState) => state.shopCart.items);
-    const branchId = useSelector(
-        (state: RootState) => state.shopCart.branchId,
-    );
-    const total = selectCartTotal(items);
-
-    const { data: branches = [] } = useQuery({
-        queryKey: ['shop-branches'],
-        queryFn: shopProductsService.listBranches,
-    });
-
-    const branch = useMemo(
-        () => branches.find((b) => b.id === branchId) ?? null,
-        [branches, branchId],
-    );
-
-    const [note, setNote] = useState('');
-    const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (items.length > 0 && !branchId) {
-            toast.error('Pick a branch before checking out');
-            navigate(FRONTEND_ROUTES.SHOP);
-        }
-    }, [items.length, branchId, navigate]);
-
-    if (items.length === 0) {
+    if (p.items.length === 0) {
         return (
             <div className="text-center py-24 text-text-3 text-sm">
                 Your cart is empty.
@@ -58,136 +16,85 @@ export default function CheckoutPage() {
         );
     }
 
-    const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!branchId) {
-            setError('Please choose a branch');
-            return;
-        }
-        setError(null);
-        setSubmitting(true);
-        try {
-            const request = await customerRequestsService.create({
-                branchId,
-                items: items.map((i) => ({
-                    productId: i.productId,
-                    quantity: i.quantity,
-                })),
-                note: note.trim() || undefined,
-            });
-            toast.success('Pickup request created');
-            dispatch(clearShopCart());
-            navigate(`/shop/requests/${request.requestCode}`);
-        } catch (err: unknown) {
-            if (axios.isAxiosError(err)) {
-                const data = err.response?.data as
-                    | { message?: string | string[] }
-                    | undefined;
-                const msg = Array.isArray(data?.message)
-                    ? data.message.join(', ')
-                    : data?.message;
-                setError(msg ?? 'Could not submit request');
-            } else {
-                setError('Could not submit request');
-            }
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
     return (
         <div className="max-w-2xl mx-auto">
             <h1 className="text-2xl font-bold text-text-1 tracking-tight mb-2">
                 Checkout
             </h1>
             <p className="text-sm text-text-2 mb-8">
-                We&apos;ll generate a QR for the counter — pay when you pick up.
+                Choose how you want to pay. Your QR stays available for pickup.
             </p>
 
-            <form onSubmit={onSubmit} className="space-y-5">
-                <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs uppercase tracking-widest text-text-3">
-                            Pickup branch
-                        </label>
-                        <Link
-                            to={FRONTEND_ROUTES.SHOP}
-                            className="text-[11px] text-text-2 hover:text-text-1 underline-offset-4 hover:underline"
-                        >
-                            Change branch
-                        </Link>
-                    </div>
-                    <div className="bg-[#111] border border-border rounded-lg px-3 py-2.5 text-sm">
-                        {branch ? (
-                            <>
-                                <p className="text-text-1 font-medium">{branch.name}</p>
-                                <p className="text-text-2 text-xs mt-0.5">
-                                    {branch.address}
-                                </p>
-                            </>
-                        ) : (
-                            <p className="text-text-3">Loading branch…</p>
-                        )}
-                    </div>
-                </div>
+            <form onSubmit={p.onSubmit} className="space-y-5">
+                <CheckoutBranchCard branch={p.branch} />
 
                 <div>
                     <label className="block text-xs uppercase tracking-widest text-text-3 mb-2">
                         Note (optional)
                     </label>
                     <textarea
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)}
+                        value={p.note}
+                        onChange={(e) => p.setNote(e.target.value)}
                         rows={2}
                         placeholder="Any pickup instructions"
-                        className="w-full bg-[#111] border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-emerald-500 resize-none"
+                        className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-primary resize-none"
                     />
                 </div>
 
-                <div className="bg-[#111] border border-border rounded-md p-5">
-                    <p className="text-[11px] uppercase tracking-widest text-text-3 mb-3">
-                        Order summary
-                    </p>
-                    <div className="space-y-1.5 text-sm">
-                        {items.map((it) => (
-                            <div
-                                key={it.productId}
-                                className="flex items-center justify-between text-text-1"
-                            >
-                                <span className="truncate pr-2">
-                                    {it.name} × {it.quantity}
-                                </span>
-                                <span>{formatCurrency(it.sellingPrice * it.quantity)}</span>
-                            </div>
-                        ))}
+                <div className="bg-surface border border-border rounded-md p-5 space-y-4">
+                    <div>
+                        <p className="text-[11px] uppercase tracking-widest text-text-3 mb-3">
+                            Payment
+                        </p>
+                        <Segmented
+                            value={p.paymentMode}
+                            onChange={p.setPaymentMode}
+                            options={[
+                                { label: 'Pay at pickup', value: 'manual' },
+                                { label: 'Pay online', value: 'online' },
+                            ]}
+                            className="w-full justify-center"
+                        />
                     </div>
-                    <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                        <span className="text-xs uppercase tracking-widest text-text-3">
-                            Estimated total
-                        </span>
-                        <span className="text-lg font-bold text-text-1">
-                            {formatCurrency(total)}
-                        </span>
-                    </div>
+
+                    <LoyaltyPointsInput
+                        value={p.loyaltyPointsToRedeem}
+                        onChange={p.setLoyaltyPointsToRedeem}
+                        availablePoints={p.availablePoints}
+                        maxRedeemable={p.maxRedeemable}
+                    />
                 </div>
 
-                {error && (
+                <CheckoutOrderSummary
+                    items={p.items}
+                    total={p.total}
+                    loyaltyDiscount={p.loyaltyDiscount}
+                    finalTotal={p.finalTotal}
+                    expectedPoints={p.expectedPoints}
+                />
+
+                {p.error && (
                     <div className="p-3 rounded-lg bg-danger-soft border border-danger/40 text-sm text-danger">
-                        {error}
+                        {p.error}
                     </div>
                 )}
 
-                <button
+                <Button
                     type="submit"
-                    disabled={submitting || !branchId}
-                    className="w-full bg-primary text-black font-semibold py-2.5 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50"
+                    disabled={p.submitting || !p.branchId}
+                    size="lg"
+                    className="w-full"
                 >
-                    {submitting ? 'Submitting…' : 'Submit pickup request'}
-                </button>
+                    {p.submitting
+                        ? 'Submitting...'
+                        : p.paymentMode === 'online'
+                          ? 'Continue to PayHere'
+                          : 'Submit pickup order'}
+                </Button>
 
                 <p className="text-[11px] text-text-3 text-center">
-                    You&apos;ll pay at the counter when you pick up. The price shown is an
-                    estimate based on today&apos;s prices.
+                    Manual orders are charged at pickup. Online orders are
+                    confirmed after PayHere notifies LedgerPro.
                 </p>
             </form>
         </div>

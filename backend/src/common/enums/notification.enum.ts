@@ -3,5 +3,5 @@ export enum NotificationType {
   SYSTEM = 'system',
   ALERT = 'alert',
   STOCK_TRANSFER = 'stock_transfer',
-  CUSTOMER_REQUEST = 'customer_request',
+  CUSTOMER_ORDER = 'customer_order',
 }

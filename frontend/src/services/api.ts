@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import type { IApiResponse } from '@/types/index';
 import { store } from '@/store';
 import { logout } from '@/store/slices/authSlice';
+import { selectAuthToken } from '@/store/selectors/auth';
 
 const api = axios.create({
     baseURL: '/api/v1',
@@ -11,10 +12,10 @@ const api = axios.create({
     },
 });
 
-// Request interceptor: attach JWT token
+// Request interceptor: attach JWT token from Redux (rehydrated by redux-persist).
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('ledgerpro_token');
+        const token = selectAuthToken(store.getState());
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -31,9 +32,14 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        // 401 → log the user out (existing behavior)
+        // 401 → log the user out (existing behavior).
+        // Skip the dispatch when there was no token to begin with so anonymous
+        // visitors (e.g. someone opening a shared pickup-confirmation link) don't
+        // trip the auth-state machine on every request.
         if (error.response?.status === 401) {
-            store.dispatch(logout());
+            if (selectAuthToken(store.getState())) {
+                store.dispatch(logout());
+            }
             return Promise.reject(error);
         }
 

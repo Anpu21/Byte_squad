@@ -4,11 +4,17 @@
  */
 
 export const FRONTEND_ROUTES = {
+    // Root fallback (smart-redirect handler)
+    ROOT: '/',
+
     // Auth
     LOGIN: '/login',
     SIGNUP: '/signup',
     OTP_VERIFICATION: '/verify-otp',
     CHANGE_PASSWORD: '/change-password',
+    FORGOT_PASSWORD: '/forgot-password',
+    RESET_PASSWORD: '/reset-password',
+    SELECT_BRANCH: '/select-branch',
 
     // Dashboard
     DASHBOARD: '/dashboard',
@@ -58,12 +64,18 @@ export const FRONTEND_ROUTES = {
     SHOP_PRODUCT_DETAIL: '/shop/products/:id',
     SHOP_CART: '/shop/cart',
     SHOP_CHECKOUT: '/shop/checkout',
-    SHOP_REQUEST_CONFIRMATION: '/shop/requests/:code',
-    SHOP_MY_REQUESTS: '/shop/my-requests',
+    SHOP_CHECKOUT_PAY: '/shop/checkout/pay',
+    SHOP_ORDER_CONFIRMATION: '/shop/orders/:code',
+    SHOP_ORDER_CONFIRMATION_LEGACY: '/shop/requests/:code',
+    SHOP_MY_ORDERS: '/shop/my-orders',
+    SHOP_MY_ORDERS_LEGACY: '/shop/my-requests',
+    SHOP_PROFILE: '/shop/profile',
+    SHOP_REWARDS: '/shop/rewards',
 
-    // Cashier scan + shared customer requests view
-    SCAN_REQUEST: '/pos/scan-request',
-    CUSTOMER_REQUESTS: '/customer-requests',
+    // Cashier scan + shared customer orders view
+    SCAN_ORDER: '/pos/scan-order',
+    SCAN_ORDER_LEGACY: '/pos/scan-request',
+    CUSTOMER_ORDERS: '/customer-orders',
 } as const;
 
 export type FrontendRoute = (typeof FRONTEND_ROUTES)[keyof typeof FRONTEND_ROUTES];
