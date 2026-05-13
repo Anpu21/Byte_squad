@@ -39,6 +39,7 @@ import { OrderConfirmationPage } from '@/pages/shop/OrderConfirmationPage';
 import { PayhereGatewayPage } from '@/pages/shop/PayhereGatewayPage';
 import { MyOrdersPage } from '@/pages/shop/MyOrdersPage';
 import { CustomerProfilePage } from '@/pages/shop/ProfilePage';
+import { RewardsPage } from '@/pages/shop/RewardsPage';
 import { InventoryByRole } from './InventoryByRole';
 import { FirstSetupOnly } from './FirstSetupOnly';
 import { LegacyOrderConfirmationRedirect } from './LegacyOrderConfirmationRedirect';
@@ -333,6 +334,12 @@ export const ROUTES: RouteDef[] = [
     {
         path: FRONTEND_ROUTES.SHOP_PROFILE,
         element: <CustomerProfilePage />,
+        allowedRoles: [UserRole.CUSTOMER],
+        layout: 'customer',
+    },
+    {
+        path: FRONTEND_ROUTES.SHOP_REWARDS,
+        element: <RewardsPage />,
         allowedRoles: [UserRole.CUSTOMER],
         layout: 'customer',
     },
