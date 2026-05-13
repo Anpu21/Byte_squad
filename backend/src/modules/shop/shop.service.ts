@@ -247,7 +247,7 @@ export class ShopService {
     return branches.map((b) => ({
       id: b.id,
       name: b.name,
-      address: b.address,
+      address: b.addressLine1,
       phone: b.phone,
       staffCount: countByBranch.get(b.id) ?? 0,
     }));

@@ -488,16 +488,19 @@ export class AdminSeedService implements OnModuleInit {
 
     // 1. Branches — three so the inter-branch transfer flow can be demoed end-to-end.
     const mainBranch = await this.ensureBranch(
+      'BR001',
       defaults.branchName,
       defaults.branchAddress,
       defaults.branchPhone,
     );
     const downtownBranch = await this.ensureBranch(
+      'BR002',
       'Downtown Branch',
       '45 Commerce Street, Downtown',
       '+94112345678',
     );
     const suburbanBranch = await this.ensureBranch(
+      'BR003',
       'Suburban Branch',
       '88 Garden Avenue, Suburb',
       '+94112987654',
@@ -619,16 +622,23 @@ export class AdminSeedService implements OnModuleInit {
   // ── Branch ─────────────────────────────────────────────
 
   private async ensureBranch(
+    code: string,
     name: string,
-    address: string,
+    addressLine1: string,
     phone: string,
   ): Promise<Branch> {
     let branch = await this.branchRepository.findOne({ where: { name } });
     if (!branch) {
       branch = await this.branchRepository.save(
-        this.branchRepository.create({ name, address, phone, isActive: true }),
+        this.branchRepository.create({
+          code,
+          name,
+          addressLine1,
+          phone,
+          isActive: true,
+        }),
       );
-      this.logger.log(`Branch "${name}" created.`);
+      this.logger.log(`Branch "${name}" (${code}) created.`);
     }
     return branch;
   }

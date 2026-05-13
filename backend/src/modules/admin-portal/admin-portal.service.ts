@@ -111,9 +111,16 @@ export class AdminPortalService {
 
         return {
           id: branch.id,
+          code: branch.code,
           name: branch.name,
-          address: branch.address,
+          addressLine1: branch.addressLine1,
+          addressLine2: branch.addressLine2,
+          city: branch.city,
+          state: branch.state,
+          country: branch.country,
+          postalCode: branch.postalCode,
           phone: branch.phone,
+          email: branch.email,
           isActive: branch.isActive,
           createdAt: branch.createdAt,
           updatedAt: branch.updatedAt,

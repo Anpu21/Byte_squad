@@ -1,34 +1,91 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { BranchesService } from './branches.service';
 import { BranchesRepository } from './branches.repository';
+import { PendingBranchActionsRepository } from './pending-branch-actions.repository';
 import { Branch } from './entities/branch.entity';
+import { PendingBranchAction } from './entities/pending-branch-action.entity';
 import { User } from '@users/entities/user.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Expense } from '@accounting/entities/expense.entity';
+import { UsersService } from '@users/users.service';
+import { EmailService } from '@/modules/email/email.service';
 
-describe('BranchesService', () => {
+interface BranchesRepoMock {
+  createAndSave: jest.Mock;
+  findAll: jest.Mock;
+  findById: jest.Mock;
+  findByCode: jest.Mock;
+  update: jest.Mock;
+  save: jest.Mock;
+  delete: jest.Mock;
+}
+
+interface PendingRepoMock {
+  create: jest.Mock;
+  findById: jest.Mock;
+  markConsumed: jest.Mock;
+  refreshOtp: jest.Mock;
+}
+
+const adminUser = {
+  id: 'admin-1',
+  email: 'admin@ledgerpro.com',
+  firstName: 'Ada',
+} as User;
+
+describe('BranchesService — two-step mutations', () => {
   let service: BranchesService;
-  let repo: jest.Mocked<BranchesRepository>;
+  let branchesRepo: BranchesRepoMock;
+  let pendingRepo: PendingRepoMock;
+  let emailService: jest.Mocked<Pick<EmailService, 'isVerified' | 'sendBranchActionOtpEmail'>>;
+  let usersService: jest.Mocked<Pick<UsersService, 'findById'>>;
 
   beforeEach(async () => {
-    const repoMock: Partial<jest.Mocked<BranchesRepository>> = {
+    branchesRepo = {
       createAndSave: jest.fn(),
       findAll: jest.fn(),
       findById: jest.fn(),
+      findByCode: jest.fn(),
       update: jest.fn(),
       save: jest.fn(),
       delete: jest.fn(),
+    };
+    pendingRepo = {
+      create: jest.fn(),
+      findById: jest.fn(),
+      markConsumed: jest.fn(),
+      refreshOtp: jest.fn(),
+    };
+    emailService = {
+      isVerified: jest.fn().mockReturnValue(true),
+      sendBranchActionOtpEmail: jest.fn().mockResolvedValue(undefined),
+    };
+    usersService = {
+      findById: jest.fn().mockResolvedValue(adminUser),
     };
 
     const module = await Test.createTestingModule({
       providers: [
         BranchesService,
-        { provide: BranchesRepository, useValue: repoMock },
+        { provide: BranchesRepository, useValue: branchesRepo },
+        { provide: PendingBranchActionsRepository, useValue: pendingRepo },
+        { provide: UsersService, useValue: usersService },
+        { provide: EmailService, useValue: emailService },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('development') },
+        },
         { provide: getRepositoryToken(User), useValue: {} },
         { provide: getRepositoryToken(Transaction), useValue: {} },
         { provide: getRepositoryToken(TransactionItem), useValue: {} },
@@ -38,50 +95,182 @@ describe('BranchesService', () => {
     }).compile();
 
     service = module.get(BranchesService);
-    repo = module.get(BranchesRepository);
   });
 
-  describe('update', () => {
-    it('throws NotFoundException when the branch does not exist', async () => {
-      repo.findById.mockResolvedValue(null);
+  describe('requestCreate', () => {
+    it('rejects a duplicate branch code before issuing an OTP', async () => {
+      branchesRepo.findByCode.mockResolvedValue({ id: 'other' } as Branch);
+
       await expect(
-        service.update('missing', { name: 'X' }),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(repo.update).not.toHaveBeenCalled();
+        service.requestCreate(adminUser.id, {
+          code: 'BR099',
+          name: 'New',
+          addressLine1: '1 Main',
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+
+      expect(pendingRepo.create).not.toHaveBeenCalled();
+      expect(emailService.sendBranchActionOtpEmail).not.toHaveBeenCalled();
     });
 
-    it('updates and returns the refreshed branch', async () => {
-      const original = { id: 'b1', name: 'Old' } as Branch;
-      const updated = { id: 'b1', name: 'New' } as Branch;
-      repo.findById
-        .mockResolvedValueOnce(original)
-        .mockResolvedValueOnce(updated);
-      const result = await service.update('b1', { name: 'New' });
-      expect(repo.update).toHaveBeenCalledWith('b1', { name: 'New' });
-      expect(result).toBe(updated);
+    it('stages the action, emails the OTP, and returns the action id', async () => {
+      branchesRepo.findByCode.mockResolvedValue(null);
+      pendingRepo.create.mockResolvedValue({
+        id: 'pending-1',
+        userId: adminUser.id,
+        actionType: 'create',
+      } as unknown as PendingBranchAction);
+
+      const result = await service.requestCreate(adminUser.id, {
+        code: 'BR099',
+        name: 'New',
+        addressLine1: '1 Main',
+      });
+
+      expect(result.actionId).toBe('pending-1');
+      expect(result.action).toBe('create');
+      expect(pendingRepo.create).toHaveBeenCalledTimes(1);
+      expect(emailService.sendBranchActionOtpEmail).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('confirmAction', () => {
+    it('refuses to confirm someone else\'s pending action', async () => {
+      pendingRepo.findById.mockResolvedValue({
+        id: 'p1',
+        userId: 'someone-else',
+        otpCode: '123456',
+        expiresAt: new Date(Date.now() + 60_000),
+        actionType: 'create',
+      } as unknown as PendingBranchAction);
+
+      await expect(
+        service.confirmAction(adminUser.id, 'p1', '123456'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('rejects an expired OTP', async () => {
+      pendingRepo.findById.mockResolvedValue({
+        id: 'p1',
+        userId: adminUser.id,
+        otpCode: '123456',
+        expiresAt: new Date(Date.now() - 1000),
+        actionType: 'create',
+        payload: {},
+      } as unknown as PendingBranchAction);
+
+      await expect(
+        service.confirmAction(adminUser.id, 'p1', '123456'),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects an already-consumed action', async () => {
+      pendingRepo.findById.mockResolvedValue({
+        id: 'p1',
+        userId: adminUser.id,
+        otpCode: '123456',
+        expiresAt: new Date(Date.now() + 60_000),
+        consumedAt: new Date(),
+        actionType: 'create',
+        payload: {},
+      } as unknown as PendingBranchAction);
+
+      await expect(
+        service.confirmAction(adminUser.id, 'p1', '123456'),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a wrong OTP', async () => {
+      pendingRepo.findById.mockResolvedValue({
+        id: 'p1',
+        userId: adminUser.id,
+        otpCode: '123456',
+        expiresAt: new Date(Date.now() + 60_000),
+        actionType: 'create',
+        payload: {},
+      } as unknown as PendingBranchAction);
+
+      await expect(
+        service.confirmAction(adminUser.id, 'p1', '999999'),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('creates the branch on a successful create-confirm', async () => {
+      pendingRepo.findById.mockResolvedValue({
+        id: 'p1',
+        userId: adminUser.id,
+        otpCode: '123456',
+        expiresAt: new Date(Date.now() + 60_000),
+        actionType: 'create',
+        branchId: null,
+        payload: {
+          code: 'BR099',
+          name: 'New',
+          addressLine1: '1 Main',
+        },
+      } as unknown as PendingBranchAction);
+      branchesRepo.findByCode.mockResolvedValue(null);
+      branchesRepo.createAndSave.mockResolvedValue({
+        id: 'b9',
+        code: 'BR099',
+      } as Branch);
+
+      const result = await service.confirmAction(
+        adminUser.id,
+        'p1',
+        '123456',
+      );
+
+      expect(result.action).toBe('create');
+      expect(result.branch?.code).toBe('BR099');
+      expect(pendingRepo.markConsumed).toHaveBeenCalledWith(
+        'p1',
+        expect.any(Date),
+      );
+    });
+
+    it('deletes the branch on a successful delete-confirm', async () => {
+      pendingRepo.findById.mockResolvedValue({
+        id: 'p2',
+        userId: adminUser.id,
+        otpCode: '654321',
+        expiresAt: new Date(Date.now() + 60_000),
+        actionType: 'delete',
+        branchId: 'b9',
+        payload: null,
+      } as unknown as PendingBranchAction);
+      branchesRepo.findById.mockResolvedValue({ id: 'b9' } as Branch);
+
+      const result = await service.confirmAction(
+        adminUser.id,
+        'p2',
+        '654321',
+      );
+
+      expect(result.action).toBe('delete');
+      expect(result.branch).toBeNull();
+      expect(branchesRepo.delete).toHaveBeenCalledWith('b9');
+      expect(pendingRepo.markConsumed).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('toggleActive', () => {
     it('flips isActive and persists via the repo', async () => {
       const branch = { id: 'b1', isActive: true } as Branch;
-      repo.findById.mockResolvedValue(branch);
-      repo.save.mockImplementation((b) => Promise.resolve(b));
+      branchesRepo.findById.mockResolvedValue(branch);
+      branchesRepo.save.mockImplementation((b) => Promise.resolve(b));
       const result = await service.toggleActive('b1');
       expect(result.isActive).toBe(false);
-      expect(repo.save).toHaveBeenCalledWith(
+      expect(branchesRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'b1', isActive: false }),
       );
     });
-  });
 
-  describe('remove', () => {
-    it('refuses to delete a missing branch', async () => {
-      repo.findById.mockResolvedValue(null);
-      await expect(service.remove('missing')).rejects.toBeInstanceOf(
+    it('refuses to toggle a missing branch', async () => {
+      branchesRepo.findById.mockResolvedValue(null);
+      await expect(service.toggleActive('missing')).rejects.toBeInstanceOf(
         NotFoundException,
       );
-      expect(repo.delete).not.toHaveBeenCalled();
     });
   });
 });
