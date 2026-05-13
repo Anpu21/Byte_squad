@@ -9,6 +9,7 @@ export interface IUser {
   role: UserRole
   branchId: string | null
   phone?: string | null
+  address?: string | null
   isFirstLogin: boolean
   isVerified: boolean
   createdAt: string

@@ -6,4 +6,6 @@ export interface IUserCreatePayload {
   lastName: string
   role: UserRole
   branchId: string
+  phone?: string | null
+  address?: string | null
 }

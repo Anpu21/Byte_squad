@@ -27,6 +27,8 @@ export const APP_ROUTES = {
     BY_ID: ':id',
     RESEND_CREDENTIALS: ':id/resend-credentials',
     RESET_PASSWORD: ':id/reset-password',
+    CONFIRM_ACTION: 'actions/:actionId/confirm',
+    RESEND_ACTION_OTP: 'actions/:actionId/resend',
   },
 
   // Branches

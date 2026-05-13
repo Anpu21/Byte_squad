@@ -1,4 +1,11 @@
-import { IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 import { UserRole } from '@common/enums/user-roles.enums';
 
 export class UpdateUserDto {
@@ -20,9 +27,15 @@ export class UpdateUserDto {
 
   @IsUUID()
   @IsOptional()
-  branchId?: string;
+  branchId?: string | null;
 
-  @IsString()
   @IsOptional()
-  avatarUrl?: string;
+  @IsString()
+  @MaxLength(32)
+  phone?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  address?: string | null;
 }

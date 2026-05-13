@@ -2,10 +2,12 @@ import { useUserManagementPage } from '@/features/user-management/hooks/useUserM
 import { UserManagementHeader } from '@/features/user-management/components/UserManagementHeader';
 import { UserFilters } from '@/features/user-management/components/UserFilters';
 import { UserTable } from '@/features/user-management/components/UserTable';
-import { CreateUserModal } from '@/features/user-management/components/CreateUserModal';
+import { UserFormModal } from '@/features/user-management/components/UserFormModal';
+import { UserActionOtpModal } from '@/features/user-management/components/UserActionOtpModal';
 
 export function UserManagementPage() {
     const p = useUserManagementPage();
+    const formOpen = p.showCreateModal || p.editingUser !== null;
 
     return (
         <div className="animate-in fade-in duration-500">
@@ -36,16 +38,31 @@ export function UserManagementPage() {
                     p.setOpenMenuId(p.openMenuId === id ? null : id)
                 }
                 getBranchName={p.getBranchName}
-                onResendCredentials={p.mutations.resendCredentials}
-                onResetPassword={p.mutations.confirmAndResetPassword}
-                onDelete={p.mutations.confirmAndDelete}
+                onEdit={(user) => p.setEditingUser(user)}
+                onRequestResetPassword={p.confirmAndRequestReset}
+                onRequestDelete={p.confirmAndRequestDelete}
             />
 
-            {p.showCreateModal && p.branches.length > 0 && (
-                <CreateUserModal
+            {formOpen && p.branches.length > 0 && (
+                <UserFormModal
+                    user={p.editingUser}
                     branches={p.branches}
-                    onClose={() => p.setShowCreateModal(false)}
-                    onCreated={p.mutations.invalidate}
+                    onClose={() => {
+                        p.setShowCreateModal(false);
+                        p.setEditingUser(null);
+                    }}
+                    onStaged={p.handleStaged}
+                />
+            )}
+
+            {p.pending && (
+                <UserActionOtpModal
+                    actionId={p.pending.response.actionId}
+                    expiresAt={p.pending.response.expiresAt}
+                    action={p.pending.response.action}
+                    targetLabel={p.pending.targetLabel}
+                    onClose={p.closePending}
+                    onConfirmed={p.handleConfirmed}
                 />
             )}
         </div>
