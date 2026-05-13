@@ -7,9 +7,6 @@ interface CatalogFiltersProps {
     onBranchChange: (id: string) => void;
     search: string;
     setSearch: (v: string) => void;
-    category: string;
-    setCategory: (v: string) => void;
-    categories: string[];
 }
 
 export function CatalogFilters({
@@ -18,26 +15,12 @@ export function CatalogFilters({
     onBranchChange,
     search,
     setSearch,
-    category,
-    setCategory,
-    categories,
 }: CatalogFiltersProps) {
     const selectClass =
         'bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-primary';
 
     return (
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <select
-                value={branchId}
-                onChange={(e) => onBranchChange(e.target.value)}
-                className={selectClass}
-            >
-                {branches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                        {b.name}
-                    </option>
-                ))}
-            </select>
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="relative flex-1">
                 <Search
                     size={16}
@@ -52,14 +35,14 @@ export function CatalogFilters({
                 />
             </div>
             <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={branchId}
+                onChange={(e) => onBranchChange(e.target.value)}
+                aria-label="Pickup branch"
                 className={selectClass}
             >
-                <option value="">All categories</option>
-                {categories.map((c) => (
-                    <option key={c} value={c}>
-                        {c}
+                {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                        {b.name}
                     </option>
                 ))}
             </select>

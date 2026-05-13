@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useCatalogPage } from '@/features/shop-catalog/hooks/useCatalogPage';
 import { CatalogFilters } from '@/features/shop-catalog/components/CatalogFilters';
+import { CategoryChips } from '@/features/shop-catalog/components/CategoryChips';
 import { ProductGrid } from '@/features/shop-catalog/components/ProductGrid';
 import { NoBranchesCard } from '@/features/shop-catalog/components/NoBranchesCard';
 import { RecommendedProductsSection } from '@/features/shop-catalog/components/RecommendedProductsSection';
@@ -38,9 +39,12 @@ export function CatalogPage() {
                 onBranchChange={p.handleBranchChange}
                 search={p.search}
                 setSearch={p.setSearch}
-                category={p.category}
-                setCategory={p.setCategory}
+            />
+
+            <CategoryChips
                 categories={p.categories}
+                value={p.category}
+                onChange={p.setCategory}
             />
 
             {!p.search && !p.category && (
