@@ -1,22 +1,25 @@
-import { useEffect, useRef } from 'react';
+import { forwardRef } from 'react';
 import type { IPayhereCheckoutPayload } from '@/types';
 
 interface PayhereRedirectFormProps {
     payment: IPayhereCheckoutPayload;
 }
 
-export function PayhereRedirectForm({ payment }: PayhereRedirectFormProps) {
-    const formRef = useRef<HTMLFormElement | null>(null);
-
-    useEffect(() => {
-        formRef.current?.submit();
-    }, []);
-
+export const PayhereRedirectForm = forwardRef<
+    HTMLFormElement,
+    PayhereRedirectFormProps
+>(function PayhereRedirectForm({ payment }, ref) {
     return (
-        <form ref={formRef} method="post" action={payment.actionUrl}>
+        <form
+            ref={ref}
+            method="post"
+            action={payment.actionUrl}
+            aria-hidden="true"
+            className="hidden"
+        >
             {Object.entries(payment.fields).map(([name, value]) => (
                 <input key={name} type="hidden" name={name} value={value} />
             ))}
         </form>
     );
-}
+});
