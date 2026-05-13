@@ -11,7 +11,13 @@ import { ShopBranchesController } from '@/modules/shop/shop-branches.controller'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, Branch, Inventory, User, TransactionItem]),
+    TypeOrmModule.forFeature([
+      Product,
+      Branch,
+      Inventory,
+      User,
+      TransactionItem,
+    ]),
   ],
   controllers: [ShopProductsController, ShopBranchesController],
   providers: [ShopService],

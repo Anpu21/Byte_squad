@@ -125,8 +125,7 @@ export class CustomerOrdersService {
         0,
       ),
     );
-    const paymentMode =
-      dto.paymentMode ?? CustomerOrderPaymentMode.MANUAL;
+    const paymentMode = dto.paymentMode ?? CustomerOrderPaymentMode.MANUAL;
     const paymentStatus =
       paymentMode === CustomerOrderPaymentMode.ONLINE
         ? CustomerOrderPaymentStatus.PENDING
@@ -201,7 +200,9 @@ export class CustomerOrdersService {
       );
     }
 
-    this.logger.log(`Customer order ${saved.orderCode} created at ${branch.name}`);
+    this.logger.log(
+      `Customer order ${saved.orderCode} created at ${branch.name}`,
+    );
 
     const qrCodeUrl = await this.generateAndStoreQrCode(saved);
     if (qrCodeUrl) {
@@ -244,7 +245,8 @@ export class CustomerOrdersService {
       payload.payhere_amount ===
       this.payhere.formatAmount(Number(attempt.amount));
     const currencyValid = payload.payhere_currency === attempt.currency;
-    const valid = signatureValid && merchantValid && amountValid && currencyValid;
+    const valid =
+      signatureValid && merchantValid && amountValid && currencyValid;
     const statusCode = payload.status_code ?? '';
 
     if (!valid) {
@@ -429,7 +431,9 @@ export class CustomerOrdersService {
       );
     }
     if (actor.role !== UserRole.ADMIN && order.branchId !== actor.branchId) {
-      throw new ForbiddenException('Cannot fulfill an order from another branch');
+      throw new ForbiddenException(
+        'Cannot fulfill an order from another branch',
+      );
     }
 
     if (order.paymentMode === CustomerOrderPaymentMode.ONLINE) {
@@ -668,7 +672,9 @@ export class CustomerOrdersService {
     return savedTx;
   }
 
-  private async resolveSettlementActorId(order: CustomerOrder): Promise<string> {
+  private async resolveSettlementActorId(
+    order: CustomerOrder,
+  ): Promise<string> {
     const cashier = await this.users.findFirstByBranchAndRole(
       order.branchId,
       UserRole.CASHIER,
@@ -794,6 +800,8 @@ export class CustomerOrdersService {
       const exists = await this.orders.existsByCode(code);
       if (!exists) return code;
     }
-    throw new InternalServerErrorException('Failed to generate unique order code');
+    throw new InternalServerErrorException(
+      'Failed to generate unique order code',
+    );
   }
 }
