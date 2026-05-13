@@ -36,6 +36,7 @@ import { ProductDetailPage } from '@/pages/shop/ProductDetailPage';
 import { CartPage } from '@/pages/shop/CartPage';
 import { CheckoutPage } from '@/pages/shop/CheckoutPage';
 import { OrderConfirmationPage } from '@/pages/shop/OrderConfirmationPage';
+import { PayhereGatewayPage } from '@/pages/shop/PayhereGatewayPage';
 import { MyOrdersPage } from '@/pages/shop/MyOrdersPage';
 import { CustomerProfilePage } from '@/pages/shop/ProfilePage';
 import { InventoryByRole } from './InventoryByRole';
@@ -297,6 +298,12 @@ export const ROUTES: RouteDef[] = [
         element: <CheckoutPage />,
         allowedRoles: [UserRole.CUSTOMER],
         layout: 'customer',
+    },
+    {
+        path: FRONTEND_ROUTES.SHOP_CHECKOUT_PAY,
+        element: <PayhereGatewayPage />,
+        allowedRoles: [UserRole.CUSTOMER],
+        layout: 'customer-public',
     },
     // Public confirmation — anyone with the code can view (the QR is the credential)
     {
