@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Store } from 'lucide-react';
+import { ChevronLeft, Store, Flame } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useProductDetail } from '@/features/product-detail/hooks/useProductDetail';
 import { ProductDetailImage } from '@/features/product-detail/components/ProductImage';
 import { ProductDetailActions } from '@/features/product-detail/components/ProductDetailActions';
+import { StickyAddToCartBar } from '@/features/product-detail/components/StickyAddToCartBar';
 import { RecommendedProductsSection } from '@/features/shop-catalog/components/RecommendedProductsSection';
 
 export function ProductDetailPage() {
@@ -52,6 +53,13 @@ export function ProductDetailPage() {
                         {formatCurrency(p.product.sellingPrice)}
                     </p>
 
+                    {p.product.stockStatus === 'low' && (
+                        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-warning">
+                            <Flame size={13} aria-hidden="true" />
+                            Limited stock — order soon
+                        </p>
+                    )}
+
                     {p.product.description && (
                         <p className="mt-4 text-sm text-text-2 leading-relaxed">
                             {p.product.description}
@@ -79,7 +87,7 @@ export function ProductDetailPage() {
                 </div>
             </div>
 
-            <div className="mt-10">
+            <div className="mt-10 pb-24 sm:pb-0">
                 <RecommendedProductsSection
                     title="You may also like"
                     products={p.recommendedProducts}
@@ -87,6 +95,13 @@ export function ProductDetailPage() {
                     onBranchSelect={() => undefined}
                 />
             </div>
+
+            <StickyAddToCartBar
+                name={p.product.name}
+                sellingPrice={p.product.sellingPrice}
+                onAdd={p.handleAdd}
+                disabled={p.isOutEverywhere}
+            />
         </div>
     );
 }
