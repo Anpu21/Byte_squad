@@ -1,7 +1,8 @@
 import { useCheckout } from '@/features/checkout/hooks/useCheckout';
 import { CheckoutBranchCard } from '@/features/checkout/components/CheckoutBranchCard';
 import { CheckoutOrderSummary } from '@/features/checkout/components/CheckoutOrderSummary';
-import { Button, Input } from '@/components/ui';
+import { LoyaltyPointsInput } from '@/features/checkout/components/LoyaltyPointsInput';
+import { Button } from '@/components/ui';
 import Segmented from '@/components/ui/Segmented';
 
 export function CheckoutPage() {
@@ -56,17 +57,11 @@ export function CheckoutPage() {
                         />
                     </div>
 
-                    <Input
-                        type="number"
-                        min={0}
-                        max={p.maxRedeemable}
+                    <LoyaltyPointsInput
                         value={p.loyaltyPointsToRedeem}
-                        onChange={(e) =>
-                            p.setLoyaltyPointsToRedeem(
-                                Math.max(0, Number(e.target.value)),
-                            )
-                        }
-                        label={`Loyalty points (${p.availablePoints} available, ${p.maxRedeemable} max)`}
+                        onChange={p.setLoyaltyPointsToRedeem}
+                        availablePoints={p.availablePoints}
+                        maxRedeemable={p.maxRedeemable}
                     />
                 </div>
 
