@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { clearShopCart } from '@/store/slices/shopCartSlice';
@@ -20,6 +20,7 @@ import type { CustomerOrderPaymentMode } from '@/types';
 export function useCheckout() {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { user } = useAuth();
     const items = useAppSelector(selectShopCartItems);
     const branchId = user?.branchId ?? null;
@@ -87,6 +88,13 @@ export function useCheckout() {
             );
             const cartItemCount = items.length;
             dispatch(clearShopCart());
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.loyalty.mine(),
+            });
+            queryClient.invalidateQueries({ queryKey: ['loyalty', 'history'] });
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.customerOrders.my(),
+            });
             if (result.payment) {
                 navigate(FRONTEND_ROUTES.SHOP_CHECKOUT_PAY, {
                     state: {

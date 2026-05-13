@@ -35,6 +35,12 @@ export function useMyOrdersPage() {
             await queryClient.invalidateQueries({
                 queryKey: queryKeys.customerOrders.my(),
             });
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.loyalty.mine(),
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['loyalty', 'history'],
+            });
         } catch {
             toast.error('Could not cancel');
         }
