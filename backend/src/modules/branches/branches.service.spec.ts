@@ -21,7 +21,6 @@ import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Expense } from '@accounting/entities/expense.entity';
-import { UsersService } from '@users/users.service';
 import { EmailService } from '@/modules/email/email.service';
 
 interface BranchesRepoMock {
@@ -107,7 +106,6 @@ describe('BranchesService — two-step mutations', () => {
   let emailService: jest.Mocked<
     Pick<EmailService, 'isVerified' | 'sendBranchActionOtpEmail'>
   >;
-  let usersService: jest.Mocked<Pick<UsersService, 'findById'>>;
 
   beforeEach(async () => {
     branchesRepo = {
@@ -129,22 +127,21 @@ describe('BranchesService — two-step mutations', () => {
       isVerified: jest.fn().mockReturnValue(true),
       sendBranchActionOtpEmail: jest.fn().mockResolvedValue(undefined),
     };
-    usersService = {
-      findById: jest.fn().mockResolvedValue(adminUser),
-    };
 
     const module = await Test.createTestingModule({
       providers: [
         BranchesService,
         { provide: BranchesRepository, useValue: branchesRepo },
         { provide: PendingBranchActionsRepository, useValue: pendingRepo },
-        { provide: UsersService, useValue: usersService },
         { provide: EmailService, useValue: emailService },
         {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue('development') },
         },
-        { provide: getRepositoryToken(User), useValue: {} },
+        {
+          provide: getRepositoryToken(User),
+          useValue: { findOne: jest.fn().mockResolvedValue(adminUser) },
+        },
         { provide: getRepositoryToken(Transaction), useValue: {} },
         { provide: getRepositoryToken(TransactionItem), useValue: {} },
         { provide: getRepositoryToken(Inventory), useValue: {} },

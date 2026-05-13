@@ -27,7 +27,6 @@ import {
 // TODO Phase C6 / C8 / C4 / C5 — replace these cross-module borrowings with
 // the corresponding *Repository classes once those modules migrate.
 import { User } from '@users/entities/user.entity';
-import { UsersService } from '@users/users.service';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
@@ -89,7 +88,6 @@ export class BranchesService {
   constructor(
     private readonly branches: BranchesRepository,
     private readonly pendingActions: PendingBranchActionsRepository,
-    private readonly usersService: UsersService,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     @InjectRepository(User)
@@ -181,7 +179,9 @@ export class BranchesService {
     const expiresAt = new Date(Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000);
     await this.pendingActions.refreshOtp(pending.id, otpCode, expiresAt);
 
-    const admin = await this.usersService.findById(adminUserId);
+    const admin = await this.userRepository.findOne({
+      where: { id: adminUserId },
+    });
     if (!admin) {
       throw new NotFoundException('Admin account not found');
     }
@@ -270,7 +270,9 @@ export class BranchesService {
       branchLabel: string;
     },
   ): Promise<BranchActionRequestResult> {
-    const admin = await this.usersService.findById(adminUserId);
+    const admin = await this.userRepository.findOne({
+      where: { id: adminUserId },
+    });
     if (!admin) {
       throw new NotFoundException('Admin account not found');
     }

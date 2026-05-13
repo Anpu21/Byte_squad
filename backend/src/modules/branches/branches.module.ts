@@ -11,10 +11,14 @@ import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Expense } from '@accounting/entities/expense.entity';
-import { UsersModule } from '@users/users.module';
 import { EmailModule } from '@/modules/email/email.module';
 
 @Module({
+  // NOTE: do not import UsersModule here. UsersModule already imports
+  // BranchesModule (for UsersService.updateMyBranch), so adding it back would
+  // re-create a circular module dependency that crashes Nest's scanner at
+  // boot. If BranchesService needs to look up a User, use the injected
+  // userRepository directly.
   imports: [
     TypeOrmModule.forFeature([
       Branch,
@@ -25,7 +29,6 @@ import { EmailModule } from '@/modules/email/email.module';
       Inventory,
       Expense,
     ]),
-    UsersModule,
     EmailModule,
   ],
   controllers: [BranchesController],
