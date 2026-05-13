@@ -15,10 +15,7 @@ import { loyaltyService } from '@/services/loyalty.service';
 import { useAuth } from '@/hooks/useAuth';
 import { queryKeys } from '@/lib/queryKeys';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import type {
-    CustomerOrderPaymentMode,
-    IPayhereCheckoutPayload,
-} from '@/types';
+import type { CustomerOrderPaymentMode } from '@/types';
 
 export function useCheckout() {
     const dispatch = useAppDispatch();
@@ -42,8 +39,6 @@ export function useCheckout() {
     const [paymentMode, setPaymentMode] =
         useState<CustomerOrderPaymentMode>('manual');
     const [loyaltyPointsToRedeem, setLoyaltyPointsToRedeem] = useState(0);
-    const [payherePayload, setPayherePayload] =
-        useState<IPayhereCheckoutPayload | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -90,9 +85,18 @@ export function useCheckout() {
                     ? 'Redirecting to PayHere'
                     : 'Pickup order created',
             );
+            const cartItemCount = items.length;
             dispatch(clearShopCart());
             if (result.payment) {
-                setPayherePayload(result.payment);
+                navigate(FRONTEND_ROUTES.SHOP_CHECKOUT_PAY, {
+                    state: {
+                        payment: result.payment,
+                        orderCode: result.order.orderCode,
+                        branchName: branch?.name ?? '',
+                        finalTotal: Number(result.order.finalTotal),
+                        itemCount: cartItemCount,
+                    },
+                });
                 return;
             }
             navigate(
@@ -135,7 +139,6 @@ export function useCheckout() {
         setNote,
         paymentMode,
         setPaymentMode,
-        payherePayload,
         submitting,
         error,
         onSubmit,

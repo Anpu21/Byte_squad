@@ -1,14 +1,13 @@
 import { useCheckout } from '@/features/checkout/hooks/useCheckout';
 import { CheckoutBranchCard } from '@/features/checkout/components/CheckoutBranchCard';
 import { CheckoutOrderSummary } from '@/features/checkout/components/CheckoutOrderSummary';
-import { PayhereRedirectForm } from '@/features/checkout/components/PayhereRedirectForm';
 import { Button, Input } from '@/components/ui';
 import Segmented from '@/components/ui/Segmented';
 
 export function CheckoutPage() {
     const p = useCheckout();
 
-    if (p.items.length === 0 && !p.payherePayload) {
+    if (p.items.length === 0) {
         return (
             <div className="text-center py-24 text-text-3 text-sm">
                 Your cart is empty.
@@ -18,9 +17,6 @@ export function CheckoutPage() {
 
     return (
         <div className="max-w-2xl mx-auto">
-            {p.payherePayload && (
-                <PayhereRedirectForm payment={p.payherePayload} />
-            )}
             <h1 className="text-2xl font-bold text-text-1 tracking-tight mb-2">
                 Checkout
             </h1>
@@ -90,7 +86,7 @@ export function CheckoutPage() {
 
                 <Button
                     type="submit"
-                    disabled={p.submitting || !p.branchId || !!p.payherePayload}
+                    disabled={p.submitting || !p.branchId}
                     size="lg"
                     className="w-full"
                 >
