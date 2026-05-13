@@ -1,12 +1,16 @@
+import { useAppSelector } from '@/store/hooks';
+import { selectIsAdmin } from '@/store/selectors/auth';
 import { useAdminProfilePage } from '@/features/admin-user-profile/hooks/useAdminProfilePage';
 import { AdminAvatarCard } from '@/features/admin-user-profile/components/AdminAvatarCard';
 import { AdminStatusCard } from '@/features/admin-user-profile/components/AdminStatusCard';
 import { AdminBranchCard } from '@/features/admin-user-profile/components/AdminBranchCard';
+import { AdminGlobalScopeCard } from '@/features/admin-user-profile/components/AdminGlobalScopeCard';
 import { AdminPersonalInfoForm } from '@/features/admin-user-profile/components/AdminPersonalInfoForm';
 import { AdminPasswordCard } from '@/features/admin-user-profile/components/AdminPasswordCard';
 
 export function ProfilePage() {
     const p = useAdminProfilePage();
+    const isAdmin = useAppSelector(selectIsAdmin);
 
     if (p.isLoading) {
         return (
@@ -35,8 +39,12 @@ export function ProfilePage() {
                         onUploadAvatar={p.onUploadAvatar}
                     />
                     <AdminStatusCard profile={p.profile} />
-                    {p.profile?.branch && (
-                        <AdminBranchCard branch={p.profile.branch} />
+                    {isAdmin ? (
+                        <AdminGlobalScopeCard />
+                    ) : (
+                        p.profile?.branch && (
+                            <AdminBranchCard branch={p.profile.branch} />
+                        )
                     )}
                 </div>
 

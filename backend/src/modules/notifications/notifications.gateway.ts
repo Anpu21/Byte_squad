@@ -52,7 +52,7 @@ export class NotificationsGateway
   /**
    * Broadcast an arbitrary domain event to every connected client on the
    * /notifications namespace. Used for live list refetches (e.g.
-   * `customer-request:created`) so frontends can invalidate cached queries
+   * `customer-order:created`) so frontends can invalidate cached queries
    * the instant something changes server-side.
    */
   broadcast(event: string, payload: unknown): void {

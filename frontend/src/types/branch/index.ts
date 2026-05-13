@@ -1,6 +1,7 @@
 export * from './branch.type'
 export * from './branch-create-payload.type'
 export * from './branch-update-payload.type'
+export * from './branch-action-request-response.type'
 export * from './my-branch-info.type'
 export * from './my-branch-admin.type'
 export * from './my-branch-today-kpis.type'

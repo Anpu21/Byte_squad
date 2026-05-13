@@ -1,4 +1,5 @@
 import { formatCurrency } from '@/lib/utils';
+import { LoyaltyPreviewLine } from '@/features/shop-cart/components/LoyaltyPreviewLine';
 
 interface CartFooterProps {
     total: number;
@@ -21,6 +22,7 @@ export function CartFooter({
                     {formatCurrency(total)}
                 </span>
             </div>
+            <LoyaltyPreviewLine total={total} />
             <div className="grid grid-cols-2 gap-2">
                 <button
                     type="button"

@@ -3,12 +3,12 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useQuery } from '@tanstack/react-query';
 import {
-    ChevronDown,
     LogOut,
     MapPin,
     Search,
     ScrollText,
     ShoppingCart,
+    Sparkles,
     User,
     UserRound,
 } from 'lucide-react';
@@ -24,6 +24,7 @@ import { CartDrawer } from '@/components/shop/CartDrawer';
 import Logo from '@/components/ui/Logo';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import Avatar from '@/components/ui/Avatar';
+import { LoyaltyHeaderBadge } from '@/features/loyalty/components/LoyaltyHeaderBadge';
 
 interface CustomerLayoutProps {
     children: ReactNode;
@@ -129,18 +130,17 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
                     <button
                         type="button"
                         onClick={() => navigate(FRONTEND_ROUTES.SHOP_PROFILE)}
-                        className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-soft text-primary-soft-text text-xs font-medium hover:opacity-90 transition-opacity max-w-[240px]"
+                        className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-soft text-primary-soft-text text-xs font-medium hover:opacity-90 transition-opacity max-w-[240px]"
                         title={
                             branchName
-                                ? `Pickup at ${branchName} — open profile to change`
+                                ? 'Pickup branch — click to change in profile'
                                 : 'Open profile to set your pickup branch'
                         }
                     >
                         <MapPin size={13} />
                         <span className="truncate">
-                            {branchName ?? 'Select branch'}
+                            {branchName ?? 'Set pickup branch'}
                         </span>
-                        <ChevronDown size={12} className="flex-shrink-0" />
                     </button>
 
                     <div className="hidden md:flex items-center flex-1 max-w-[420px] h-[36px] px-3 bg-surface-2 border border-border rounded-md gap-2">
@@ -155,12 +155,16 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
                     <div className="flex items-center gap-1 ml-auto">
                         {isAuthenticated && user && (
                             <Link
-                                to={FRONTEND_ROUTES.SHOP_MY_REQUESTS}
+                                to={FRONTEND_ROUTES.SHOP_MY_ORDERS}
                                 className="hidden sm:inline-flex items-center gap-2 h-9 px-3 text-[13px] font-medium rounded-md bg-surface text-text-1 border border-border-strong hover:bg-surface-2 transition-colors"
                             >
                                 <ScrollText size={14} />
-                                <span>My Requests</span>
+                                <span>My Orders</span>
                             </Link>
+                        )}
+
+                        {isAuthenticated && user?.role === UserRole.CUSTOMER && (
+                            <LoyaltyHeaderBadge />
                         )}
 
                         <ThemeToggle />
@@ -219,11 +223,19 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
                                         </Link>
                                         <Link
                                             role="menuitem"
-                                            to={FRONTEND_ROUTES.SHOP_MY_REQUESTS}
+                                            to={FRONTEND_ROUTES.SHOP_MY_ORDERS}
                                             className="flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:bg-surface-2"
                                             onClick={() => setMenuOpen(false)}
                                         >
-                                            <ScrollText size={14} /> My Requests
+                                            <ScrollText size={14} /> My Orders
+                                        </Link>
+                                        <Link
+                                            role="menuitem"
+                                            to={FRONTEND_ROUTES.SHOP_REWARDS}
+                                            className="flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:bg-surface-2"
+                                            onClick={() => setMenuOpen(false)}
+                                        >
+                                            <Sparkles size={14} /> Rewards
                                         </Link>
                                         <button
                                             role="menuitem"

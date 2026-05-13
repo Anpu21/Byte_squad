@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useConfirm } from '@/hooks/useConfirm';
 import { queryKeys } from '@/lib/queryKeys';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import type { IShopProduct } from '@/types';
 
 export function useProductDetail() {
     const { id } = useParams<{ id: string }>();
@@ -32,17 +33,32 @@ export function useProductDetail() {
         enabled: !!id,
     });
 
+    const { data: recommendedProducts = [] } = useQuery({
+        queryKey: queryKeys.shop.recommended({
+            branchId: userBranchId,
+            productId: id,
+            category: product?.category,
+            limit: 4,
+        }),
+        queryFn: () =>
+            shopProductsService.listRecommended({
+                branchId: userBranchId!,
+                productId: id,
+                category: product?.category,
+                limit: 4,
+            }),
+        enabled: Boolean(userBranchId && id && product),
+    });
+
     const availableIds = product?.availableBranches.map((b) => b.id) ?? [];
-    const isOutEverywhere = availableIds.length === 0;
-    const currentBranchHasIt =
-        !!userBranchId && availableIds.includes(userBranchId);
+    const isOutEverywhere =
+        !!product && product.stockStatus === 'out' && availableIds.length === 0;
+    const currentBranchHasIt = !!product && product.stockStatus !== 'out';
     const branchSwitchNeeded =
-        !!product && !currentBranchHasIt && !isOutEverywhere;
+        !!product && !currentBranchHasIt && availableIds.length > 0;
 
     const targetBranch =
-        product?.availableBranches.find((b) => b.id === userBranchId) ??
-        product?.availableBranches[0] ??
-        null;
+        product?.availableBranches[0] ?? null;
 
     const handleAdd = async (): Promise<boolean> => {
         if (!product) return false;
@@ -98,6 +114,19 @@ export function useProductDetail() {
         if (added) navigate(FRONTEND_ROUTES.SHOP_CART);
     };
 
+    const handleAddRecommended = (recommended: IShopProduct) => {
+        if (recommended.stockStatus === 'out') return;
+        dispatch(
+            addToCart({
+                productId: recommended.id,
+                name: recommended.name,
+                sellingPrice: recommended.sellingPrice,
+                imageUrl: recommended.imageUrl,
+            }),
+        );
+        toast.success(`${recommended.name} added`);
+    };
+
     return {
         product,
         isLoading,
@@ -107,6 +136,8 @@ export function useProductDetail() {
         isOutEverywhere,
         branchSwitchNeeded,
         targetBranch,
+        recommendedProducts,
+        handleAddRecommended,
         handleAdd,
         handleBuyNow,
     };

@@ -5,6 +5,29 @@ import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
+import { DiscountType } from '@common/enums/discount.enum';
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+// A line discount may be either a percentage of the line base (qty × unitPrice)
+// or a fixed money amount; treating the percentage value as money produces
+// totals that are right at qty=1 by coincidence and wrong everywhere else.
+function computeLineTotal(
+  unitPrice: number,
+  quantity: number,
+  discountAmount: number,
+  discountType: DiscountType,
+): number {
+  const base = unitPrice * quantity;
+  if (discountAmount <= 0) return round2(base);
+  const off =
+    discountType === DiscountType.PERCENTAGE
+      ? base * (discountAmount / 100)
+      : discountAmount;
+  return round2(Math.max(0, base - off));
+}
 import {
   DailyBreakdown,
   TopProduct,
@@ -59,25 +82,54 @@ export class PosService {
 
     const transactionNumber = `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
+    const items = dto.items.map((item) => {
+      const discountAmount = item.discountAmount ?? 0;
+      const discountType = item.discountType ?? DiscountType.NONE;
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        discountAmount,
+        discountType,
+        lineTotal: computeLineTotal(
+          item.unitPrice,
+          item.quantity,
+          discountAmount,
+          discountType,
+        ),
+      };
+    });
+
+    const subtotal = round2(
+      items.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0),
+    );
+    const afterLineDiscounts = round2(
+      items.reduce((sum, it) => sum + it.lineTotal, 0),
+    );
+
+    const cartDiscountAmount = dto.discountAmount ?? 0;
+    const cartDiscountType = dto.discountType ?? DiscountType.NONE;
+    const cartDiscountValue =
+      cartDiscountAmount > 0
+        ? cartDiscountType === DiscountType.PERCENTAGE
+          ? round2(afterLineDiscounts * (cartDiscountAmount / 100))
+          : round2(cartDiscountAmount)
+        : 0;
+
+    const total = round2(Math.max(0, afterLineDiscounts - cartDiscountValue));
+
     const saved = await this.pos.createAndSaveTransaction({
       transactionNumber,
       branchId,
       cashierId,
       type: dto.type,
-      subtotal: 0,
-      discountAmount: dto.discountAmount ?? 0,
-      discountType: dto.discountType,
+      subtotal,
+      discountAmount: cartDiscountAmount,
+      discountType: cartDiscountType,
       taxAmount: 0,
-      total: 0,
+      total,
       paymentMethod: dto.paymentMethod,
-      items: dto.items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        discountAmount: item.discountAmount ?? 0,
-        discountType: item.discountType,
-        lineTotal: item.unitPrice * item.quantity - (item.discountAmount ?? 0),
-      })),
+      items,
     });
 
     if (Number(saved.total) > 0) {

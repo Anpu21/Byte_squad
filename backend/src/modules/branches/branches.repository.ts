@@ -36,6 +36,10 @@ export class BranchesRepository {
     return this.repo.findOne({ where: { id } });
   }
 
+  async findByCode(code: string): Promise<Branch | null> {
+    return this.repo.findOne({ where: { code } });
+  }
+
   async update(id: string, dto: DeepPartial<Branch>): Promise<void> {
     await this.repo.update(id, dto);
   }

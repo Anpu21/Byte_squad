@@ -9,7 +9,15 @@ interface BranchTableProps {
     onDelete: (branch: IBranchWithMeta) => void;
 }
 
-const HEADERS = ['Name', 'Address', 'Phone', 'Admin', 'Staff', 'Status'];
+const HEADERS = [
+    'Code',
+    'Name',
+    'Address',
+    'Phone',
+    'Manager',
+    'Staff',
+    'Status',
+];
 
 export function BranchTable({
     branches,

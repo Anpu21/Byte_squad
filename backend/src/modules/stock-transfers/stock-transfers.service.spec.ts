@@ -218,6 +218,49 @@ describe('StockTransfersService', () => {
         ),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
+
+    it('rejects an admin creating a transfer without destinationBranchId', async () => {
+      products.findById.mockResolvedValue({
+        id: 'p',
+        name: 'Apples',
+      } as never);
+      await expect(
+        service.create(
+          { productId: 'p', requestedQuantity: 2 },
+          { id: 'a', role: UserRole.ADMIN, branchId: null },
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('uses dto.destinationBranchId when an admin creates the transfer', async () => {
+      products.findById.mockResolvedValue({
+        id: 'p',
+        name: 'Apples',
+      } as never);
+      branches.findById.mockResolvedValue({
+        id: 'b',
+        name: 'Main',
+      } as Branch);
+      transfers.create.mockResolvedValue({ id: 't1' } as StockTransferRequest);
+      transfers.findById.mockResolvedValue({
+        id: 't1',
+        destinationBranchId: 'b',
+        sourceBranchId: null,
+      } as StockTransferRequest);
+
+      await service.create(
+        {
+          productId: 'p',
+          requestedQuantity: 2,
+          destinationBranchId: 'b',
+        },
+        { id: 'a', role: UserRole.ADMIN, branchId: null },
+      );
+
+      expect(transfers.create).toHaveBeenCalledWith(
+        expect.objectContaining({ destinationBranchId: 'b' }),
+      );
+    });
   });
 
   it('uses repos to fan out admin notifications on create', async () => {

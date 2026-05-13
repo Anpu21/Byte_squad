@@ -14,10 +14,12 @@ import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
 import { AdminPortalModule } from '@admin-portal/admin-portal.module';
 import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
-import { CustomerRequestsModule } from '@/modules/customer-requests/customer-requests.module';
+import { CustomerOrdersModule } from '@/modules/customer-orders/customer-orders.module';
 import { ShopModule } from '@/modules/shop/shop.module';
+import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
+import { PendingBranchAction } from '@branches/entities/pending-branch-action.entity';
 import { Product } from '@products/entities/product.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
@@ -27,8 +29,11 @@ import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { Notification } from '@notifications/entities/notification.entity';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
-import { CustomerRequest } from '@/modules/customer-requests/entities/customer-request.entity';
-import { CustomerRequestItem } from '@/modules/customer-requests/entities/customer-request-item.entity';
+import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
+import { CustomerOrderItem } from '@/modules/customer-orders/entities/customer-order-item.entity';
+import { PayherePaymentAttempt } from '@/modules/customer-orders/entities/payhere-payment-attempt.entity';
+import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
 import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
 
@@ -48,6 +53,7 @@ import appConfig from '@common/config/app.config';
     TypeOrmModule.forFeature([
       User,
       Branch,
+      PendingBranchAction,
       Product,
       Inventory,
       Transaction,
@@ -57,8 +63,11 @@ import appConfig from '@common/config/app.config';
       Expense,
       Notification,
       StockTransferRequest,
-      CustomerRequest,
-      CustomerRequestItem,
+      CustomerOrder,
+      CustomerOrderItem,
+      PayherePaymentAttempt,
+      LoyaltyAccount,
+      LoyaltyLedgerEntry,
     ]),
     CloudinaryModule,
     AuthModule,
@@ -71,8 +80,9 @@ import appConfig from '@common/config/app.config';
     NotificationsModule,
     AdminPortalModule,
     StockTransfersModule,
-    CustomerRequestsModule,
+    CustomerOrdersModule,
     ShopModule,
+    LoyaltyModule,
   ],
   providers: [AdminSeedService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
 })

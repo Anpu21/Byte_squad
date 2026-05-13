@@ -1,11 +1,20 @@
 import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { adminService } from '@/services/admin.service';
 import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
+import { BranchActionOtpStep } from './BranchActionOtpStep';
+import { BranchFormFields } from './BranchFormFields';
+import {
+    buildCreatePayload,
+    buildUpdatePayload,
+    initialBranchForm,
+} from './branch-form.helpers';
 import type {
     IBranchWithMeta,
-    IBranchCreatePayload,
-    IBranchUpdatePayload,
+    IBranchActionRequestResponse,
+    IBranchActionConfirmResponse,
 } from '@/types';
 
 interface BranchFormModalProps {
@@ -14,10 +23,10 @@ interface BranchFormModalProps {
     onSaved: () => void;
 }
 
-const FIELD_LABEL_CLASS =
-    'block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5';
-const FIELD_INPUT_CLASS =
-    'w-full h-9 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors';
+function extractApiMessage(err: unknown): string | undefined {
+    const axiosErr = err as { response?: { data?: { message?: string } } };
+    return axiosErr?.response?.data?.message;
+}
 
 export function BranchFormModal({
     editing,
@@ -25,102 +34,107 @@ export function BranchFormModal({
     onSaved,
 }: BranchFormModalProps) {
     const isEdit = editing !== null;
-    const [form, setForm] = useState<IBranchCreatePayload>({
-        name: editing?.name ?? '',
-        address: editing?.address ?? '',
-        phone: editing?.phone ?? '',
-    });
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [form, setForm] = useState(() => initialBranchForm(editing));
+    const [pending, setPending] =
+        useState<IBranchActionRequestResponse | null>(null);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        try {
-            if (isEdit && editing) {
-                const payload: IBranchUpdatePayload = { ...form };
-                await adminService.updateBranch(editing.id, payload);
-                toast.success('Branch updated');
-            } else {
-                await adminService.createBranch(form);
-                toast.success('Branch created');
-            }
-            onSaved();
-            onClose();
-        } catch (err: unknown) {
-            const axiosErr = err as { response?: { data?: { message?: string } } };
+    const requestMutation = useMutation({
+        mutationFn: () =>
+            isEdit && editing
+                ? adminService.requestUpdateBranch(
+                      editing.id,
+                      buildUpdatePayload(form),
+                  )
+                : adminService.requestCreateBranch(buildCreatePayload(form)),
+        onSuccess: (response) => {
+            setPending(response);
+            toast.success('Verification code sent to your email');
+        },
+        onError: (err: unknown) => {
             toast.error(
-                axiosErr.response?.data?.message ||
-                    (isEdit ? 'Failed to update branch' : 'Failed to create branch'),
+                extractApiMessage(err) ??
+                    (isEdit
+                        ? 'Failed to request branch update'
+                        : 'Failed to request branch creation'),
             );
-        } finally {
-            setIsSubmitting(false);
-        }
+        },
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        requestMutation.mutate();
     };
+
+    const handleConfirmed = (result: IBranchActionConfirmResponse) => {
+        toast.success(
+            result.action === 'create' ? 'Branch created' : 'Branch updated',
+        );
+        onSaved();
+        onClose();
+    };
+
+    const title = pending
+        ? isEdit
+            ? 'Confirm branch changes'
+            : 'Confirm new branch'
+        : isEdit
+          ? 'Edit Branch'
+          : 'Create Branch';
 
     return (
         <Modal
             isOpen
             onClose={onClose}
-            title={isEdit ? 'Edit Branch' : 'Create Branch'}
-            maxWidth="md"
+            title={title}
+            maxWidth="2xl"
+            closeOnBackdrop={!pending}
         >
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className={FIELD_LABEL_CLASS}>Name</label>
-                    <input
-                        type="text"
-                        required
-                        value={form.name}
-                        onChange={(e) =>
-                            setForm({ ...form, name: e.target.value })
+            {pending ? (
+                <BranchActionOtpStep
+                    actionId={pending.actionId}
+                    expiresAt={pending.expiresAt}
+                    action={pending.action}
+                    branchLabel={
+                        form.name.trim() || form.code.trim() || 'this branch'
+                    }
+                    onConfirmed={handleConfirmed}
+                    onCancel={() => setPending(null)}
+                />
+            ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <BranchFormFields
+                        form={form}
+                        onChange={(key, value) =>
+                            setForm((prev) => ({ ...prev, [key]: value }))
                         }
-                        className={FIELD_INPUT_CLASS}
                     />
-                </div>
-                <div>
-                    <label className={FIELD_LABEL_CLASS}>Address</label>
-                    <input
-                        type="text"
-                        required
-                        value={form.address}
-                        onChange={(e) =>
-                            setForm({ ...form, address: e.target.value })
-                        }
-                        className={FIELD_INPUT_CLASS}
-                    />
-                </div>
-                <div>
-                    <label className={FIELD_LABEL_CLASS}>Phone</label>
-                    <input
-                        type="text"
-                        value={form.phone}
-                        onChange={(e) =>
-                            setForm({ ...form, phone: e.target.value })
-                        }
-                        className={FIELD_INPUT_CLASS}
-                    />
-                </div>
-                <div className="flex gap-3 pt-2">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="flex-1 h-9 rounded-lg border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="flex-1 h-9 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all disabled:opacity-50"
-                    >
-                        {isSubmitting
-                            ? 'Saving...'
-                            : isEdit
-                              ? 'Save Changes'
-                              : 'Create Branch'}
-                    </button>
-                </div>
-            </form>
+                    <div className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[12px] text-text-2">
+                        Sensitive change — we'll email a 6-digit code to your
+                        admin address to confirm before applying.
+                    </div>
+                    <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={onClose}
+                            className="flex-1"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={requestMutation.isPending}
+                            className="flex-1"
+                        >
+                            {requestMutation.isPending
+                                ? 'Sending code…'
+                                : isEdit
+                                  ? 'Save changes (verify by email)'
+                                  : 'Create branch (verify by email)'}
+                        </Button>
+                    </div>
+                </form>
+            )}
         </Modal>
     );
 }
