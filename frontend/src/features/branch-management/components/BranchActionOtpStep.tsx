@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { adminService } from '@/services/admin.service';
 import { OtpCodeField } from '@/features/reset-password/components/OtpCodeField';
+import Button from '@/components/ui/Button';
 import type {
     BranchActionType,
     IBranchActionConfirmResponse,
@@ -31,6 +33,11 @@ function formatCountdown(ms: number): string {
     return `${m}:${s}`;
 }
 
+function extractApiMessage(err: unknown): string | undefined {
+    const axiosErr = err as { response?: { data?: { message?: string } } };
+    return axiosErr?.response?.data?.message;
+}
+
 export function BranchActionOtpStep({
     actionId,
     expiresAt,
@@ -41,8 +48,6 @@ export function BranchActionOtpStep({
 }: BranchActionOtpStepProps) {
     const [otp, setOtp] = useState('');
     const [error, setError] = useState<string | null>(null);
-    const [submitting, setSubmitting] = useState(false);
-    const [resending, setResending] = useState(false);
     const [deadline, setDeadline] = useState(() =>
         new Date(expiresAt).getTime(),
     );
@@ -56,48 +61,35 @@ export function BranchActionOtpStep({
     const remaining = deadline - now;
     const expired = remaining <= 0;
 
-    const handleVerify = async () => {
+    const verifyMutation = useMutation({
+        mutationFn: () => adminService.confirmBranchAction(actionId, otp),
+        onSuccess: (result) => onConfirmed(result),
+        onError: (err: unknown) =>
+            setError(
+                extractApiMessage(err) ??
+                    'Could not verify code. Please try again.',
+            ),
+    });
+
+    const resendMutation = useMutation({
+        mutationFn: () => adminService.resendBranchActionOtp(actionId),
+        onSuccess: ({ expiresAt: nextExpiresAt }) => {
+            setDeadline(new Date(nextExpiresAt).getTime());
+            setOtp('');
+            setError(null);
+            toast.success('A fresh code was sent to your email');
+        },
+        onError: (err: unknown) =>
+            toast.error(extractApiMessage(err) ?? 'Could not resend code'),
+    });
+
+    const handleVerify = () => {
         if (otp.length !== 6) {
             setError('Enter the 6-digit code from your email');
             return;
         }
-        setSubmitting(true);
         setError(null);
-        try {
-            const result = await adminService.confirmBranchAction(actionId, otp);
-            onConfirmed(result);
-        } catch (err: unknown) {
-            const axiosErr = err as {
-                response?: { data?: { message?: string } };
-            };
-            setError(
-                axiosErr.response?.data?.message ??
-                    'Could not verify code. Please try again.',
-            );
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const handleResend = async () => {
-        setResending(true);
-        setError(null);
-        try {
-            const { expiresAt: nextExpiresAt } =
-                await adminService.resendBranchActionOtp(actionId);
-            setDeadline(new Date(nextExpiresAt).getTime());
-            setOtp('');
-            toast.success('A fresh code was sent to your email');
-        } catch (err: unknown) {
-            const axiosErr = err as {
-                response?: { data?: { message?: string } };
-            };
-            toast.error(
-                axiosErr.response?.data?.message ?? 'Could not resend code',
-            );
-        } finally {
-            setResending(false);
-        }
+        verifyMutation.mutate();
     };
 
     return (
@@ -133,29 +125,37 @@ export function BranchActionOtpStep({
             />
 
             <div className="flex flex-col-reverse sm:flex-row gap-3 pt-1">
-                <button
+                <Button
                     type="button"
+                    variant="secondary"
                     onClick={onCancel}
-                    className="flex-1 h-10 rounded-lg border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors"
+                    className="flex-1"
                 >
                     Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                     type="button"
-                    onClick={handleResend}
-                    disabled={resending}
-                    className="flex-1 h-10 rounded-lg border border-border text-text-1 text-sm font-medium hover:bg-surface-2 transition-colors disabled:opacity-50"
+                    variant="secondary"
+                    onClick={() => resendMutation.mutate()}
+                    disabled={resendMutation.isPending}
+                    className="flex-1"
                 >
-                    {resending ? 'Sending…' : 'Resend code'}
-                </button>
-                <button
+                    {resendMutation.isPending ? 'Sending…' : 'Resend code'}
+                </Button>
+                <Button
                     type="button"
                     onClick={handleVerify}
-                    disabled={submitting || otp.length !== 6 || expired}
-                    className="flex-1 h-10 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all disabled:opacity-50"
+                    disabled={
+                        verifyMutation.isPending ||
+                        otp.length !== 6 ||
+                        expired
+                    }
+                    className="flex-1"
                 >
-                    {submitting ? 'Verifying…' : 'Verify & continue'}
-                </button>
+                    {verifyMutation.isPending
+                        ? 'Verifying…'
+                        : 'Verify & continue'}
+                </Button>
             </div>
         </div>
     );

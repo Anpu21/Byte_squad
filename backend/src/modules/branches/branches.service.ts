@@ -20,6 +20,10 @@ import { BranchesRepository } from '@branches/branches.repository';
 import { PendingBranchActionsRepository } from '@branches/pending-branch-actions.repository';
 import { CreateBranchDto } from '@branches/dto/create-branch.dto';
 import { UpdateBranchDto } from '@branches/dto/update-branch.dto';
+import {
+  parseCreateBranchPayload,
+  parseUpdateBranchPayload,
+} from '@branches/branch-payload.parser';
 // TODO Phase C6 / C8 / C4 / C5 — replace these cross-module borrowings with
 // the corresponding *Repository classes once those modules migrate.
 import { User } from '@users/entities/user.entity';
@@ -174,9 +178,7 @@ export class BranchesService {
   ): Promise<{ expiresAt: Date }> {
     const pending = await this.loadOwnedPendingAction(adminUserId, actionId);
     const otpCode = this.generateOtp();
-    const expiresAt = new Date(
-      Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
-    );
+    const expiresAt = new Date(Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000);
     await this.pendingActions.refreshOtp(pending.id, otpCode, expiresAt);
 
     const admin = await this.usersService.findById(adminUserId);
@@ -212,7 +214,7 @@ export class BranchesService {
     let branch: Branch | null = null;
     switch (pending.actionType) {
       case 'create': {
-        const payload = (pending.payload ?? {}) as unknown as CreateBranchDto;
+        const payload = parseCreateBranchPayload(pending.payload);
         await this.assertCodeAvailable(payload.code, null);
         branch = await this.branches.createAndSave({ ...payload });
         break;
@@ -227,7 +229,7 @@ export class BranchesService {
         if (!existing) {
           throw new NotFoundException('Branch no longer exists');
         }
-        const payload = (pending.payload ?? {}) as unknown as UpdateBranchDto;
+        const payload = parseUpdateBranchPayload(pending.payload);
         if (payload.code !== undefined && payload.code !== existing.code) {
           await this.assertCodeAvailable(payload.code, existing.id);
         }
@@ -274,9 +276,7 @@ export class BranchesService {
     }
 
     const otpCode = this.generateOtp();
-    const expiresAt = new Date(
-      Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
-    );
+    const expiresAt = new Date(Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000);
 
     const pending = await this.pendingActions.create({
       userId: adminUserId,
@@ -360,15 +360,13 @@ export class BranchesService {
     }
     const existing = await this.branches.findByCode(trimmed);
     if (existing && existing.id !== excludeBranchId) {
-      throw new ConflictException(
-        `Branch code "${trimmed}" is already in use`,
-      );
+      throw new ConflictException(`Branch code "${trimmed}" is already in use`);
     }
   }
 
   private payloadLabel(action: PendingBranchAction): string | null {
     if (action.payload && typeof action.payload === 'object') {
-      const name = (action.payload as Record<string, unknown>).name;
+      const name = action.payload.name;
       if (typeof name === 'string') return name;
     }
     return null;

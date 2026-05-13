@@ -16,6 +16,11 @@ interface PendingDelete {
     branchName: string;
 }
 
+function extractApiMessage(err: unknown): string | undefined {
+    const axiosErr = err as { response?: { data?: { message?: string } } };
+    return axiosErr?.response?.data?.message;
+}
+
 export function useBranchManagementPage() {
     const queryClient = useQueryClient();
     const confirm = useConfirm();
@@ -44,6 +49,20 @@ export function useBranchManagementPage() {
         onError: () => toast.error('Failed to toggle branch'),
     });
 
+    const requestDeleteMutation = useMutation({
+        mutationFn: ({ branchId }: { branchId: string; branchName: string }) =>
+            adminService.requestDeleteBranch(branchId),
+        onSuccess: (pending, variables) => {
+            toast.success('Verification code sent to your email');
+            setPendingDelete({ pending, branchName: variables.branchName });
+        },
+        onError: (err: unknown) =>
+            toast.error(
+                extractApiMessage(err) ??
+                    'Cannot delete branch (may have existing data)',
+            ),
+    });
+
     const openCreate = () => {
         setEditing(null);
         setShowModal(true);
@@ -64,19 +83,10 @@ export function useBranchManagementPage() {
             tone: 'danger',
         });
         if (!ok) return;
-        try {
-            const pending = await adminService.requestDeleteBranch(branch.id);
-            toast.success('Verification code sent to your email');
-            setPendingDelete({ pending, branchName: branch.name });
-        } catch (err: unknown) {
-            const axiosErr = err as {
-                response?: { data?: { message?: string } };
-            };
-            toast.error(
-                axiosErr.response?.data?.message ??
-                    'Cannot delete branch (may have existing data)',
-            );
-        }
+        requestDeleteMutation.mutate({
+            branchId: branch.id,
+            branchName: branch.name,
+        });
     };
 
     const closePendingDelete = () => setPendingDelete(null);

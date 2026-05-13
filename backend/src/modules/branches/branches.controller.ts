@@ -95,11 +95,7 @@ export class BranchesController {
     @Param('id') id: string,
     @Body() updateBranchDto: UpdateBranchDto,
   ): Promise<BranchActionRequestResult> {
-    return this.branchesService.requestUpdate(
-      adminUserId,
-      id,
-      updateBranchDto,
-    );
+    return this.branchesService.requestUpdate(adminUserId, id, updateBranchDto);
   }
 
   @Patch(APP_ROUTES.BRANCHES.TOGGLE_ACTIVE)
