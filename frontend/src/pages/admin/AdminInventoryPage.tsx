@@ -8,7 +8,7 @@ import { InventoryPageHeader } from '@/features/admin-inventory/components/Inven
 import { InventoryFilterRail } from '@/features/admin-inventory/components/InventoryFilterRail';
 import { InventoryHeroKpi } from '@/features/admin-inventory/components/InventoryHeroKpi';
 import { ActiveFilterChips } from '@/features/admin-inventory/components/ActiveFilterChips';
-import { InventoryRecordList } from '@/features/admin-inventory/components/InventoryRecordList';
+import { InventoryRecordTable } from '@/features/admin-inventory/components/InventoryRecordTable';
 import { InventoryPagination } from '@/features/admin-inventory/components/InventoryPagination';
 
 interface AdminInventoryPageProps {
@@ -65,7 +65,7 @@ export function AdminInventoryPage({
                         branches={branches}
                         recordCount={records.list.length}
                     />
-                    <InventoryRecordList
+                    <InventoryRecordTable
                         records={records.list}
                         isLoading={matrixQuery.isLoading}
                         hasActiveFilter={filters.hasActiveFilter}

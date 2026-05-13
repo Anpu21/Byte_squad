@@ -43,14 +43,26 @@ export class CustomerOrdersRepository {
   async findById(id: string): Promise<CustomerOrder | null> {
     return this.orderRepo.findOne({
       where: { id },
-      relations: ['items', 'items.product', 'branch', 'user', 'paymentAttempts'],
+      relations: [
+        'items',
+        'items.product',
+        'branch',
+        'user',
+        'paymentAttempts',
+      ],
     });
   }
 
   async findByCode(code: string): Promise<CustomerOrder | null> {
     return this.orderRepo.findOne({
       where: { orderCode: code },
-      relations: ['items', 'items.product', 'branch', 'user', 'paymentAttempts'],
+      relations: [
+        'items',
+        'items.product',
+        'branch',
+        'user',
+        'paymentAttempts',
+      ],
     });
   }
 

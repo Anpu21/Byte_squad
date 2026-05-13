@@ -1,5 +1,6 @@
 export interface ListLedgerOptions {
-  branchId: string;
+  // null means "across all branches" — admins see cross-branch totals.
+  branchId: string | null;
   entryType?: string;
   startDate?: string;
   endDate?: string;

@@ -30,7 +30,7 @@ interface ActorPayload {
   id: string;
   email: string;
   role: UserRole;
-  branchId: string;
+  branchId: string | null;
 }
 
 @Controller(APP_ROUTES.STOCK_TRANSFERS.BASE)
@@ -144,4 +144,3 @@ export class StockTransfersController {
     return this.stockTransfersService.receive(id, actor);
   }
 }
-

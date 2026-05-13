@@ -141,9 +141,7 @@ export class ShopService {
     return rows.map((r) => r.category).filter((c): c is string => Boolean(c));
   }
 
-  async listRecommended(
-    query: ListRecommendedQuery,
-  ): Promise<ShopProduct[]> {
+  async listRecommended(query: ListRecommendedQuery): Promise<ShopProduct[]> {
     const limit = query.limit ?? 8;
     const contextProduct = query.productId
       ? await this.productRepo.findOne({
@@ -151,7 +149,9 @@ export class ShopService {
         })
       : null;
     const category = query.category ?? contextProduct?.category ?? null;
-    const availableProducts = (await this.listProducts({ branchId: query.branchId }))
+    const availableProducts = (
+      await this.listProducts({ branchId: query.branchId })
+    )
       .filter((product) => product.stockStatus !== 'out')
       .filter((product) => product.id !== query.productId);
 
@@ -247,7 +247,7 @@ export class ShopService {
     return branches.map((b) => ({
       id: b.id,
       name: b.name,
-      address: b.address,
+      address: b.addressLine1,
       phone: b.phone,
       staffCount: countByBranch.get(b.id) ?? 0,
     }));

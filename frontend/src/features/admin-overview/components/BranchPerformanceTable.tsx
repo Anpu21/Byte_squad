@@ -58,7 +58,7 @@ export function BranchPerformanceTable({
                                                 {b.branchName}
                                             </span>
                                             <span className="text-[11px] text-text-3">
-                                                {b.adminName || 'No admin'}
+                                                {b.managerName || 'No manager'}
                                             </span>
                                         </div>
                                     </td>

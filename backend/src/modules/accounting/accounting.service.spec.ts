@@ -46,11 +46,22 @@ describe('AccountingService', () => {
   });
 
   describe('createExpense', () => {
-    it('rejects when neither manager nor admin has a branch context', async () => {
+    it('rejects when an admin omits dto.branchId (admins are not pinned to a branch)', async () => {
       await expect(
         service.createExpense({ branchId: undefined } as never, {
           id: 'u',
           role: UserRole.ADMIN,
+          branchId: null,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repo.createExpense).not.toHaveBeenCalled();
+    });
+
+    it('rejects when a manager has no branch assigned', async () => {
+      await expect(
+        service.createExpense({ branchId: undefined } as never, {
+          id: 'u',
+          role: UserRole.MANAGER,
           branchId: null,
         }),
       ).rejects.toBeInstanceOf(ForbiddenException);

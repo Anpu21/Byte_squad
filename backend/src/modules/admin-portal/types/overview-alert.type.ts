@@ -1,6 +1,6 @@
 export interface OverviewAlert {
   type:
-    | 'no_admin'
+    | 'no_manager'
     | 'no_transactions'
     | 'critical_low_stock'
     | 'inactive_branch';

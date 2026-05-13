@@ -104,21 +104,30 @@ export class AdminPortalService {
 
     return Promise.all(
       branches.map(async (branch) => {
-        const [admin, staffCount] = await Promise.all([
-          this.users.findFirstByBranchAndRole(branch.id, UserRole.ADMIN),
+        const [manager, staffCount] = await Promise.all([
+          this.users.findFirstByBranchAndRole(branch.id, UserRole.MANAGER),
           this.users.countByBranch(branch.id),
         ]);
 
         return {
           id: branch.id,
+          code: branch.code,
           name: branch.name,
-          address: branch.address,
+          addressLine1: branch.addressLine1,
+          addressLine2: branch.addressLine2,
+          city: branch.city,
+          state: branch.state,
+          country: branch.country,
+          postalCode: branch.postalCode,
           phone: branch.phone,
+          email: branch.email,
           isActive: branch.isActive,
           createdAt: branch.createdAt,
           updatedAt: branch.updatedAt,
-          adminName: admin ? `${admin.firstName} ${admin.lastName}` : null,
-          adminEmail: admin ? admin.email : null,
+          managerName: manager
+            ? `${manager.firstName} ${manager.lastName}`
+            : null,
+          managerEmail: manager ? manager.email : null,
           staffCount,
         };
       }),
@@ -339,7 +348,7 @@ export class AdminPortalService {
     todayStart: Date,
     todayEnd: Date,
   ): Promise<BranchPerformance> {
-    const [salesAgg, staffCount, activeProducts, lowStockItems, adminUser] =
+    const [salesAgg, staffCount, activeProducts, lowStockItems, managerUser] =
       await Promise.all([
         this.transactionRepo
           .createQueryBuilder('txn')
@@ -355,7 +364,7 @@ export class AdminPortalService {
         this.users.countByBranch(branch.id),
         this.inventory.countActiveForBranch(branch.id),
         this.inventory.countLowStockForBranch(branch.id),
-        this.users.findFirstByBranchAndRole(branch.id, UserRole.ADMIN),
+        this.users.findFirstByBranchAndRole(branch.id, UserRole.MANAGER),
       ]);
 
     return {
@@ -367,8 +376,8 @@ export class AdminPortalService {
       staffCount,
       activeProducts,
       lowStockItems,
-      adminName: adminUser
-        ? `${adminUser.firstName} ${adminUser.lastName}`
+      managerName: managerUser
+        ? `${managerUser.firstName} ${managerUser.lastName}`
         : null,
     };
   }
@@ -463,12 +472,12 @@ export class AdminPortalService {
         });
         continue;
       }
-      if (!p.adminName) {
+      if (!p.managerName) {
         alerts.push({
-          type: 'no_admin',
+          type: 'no_manager',
           branchId: p.branchId,
           branchName: p.branchName,
-          message: `${p.branchName} has no admin assigned`,
+          message: `${p.branchName} has no manager assigned`,
         });
       }
       if (p.todayTransactions === 0) {

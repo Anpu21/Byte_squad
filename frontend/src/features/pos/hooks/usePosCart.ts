@@ -1,77 +1,59 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { IProduct } from '@/types';
 import type { CartItem } from '../types/cart-item.type';
-import type { DiscountType } from '../types/pad-mode.type';
-import { computeDiscountValue, computeTotal } from '../lib/discount';
+import {
+    computeEffectiveLineTotal,
+    computeLineDiscountValue,
+} from '../lib/discount';
+
+function buildLine(
+    product: IProduct,
+    quantity: number,
+    unitPrice: number,
+    discountAmount: number | undefined,
+): CartItem {
+    const lineTotal = Math.round(quantity * unitPrice * 100) / 100;
+    const effectiveLineTotal = computeEffectiveLineTotal(
+        quantity,
+        unitPrice,
+        discountAmount,
+    );
+    return {
+        product,
+        quantity,
+        unitPrice,
+        lineTotal,
+        lineDiscountAmount: discountAmount,
+        effectiveLineTotal,
+    };
+}
 
 export function usePosCart() {
     const confirm = useConfirm();
     const [cart, setCart] = useState<CartItem[]>([]);
-    const [discountAmount, setDiscountAmount] = useState(0);
-    const [discountType, setDiscountType] = useState<DiscountType>('fixed');
 
     const addToCart = useCallback((product: IProduct, qty = 1) => {
         setCart((prev) => {
-            const existing = prev.find(
-                (item) => item.product.id === product.id && !item.isCustom,
-            );
+            const existing = prev.find((item) => item.product.id === product.id);
             if (existing) {
                 return prev.map((item) =>
-                    item.product.id === product.id && !item.isCustom
-                        ? {
-                              ...item,
-                              quantity: item.quantity + qty,
-                              lineTotal:
-                                  (item.quantity + qty) * item.unitPrice,
-                          }
+                    item.product.id === product.id
+                        ? buildLine(
+                              item.product,
+                              item.quantity + qty,
+                              item.unitPrice,
+                              item.lineDiscountAmount,
+                          )
                         : item,
                 );
             }
             return [
                 ...prev,
-                {
-                    product,
-                    quantity: qty,
-                    unitPrice: Number(product.sellingPrice),
-                    lineTotal: qty * Number(product.sellingPrice),
-                },
+                buildLine(product, qty, Number(product.sellingPrice), undefined),
             ];
         });
     }, []);
-
-    const addCustomItem = useCallback(
-        (name: string, price: number, qty = 1) => {
-            if (!name.trim() || price <= 0) return;
-            const customProduct: IProduct = {
-                id:
-                    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-                        ? `custom-${crypto.randomUUID()}`
-                        : `custom-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-                name: name.trim(),
-                barcode: '',
-                description: 'Custom item',
-                category: 'Custom',
-                costPrice: 0,
-                sellingPrice: price,
-                imageUrl: null,
-                isActive: true,
-                createdAt: '',
-                updatedAt: '',
-            };
-            setCart((prev) => [
-                ...prev,
-                {
-                    product: customProduct,
-                    quantity: qty,
-                    unitPrice: price,
-                    lineTotal: qty * price,
-                    isCustom: true,
-                },
-            ]);
-        },
-        [],
-    );
 
     const removeFromCart = useCallback((productId: string) => {
         setCart((prev) =>
@@ -88,16 +70,35 @@ export function usePosCart() {
             setCart((prev) =>
                 prev.map((item) =>
                     item.product.id === productId
-                        ? {
-                              ...item,
-                              quantity: newQty,
-                              lineTotal: newQty * item.unitPrice,
-                          }
+                        ? buildLine(
+                              item.product,
+                              newQty,
+                              item.unitPrice,
+                              item.lineDiscountAmount,
+                          )
                         : item,
                 ),
             );
         },
         [removeFromCart],
+    );
+
+    const setItemDiscount = useCallback(
+        (productId: string, amount: number | undefined) => {
+            setCart((prev) =>
+                prev.map((item) =>
+                    item.product.id === productId
+                        ? buildLine(
+                              item.product,
+                              item.quantity,
+                              item.unitPrice,
+                              amount,
+                          )
+                        : item,
+                ),
+            );
+        },
+        [],
     );
 
     const clearCart = useCallback(async (): Promise<boolean> => {
@@ -110,34 +111,53 @@ export function usePosCart() {
         });
         if (!ok) return false;
         setCart([]);
-        setDiscountAmount(0);
         return true;
     }, [cart.length, confirm]);
 
-    const subtotal = cart.reduce((sum, item) => sum + item.lineTotal, 0);
-    const discountValue = computeDiscountValue(
-        subtotal,
-        discountAmount,
-        discountType,
-    );
-    const total = computeTotal(subtotal, discountValue);
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const totals = useMemo(() => {
+        const subtotal =
+            Math.round(
+                cart.reduce((sum, item) => sum + item.lineTotal, 0) * 100,
+            ) / 100;
+        const lineDiscountsTotal =
+            Math.round(
+                cart.reduce(
+                    (sum, item) =>
+                        sum +
+                        computeLineDiscountValue(
+                            item.quantity,
+                            item.unitPrice,
+                            item.lineDiscountAmount,
+                        ),
+                    0,
+                ) * 100,
+            ) / 100;
+        const total = Math.max(
+            0,
+            Math.round((subtotal - lineDiscountsTotal) * 100) / 100,
+        );
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        return {
+            subtotal,
+            lineDiscountsTotal,
+            total,
+            totalItems,
+        };
+    }, [cart]);
 
     return {
         cart,
         setCart,
         addToCart,
-        addCustomItem,
         removeFromCart,
         updateQuantity,
+        setItemDiscount,
         clearCart,
-        discountAmount,
-        setDiscountAmount,
-        discountType,
-        setDiscountType,
-        subtotal,
-        discountValue,
-        total,
-        totalItems,
+        subtotal: totals.subtotal,
+        lineDiscountsTotal: totals.lineDiscountsTotal,
+        // Kept name for compat with components that bind to it.
+        totalDiscount: totals.lineDiscountsTotal,
+        total: totals.total,
+        totalItems: totals.totalItems,
     };
 }

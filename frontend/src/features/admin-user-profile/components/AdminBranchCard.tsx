@@ -15,11 +15,11 @@ export function AdminBranchCard({ branch }: AdminBranchCardProps) {
                     <span className="text-text-2">Name</span>
                     <span className="text-text-1 font-medium">{branch.name}</span>
                 </div>
-                {branch.address && (
+                {branch.addressLine1 && (
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-text-2">Address</span>
                         <span className="text-text-1 font-medium text-right max-w-[60%]">
-                            {branch.address}
+                            {branch.addressLine1}
                         </span>
                     </div>
                 )}

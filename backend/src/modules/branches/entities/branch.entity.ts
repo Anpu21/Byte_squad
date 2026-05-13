@@ -15,14 +15,35 @@ export class Branch {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Column({ type: 'varchar', length: 16, unique: true })
+  code!: string;
+
   @Column({ type: 'varchar', unique: true })
   name!: string;
 
-  @Column({ type: 'varchar' })
-  address!: string;
+  @Column({ type: 'varchar', name: 'address_line_1' })
+  addressLine1!: string;
+
+  @Column({ type: 'varchar', name: 'address_line_2', nullable: true })
+  addressLine2!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  city!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  state!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  country!: string | null;
+
+  @Column({ type: 'varchar', name: 'postal_code', nullable: true })
+  postalCode!: string | null;
 
   @Column({ type: 'varchar' })
   phone!: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  email!: string | null;
 
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive!: boolean;

@@ -50,7 +50,7 @@ export class AccountingService {
   ) {}
 
   async getLedgerEntries(
-    branchId: string,
+    branchId: string | null,
     options?: {
       entryType?: string;
       startDate?: string;
@@ -71,7 +71,7 @@ export class AccountingService {
     });
   }
 
-  async getLedgerSummary(branchId: string): Promise<LedgerSummary> {
+  async getLedgerSummary(branchId: string | null): Promise<LedgerSummary> {
     const result = await this.accounting.getLedgerSummary(branchId);
     return {
       totalCredits: Math.round(result.totalCredits * 100) / 100,
@@ -86,16 +86,22 @@ export class AccountingService {
     dto: CreateExpenseDto,
     user: RequestUser,
   ): Promise<Expense> {
-    // Managers can only add expenses to their own branch.
-    // Admins may pick any branch via dto.branchId; fall back to their own.
-    let branchId: string | null;
+    // Managers can only add expenses to their own branch; the dto.branchId
+    // is ignored. Admins are not tied to a branch, so they MUST pass
+    // dto.branchId to say which branch the expense is for.
+    let branchId: string;
     if (user.role === UserRole.MANAGER) {
+      if (!user.branchId) {
+        throw new ForbiddenException('Manager is not assigned to a branch');
+      }
       branchId = user.branchId;
     } else {
-      branchId = dto.branchId ?? user.branchId;
-    }
-    if (!branchId) {
-      throw new ForbiddenException('No branch context available');
+      if (!dto.branchId) {
+        throw new BadRequestException(
+          'branchId is required when an admin creates an expense',
+        );
+      }
+      branchId = dto.branchId;
     }
 
     const saved = await this.accounting.createExpense({
@@ -170,7 +176,7 @@ export class AccountingService {
   }
 
   async getProfitLoss(
-    branchId: string,
+    branchId: string | null,
     startDate: string,
     endDate: string,
   ): Promise<ProfitLossData> {
@@ -179,12 +185,13 @@ export class AccountingService {
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
-    // Revenue: sum of all transactions in the period
+    // Revenue: sum of all transactions in the period.
+    // branchId === null means "across all branches" (admin cross-branch view).
     const transactions = await this.transactionRepository.find({
-      where: {
-        branchId,
-        createdAt: Between(start, end),
-      },
+      where:
+        branchId !== null
+          ? { branchId, createdAt: Between(start, end) }
+          : { createdAt: Between(start, end) },
     });
 
     const totalSales = transactions.reduce(
@@ -202,15 +209,20 @@ export class AccountingService {
     const netRevenue = totalSales;
 
     // COGS: sum of (costPrice × quantity) for all items sold
-    const cogsResult = await this.transactionItemRepository
+    const cogsQb = this.transactionItemRepository
       .createQueryBuilder('ti')
       .select('SUM(p.cost_price * ti.quantity)', 'totalCOGS')
       .addSelect('SUM(ti.quantity)', 'itemsSold')
       .innerJoin('ti.transaction', 't')
       .innerJoin('ti.product', 'p')
-      .where('t.branch_id = :branchId', { branchId })
-      .andWhere('t.created_at BETWEEN :start AND :end', { start, end })
-      .getRawOne<{ totalCOGS: string | null; itemsSold: string | null }>();
+      .where('t.created_at BETWEEN :start AND :end', { start, end });
+    if (branchId !== null) {
+      cogsQb.andWhere('t.branch_id = :branchId', { branchId });
+    }
+    const cogsResult = await cogsQb.getRawOne<{
+      totalCOGS: string | null;
+      itemsSold: string | null;
+    }>();
 
     const totalCOGS = Number(cogsResult?.totalCOGS ?? 0);
     const itemsSold = Number(cogsResult?.itemsSold ?? 0);

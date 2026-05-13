@@ -163,4 +163,168 @@ describe('PosService.createTransaction (idempotency)', () => {
     await service.createTransaction(baseDto, 'cashier-1', 'branch-1');
     expect(accounting.createLedgerEntry).not.toHaveBeenCalled();
   });
+
+  describe('createTransaction totals', () => {
+    function makeDto(
+      items: Array<{
+        unitPrice: number;
+        quantity: number;
+        discountAmount?: number;
+        discountType?: DiscountType;
+      }>,
+      cart: { discountAmount?: number; discountType?: DiscountType } = {},
+    ): CreateTransactionDto {
+      return {
+        type: TransactionType.SALE,
+        paymentMethod: PaymentMethod.CASH,
+        discountAmount: cart.discountAmount ?? 0,
+        discountType: cart.discountType ?? DiscountType.NONE,
+        items: items.map((it, idx) => ({
+          productId: `p${idx + 1}`,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          discountAmount: it.discountAmount ?? 0,
+          discountType: it.discountType ?? DiscountType.NONE,
+        })),
+      };
+    }
+
+    it('computes subtotal/total/lineTotal with no discount', async () => {
+      pos.createAndSaveTransaction.mockResolvedValue({
+        id: 'txn',
+        total: 500,
+        transactionNumber: 'TXN-X',
+        branchId: 'branch-1',
+      } as Transaction);
+
+      await service.createTransaction(
+        makeDto([{ unitPrice: 250, quantity: 2 }]),
+        'cashier-1',
+        'branch-1',
+      );
+
+      expect(pos.createAndSaveTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subtotal: 500,
+          total: 500,
+          items: [expect.objectContaining({ lineTotal: 500 })],
+        }),
+      );
+    });
+
+    it('applies a percentage line discount against the line base', async () => {
+      pos.createAndSaveTransaction.mockResolvedValue({
+        id: 'txn',
+        total: 180,
+        transactionNumber: 'TXN-X',
+        branchId: 'branch-1',
+      } as Transaction);
+
+      await service.createTransaction(
+        makeDto([
+          {
+            unitPrice: 100,
+            quantity: 2,
+            discountAmount: 10,
+            discountType: DiscountType.PERCENTAGE,
+          },
+        ]),
+        'cashier-1',
+        'branch-1',
+      );
+
+      expect(pos.createAndSaveTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subtotal: 200,
+          total: 180,
+          items: [expect.objectContaining({ lineTotal: 180 })],
+        }),
+      );
+    });
+
+    it('applies a fixed line discount as a money amount', async () => {
+      pos.createAndSaveTransaction.mockResolvedValue({
+        id: 'txn',
+        total: 185,
+        transactionNumber: 'TXN-X',
+        branchId: 'branch-1',
+      } as Transaction);
+
+      await service.createTransaction(
+        makeDto([
+          {
+            unitPrice: 100,
+            quantity: 2,
+            discountAmount: 15,
+            discountType: DiscountType.FIXED,
+          },
+        ]),
+        'cashier-1',
+        'branch-1',
+      );
+
+      expect(pos.createAndSaveTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subtotal: 200,
+          total: 185,
+          items: [expect.objectContaining({ lineTotal: 185 })],
+        }),
+      );
+    });
+
+    it('stacks a cart-wide percentage on top of line discounts', async () => {
+      pos.createAndSaveTransaction.mockResolvedValue({
+        id: 'txn',
+        total: 162,
+        transactionNumber: 'TXN-X',
+        branchId: 'branch-1',
+      } as Transaction);
+
+      // line: 100 × 2 with 10% → 180. cart: 10% on 180 → 18. total = 162.
+      await service.createTransaction(
+        makeDto(
+          [
+            {
+              unitPrice: 100,
+              quantity: 2,
+              discountAmount: 10,
+              discountType: DiscountType.PERCENTAGE,
+            },
+          ],
+          { discountAmount: 10, discountType: DiscountType.PERCENTAGE },
+        ),
+        'cashier-1',
+        'branch-1',
+      );
+
+      expect(pos.createAndSaveTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subtotal: 200,
+          discountAmount: 10,
+          discountType: DiscountType.PERCENTAGE,
+          total: 162,
+        }),
+      );
+    });
+
+    it('creates a ledger entry with the computed total when total > 0', async () => {
+      pos.createAndSaveTransaction.mockResolvedValue({
+        id: 'txn',
+        total: 500,
+        transactionNumber: 'TXN-X',
+        branchId: 'branch-1',
+      } as Transaction);
+
+      await service.createTransaction(
+        makeDto([{ unitPrice: 250, quantity: 2 }]),
+        'cashier-1',
+        'branch-1',
+      );
+
+      expect(accounting.createLedgerEntry).toHaveBeenCalledTimes(1);
+      expect(accounting.createLedgerEntry).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: 500 }),
+      );
+    });
+  });
 });

@@ -488,38 +488,41 @@ export class AdminSeedService implements OnModuleInit {
 
     // 1. Branches — three so the inter-branch transfer flow can be demoed end-to-end.
     const mainBranch = await this.ensureBranch(
+      'BR001',
       defaults.branchName,
       defaults.branchAddress,
       defaults.branchPhone,
     );
     const downtownBranch = await this.ensureBranch(
+      'BR002',
       'Downtown Branch',
       '45 Commerce Street, Downtown',
       '+94112345678',
     );
     const suburbanBranch = await this.ensureBranch(
+      'BR003',
       'Suburban Branch',
       '88 Garden Avenue, Suburb',
       '+94112987654',
     );
 
-    // 2. Users — admins, branch managers, cashiers
+    // 2. Users — admins (not tied to any branch), branch managers, cashiers
     const admin = await this.ensureUser({
       email: defaults.adminEmail,
       password: defaults.adminPassword,
       firstName: defaults.adminFirstName,
       lastName: defaults.adminLastName,
       role: UserRole.ADMIN,
-      branchId: mainBranch.id,
+      branchId: null,
     });
 
     await this.ensureUser({
       email: 'admin2@ledgerpro.com',
       password: 'Admin@123',
-      firstName: 'Downtown',
+      firstName: 'System',
       lastName: 'Admin',
       role: UserRole.ADMIN,
-      branchId: downtownBranch.id,
+      branchId: null,
     });
 
     const mainManager = await this.ensureUser({
@@ -619,16 +622,23 @@ export class AdminSeedService implements OnModuleInit {
   // ── Branch ─────────────────────────────────────────────
 
   private async ensureBranch(
+    code: string,
     name: string,
-    address: string,
+    addressLine1: string,
     phone: string,
   ): Promise<Branch> {
     let branch = await this.branchRepository.findOne({ where: { name } });
     if (!branch) {
       branch = await this.branchRepository.save(
-        this.branchRepository.create({ name, address, phone, isActive: true }),
+        this.branchRepository.create({
+          code,
+          name,
+          addressLine1,
+          phone,
+          isActive: true,
+        }),
       );
-      this.logger.log(`Branch "${name}" created.`);
+      this.logger.log(`Branch "${name}" (${code}) created.`);
     }
     return branch;
   }
@@ -641,16 +651,27 @@ export class AdminSeedService implements OnModuleInit {
     firstName: string;
     lastName: string;
     role: UserRole;
-    branchId: string;
+    branchId: string | null;
   }): Promise<User> {
     let user = await this.userRepository.findOne({
       where: { email: data.email },
     });
 
     if (user) {
+      const patch: Partial<User> = {};
       if (user.isFirstLogin) {
-        await this.userRepository.update(user.id, { isFirstLogin: false });
+        patch.isFirstLogin = false;
         user.isFirstLogin = false;
+      }
+      // Heal stale branchId for seed-managed accounts. Admins should always
+      // have branchId === null (they oversee all branches); managers and
+      // cashiers should stay pinned to their seeded branch.
+      if ((user.branchId ?? null) !== data.branchId) {
+        patch.branchId = data.branchId;
+        user.branchId = data.branchId;
+      }
+      if (Object.keys(patch).length > 0) {
+        await this.userRepository.update(user.id, patch);
       }
       return user;
     }

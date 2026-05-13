@@ -1,6 +1,7 @@
 import { useBranchManagementPage } from '@/features/branch-management/hooks/useBranchManagementPage';
 import { BranchTable } from '@/features/branch-management/components/BranchTable';
 import { BranchFormModal } from '@/features/branch-management/components/BranchFormModal';
+import { BranchActionOtpModal } from '@/features/branch-management/components/BranchActionOtpModal';
 
 interface BranchManagementPageProps {
     embedded?: boolean;
@@ -51,6 +52,17 @@ export function BranchManagementPage({
                     editing={p.editing}
                     onClose={p.closeModal}
                     onSaved={p.onSaved}
+                />
+            )}
+
+            {p.pendingDelete && (
+                <BranchActionOtpModal
+                    actionId={p.pendingDelete.pending.actionId}
+                    expiresAt={p.pendingDelete.pending.expiresAt}
+                    action={p.pendingDelete.pending.action}
+                    branchLabel={p.pendingDelete.branchName}
+                    onClose={p.closePendingDelete}
+                    onConfirmed={p.handleDeleteConfirmed}
                 />
             )}
         </div>

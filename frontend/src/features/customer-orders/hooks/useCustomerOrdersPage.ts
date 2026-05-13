@@ -1,9 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { useAppSelector } from '@/store/hooks';
+import {
+    selectIsAdmin,
+    selectIsCashier,
+    selectIsManager,
+} from '@/store/selectors/auth';
 import { profileService } from '@/services/profile.service';
 import { queryKeys } from '@/lib/queryKeys';
-import { UserRole } from '@/constants/enums';
 import { useCustomerOrdersQuery } from './useCustomerOrdersQuery';
 import { useOrderActions } from './useOrderActions';
 import { useOrderNotificationSocket } from './useOrderNotificationSocket';
@@ -11,6 +16,9 @@ import { computeOrdersKpis } from '../lib/metrics';
 
 export function useCustomerOrdersPage() {
     const { user } = useAuth();
+    const isAdmin = useAppSelector(selectIsAdmin);
+    const isManager = useAppSelector(selectIsManager);
+    const isCashier = useAppSelector(selectIsCashier);
     const requestsApi = useCustomerOrdersQuery();
     const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
         null,
@@ -27,7 +35,7 @@ export function useCustomerOrdersPage() {
     const { data: profile } = useQuery({
         queryKey: queryKeys.profile.self(),
         queryFn: profileService.getProfile,
-        enabled: user?.role !== UserRole.ADMIN,
+        enabled: !isAdmin,
     });
 
     const selectedRequest =
@@ -39,15 +47,11 @@ export function useCustomerOrdersPage() {
     );
 
     const canReview = (branchId: string) =>
-        user?.role === UserRole.ADMIN ||
-        (user?.role === UserRole.MANAGER && user.branchId === branchId);
+        isAdmin || (isManager && user?.branchId === branchId);
 
-    const isAdmin = user?.role === UserRole.ADMIN;
-    const isCashier = user?.role === UserRole.CASHIER;
     const hasFilters =
         requestsApi.statusFilter !== '' || requestsApi.search.trim() !== '';
-    const needsBranchAssignment =
-        user?.role !== UserRole.ADMIN && !user?.branchId;
+    const needsBranchAssignment = !isAdmin && !user?.branchId;
 
     return {
         user,

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { posService } from '@/services/pos.service';
 import type { ICreateTransactionPayload } from '@/services/pos.service';
 import type { CartItem } from '../types/cart-item.type';
-import type { PaymentMethod } from '../types/payment-method.type';
 
 interface LastTransactionInfo {
     transactionNumber: string;
@@ -11,19 +10,16 @@ interface LastTransactionInfo {
 
 interface UsePosCheckoutOptions {
     cart: CartItem[];
-    discountValue: number;
     total: number;
     onSuccess: () => void;
 }
 
 export function usePosCheckout({
     cart,
-    discountValue,
     total,
     onSuccess,
 }: UsePosCheckoutOptions) {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [lastTransaction, setLastTransaction] =
@@ -71,16 +67,18 @@ export function usePosCheckout({
 
         const payload: ICreateTransactionPayload = {
             type: 'sale',
-            paymentMethod,
-            discountAmount: discountValue > 0 ? discountValue : undefined,
-            discountType: discountValue > 0 ? 'fixed' : undefined,
-            items: cart
-                .filter((item) => !item.isCustom)
-                .map((item) => ({
-                    productId: item.product.id,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                })),
+            paymentMethod: 'cash',
+            items: cart.map((item) => ({
+                productId: item.product.id,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                ...(item.lineDiscountAmount && item.lineDiscountAmount > 0
+                    ? {
+                          discountAmount: item.lineDiscountAmount,
+                          discountType: 'percentage',
+                      }
+                    : {}),
+            })),
         };
 
         try {
@@ -101,7 +99,7 @@ export function usePosCheckout({
             setIsCheckingOut(false);
             inFlightRef.current = false;
         }
-    }, [cart, discountValue, paymentMethod, onSuccess]);
+    }, [cart, onSuccess]);
 
     const dismissLastTransaction = useCallback(() => {
         setLastTransaction(null);
@@ -113,8 +111,6 @@ export function usePosCheckout({
         showPaymentModal,
         openPaymentModal,
         closePaymentModal,
-        paymentMethod,
-        setPaymentMethod,
         cashTendered,
         setCashTendered,
         cashChange,
