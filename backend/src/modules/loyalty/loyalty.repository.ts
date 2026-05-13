@@ -73,4 +73,19 @@ export class LoyaltyRepository {
       .where('user_id = :userId', { userId })
       .execute();
   }
+
+  async listEntries(
+    userId: string,
+    limit: number,
+    offset: number,
+  ): Promise<{ rows: LoyaltyLedgerEntry[]; total: number }> {
+    const [rows, total] = await this.ledgerRepo.findAndCount({
+      where: { userId },
+      relations: ['order'],
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+    return { rows, total };
+  }
 }

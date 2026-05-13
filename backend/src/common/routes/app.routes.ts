@@ -123,6 +123,7 @@ export const APP_ROUTES = {
   LOYALTY: {
     BASE: `${API_PREFIX}/loyalty`,
     MINE: 'me',
+    HISTORY: 'me/history',
   },
 
   // Stock Transfers (inter-branch stock movement)

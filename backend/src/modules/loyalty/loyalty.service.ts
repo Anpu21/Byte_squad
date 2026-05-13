@@ -2,12 +2,20 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { LoyaltyRepository } from '@/modules/loyalty/loyalty.repository';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
+import type {
+  LoyaltyHistoryEntry,
+  LoyaltyHistoryResponse,
+} from '@/modules/loyalty/types';
+import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
 
 export interface LoyaltySummary {
   pointsBalance: number;
   lifetimePointsEarned: number;
   lifetimePointsRedeemed: number;
 }
+
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
 
 @Injectable()
 export class LoyaltyService {
@@ -26,6 +34,31 @@ export class LoyaltyService {
       lifetimePointsEarned: account.lifetimePointsEarned,
       lifetimePointsRedeemed: account.lifetimePointsRedeemed,
     };
+  }
+
+  async listHistory(
+    userId: string,
+    query: ListLoyaltyHistoryQueryDto,
+  ): Promise<LoyaltyHistoryResponse> {
+    const limit = Math.min(Math.max(query.limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT);
+    const offset = Math.max(query.offset ?? 0, 0);
+
+    const { rows, total } = await this.loyalty.listEntries(
+      userId,
+      limit,
+      offset,
+    );
+
+    const entries: LoyaltyHistoryEntry[] = rows.map((row) => ({
+      id: row.id,
+      type: row.type,
+      points: row.points,
+      description: row.description,
+      orderCode: row.order?.orderCode ?? null,
+      createdAt: row.createdAt,
+    }));
+
+    return { entries, total, limit, offset };
   }
 
   calculateMaxRedeemable(subtotal: number, availablePoints: number): number {
