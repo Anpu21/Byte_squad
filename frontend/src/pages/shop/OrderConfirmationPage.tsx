@@ -4,6 +4,7 @@ import { useOrderConfirmation } from '@/features/order-confirmation/hooks/useOrd
 import { QrCodeCard } from '@/features/order-confirmation/components/QrCodeCard';
 import { OrderSummaryPanel } from '@/features/order-confirmation/components/OrderSummaryPanel';
 import { OrderNotFound } from '@/features/order-confirmation/components/OrderNotFound';
+import { PointsEarnedBanner } from '@/features/loyalty/components/PointsEarnedBanner';
 
 export function OrderConfirmationPage() {
     const p = useOrderConfirmation();
@@ -25,6 +26,9 @@ export function OrderConfirmationPage() {
                 : 'Online payment is still pending. This page will show paid after PayHere notifies LedgerPro.'
             : 'Show this QR code at the counter and pay when you pick up.';
 
+    const isCompleted = p.order.status === 'completed';
+    const pointsEarned = Number(p.order.loyaltyPointsEarned ?? 0);
+
     return (
         <div className="max-w-3xl mx-auto">
             <div className="text-center mb-8">
@@ -35,6 +39,8 @@ export function OrderConfirmationPage() {
                     {paymentMessage}
                 </p>
             </div>
+
+            {isCompleted && <PointsEarnedBanner pointsEarned={pointsEarned} />}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <QrCodeCard
