@@ -1,4 +1,5 @@
 import { formatCurrency } from '@/lib/utils';
+import { LoyaltyPreviewLine } from './LoyaltyPreviewLine';
 
 interface CartTotalBarProps {
     total: number;
@@ -15,6 +16,9 @@ export function CartTotalBar({ total, onCheckout }: CartTotalBarProps) {
                 <p className="text-2xl font-bold text-text-1 tracking-tight mt-1">
                     {formatCurrency(total)}
                 </p>
+                <div className="mt-2">
+                    <LoyaltyPreviewLine total={total} />
+                </div>
             </div>
             <button
                 type="button"
