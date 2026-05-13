@@ -7,5 +7,5 @@ export interface IBranchPerformance {
   staffCount: number
   activeProducts: number
   lowStockItems: number
-  adminName: string | null
+  managerName: string | null
 }

@@ -35,16 +35,16 @@ export function BranchRow({
             </td>
             <td className="px-6 py-4 text-text-2">{branch.phone || '—'}</td>
             <td className="px-6 py-4">
-                {branch.adminName ? (
+                {branch.managerName ? (
                     <div className="flex flex-col">
-                        <span className="text-text-1">{branch.adminName}</span>
+                        <span className="text-text-1">{branch.managerName}</span>
                         <span className="text-[11px] text-text-3">
-                            {branch.adminEmail}
+                            {branch.managerEmail}
                         </span>
                     </div>
                 ) : (
                     <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-warning-soft text-warning border border-warning/40 uppercase tracking-widest">
-                        No admin
+                        No manager
                     </span>
                 )}
             </td>

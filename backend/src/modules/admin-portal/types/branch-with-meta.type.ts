@@ -13,7 +13,7 @@ export interface BranchWithMeta {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  adminName: string | null;
-  adminEmail: string | null;
+  managerName: string | null;
+  managerEmail: string | null;
   staffCount: number;
 }

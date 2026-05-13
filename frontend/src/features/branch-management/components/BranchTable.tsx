@@ -14,7 +14,7 @@ const HEADERS = [
     'Name',
     'Address',
     'Phone',
-    'Admin',
+    'Manager',
     'Staff',
     'Status',
 ];
