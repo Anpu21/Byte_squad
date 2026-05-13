@@ -91,6 +91,8 @@ export const queryKeys = {
     },
     loyalty: {
         mine: () => ['loyalty', 'mine'] as const,
+        history: (params: { limit?: number; offset?: number }) =>
+            ['loyalty', 'history', params] as const,
     },
     cashierDashboard: () => ['cashier-dashboard'] as const,
     transactions: {
