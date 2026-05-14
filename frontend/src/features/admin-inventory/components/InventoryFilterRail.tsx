@@ -19,7 +19,7 @@ export function InventoryFilterRail({
     filters,
 }: InventoryFilterRailProps) {
     return (
-        <aside className="w-full lg:w-60 lg:flex-shrink-0">
+        <aside className="w-full lg:w-60 lg:flex-shrink-0 lg:sticky lg:top-0 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
             <Card className="p-4">
                 <FilterSearch
                     value={filters.searchInput}
