@@ -7,6 +7,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { IsSriLankaPhone } from '@common/decorators/is-sri-lanka-phone.decorator';
 
 export class UpdateBranchDto {
   @IsString()
@@ -51,8 +52,8 @@ export class UpdateBranchDto {
   @MaxLength(32)
   postalCode?: string;
 
-  @IsString()
   @IsOptional()
+  @IsSriLankaPhone()
   phone?: string;
 
   @IsEmail()

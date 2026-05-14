@@ -15,6 +15,7 @@ export interface BranchFormState {
 
 interface BranchFormFieldsProps {
     form: BranchFormState;
+    phoneError?: string;
     onChange: <K extends keyof BranchFormState>(
         key: K,
         value: BranchFormState[K],
@@ -24,7 +25,11 @@ interface BranchFormFieldsProps {
 const SECTION_TITLE_CLASS =
     'text-[11px] uppercase tracking-widest text-text-2 font-semibold pb-2 border-b border-border';
 
-export function BranchFormFields({ form, onChange }: BranchFormFieldsProps) {
+export function BranchFormFields({
+    form,
+    phoneError,
+    onChange,
+}: BranchFormFieldsProps) {
     return (
         <>
             <section className="space-y-3">
@@ -94,8 +99,13 @@ export function BranchFormFields({ form, onChange }: BranchFormFieldsProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
                         label="Phone"
+                        type="tel"
+                        inputMode="tel"
+                        maxLength={16}
+                        placeholder="+94 77 123 4567"
                         value={form.phone}
                         onChange={(e) => onChange('phone', e.target.value)}
+                        error={phoneError}
                     />
                     <Input
                         label="Email"

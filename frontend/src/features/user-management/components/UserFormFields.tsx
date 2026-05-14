@@ -13,6 +13,7 @@ interface UserFormFieldsProps {
     form: UserFormState;
     branches: IBranch[];
     isEdit: boolean;
+    phoneError?: string;
     onChange: <K extends keyof UserFormState>(
         key: K,
         value: UserFormState[K],
@@ -23,6 +24,7 @@ export function UserFormFields({
     form,
     branches,
     isEdit,
+    phoneError,
     onChange,
 }: UserFormFieldsProps) {
     const roleOptions = isEdit
@@ -83,11 +85,19 @@ export function UserFormFields({
                     <input
                         id="uf-phone"
                         type="tel"
+                        inputMode="tel"
+                        maxLength={16}
                         value={form.phone}
                         onChange={(e) => onChange('phone', e.target.value)}
                         placeholder="+94 77 123 4567"
-                        className={INPUT_CLASS}
+                        aria-invalid={!!phoneError}
+                        className={`${INPUT_CLASS} ${phoneError ? 'border-danger focus:border-danger focus:ring-danger/25' : ''}`}
                     />
+                    {phoneError && (
+                        <p className="mt-1 text-[11px] text-danger">
+                            {phoneError}
+                        </p>
+                    )}
                 </div>
             </div>
 

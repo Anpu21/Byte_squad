@@ -4,6 +4,10 @@ import toast from 'react-hot-toast';
 import { adminService } from '@/services/admin.service';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import {
+    SRI_LANKA_PHONE_ERROR,
+    isValidSriLankaPhone,
+} from '@/lib/phone';
 import { BranchActionOtpStep } from './BranchActionOtpStep';
 import { BranchFormFields } from './BranchFormFields';
 import {
@@ -37,6 +41,7 @@ export function BranchFormModal({
     const [form, setForm] = useState(() => initialBranchForm(editing));
     const [pending, setPending] =
         useState<IBranchActionRequestResponse | null>(null);
+    const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
 
     const requestMutation = useMutation({
         mutationFn: () =>
@@ -62,6 +67,11 @@ export function BranchFormModal({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (form.phone.trim() && !isValidSriLankaPhone(form.phone)) {
+            setPhoneError(SRI_LANKA_PHONE_ERROR);
+            return;
+        }
+        setPhoneError(undefined);
         requestMutation.mutate();
     };
 
@@ -104,9 +114,11 @@ export function BranchFormModal({
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <BranchFormFields
                         form={form}
-                        onChange={(key, value) =>
-                            setForm((prev) => ({ ...prev, [key]: value }))
-                        }
+                        phoneError={phoneError}
+                        onChange={(key, value) => {
+                            setForm((prev) => ({ ...prev, [key]: value }));
+                            if (key === 'phone') setPhoneError(undefined);
+                        }}
                     />
                     <div className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[12px] text-text-2">
                         Sensitive change — we'll email a 6-digit code to your

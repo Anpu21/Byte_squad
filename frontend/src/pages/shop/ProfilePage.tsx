@@ -1,5 +1,11 @@
+import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '@/hooks/useAuth';
+import {
+    SRI_LANKA_PHONE_ERROR,
+    normalizeSriLankaPhone,
+} from '@/lib/phone';
 import { useProfileQuery } from '@/features/customer-profile/hooks/useProfileQuery';
 import { useProfileMutations } from '@/features/customer-profile/hooks/useProfileMutations';
 import { usePersonalInfo } from '@/features/customer-profile/hooks/usePersonalInfo';
@@ -19,6 +25,7 @@ export function CustomerProfilePage() {
     const { updateProfile, uploadAvatar } = useProfileMutations();
     const branch = useBranchChange(profile);
     const password = usePasswordChange();
+    const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
 
     if (profileQuery.isLoading) {
         return (
@@ -38,11 +45,26 @@ export function CustomerProfilePage() {
     const handlePersonalSave = (e: React.FormEvent) => {
         e.preventDefault();
         const trimmedPhone = personal.phone.trim();
+        let normalizedPhone: string | null = null;
+        if (trimmedPhone.length > 0) {
+            normalizedPhone = normalizeSriLankaPhone(trimmedPhone);
+            if (!normalizedPhone) {
+                setPhoneError(SRI_LANKA_PHONE_ERROR);
+                toast.error(SRI_LANKA_PHONE_ERROR);
+                return;
+            }
+        }
+        setPhoneError(undefined);
         updateProfile.mutate({
             firstName: personal.firstName.trim(),
             lastName: personal.lastName.trim(),
-            phone: trimmedPhone.length > 0 ? trimmedPhone : null,
+            phone: normalizedPhone,
         });
+    };
+
+    const handleSetPhone = (v: string) => {
+        personal.setPhone(v);
+        if (phoneError) setPhoneError(undefined);
     };
 
     return (
@@ -77,7 +99,8 @@ export function CustomerProfilePage() {
                         setLastName={personal.setLastName}
                         email={profile?.email}
                         phone={personal.phone}
-                        setPhone={personal.setPhone}
+                        setPhone={handleSetPhone}
+                        phoneError={phoneError}
                         isSubmitting={updateProfile.isPending}
                         onSubmit={handlePersonalSave}
                     />

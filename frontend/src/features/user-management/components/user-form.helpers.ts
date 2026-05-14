@@ -5,6 +5,7 @@ import type {
     IUserCreatePayload,
     IUserUpdatePayload,
 } from '@/types';
+import { normalizeSriLankaPhone } from '@/lib/phone';
 
 export interface UserFormState {
     firstName: string;
@@ -53,6 +54,12 @@ function emptyToNull(value: string): string | null {
     return trimmed.length === 0 ? null : trimmed;
 }
 
+function phoneToPayload(value: string): string | null {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) return null;
+    return normalizeSriLankaPhone(trimmed);
+}
+
 export function buildCreatePayload(form: UserFormState): IUserCreatePayload {
     return {
         email: form.email.trim(),
@@ -60,7 +67,7 @@ export function buildCreatePayload(form: UserFormState): IUserCreatePayload {
         lastName: form.lastName.trim(),
         role: form.role,
         branchId: form.branchId,
-        phone: emptyToNull(form.phone),
+        phone: phoneToPayload(form.phone),
         address: emptyToNull(form.address),
     };
 }
@@ -72,7 +79,7 @@ export function buildUpdatePayload(form: UserFormState): IUserUpdatePayload {
         lastName: form.lastName.trim(),
         role: form.role,
         branchId: form.branchId === '' ? null : form.branchId,
-        phone: emptyToNull(form.phone),
+        phone: phoneToPayload(form.phone),
         address: emptyToNull(form.address),
     };
 }

@@ -26,6 +26,7 @@ import { CreateUserDto } from '@users/dto/create-user.dto';
 import { UpdateUserDto } from '@users/dto/update-user.dto';
 import { ConfirmUserActionDto } from '@users/dto/confirm-user-action.dto';
 import { UpdateMyBranchDto } from '@users/dto/update-my-branch.dto';
+import { UpdateProfileDto } from '@users/dto/update-profile.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -49,8 +50,7 @@ export class UsersController {
   @Patch(APP_ROUTES.USERS.PROFILE)
   updateProfile(
     @CurrentUser('id') userId: string,
-    @Body()
-    body: { firstName?: string; lastName?: string; phone?: string | null },
+    @Body() body: UpdateProfileDto,
   ): Promise<User | null> {
     return this.usersService.updateProfile(userId, body);
   }

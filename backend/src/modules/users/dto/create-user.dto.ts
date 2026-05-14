@@ -8,6 +8,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { UserRole } from '@common/enums/user-roles.enums';
+import { IsSriLankaPhone } from '@common/decorators/is-sri-lanka-phone.decorator';
 
 export class CreateUserDto {
   @IsEmail()
@@ -28,8 +29,7 @@ export class CreateUserDto {
   branchId!: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(32)
+  @IsSriLankaPhone()
   phone?: string | null;
 
   @IsOptional()

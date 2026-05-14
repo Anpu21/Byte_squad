@@ -4,6 +4,10 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { authService } from '@/services/auth.service';
 import { isValidEmail } from '@/lib/utils';
+import {
+    SRI_LANKA_PHONE_ERROR,
+    normalizeSriLankaPhone,
+} from '@/lib/phone';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
 export interface SignupErrors {
@@ -36,13 +40,15 @@ export function useSignupForm() {
         if (!lastName.trim()) next.lastName = 'Last name is required';
         if (!email) next.email = 'Email is required';
         else if (!isValidEmail(email)) next.email = 'Enter a valid email';
-        if (!password) next.password = 'Password is required';
-        else if (password.length < PASSWORD_MIN)
+        if (password && password.length < PASSWORD_MIN)
             next.password = `At least ${PASSWORD_MIN} characters`;
+        if (!password) next.password = 'Password is required';
         if (!confirmPassword)
             next.confirmPassword = 'Please confirm your password';
         else if (password && confirmPassword !== password)
             next.confirmPassword = "Passwords don't match";
+        if (phone.trim() && !normalizeSriLankaPhone(phone))
+            next.phone = SRI_LANKA_PHONE_ERROR;
         setErrors(next);
         return Object.keys(next).length === 0;
     };
@@ -53,12 +59,15 @@ export function useSignupForm() {
 
         setSubmitting(true);
         try {
+            const normalizedPhone = phone.trim()
+                ? normalizeSriLankaPhone(phone)
+                : undefined;
             await authService.signup({
                 email,
                 password,
                 firstName: firstName.trim(),
                 lastName: lastName.trim(),
-                phone: phone.trim() || undefined,
+                phone: normalizedPhone ?? undefined,
             });
             toast.success('Check your email for the verification code');
             navigate(FRONTEND_ROUTES.OTP_VERIFICATION, { state: { email } });

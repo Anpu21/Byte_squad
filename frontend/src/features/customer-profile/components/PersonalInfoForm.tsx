@@ -10,6 +10,7 @@ interface PersonalInfoFormProps {
     email: string | undefined;
     phone: string;
     setPhone: (v: string) => void;
+    phoneError?: string;
     isSubmitting: boolean;
     onSubmit: (e: React.FormEvent) => void;
 }
@@ -22,6 +23,7 @@ export function PersonalInfoForm({
     email,
     phone,
     setPhone,
+    phoneError,
     isSubmitting,
     onSubmit,
 }: PersonalInfoFormProps) {
@@ -60,11 +62,20 @@ export function PersonalInfoForm({
                 </ProfileField>
                 <ProfileField label="Phone">
                     <input
+                        type="tel"
+                        inputMode="tel"
+                        maxLength={16}
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+94 7X XXX XXXX"
-                        className={PROFILE_INPUT_CLASS}
+                        placeholder="+94 77 123 4567"
+                        aria-invalid={!!phoneError}
+                        className={`${PROFILE_INPUT_CLASS}${phoneError ? ' border-danger focus:border-danger focus:ring-danger/30' : ''}`}
                     />
+                    {phoneError && (
+                        <span className="block text-[10.5px] text-danger mt-1">
+                            {phoneError}
+                        </span>
+                    )}
                 </ProfileField>
             </div>
             <footer className="px-6 py-4 border-t border-border bg-surface-2 flex justify-end">
