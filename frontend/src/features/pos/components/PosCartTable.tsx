@@ -17,6 +17,7 @@ interface PosCartTableProps {
     totalDiscount: number;
     total: number;
     branchId: string | null | undefined;
+    stockByProductId?: Record<string, number>;
     onSelectProduct: (product: IProduct) => void;
     onOpenCamera: () => void;
     inputRef: RefObject<HTMLInputElement | null>;
@@ -36,6 +37,7 @@ export function PosCartTable({
     totalDiscount,
     total,
     branchId,
+    stockByProductId,
     onSelectProduct,
     onOpenCamera,
     inputRef,
@@ -99,6 +101,9 @@ export function PosCartTable({
                             editingDiscountId === item.product.id;
                         const hasDiscount =
                             (item.lineDiscountAmount ?? 0) > 0;
+                        const stock = stockByProductId?.[item.product.id];
+                        const atCap =
+                            stock !== undefined && item.quantity >= stock;
                         return (
                             <tr
                                 key={item.product.id}
@@ -159,6 +164,7 @@ export function PosCartTable({
                                         <input
                                             type="number"
                                             min="1"
+                                            max={stock}
                                             value={item.quantity}
                                             onChange={(e) => {
                                                 const v = e.target.value;
@@ -178,6 +184,7 @@ export function PosCartTable({
                                         />
                                         <button
                                             type="button"
+                                            disabled={atCap}
                                             onClick={() =>
                                                 onUpdateQuantity(
                                                     item.product.id,
@@ -185,11 +192,21 @@ export function PosCartTable({
                                                 )
                                             }
                                             aria-label="Increase quantity"
-                                            className="w-6 h-6 rounded text-text-2 hover:text-text-1 hover:bg-primary-soft transition-colors flex items-center justify-center"
+                                            title={
+                                                atCap
+                                                    ? `Only ${stock} in stock`
+                                                    : undefined
+                                            }
+                                            className="w-6 h-6 rounded text-text-2 hover:text-text-1 hover:bg-primary-soft transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-2"
                                         >
                                             <Plus size={12} />
                                         </button>
                                     </div>
+                                    {atCap && (
+                                        <p className="mt-1 text-[10.5px] text-warning font-medium">
+                                            Only {stock} in stock
+                                        </p>
+                                    )}
                                 </td>
                                 <td className={`px-2 py-3 text-right ${COL_BORDER}`}>
                                     {isEditing ? (

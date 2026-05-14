@@ -29,33 +29,78 @@ function buildLine(
     };
 }
 
-export function usePosCart() {
+interface UsePosCartOptions {
+    stockByProductId?: Record<string, number>;
+}
+
+export function usePosCart(options: UsePosCartOptions = {}) {
     const confirm = useConfirm();
     const [cart, setCart] = useState<CartItem[]>([]);
+    const [blockedReason, setBlockedReason] = useState<string | null>(null);
 
-    const addToCart = useCallback((product: IProduct, qty = 1) => {
-        setCart((prev) => {
-            const existing = prev.find((item) => item.product.id === product.id);
-            if (existing) {
-                return prev.map((item) =>
-                    item.product.id === product.id
-                        ? buildLine(
-                              item.product,
-                              item.quantity + qty,
-                              item.unitPrice,
-                              item.lineDiscountAmount,
-                          )
-                        : item,
+    const stockMap = options.stockByProductId;
+
+    const clamp = useCallback(
+        (productId: string, desired: number, productName?: string): number => {
+            if (!stockMap) return desired;
+            const stock = stockMap[productId];
+            if (stock === undefined) return desired;
+            if (desired > stock) {
+                setBlockedReason(
+                    productName
+                        ? `Only ${stock} in stock for ${productName}`
+                        : `Only ${stock} in stock`,
                 );
+                return Math.max(0, stock);
             }
-            return [
-                ...prev,
-                buildLine(product, qty, Number(product.sellingPrice), undefined),
-            ];
-        });
-    }, []);
+            return desired;
+        },
+        [stockMap],
+    );
+
+    const addToCart = useCallback(
+        (product: IProduct, qty = 1) => {
+            setBlockedReason(null);
+            setCart((prev) => {
+                const existing = prev.find(
+                    (item) => item.product.id === product.id,
+                );
+                if (existing) {
+                    const next = clamp(
+                        product.id,
+                        existing.quantity + qty,
+                        product.name,
+                    );
+                    if (next === existing.quantity) return prev;
+                    return prev.map((item) =>
+                        item.product.id === product.id
+                            ? buildLine(
+                                  item.product,
+                                  next,
+                                  item.unitPrice,
+                                  item.lineDiscountAmount,
+                              )
+                            : item,
+                    );
+                }
+                const next = clamp(product.id, qty, product.name);
+                if (next <= 0) return prev;
+                return [
+                    ...prev,
+                    buildLine(
+                        product,
+                        next,
+                        Number(product.sellingPrice),
+                        undefined,
+                    ),
+                ];
+            });
+        },
+        [clamp],
+    );
 
     const removeFromCart = useCallback((productId: string) => {
+        setBlockedReason(null);
         setCart((prev) =>
             prev.filter((item) => item.product.id !== productId),
         );
@@ -67,20 +112,31 @@ export function usePosCart() {
                 removeFromCart(productId);
                 return;
             }
-            setCart((prev) =>
-                prev.map((item) =>
+            setBlockedReason(null);
+            setCart((prev) => {
+                const existing = prev.find(
+                    (item) => item.product.id === productId,
+                );
+                if (!existing) return prev;
+                const capped = clamp(
+                    productId,
+                    newQty,
+                    existing.product.name,
+                );
+                if (capped === existing.quantity) return prev;
+                return prev.map((item) =>
                     item.product.id === productId
                         ? buildLine(
                               item.product,
-                              newQty,
+                              capped,
                               item.unitPrice,
                               item.lineDiscountAmount,
                           )
                         : item,
-                ),
-            );
+                );
+            });
         },
-        [removeFromCart],
+        [removeFromCart, clamp],
     );
 
     const setItemDiscount = useCallback(
@@ -111,8 +167,14 @@ export function usePosCart() {
         });
         if (!ok) return false;
         setCart([]);
+        setBlockedReason(null);
         return true;
     }, [cart.length, confirm]);
+
+    const dismissBlockedReason = useCallback(
+        () => setBlockedReason(null),
+        [],
+    );
 
     const totals = useMemo(() => {
         const subtotal =
@@ -153,6 +215,8 @@ export function usePosCart() {
         updateQuantity,
         setItemDiscount,
         clearCart,
+        blockedReason,
+        dismissBlockedReason,
         subtotal: totals.subtotal,
         lineDiscountsTotal: totals.lineDiscountsTotal,
         // Kept name for compat with components that bind to it.

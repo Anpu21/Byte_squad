@@ -5,6 +5,7 @@ import { usePosCart } from '@/features/pos/hooks/usePosCart';
 import { usePosCheckout } from '@/features/pos/hooks/usePosCheckout';
 import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
 import { usePosKeyboardShortcuts } from '@/features/pos/hooks/usePosKeyboardShortcuts';
+import { useBranchStockMap } from '@/features/pos/hooks/useBranchStockMap';
 import { PosStatusBar } from '@/features/pos/components/PosStatusBar';
 import { PosCartPanel } from '@/features/pos/components/PosCartPanel';
 import { PosPaymentModal } from '@/features/pos/components/PosPaymentModal';
@@ -12,7 +13,8 @@ import { PosCameraScannerModal } from '@/features/pos/components/PosCameraScanne
 
 export function PosPage() {
     const { user } = useAuth();
-    const cart = usePosCart();
+    const stockByProductId = useBranchStockMap(user?.branchId);
+    const cart = usePosCart({ stockByProductId });
     const [showCameraScanner, setShowCameraScanner] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,6 +56,7 @@ export function PosPage() {
                 cart={cart}
                 checkout={checkout}
                 branchId={user?.branchId}
+                stockByProductId={stockByProductId}
                 onOpenCamera={() => setShowCameraScanner(true)}
                 inputRef={searchInputRef}
                 onSelectProduct={handleAddProduct}

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import { posService } from '@/services/pos.service';
 import type { ICreateTransactionPayload } from '@/services/pos.service';
 import type { CartItem } from '../types/cart-item.type';
@@ -19,6 +21,7 @@ export function usePosCheckout({
     total,
     onSuccess,
 }: UsePosCheckoutOptions) {
+    const queryClient = useQueryClient();
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -92,14 +95,25 @@ export function usePosCheckout({
             });
             setShowPaymentModal(false);
             setCashTendered('');
+            await queryClient.invalidateQueries({ queryKey: ['inventory'] });
             onSuccess();
-        } catch {
-            setError('Failed to complete sale. Please try again.');
+        } catch (err: unknown) {
+            const apiMessage = axios.isAxiosError(err)
+                ? (
+                      err.response?.data as
+                          | { message?: string | string[] }
+                          | undefined
+                  )?.message
+                : null;
+            const message = Array.isArray(apiMessage)
+                ? apiMessage.join(', ')
+                : apiMessage;
+            setError(message ?? 'Failed to complete sale. Please try again.');
         } finally {
             setIsCheckingOut(false);
             inFlightRef.current = false;
         }
-    }, [cart, onSuccess]);
+    }, [cart, onSuccess, queryClient]);
 
     const dismissLastTransaction = useCallback(() => {
         setLastTransaction(null);
