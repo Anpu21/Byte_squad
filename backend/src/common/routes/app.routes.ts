@@ -136,6 +136,8 @@ export const APP_ROUTES = {
     MY_REQUESTS: 'my-requests',
     INCOMING: 'incoming',
     HISTORY: 'history',
+    ADMIN_DIRECT: 'admin-direct',
+    MANAGER_BATCH: 'manager-batch',
     BY_ID: ':id',
     SOURCE_OPTIONS: ':id/source-options',
     APPROVE: ':id/approve',

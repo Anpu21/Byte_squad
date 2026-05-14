@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -14,6 +16,8 @@ import type {
   SourceOption,
 } from '@stock-transfers/stock-transfers.service';
 import { CreateTransferRequestDto } from '@stock-transfers/dto/create-transfer-request.dto';
+import { CreateAdminDirectTransferDto } from '@stock-transfers/dto/create-admin-direct-transfer.dto';
+import { CreateManagerBatchTransferDto } from '@stock-transfers/dto/create-manager-batch-transfer.dto';
 import { ApproveTransferDto } from '@stock-transfers/dto/approve-transfer.dto';
 import { RejectTransferDto } from '@stock-transfers/dto/reject-transfer.dto';
 import { ListTransfersQueryDto } from '@stock-transfers/dto/list-transfers-query.dto';
@@ -80,6 +84,32 @@ export class StockTransfersController {
     @Query() query: ListTransferHistoryQueryDto,
   ): Promise<PaginatedTransfers> {
     return this.stockTransfersService.listHistory(actor, query);
+  }
+
+  // Declared before `:id` routes so Nest doesn't match "admin-direct" as a
+  // transfer id. Admin-only batch creator that turns a multi-line cart into
+  // N APPROVED transfer rows in one transactional call.
+  @Post(APP_ROUTES.STOCK_TRANSFERS.ADMIN_DIRECT)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.CREATED)
+  createAdminDirect(
+    @CurrentUser('id') adminUserId: string,
+    @Body() dto: CreateAdminDirectTransferDto,
+  ): Promise<StockTransferRequest[]> {
+    return this.stockTransfersService.createAdminDirect(adminUserId, dto);
+  }
+
+  // Manager-only batch creator. Multi-line cart → N PENDING rows, all
+  // destined for the manager's own branch. Declared before `:id` so Nest
+  // doesn't match "manager-batch" as a transfer id.
+  @Post(APP_ROUTES.STOCK_TRANSFERS.MANAGER_BATCH)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.CREATED)
+  createManagerBatch(
+    @CurrentUser() actor: ActorPayload,
+    @Body() dto: CreateManagerBatchTransferDto,
+  ): Promise<StockTransferRequest[]> {
+    return this.stockTransfersService.createManagerBatch(actor, dto);
   }
 
   @Get(APP_ROUTES.STOCK_TRANSFERS.SOURCE_OPTIONS)

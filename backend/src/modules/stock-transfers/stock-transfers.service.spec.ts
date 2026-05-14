@@ -2,6 +2,7 @@
 import { Test } from '@nestjs/testing';
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -27,6 +28,9 @@ describe('StockTransfersService', () => {
   let branches: jest.Mocked<BranchesRepository>;
   let inventory: jest.Mocked<InventoryRepository>;
   let users: jest.Mocked<UsersRepository>;
+  let dataSource: { transaction: jest.Mock };
+  let notifications: { create: jest.Mock };
+  let gateway: { sendToUser: jest.Mock };
 
   beforeEach(async () => {
     const transfersMock: Partial<jest.Mocked<StockTransfersRepository>> = {
@@ -53,8 +57,11 @@ describe('StockTransfersService', () => {
       findAllByRole: jest.fn().mockResolvedValue([]),
       findManagersAndAdminsForBranches: jest.fn().mockResolvedValue([]),
     };
-    const notifications = { create: jest.fn().mockResolvedValue(undefined) };
-    const gateway = { sendToUser: jest.fn() };
+    const notificationsMock = {
+      create: jest.fn().mockResolvedValue(undefined),
+    };
+    const gatewayMock = { sendToUser: jest.fn() };
+    const dataSourceMock = { transaction: jest.fn() };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -64,9 +71,9 @@ describe('StockTransfersService', () => {
         { provide: BranchesRepository, useValue: branchesMock },
         { provide: InventoryRepository, useValue: inventoryMock },
         { provide: UsersRepository, useValue: usersMock },
-        { provide: NotificationsService, useValue: notifications },
-        { provide: NotificationsGateway, useValue: gateway },
-        { provide: DataSource, useValue: { transaction: jest.fn() } },
+        { provide: NotificationsService, useValue: notificationsMock },
+        { provide: NotificationsGateway, useValue: gatewayMock },
+        { provide: DataSource, useValue: dataSourceMock },
       ],
     }).compile();
 
@@ -76,6 +83,9 @@ describe('StockTransfersService', () => {
     branches = module.get(BranchesRepository);
     inventory = module.get(InventoryRepository);
     users = module.get(UsersRepository);
+    dataSource = module.get(DataSource);
+    notifications = module.get(NotificationsService);
+    gateway = module.get(NotificationsGateway);
   });
 
   describe('approve', () => {
@@ -280,5 +290,497 @@ describe('StockTransfersService', () => {
       { id: 'u', role: UserRole.MANAGER, branchId: 'b' },
     );
     expect(users.findAllByRole).toHaveBeenCalledWith(UserRole.ADMIN);
+  });
+
+  describe('createAdminDirect', () => {
+    const adminId = 'admin-user-1';
+    const srcId = 'src-branch';
+    const dstId = 'dst-branch';
+
+    const activeSource = {
+      id: srcId,
+      name: 'Source',
+      isActive: true,
+    } as Branch;
+    const activeDestination = {
+      id: dstId,
+      name: 'Destination',
+      isActive: true,
+    } as Branch;
+
+    function mockActiveBranches() {
+      branches.findById.mockImplementation(async (id: string) => {
+        if (id === srcId) return activeSource;
+        if (id === dstId) return activeDestination;
+        return null;
+      });
+    }
+
+    function mockProducts(productNames: Record<string, string>) {
+      products.findById.mockImplementation(async (id: string) => {
+        if (productNames[id]) {
+          return { id, name: productNames[id] } as never;
+        }
+        return null;
+      });
+    }
+
+    function mockTransaction(opts: {
+      sourceQtyByProductId: Record<string, number | null>;
+    }) {
+      const savedTransfers: StockTransferRequest[] = [];
+      const transferSave = jest.fn(
+        async (data: Partial<StockTransferRequest>) => {
+          const persisted = {
+            ...data,
+            id: `t-${savedTransfers.length + 1}`,
+          } as StockTransferRequest;
+          savedTransfers.push(persisted);
+          return persisted;
+        },
+      );
+
+      dataSource.transaction.mockImplementation(
+        async (cb: (m: unknown) => Promise<unknown>) => {
+          const inventoryRepo = {
+            createQueryBuilder: jest.fn(() => {
+              let capturedProductId: string | undefined;
+              const qb = {
+                setLock: jest.fn().mockReturnThis(),
+                where: jest.fn(
+                  (_sql: string, params: { productId?: string }) => {
+                    if (params?.productId) capturedProductId = params.productId;
+                    return qb;
+                  },
+                ),
+                andWhere: jest.fn(
+                  (_sql: string, params: { productId?: string }) => {
+                    if (params?.productId) capturedProductId = params.productId;
+                    return qb;
+                  },
+                ),
+                getOne: jest.fn(async () => {
+                  if (!capturedProductId) return null;
+                  const qty = opts.sourceQtyByProductId[capturedProductId];
+                  if (qty === null || qty === undefined) return null;
+                  return {
+                    productId: capturedProductId,
+                    branchId: srcId,
+                    quantity: qty,
+                  } as Inventory;
+                }),
+              };
+              return qb;
+            }),
+          };
+
+          const transferRepo = {
+            create: jest.fn((data: Partial<StockTransferRequest>) => data),
+            save: transferSave,
+          };
+
+          const manager = {
+            getRepository: jest.fn((entity: unknown) => {
+              if (entity === Inventory) return inventoryRepo;
+              if (entity === StockTransferRequest) return transferRepo;
+              throw new Error('Unexpected entity in transaction mock');
+            }),
+          };
+
+          return cb(manager);
+        },
+      );
+
+      return { savedTransfers, transferSave };
+    }
+
+    it('rejects when source equals destination', async () => {
+      // Arrange
+      const dto = {
+        sourceBranchId: srcId,
+        destinationBranchId: srcId,
+        lines: [{ productId: 'p1', quantity: 1 }],
+      };
+
+      // Act + Assert
+      await expect(
+        service.createAdminDirect(adminId, dto as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('rejects when the source branch is inactive', async () => {
+      // Arrange
+      branches.findById.mockImplementation(async (id: string) => {
+        if (id === srcId) {
+          return { id, name: 'Source', isActive: false } as Branch;
+        }
+        if (id === dstId) return activeDestination;
+        return null;
+      });
+      const dto = {
+        sourceBranchId: srcId,
+        destinationBranchId: dstId,
+        lines: [{ productId: 'p1', quantity: 1 }],
+      };
+
+      // Act + Assert
+      await expect(
+        service.createAdminDirect(adminId, dto as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when a product cannot be found', async () => {
+      // Arrange
+      mockActiveBranches();
+      products.findById.mockResolvedValue(null);
+      const dto = {
+        sourceBranchId: srcId,
+        destinationBranchId: dstId,
+        lines: [{ productId: 'missing-product', quantity: 1 }],
+      };
+
+      // Act + Assert
+      await expect(
+        service.createAdminDirect(adminId, dto as never),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('throws ConflictException when source has insufficient stock and writes nothing', async () => {
+      // Arrange
+      mockActiveBranches();
+      mockProducts({ p1: 'Apples' });
+      const { transferSave } = mockTransaction({
+        sourceQtyByProductId: { p1: 5 },
+      });
+      const dto = {
+        sourceBranchId: srcId,
+        destinationBranchId: dstId,
+        lines: [{ productId: 'p1', quantity: 10 }],
+      };
+
+      // Act + Assert
+      await expect(
+        service.createAdminDirect(adminId, dto as never),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(transferSave).not.toHaveBeenCalled();
+    });
+
+    it('saves all lines in APPROVED state with the admin as reviewer', async () => {
+      // Arrange
+      mockActiveBranches();
+      mockProducts({ p1: 'Apples', p2: 'Bananas', p3: 'Carrots' });
+      const { savedTransfers, transferSave } = mockTransaction({
+        sourceQtyByProductId: { p1: 100, p2: 100, p3: 100 },
+      });
+      transfers.findById.mockImplementation(
+        async (id: string) => ({ id }) as StockTransferRequest,
+      );
+      const dto = {
+        sourceBranchId: srcId,
+        destinationBranchId: dstId,
+        lines: [
+          { productId: 'p1', quantity: 2 },
+          { productId: 'p2', quantity: 3 },
+          { productId: 'p3', quantity: 5 },
+        ],
+      };
+
+      // Act
+      const result = await service.createAdminDirect(adminId, dto as never);
+
+      // Assert
+      expect(transferSave).toHaveBeenCalledTimes(3);
+      for (const call of transferSave.mock.calls) {
+        const [data] = call as [Partial<StockTransferRequest>];
+        expect(data.status).toBe(TransferStatus.APPROVED);
+        expect(data.requestedByUserId).toBe(adminId);
+        expect(data.reviewedByUserId).toBe(adminId);
+        expect(data.sourceBranchId).toBe(srcId);
+        expect(data.destinationBranchId).toBe(dstId);
+        expect(data.requestedQuantity).toBe(data.approvedQuantity);
+      }
+      expect(savedTransfers).toHaveLength(3);
+      expect(result).toHaveLength(3);
+    });
+
+    it('dedupes lines with the same productId by summing quantities', async () => {
+      // Arrange
+      mockActiveBranches();
+      mockProducts({ p1: 'Apples' });
+      const { transferSave } = mockTransaction({
+        sourceQtyByProductId: { p1: 100 },
+      });
+      transfers.findById.mockImplementation(
+        async (id: string) => ({ id }) as StockTransferRequest,
+      );
+      const dto = {
+        sourceBranchId: srcId,
+        destinationBranchId: dstId,
+        lines: [
+          { productId: 'p1', quantity: 3 },
+          { productId: 'p1', quantity: 5 },
+        ],
+      };
+
+      // Act
+      await service.createAdminDirect(adminId, dto as never);
+
+      // Assert
+      expect(transferSave).toHaveBeenCalledTimes(1);
+      const [persisted] = transferSave.mock.calls[0] as [
+        Partial<StockTransferRequest>,
+      ];
+      expect(persisted.productId).toBe('p1');
+      expect(persisted.requestedQuantity).toBe(8);
+      expect(persisted.approvedQuantity).toBe(8);
+    });
+
+    it('fires one notification per saved transfer per recipient', async () => {
+      // Arrange
+      mockActiveBranches();
+      mockProducts({ p1: 'Apples', p2: 'Bananas' });
+      const recipients = [
+        { id: 'mgr-1' } as never,
+        { id: 'mgr-2' } as never,
+      ];
+      users.findManagersAndAdminsForBranches.mockResolvedValue(recipients);
+      mockTransaction({
+        sourceQtyByProductId: { p1: 100, p2: 100 },
+      });
+      transfers.findById.mockImplementation(
+        async (id: string) => ({ id }) as StockTransferRequest,
+      );
+      const dto = {
+        sourceBranchId: srcId,
+        destinationBranchId: dstId,
+        lines: [
+          { productId: 'p1', quantity: 2 },
+          { productId: 'p2', quantity: 4 },
+        ],
+      };
+
+      // Act
+      await service.createAdminDirect(adminId, dto as never);
+
+      // Assert — 2 saved transfers × 2 recipients = 4 fan-outs
+      expect(notifications.create).toHaveBeenCalledTimes(4);
+      expect(gateway.sendToUser).toHaveBeenCalledTimes(4);
+    });
+  });
+
+  describe('createManagerBatch', () => {
+    const managerId = 'manager-user-1';
+    const branchId = 'manager-branch';
+    const actor = {
+      id: managerId,
+      role: UserRole.MANAGER,
+      branchId,
+    };
+    const activeBranch = {
+      id: branchId,
+      name: 'Downtown',
+      isActive: true,
+    } as Branch;
+
+    function mockProducts(productNames: Record<string, string>) {
+      products.findById.mockImplementation(async (id: string) => {
+        if (productNames[id]) {
+          return { id, name: productNames[id] } as never;
+        }
+        return null;
+      });
+    }
+
+    function mockTransaction() {
+      const savedTransfers: StockTransferRequest[] = [];
+      const transferSave = jest.fn(
+        async (data: Partial<StockTransferRequest>) => {
+          const persisted = {
+            ...data,
+            id: `t-${savedTransfers.length + 1}`,
+          } as StockTransferRequest;
+          savedTransfers.push(persisted);
+          return persisted;
+        },
+      );
+
+      dataSource.transaction.mockImplementation(
+        async (cb: (m: unknown) => Promise<unknown>) => {
+          const transferRepo = {
+            create: jest.fn((data: Partial<StockTransferRequest>) => data),
+            save: transferSave,
+          };
+          const manager = {
+            getRepository: jest.fn((entity: unknown) => {
+              if (entity === StockTransferRequest) return transferRepo;
+              throw new Error('Unexpected entity in transaction mock');
+            }),
+          };
+          return cb(manager);
+        },
+      );
+
+      return { savedTransfers, transferSave };
+    }
+
+    it('rejects when the actor has no branch', async () => {
+      // Arrange
+      const noBranchActor = {
+        id: 'a',
+        role: UserRole.ADMIN,
+        branchId: null,
+      };
+      const dto = {
+        lines: [{ productId: 'p1', quantity: 1 }],
+      };
+
+      // Act + Assert
+      await expect(
+        service.createManagerBatch(noBranchActor, dto as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(notifications.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects when the destination branch is inactive', async () => {
+      // Arrange
+      branches.findById.mockResolvedValue({
+        id: branchId,
+        name: 'Downtown',
+        isActive: false,
+      } as Branch);
+      const dto = {
+        lines: [{ productId: 'p1', quantity: 1 }],
+      };
+
+      // Act + Assert
+      await expect(
+        service.createManagerBatch(actor, dto as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when a product cannot be found', async () => {
+      // Arrange
+      branches.findById.mockResolvedValue(activeBranch);
+      products.findById.mockResolvedValue(null);
+      const dto = {
+        lines: [{ productId: 'missing', quantity: 1 }],
+      };
+
+      // Act + Assert
+      await expect(
+        service.createManagerBatch(actor, dto as never),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('saves all lines as PENDING with the manager as requester', async () => {
+      // Arrange
+      branches.findById.mockResolvedValue(activeBranch);
+      mockProducts({ p1: 'Apples', p2: 'Bananas', p3: 'Carrots' });
+      const { savedTransfers, transferSave } = mockTransaction();
+      transfers.findById.mockImplementation(
+        async (id: string) => ({ id }) as StockTransferRequest,
+      );
+      const dto = {
+        requestReason: 'low stock',
+        lines: [
+          { productId: 'p1', quantity: 2 },
+          { productId: 'p2', quantity: 3 },
+          { productId: 'p3', quantity: 5 },
+        ],
+      };
+
+      // Act
+      const result = await service.createManagerBatch(actor, dto as never);
+
+      // Assert
+      expect(transferSave).toHaveBeenCalledTimes(3);
+      for (const call of transferSave.mock.calls) {
+        const [data] = call as [Partial<StockTransferRequest>];
+        expect(data.status).toBe(TransferStatus.PENDING);
+        expect(data.requestedByUserId).toBe(managerId);
+        expect(data.destinationBranchId).toBe(branchId);
+        expect(data.requestReason).toBe('low stock');
+        expect(data.approvedQuantity).toBeUndefined();
+      }
+      expect(savedTransfers).toHaveLength(3);
+      expect(result).toHaveLength(3);
+    });
+
+    it('dedupes lines with the same productId by summing quantities', async () => {
+      // Arrange
+      branches.findById.mockResolvedValue(activeBranch);
+      mockProducts({ p1: 'Apples' });
+      const { transferSave } = mockTransaction();
+      transfers.findById.mockImplementation(
+        async (id: string) => ({ id }) as StockTransferRequest,
+      );
+      const dto = {
+        requestReason: 'restock',
+        lines: [
+          { productId: 'p1', quantity: 3 },
+          { productId: 'p1', quantity: 5 },
+        ],
+      };
+
+      // Act
+      await service.createManagerBatch(actor, dto as never);
+
+      // Assert
+      expect(transferSave).toHaveBeenCalledTimes(1);
+      const [persisted] = transferSave.mock.calls[0] as [
+        Partial<StockTransferRequest>,
+      ];
+      expect(persisted.productId).toBe('p1');
+      expect(persisted.requestedQuantity).toBe(8);
+    });
+
+    it('fans out a notification per saved transfer per admin', async () => {
+      // Arrange
+      branches.findById.mockResolvedValue(activeBranch);
+      mockProducts({ p1: 'Apples', p2: 'Bananas' });
+      const admins = [{ id: 'admin-1' } as never, { id: 'admin-2' } as never];
+      users.findAllByRole.mockResolvedValue(admins);
+      mockTransaction();
+      transfers.findById.mockImplementation(
+        async (id: string) => ({ id }) as StockTransferRequest,
+      );
+      const dto = {
+        requestReason: 'restock',
+        lines: [
+          { productId: 'p1', quantity: 2 },
+          { productId: 'p2', quantity: 4 },
+        ],
+      };
+
+      // Act
+      await service.createManagerBatch(actor, dto as never);
+
+      // Assert — 2 saved transfers × 2 admins = 4 fan-outs
+      expect(notifications.create).toHaveBeenCalledTimes(4);
+      expect(gateway.sendToUser).toHaveBeenCalledTimes(4);
+    });
+
+    it('rejects when requestReason is empty after trim', async () => {
+      // Arrange
+      branches.findById.mockResolvedValue(activeBranch);
+      mockProducts({ p1: 'Apples' });
+      const dto = {
+        requestReason: '   ',
+        lines: [{ productId: 'p1', quantity: 1 }],
+      };
+
+      // Act + Assert
+      await expect(
+        service.createManagerBatch(actor, dto as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(notifications.create).not.toHaveBeenCalled();
+    });
   });
 });
