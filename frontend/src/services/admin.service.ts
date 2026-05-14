@@ -10,8 +10,6 @@ import type {
   IBranchUpdatePayload,
   IBranchActionRequestResponse,
   IBranchActionConfirmResponse,
-  IUser,
-  IUserCreatePayload,
   IBranchComparisonRequest,
   IBranchComparisonResponse,
   IInventoryMatrixResponse,
@@ -127,29 +125,6 @@ export const adminService = {
     return response.data.data
   },
 
-  // ── User mutations (uses existing /users endpoints) ──────────────
-
-  createUser: async (payload: IUserCreatePayload): Promise<IUser> => {
-    const response = await api.post<IApiResponse<IUser>>('/users', payload)
-    return response.data.data
-  },
-
-  updateUser: async (
-    id: string,
-    payload: Partial<IUserCreatePayload>,
-  ): Promise<IUser> => {
-    const response = await api.patch<IApiResponse<IUser>>(
-      `/users/${id}`,
-      payload,
-    )
-    return response.data.data
-  },
-
-  deleteUser: async (id: string): Promise<void> => {
-    await api.delete(`/users/${id}`)
-  },
-
-  resetUserPassword: async (id: string): Promise<void> => {
-    await api.post(`/users/${id}/reset-password`)
-  },
+  // User mutations live in `user.service.ts` — they share the same two-step
+  // OTP pattern as branch mutations.
 }

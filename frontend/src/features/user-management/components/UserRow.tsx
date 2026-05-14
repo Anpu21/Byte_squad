@@ -9,9 +9,9 @@ interface UserRowProps {
     branchName: string;
     isMenuOpen: boolean;
     onToggleMenu: () => void;
-    onResendCredentials: (id: string) => void;
-    onResetPassword: (user: IUser) => void;
-    onDelete: (user: IUser) => void;
+    onEdit: (user: IUser) => void;
+    onRequestResetPassword: (user: IUser) => void;
+    onRequestDelete: (user: IUser) => void;
 }
 
 export function UserRow({
@@ -19,9 +19,9 @@ export function UserRow({
     branchName,
     isMenuOpen,
     onToggleMenu,
-    onResendCredentials,
-    onResetPassword,
-    onDelete,
+    onEdit,
+    onRequestResetPassword,
+    onRequestDelete,
 }: UserRowProps) {
     return (
         <tr className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors group">
@@ -38,14 +38,23 @@ export function UserRow({
                 </div>
             </td>
             <td className="px-5 py-3 text-text-2 text-[13px]">{user.email}</td>
+            <td className="px-5 py-3 text-text-2 text-[13px] hidden md:table-cell">
+                {user.phone || '—'}
+            </td>
             <td className="px-5 py-3">
                 <RolePill role={user.role} />
             </td>
             <td className="px-5 py-3 text-text-2 text-[13px]">{branchName}</td>
+            <td
+                className="px-5 py-3 text-text-2 text-[13px] hidden lg:table-cell max-w-[220px]"
+                title={user.address ?? undefined}
+            >
+                <span className="block truncate">{user.address || '—'}</span>
+            </td>
             <td className="px-5 py-3">
                 <UserStatusBadge user={user} />
             </td>
-            <td className="px-5 py-3 text-text-3 text-[13px]">
+            <td className="px-5 py-3 text-text-3 text-[13px] hidden xl:table-cell">
                 {new Date(user.createdAt).toLocaleDateString()}
             </td>
             <td className="px-5 py-3 text-right">
@@ -53,9 +62,9 @@ export function UserRow({
                     user={user}
                     isOpen={isMenuOpen}
                     onToggle={onToggleMenu}
-                    onResendCredentials={onResendCredentials}
-                    onResetPassword={onResetPassword}
-                    onDelete={onDelete}
+                    onEdit={onEdit}
+                    onRequestResetPassword={onRequestResetPassword}
+                    onRequestDelete={onRequestDelete}
                 />
             </td>
         </tr>

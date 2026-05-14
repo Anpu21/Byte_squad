@@ -2,6 +2,7 @@ import { useTransferDetailPage } from '@/features/transfer-detail/hooks/useTrans
 import { TransferDetailHeader } from '@/features/transfer-detail/components/TransferDetailHeader';
 import { AuditTimeline } from '@/features/transfer-detail/components/AuditTimeline';
 import { TransferReasonsCard } from '@/features/transfer-detail/components/TransferReasonsCard';
+import { SourceAvailabilityCard } from '@/features/transfer-detail/components/SourceAvailabilityCard';
 import { TransferActionsCard } from '@/features/transfer-detail/components/TransferActionsCard';
 import { ApproveTransferModal } from '@/features/transfer-detail/components/ApproveTransferModal';
 import { RejectTransferModal } from '@/features/transfer-detail/components/RejectTransferModal';
@@ -31,6 +32,13 @@ export function TransferDetailPage() {
             <TransferDetailHeader transfer={p.transfer} displayQty={displayQty} />
             <AuditTimeline transfer={p.transfer} />
             <TransferReasonsCard transfer={p.transfer} />
+            {p.permissions.canApproveOrReject && p.id && (
+                <SourceAvailabilityCard
+                    transferId={p.id}
+                    requestedQuantity={p.transfer.requestedQuantity}
+                    onChoose={p.openApproveWith}
+                />
+            )}
             <TransferActionsCard
                 permissions={p.permissions}
                 onApprove={p.openApprove}

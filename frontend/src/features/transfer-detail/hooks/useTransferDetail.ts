@@ -31,7 +31,7 @@ export function useTransferDetail(id: string | undefined) {
 
     const invalidate = () =>
         queryClient.invalidateQueries({
-            queryKey: queryKeys.stockTransfers.byId(id ?? ''),
+            queryKey: ['stock-transfers'],
         });
 
     async function runAction<T>(

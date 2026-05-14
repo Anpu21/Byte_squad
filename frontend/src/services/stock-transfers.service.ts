@@ -4,18 +4,35 @@ import type {
   IStockTransferRequest,
   ITransferSourceOption,
   IPaginatedTransfers,
-  ICreateTransferPayload,
+  ICreateAdminDirectTransferPayload,
+  ICreateManagerBatchTransferPayload,
   IApproveTransferPayload,
   IListTransfersParams,
   IListTransferHistoryParams,
 } from '@/types'
 
 export const stockTransfersService = {
-  create: async (
-    payload: ICreateTransferPayload,
-  ): Promise<IStockTransferRequest> => {
-    const response = await api.post<IApiResponse<IStockTransferRequest>>(
-      '/stock-transfers',
+  // Admin-only multi-line direct shipment. Each cart line becomes a separate
+  // StockTransferRequest written in APPROVED state in a single backend
+  // transaction. Returns the list of created transfers.
+  createAdminDirect: async (
+    payload: ICreateAdminDirectTransferPayload,
+  ): Promise<IStockTransferRequest[]> => {
+    const response = await api.post<IApiResponse<IStockTransferRequest[]>>(
+      '/stock-transfers/admin-direct',
+      payload,
+    )
+    return response.data.data
+  },
+
+  // Manager multi-line request. Each cart line becomes a PENDING transfer
+  // row destined for the manager's own branch in a single backend
+  // transaction. Admin picks source + approves each one downstream.
+  createManagerBatch: async (
+    payload: ICreateManagerBatchTransferPayload,
+  ): Promise<IStockTransferRequest[]> => {
+    const response = await api.post<IApiResponse<IStockTransferRequest[]>>(
+      '/stock-transfers/manager-batch',
       payload,
     )
     return response.data.data

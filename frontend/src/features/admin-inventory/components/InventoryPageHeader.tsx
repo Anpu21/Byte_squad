@@ -1,13 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
 import type { IInventoryMatrixBranchColumn } from '@/types';
 import type { ExportFormat } from '@/lib/exportUtils';
 import ExportMenu from '@/components/common/ExportMenu';
-import Button from '@/components/ui/Button';
 import type { AdminInventoryFiltersState } from '../hooks/useAdminInventoryFilters';
 import { exportInventoryRecords } from '../lib/export-records';
 
@@ -24,7 +20,6 @@ export function InventoryPageHeader({
     filters,
     branches,
 }: InventoryPageHeaderProps) {
-    const navigate = useNavigate();
     const { user } = useAuth();
     const [isExporting, setIsExporting] = useState(false);
 
@@ -74,12 +69,6 @@ export function InventoryPageHeader({
                     disabled={total === 0}
                     isPreparing={isExporting}
                 />
-                <Button
-                    type="button"
-                    onClick={() => navigate(FRONTEND_ROUTES.INVENTORY_ADD)}
-                >
-                    <Plus size={14} /> Add product
-                </Button>
             </div>
         </div>
     );

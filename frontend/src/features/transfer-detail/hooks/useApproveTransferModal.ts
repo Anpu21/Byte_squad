@@ -1,8 +1,6 @@
 import { useCallback, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { stockTransfersService } from '@/services/stock-transfers.service';
-import { queryKeys } from '@/lib/queryKeys';
 import type { ITransferSourceOption } from '@/types';
+import { useSourceOptionsQuery } from './useSourceOptionsQuery';
 
 export interface ApproveModalState {
     chosenSourceId: string;
@@ -29,12 +27,7 @@ export function useApproveTransferModal({
     const [approvedQuantityStr, setApprovedQuantityStr] = useState('');
     const [approvalNote, setApprovalNote] = useState('');
 
-    const query = useQuery<ITransferSourceOption[]>({
-        queryKey: queryKeys.stockTransfers.sourceOptions(transferId ?? ''),
-        queryFn: () =>
-            stockTransfersService.getSourceOptions(transferId ?? ''),
-        enabled: isOpen && Boolean(transferId),
-    });
+    const query = useSourceOptionsQuery(transferId, isOpen);
 
     const reset = useCallback((requestedQuantity: number) => {
         setChosenSourceId('');

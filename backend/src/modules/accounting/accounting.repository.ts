@@ -71,9 +71,7 @@ export class AccountingRepository {
     };
   }
 
-  async getLedgerSummary(
-    branchId: string | null,
-  ): Promise<LedgerSummaryRaw> {
+  async getLedgerSummary(branchId: string | null): Promise<LedgerSummaryRaw> {
     const qb = this.ledgerRepo
       .createQueryBuilder('le')
       .select(

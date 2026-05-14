@@ -32,6 +32,16 @@ export function useTransferDetailPage() {
         approve.reset(detail.transfer.requestedQuantity);
     }, [approve, detail.transfer]);
 
+    const openApproveWith = useCallback(
+        (branchId: string) => {
+            if (!detail.transfer) return;
+            approve.reset(detail.transfer.requestedQuantity);
+            approve.setChosenSourceId(branchId);
+            setActiveAction('approve');
+        },
+        [approve, detail.transfer],
+    );
+
     const handleApproveSubmit = useCallback(async () => {
         if (!detail.transfer) return;
         if (!approve.chosenSourceId) {
@@ -46,6 +56,15 @@ export function useTransferDetailPage() {
         ) {
             toast.error(
                 `Approved quantity must be between 1 and ${detail.transfer.requestedQuantity}`,
+            );
+            return;
+        }
+        const chosenSource = approve.sourceOptions.find(
+            (opt) => opt.branchId === approve.chosenSourceId,
+        );
+        if (chosenSource && qty > chosenSource.currentQuantity) {
+            toast.error(
+                `${chosenSource.branchName} only has ${chosenSource.currentQuantity} unit(s) in stock`,
             );
             return;
         }
@@ -95,6 +114,7 @@ export function useTransferDetailPage() {
         activeAction,
         setActiveAction,
         openApprove,
+        openApproveWith,
         closeModal,
         approve,
         handleApproveSubmit,

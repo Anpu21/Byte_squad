@@ -56,6 +56,7 @@ export function UserFilters({
                         <option value={UserRole.ADMIN}>Admin</option>
                         <option value={UserRole.MANAGER}>Manager</option>
                         <option value={UserRole.CASHIER}>Cashier</option>
+                        <option value={UserRole.CUSTOMER}>Customer</option>
                     </select>
                     <select
                         aria-label="Branch filter"

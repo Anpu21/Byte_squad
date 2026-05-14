@@ -1,22 +1,22 @@
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Pencil, KeyRound, Trash2 } from 'lucide-react';
 import type { IUser } from '@/types';
 
 interface UserActionsMenuProps {
     user: IUser;
     isOpen: boolean;
     onToggle: () => void;
-    onResendCredentials: (id: string) => void;
-    onResetPassword: (user: IUser) => void;
-    onDelete: (user: IUser) => void;
+    onEdit: (user: IUser) => void;
+    onRequestResetPassword: (user: IUser) => void;
+    onRequestDelete: (user: IUser) => void;
 }
 
 export function UserActionsMenu({
     user,
     isOpen,
     onToggle,
-    onResendCredentials,
-    onResetPassword,
-    onDelete,
+    onEdit,
+    onRequestResetPassword,
+    onRequestDelete,
 }: UserActionsMenuProps) {
     const close = () => onToggle();
     return (
@@ -30,37 +30,40 @@ export function UserActionsMenu({
                 <MoreHorizontal size={16} />
             </button>
             {isOpen && (
-                <div className="absolute right-3 top-10 z-10 w-48 bg-surface border border-border rounded-md shadow-xl py-1">
-                    {!user.isVerified && (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                onResendCredentials(user.id);
-                                close();
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-text-1 hover:bg-surface-2 transition-colors"
-                        >
-                            Resend credentials
-                        </button>
-                    )}
+                <div className="absolute right-3 top-10 z-dropdown w-52 bg-surface border border-border rounded-md shadow-xl py-1">
                     <button
                         type="button"
                         onClick={() => {
                             close();
-                            onResetPassword(user);
+                            onEdit(user);
                         }}
-                        className="w-full text-left px-4 py-2 text-sm text-text-1 hover:bg-surface-2 transition-colors"
+                        className="w-full text-left px-4 py-2 text-sm text-text-1 hover:bg-surface-2 transition-colors flex items-center gap-2"
                     >
-                        Reset password
+                        <Pencil size={14} className="text-text-3" />
+                        Edit user
                     </button>
                     <button
                         type="button"
                         onClick={() => {
                             close();
-                            onDelete(user);
+                            onRequestResetPassword(user);
                         }}
-                        className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-danger-soft transition-colors"
+                        className="w-full text-left px-4 py-2 text-sm text-text-1 hover:bg-surface-2 transition-colors flex items-center gap-2"
                     >
+                        <KeyRound size={14} className="text-text-3" />
+                        {user.isVerified
+                            ? 'Reset password'
+                            : 'Resend credentials'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            close();
+                            onRequestDelete(user);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-danger-soft transition-colors flex items-center gap-2"
+                    >
+                        <Trash2 size={14} />
                         Delete user
                     </button>
                 </div>
