@@ -61,7 +61,10 @@ export function useCatalogPage() {
     );
     const categories = categoriesQuery.data ?? [];
     const products = productsQuery.data ?? [];
-    const recommendedProducts = recommendedQuery.data ?? [];
+    const recommendedProducts = useMemo(
+        () => recommendedQuery.data ?? [],
+        [recommendedQuery.data],
+    );
 
     const excludeRecommendedIds = useMemo(
         () => recommendedProducts.map((p) => p.id),
