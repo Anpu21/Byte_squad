@@ -29,6 +29,7 @@ import { NewTransferRequestPage } from '@/pages/transfers/NewTransferRequestPage
 import { TransferHistoryPage } from '@/pages/transfers/TransferHistoryPage';
 import { TransferDetailPage } from '@/pages/transfers/TransferDetailPage';
 import { AdminTransfersPage } from '@/pages/admin/AdminTransfersPage';
+import { AdminTransferCreatePage } from '@/pages/transfers/AdminTransferCreatePage';
 import { CustomerOrdersPage } from '@/pages/orders/CustomerOrdersPage';
 import { ScanOrderPage } from '@/pages/pos/ScanOrderPage';
 import { CatalogPage } from '@/pages/shop/CatalogPage';
@@ -244,6 +245,12 @@ export const ROUTES: RouteDef[] = [
         path: FRONTEND_ROUTES.TRANSFER_DETAIL,
         element: <TransferDetailPage />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.ADMIN_TRANSFER_NEW,
+        element: <AdminTransferCreatePage />,
+        allowedRoles: [UserRole.ADMIN],
         layout: 'dashboard',
     },
     {
