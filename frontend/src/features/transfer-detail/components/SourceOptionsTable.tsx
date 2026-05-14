@@ -37,7 +37,8 @@ export function SourceOptionsTable({
             <tbody>
                 {options.map((opt) => {
                     const sufficient = opt.currentQuantity >= requestedQuantity;
-                    const disabled = !opt.isActive;
+                    const noStock = opt.currentQuantity <= 0;
+                    const disabled = !opt.isActive || noStock;
                     const isChecked = chosenSourceId === opt.branchId;
                     return (
                         <tr
@@ -67,6 +68,11 @@ export function SourceOptionsTable({
                                 {!opt.isActive && (
                                     <span className="ml-2 text-[10px] text-text-3">
                                         (inactive)
+                                    </span>
+                                )}
+                                {opt.isActive && noStock && (
+                                    <span className="ml-2 text-[10px] text-text-3">
+                                        (no stock)
                                     </span>
                                 )}
                             </td>

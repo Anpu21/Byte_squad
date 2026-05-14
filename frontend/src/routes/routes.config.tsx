@@ -131,11 +131,13 @@ export const ROUTES: RouteDef[] = [
     {
         path: FRONTEND_ROUTES.INVENTORY_ADD,
         element: <ProductFormPage />,
+        allowedRoles: [UserRole.MANAGER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.INVENTORY_EDIT,
         element: <ProductFormPage />,
+        allowedRoles: [UserRole.MANAGER],
         layout: 'dashboard',
     },
 

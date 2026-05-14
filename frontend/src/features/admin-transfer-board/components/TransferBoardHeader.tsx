@@ -15,8 +15,8 @@ export function TransferBoardHeader({ total }: TransferBoardHeaderProps) {
                 </h1>
                 <p className="text-sm text-text-3 mt-1">
                     {total} transfer{total === 1 ? '' : 's'} across the
-                    pipeline. Drag-free Kanban — click a card to review,
-                    approve, ship, or receive.
+                    pipeline. Drag a card between columns to act on it, or
+                    click to open the details.
                 </p>
             </div>
             <Link

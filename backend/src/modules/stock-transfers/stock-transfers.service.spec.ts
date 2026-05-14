@@ -185,6 +185,61 @@ describe('StockTransfersService', () => {
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
+
+    it('sends a ship-CTA message to source managers and the generic approved message to destination managers', async () => {
+      // Arrange — happy path, transfer goes from PENDING to APPROVED.
+      // findByIdOrThrow is called twice: once on entry, once after save.
+      transfers.findById
+        .mockResolvedValueOnce({
+          id: 't1',
+          status: TransferStatus.PENDING,
+          destinationBranchId: 'dst',
+          requestedQuantity: 5,
+          productId: 'p1',
+        } as StockTransferRequest)
+        .mockResolvedValueOnce({
+          id: 't1',
+          status: TransferStatus.APPROVED,
+          destinationBranchId: 'dst',
+          sourceBranchId: 'src',
+          approvedQuantity: 5,
+          product: { name: 'Apples' },
+          sourceBranch: { name: 'Source' },
+          destinationBranch: { name: 'Dest' },
+        } as StockTransferRequest);
+      branches.findById.mockResolvedValue({
+        id: 'src',
+        name: 'Source',
+        isActive: true,
+      } as Branch);
+      inventory.findByProductAndBranch.mockResolvedValue({
+        quantity: 10,
+      } as Inventory);
+      transfers.save.mockResolvedValue({} as StockTransferRequest);
+      users.findManagersAndAdminsForBranches.mockResolvedValue([
+        { id: 'src-mgr', role: UserRole.MANAGER, branchId: 'src' } as never,
+        { id: 'dst-mgr', role: UserRole.MANAGER, branchId: 'dst' } as never,
+      ]);
+
+      // Act
+      await service.approve(
+        't1',
+        { sourceBranchId: 'src', approvedQuantity: 5 },
+        actor,
+      );
+
+      // Assert
+      expect(notifications.create).toHaveBeenCalledTimes(2);
+      const calls = notifications.create.mock.calls.map(
+        ([arg]) => arg as { userId: string; title: string; message: string },
+      );
+      const srcCall = calls.find((c) => c.userId === 'src-mgr');
+      const dstCall = calls.find((c) => c.userId === 'dst-mgr');
+      expect(srcCall?.title).toBe('Action needed — ship transfer');
+      expect(srcCall?.message).toContain('Please ship 5 unit(s) of Apples');
+      expect(dstCall?.title).toBe('Stock transfer approved');
+      expect(dstCall?.message).toContain('Approved: 5 unit(s) of Apples');
+    });
   });
 
   describe('findById access control', () => {
@@ -468,7 +523,7 @@ describe('StockTransfersService', () => {
       expect(transferSave).not.toHaveBeenCalled();
     });
 
-    it('saves all lines in APPROVED state with the admin as reviewer', async () => {
+    it('saves all lines in APPROVED state with the admin as reviewer and shares one batchId', async () => {
       // Arrange
       mockActiveBranches();
       mockProducts({ p1: 'Apples', p2: 'Bananas', p3: 'Carrots' });
@@ -493,6 +548,7 @@ describe('StockTransfersService', () => {
 
       // Assert
       expect(transferSave).toHaveBeenCalledTimes(3);
+      const seenBatchIds = new Set<string>();
       for (const call of transferSave.mock.calls) {
         const [data] = call as [Partial<StockTransferRequest>];
         expect(data.status).toBe(TransferStatus.APPROVED);
@@ -501,7 +557,10 @@ describe('StockTransfersService', () => {
         expect(data.sourceBranchId).toBe(srcId);
         expect(data.destinationBranchId).toBe(dstId);
         expect(data.requestedQuantity).toBe(data.approvedQuantity);
+        expect(data.batchId).toBeTruthy();
+        if (data.batchId) seenBatchIds.add(data.batchId);
       }
+      expect(seenBatchIds.size).toBe(1);
       expect(savedTransfers).toHaveLength(3);
       expect(result).toHaveLength(3);
     });
@@ -538,7 +597,7 @@ describe('StockTransfersService', () => {
       expect(persisted.approvedQuantity).toBe(8);
     });
 
-    it('fires one notification per saved transfer per recipient', async () => {
+    it('fires one notification per recipient per batch', async () => {
       // Arrange
       mockActiveBranches();
       mockProducts({ p1: 'Apples', p2: 'Bananas' });
@@ -565,9 +624,9 @@ describe('StockTransfersService', () => {
       // Act
       await service.createAdminDirect(adminId, dto as never);
 
-      // Assert — 2 saved transfers × 2 recipients = 4 fan-outs
-      expect(notifications.create).toHaveBeenCalledTimes(4);
-      expect(gateway.sendToUser).toHaveBeenCalledTimes(4);
+      // Assert — 1 batch × 2 recipients = 2 fan-outs (was 4 per-line)
+      expect(notifications.create).toHaveBeenCalledTimes(2);
+      expect(gateway.sendToUser).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -678,7 +737,7 @@ describe('StockTransfersService', () => {
       expect(dataSource.transaction).not.toHaveBeenCalled();
     });
 
-    it('saves all lines as PENDING with the manager as requester', async () => {
+    it('saves all lines as PENDING with the manager as requester and shares one batchId', async () => {
       // Arrange
       branches.findById.mockResolvedValue(activeBranch);
       mockProducts({ p1: 'Apples', p2: 'Bananas', p3: 'Carrots' });
@@ -700,6 +759,7 @@ describe('StockTransfersService', () => {
 
       // Assert
       expect(transferSave).toHaveBeenCalledTimes(3);
+      const seenBatchIds = new Set<string>();
       for (const call of transferSave.mock.calls) {
         const [data] = call as [Partial<StockTransferRequest>];
         expect(data.status).toBe(TransferStatus.PENDING);
@@ -707,7 +767,10 @@ describe('StockTransfersService', () => {
         expect(data.destinationBranchId).toBe(branchId);
         expect(data.requestReason).toBe('low stock');
         expect(data.approvedQuantity).toBeUndefined();
+        expect(data.batchId).toBeTruthy();
+        if (data.batchId) seenBatchIds.add(data.batchId);
       }
+      expect(seenBatchIds.size).toBe(1);
       expect(savedTransfers).toHaveLength(3);
       expect(result).toHaveLength(3);
     });
@@ -740,7 +803,7 @@ describe('StockTransfersService', () => {
       expect(persisted.requestedQuantity).toBe(8);
     });
 
-    it('fans out a notification per saved transfer per admin', async () => {
+    it('fans out one notification per admin per batch', async () => {
       // Arrange
       branches.findById.mockResolvedValue(activeBranch);
       mockProducts({ p1: 'Apples', p2: 'Bananas' });
@@ -761,9 +824,9 @@ describe('StockTransfersService', () => {
       // Act
       await service.createManagerBatch(actor, dto as never);
 
-      // Assert — 2 saved transfers × 2 admins = 4 fan-outs
-      expect(notifications.create).toHaveBeenCalledTimes(4);
-      expect(gateway.sendToUser).toHaveBeenCalledTimes(4);
+      // Assert — 1 batch × 2 admins = 2 fan-outs (was 4 per-line)
+      expect(notifications.create).toHaveBeenCalledTimes(2);
+      expect(gateway.sendToUser).toHaveBeenCalledTimes(2);
     });
 
     it('rejects when requestReason is empty after trim', async () => {

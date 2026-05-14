@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { DataSource } from 'typeorm';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
@@ -332,6 +333,7 @@ export class StockTransfersService {
 
     const trimmedApprovalNote = dto.approvalNote?.trim() || null;
     const now = new Date();
+    const batchId = randomUUID();
 
     // One transaction for the whole batch: pessimistic-lock the source
     // inventory rows, check stock, save all N transfers. If any line fails
@@ -380,6 +382,7 @@ export class StockTransfersService {
             reviewedAt: now,
             approvalNote: trimmedApprovalNote,
             requestReason: line.requestReason,
+            batchId,
           });
           saved.push(await transferRepo.save(created));
         }
@@ -388,40 +391,41 @@ export class StockTransfersService {
       },
     );
 
-    // Notify both branches' managers + admins once per created transfer.
-    // Reuses the same notification shape the existing `approve` path emits
-    // so the frontend Kanban's `useStockTransferRealtime` hook invalidates
-    // `['stock-transfers']` and the Approved column refreshes live.
+    // One notification per recipient per batch — admins/managers see a
+    // single "approved batch" event instead of N per line, matching the
+    // single batch card on the admin Kanban.
     const recipients = await this.collectBranchManagers([
       dto.sourceBranchId,
       dto.destinationBranchId,
     ]);
-    for (const transfer of savedTransfers) {
-      const product = productById.get(transfer.productId);
-      const productName = product?.name ?? 'product';
-      const baseMessage = `Approved: ${transfer.approvedQuantity} unit(s) of ${productName} from ${sourceBranch.name} to ${destinationBranch.name}`;
-      const message = trimmedApprovalNote
-        ? `${baseMessage} — Admin note: ${trimmedApprovalNote}`
-        : baseMessage;
-      await Promise.all(
-        recipients.map((user) =>
-          this.notifyUser(user.id, {
-            title: 'Stock transfer approved',
-            message,
-            metadata: {
-              event: 'approved',
-              transferId: transfer.id,
-              productName,
-              sourceBranchName: sourceBranch.name,
-              destinationBranchName: destinationBranch.name,
-              quantity: transfer.approvedQuantity,
-              approvalNote: trimmedApprovalNote,
-              origin: 'admin-direct',
-            },
-          }),
-        ),
-      );
-    }
+    const summary = mergedLines
+      .slice(0, 3)
+      .map((line) => productById.get(line.productId)?.name ?? 'product')
+      .join(', ');
+    const overflow =
+      mergedLines.length > 3 ? ` +${mergedLines.length - 3} more` : '';
+    const baseMessage = `Approved batch of ${mergedLines.length} product(s) from ${sourceBranch.name} to ${destinationBranch.name}: ${summary}${overflow}`;
+    const message = trimmedApprovalNote
+      ? `${baseMessage} — Admin note: ${trimmedApprovalNote}`
+      : baseMessage;
+    await Promise.all(
+      recipients.map((user) =>
+        this.notifyUser(user.id, {
+          title: 'Stock transfer approved',
+          message,
+          metadata: {
+            event: 'approved',
+            batchId,
+            transferIds: savedTransfers.map((t) => t.id),
+            sourceBranchName: sourceBranch.name,
+            destinationBranchName: destinationBranch.name,
+            productCount: mergedLines.length,
+            approvalNote: trimmedApprovalNote,
+            origin: 'admin-direct',
+          },
+        }),
+      ),
+    );
 
     // Re-fetch with relations populated so callers (and HTTP responses) get
     // fully hydrated entities, matching the shape returned by `approve`.
@@ -496,6 +500,7 @@ export class StockTransfersService {
     if (!trimmedReason) {
       throw new BadRequestException('Reason is required');
     }
+    const batchId = randomUUID();
 
     // Atomic batch save. Unlike admin-direct this never locks inventory —
     // manager requests are advisory until admin approve, and the binding
@@ -512,6 +517,7 @@ export class StockTransfersService {
             status: TransferStatus.PENDING,
             requestedByUserId: actor.id,
             requestReason: trimmedReason,
+            batchId,
           });
           saved.push(await transferRepo.save(created));
         }
@@ -519,31 +525,32 @@ export class StockTransfersService {
       },
     );
 
-    // Notify all admins once per saved transfer. Uses the same metadata
-    // shape as the existing single-product `create` path so the admin
-    // Kanban's realtime hook invalidates ['stock-transfers'] identically.
+    // One notification per admin per batch — collapses N-line storms into
+    // a single event matching the single batch card on the admin Kanban.
     const admins = await this.users.findAllByRole(UserRole.ADMIN);
-    for (const transfer of savedTransfers) {
-      const product = productById.get(transfer.productId);
-      const productName = product?.name ?? 'product';
-      const message = `${destinationBranch.name} requests ${transfer.requestedQuantity} unit(s) of ${productName}`;
-      await Promise.all(
-        admins.map((admin) =>
-          this.notifyUser(admin.id, {
-            title: 'New stock transfer request',
-            message,
-            metadata: {
-              event: 'created',
-              transferId: transfer.id,
-              productName,
-              destinationBranchName: destinationBranch.name,
-              quantity: transfer.requestedQuantity,
-              origin: 'manager-batch',
-            },
-          }),
-        ),
-      );
-    }
+    const summary = mergedLines
+      .slice(0, 3)
+      .map((line) => productById.get(line.productId)?.name ?? 'product')
+      .join(', ');
+    const overflow =
+      mergedLines.length > 3 ? ` +${mergedLines.length - 3} more` : '';
+    const message = `${destinationBranch.name} requested ${mergedLines.length} product(s): ${summary}${overflow}`;
+    await Promise.all(
+      admins.map((admin) =>
+        this.notifyUser(admin.id, {
+          title: 'New stock transfer request',
+          message,
+          metadata: {
+            event: 'created',
+            batchId,
+            transferIds: savedTransfers.map((t) => t.id),
+            destinationBranchName: destinationBranch.name,
+            productCount: mergedLines.length,
+            origin: 'manager-batch',
+          },
+        }),
+      ),
+    );
 
     const hydrated: StockTransferRequest[] = [];
     for (const transfer of savedTransfers) {
@@ -610,26 +617,41 @@ export class StockTransfersService {
       transfer.destinationBranchId,
     ]);
     const productName = updated.product.name;
-    const baseMessage = `Approved: ${dto.approvedQuantity} unit(s) of ${productName} from ${sourceBranch.name} to ${updated.destinationBranch.name}`;
-    const message = trimmedNote
-      ? `${baseMessage} — Admin note: ${trimmedNote}`
-      : baseMessage;
+    const qty = dto.approvedQuantity;
+    const fromName = sourceBranch.name;
+    const toName = updated.destinationBranch.name;
+
+    const genericBase = `Approved: ${qty} unit(s) of ${productName} from ${fromName} to ${toName}`;
+    const genericMessage = trimmedNote
+      ? `${genericBase} — Admin note: ${trimmedNote}`
+      : genericBase;
+    const shipBase = `Please ship ${qty} unit(s) of ${productName} from ${fromName} to ${toName}`;
+    const shipMessage = trimmedNote
+      ? `${shipBase} — Admin note: ${trimmedNote}`
+      : shipBase;
+
     await Promise.all(
-      recipients.map((user) =>
-        this.notifyUser(user.id, {
-          title: 'Stock transfer approved',
-          message,
+      recipients.map((user) => {
+        const isSourceManager =
+          user.role === UserRole.MANAGER &&
+          user.branchId === dto.sourceBranchId;
+        return this.notifyUser(user.id, {
+          title: isSourceManager
+            ? 'Action needed — ship transfer'
+            : 'Stock transfer approved',
+          message: isSourceManager ? shipMessage : genericMessage,
           metadata: {
             event: 'approved',
             transferId: id,
             productName,
-            sourceBranchName: sourceBranch.name,
-            destinationBranchName: updated.destinationBranch.name,
-            quantity: dto.approvedQuantity,
+            sourceBranchName: fromName,
+            destinationBranchName: toName,
+            quantity: qty,
             approvalNote: trimmedNote ?? null,
+            role: isSourceManager ? 'source' : 'destination',
           },
-        }),
-      ),
+        });
+      }),
     );
 
     return updated;
