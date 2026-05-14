@@ -10,6 +10,7 @@ interface PosCartPanelProps {
     cart: ReturnType<typeof usePosCart>;
     checkout: ReturnType<typeof usePosCheckout>;
     branchId: string | null | undefined;
+    stockByProductId?: Record<string, number>;
     onOpenCamera: () => void;
     inputRef: RefObject<HTMLInputElement | null>;
     onSelectProduct: (product: IProduct) => void;
@@ -19,6 +20,7 @@ export function PosCartPanel({
     cart,
     checkout,
     branchId,
+    stockByProductId,
     onOpenCamera,
     inputRef,
     onSelectProduct,
@@ -51,10 +53,32 @@ export function PosCartPanel({
                 totalDiscount={cart.totalDiscount}
                 total={cart.total}
                 branchId={branchId}
+                stockByProductId={stockByProductId}
                 onSelectProduct={onSelectProduct}
                 onOpenCamera={onOpenCamera}
                 inputRef={inputRef}
             />
+
+            {cart.blockedReason && (
+                <div className="px-5 pt-3">
+                    <div
+                        role="alert"
+                        aria-live="polite"
+                        className="p-2.5 bg-warning-soft border border-warning/30 rounded-md text-xs text-warning flex items-start gap-2"
+                    >
+                        <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
+                        <span className="flex-1">{cart.blockedReason}</span>
+                        <button
+                            type="button"
+                            onClick={cart.dismissBlockedReason}
+                            aria-label="Dismiss"
+                            className="p-0.5 text-text-3 hover:text-text-1 -mt-0.5 -mr-0.5 rounded focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                        >
+                            <X size={12} strokeWidth={2.5} />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {(checkout.error || checkout.lastTransaction) && (
                 <div className="px-5 pt-3 space-y-2">

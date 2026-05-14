@@ -9,6 +9,10 @@ import type {
     IUser,
     IUserActionRequestResponse,
 } from '@/types';
+import {
+    SRI_LANKA_PHONE_ERROR,
+    isValidSriLankaPhone,
+} from '@/lib/phone';
 import { UserFormFields } from './UserFormFields';
 import {
     buildCreatePayload,
@@ -39,6 +43,7 @@ export function UserFormModal({
 }: UserFormModalProps) {
     const isEdit = user !== null;
     const [form, setForm] = useState(() => initialUserForm(user, branches));
+    const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
 
     const requestMutation = useMutation({
         mutationFn: () =>
@@ -64,6 +69,11 @@ export function UserFormModal({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (form.phone.trim() && !isValidSriLankaPhone(form.phone)) {
+            setPhoneError(SRI_LANKA_PHONE_ERROR);
+            return;
+        }
+        setPhoneError(undefined);
         requestMutation.mutate();
     };
 
@@ -79,9 +89,11 @@ export function UserFormModal({
                     form={form}
                     branches={branches}
                     isEdit={isEdit}
-                    onChange={(key, value) =>
-                        setForm((prev) => ({ ...prev, [key]: value }))
-                    }
+                    phoneError={phoneError}
+                    onChange={(key, value) => {
+                        setForm((prev) => ({ ...prev, [key]: value }));
+                        if (key === 'phone') setPhoneError(undefined);
+                    }}
                 />
 
                 <div className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[12px] text-text-2">

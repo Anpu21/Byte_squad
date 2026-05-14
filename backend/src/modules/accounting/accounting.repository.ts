@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, DeepPartial, Repository } from 'typeorm';
+import { Between, DeepPartial, EntityManager, Repository } from 'typeorm';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 
@@ -24,6 +24,14 @@ export class AccountingRepository {
     partial: DeepPartial<LedgerEntry>,
   ): Promise<LedgerEntry> {
     return this.ledgerRepo.save(this.ledgerRepo.create(partial));
+  }
+
+  async createLedgerEntryWithManager(
+    manager: EntityManager,
+    partial: DeepPartial<LedgerEntry>,
+  ): Promise<LedgerEntry> {
+    const repo = manager.getRepository(LedgerEntry);
+    return repo.save(repo.create(partial));
   }
 
   async deleteLedgerByReference(referenceNumber: string): Promise<void> {
