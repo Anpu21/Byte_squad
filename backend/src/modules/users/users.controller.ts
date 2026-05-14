@@ -17,7 +17,11 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from '@users/users.service';
-import type { Actor, UserActionConfirmResult, UserActionRequestResult } from '@users/users.service';
+import type {
+  Actor,
+  UserActionConfirmResult,
+  UserActionRequestResult,
+} from '@users/users.service';
 import { CreateUserDto } from '@users/dto/create-user.dto';
 import { UpdateUserDto } from '@users/dto/update-user.dto';
 import { ConfirmUserActionDto } from '@users/dto/confirm-user-action.dto';

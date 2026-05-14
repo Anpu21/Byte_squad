@@ -520,7 +520,12 @@ export class UsersService {
 
     // Fire welcome email best-effort — OTP already verified the admin.
     this.emailService
-      .sendWelcomeEmail(saved.email, saved.firstName, tempPassword, expiresInHours)
+      .sendWelcomeEmail(
+        saved.email,
+        saved.firstName,
+        tempPassword,
+        expiresInHours,
+      )
       .catch((err) => {
         const message = err instanceof Error ? err.message : String(err);
         this.logger.error(
@@ -584,7 +589,7 @@ export class UsersService {
 
   private payloadLabel(action: PendingUserAction): string | null {
     if (action.payload && typeof action.payload === 'object') {
-      const email = (action.payload as Record<string, unknown>).email;
+      const email = action.payload.email;
       if (typeof email === 'string') return email;
     }
     return null;

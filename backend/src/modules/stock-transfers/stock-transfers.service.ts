@@ -324,9 +324,7 @@ export class StockTransfersService {
     for (const line of mergedLines) {
       const product = await this.products.findById(line.productId);
       if (!product) {
-        throw new NotFoundException(
-          `Product ${line.productId} not found`,
-        );
+        throw new NotFoundException(`Product ${line.productId} not found`);
       }
       productById.set(line.productId, product);
     }
@@ -460,10 +458,7 @@ export class StockTransfersService {
     }
 
     // Dedupe lines by productId, summing quantities. Mirrors admin-direct.
-    const merged = new Map<
-      string,
-      { productId: string; quantity: number }
-    >();
+    const merged = new Map<string, { productId: string; quantity: number }>();
     for (const line of dto.lines) {
       const existing = merged.get(line.productId);
       if (existing) {
@@ -489,9 +484,7 @@ export class StockTransfersService {
     for (const line of mergedLines) {
       const product = await this.products.findById(line.productId);
       if (!product) {
-        throw new NotFoundException(
-          `Product ${line.productId} not found`,
-        );
+        throw new NotFoundException(`Product ${line.productId} not found`);
       }
       productById.set(line.productId, product);
     }

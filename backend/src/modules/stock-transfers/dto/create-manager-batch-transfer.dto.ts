@@ -21,7 +21,7 @@ class ManagerBatchTransferLineDto {
 }
 
 export class CreateManagerBatchTransferDto {
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsString()

@@ -362,7 +362,7 @@ describe('UsersService', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('forbids confirming another admin\'s action', async () => {
+    it("forbids confirming another admin's action", async () => {
       pending.findById.mockResolvedValue(
         makePending({ userId: 'other-admin' }),
       );
@@ -541,7 +541,7 @@ describe('UsersService', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('forbids resending another admin\'s action', async () => {
+    it("forbids resending another admin's action", async () => {
       pending.findById.mockResolvedValue({
         id: ACTION_ID,
         userId: 'other-admin',

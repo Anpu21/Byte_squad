@@ -21,6 +21,13 @@ import { Inventory } from '@inventory/entities/inventory.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 
+interface InventoryQB {
+  setLock: jest.Mock<InventoryQB, []>;
+  where: jest.Mock<InventoryQB, [string, { productId?: string }?]>;
+  andWhere: jest.Mock<InventoryQB, [string, { productId?: string }?]>;
+  getOne: jest.Mock<Promise<Inventory | null>, []>;
+}
+
 describe('StockTransfersService', () => {
   let service: StockTransfersService;
   let transfers: jest.Mocked<StockTransfersRepository>;
@@ -364,19 +371,19 @@ describe('StockTransfersService', () => {
     } as Branch;
 
     function mockActiveBranches() {
-      branches.findById.mockImplementation(async (id: string) => {
-        if (id === srcId) return activeSource;
-        if (id === dstId) return activeDestination;
-        return null;
+      branches.findById.mockImplementation((id: string) => {
+        if (id === srcId) return Promise.resolve(activeSource);
+        if (id === dstId) return Promise.resolve(activeDestination);
+        return Promise.resolve(null);
       });
     }
 
     function mockProducts(productNames: Record<string, string>) {
-      products.findById.mockImplementation(async (id: string) => {
+      products.findById.mockImplementation((id: string) => {
         if (productNames[id]) {
-          return { id, name: productNames[id] } as never;
+          return Promise.resolve({ id, name: productNames[id] } as never);
         }
-        return null;
+        return Promise.resolve(null);
       });
     }
 
@@ -384,45 +391,45 @@ describe('StockTransfersService', () => {
       sourceQtyByProductId: Record<string, number | null>;
     }) {
       const savedTransfers: StockTransferRequest[] = [];
-      const transferSave = jest.fn(
-        async (data: Partial<StockTransferRequest>) => {
-          const persisted = {
-            ...data,
-            id: `t-${savedTransfers.length + 1}`,
-          } as StockTransferRequest;
-          savedTransfers.push(persisted);
-          return persisted;
-        },
-      );
+      const transferSave = jest.fn((data: Partial<StockTransferRequest>) => {
+        const persisted = {
+          ...data,
+          id: `t-${savedTransfers.length + 1}`,
+        } as StockTransferRequest;
+        savedTransfers.push(persisted);
+        return Promise.resolve(persisted);
+      });
 
       dataSource.transaction.mockImplementation(
         async (cb: (m: unknown) => Promise<unknown>) => {
           const inventoryRepo = {
-            createQueryBuilder: jest.fn(() => {
+            createQueryBuilder: jest.fn((): InventoryQB => {
               let capturedProductId: string | undefined;
-              const qb = {
-                setLock: jest.fn().mockReturnThis(),
+              const qb: InventoryQB = {
+                setLock: jest.fn(() => qb),
                 where: jest.fn(
-                  (_sql: string, params: { productId?: string }) => {
+                  (_sql: string, params?: { productId?: string }) => {
                     if (params?.productId) capturedProductId = params.productId;
                     return qb;
                   },
                 ),
                 andWhere: jest.fn(
-                  (_sql: string, params: { productId?: string }) => {
+                  (_sql: string, params?: { productId?: string }) => {
                     if (params?.productId) capturedProductId = params.productId;
                     return qb;
                   },
                 ),
-                getOne: jest.fn(async () => {
-                  if (!capturedProductId) return null;
+                getOne: jest.fn(() => {
+                  if (!capturedProductId) return Promise.resolve(null);
                   const qty = opts.sourceQtyByProductId[capturedProductId];
-                  if (qty === null || qty === undefined) return null;
-                  return {
+                  if (qty === null || qty === undefined) {
+                    return Promise.resolve(null);
+                  }
+                  return Promise.resolve({
                     productId: capturedProductId,
                     branchId: srcId,
                     quantity: qty,
-                  } as Inventory;
+                  } as Inventory);
                 }),
               };
               return qb;
@@ -466,12 +473,16 @@ describe('StockTransfersService', () => {
 
     it('rejects when the source branch is inactive', async () => {
       // Arrange
-      branches.findById.mockImplementation(async (id: string) => {
+      branches.findById.mockImplementation((id: string) => {
         if (id === srcId) {
-          return { id, name: 'Source', isActive: false } as Branch;
+          return Promise.resolve({
+            id,
+            name: 'Source',
+            isActive: false,
+          } as Branch);
         }
-        if (id === dstId) return activeDestination;
-        return null;
+        if (id === dstId) return Promise.resolve(activeDestination);
+        return Promise.resolve(null);
       });
       const dto = {
         sourceBranchId: srcId,
@@ -530,8 +541,8 @@ describe('StockTransfersService', () => {
       const { savedTransfers, transferSave } = mockTransaction({
         sourceQtyByProductId: { p1: 100, p2: 100, p3: 100 },
       });
-      transfers.findById.mockImplementation(
-        async (id: string) => ({ id }) as StockTransferRequest,
+      transfers.findById.mockImplementation((id: string) =>
+        Promise.resolve({ id } as StockTransferRequest),
       );
       const dto = {
         sourceBranchId: srcId,
@@ -572,8 +583,8 @@ describe('StockTransfersService', () => {
       const { transferSave } = mockTransaction({
         sourceQtyByProductId: { p1: 100 },
       });
-      transfers.findById.mockImplementation(
-        async (id: string) => ({ id }) as StockTransferRequest,
+      transfers.findById.mockImplementation((id: string) =>
+        Promise.resolve({ id } as StockTransferRequest),
       );
       const dto = {
         sourceBranchId: srcId,
@@ -601,16 +612,13 @@ describe('StockTransfersService', () => {
       // Arrange
       mockActiveBranches();
       mockProducts({ p1: 'Apples', p2: 'Bananas' });
-      const recipients = [
-        { id: 'mgr-1' } as never,
-        { id: 'mgr-2' } as never,
-      ];
+      const recipients = [{ id: 'mgr-1' } as never, { id: 'mgr-2' } as never];
       users.findManagersAndAdminsForBranches.mockResolvedValue(recipients);
       mockTransaction({
         sourceQtyByProductId: { p1: 100, p2: 100 },
       });
-      transfers.findById.mockImplementation(
-        async (id: string) => ({ id }) as StockTransferRequest,
+      transfers.findById.mockImplementation((id: string) =>
+        Promise.resolve({ id } as StockTransferRequest),
       );
       const dto = {
         sourceBranchId: srcId,
@@ -645,26 +653,24 @@ describe('StockTransfersService', () => {
     } as Branch;
 
     function mockProducts(productNames: Record<string, string>) {
-      products.findById.mockImplementation(async (id: string) => {
+      products.findById.mockImplementation((id: string) => {
         if (productNames[id]) {
-          return { id, name: productNames[id] } as never;
+          return Promise.resolve({ id, name: productNames[id] } as never);
         }
-        return null;
+        return Promise.resolve(null);
       });
     }
 
     function mockTransaction() {
       const savedTransfers: StockTransferRequest[] = [];
-      const transferSave = jest.fn(
-        async (data: Partial<StockTransferRequest>) => {
-          const persisted = {
-            ...data,
-            id: `t-${savedTransfers.length + 1}`,
-          } as StockTransferRequest;
-          savedTransfers.push(persisted);
-          return persisted;
-        },
-      );
+      const transferSave = jest.fn((data: Partial<StockTransferRequest>) => {
+        const persisted = {
+          ...data,
+          id: `t-${savedTransfers.length + 1}`,
+        } as StockTransferRequest;
+        savedTransfers.push(persisted);
+        return Promise.resolve(persisted);
+      });
 
       dataSource.transaction.mockImplementation(
         async (cb: (m: unknown) => Promise<unknown>) => {
@@ -742,8 +748,8 @@ describe('StockTransfersService', () => {
       branches.findById.mockResolvedValue(activeBranch);
       mockProducts({ p1: 'Apples', p2: 'Bananas', p3: 'Carrots' });
       const { savedTransfers, transferSave } = mockTransaction();
-      transfers.findById.mockImplementation(
-        async (id: string) => ({ id }) as StockTransferRequest,
+      transfers.findById.mockImplementation((id: string) =>
+        Promise.resolve({ id } as StockTransferRequest),
       );
       const dto = {
         requestReason: 'low stock',
@@ -780,8 +786,8 @@ describe('StockTransfersService', () => {
       branches.findById.mockResolvedValue(activeBranch);
       mockProducts({ p1: 'Apples' });
       const { transferSave } = mockTransaction();
-      transfers.findById.mockImplementation(
-        async (id: string) => ({ id }) as StockTransferRequest,
+      transfers.findById.mockImplementation((id: string) =>
+        Promise.resolve({ id } as StockTransferRequest),
       );
       const dto = {
         requestReason: 'restock',
@@ -810,8 +816,8 @@ describe('StockTransfersService', () => {
       const admins = [{ id: 'admin-1' } as never, { id: 'admin-2' } as never];
       users.findAllByRole.mockResolvedValue(admins);
       mockTransaction();
-      transfers.findById.mockImplementation(
-        async (id: string) => ({ id }) as StockTransferRequest,
+      transfers.findById.mockImplementation((id: string) =>
+        Promise.resolve({ id } as StockTransferRequest),
       );
       const dto = {
         requestReason: 'restock',
