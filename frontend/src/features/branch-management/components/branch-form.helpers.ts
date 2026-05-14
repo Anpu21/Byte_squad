@@ -3,6 +3,7 @@ import type {
     IBranchCreatePayload,
     IBranchUpdatePayload,
 } from '@/types';
+import { normalizeSriLankaPhone } from '@/lib/phone';
 import type { BranchFormState } from './BranchFormFields';
 
 export function initialBranchForm(
@@ -27,6 +28,12 @@ function trimOrUndefined(value: string): string | undefined {
     return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function phoneOrUndefined(value: string): string | undefined {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) return undefined;
+    return normalizeSriLankaPhone(trimmed) ?? undefined;
+}
+
 export function buildCreatePayload(
     form: BranchFormState,
 ): IBranchCreatePayload {
@@ -39,7 +46,7 @@ export function buildCreatePayload(
         state: trimOrUndefined(form.state),
         country: trimOrUndefined(form.country),
         postalCode: trimOrUndefined(form.postalCode),
-        phone: trimOrUndefined(form.phone),
+        phone: phoneOrUndefined(form.phone),
         email: trimOrUndefined(form.email),
     };
 }
@@ -56,7 +63,7 @@ export function buildUpdatePayload(
         state: trimOrUndefined(form.state),
         country: trimOrUndefined(form.country),
         postalCode: trimOrUndefined(form.postalCode),
-        phone: trimOrUndefined(form.phone),
+        phone: phoneOrUndefined(form.phone),
         email: trimOrUndefined(form.email),
     };
 }

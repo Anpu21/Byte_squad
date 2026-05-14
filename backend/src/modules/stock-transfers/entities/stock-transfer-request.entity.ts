@@ -64,6 +64,10 @@ export class StockTransferRequest {
   @Column({ type: 'text', name: 'approval_note', nullable: true })
   approvalNote!: string | null;
 
+  @Column({ type: 'uuid', name: 'batch_id', nullable: true })
+  @Index()
+  batchId!: string | null;
+
   @Column({ type: 'uuid', name: 'requested_by_user_id' })
   requestedByUserId!: string;
 

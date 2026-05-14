@@ -1,10 +1,13 @@
-import { type RefObject, useState } from 'react';
+import { type RefObject, useRef, useState } from 'react';
 import { Minus, Plus, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { IProduct } from '@/types';
 import type { CartItem } from '../types/cart-item.type';
+import { usePosCartTableNav } from '../hooks/usePosCartTableNav';
 import { PosDiscountEditor } from './PosDiscountEditor';
 import { PosCartAddRow } from './PosCartAddRow';
+
+const COL_BORDER = 'border-r border-border';
 
 interface PosCartTableProps {
     cart: CartItem[];
@@ -14,6 +17,7 @@ interface PosCartTableProps {
     totalDiscount: number;
     total: number;
     branchId: string | null | undefined;
+    stockByProductId?: Record<string, number>;
     onSelectProduct: (product: IProduct) => void;
     onOpenCamera: () => void;
     inputRef: RefObject<HTMLInputElement | null>;
@@ -33,6 +37,7 @@ export function PosCartTable({
     totalDiscount,
     total,
     branchId,
+    stockByProductId,
     onSelectProduct,
     onOpenCamera,
     inputRef,
@@ -40,6 +45,13 @@ export function PosCartTable({
     const [editingDiscountId, setEditingDiscountId] = useState<string | null>(
         null,
     );
+    const tableRef = useRef<HTMLTableElement>(null);
+    const onCellKeyDown = usePosCartTableNav({
+        rowCount: cart.length,
+        colCount: 2,
+        tableRef,
+        fallbackRef: inputRef,
+    });
 
     function commitDiscount(productId: string, amount: number) {
         onSetItemDiscount(productId, amount > 0 ? amount : undefined);
@@ -48,20 +60,33 @@ export function PosCartTable({
 
     return (
         <div className="flex-1 min-h-[240px] overflow-y-auto overflow-x-visible">
-            <table className="w-full text-left border-collapse">
+            <table
+                ref={tableRef}
+                className="w-full text-left border-collapse"
+            >
                 <thead className="sticky top-0 bg-surface z-[1]">
-                    <tr className="text-[10px] uppercase tracking-[0.1em] text-text-3 border-b border-border">
-                        <th className="px-3 py-2.5 font-semibold w-[40px] text-center">
+                    <tr className="text-[10px] uppercase tracking-[0.1em] text-text-3 border-b-2 border-border">
+                        <th
+                            className={`px-3 py-2.5 font-semibold w-[40px] text-center ${COL_BORDER}`}
+                        >
                             #
                         </th>
-                        <th className="px-3 py-2.5 font-semibold">Product</th>
-                        <th className="px-2 py-2.5 font-semibold text-right w-[100px]">
+                        <th className={`px-3 py-2.5 font-semibold ${COL_BORDER}`}>
+                            Product
+                        </th>
+                        <th
+                            className={`px-2 py-2.5 font-semibold text-right w-[100px] ${COL_BORDER}`}
+                        >
                             Price
                         </th>
-                        <th className="px-2 py-2.5 font-semibold text-center w-[120px]">
+                        <th
+                            className={`px-2 py-2.5 font-semibold text-center w-[120px] ${COL_BORDER}`}
+                        >
                             Qty
                         </th>
-                        <th className="px-2 py-2.5 font-semibold text-right w-[150px]">
+                        <th
+                            className={`px-2 py-2.5 font-semibold text-right w-[150px] ${COL_BORDER}`}
+                        >
                             Discount
                         </th>
                         <th className="px-4 py-2.5 font-semibold text-right w-[130px]">
@@ -70,23 +95,28 @@ export function PosCartTable({
                     </tr>
                 </thead>
 
-                <tbody>
+                <tbody onKeyDown={onCellKeyDown}>
                     {cart.map((item, idx) => {
                         const isEditing =
                             editingDiscountId === item.product.id;
                         const hasDiscount =
                             (item.lineDiscountAmount ?? 0) > 0;
+                        const stock = stockByProductId?.[item.product.id];
+                        const atCap =
+                            stock !== undefined && item.quantity >= stock;
                         return (
                             <tr
                                 key={item.product.id}
                                 className="border-b border-border last:border-b-0 hover:bg-surface-2 group transition-colors align-middle"
                             >
-                                <td className="px-3 py-3 text-center align-middle">
+                                <td
+                                    className={`px-3 py-3 text-center align-middle ${COL_BORDER}`}
+                                >
                                     <span className="text-[12px] text-text-3 tabular-nums mono">
                                         {idx + 1}
                                     </span>
                                 </td>
-                                <td className="px-3 py-3 min-w-0">
+                                <td className={`px-3 py-3 min-w-0 ${COL_BORDER}`}>
                                     <div className="flex items-start gap-2">
                                         <div className="flex-1 min-w-0">
                                             <p className="text-[13px] font-medium text-text-1 truncate leading-tight">
@@ -109,12 +139,14 @@ export function PosCartTable({
                                         </button>
                                     </div>
                                 </td>
-                                <td className="px-2 py-3 text-right tabular-nums">
+                                <td
+                                    className={`px-2 py-3 text-right tabular-nums ${COL_BORDER}`}
+                                >
                                     <span className="text-[13px] text-text-2 mono">
                                         {formatCurrency(item.unitPrice)}
                                     </span>
                                 </td>
-                                <td className="px-1 py-3 text-center">
+                                <td className={`px-1 py-3 text-center ${COL_BORDER}`}>
                                     <div className="inline-flex items-center gap-0.5 bg-canvas border border-border rounded-md p-0.5">
                                         <button
                                             type="button"
@@ -132,6 +164,7 @@ export function PosCartTable({
                                         <input
                                             type="number"
                                             min="1"
+                                            max={stock}
                                             value={item.quantity}
                                             onChange={(e) => {
                                                 const v = e.target.value;
@@ -145,10 +178,13 @@ export function PosCartTable({
                                                 }
                                             }}
                                             aria-label={`Quantity for ${item.product.name}`}
+                                            data-cell-row={idx}
+                                            data-cell-col={0}
                                             className="w-9 h-6 text-center bg-transparent text-text-1 text-[13px] font-semibold tabular-nums outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         />
                                         <button
                                             type="button"
+                                            disabled={atCap}
                                             onClick={() =>
                                                 onUpdateQuantity(
                                                     item.product.id,
@@ -156,13 +192,23 @@ export function PosCartTable({
                                                 )
                                             }
                                             aria-label="Increase quantity"
-                                            className="w-6 h-6 rounded text-text-2 hover:text-text-1 hover:bg-primary-soft transition-colors flex items-center justify-center"
+                                            title={
+                                                atCap
+                                                    ? `Only ${stock} in stock`
+                                                    : undefined
+                                            }
+                                            className="w-6 h-6 rounded text-text-2 hover:text-text-1 hover:bg-primary-soft transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-2"
                                         >
                                             <Plus size={12} />
                                         </button>
                                     </div>
+                                    {atCap && (
+                                        <p className="mt-1 text-[10.5px] text-warning font-medium">
+                                            Only {stock} in stock
+                                        </p>
+                                    )}
                                 </td>
-                                <td className="px-2 py-3 text-right">
+                                <td className={`px-2 py-3 text-right ${COL_BORDER}`}>
                                     {isEditing ? (
                                         <PosDiscountEditor
                                             initialAmount={
@@ -191,6 +237,8 @@ export function PosCartTable({
                                                     ? `Edit discount for ${item.product.name}`
                                                     : `Add discount to ${item.product.name}`
                                             }
+                                            data-cell-row={idx}
+                                            data-cell-col={1}
                                             className={`inline-flex items-center justify-end gap-1 px-2 py-1 rounded-md text-[11px] font-semibold tabular-nums mono transition-colors focus:outline-none focus:ring-[3px] focus:ring-warning/30 ${
                                                 hasDiscount
                                                     ? 'bg-warning-soft text-warning border border-warning/30'
@@ -222,7 +270,10 @@ export function PosCartTable({
 
                 <tfoot>
                     <tr className="border-t-2 border-border-strong bg-surface-2/30">
-                        <td colSpan={5} className="px-4 py-2.5 text-right">
+                        <td
+                            colSpan={5}
+                            className={`px-4 py-2.5 text-right ${COL_BORDER}`}
+                        >
                             <span className="text-[11px] uppercase tracking-[0.1em] text-text-2 font-semibold">
                                 Total Discount
                             </span>
@@ -236,7 +287,10 @@ export function PosCartTable({
                         </td>
                     </tr>
                     <tr className="border-t border-border bg-surface-2/40">
-                        <td colSpan={5} className="px-4 py-3 text-right">
+                        <td
+                            colSpan={5}
+                            className={`px-4 py-3 text-right ${COL_BORDER}`}
+                        >
                             <span className="text-[11px] uppercase tracking-[0.1em] text-text-1 font-bold">
                                 Total Bill Amount · LKR
                             </span>

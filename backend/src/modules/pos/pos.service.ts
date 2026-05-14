@@ -1,11 +1,19 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { QueryFailedError } from 'typeorm';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { DataSource, QueryFailedError } from 'typeorm';
 import { Transaction } from '@pos/entities/transaction.entity.js';
+import { TransactionItem } from '@pos/entities/transaction-item.entity';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
+import { Inventory } from '@inventory/entities/inventory.entity';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { DiscountType } from '@common/enums/discount.enum';
+import { TransactionType } from '@common/enums/transaction.enum';
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -57,6 +65,7 @@ export class PosService {
   constructor(
     private readonly pos: PosRepository,
     private readonly accounting: AccountingRepository,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createTransaction(
@@ -118,30 +127,65 @@ export class PosService {
 
     const total = round2(Math.max(0, afterLineDiscounts - cartDiscountValue));
 
-    const saved = await this.pos.createAndSaveTransaction({
-      transactionNumber,
-      branchId,
-      cashierId,
-      type: dto.type,
-      subtotal,
-      discountAmount: cartDiscountAmount,
-      discountType: cartDiscountType,
-      taxAmount: 0,
-      total,
-      paymentMethod: dto.paymentMethod,
-      items,
-    });
+    const saved = await this.dataSource.transaction(async (manager) => {
+      if (dto.type === TransactionType.SALE) {
+        const inventoryRepo = manager.getRepository(Inventory);
+        for (const item of items) {
+          const inv = await inventoryRepo
+            .createQueryBuilder('inv')
+            .setLock('pessimistic_write')
+            .where('inv.product_id = :productId', { productId: item.productId })
+            .andWhere('inv.branch_id = :branchId', { branchId })
+            .getOne();
 
-    if (Number(saved.total) > 0) {
-      await this.accounting.createLedgerEntry({
-        branchId: saved.branchId,
-        entryType: LedgerEntryType.CREDIT,
-        amount: saved.total,
-        description: `POS Sale — ${saved.transactionNumber}`,
-        referenceNumber: saved.transactionNumber,
-        transactionId: saved.id,
-      });
-    }
+          if (!inv) {
+            throw new ConflictException(
+              `Product ${item.productId} is not stocked at this branch`,
+            );
+          }
+          if (inv.quantity < item.quantity) {
+            throw new ConflictException(
+              `Insufficient stock for product ${item.productId}: only ${inv.quantity} available (requested ${item.quantity})`,
+            );
+          }
+          inv.quantity -= item.quantity;
+          await inventoryRepo.save(inv);
+        }
+      }
+
+      const txnRepo = manager.getRepository(Transaction);
+      const itemRepo = manager.getRepository(TransactionItem);
+      const txn = await txnRepo.save(
+        txnRepo.create({
+          transactionNumber,
+          branchId,
+          cashierId,
+          type: dto.type,
+          subtotal,
+          discountAmount: cartDiscountAmount,
+          discountType: cartDiscountType,
+          taxAmount: 0,
+          total,
+          paymentMethod: dto.paymentMethod,
+        }),
+      );
+      await itemRepo.save(
+        items.map((it) => itemRepo.create({ ...it, transactionId: txn.id })),
+      );
+
+      if (Number(txn.total) > 0) {
+        await this.accounting.createLedgerEntryWithManager(manager, {
+          branchId: txn.branchId,
+          entryType: LedgerEntryType.CREDIT,
+          amount: txn.total,
+          description: `POS Sale — ${txn.transactionNumber}`,
+          referenceNumber: txn.transactionNumber,
+          transactionId: txn.id,
+        });
+      }
+
+      return txn;
+    });
 
     if (trimmedKey) {
       try {
@@ -151,8 +195,6 @@ export class PosService {
           transactionId: saved.id,
         });
       } catch (err) {
-        // Concurrent retry beat us to the insert. Return the row that won
-        // the race, not our just-created duplicate.
         if (err instanceof QueryFailedError) {
           const winning = await this.pos.findIdempotencyKey(
             cashierId,

@@ -58,9 +58,14 @@ export function SignupPage() {
                     type="tel"
                     autoComplete="tel"
                     inputMode="tel"
+                    maxLength={16}
                     value={p.phone}
-                    onChange={(e) => p.setPhone(e.target.value)}
-                    placeholder="+94 …"
+                    onChange={(e) => {
+                        p.setPhone(e.target.value);
+                        p.clearError('phone');
+                    }}
+                    placeholder="+94 77 123 4567"
+                    error={p.errors.phone}
                     sizeVariant="lg"
                 />
 

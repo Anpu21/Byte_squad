@@ -58,6 +58,7 @@ export const FRONTEND_ROUTES = {
     TRANSFER_HISTORY: '/transfers/history',
     TRANSFER_DETAIL: '/transfers/:id',
     ADMIN_TRANSFERS: '/admin/transfers',
+    ADMIN_TRANSFER_NEW: '/admin/transfers/new',
 
     // Customer storefront (login required)
     SHOP: '/shop',

@@ -13,7 +13,6 @@ import {
     Receipt,
     ScanLine,
     ScrollText,
-    Search,
     ShoppingCart,
     Truck,
     UserCog,
@@ -198,7 +197,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
-    const searchRef = useRef<HTMLInputElement>(null);
     const location = useLocation();
     const navigate = useNavigate();
     const crumbs = useBreadcrumbs();
@@ -207,17 +205,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const filteredNavItems = NAV_ITEMS.filter((item) =>
         user ? item.roles.includes(user.role as UserRole) : false,
     );
-
-    useEffect(() => {
-        const handler = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-                e.preventDefault();
-                searchRef.current?.focus();
-            }
-        };
-        window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
-    }, []);
 
     useEffect(() => {
         if (!profileOpen) return;
@@ -272,7 +259,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     };
 
     return (
-        <div className="min-h-screen flex bg-canvas text-text-1 font-sans">
+        <div className="h-screen flex bg-canvas text-text-1 font-sans overflow-hidden">
             <a
                 href="#main-content"
                 className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-modal focus:px-3 focus:py-2 focus:rounded-md focus:bg-primary focus:text-text-inv focus:text-sm focus:font-medium focus:shadow-md-token focus:outline-none focus:ring-[3px] focus:ring-primary/30"
@@ -439,22 +426,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         </nav>
                     )}
 
-                    <div className="flex-1 flex justify-end">
-                        <div className="hidden lg:flex items-center w-full max-w-[360px] h-[34px] px-3 bg-surface-2 border border-border rounded-md gap-2">
-                            <Search size={14} className="text-text-3 flex-shrink-0" />
-                            <input
-                                ref={searchRef}
-                                type="text"
-                                placeholder="Search products, transactions, customers…"
-                                className="flex-1 bg-transparent outline-none text-[13px] text-text-1 placeholder:text-text-3 min-w-0"
-                            />
-                            <span className="mono text-[10px] text-text-3 px-1.5 py-0.5 bg-surface border border-border rounded">
-                                ⌘K
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 flex-shrink-0">
+                    <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
                         <ThemeToggle />
                         <NotificationDropdown />
                         <div className="w-px h-6 bg-border mx-1" />

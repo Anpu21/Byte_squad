@@ -1,9 +1,11 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { DataSource } from 'typeorm';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
@@ -14,6 +16,8 @@ import { BranchesRepository } from '@branches/branches.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
 import { UsersRepository } from '@users/users.repository';
 import { CreateTransferRequestDto } from '@stock-transfers/dto/create-transfer-request.dto';
+import { CreateAdminDirectTransferDto } from '@stock-transfers/dto/create-admin-direct-transfer.dto';
+import { CreateManagerBatchTransferDto } from '@stock-transfers/dto/create-manager-batch-transfer.dto';
 import { ApproveTransferDto } from '@stock-transfers/dto/approve-transfer.dto';
 import { RejectTransferDto } from '@stock-transfers/dto/reject-transfer.dto';
 import { ListTransfersQueryDto } from '@stock-transfers/dto/list-transfers-query.dto';
@@ -249,6 +253,305 @@ export class StockTransfersService {
     return options;
   }
 
+  // Admin-only batch creator. Fans out a multi-line cart into N independent
+  // StockTransferRequest rows, all in APPROVED state, all sharing the same
+  // source + destination + reviewer (the admin). No backend schema change —
+  // each cart line is its own transfer row. Source stock is verified inside
+  // a single pessimistic-locked transaction, mirroring the `ship` path's
+  // locking discipline. Stock is NOT decremented here; it is decremented at
+  // the existing `ship` transition (same as manager-requested approvals).
+  async createAdminDirect(
+    adminUserId: string,
+    dto: CreateAdminDirectTransferDto,
+  ): Promise<StockTransferRequest[]> {
+    if (dto.sourceBranchId === dto.destinationBranchId) {
+      throw new BadRequestException(
+        'Source branch must be different from destination branch',
+      );
+    }
+
+    const sourceBranch = await this.branches.findById(dto.sourceBranchId);
+    if (!sourceBranch) {
+      throw new NotFoundException('Source branch not found');
+    }
+    if (!sourceBranch.isActive) {
+      throw new BadRequestException('Source branch is inactive');
+    }
+    const destinationBranch = await this.branches.findById(
+      dto.destinationBranchId,
+    );
+    if (!destinationBranch) {
+      throw new NotFoundException('Destination branch not found');
+    }
+    if (!destinationBranch.isActive) {
+      throw new BadRequestException('Destination branch is inactive');
+    }
+
+    // Dedupe lines by productId, summing quantities. First non-empty reason
+    // wins for a given product. Resulting `mergedLines` is the canonical
+    // list we'll persist.
+    const merged = new Map<
+      string,
+      { productId: string; quantity: number; requestReason: string | null }
+    >();
+    for (const line of dto.lines) {
+      const existing = merged.get(line.productId);
+      if (existing) {
+        existing.quantity += line.quantity;
+        if (!existing.requestReason && line.requestReason?.trim()) {
+          existing.requestReason = line.requestReason.trim();
+        }
+      } else {
+        merged.set(line.productId, {
+          productId: line.productId,
+          quantity: line.quantity,
+          requestReason: line.requestReason?.trim() || null,
+        });
+      }
+    }
+    const mergedLines = Array.from(merged.values());
+    if (mergedLines.length === 0) {
+      throw new BadRequestException('At least one line item is required');
+    }
+
+    // Validate every product exists before opening the transaction so the
+    // transactional path stays short and the error surfaces with the bad
+    // productId, not as a generic FK violation.
+    const productById = new Map<
+      string,
+      Awaited<ReturnType<typeof this.products.findById>>
+    >();
+    for (const line of mergedLines) {
+      const product = await this.products.findById(line.productId);
+      if (!product) {
+        throw new NotFoundException(`Product ${line.productId} not found`);
+      }
+      productById.set(line.productId, product);
+    }
+
+    const trimmedApprovalNote = dto.approvalNote?.trim() || null;
+    const now = new Date();
+    const batchId = randomUUID();
+
+    // One transaction for the whole batch: pessimistic-lock the source
+    // inventory rows, check stock, save all N transfers. If any line fails
+    // the whole batch rolls back — the admin sees a single error and fixes
+    // it before resubmitting (all-or-nothing).
+    const savedTransfers = await this.dataSource.transaction(
+      async (manager) => {
+        const inventoryRepo = manager.getRepository(Inventory);
+        const transferRepo = manager.getRepository(StockTransferRequest);
+        const saved: StockTransferRequest[] = [];
+
+        for (const line of mergedLines) {
+          const sourceInventory = await inventoryRepo
+            .createQueryBuilder('inv')
+            .setLock('pessimistic_write')
+            .where('inv.product_id = :productId', {
+              productId: line.productId,
+            })
+            .andWhere('inv.branch_id = :branchId', {
+              branchId: dto.sourceBranchId,
+            })
+            .getOne();
+
+          const product = productById.get(line.productId);
+          const productName = product?.name ?? line.productId;
+          if (!sourceInventory) {
+            throw new ConflictException(
+              `Source branch has no inventory record for ${productName}`,
+            );
+          }
+          if (sourceInventory.quantity < line.quantity) {
+            throw new ConflictException(
+              `${productName}: source branch has only ${sourceInventory.quantity} unit(s), cannot allocate ${line.quantity}`,
+            );
+          }
+
+          const created = transferRepo.create({
+            productId: line.productId,
+            sourceBranchId: dto.sourceBranchId,
+            destinationBranchId: dto.destinationBranchId,
+            requestedQuantity: line.quantity,
+            approvedQuantity: line.quantity,
+            status: TransferStatus.APPROVED,
+            requestedByUserId: adminUserId,
+            reviewedByUserId: adminUserId,
+            reviewedAt: now,
+            approvalNote: trimmedApprovalNote,
+            requestReason: line.requestReason,
+            batchId,
+          });
+          saved.push(await transferRepo.save(created));
+        }
+
+        return saved;
+      },
+    );
+
+    // One notification per recipient per batch — admins/managers see a
+    // single "approved batch" event instead of N per line, matching the
+    // single batch card on the admin Kanban.
+    const recipients = await this.collectBranchManagers([
+      dto.sourceBranchId,
+      dto.destinationBranchId,
+    ]);
+    const summary = mergedLines
+      .slice(0, 3)
+      .map((line) => productById.get(line.productId)?.name ?? 'product')
+      .join(', ');
+    const overflow =
+      mergedLines.length > 3 ? ` +${mergedLines.length - 3} more` : '';
+    const baseMessage = `Approved batch of ${mergedLines.length} product(s) from ${sourceBranch.name} to ${destinationBranch.name}: ${summary}${overflow}`;
+    const message = trimmedApprovalNote
+      ? `${baseMessage} — Admin note: ${trimmedApprovalNote}`
+      : baseMessage;
+    await Promise.all(
+      recipients.map((user) =>
+        this.notifyUser(user.id, {
+          title: 'Stock transfer approved',
+          message,
+          metadata: {
+            event: 'approved',
+            batchId,
+            transferIds: savedTransfers.map((t) => t.id),
+            sourceBranchName: sourceBranch.name,
+            destinationBranchName: destinationBranch.name,
+            productCount: mergedLines.length,
+            approvalNote: trimmedApprovalNote,
+            origin: 'admin-direct',
+          },
+        }),
+      ),
+    );
+
+    // Re-fetch with relations populated so callers (and HTTP responses) get
+    // fully hydrated entities, matching the shape returned by `approve`.
+    const hydrated: StockTransferRequest[] = [];
+    for (const transfer of savedTransfers) {
+      hydrated.push(await this.findByIdOrThrow(transfer.id));
+    }
+    return hydrated;
+  }
+
+  // Manager-only batch creator. Fans out a multi-line cart into N PENDING
+  // StockTransferRequest rows, destination = the manager's own branch. The
+  // admin still picks source and approves each row individually, so this
+  // endpoint never touches source/inventory. Atomic transaction ensures the
+  // admin sees the whole batch land together in their Kanban To-Do column.
+  async createManagerBatch(
+    actor: ActorContext,
+    dto: CreateManagerBatchTransferDto,
+  ): Promise<StockTransferRequest[]> {
+    if (!actor.branchId) {
+      throw new BadRequestException(
+        'Your account is not associated with a branch',
+      );
+    }
+
+    const destinationBranch = await this.branches.findById(actor.branchId);
+    if (!destinationBranch) {
+      throw new NotFoundException('Destination branch not found');
+    }
+    if (!destinationBranch.isActive) {
+      throw new BadRequestException('Destination branch is inactive');
+    }
+
+    // Dedupe lines by productId, summing quantities. Mirrors admin-direct.
+    const merged = new Map<string, { productId: string; quantity: number }>();
+    for (const line of dto.lines) {
+      const existing = merged.get(line.productId);
+      if (existing) {
+        existing.quantity += line.quantity;
+      } else {
+        merged.set(line.productId, {
+          productId: line.productId,
+          quantity: line.quantity,
+        });
+      }
+    }
+    const mergedLines = Array.from(merged.values());
+    if (mergedLines.length === 0) {
+      throw new BadRequestException('At least one line item is required');
+    }
+
+    // Validate every product exists before opening the transaction so a bad
+    // productId surfaces by name instead of as a generic FK violation.
+    const productById = new Map<
+      string,
+      Awaited<ReturnType<typeof this.products.findById>>
+    >();
+    for (const line of mergedLines) {
+      const product = await this.products.findById(line.productId);
+      if (!product) {
+        throw new NotFoundException(`Product ${line.productId} not found`);
+      }
+      productById.set(line.productId, product);
+    }
+
+    const trimmedReason = dto.requestReason.trim();
+    if (!trimmedReason) {
+      throw new BadRequestException('Reason is required');
+    }
+    const batchId = randomUUID();
+
+    // Atomic batch save. Unlike admin-direct this never locks inventory —
+    // manager requests are advisory until admin approve, and the binding
+    // stock check happens under pessimistic lock at ship time.
+    const savedTransfers = await this.dataSource.transaction(
+      async (manager) => {
+        const transferRepo = manager.getRepository(StockTransferRequest);
+        const saved: StockTransferRequest[] = [];
+        for (const line of mergedLines) {
+          const created = transferRepo.create({
+            productId: line.productId,
+            destinationBranchId: actor.branchId as string,
+            requestedQuantity: line.quantity,
+            status: TransferStatus.PENDING,
+            requestedByUserId: actor.id,
+            requestReason: trimmedReason,
+            batchId,
+          });
+          saved.push(await transferRepo.save(created));
+        }
+        return saved;
+      },
+    );
+
+    // One notification per admin per batch — collapses N-line storms into
+    // a single event matching the single batch card on the admin Kanban.
+    const admins = await this.users.findAllByRole(UserRole.ADMIN);
+    const summary = mergedLines
+      .slice(0, 3)
+      .map((line) => productById.get(line.productId)?.name ?? 'product')
+      .join(', ');
+    const overflow =
+      mergedLines.length > 3 ? ` +${mergedLines.length - 3} more` : '';
+    const message = `${destinationBranch.name} requested ${mergedLines.length} product(s): ${summary}${overflow}`;
+    await Promise.all(
+      admins.map((admin) =>
+        this.notifyUser(admin.id, {
+          title: 'New stock transfer request',
+          message,
+          metadata: {
+            event: 'created',
+            batchId,
+            transferIds: savedTransfers.map((t) => t.id),
+            destinationBranchName: destinationBranch.name,
+            productCount: mergedLines.length,
+            origin: 'manager-batch',
+          },
+        }),
+      ),
+    );
+
+    const hydrated: StockTransferRequest[] = [];
+    for (const transfer of savedTransfers) {
+      hydrated.push(await this.findByIdOrThrow(transfer.id));
+    }
+    return hydrated;
+  }
+
   async approve(
     id: string,
     dto: ApproveTransferDto,
@@ -307,26 +610,41 @@ export class StockTransfersService {
       transfer.destinationBranchId,
     ]);
     const productName = updated.product.name;
-    const baseMessage = `Approved: ${dto.approvedQuantity} unit(s) of ${productName} from ${sourceBranch.name} to ${updated.destinationBranch.name}`;
-    const message = trimmedNote
-      ? `${baseMessage} — Admin note: ${trimmedNote}`
-      : baseMessage;
+    const qty = dto.approvedQuantity;
+    const fromName = sourceBranch.name;
+    const toName = updated.destinationBranch.name;
+
+    const genericBase = `Approved: ${qty} unit(s) of ${productName} from ${fromName} to ${toName}`;
+    const genericMessage = trimmedNote
+      ? `${genericBase} — Admin note: ${trimmedNote}`
+      : genericBase;
+    const shipBase = `Please ship ${qty} unit(s) of ${productName} from ${fromName} to ${toName}`;
+    const shipMessage = trimmedNote
+      ? `${shipBase} — Admin note: ${trimmedNote}`
+      : shipBase;
+
     await Promise.all(
-      recipients.map((user) =>
-        this.notifyUser(user.id, {
-          title: 'Stock transfer approved',
-          message,
+      recipients.map((user) => {
+        const isSourceManager =
+          user.role === UserRole.MANAGER &&
+          user.branchId === dto.sourceBranchId;
+        return this.notifyUser(user.id, {
+          title: isSourceManager
+            ? 'Action needed — ship transfer'
+            : 'Stock transfer approved',
+          message: isSourceManager ? shipMessage : genericMessage,
           metadata: {
             event: 'approved',
             transferId: id,
             productName,
-            sourceBranchName: sourceBranch.name,
-            destinationBranchName: updated.destinationBranch.name,
-            quantity: dto.approvedQuantity,
+            sourceBranchName: fromName,
+            destinationBranchName: toName,
+            quantity: qty,
             approvalNote: trimmedNote ?? null,
+            role: isSourceManager ? 'source' : 'destination',
           },
-        }),
-      ),
+        });
+      }),
     );
 
     return updated;

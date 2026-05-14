@@ -43,8 +43,11 @@ export class User {
   @JoinColumn({ name: 'branch_id' })
   branch!: Branch | null;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', length: 16, nullable: true })
   phone!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  address!: string | null;
 
   @Column({ type: 'boolean', name: 'is_first_login', default: true })
   isFirstLogin!: boolean;

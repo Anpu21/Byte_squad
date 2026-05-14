@@ -10,9 +10,9 @@ interface UserTableProps {
     openMenuId: string | null;
     onToggleMenu: (id: string) => void;
     getBranchName: (branchId: string | null) => string;
-    onResendCredentials: (id: string) => void;
-    onResetPassword: (user: IUser) => void;
-    onDelete: (user: IUser) => void;
+    onEdit: (user: IUser) => void;
+    onRequestResetPassword: (user: IUser) => void;
+    onRequestDelete: (user: IUser) => void;
 }
 
 export function UserTable({
@@ -23,9 +23,9 @@ export function UserTable({
     openMenuId,
     onToggleMenu,
     getBranchName,
-    onResendCredentials,
-    onResetPassword,
-    onDelete,
+    onEdit,
+    onRequestResetPassword,
+    onRequestDelete,
 }: UserTableProps) {
     return (
         <Card>
@@ -44,16 +44,22 @@ export function UserTable({
                                 <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
                                     Email
                                 </th>
+                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap hidden md:table-cell">
+                                    Phone
+                                </th>
                                 <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
                                     Role
                                 </th>
                                 <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
                                     Branch
                                 </th>
+                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap hidden lg:table-cell">
+                                    Address
+                                </th>
                                 <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
                                     Status
                                 </th>
-                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
+                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap hidden xl:table-cell">
                                     Joined
                                 </th>
                                 <th className="px-5 py-2.5 font-semibold text-right" />
@@ -63,7 +69,7 @@ export function UserTable({
                             {users.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={7}
+                                        colSpan={9}
                                         className="px-5 py-16 text-center text-text-3"
                                     >
                                         {hasFilters
@@ -79,9 +85,11 @@ export function UserTable({
                                         branchName={getBranchName(user.branchId)}
                                         isMenuOpen={openMenuId === user.id}
                                         onToggleMenu={() => onToggleMenu(user.id)}
-                                        onResendCredentials={onResendCredentials}
-                                        onResetPassword={onResetPassword}
-                                        onDelete={onDelete}
+                                        onEdit={onEdit}
+                                        onRequestResetPassword={
+                                            onRequestResetPassword
+                                        }
+                                        onRequestDelete={onRequestDelete}
                                     />
                                 ))
                             )}

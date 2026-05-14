@@ -423,8 +423,18 @@ See [DOCKER.md](./DOCKER.md) for full deployment notes (multi-stage builds, prod
 | `docker compose up -d`            | Start dev stack (cached layers)                 |
 | `docker compose logs -f backend`  | Tail backend logs                               |
 | `docker compose exec backend sh`  | Shell into the backend container                |
+| `docker compose restart`          | Restart **all** containers (frontend, backend, postgres) |
+| `docker compose restart backend`  | Restart a single service (swap `backend` for `frontend` or `postgres`) |
+| `docker compose down && docker compose up -d` | Full stop + start (use after editing `docker-compose.yml` or `.env`) |
+| `docker compose up -d --force-recreate backend` | Recreate one container from scratch without rebuilding the image |
 | `docker compose down`             | Stop containers (keep volumes)                  |
 | `docker compose down -v`          | Stop containers **and drop the postgres volume** (resets all data — re-seeds on next `up`) |
+
+> **When to use which restart**
+> - **Code change** (backend/frontend `src/`): no restart needed — both services run in watch mode with bind mounts.
+> - **Dependency change** (`package.json`): `docker compose up -d --build` to rebuild the image.
+> - **Env change** (`.env`): `docker compose down && docker compose up -d` — `restart` alone won't reload env vars.
+> - **Container looks stuck / port stuck:** `docker compose restart <service>`.
 
 ---
 

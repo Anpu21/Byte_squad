@@ -5,6 +5,7 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
+import { IsSriLankaPhone } from '@common/decorators/is-sri-lanka-phone.decorator';
 
 export class SignupDto {
   @IsEmail()
@@ -23,6 +24,6 @@ export class SignupDto {
   lastName!: string;
 
   @IsOptional()
-  @IsString()
+  @IsSriLankaPhone()
   phone?: string;
 }

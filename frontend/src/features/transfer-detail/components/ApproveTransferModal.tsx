@@ -20,6 +20,22 @@ export function ApproveTransferModal({
     submitting,
     onSubmit,
 }: ApproveTransferModalProps) {
+    const chosenSource = state.sourceOptions.find(
+        (opt) => opt.branchId === state.chosenSourceId,
+    );
+    const parsedQty = Number.parseInt(state.approvedQuantityStr, 10);
+    const qtyIsNumber = !Number.isNaN(parsedQty);
+    const qtyInRange =
+        qtyIsNumber &&
+        parsedQty >= 1 &&
+        parsedQty <= transfer.requestedQuantity;
+    const qtyWithinStock =
+        qtyIsNumber && chosenSource
+            ? parsedQty <= chosenSource.currentQuantity
+            : false;
+    const canSubmit =
+        Boolean(chosenSource) && qtyInRange && qtyWithinStock;
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Approve transfer" maxWidth="2xl">
             <div>
@@ -59,6 +75,21 @@ export function ApproveTransferModal({
                     <p className="text-[11px] text-text-3 mt-1">
                         Requested: {transfer.requestedQuantity} unit(s)
                     </p>
+                    {chosenSource && (
+                        <p
+                            className={`text-[11px] mt-1 ${
+                                qtyWithinStock
+                                    ? 'text-text-3'
+                                    : 'text-warning font-medium'
+                            }`}
+                        >
+                            {chosenSource.branchName} has{' '}
+                            {chosenSource.currentQuantity} unit(s) in stock.
+                            {!qtyWithinStock && qtyIsNumber
+                                ? ` — over by ${parsedQty - chosenSource.currentQuantity}.`
+                                : ''}
+                        </p>
+                    )}
                 </div>
 
                 <div className="mb-4">
@@ -95,7 +126,7 @@ export function ApproveTransferModal({
                     <button
                         type="button"
                         onClick={onSubmit}
-                        disabled={submitting || !state.chosenSourceId}
+                        disabled={submitting || !canSubmit}
                         className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all disabled:opacity-50"
                     >
                         {submitting ? 'Approving…' : 'Confirm approval'}

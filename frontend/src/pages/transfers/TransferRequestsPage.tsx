@@ -1,8 +1,10 @@
 import { useTransferRequestsPage } from '@/features/transfer-requests/hooks/useTransferRequestsPage';
 import { TransferScopeTabs } from '@/features/transfer-requests/components/TransferScopeTabs';
 import { TransferRequestsTable } from '@/features/transfer-requests/components/TransferRequestsTable';
+import { useStockTransferRealtime } from '@/hooks/useStockTransferRealtime';
 
 export function TransferRequestsPage() {
+    useStockTransferRealtime();
     const p = useTransferRequestsPage();
 
     return (

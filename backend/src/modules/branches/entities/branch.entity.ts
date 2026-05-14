@@ -39,7 +39,7 @@ export class Branch {
   @Column({ type: 'varchar', name: 'postal_code', nullable: true })
   postalCode!: string | null;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar', length: 16 })
   phone!: string;
 
   @Column({ type: 'varchar', nullable: true })

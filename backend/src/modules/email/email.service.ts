@@ -307,6 +307,77 @@ export class EmailService implements OnModuleInit {
     }
   }
 
+  async sendUserActionOtpEmail(
+    to: string,
+    firstName: string,
+    otpCode: string,
+    action: 'create' | 'update' | 'delete' | 'reset-password',
+    targetLabel: string,
+    expiresInMinutes: number,
+  ): Promise<void> {
+    const actionLabel =
+      action === 'create'
+        ? 'create a new user'
+        : action === 'update'
+          ? `update user ${targetLabel}`
+          : action === 'delete'
+            ? `delete user ${targetLabel}`
+            : `reset the password for ${targetLabel}`;
+    const subject = `LedgerPro — Confirm ${action} user (code ${otpCode})`;
+
+    const html = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #0a0a0a; border: 1px solid #222; border-radius: 12px; overflow: hidden;">
+        <div style="background: #111; padding: 32px 32px 24px; border-bottom: 1px solid #222;">
+          <h1 style="color: #fff; font-size: 22px; margin: 0; font-weight: 700;">LedgerPro</h1>
+        </div>
+        <div style="padding: 32px;">
+          <p style="color: #e2e8f0; font-size: 15px; margin: 0 0 20px;">
+            Hi <strong>${firstName}</strong>,
+          </p>
+          <p style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+            We received a request to ${actionLabel}. Enter the code below in the
+            admin console to confirm this action.
+          </p>
+
+          <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 24px; margin: 0 0 24px; text-align: center;">
+            <p style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 12px;">Confirmation Code</p>
+            <p style="color: #fff; font-size: 32px; font-weight: 700; font-family: monospace; letter-spacing: 6px; margin: 0;">${otpCode}</p>
+          </div>
+
+          <div style="background: #1c1007; border: 1px solid #854d0e; border-radius: 8px; padding: 12px 16px; margin: 0 0 24px;">
+            <p style="color: #fbbf24; font-size: 13px; margin: 0;">
+              This code expires in <strong>${expiresInMinutes} minutes</strong>.
+            </p>
+          </div>
+
+          <p style="color: #475569; font-size: 12px; margin: 0; line-height: 1.5;">
+            If you did not initiate this action, ignore this email and consider
+            rotating your account credentials.
+          </p>
+        </div>
+      </div>
+    `;
+
+    try {
+      await this.transporter.sendMail({
+        from: this.configService.get<string>(
+          'MAIL_FROM',
+          '"LedgerPro" <noreply@ledgerpro.com>',
+        ),
+        to,
+        subject,
+        html,
+      });
+      this.logger.log(`User-action OTP email sent to ${to}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Failed to send user-action OTP email to ${to}: ${message}`,
+      );
+      throw error;
+    }
+  }
+
   async sendPasswordResetEmail(
     to: string,
     firstName: string,

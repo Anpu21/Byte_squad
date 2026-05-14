@@ -1,6 +1,4 @@
-import { useNavigate } from 'react-router-dom';
-import { Package, Plus } from 'lucide-react';
-import { FRONTEND_ROUTES } from '@/constants/routes';
+import { Package } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
 import type { FlatRecord } from '../types/flat-record.type';
@@ -30,8 +28,6 @@ export function InventoryRecordTable({
     hasActiveFilter,
     onResetFilters,
 }: InventoryRecordTableProps) {
-    const navigate = useNavigate();
-
     return (
         <div className="bg-surface border border-border rounded-md overflow-hidden">
             <div className="overflow-x-auto">
@@ -86,20 +82,7 @@ export function InventoryRecordTable({
                                                 >
                                                     Reset filters
                                                 </Button>
-                                            ) : (
-                                                <Button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        navigate(
-                                                            FRONTEND_ROUTES.INVENTORY_ADD,
-                                                        )
-                                                    }
-                                                    size="md"
-                                                >
-                                                    <Plus size={14} /> Add
-                                                    product
-                                                </Button>
-                                            )
+                                            ) : undefined
                                         }
                                     />
                                 </td>
