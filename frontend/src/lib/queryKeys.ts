@@ -116,6 +116,7 @@ export const queryKeys = {
     },
     ledger: {
         entries: (filters: {
+            branchId?: string | null;
             entryType?: string;
             startDate?: string;
             endDate?: string;
@@ -123,7 +124,8 @@ export const queryKeys = {
             page: number;
             limit: number;
         }) => ['ledger', 'entries', filters] as const,
-        summary: () => ['ledger', 'summary'] as const,
+        summary: (branchId?: string | null) =>
+            ['ledger', 'summary', branchId ?? null] as const,
     },
     accounting: {
         profitLoss: (startDate: string, endDate: string) =>

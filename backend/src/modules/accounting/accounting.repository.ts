@@ -40,6 +40,7 @@ export class AccountingRepository {
 
   async listLedger(opts: ListLedgerOptions): Promise<PagedLedger> {
     const qb = this.ledgerRepo.createQueryBuilder('le');
+    qb.leftJoinAndSelect('le.branch', 'branch');
     if (opts.branchId !== null) {
       qb.where('le.branch_id = :branchId', { branchId: opts.branchId });
     }
@@ -64,7 +65,7 @@ export class AccountingRepository {
       );
     }
 
-    qb.orderBy('le.created_at', 'DESC');
+    qb.orderBy('le.createdAt', 'DESC');
     const [items, total] = await qb
       .skip((opts.page - 1) * opts.limit)
       .take(opts.limit)

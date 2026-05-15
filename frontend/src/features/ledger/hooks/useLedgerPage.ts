@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { queryKeys } from '@/lib/queryKeys';
+import { userService } from '@/services/user.service';
 import { useLedgerFilters } from './useLedgerFilters';
 import {
     useLedgerQuery,
@@ -12,8 +15,14 @@ import { computeRunningBalance } from '../lib/compute-balance';
 export function useLedgerPage() {
     const { user } = useAuth();
     const filters = useLedgerFilters();
+    const branchesQuery = useQuery({
+        queryKey: queryKeys.branches.all(),
+        queryFn: userService.getBranches,
+    });
     const entriesQuery = useLedgerQuery(filters);
-    const summaryQuery = useLedgerSummaryQuery();
+    const summaryQuery = useLedgerSummaryQuery(filters.branchId || undefined);
+
+    const branches = useMemo(() => branchesQuery.data ?? [], [branchesQuery.data]);
 
     const entries = useMemo(
         () => entriesQuery.data?.items ?? [],
@@ -28,6 +37,7 @@ export function useLedgerPage() {
     );
 
     const exportApi = useLedgerExport({
+        branchId: filters.branchId,
         entryType: filters.entryType,
         startDate: filters.startDate,
         endDate: filters.endDate,
@@ -45,6 +55,7 @@ export function useLedgerPage() {
 
     return {
         filters,
+        branches,
         entries,
         entriesWithBalance,
         total,

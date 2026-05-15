@@ -45,6 +45,58 @@ describe('AccountingService', () => {
     repo = module.get(AccountingRepository);
   });
 
+  describe('getLedgerEntries', () => {
+    it('forwards branchId and filters to the repository', async () => {
+      repo.listLedger.mockResolvedValue({
+        items: [],
+        total: 0,
+        page: 2,
+        limit: 10,
+        totalPages: 0,
+      } as never);
+
+      await service.getLedgerEntries('branch-1', {
+        entryType: 'credit',
+        startDate: '2026-05-01',
+        endDate: '2026-05-31',
+        search: 'invoice',
+        page: 2,
+        limit: 10,
+      });
+
+      expect(repo.listLedger).toHaveBeenCalledWith(
+        expect.objectContaining({
+          branchId: 'branch-1',
+          entryType: 'credit',
+          startDate: '2026-05-01',
+          endDate: '2026-05-31',
+          search: 'invoice',
+          page: 2,
+          limit: 10,
+        }),
+      );
+    });
+  });
+
+  describe('getLedgerSummary', () => {
+    it('forwards branchId to the repository and rounds totals', async () => {
+      repo.getLedgerSummary.mockResolvedValue({
+        totalCredits: 123.456,
+        totalDebits: 23.456,
+        entryCount: 4,
+      } as never);
+
+      await expect(service.getLedgerSummary('branch-1')).resolves.toEqual({
+        totalCredits: 123.46,
+        totalDebits: 23.46,
+        netBalance: 100,
+        entryCount: 4,
+      });
+
+      expect(repo.getLedgerSummary).toHaveBeenCalledWith('branch-1');
+    });
+  });
+
   describe('createExpense', () => {
     it('rejects when an admin omits dto.branchId (admins are not pinned to a branch)', async () => {
       await expect(

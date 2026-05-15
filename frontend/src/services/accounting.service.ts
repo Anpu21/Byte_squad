@@ -20,8 +20,10 @@ export const accountingService = {
     return response.data.data
   },
 
-  getLedgerSummary: async (): Promise<ILedgerSummary> => {
-    const response = await api.get<IApiResponse<ILedgerSummary>>('/accounting/ledger/summary')
+  getLedgerSummary: async (branchId?: string): Promise<ILedgerSummary> => {
+    const response = await api.get<IApiResponse<ILedgerSummary>>('/accounting/ledger/summary', {
+      params: branchId ? { branchId } : undefined,
+    })
     return response.data.data
   },
 

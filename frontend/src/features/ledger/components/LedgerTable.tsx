@@ -39,7 +39,7 @@ export function LedgerTable({ entries, isLoading, hasFilters }: LedgerTableProps
 
     return (
         <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full min-w-[920px] text-left">
                 <thead>
                     <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 bg-surface-2 border-b border-border">
                         <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
@@ -47,6 +47,9 @@ export function LedgerTable({ entries, isLoading, hasFilters }: LedgerTableProps
                         </th>
                         <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
                             Reference
+                        </th>
+                        <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
+                            Branch
                         </th>
                         <th className="px-5 py-2.5 font-semibold">
                             Description

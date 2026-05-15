@@ -13,6 +13,7 @@ export function LedgerPage() {
     const periodLabel = formatPeriodLabel(filters.startDate, filters.endDate);
     const hasFilters =
         Boolean(filters.debouncedSearch) ||
+        Boolean(filters.branchId) ||
         filters.entryType !== 'all' ||
         Boolean(filters.startDate) ||
         Boolean(filters.endDate);
@@ -34,7 +35,7 @@ export function LedgerPage() {
             )}
 
             <LedgerSummaryCards summary={p.summary} />
-            <LedgerFilters filters={filters} />
+            <LedgerFilters filters={filters} branches={p.branches} />
 
             <Card className="overflow-hidden">
                 <LedgerTable
