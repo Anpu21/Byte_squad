@@ -314,6 +314,16 @@ export class BranchesService {
     action: PendingBranchActionType,
     branchLabel: string,
   ): Promise<void> {
+    const isProd = this.isProduction();
+
+    // Dev: always log so the developer can copy from container logs, even when
+    // SMTP succeeds (the email may land in spam or be delayed).
+    if (!isProd) {
+      this.logger.warn(
+        `✨ DEV branch-action OTP for ${admin.email} (${action} ${branchLabel}): ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m).`,
+      );
+    }
+
     if (this.emailService.isVerified()) {
       await this.emailService.sendBranchActionOtpEmail(
         admin.email,
@@ -325,14 +335,14 @@ export class BranchesService {
       );
       return;
     }
-    if (this.isProduction()) {
+    if (isProd) {
       throw new ServiceUnavailableException(
         'Email service unavailable. Please try again in a moment.',
       );
     }
-    // Dev fallback — log so the developer can copy the code from container logs.
+    // Dev with no SMTP — the OTP was already logged above; nothing else to do.
     this.logger.warn(
-      `✨ DEV branch-action OTP for ${admin.email} (${action} ${branchLabel}): ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m).`,
+      `SMTP unavailable; OTP for ${admin.email} only printed to logs.`,
     );
   }
 

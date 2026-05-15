@@ -89,6 +89,15 @@ export class AuthService {
     });
     this.logger.log(`Customer signup: ${saved.email}`);
 
+    const isProd = this.isProduction();
+    if (!isProd) {
+      // Always log in dev so the OTP is available from container logs even
+      // when SMTP succeeds (mail may land in spam or be delayed).
+      this.logger.warn(
+        `✨ DEV signup OTP for ${saved.email}: ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m).`,
+      );
+    }
+
     if (this.emailService.isVerified()) {
       try {
         await this.emailService.sendOtpEmail(
@@ -99,28 +108,28 @@ export class AuthService {
         );
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(
-          `Failed to send OTP email to ${saved.email}: ${message}. Rolling back signup.`,
-        );
-        // Roll back the half-created user so a retry can succeed without 409.
-        await this.usersService.removeByIdInternal(saved.id);
-        throw new ServiceUnavailableException(
-          'Email service unavailable. Please try again in a moment.',
+        if (isProd) {
+          this.logger.error(
+            `Failed to send OTP email to ${saved.email}: ${message}. Rolling back signup.`,
+          );
+          // Roll back the half-created user so a retry can succeed without 409.
+          await this.usersService.removeByIdInternal(saved.id);
+          throw new ServiceUnavailableException(
+            'Email service unavailable. Please try again in a moment.',
+          );
+        }
+        // Dev: keep the user; the OTP is already in the logs above.
+        this.logger.warn(
+          `SMTP send failed in dev for ${saved.email}: ${message}. OTP printed to logs.`,
         );
       }
-    } else if (this.isProduction()) {
+    } else if (isProd) {
       this.logger.error(
         `Cannot send OTP to ${saved.email}: email transporter not verified. Rolling back signup.`,
       );
       await this.usersService.removeByIdInternal(saved.id);
       throw new ServiceUnavailableException(
         'Email service unavailable. Please try again in a moment.',
-      );
-    } else {
-      // Dev fallback: SMTP unreachable. Log the OTP so the developer can copy
-      // it from the container logs and continue verification.
-      this.logger.warn(
-        `✨ DEV OTP for ${saved.email}: ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m). SMTP unavailable; copy from logs to verify.`,
       );
     }
 
@@ -163,6 +172,12 @@ export class AuthService {
       Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
     );
     await this.usersService.setOtp(user.id, otpCode, otpExpiresAt);
+
+    if (!this.isProduction()) {
+      this.logger.warn(
+        `✨ DEV resend OTP for ${user.email}: ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m).`,
+      );
+    }
 
     await this.emailService.sendOtpEmail(
       user.email,
@@ -290,6 +305,14 @@ export class AuthService {
     );
     await this.usersService.setOtp(user.id, otpCode, otpExpiresAt);
 
+    const isProd = this.isProduction();
+    if (!isProd) {
+      // Always log in dev so the OTP is available from container logs.
+      this.logger.warn(
+        `✨ DEV password reset OTP for ${user.email}: ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m).`,
+      );
+    }
+
     if (this.emailService.isVerified()) {
       try {
         await this.emailService.sendPasswordResetOtpEmail(
@@ -300,23 +323,24 @@ export class AuthService {
         );
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(
-          `Failed to send password reset OTP to ${user.email}: ${message}`,
-        );
-        throw new ServiceUnavailableException(
-          'Email service unavailable. Please try again in a moment.',
+        if (isProd) {
+          this.logger.error(
+            `Failed to send password reset OTP to ${user.email}: ${message}`,
+          );
+          throw new ServiceUnavailableException(
+            'Email service unavailable. Please try again in a moment.',
+          );
+        }
+        this.logger.warn(
+          `SMTP send failed in dev for ${user.email}: ${message}. OTP printed to logs.`,
         );
       }
-    } else if (this.isProduction()) {
+    } else if (isProd) {
       this.logger.error(
         `Cannot send password reset OTP to ${user.email}: email transporter not verified.`,
       );
       throw new ServiceUnavailableException(
         'Email service unavailable. Please try again in a moment.',
-      );
-    } else {
-      this.logger.warn(
-        `✨ DEV password reset OTP for ${user.email}: ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m). SMTP unavailable; copy from logs to reset.`,
       );
     }
 
