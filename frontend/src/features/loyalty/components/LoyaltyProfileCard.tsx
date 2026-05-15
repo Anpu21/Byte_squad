@@ -2,9 +2,16 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useLoyaltySummary } from '../hooks/useLoyaltySummary';
+import { useLoyaltySettings } from '../hooks/useLoyaltySettings';
+import {
+    formatEarnRule,
+    formatPointValueRule,
+    formatRedeemCapRule,
+} from '../lib/format-loyalty-rules';
 
 export function LoyaltyProfileCard() {
     const { data, isLoading, isError } = useLoyaltySummary();
+    const { data: settings } = useLoyaltySettings();
 
     if (isLoading || isError || !data) return null;
 
@@ -54,9 +61,9 @@ export function LoyaltyProfileCard() {
                         <p className="text-[11px] uppercase tracking-widest text-text-3">
                             How it works
                         </p>
-                        <p>&bull; Earn 1 point for every LKR 100 paid</p>
-                        <p>&bull; Redeem 1 point as LKR 1 off any order</p>
-                        <p>&bull; Cap of 20% off per order</p>
+                        <p>&bull; {formatEarnRule(settings)}</p>
+                        <p>&bull; {formatPointValueRule(settings)}</p>
+                        <p>&bull; {formatRedeemCapRule(settings)}</p>
                     </div>
                 </div>
             </div>

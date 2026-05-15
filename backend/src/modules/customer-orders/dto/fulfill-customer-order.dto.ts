@@ -2,7 +2,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
-  IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsUUID,
@@ -22,7 +22,9 @@ export class FulfillCustomerOrderItemDto {
 
 export class FulfillCustomerOrderDto {
   @IsOptional()
-  @IsEnum(PaymentMethod)
+  @IsIn([PaymentMethod.CASH], {
+    message: 'Pickup orders can only be settled with cash',
+  })
   paymentMethod?: PaymentMethod;
 
   @IsOptional()

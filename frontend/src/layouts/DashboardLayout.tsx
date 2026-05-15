@@ -14,6 +14,7 @@ import {
     ScanLine,
     ScrollText,
     ShoppingCart,
+    Sparkles,
     Truck,
     UserCog,
     Users,
@@ -128,6 +129,13 @@ const NAV_ITEMS: NavItem[] = [
         roles: [UserRole.ADMIN],
         icon: <PiggyBank size={15} />,
         group: 'Accounting',
+    },
+    {
+        label: 'Customer loyalty',
+        path: FRONTEND_ROUTES.ADMIN_LOYALTY,
+        roles: [UserRole.ADMIN],
+        icon: <Sparkles size={15} />,
+        group: 'People',
     },
     {
         label: 'Users',

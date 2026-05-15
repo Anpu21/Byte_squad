@@ -128,6 +128,11 @@ export const APP_ROUTES = {
     BASE: `${API_PREFIX}/loyalty`,
     MINE: 'me',
     HISTORY: 'me/history',
+    SETTINGS: 'settings',
+    ADMIN_BASE: `${API_PREFIX}/admin/loyalty`,
+    ADMIN_SETTINGS: 'settings',
+    ADMIN_CUSTOMERS: 'customers',
+    ADMIN_CUSTOMER_HISTORY: 'customers/:userId/history',
   },
 
   // Stock Transfers (inter-branch stock movement)
