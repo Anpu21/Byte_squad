@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import toast from 'react-hot-toast';
@@ -21,8 +22,19 @@ export function useCatalogPage() {
     const branchId = user?.branchId ?? null;
     const cartItemCount = useAppSelector(selectShopCartItemCount);
 
-    const [search, setSearch] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const search = searchParams.get('q') ?? '';
     const [category, setCategory] = useState('');
+
+    const clearSearch = () => {
+        setSearchParams(
+            (prev) => {
+                prev.delete('q');
+                return prev;
+            },
+            { replace: true },
+        );
+    };
 
     const branchesQuery = useQuery({
         queryKey: queryKeys.shop.branches(),
@@ -135,7 +147,7 @@ export function useCatalogPage() {
         isLoading: productsQuery.isLoading,
         currentBranch,
         search,
-        setSearch,
+        clearSearch,
         category,
         setCategory,
         handleBranchChange,
