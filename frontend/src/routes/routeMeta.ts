@@ -37,6 +37,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.BRANCH_MANAGEMENT]: { title: 'Branch management', crumbs: ['Branches', 'Manage'] },
     [FRONTEND_ROUTES.BRANCHES_HUB]: { title: 'Branches', crumbs: ['Admin', 'Branches'] },
     [FRONTEND_ROUTES.BRANCH_COMPARE]: { title: 'Compare branches', crumbs: ['Admin', 'Compare'] },
+    [FRONTEND_ROUTES.ADMIN_LOYALTY]: { title: 'Customer loyalty', crumbs: ['Admin', 'Customer loyalty'] },
 
     [FRONTEND_ROUTES.NOTIFICATIONS]: { title: 'Notifications', crumbs: ['Notifications'] },
     [FRONTEND_ROUTES.NOTIFICATION_DETAIL]: { title: 'Notification', crumbs: ['Notifications', 'Detail'] },
