@@ -453,6 +453,16 @@ export class UsersService {
     action: PendingUserActionType,
     targetLabel: string,
   ): Promise<void> {
+    const isProd = this.isProduction();
+
+    // Dev: always log so the developer can copy from container logs, even when
+    // SMTP succeeds (the email may land in spam or take a moment to arrive).
+    if (!isProd) {
+      this.logger.warn(
+        `✨ DEV user-action OTP for ${admin.email} (${action} ${targetLabel}): ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m).`,
+      );
+    }
+
     if (this.emailService.isVerified()) {
       await this.emailService.sendUserActionOtpEmail(
         admin.email,
@@ -464,14 +474,14 @@ export class UsersService {
       );
       return;
     }
-    if (this.isProduction()) {
+    if (isProd) {
       throw new ServiceUnavailableException(
         'Email service unavailable. Please try again in a moment.',
       );
     }
-    // Dev fallback — log so the developer can copy the code from container logs.
+    // Dev with no SMTP — the OTP was already logged above; nothing else to do.
     this.logger.warn(
-      `✨ DEV user-action OTP for ${admin.email} (${action} ${targetLabel}): ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m).`,
+      `SMTP unavailable; OTP for ${admin.email} only printed to logs.`,
     );
   }
 
