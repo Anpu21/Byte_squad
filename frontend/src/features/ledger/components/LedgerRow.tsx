@@ -19,6 +19,9 @@ export function LedgerRow({ entry }: LedgerRowProps) {
             <td className="px-5 py-3 mono text-xs text-text-1">
                 {entry.referenceNumber}
             </td>
+            <td className="px-5 py-3 text-[13px] text-text-1 whitespace-nowrap">
+                {entry.branch?.name ?? entry.branchId}
+            </td>
             <td className="px-5 py-3 text-[13px] text-text-1">
                 {entry.description}
             </td>

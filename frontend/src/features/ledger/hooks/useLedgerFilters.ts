@@ -9,6 +9,8 @@ import type {
 const SEARCH_DEBOUNCE_MS = 300;
 
 export interface LedgerFiltersState {
+    branchId: string;
+    setBranchId: (value: string) => void;
     entryType: LedgerEntryType;
     setEntryType: (value: LedgerEntryType) => void;
     accountType: LedgerAccountType;
@@ -24,11 +26,13 @@ export interface LedgerFiltersState {
     setEndDate: (value: string) => void;
     page: number;
     setPage: (page: number | ((p: number) => number)) => void;
+    handleBranchChange: (branchId: string) => void;
     handleAccountTypeChange: (type: LedgerAccountType) => void;
     handleTimePeriodChange: (period: LedgerTimePeriod) => void;
 }
 
 export function useLedgerFilters(): LedgerFiltersState {
+    const [branchId, setBranchId] = useState('');
     const [entryType, setEntryType] = useState<LedgerEntryType>('all');
     const [accountType, setAccountType] = useState<LedgerAccountType>('all');
     const [timePeriod, setTimePeriod] = useState<LedgerTimePeriod>('');
@@ -64,7 +68,14 @@ export function useLedgerFilters(): LedgerFiltersState {
         setEndDate(range.endDate);
     }, []);
 
+    const handleBranchChange = useCallback((value: string) => {
+        setBranchId(value);
+        setPage(1);
+    }, []);
+
     return {
+        branchId,
+        setBranchId,
         entryType,
         setEntryType,
         accountType,
@@ -80,6 +91,7 @@ export function useLedgerFilters(): LedgerFiltersState {
         setEndDate,
         page,
         setPage,
+        handleBranchChange,
         handleAccountTypeChange,
         handleTimePeriodChange,
     };

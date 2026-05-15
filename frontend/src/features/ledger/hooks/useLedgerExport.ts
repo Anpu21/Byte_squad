@@ -20,6 +20,7 @@ interface LedgerExportRow {
 }
 
 interface UseLedgerExportArgs {
+    branchId: string;
     entryType: string;
     startDate: string;
     endDate: string;
@@ -29,6 +30,7 @@ interface UseLedgerExportArgs {
 }
 
 export function useLedgerExport({
+    branchId,
     entryType,
     startDate,
     endDate,
@@ -44,6 +46,7 @@ export function useLedgerExport({
             setIsExporting(true);
             setError(null);
             const data = await accountingService.getLedgerEntries({
+                branchId: branchId || undefined,
                 entryType: entryType !== 'all' ? entryType : undefined,
                 startDate: startDate || undefined,
                 endDate: endDate || undefined,

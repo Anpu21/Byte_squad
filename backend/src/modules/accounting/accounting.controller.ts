@@ -21,6 +21,7 @@ import { ReviewExpenseDto } from '@accounting/dto/review-expense.dto';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Expense } from '@accounting/entities/expense.entity';
 import { ExpenseStatus } from '@common/enums/expense-status.enum';
+import { ListLedgerQueryDto } from '@accounting/dto/list-ledger-query.dto';
 
 @Controller(APP_ROUTES.ACCOUNTING.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,22 +40,14 @@ export class AccountingController {
 
   @Get(APP_ROUTES.ACCOUNTING.LEDGER)
   @Roles(UserRole.ADMIN)
-  getLedger(
-    @Query('branchId') branchId?: string,
-    @Query('entryType') entryType?: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @Query('search') search?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.accountingService.getLedgerEntries(branchId ?? null, {
-      entryType,
-      startDate,
-      endDate,
-      search,
-      page: page ? parseInt(page, 10) : 1,
-      limit: limit ? parseInt(limit, 10) : 20,
+  getLedger(@Query() query: ListLedgerQueryDto) {
+    return this.accountingService.getLedgerEntries(query.branchId ?? null, {
+      entryType: query.entryType,
+      startDate: query.startDate,
+      endDate: query.endDate,
+      search: query.search,
+      page: query.page ?? 1,
+      limit: query.limit ?? 20,
     });
   }
 
