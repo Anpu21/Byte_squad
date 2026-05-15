@@ -29,13 +29,13 @@ export function useTransferDetailPage() {
     const openApprove = useCallback(() => {
         if (!detail.transfer) return;
         setActiveAction('approve');
-        approve.reset(detail.transfer.requestedQuantity);
+        approve.reset();
     }, [approve, detail.transfer]);
 
     const openApproveWith = useCallback(
         (branchId: string) => {
             if (!detail.transfer) return;
-            approve.reset(detail.transfer.requestedQuantity);
+            approve.reset();
             approve.setChosenSourceId(branchId);
             setActiveAction('approve');
         },
@@ -48,17 +48,7 @@ export function useTransferDetailPage() {
             toast.error('Pick a source branch first');
             return;
         }
-        const qty = parseInt(approve.approvedQuantityStr, 10);
-        if (
-            Number.isNaN(qty) ||
-            qty < 1 ||
-            qty > detail.transfer.requestedQuantity
-        ) {
-            toast.error(
-                `Approved quantity must be between 1 and ${detail.transfer.requestedQuantity}`,
-            );
-            return;
-        }
+        const qty = detail.transfer.requestedQuantity;
         const chosenSource = approve.sourceOptions.find(
             (opt) => opt.branchId === approve.chosenSourceId,
         );

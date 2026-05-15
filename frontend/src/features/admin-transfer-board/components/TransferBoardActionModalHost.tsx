@@ -1,6 +1,8 @@
 import { ApproveTransferModal } from '@/features/transfer-detail/components/ApproveTransferModal';
+import { BatchApproveTransferModal } from '@/features/transfer-detail/components/BatchApproveTransferModal';
 import { RejectTransferModal } from '@/features/transfer-detail/components/RejectTransferModal';
 import { ConfirmTransferActionModal } from '@/features/transfer-detail/components/ConfirmTransferActionModal';
+import { BatchConfirmActionModal } from '@/features/transfer-detail/components/BatchConfirmActionModal';
 import type { ConfirmAction } from '@/features/transfer-detail/types/transfer-action.type';
 import type { BoardActionModalState } from '../hooks/useBoardActionModal';
 
@@ -11,12 +13,17 @@ interface TransferBoardActionModalHostProps {
 export function TransferBoardActionModalHost({
     modal,
 }: TransferBoardActionModalHostProps) {
-    const { activeAction, transfer, submitting, approve } = modal;
+    const {
+        activeAction,
+        activeTransfers,
+        primary,
+        isBatch,
+        submitting,
+        approve,
+    } = modal;
 
-    if (!transfer || activeAction === null) return null;
+    if (!primary || activeAction === null) return null;
 
-    const displayQty =
-        transfer.approvedQuantity ?? transfer.requestedQuantity;
     const confirmAction: ConfirmAction | null =
         activeAction === 'cancel' ||
         activeAction === 'ship' ||
@@ -26,14 +33,26 @@ export function TransferBoardActionModalHost({
 
     return (
         <>
-            <ApproveTransferModal
-                isOpen={activeAction === 'approve'}
-                onClose={modal.close}
-                transfer={transfer}
-                state={approve}
-                submitting={submitting}
-                onSubmit={modal.handleApproveSubmit}
-            />
+            {isBatch ? (
+                <BatchApproveTransferModal
+                    key={activeTransfers.map((t) => t.id).join(',')}
+                    isOpen={activeAction === 'approve'}
+                    onClose={modal.close}
+                    transfers={activeTransfers}
+                    submitting={submitting}
+                    onSubmit={modal.handleBatchApproveSubmit}
+                />
+            ) : (
+                <ApproveTransferModal
+                    isOpen={activeAction === 'approve'}
+                    onClose={modal.close}
+                    transfer={primary}
+                    state={approve}
+                    submitting={submitting}
+                    onSubmit={modal.handleSingleApproveSubmit}
+                />
+            )}
+
             <RejectTransferModal
                 isOpen={activeAction === 'reject'}
                 onClose={modal.close}
@@ -42,14 +61,27 @@ export function TransferBoardActionModalHost({
                 submitting={submitting}
                 onSubmit={modal.handleRejectSubmit}
             />
-            <ConfirmTransferActionModal
-                action={confirmAction}
-                transfer={transfer}
-                displayQty={displayQty}
-                submitting={submitting}
-                onClose={modal.close}
-                onConfirm={modal.handleConfirmAction}
-            />
+
+            {isBatch ? (
+                <BatchConfirmActionModal
+                    action={confirmAction}
+                    count={activeTransfers.length}
+                    submitting={submitting}
+                    onClose={modal.close}
+                    onConfirm={modal.handleConfirmAction}
+                />
+            ) : (
+                <ConfirmTransferActionModal
+                    action={confirmAction}
+                    transfer={primary}
+                    displayQty={
+                        primary.approvedQuantity ?? primary.requestedQuantity
+                    }
+                    submitting={submitting}
+                    onClose={modal.close}
+                    onConfirm={modal.handleConfirmAction}
+                />
+            )}
         </>
     );
 }

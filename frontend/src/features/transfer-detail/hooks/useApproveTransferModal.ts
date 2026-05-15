@@ -5,13 +5,11 @@ import { useSourceOptionsQuery } from './useSourceOptionsQuery';
 export interface ApproveModalState {
     chosenSourceId: string;
     setChosenSourceId: (id: string) => void;
-    approvedQuantityStr: string;
-    setApprovedQuantityStr: (value: string) => void;
     approvalNote: string;
     setApprovalNote: (value: string) => void;
     sourceOptions: ITransferSourceOption[];
     sourceLoading: boolean;
-    reset: (requestedQuantity: number) => void;
+    reset: () => void;
 }
 
 interface UseApproveTransferModalArgs {
@@ -24,22 +22,18 @@ export function useApproveTransferModal({
     isOpen,
 }: UseApproveTransferModalArgs): ApproveModalState {
     const [chosenSourceId, setChosenSourceId] = useState('');
-    const [approvedQuantityStr, setApprovedQuantityStr] = useState('');
     const [approvalNote, setApprovalNote] = useState('');
 
     const query = useSourceOptionsQuery(transferId, isOpen);
 
-    const reset = useCallback((requestedQuantity: number) => {
+    const reset = useCallback(() => {
         setChosenSourceId('');
-        setApprovedQuantityStr(String(requestedQuantity));
         setApprovalNote('');
     }, []);
 
     return {
         chosenSourceId,
         setChosenSourceId,
-        approvedQuantityStr,
-        setApprovedQuantityStr,
         approvalNote,
         setApprovalNote,
         sourceOptions: query.data ?? [],

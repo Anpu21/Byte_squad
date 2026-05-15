@@ -36,9 +36,8 @@ export function TransferBoardSingleLineCard({
         useDraggable({
             id: transfer.id,
             data: {
-                transferId: transfer.id,
+                transfers: [transfer],
                 fromColumnId,
-                requestedQuantity: transfer.requestedQuantity,
             },
         });
 

@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Package } from 'lucide-react';
+import { useDraggable } from '@dnd-kit/core';
+import { ArrowRight, GripVertical, Package } from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { TransferBoardGroup } from '../types/transfer-board-group.type';
 import { formatTimeAgo } from '../lib/format-time-ago';
+import { columnIdForStatus } from '../lib/allowed-transitions';
 import { TransferBoardSingleLineCard } from './TransferBoardSingleLineCard';
 
 interface TransferBoardCardProps {
@@ -29,6 +31,30 @@ export function TransferBoardCard({ group }: TransferBoardCardProps) {
         return <TransferBoardSingleLineCard transfer={primary} />;
     }
 
+    return <BatchTransferBoardCard group={group} />;
+}
+
+function BatchTransferBoardCard({ group }: TransferBoardCardProps) {
+    const { transfers, primary } = group;
+    const fromColumnId = columnIdForStatus(primary.status);
+
+    const { attributes, listeners, setNodeRef, transform, isDragging } =
+        useDraggable({
+            id: group.key,
+            data: {
+                transfers,
+                fromColumnId,
+            },
+        });
+
+    const style = transform
+        ? {
+              transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+              opacity: isDragging ? 0.4 : 1,
+              zIndex: isDragging ? 50 : undefined,
+          }
+        : undefined;
+
     const fromName = primary.sourceBranch?.name ?? '—';
     const toName = primary.destinationBranch.name;
     const requesterName = primary.requestedBy
@@ -45,9 +71,20 @@ export function TransferBoardCard({ group }: TransferBoardCardProps) {
 
     return (
         <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            aria-roledescription="batch transfer card, draggable"
             aria-label={`Batch of ${transfers.length} products`}
-            className="bg-surface border border-border rounded-md p-3 hover:border-border-strong hover:shadow-md-token transition-all"
+            className="group relative bg-surface border border-border rounded-md p-3 hover:border-border-strong hover:shadow-md-token transition-all touch-none cursor-grab active:cursor-grabbing"
         >
+            <span
+                aria-hidden
+                className="absolute top-1.5 right-1.5 text-text-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+            >
+                <GripVertical size={14} strokeWidth={1.75} />
+            </span>
             <div className="flex items-center justify-between gap-2">
                 <p className="text-[13px] font-semibold text-text-1 leading-tight flex items-center gap-1.5 min-w-0">
                     <Package
@@ -91,6 +128,7 @@ export function TransferBoardCard({ group }: TransferBoardCardProps) {
                         </span>
                         <Link
                             to={detailPathFor(line.id)}
+                            draggable={false}
                             className="text-[11px] text-primary hover:underline flex-shrink-0 focus:outline-none focus:ring-[2px] focus:ring-primary/30 rounded"
                             aria-label={`View ${line.product?.name ?? 'transfer'}`}
                         >

@@ -1,7 +1,3 @@
-import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
-import { FRONTEND_ROUTES } from '@/constants/routes';
-
 interface TransferBoardHeaderProps {
     total: number;
 }
@@ -19,13 +15,6 @@ export function TransferBoardHeader({ total }: TransferBoardHeaderProps) {
                     click to open the details.
                 </p>
             </div>
-            <Link
-                to={FRONTEND_ROUTES.ADMIN_TRANSFER_NEW}
-                className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all flex items-center gap-2 self-start focus:outline-none focus:ring-[3px] focus:ring-primary/30"
-            >
-                <Plus size={14} strokeWidth={2.5} />
-                Create transfer
-            </Link>
         </div>
     );
 }

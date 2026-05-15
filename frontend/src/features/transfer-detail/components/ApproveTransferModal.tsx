@@ -23,25 +23,17 @@ export function ApproveTransferModal({
     const chosenSource = state.sourceOptions.find(
         (opt) => opt.branchId === state.chosenSourceId,
     );
-    const parsedQty = Number.parseInt(state.approvedQuantityStr, 10);
-    const qtyIsNumber = !Number.isNaN(parsedQty);
-    const qtyInRange =
-        qtyIsNumber &&
-        parsedQty >= 1 &&
-        parsedQty <= transfer.requestedQuantity;
-    const qtyWithinStock =
-        qtyIsNumber && chosenSource
-            ? parsedQty <= chosenSource.currentQuantity
-            : false;
-    const canSubmit =
-        Boolean(chosenSource) && qtyInRange && qtyWithinStock;
+    const stockSufficient = chosenSource
+        ? chosenSource.currentQuantity >= transfer.requestedQuantity
+        : false;
+    const canSubmit = Boolean(chosenSource) && stockSufficient;
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Approve transfer" maxWidth="2xl">
             <div>
                 <p className="text-xs text-text-3 mb-4">
-                    Pick a source branch with enough stock and confirm the
-                    quantity.
+                    Pick a source branch with enough stock for the requested{' '}
+                    {transfer.requestedQuantity} unit(s).
                 </p>
 
                 <div className="bg-canvas border border-border rounded-xl max-h-72 overflow-y-auto mb-4">
@@ -54,43 +46,13 @@ export function ApproveTransferModal({
                     />
                 </div>
 
-                <div className="mb-4">
-                    <label
-                        htmlFor="approved-qty"
-                        className="block text-xs font-semibold uppercase tracking-wider text-text-3 mb-2"
-                    >
-                        Approved quantity
-                    </label>
-                    <input
-                        id="approved-qty"
-                        type="number"
-                        min={1}
-                        max={transfer.requestedQuantity}
-                        value={state.approvedQuantityStr}
-                        onChange={(e) =>
-                            state.setApprovedQuantityStr(e.target.value)
-                        }
-                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all"
-                    />
-                    <p className="text-[11px] text-text-3 mt-1">
-                        Requested: {transfer.requestedQuantity} unit(s)
+                {chosenSource && !stockSufficient && (
+                    <p className="text-[11px] text-warning font-medium mb-4">
+                        {chosenSource.branchName} only has{' '}
+                        {chosenSource.currentQuantity} unit(s) in stock — short by{' '}
+                        {transfer.requestedQuantity - chosenSource.currentQuantity}.
                     </p>
-                    {chosenSource && (
-                        <p
-                            className={`text-[11px] mt-1 ${
-                                qtyWithinStock
-                                    ? 'text-text-3'
-                                    : 'text-warning font-medium'
-                            }`}
-                        >
-                            {chosenSource.branchName} has{' '}
-                            {chosenSource.currentQuantity} unit(s) in stock.
-                            {!qtyWithinStock && qtyIsNumber
-                                ? ` — over by ${parsedQty - chosenSource.currentQuantity}.`
-                                : ''}
-                        </p>
-                    )}
-                </div>
+                )}
 
                 <div className="mb-4">
                     <label

@@ -7,6 +7,7 @@ import {
     useSensors,
 } from '@dnd-kit/core';
 import toast from 'react-hot-toast';
+import type { IStockTransferRequest } from '@/types';
 import { useTransferBoardData } from '../hooks/useTransferBoardData';
 import {
     useBoardActionModal,
@@ -18,9 +19,8 @@ import { TransferBoardColumn } from './TransferBoardColumn';
 import { TransferBoardActionModalHost } from './TransferBoardActionModalHost';
 
 interface DragData {
-    transferId: string;
+    transfers: IStockTransferRequest[];
     fromColumnId: string;
-    requestedQuantity: number;
 }
 
 export function TransferBoard() {
@@ -36,7 +36,7 @@ export function TransferBoard() {
         const { active, over } = event;
         if (!over) return;
         const dragData = active.data.current as DragData | undefined;
-        if (!dragData) return;
+        if (!dragData || dragData.transfers.length === 0) return;
         const toColumnId = String(over.id);
         const action = getDropAction(dragData.fromColumnId, toColumnId);
         if (!action) {
@@ -48,9 +48,8 @@ export function TransferBoard() {
             return;
         }
         modal.open({
-            transferId: dragData.transferId,
+            transfers: dragData.transfers,
             action: action as BoardModalAction,
-            requestedQuantity: dragData.requestedQuantity,
         });
     };
 

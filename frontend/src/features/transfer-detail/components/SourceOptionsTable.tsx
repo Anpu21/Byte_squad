@@ -6,6 +6,7 @@ interface SourceOptionsTableProps {
     requestedQuantity: number;
     chosenSourceId: string;
     onChoose: (branchId: string) => void;
+    radioName?: string;
 }
 
 export function SourceOptionsTable({
@@ -14,6 +15,7 @@ export function SourceOptionsTable({
     requestedQuantity,
     chosenSourceId,
     onChoose,
+    radioName = 'source-branch',
 }: SourceOptionsTableProps) {
     if (isLoading) {
         return <div className="p-4 text-sm text-text-3">Loading branches…</div>;
@@ -53,7 +55,7 @@ export function SourceOptionsTable({
                             <td className="px-4 py-3 w-10">
                                 <input
                                     type="radio"
-                                    name="source-branch"
+                                    name={radioName}
                                     checked={isChecked}
                                     onChange={() =>
                                         !disabled && onChoose(opt.branchId)
