@@ -24,6 +24,7 @@ import { NotificationDetailPage } from '@/pages/notifications/NotificationDetail
 import { BranchManagementPage } from '@/pages/branches/BranchManagementPage';
 import { BranchPerformancePage } from '@/pages/branches/BranchPerformancePage';
 import { BranchComparisonPage } from '@/pages/admin/BranchComparisonPage';
+import { AdminLoyaltyPage } from '@/pages/admin/AdminLoyaltyPage';
 import { TransferRequestsPage } from '@/pages/transfers/TransferRequestsPage';
 import { NewTransferRequestPage } from '@/pages/transfers/NewTransferRequestPage';
 import { TransferHistoryPage } from '@/pages/transfers/TransferHistoryPage';
@@ -220,6 +221,12 @@ export const ROUTES: RouteDef[] = [
     {
         path: FRONTEND_ROUTES.BRANCH_COMPARE,
         element: <BranchComparisonPage />,
+        allowedRoles: [UserRole.ADMIN],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.ADMIN_LOYALTY,
+        element: <AdminLoyaltyPage />,
         allowedRoles: [UserRole.ADMIN],
         layout: 'dashboard',
     },

@@ -10,16 +10,23 @@ import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-h
 
 @Controller(APP_ROUTES.LOYALTY.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.CUSTOMER)
 export class LoyaltyController {
   constructor(private readonly loyalty: LoyaltyService) {}
 
+  @Get(APP_ROUTES.LOYALTY.SETTINGS)
+  @Roles(UserRole.CUSTOMER, UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  getSettings() {
+    return this.loyalty.getSettings();
+  }
+
   @Get(APP_ROUTES.LOYALTY.MINE)
+  @Roles(UserRole.CUSTOMER)
   getMine(@CurrentUser('id') userId: string) {
     return this.loyalty.getSummary(userId);
   }
 
   @Get(APP_ROUTES.LOYALTY.HISTORY)
+  @Roles(UserRole.CUSTOMER)
   listHistory(
     @CurrentUser('id') userId: string,
     @Query() query: ListLoyaltyHistoryQueryDto,

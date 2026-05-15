@@ -157,7 +157,10 @@ export class CustomerOrdersService {
       subtotal: estimatedTotal,
       requestedPoints: loyaltyPointsRequested,
     });
-    const loyaltyDiscountAmount = this.roundMoney(loyaltyPointsRedeemed);
+    const pointValue = await this.loyalty.getPointValue();
+    const loyaltyDiscountAmount = this.roundMoney(
+      loyaltyPointsRedeemed * pointValue,
+    );
     const finalTotal = this.roundMoney(
       Math.max(0, estimatedTotal - loyaltyDiscountAmount),
     );

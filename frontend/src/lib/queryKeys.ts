@@ -93,6 +93,18 @@ export const queryKeys = {
         mine: () => ['loyalty', 'mine'] as const,
         history: (params: { limit?: number; offset?: number }) =>
             ['loyalty', 'history', params] as const,
+        settings: () => ['loyalty', 'settings'] as const,
+    },
+    adminLoyalty: {
+        customers: (params: {
+            search?: string;
+            limit?: number;
+            offset?: number;
+        }) => ['admin-loyalty', 'customers', params] as const,
+        customerHistory: (
+            userId: string,
+            params: { limit?: number; offset?: number },
+        ) => ['admin-loyalty', 'customer-history', userId, params] as const,
     },
     cashierDashboard: () => ['cashier-dashboard'] as const,
     transactions: {

@@ -1,12 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { LoyaltyRepository } from '@/modules/loyalty/loyalty.repository';
+import type { LoyaltyCustomerRow } from '@/modules/loyalty/loyalty.repository';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltySettings } from '@/modules/loyalty/entities/loyalty-settings.entity';
+import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 import type {
   LoyaltyHistoryEntry,
   LoyaltyHistoryResponse,
 } from '@/modules/loyalty/types';
 import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
+import { ListLoyaltyCustomersQueryDto } from '@/modules/loyalty/dto/list-loyalty-customers-query.dto';
 
 export interface LoyaltySummary {
   pointsBalance: number;
@@ -14,12 +18,22 @@ export interface LoyaltySummary {
   lifetimePointsRedeemed: number;
 }
 
+export interface LoyaltyCustomersResponse {
+  rows: LoyaltyCustomerRow[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
 @Injectable()
 export class LoyaltyService {
-  constructor(private readonly loyalty: LoyaltyRepository) {}
+  constructor(
+    private readonly loyalty: LoyaltyRepository,
+    private readonly settings: LoyaltySettingsService,
+  ) {}
 
   async getOrCreateAccount(userId: string): Promise<LoyaltyAccount> {
     const existing = await this.loyalty.findAccountByUser(userId);
@@ -34,6 +48,10 @@ export class LoyaltyService {
       lifetimePointsEarned: account.lifetimePointsEarned,
       lifetimePointsRedeemed: account.lifetimePointsRedeemed,
     };
+  }
+
+  async getSettings(): Promise<LoyaltySettings> {
+    return this.settings.get();
   }
 
   async listHistory(
@@ -64,12 +82,45 @@ export class LoyaltyService {
     return { entries, total, limit, offset };
   }
 
-  calculateMaxRedeemable(subtotal: number, availablePoints: number): number {
-    return Math.max(0, Math.min(availablePoints, Math.floor(subtotal * 0.2)));
+  async listCustomers(
+    query: ListLoyaltyCustomersQueryDto,
+  ): Promise<LoyaltyCustomersResponse> {
+    const limit = Math.min(
+      Math.max(query.limit ?? DEFAULT_LIMIT, 1),
+      MAX_LIMIT,
+    );
+    const offset = Math.max(query.offset ?? 0, 0);
+    const { rows, total } = await this.loyalty.listCustomerAccounts({
+      search: query.search,
+      limit,
+      offset,
+    });
+    return { rows, total, limit, offset };
   }
 
-  calculateEarnedPoints(paidAmount: number): number {
-    return Math.max(0, Math.floor(paidAmount / 100));
+  async calculateMaxRedeemable(
+    subtotal: number,
+    availablePoints: number,
+  ): Promise<number> {
+    const settings = await this.settings.get();
+    const value = settings.pointValue > 0 ? settings.pointValue : 1;
+    const capLkr = (subtotal * settings.redeemCapPercent) / 100;
+    const pointsForCap = Math.floor(capLkr / value);
+    return Math.max(0, Math.min(availablePoints, pointsForCap));
+  }
+
+  async calculateEarnedPoints(paidAmount: number): Promise<number> {
+    const settings = await this.settings.get();
+    if (settings.earnPerAmount <= 0 || settings.earnPoints <= 0) return 0;
+    return Math.max(
+      0,
+      Math.floor((paidAmount / settings.earnPerAmount) * settings.earnPoints),
+    );
+  }
+
+  async getPointValue(): Promise<number> {
+    const settings = await this.settings.get();
+    return settings.pointValue > 0 ? settings.pointValue : 1;
   }
 
   async redeemForOrder(params: {
@@ -83,7 +134,7 @@ export class LoyaltyService {
     if (requestedPoints <= 0) return 0;
 
     const account = await this.getOrCreateAccount(params.userId);
-    const max = this.calculateMaxRedeemable(
+    const max = await this.calculateMaxRedeemable(
       params.subtotal,
       account.pointsBalance,
     );
@@ -158,7 +209,7 @@ export class LoyaltyService {
     paidAmount: number;
   }): Promise<number> {
     if (!params.userId) return 0;
-    const points = this.calculateEarnedPoints(params.paidAmount);
+    const points = await this.calculateEarnedPoints(params.paidAmount);
     if (points <= 0) return 0;
 
     await this.getOrCreateAccount(params.userId);

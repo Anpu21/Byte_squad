@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useLoyaltySettings } from '../hooks/useLoyaltySettings';
+import {
+    formatEarnRule,
+    formatPointValueRule,
+    formatRedeemCapRule,
+} from '../lib/format-loyalty-rules';
 
 export function LoyaltyHowItWorks() {
     const [open, setOpen] = useState(true);
+    const { data: settings } = useLoyaltySettings();
 
     return (
         <section className="bg-surface border border-border rounded-md mb-6">
@@ -20,9 +27,9 @@ export function LoyaltyHowItWorks() {
             </button>
             {open && (
                 <ul className="px-4 pb-4 space-y-1.5 text-sm text-text-2 list-disc list-inside">
-                    <li>Earn 1 point for every LKR 100 paid at pickup</li>
-                    <li>Redeem 1 point as LKR 1 off any order</li>
-                    <li>Use up to 20% of any order subtotal in points</li>
+                    <li>{formatEarnRule(settings)}</li>
+                    <li>{formatPointValueRule(settings)}</li>
+                    <li>{formatRedeemCapRule(settings)}</li>
                     <li>Points reverse if you cancel before pickup</li>
                 </ul>
             )}

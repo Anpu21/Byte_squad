@@ -413,7 +413,6 @@ const SUPERMARKET_PRODUCTS: SupermarketProductSeed[] = [
   },
 ];
 
-
 const CATEGORY_THRESHOLDS: Record<string, number> = {
   Beverages: 30,
   Dairy: 30,

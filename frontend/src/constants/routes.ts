@@ -48,6 +48,9 @@ export const FRONTEND_ROUTES = {
     // Admin-only side-by-side branch comparison
     BRANCH_COMPARE: '/admin/compare',
 
+    // Admin-only loyalty program management
+    ADMIN_LOYALTY: '/admin/loyalty',
+
     // Notifications
     NOTIFICATIONS: '/notifications',
     NOTIFICATION_DETAIL: '/notifications/:id',

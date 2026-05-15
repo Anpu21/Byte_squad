@@ -88,4 +88,73 @@ export class LoyaltyRepository {
     });
     return { rows, total };
   }
+
+  async listCustomerAccounts(opts: {
+    search?: string;
+    limit: number;
+    offset: number;
+  }): Promise<{ rows: LoyaltyCustomerRow[]; total: number }> {
+    const qb = this.accountRepo
+      .createQueryBuilder('acc')
+      .innerJoin('users', 'u', 'u.id = acc.user_id')
+      .select('u.id', 'id')
+      .addSelect('u.first_name', 'firstName')
+      .addSelect('u.last_name', 'lastName')
+      .addSelect('u.email', 'email')
+      .addSelect('acc.points_balance', 'pointsBalance')
+      .addSelect('acc.lifetime_points_earned', 'lifetimePointsEarned')
+      .addSelect('acc.lifetime_points_redeemed', 'lifetimePointsRedeemed')
+      .addSelect('acc.updated_at', 'lastActivityAt');
+
+    if (opts.search?.trim()) {
+      const term = `%${opts.search.trim().toLowerCase()}%`;
+      qb.where(
+        'LOWER(u.first_name) LIKE :term OR LOWER(u.last_name) LIKE :term OR LOWER(u.email) LIKE :term',
+        { term },
+      );
+    }
+
+    const totalQb = qb.clone();
+    const total = await totalQb.getCount();
+
+    const rawRows = await qb
+      .orderBy('acc.points_balance', 'DESC')
+      .addOrderBy('acc.updated_at', 'DESC')
+      .limit(opts.limit)
+      .offset(opts.offset)
+      .getRawMany<{
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        pointsBalance: string | number;
+        lifetimePointsEarned: string | number;
+        lifetimePointsRedeemed: string | number;
+        lastActivityAt: Date;
+      }>();
+
+    const rows: LoyaltyCustomerRow[] = rawRows.map((r) => ({
+      id: r.id,
+      firstName: r.firstName,
+      lastName: r.lastName,
+      email: r.email,
+      pointsBalance: Number(r.pointsBalance),
+      lifetimePointsEarned: Number(r.lifetimePointsEarned),
+      lifetimePointsRedeemed: Number(r.lifetimePointsRedeemed),
+      lastActivityAt: r.lastActivityAt,
+    }));
+
+    return { rows, total };
+  }
+}
+
+export interface LoyaltyCustomerRow {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  pointsBalance: number;
+  lifetimePointsEarned: number;
+  lifetimePointsRedeemed: number;
+  lastActivityAt: Date;
 }
