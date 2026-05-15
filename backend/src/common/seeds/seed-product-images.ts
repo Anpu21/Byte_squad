@@ -12,34 +12,34 @@
  */
 export const SEED_PRODUCT_IMAGES: Record<string, string[]> = {
   Beverages: [
-    'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600&q=80&auto=format&fit=crop', // soda bottle
+    'https://images.unsplash.com/photo-1534260164206-2a3a4a72891d?w=600&q=80&auto=format&fit=crop', // soda bottle
     'https://images.unsplash.com/photo-1622543925917-bd9e34ee9e6f?w=600&q=80&auto=format&fit=crop', // cola cans
-    'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?w=600&q=80&auto=format&fit=crop', // sprite-style soda
-    'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=600&q=80&auto=format&fit=crop', // orange juice
-    'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&q=80&auto=format&fit=crop', // bottled water
-    'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&q=80&auto=format&fit=crop', // tea cup / leaves
-    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80&auto=format&fit=crop', // coffee
+    'https://images.unsplash.com/photo-1635232481590-00102ef8e77a?w=600&q=80&auto=format&fit=crop', // lemon-lime soda / lemonade
+    'https://images.unsplash.com/photo-1587015990127-424b954e38b5?w=600&q=80&auto=format&fit=crop', // orange juice
+    'https://images.unsplash.com/photo-1550505095-81378a674395?w=600&q=80&auto=format&fit=crop', // bottled water
+    'https://images.unsplash.com/photo-1628153792464-21bffac488d4?w=600&q=80&auto=format&fit=crop', // tea leaves
+    'https://images.unsplash.com/photo-1554600740-951beab4712b?w=600&q=80&auto=format&fit=crop', // coffee
   ],
   Dairy: [
-    'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600&q=80&auto=format&fit=crop', // milk bottle
-    'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600&q=80&auto=format&fit=crop', // yogurt
-    'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=600&q=80&auto=format&fit=crop', // cheese block
-    'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=600&q=80&auto=format&fit=crop', // butter
-    'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&q=80&auto=format&fit=crop', // eggs
-    'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=600&q=80&auto=format&fit=crop', // milk pour
+    'https://images.unsplash.com/photo-1635436338433-89747d0ca0ef?w=600&q=80&auto=format&fit=crop', // milk bottle
+    'https://images.unsplash.com/photo-1571212515416-fef01fc43637?w=600&q=80&auto=format&fit=crop', // yogurt
+    'https://images.unsplash.com/photo-1757857755423-3412736d1236?w=600&q=80&auto=format&fit=crop', // cheese block
+    'https://images.unsplash.com/photo-1603596310923-dbb12732f9c7?w=600&q=80&auto=format&fit=crop', // butter
+    'https://images.unsplash.com/photo-1498654077810-12c21d4d6dc3?w=600&q=80&auto=format&fit=crop', // eggs
+    'https://images.unsplash.com/photo-1695694381035-e939e7d90f87?w=600&q=80&auto=format&fit=crop', // milk pour
   ],
   Bakery: [
     'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&q=80&auto=format&fit=crop', // white bread
     'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=600&q=80&auto=format&fit=crop', // brown bread
     'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&q=80&auto=format&fit=crop', // burger buns
-    'https://images.unsplash.com/photo-1517686469429-8bdb88b9f907?w=600&q=80&auto=format&fit=crop', // dinner rolls
+    'https://images.unsplash.com/photo-1671036437036-0b1f11c80941?w=600&q=80&auto=format&fit=crop', // dinner rolls
   ],
   Produce: [
     'https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=600&q=80&auto=format&fit=crop', // apples
     'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=600&q=80&auto=format&fit=crop', // bananas
     'https://images.unsplash.com/photo-1582284540020-8acbe03f4924?w=600&q=80&auto=format&fit=crop', // tomatoes
-    'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=600&q=80&auto=format&fit=crop', // onions
-    'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=600&q=80&auto=format&fit=crop', // potatoes (using onions photo as fallback)
+    'https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=600&q=80&auto=format&fit=crop', // onions
+    'https://images.unsplash.com/photo-1508313880080-c4bef0730395?w=600&q=80&auto=format&fit=crop', // potatoes
     'https://images.unsplash.com/photo-1447175008436-054170c2e979?w=600&q=80&auto=format&fit=crop', // carrots
   ],
   Pantry: [
@@ -64,16 +64,16 @@ export const SEED_PRODUCT_IMAGES: Record<string, string[]> = {
     'https://images.unsplash.com/photo-1567206563064-6f60f40a2b57?w=600&q=80&auto=format&fit=crop', // ice cream
   ],
   Household: [
-    'https://images.unsplash.com/photo-1583947214955-a6e51d23ba70?w=600&q=80&auto=format&fit=crop', // dish soap / cleaning
-    'https://images.unsplash.com/photo-1582735689669-fa5a4d8a0eb6?w=600&q=80&auto=format&fit=crop', // laundry detergent
-    'https://images.unsplash.com/photo-1584556812952-905ffd0c611a?w=600&q=80&auto=format&fit=crop', // toilet paper rolls
-    'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80&auto=format&fit=crop', // floor cleaner / mop
+    'https://images.unsplash.com/photo-1647577746559-c9a28c0d0870?w=600&q=80&auto=format&fit=crop', // dish soap
+    'https://images.unsplash.com/photo-1624372635310-01d078c05dd9?w=600&q=80&auto=format&fit=crop', // laundry detergent
+    'https://images.unsplash.com/photo-1585690359409-9020f3602bdb?w=600&q=80&auto=format&fit=crop', // toilet paper rolls
+    'https://images.unsplash.com/photo-1689127903369-aef916b0c40d?w=600&q=80&auto=format&fit=crop', // floor cleaner / mop
   ],
   'Personal Care': [
-    'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&q=80&auto=format&fit=crop', // shampoo bottles
+    'https://images.unsplash.com/photo-1747098393451-6b985f62a2c2?w=600&q=80&auto=format&fit=crop', // shampoo bottles
     'https://images.unsplash.com/photo-1571781565635-f7c01b8d9a93?w=600&q=80&auto=format&fit=crop', // soap bar
     'https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=600&q=80&auto=format&fit=crop', // toothpaste
-    'https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?w=600&q=80&auto=format&fit=crop', // toothbrush
+    'https://images.unsplash.com/photo-1625834319124-345137437603?w=600&q=80&auto=format&fit=crop', // toothbrush
   ],
 };
 
