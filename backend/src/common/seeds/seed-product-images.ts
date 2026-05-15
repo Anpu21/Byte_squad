@@ -72,7 +72,7 @@ export const SEED_PRODUCT_IMAGES: Record<string, string[]> = {
   'Personal Care': [
     'https://images.unsplash.com/photo-1747098393451-6b985f62a2c2?w=600&q=80&auto=format&fit=crop', // shampoo bottles
     'https://images.unsplash.com/photo-1571781565635-f7c01b8d9a93?w=600&q=80&auto=format&fit=crop', // soap bar
-    'https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=600&q=80&auto=format&fit=crop', // toothpaste
+    'https://images.unsplash.com/photo-1610216690558-4aee861f4ab3?w=600&q=80&auto=format&fit=crop', // toothpaste, // toothpaste
     'https://images.unsplash.com/photo-1625834319124-345137437603?w=600&q=80&auto=format&fit=crop', // toothbrush
   ],
 };

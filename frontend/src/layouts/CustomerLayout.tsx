@@ -1,5 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+    Link,
+    Navigate,
+    useLocation,
+    useNavigate,
+    useSearchParams,
+} from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -11,6 +17,7 @@ import {
     Sparkles,
     User,
     UserRound,
+    X,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,6 +49,55 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
     const cartCount = useAppSelector(selectShopCartItemCount);
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const isOnShop = location.pathname === FRONTEND_ROUTES.SHOP;
+    const urlQ = isOnShop ? (searchParams.get('q') ?? '') : '';
+    const [searchDraft, setSearchDraft] = useState(urlQ);
+
+    useEffect(() => {
+        setSearchDraft(urlQ);
+    }, [urlQ]);
+
+    useEffect(() => {
+        if (!isOnShop) return;
+        if (searchDraft === urlQ) return;
+        const timer = setTimeout(() => {
+            setSearchParams(
+                (prev) => {
+                    if (searchDraft) prev.set('q', searchDraft);
+                    else prev.delete('q');
+                    return prev;
+                },
+                { replace: true },
+            );
+        }, 200);
+        return () => clearTimeout(timer);
+    }, [searchDraft, urlQ, isOnShop, setSearchParams]);
+
+    const handleSearchSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const q = searchDraft.trim();
+        if (isOnShop) return;
+        const target = q
+            ? `${FRONTEND_ROUTES.SHOP}?q=${encodeURIComponent(q)}`
+            : FRONTEND_ROUTES.SHOP;
+        navigate(target);
+    };
+
+    const handleSearchClear = () => {
+        setSearchDraft('');
+        if (isOnShop) {
+            setSearchParams(
+                (prev) => {
+                    prev.delete('q');
+                    return prev;
+                },
+                { replace: true },
+            );
+        }
+    };
 
     const { data: profile } = useQuery({
         queryKey: queryKeys.profile.self(),
@@ -143,14 +199,34 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
                         </span>
                     </button>
 
-                    <div className="hidden md:flex items-center flex-1 max-w-[420px] h-[36px] px-3 bg-surface-2 border border-border rounded-md gap-2">
-                        <Search size={14} className="text-text-3 flex-shrink-0" />
+                    <form
+                        role="search"
+                        onSubmit={handleSearchSubmit}
+                        className="hidden md:flex items-center flex-1 max-w-[420px] h-[36px] px-3 bg-surface-2 border border-border rounded-md gap-2 focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/20 transition-colors"
+                    >
+                        <Search
+                            size={14}
+                            className="text-text-3 flex-shrink-0"
+                        />
                         <input
                             type="text"
+                            value={searchDraft}
+                            onChange={(e) => setSearchDraft(e.target.value)}
                             placeholder="Search products…"
+                            aria-label="Search products"
                             className="flex-1 bg-transparent outline-none text-[13px] text-text-1 placeholder:text-text-3 min-w-0"
                         />
-                    </div>
+                        {searchDraft && (
+                            <button
+                                type="button"
+                                onClick={handleSearchClear}
+                                aria-label="Clear search"
+                                className="p-0.5 rounded-sm text-text-3 hover:text-text-1 transition-colors focus:outline-none focus:ring-[2px] focus:ring-primary/30"
+                            >
+                                <X size={12} />
+                            </button>
+                        )}
+                    </form>
 
                     <div className="flex items-center gap-1 ml-auto">
                         {isAuthenticated && user && (

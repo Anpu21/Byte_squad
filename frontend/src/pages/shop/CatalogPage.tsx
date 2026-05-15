@@ -1,7 +1,8 @@
 import { Link, Navigate } from 'react-router-dom';
+import { X } from 'lucide-react';
+import Pill from '@/components/ui/Pill';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useCatalogPage } from '@/features/shop-catalog/hooks/useCatalogPage';
-import { CatalogFilters } from '@/features/shop-catalog/components/CatalogFilters';
 import { CategoryChips } from '@/features/shop-catalog/components/CategoryChips';
 import { ProductGrid } from '@/features/shop-catalog/components/ProductGrid';
 import { NoBranchesCard } from '@/features/shop-catalog/components/NoBranchesCard';
@@ -41,10 +42,21 @@ export function CatalogPage() {
                 </p>
             </div>
 
-            <CatalogFilters
-                search={p.search}
-                setSearch={p.setSearch}
-            />
+            {p.search && (
+                <div className="mb-4">
+                    <Pill tone="primary" dot={false}>
+                        Search: “{p.search}”
+                        <button
+                            type="button"
+                            onClick={p.clearSearch}
+                            aria-label="Clear search"
+                            className="ml-1.5 -mr-1 inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-primary-soft/60 focus:outline-none focus:ring-[2px] focus:ring-primary/30"
+                        >
+                            <X size={10} />
+                        </button>
+                    </Pill>
+                </div>
+            )}
 
             <CategoryChips
                 categories={p.categories}
