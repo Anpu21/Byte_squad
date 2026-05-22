@@ -4,16 +4,7 @@ import toast from 'react-hot-toast';
 import { userService } from '@/services/user.service';
 import { useConfirm } from '@/hooks/useConfirm';
 import { queryKeys } from '@/lib/queryKeys';
-import type {
-    IBranch,
-    IUser,
-    IUserActionRequestResponse,
-} from '@/types';
-
-interface PendingAction {
-    response: IUserActionRequestResponse;
-    targetLabel: string;
-}
+import type { IBranch, IUser } from '@/types';
 
 function extractApiMessage(err: unknown): string | undefined {
     const axiosErr = err as { response?: { data?: { message?: string } } };
@@ -35,7 +26,6 @@ export function useUserManagementPage() {
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editingUser, setEditingUser] = useState<IUser | null>(null);
-    const [pending, setPending] = useState<PendingAction | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState<string>('all');
     const [branchFilter, setBranchFilter] = useState<string>('all');
@@ -53,70 +43,52 @@ export function useUserManagementPage() {
     const invalidate = () =>
         queryClient.invalidateQueries({ queryKey: queryKeys.users.all() });
 
-    const requestDeleteMutation = useMutation({
-        mutationFn: (user: IUser) => userService.requestDelete(user.id),
-        onSuccess: (response, user) => {
-            toast.success('Verification code sent to your email');
-            setPending({
-                response,
-                targetLabel: `${user.firstName} ${user.lastName}`,
-            });
+    const deleteMutation = useMutation({
+        mutationFn: (user: IUser) => userService.remove(user.id),
+        onSuccess: () => {
+            toast.success('User deleted');
+            invalidate();
         },
         onError: (err: unknown) =>
-            toast.error(
-                extractApiMessage(err) ?? 'Failed to request user deletion',
-            ),
+            toast.error(extractApiMessage(err) ?? 'Failed to delete user'),
     });
 
-    const requestResetMutation = useMutation({
-        mutationFn: (user: IUser) => userService.requestResetPassword(user.id),
-        onSuccess: (response, user) => {
-            toast.success('Verification code sent to your email');
-            setPending({
-                response,
-                targetLabel: `${user.firstName} ${user.lastName}`,
-            });
+    const resetMutation = useMutation({
+        mutationFn: (user: IUser) => userService.resetPassword(user.id),
+        onSuccess: () => {
+            toast.success(
+                'Password reset — a fresh temporary password was emailed to the user',
+            );
+            invalidate();
         },
         onError: (err: unknown) =>
-            toast.error(
-                extractApiMessage(err) ?? 'Failed to request password reset',
-            ),
+            toast.error(extractApiMessage(err) ?? 'Failed to reset password'),
     });
 
-    const confirmAndRequestDelete = async (user: IUser) => {
+    const confirmAndDelete = async (user: IUser) => {
         const ok = await confirm({
             title: 'Delete user?',
-            body: `Delete ${user.firstName} ${user.lastName}. You'll be emailed a 6-digit code to confirm — this action cannot be undone.`,
-            confirmLabel: 'Send verification code',
+            body: `Delete ${user.firstName} ${user.lastName}. This action cannot be undone.`,
+            confirmLabel: 'Delete user',
             tone: 'danger',
         });
-        if (ok) requestDeleteMutation.mutate(user);
+        if (ok) deleteMutation.mutate(user);
     };
 
-    const confirmAndRequestReset = async (user: IUser) => {
+    const confirmAndReset = async (user: IUser) => {
         const ok = await confirm({
             title: 'Reset password?',
-            body: `Reset password for ${user.firstName} ${user.lastName}. You'll be emailed a 6-digit code; on confirmation a fresh temporary password is sent to the user.`,
-            confirmLabel: 'Send verification code',
+            body: `Reset password for ${user.firstName} ${user.lastName}. A fresh temporary password will be emailed to the user.`,
+            confirmLabel: 'Reset password',
         });
-        if (ok) requestResetMutation.mutate(user);
+        if (ok) resetMutation.mutate(user);
     };
 
-    const handleStaged = (
-        response: IUserActionRequestResponse,
-        targetLabel: string,
-    ) => {
-        setPending({ response, targetLabel });
+    const handleSaved = () => {
         setShowCreateModal(false);
         setEditingUser(null);
-    };
-
-    const handleConfirmed = () => {
-        setPending(null);
         invalidate();
     };
-
-    const closePending = () => setPending(null);
 
     const filteredUsers = useMemo(() => {
         const q = searchQuery.toLowerCase();
@@ -158,10 +130,7 @@ export function useUserManagementPage() {
         setShowCreateModal,
         editingUser,
         setEditingUser,
-        pending,
-        closePending,
-        handleStaged,
-        handleConfirmed,
+        handleSaved,
         searchQuery,
         setSearchQuery,
         roleFilter,
@@ -171,7 +140,7 @@ export function useUserManagementPage() {
         openMenuId,
         setOpenMenuId,
         getBranchName,
-        confirmAndRequestDelete,
-        confirmAndRequestReset,
+        confirmAndDelete,
+        confirmAndReset,
     };
 }

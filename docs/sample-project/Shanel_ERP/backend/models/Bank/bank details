@@ -1,0 +1,121 @@
+-- ============================================
+-- CREATE TABLE : banks
+-- ============================================
+
+CREATE TABLE banks (
+    bank_id INT AUTO_INCREMENT PRIMARY KEY,
+    bank_name VARCHAR(100) NOT NULL UNIQUE,
+    bank_code VARCHAR(10)
+);
+
+-- ============================================
+-- CREATE TABLE : branches
+-- ============================================
+
+CREATE TABLE branches (
+    branch_id INT AUTO_INCREMENT PRIMARY KEY,
+    bank_id INT NOT NULL,
+    branch_name VARCHAR(100) NOT NULL,
+    branch_code VARCHAR(10),
+
+    CONSTRAINT fk_branch_bank
+        FOREIGN KEY (bank_id)
+        REFERENCES banks(bank_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- ============================================
+-- INSERT DATA INTO banks
+-- ============================================
+
+INSERT INTO banks (bank_name, bank_code) VALUES
+('Bank of Ceylon', '7010'),
+('People''s Bank', '7135'),
+('Commercial Bank', '7056'),
+('Hatton National Bank', '7083'),
+('Sampath Bank', '7278'),
+('Seylan Bank', '7287'),
+('Nations Trust Bank', '7162'),
+('DFCC Bank', '7454'),
+('National Development Bank', '7214'),
+('Pan Asia Bank', '7311'),
+('Union Bank', '7302'),
+('Amana Bank', '7463'),
+('Cargills Bank', '7481'),
+('HSBC Sri Lanka', '7072'),
+('Standard Chartered Bank', '7038');
+
+-- ============================================
+-- INSERT DATA INTO branches
+-- ============================================
+INSERT INTO branches (bank_id, branch_name, branch_code) VALUES
+
+-- Bank of Ceylon
+(1, 'Colombo Fort', '001'),
+(1, 'Pettah', '002'),
+(1, 'Kandy', '003'),
+(1, 'Galle', '004'),
+(1, 'Matara', '005'),
+
+-- People's Bank
+(2, 'Head Office Colombo', '001'),
+(2, 'Pettah', '002'),
+(2, 'Kandy', '003'),
+(2, 'Kurunegala', '004'),
+
+-- Commercial Bank
+(3, 'Colombo Main', '001'),
+(3, 'Kandy', '002'),
+(3, 'Negombo', '003'),
+(3, 'Galle', '004'),
+
+-- Hatton National Bank
+(4, 'Colombo', '001'),
+(4, 'Kandy', '002'),
+(4, 'Matara', '003'),
+
+-- Sampath Bank
+(5, 'Colombo Super Branch', '001'),
+(5, 'Pettah', '002'),
+(5, 'Kandy', '003'),
+
+-- Seylan Bank
+(6, 'Seylan Towers Colombo', '001'),
+(6, 'Kandy', '002'),
+(6, 'Negombo', '003'),
+
+-- Nations Trust Bank
+(7, 'Colombo 03', '001'),
+(7, 'Kandy', '002'),
+
+-- DFCC Bank
+(8, 'Colombo', '001'),
+(8, 'Galle', '002'),
+
+-- NDB
+(9, 'Colombo', '001'),
+(9, 'Kandy', '002'),
+
+-- Pan Asia
+(10, 'Colombo', '001'),
+(10, 'Kurunegala', '002'),
+
+-- Union Bank
+(11, 'Colombo', '001'),
+(11, 'Gampaha', '002'),
+
+-- Amana Bank
+(12, 'Colombo 03', '001'),
+(12, 'Kandy', '002'),
+
+-- Cargills Bank
+(13, 'Colombo', '001'),
+(13, 'Kandy', '002'),
+
+-- HSBC
+(14, 'Colombo Fort', '001'),
+(14, 'Bambalapitiya', '002'),
+
+-- Standard Chartered
+(15, 'Colombo Fort', '001');

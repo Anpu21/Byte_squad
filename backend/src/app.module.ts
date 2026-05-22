@@ -19,7 +19,6 @@ import { ShopModule } from '@/modules/shop/shop.module';
 import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
-import { PendingBranchAction } from '@branches/entities/pending-branch-action.entity';
 import { Product } from '@products/entities/product.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
@@ -53,7 +52,6 @@ import appConfig from '@common/config/app.config';
     TypeOrmModule.forFeature([
       User,
       Branch,
-      PendingBranchAction,
       Product,
       Inventory,
       Transaction,
