@@ -4,17 +4,9 @@ import toast from 'react-hot-toast';
 import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';
 import { useConfirm } from '@/hooks/useConfirm';
-import type {
-    IBranchWithMeta,
-    IBranchActionRequestResponse,
-} from '@/types';
+import type { IBranchWithMeta } from '@/types';
 
 export type EditingBranch = IBranchWithMeta | null;
-
-interface PendingDelete {
-    pending: IBranchActionRequestResponse;
-    branchName: string;
-}
 
 function extractApiMessage(err: unknown): string | undefined {
     const axiosErr = err as { response?: { data?: { message?: string } } };
@@ -26,9 +18,6 @@ export function useBranchManagementPage() {
     const confirm = useConfirm();
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<EditingBranch>(null);
-    const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(
-        null,
-    );
 
     const { data: branches = [], isLoading } = useQuery({
         queryKey: queryKeys.admin.branches(),
@@ -49,12 +38,11 @@ export function useBranchManagementPage() {
         onError: () => toast.error('Failed to toggle branch'),
     });
 
-    const requestDeleteMutation = useMutation({
-        mutationFn: ({ branchId }: { branchId: string; branchName: string }) =>
-            adminService.requestDeleteBranch(branchId),
-        onSuccess: (pending, variables) => {
-            toast.success('Verification code sent to your email');
-            setPendingDelete({ pending, branchName: variables.branchName });
+    const deleteMutation = useMutation({
+        mutationFn: (branchId: string) => adminService.deleteBranch(branchId),
+        onSuccess: () => {
+            toast.success('Branch deleted');
+            invalidate();
         },
         onError: (err: unknown) =>
             toast.error(
@@ -78,23 +66,12 @@ export function useBranchManagementPage() {
     const requestDelete = async (branch: IBranchWithMeta) => {
         const ok = await confirm({
             title: 'Delete branch?',
-            body: `Delete branch "${branch.name}". You'll be emailed a 6-digit code to confirm — deletion will fail if the branch has any users or transactions.`,
-            confirmLabel: 'Send verification code',
+            body: `Delete branch "${branch.name}". Deletion will fail if the branch has any users or transactions.`,
+            confirmLabel: 'Delete branch',
             tone: 'danger',
         });
         if (!ok) return;
-        requestDeleteMutation.mutate({
-            branchId: branch.id,
-            branchName: branch.name,
-        });
-    };
-
-    const closePendingDelete = () => setPendingDelete(null);
-
-    const handleDeleteConfirmed = () => {
-        toast.success('Branch deleted');
-        setPendingDelete(null);
-        invalidate();
+        deleteMutation.mutate(branch.id);
     };
 
     return {
@@ -108,8 +85,5 @@ export function useBranchManagementPage() {
         onSaved: invalidate,
         onToggle: toggleMutation.mutate,
         onRequestDelete: requestDelete,
-        pendingDelete,
-        closePendingDelete,
-        handleDeleteConfirmed,
     };
 }

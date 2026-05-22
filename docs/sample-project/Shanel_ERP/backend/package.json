@@ -1,0 +1,43 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "start": "node scripts/ensure-deps.js && nodemon server.js",
+    "dev": "node scripts/ensure-deps.js && nodemon server.js"
+  },
+  "overrides": {
+    "uuid": "14.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.13.4",
+    "bcrypt": "^6.0.0",
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.0.2",
+    "mysql2": "^3.22.3",
+    "nodemailer": "^8.0.7",
+    "nodemon": "^3.1.11",
+    "sequelize": "^6.37.8",
+    "stripe": "^20.3.1",
+    "validator": "^13.15.26"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "sequelize-cli": "^6.6.5"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  }
+}

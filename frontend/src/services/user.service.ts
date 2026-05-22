@@ -3,8 +3,6 @@ import type {
   IUser,
   IUserCreatePayload,
   IUserUpdatePayload,
-  IUserActionRequestResponse,
-  IUserActionConfirmResponse,
   IApiResponse,
   IBranch,
 } from '@/types';
@@ -20,61 +18,28 @@ export const userService = {
     return response.data.data;
   },
 
-  // ── Two-step admin mutations: request → confirm OTP ───────────────────
-  // POST/PATCH/DELETE on /users now return a pending-action id + expiresAt.
-  // The admin must follow up with POST /users/actions/:actionId/confirm
-  // carrying the 6-digit OTP they received by email.
+  // ── Admin mutations (direct, no OTP) ──────────────────────────────────
 
-  requestCreate: async (
-    payload: IUserCreatePayload,
-  ): Promise<IUserActionRequestResponse> => {
-    const response = await api.post<
-      IApiResponse<IUserActionRequestResponse>
-    >('/users', payload);
+  create: async (payload: IUserCreatePayload): Promise<IUser> => {
+    const response = await api.post<IApiResponse<IUser>>('/users', payload);
     return response.data.data;
   },
 
-  requestUpdate: async (
-    id: string,
-    payload: IUserUpdatePayload,
-  ): Promise<IUserActionRequestResponse> => {
-    const response = await api.patch<
-      IApiResponse<IUserActionRequestResponse>
-    >(`/users/${id}`, payload);
+  update: async (id: string, payload: IUserUpdatePayload): Promise<IUser> => {
+    const response = await api.patch<IApiResponse<IUser>>(
+      `/users/${id}`,
+      payload,
+    );
     return response.data.data;
   },
 
-  requestDelete: async (id: string): Promise<IUserActionRequestResponse> => {
-    const response = await api.delete<
-      IApiResponse<IUserActionRequestResponse>
-    >(`/users/${id}`);
-    return response.data.data;
+  remove: async (id: string): Promise<void> => {
+    await api.delete(`/users/${id}`);
   },
 
-  requestResetPassword: async (
-    id: string,
-  ): Promise<IUserActionRequestResponse> => {
-    const response = await api.post<
-      IApiResponse<IUserActionRequestResponse>
-    >(`/users/${id}/reset-password`);
-    return response.data.data;
-  },
-
-  confirmUserAction: async (
-    actionId: string,
-    otpCode: string,
-  ): Promise<IUserActionConfirmResponse> => {
-    const response = await api.post<
-      IApiResponse<IUserActionConfirmResponse>
-    >(`/users/actions/${actionId}/confirm`, { otpCode });
-    return response.data.data;
-  },
-
-  resendUserActionOtp: async (
-    actionId: string,
-  ): Promise<{ expiresAt: string }> => {
-    const response = await api.post<IApiResponse<{ expiresAt: string }>>(
-      `/users/actions/${actionId}/resend`,
+  resetPassword: async (id: string): Promise<IUser> => {
+    const response = await api.post<IApiResponse<IUser>>(
+      `/users/${id}/reset-password`,
     );
     return response.data.data;
   },

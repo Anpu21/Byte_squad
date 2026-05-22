@@ -1,0 +1,35 @@
+'use strict';
+
+module.exports = {
+    up: async (queryInterface, Sequelize) => {
+        try{
+            const table = await queryInterface.describeTable('product');
+            if(!table.S_ID){
+                await queryInterface.addColumn('product', 'S_ID', {
+                    type: Sequelize.INTEGER,
+                    allowNull: true,
+                    defaultValue: null
+                });
+                console.log('S_ID column added successfully to product table');
+            }else{
+                console.log('S_ID column already exists ');
+            }
+        } catch (error) {
+            console.error('Error adding S_ID column:', error);
+            throw error;
+        }
+    },
+
+    down: async (queryInterface, Sequelize) => {
+        try {
+            const table = await queryInterface.describeTable('product');
+            if (table.S_ID) {
+                await queryInterface.removeColumn('product', 'S_ID');
+                console.log('S_ID column removed successfully from product table');
+            }
+        } catch (error) {
+            console.error('Error removing S_ID column:', error);
+            throw error;
+        }
+    }
+}

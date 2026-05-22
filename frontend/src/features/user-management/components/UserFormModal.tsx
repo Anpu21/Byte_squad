@@ -4,11 +4,7 @@ import toast from 'react-hot-toast';
 import { userService } from '@/services/user.service';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
-import type {
-    IBranch,
-    IUser,
-    IUserActionRequestResponse,
-} from '@/types';
+import type { IBranch, IUser } from '@/types';
 import {
     SRI_LANKA_PHONE_ERROR,
     isValidSriLankaPhone,
@@ -24,10 +20,7 @@ interface UserFormModalProps {
     user: IUser | null;
     branches: IBranch[];
     onClose: () => void;
-    onStaged: (
-        response: IUserActionRequestResponse,
-        targetLabel: string,
-    ) => void;
+    onSaved: () => void;
 }
 
 function extractApiMessage(err: unknown): string | undefined {
@@ -39,30 +32,27 @@ export function UserFormModal({
     user,
     branches,
     onClose,
-    onStaged,
+    onSaved,
 }: UserFormModalProps) {
     const isEdit = user !== null;
     const [form, setForm] = useState(() => initialUserForm(user, branches));
     const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
 
-    const requestMutation = useMutation({
+    const saveMutation = useMutation({
         mutationFn: () =>
             isEdit && user
-                ? userService.requestUpdate(user.id, buildUpdatePayload(form))
-                : userService.requestCreate(buildCreatePayload(form)),
-        onSuccess: (response) => {
-            const label = `${form.firstName.trim()} ${form.lastName.trim()}`.trim() ||
-                form.email.trim() ||
-                'this user';
-            onStaged(response, label);
-            toast.success('Verification code sent to your email');
+                ? userService.update(user.id, buildUpdatePayload(form))
+                : userService.create(buildCreatePayload(form)),
+        onSuccess: () => {
+            toast.success(isEdit ? 'User updated' : 'User invited');
+            onSaved();
         },
         onError: (err: unknown) => {
             toast.error(
                 extractApiMessage(err) ??
                     (isEdit
-                        ? 'Failed to request user update'
-                        : 'Failed to request user creation'),
+                        ? 'Failed to update user'
+                        : 'Failed to create user'),
             );
         },
     });
@@ -74,7 +64,7 @@ export function UserFormModal({
             return;
         }
         setPhoneError(undefined);
-        requestMutation.mutate();
+        saveMutation.mutate();
     };
 
     return (
@@ -96,11 +86,6 @@ export function UserFormModal({
                     }}
                 />
 
-                <div className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[12px] text-text-2">
-                    Sensitive change — we'll email a 6-digit code to your admin
-                    address to confirm before applying.
-                </div>
-
                 <div className="flex flex-col-reverse sm:flex-row gap-3 pt-1">
                     <Button
                         type="button"
@@ -112,14 +97,14 @@ export function UserFormModal({
                     </Button>
                     <Button
                         type="submit"
-                        disabled={requestMutation.isPending}
+                        disabled={saveMutation.isPending}
                         className="flex-1"
                     >
-                        {requestMutation.isPending
-                            ? 'Sending code…'
+                        {saveMutation.isPending
+                            ? 'Saving…'
                             : isEdit
-                              ? 'Save changes (verify by email)'
-                              : 'Invite user (verify by email)'}
+                              ? 'Save changes'
+                              : 'Invite user'}
                     </Button>
                 </div>
             </form>
