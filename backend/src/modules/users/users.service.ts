@@ -3,50 +3,26 @@ import {
   ConflictException,
   ForbiddenException,
   NotFoundException,
-  ServiceUnavailableException,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
 import { User } from '@users/entities/user.entity';
 import { UsersRepository } from '@users/users.repository';
-import { PendingUserActionsRepository } from '@users/pending-user-actions.repository';
-import {
-  PendingUserAction,
-  PendingUserActionType,
-} from '@users/entities/pending-user-action.entity';
 import { BranchesRepository } from '@branches/branches.repository';
 import { CreateUserDto } from '@users/dto/create-user.dto';
 import { UpdateUserDto } from '@users/dto/update-user.dto';
-import {
-  parseCreateUserPayload,
-  parseUpdateUserPayload,
-} from '@users/user-payload.parser';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { EmailService } from '../email/email.service';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import randomPasswordGenerator from '@/common/utils/random-password-generator';
 
 const AVATAR_CLOUDINARY_FOLDER = 'ledgerpro/avatars';
-const OTP_EXPIRES_IN_MINUTES = 10;
 
 export interface Actor {
   id: string;
   role: UserRole;
   branchId: string;
-}
-
-export interface UserActionRequestResult {
-  actionId: string;
-  expiresAt: Date;
-  action: PendingUserActionType;
-}
-
-export interface UserActionConfirmResult {
-  action: PendingUserActionType;
-  user: User | null;
 }
 
 const ASSIGNABLE_ROLES_ON_CREATE: UserRole[] = [
@@ -61,7 +37,6 @@ export class UsersService {
 
   constructor(
     private readonly users: UsersRepository,
-    private readonly pendingActions: PendingUserActionsRepository,
     private readonly branches: BranchesRepository,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
@@ -220,288 +195,16 @@ export class UsersService {
     return this.findById(id);
   }
 
-  // ── Two-step admin mutations: request* stages the action and emails OTP ─
+  // ── Admin mutations (direct, no OTP) ───────────────────────────────────
 
-  async requestCreate(
-    adminUserId: string,
-    dto: CreateUserDto,
-  ): Promise<UserActionRequestResult> {
+  async create(adminUserId: string, dto: CreateUserDto): Promise<User> {
     if (!ASSIGNABLE_ROLES_ON_CREATE.includes(dto.role)) {
       throw new ForbiddenException(
         'Admins can only create admin, manager, or cashier accounts',
       );
     }
     await this.assertEmailAvailable(dto.email, null);
-    return this.stageAction(adminUserId, {
-      actionType: 'create',
-      targetUserId: null,
-      payload: { ...dto },
-      targetLabel: dto.email,
-    });
-  }
 
-  async requestUpdate(
-    adminUserId: string,
-    targetUserId: string,
-    dto: UpdateUserDto,
-  ): Promise<UserActionRequestResult> {
-    const target = await this.users.findById(targetUserId);
-    if (!target) {
-      throw new NotFoundException('User not found');
-    }
-    this.assertNotSelf(adminUserId, target.id);
-    if (dto.email !== undefined) {
-      await this.assertEmailAvailable(dto.email, targetUserId);
-    }
-    return this.stageAction(adminUserId, {
-      actionType: 'update',
-      targetUserId,
-      payload: { ...dto },
-      targetLabel: target.email,
-    });
-  }
-
-  async requestDelete(
-    adminUserId: string,
-    targetUserId: string,
-  ): Promise<UserActionRequestResult> {
-    const target = await this.users.findById(targetUserId);
-    if (!target) {
-      throw new NotFoundException('User not found');
-    }
-    this.assertNotSelf(adminUserId, target.id);
-    return this.stageAction(adminUserId, {
-      actionType: 'delete',
-      targetUserId,
-      payload: null,
-      targetLabel: target.email,
-    });
-  }
-
-  async requestResetPassword(
-    adminUserId: string,
-    targetUserId: string,
-  ): Promise<UserActionRequestResult> {
-    const target = await this.users.findById(targetUserId);
-    if (!target) {
-      throw new NotFoundException('User not found');
-    }
-    this.assertNotSelf(adminUserId, target.id);
-    return this.stageAction(adminUserId, {
-      actionType: 'reset-password',
-      targetUserId,
-      payload: null,
-      targetLabel: target.email,
-    });
-  }
-
-  async confirmAction(
-    adminUserId: string,
-    actionId: string,
-    otpCode: string,
-  ): Promise<UserActionConfirmResult> {
-    const pending = await this.loadOwnedPendingAction(adminUserId, actionId);
-
-    if (pending.consumedAt) {
-      throw new BadRequestException('This confirmation has already been used');
-    }
-    if (new Date() > pending.expiresAt) {
-      throw new BadRequestException('Confirmation code has expired');
-    }
-    if (pending.otpCode !== otpCode) {
-      throw new BadRequestException('Invalid confirmation code');
-    }
-
-    let result: User | null = null;
-    switch (pending.actionType) {
-      case 'create': {
-        const payload = parseCreateUserPayload(pending.payload);
-        await this.assertEmailAvailable(payload.email, null);
-        result = await this.executeCreate(payload);
-        break;
-      }
-      case 'update': {
-        if (!pending.targetUserId) {
-          throw new ConflictException(
-            'Pending update is missing its target user reference',
-          );
-        }
-        const existing = await this.users.findById(pending.targetUserId);
-        if (!existing) {
-          throw new NotFoundException('User no longer exists');
-        }
-        const payload = parseUpdateUserPayload(pending.payload);
-        if (payload.email !== undefined && payload.email !== existing.email) {
-          await this.assertEmailAvailable(payload.email, existing.id);
-        }
-        await this.users.update(existing.id, payload);
-        result = await this.findById(existing.id);
-        break;
-      }
-      case 'delete': {
-        if (!pending.targetUserId) {
-          throw new ConflictException(
-            'Pending delete is missing its target user reference',
-          );
-        }
-        const existing = await this.users.findById(pending.targetUserId);
-        if (!existing) {
-          throw new NotFoundException('User no longer exists');
-        }
-        await this.users.delete(existing.id);
-        result = null;
-        break;
-      }
-      case 'reset-password': {
-        if (!pending.targetUserId) {
-          throw new ConflictException(
-            'Pending reset is missing its target user reference',
-          );
-        }
-        const existing = await this.users.findById(pending.targetUserId);
-        if (!existing) {
-          throw new NotFoundException('User no longer exists');
-        }
-        await this.executeResetPassword(existing);
-        result = await this.findById(existing.id);
-        break;
-      }
-      default: {
-        throw new ConflictException('Unknown pending action');
-      }
-    }
-
-    await this.pendingActions.markConsumed(pending.id, new Date());
-    return { action: pending.actionType, user: result };
-  }
-
-  async resendActionOtp(
-    adminUserId: string,
-    actionId: string,
-  ): Promise<{ expiresAt: Date }> {
-    const pending = await this.loadOwnedPendingAction(adminUserId, actionId);
-    if (pending.consumedAt) {
-      throw new BadRequestException('This confirmation has already been used');
-    }
-    const otpCode = this.generateOtp();
-    const expiresAt = new Date(Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000);
-    await this.pendingActions.refreshOtp(pending.id, otpCode, expiresAt);
-
-    const admin = await this.users.findById(adminUserId);
-    if (!admin) {
-      throw new NotFoundException('Admin account not found');
-    }
-    await this.sendOtp(
-      admin,
-      otpCode,
-      pending.actionType,
-      this.payloadLabel(pending) ?? 'the selected user',
-    );
-    return { expiresAt };
-  }
-
-  // ── Internals ──────────────────────────────────────────────────────────
-
-  private async stageAction(
-    adminUserId: string,
-    args: {
-      actionType: PendingUserActionType;
-      targetUserId: string | null;
-      payload: Record<string, unknown> | null;
-      targetLabel: string;
-    },
-  ): Promise<UserActionRequestResult> {
-    const admin = await this.users.findById(adminUserId);
-    if (!admin) {
-      throw new NotFoundException('Admin account not found');
-    }
-
-    const otpCode = this.generateOtp();
-    const expiresAt = new Date(Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000);
-
-    const pending = await this.pendingActions.create({
-      userId: adminUserId,
-      actionType: args.actionType,
-      targetUserId: args.targetUserId,
-      payload: args.payload,
-      otpCode,
-      expiresAt,
-    });
-
-    try {
-      await this.sendOtp(admin, otpCode, args.actionType, args.targetLabel);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(
-        `Failed to send user-action OTP to ${admin.email}: ${message}`,
-      );
-      throw new ServiceUnavailableException(
-        'Email service unavailable. Please try again in a moment.',
-      );
-    }
-
-    return {
-      actionId: pending.id,
-      expiresAt,
-      action: args.actionType,
-    };
-  }
-
-  private async sendOtp(
-    admin: User,
-    otpCode: string,
-    action: PendingUserActionType,
-    targetLabel: string,
-  ): Promise<void> {
-    const isProd = this.isProduction();
-
-    // Dev: always log so the developer can copy from container logs, even when
-    // SMTP succeeds (the email may land in spam or take a moment to arrive).
-    if (!isProd) {
-      this.logger.warn(
-        `✨ DEV user-action OTP for ${admin.email} (${action} ${targetLabel}): ${otpCode} (expires in ${OTP_EXPIRES_IN_MINUTES}m).`,
-      );
-    }
-
-    if (this.emailService.isVerified()) {
-      await this.emailService.sendUserActionOtpEmail(
-        admin.email,
-        admin.firstName,
-        otpCode,
-        action,
-        targetLabel,
-        OTP_EXPIRES_IN_MINUTES,
-      );
-      return;
-    }
-    if (isProd) {
-      throw new ServiceUnavailableException(
-        'Email service unavailable. Please try again in a moment.',
-      );
-    }
-    // Dev with no SMTP — the OTP was already logged above; nothing else to do.
-    this.logger.warn(
-      `SMTP unavailable; OTP for ${admin.email} only printed to logs.`,
-    );
-  }
-
-  private async loadOwnedPendingAction(
-    adminUserId: string,
-    actionId: string,
-  ): Promise<PendingUserAction> {
-    const pending = await this.pendingActions.findById(actionId);
-    if (!pending) {
-      throw new NotFoundException('Pending action not found');
-    }
-    if (pending.userId !== adminUserId) {
-      throw new ForbiddenException(
-        'You can only confirm your own user actions',
-      );
-    }
-    return pending;
-  }
-
-  private async executeCreate(dto: CreateUserDto): Promise<User> {
     const tempPassword = randomPasswordGenerator();
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(tempPassword, salt);
@@ -526,9 +229,11 @@ export class UsersService {
       isVerified: false,
       otpExpiresAt,
     });
-    this.logger.log(`User created: ${saved.email} (role: ${saved.role})`);
+    this.logger.log(
+      `User created by admin ${adminUserId}: ${saved.email} (role: ${saved.role})`,
+    );
 
-    // Fire welcome email best-effort — OTP already verified the admin.
+    // Fire welcome email best-effort.
     this.emailService
       .sendWelcomeEmail(
         saved.email,
@@ -546,7 +251,46 @@ export class UsersService {
     return this.stripPassword(saved);
   }
 
-  private async executeResetPassword(target: User): Promise<void> {
+  async update(
+    adminUserId: string,
+    targetUserId: string,
+    dto: UpdateUserDto,
+  ): Promise<User | null> {
+    const target = await this.users.findById(targetUserId);
+    if (!target) {
+      throw new NotFoundException('User not found');
+    }
+    this.assertNotSelf(adminUserId, target.id);
+    if (dto.email !== undefined && dto.email !== target.email) {
+      await this.assertEmailAvailable(dto.email, targetUserId);
+    }
+
+    await this.users.update(target.id, { ...dto });
+    this.logger.log(`User ${target.email} updated by admin ${adminUserId}`);
+    return this.findById(target.id);
+  }
+
+  async delete(adminUserId: string, targetUserId: string): Promise<void> {
+    const target = await this.users.findById(targetUserId);
+    if (!target) {
+      throw new NotFoundException('User not found');
+    }
+    this.assertNotSelf(adminUserId, target.id);
+
+    await this.users.delete(target.id);
+    this.logger.log(`User ${target.email} deleted by admin ${adminUserId}`);
+  }
+
+  async resetPassword(
+    adminUserId: string,
+    targetUserId: string,
+  ): Promise<User | null> {
+    const target = await this.users.findById(targetUserId);
+    if (!target) {
+      throw new NotFoundException('User not found');
+    }
+    this.assertNotSelf(adminUserId, target.id);
+
     const tempPassword = randomPasswordGenerator();
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(tempPassword, salt);
@@ -572,8 +316,13 @@ export class UsersService {
       expiresInHours,
     );
 
-    this.logger.log(`Credentials reset for user: ${target.email}`);
+    this.logger.log(
+      `Credentials reset for ${target.email} by admin ${adminUserId}`,
+    );
+    return this.findById(target.id);
   }
+
+  // ── Internals ──────────────────────────────────────────────────────────
 
   private async assertEmailAvailable(
     email: string,
@@ -595,25 +344,6 @@ export class UsersService {
         'You cannot manage your own account through this endpoint',
       );
     }
-  }
-
-  private payloadLabel(action: PendingUserAction): string | null {
-    if (action.payload && typeof action.payload === 'object') {
-      const email = action.payload.email;
-      if (typeof email === 'string') return email;
-    }
-    return null;
-  }
-
-  private generateOtp(): string {
-    return crypto.randomInt(100000, 1000000).toString();
-  }
-
-  private isProduction(): boolean {
-    return (
-      (this.configService.get<string>('NODE_ENV') ?? 'development') ===
-      'production'
-    );
   }
 
   private stripPassword(user: User): User {

@@ -10,15 +10,10 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import {
-  BranchActionConfirmResult,
-  BranchActionRequestResult,
-  BranchesService,
-} from '@branches/branches.service';
+import { BranchesService } from '@branches/branches.service';
 import type { MyBranchPerformance } from '@branches/types';
 import { CreateBranchDto } from '@branches/dto/create-branch.dto';
 import { UpdateBranchDto } from '@branches/dto/update-branch.dto';
-import { ConfirmBranchActionDto } from '@branches/dto/confirm-branch-action.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -34,12 +29,11 @@ export class BranchesController {
 
   @Post()
   @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.ACCEPTED)
-  requestCreate(
+  create(
     @CurrentUser('id') adminUserId: string,
     @Body() createBranchDto: CreateBranchDto,
-  ): Promise<BranchActionRequestResult> {
-    return this.branchesService.requestCreate(adminUserId, createBranchDto);
+  ): Promise<Branch> {
+    return this.branchesService.create(adminUserId, createBranchDto);
   }
 
   @Get()
@@ -59,31 +53,6 @@ export class BranchesController {
     return this.branchesService.getMyPerformance(branchId);
   }
 
-  @Post(APP_ROUTES.BRANCHES.CONFIRM_ACTION)
-  @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
-  confirmAction(
-    @CurrentUser('id') adminUserId: string,
-    @Param('actionId') actionId: string,
-    @Body() dto: ConfirmBranchActionDto,
-  ): Promise<BranchActionConfirmResult> {
-    return this.branchesService.confirmAction(
-      adminUserId,
-      actionId,
-      dto.otpCode,
-    );
-  }
-
-  @Post(APP_ROUTES.BRANCHES.RESEND_ACTION_OTP)
-  @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
-  resendActionOtp(
-    @CurrentUser('id') adminUserId: string,
-    @Param('actionId') actionId: string,
-  ): Promise<{ expiresAt: Date }> {
-    return this.branchesService.resendActionOtp(adminUserId, actionId);
-  }
-
   @Get(APP_ROUTES.BRANCHES.BY_ID)
   findOne(@Param('id') id: string): Promise<Branch | null> {
     return this.branchesService.findById(id);
@@ -91,13 +60,12 @@ export class BranchesController {
 
   @Patch(APP_ROUTES.BRANCHES.BY_ID)
   @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.ACCEPTED)
-  requestUpdate(
+  update(
     @CurrentUser('id') adminUserId: string,
     @Param('id') id: string,
     @Body() updateBranchDto: UpdateBranchDto,
-  ): Promise<BranchActionRequestResult> {
-    return this.branchesService.requestUpdate(adminUserId, id, updateBranchDto);
+  ): Promise<Branch | null> {
+    return this.branchesService.update(adminUserId, id, updateBranchDto);
   }
 
   @Patch(APP_ROUTES.BRANCHES.TOGGLE_ACTIVE)
@@ -108,11 +76,11 @@ export class BranchesController {
 
   @Delete(APP_ROUTES.BRANCHES.BY_ID)
   @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.ACCEPTED)
-  requestDelete(
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(
     @CurrentUser('id') adminUserId: string,
     @Param('id') id: string,
-  ): Promise<BranchActionRequestResult> {
-    return this.branchesService.requestDelete(adminUserId, id);
+  ): Promise<void> {
+    return this.branchesService.delete(adminUserId, id);
   }
 }
