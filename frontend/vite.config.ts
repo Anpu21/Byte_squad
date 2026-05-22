@@ -22,6 +22,12 @@ export default defineConfig({
         target: process.env.BACKEND_API_URL || 'http://backend:3000',
         changeOrigin: true,
       },
+      // socket.io for live notifications + customer-request:created broadcasts
+      '/socket.io': {
+        target: process.env.BACKEND_API_URL || 'http://backend:3000',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 })

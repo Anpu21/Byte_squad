@@ -33,12 +33,21 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.CASHIER })
   role!: UserRole;
 
-  @Column({ type: 'uuid', name: 'branch_id' })
-  branchId!: string;
+  @Column({ type: 'uuid', name: 'branch_id', nullable: true })
+  branchId!: string | null;
 
-  @ManyToOne(() => Branch, (branch) => branch.users, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Branch, (branch) => branch.users, {
+    onDelete: 'RESTRICT',
+    nullable: true,
+  })
   @JoinColumn({ name: 'branch_id' })
-  branch!: Branch;
+  branch!: Branch | null;
+
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  phone!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  address!: string | null;
 
   @Column({ type: 'boolean', name: 'is_first_login', default: true })
   isFirstLogin!: boolean;

@@ -32,8 +32,11 @@
       "@notifications/*": [
         "src/modules/notifications/*"
       ],
-      "@super-admin/*": [
-        "src/modules/super-admin/*"
+      "@admin-portal/*": [
+        "src/modules/admin-portal/*"
+      ],
+      "@stock-transfers/*": [
+        "src/modules/stock-transfers/*"
       ]
     },
     "module": "NodeNext",

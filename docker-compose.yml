@@ -29,7 +29,7 @@ services:
       target: development
     container_name: ledgerpro-backend
     ports:
-      - "${BACKEND_PORT:-3001}:3000"
+      - "${BACKEND_PORT:-3000}:3000"
     volumes:
       - ./backend/src:/app/src
       - ./backend/tsconfig-paths-bootstrap.js:/app/tsconfig-paths-bootstrap.js
@@ -48,6 +48,22 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
       - CORS_ORIGIN=${CORS_ORIGIN}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM=${MAIL_FROM}
+      - TEMP_PASSWORD_EXPIRES_HOURS=${TEMP_PASSWORD_EXPIRES_HOURS}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - PAYHERE_MERCHANT_ID=${PAYHERE_MERCHANT_ID}
+      - PAYHERE_MERCHANT_SECRET=${PAYHERE_MERCHANT_SECRET}
+      - BACKEND_PUBLIC_URL=${BACKEND_PUBLIC_URL:-http://localhost:3000}
+      - PAYHERE_CHECKOUT_URL=${PAYHERE_CHECKOUT_URL:-https://sandbox.payhere.lk/pay/checkout}
+      - PAYHERE_NOTIFY_URL=${PAYHERE_NOTIFY_URL}
+      - PAYHERE_RETURN_URL=${PAYHERE_RETURN_URL}
+      - PAYHERE_CANCEL_URL=${PAYHERE_CANCEL_URL}
     depends_on:
       postgres:
         condition: service_healthy

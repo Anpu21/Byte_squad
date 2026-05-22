@@ -1,6 +1,7 @@
-import { useEffect, useCallback, useState } from 'react';
-import type { INotification } from '@/types/index';
-import api from '@/services/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { INotification } from '@/types';
+import { notificationsService } from '@/services/notifications.service';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface UseNotificationsReturn {
     notifications: INotification[];
@@ -11,54 +12,47 @@ interface UseNotificationsReturn {
 }
 
 export function useNotifications(): UseNotificationsReturn {
-    const [notifications, setNotifications] = useState<INotification[]>([]);
+    const queryClient = useQueryClient();
 
-    const fetchNotifications = useCallback(async () => {
-        try {
-            const response = await api.get<{ data: INotification[] }>(
-                '/notifications',
-            );
-            setNotifications(response.data.data);
-        } catch {
-            // Silently fail — notifications are non-critical
-        }
-    }, []);
+    const query = useQuery({
+        queryKey: queryKeys.notifications.list(),
+        queryFn: notificationsService.list,
+    });
 
-    const markAsRead = useCallback(async (id: string) => {
-        await api.patch(`/notifications/${id}/read`);
-        setNotifications((prev) =>
-            prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-        );
-    }, []);
-
-    const markAllAsRead = useCallback(async () => {
-        await api.patch('/notifications/read-all');
-        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    }, []);
-
-    useEffect(() => {
-        let active = true;
-        api.get<{ data: INotification[] }>('/notifications')
-            .then((response) => {
-                if (active) {
-                    setNotifications(response.data.data);
-                }
-            })
-            .catch(() => {
-                // Silently fail — notifications are non-critical
+    const markAsReadMutation = useMutation({
+        mutationFn: notificationsService.markAsRead,
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.notifications.list(),
             });
-        return () => {
-            active = false;
-        };
-    }, []);
+        },
+    });
 
+    const markAllAsReadMutation = useMutation({
+        mutationFn: notificationsService.markAllAsRead,
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.notifications.list(),
+            });
+        },
+    });
+
+    const notifications = query.data ?? [];
     const unreadCount = notifications.filter((n) => !n.isRead).length;
 
     return {
         notifications,
         unreadCount,
-        markAsRead,
-        markAllAsRead,
-        refetch: fetchNotifications,
+        markAsRead: async (id) => {
+            await markAsReadMutation.mutateAsync(id);
+        },
+        markAllAsRead: async () => {
+            await markAllAsReadMutation.mutateAsync();
+        },
+        refetch: async () => {
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.notifications.list(),
+            });
+        },
     };
 }

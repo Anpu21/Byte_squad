@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Headers,
+} from '@nestjs/common';
 import { PosService } from '@pos/pos.service.js';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -11,11 +19,12 @@ import { Transaction } from '@pos/entities/transaction.entity';
 import type {
   CashierDashboardData,
   AdminDashboardData,
-} from '@pos/pos.service';
+  CashierTransactionsSummary,
+} from '@pos/types';
 
 @Controller(APP_ROUTES.POS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER)
+@Roles(UserRole.CASHIER)
 export class PosController {
   constructor(private readonly posService: PosService) {}
 
@@ -33,16 +42,35 @@ export class PosController {
     return this.posService.getCashierDashboard(cashierId, branchId);
   }
 
+  @Get(APP_ROUTES.POS.MY_TRANSACTIONS)
+  @Roles(UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER)
+  getMyTransactions(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('branchId') branchId: string,
+    @CurrentUser('role') role: UserRole,
+  ): Promise<CashierTransactionsSummary> {
+    const cashierId = role === UserRole.CASHIER ? userId : null;
+    return this.posService.getTransactionsSummary(branchId, cashierId);
+  }
+
+  @Get(APP_ROUTES.POS.ALL_TRANSACTIONS)
+  @Roles(UserRole.ADMIN)
+  getAllTransactions(): Promise<CashierTransactionsSummary> {
+    return this.posService.getAllTransactionsSummary();
+  }
+
   @Post(APP_ROUTES.POS.TRANSACTIONS)
   create(
     @Body() createTransactionDto: CreateTransactionDto,
     @CurrentUser('id') cashierId: string,
     @CurrentUser('branchId') branchId: string,
+    @Headers('x-idempotency-key') idempotencyKey?: string,
   ): Promise<Transaction> {
     return this.posService.createTransaction(
       createTransactionDto,
       cashierId,
       branchId,
+      idempotencyKey,
     );
   }
 

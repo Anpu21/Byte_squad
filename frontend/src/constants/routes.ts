@@ -4,10 +4,17 @@
  */
 
 export const FRONTEND_ROUTES = {
+    // Root fallback (smart-redirect handler)
+    ROOT: '/',
+
     // Auth
     LOGIN: '/login',
+    SIGNUP: '/signup',
     OTP_VERIFICATION: '/verify-otp',
     CHANGE_PASSWORD: '/change-password',
+    FORGOT_PASSWORD: '/forgot-password',
+    RESET_PASSWORD: '/reset-password',
+    SELECT_BRANCH: '/select-branch',
 
     // Dashboard
     DASHBOARD: '/dashboard',
@@ -20,6 +27,7 @@ export const FRONTEND_ROUTES = {
 
     // POS
     POS: '/pos',
+    TRANSACTIONS: '/transactions',
 
     // Accounting
     LEDGER: '/accounting/ledger',
@@ -32,16 +40,46 @@ export const FRONTEND_ROUTES = {
 
     // Branches
     BRANCHES: '/branches',
+    BRANCH_MANAGEMENT: '/branches/manage',
 
-    // Super Admin
-    SUPER_ADMIN_DASHBOARD: '/super-admin/dashboard',
-    BRANCH_MANAGEMENT: '/super-admin/branches',
-    ADMIN_MANAGEMENT: '/super-admin/admins',
-    BRANCH_COMPARISON: '/super-admin/comparison',
-    ALL_USERS: '/super-admin/users',
+    // Admin-only Branches CRUD
+    BRANCHES_HUB: '/admin/branches',
+
+    // Admin-only side-by-side branch comparison
+    BRANCH_COMPARE: '/admin/compare',
+
+    // Admin-only loyalty program management
+    ADMIN_LOYALTY: '/admin/loyalty',
 
     // Notifications
     NOTIFICATIONS: '/notifications',
+    NOTIFICATION_DETAIL: '/notifications/:id',
+
+    // Stock Transfers
+    TRANSFERS: '/transfers',
+    TRANSFERS_NEW: '/transfers/new',
+    TRANSFER_HISTORY: '/transfers/history',
+    TRANSFER_DETAIL: '/transfers/:id',
+    ADMIN_TRANSFERS: '/admin/transfers',
+    ADMIN_TRANSFER_NEW: '/admin/transfers/new',
+
+    // Customer storefront (login required)
+    SHOP: '/shop',
+    SHOP_PRODUCT_DETAIL: '/shop/products/:id',
+    SHOP_CART: '/shop/cart',
+    SHOP_CHECKOUT: '/shop/checkout',
+    SHOP_CHECKOUT_PAY: '/shop/checkout/pay',
+    SHOP_ORDER_CONFIRMATION: '/shop/orders/:code',
+    SHOP_ORDER_CONFIRMATION_LEGACY: '/shop/requests/:code',
+    SHOP_MY_ORDERS: '/shop/my-orders',
+    SHOP_MY_ORDERS_LEGACY: '/shop/my-requests',
+    SHOP_PROFILE: '/shop/profile',
+    SHOP_REWARDS: '/shop/rewards',
+
+    // Cashier scan + shared customer orders view
+    SCAN_ORDER: '/pos/scan-order',
+    SCAN_ORDER_LEGACY: '/pos/scan-request',
+    CUSTOMER_ORDERS: '/customer-orders',
 } as const;
 
 export type FrontendRoute = (typeof FRONTEND_ROUTES)[keyof typeof FRONTEND_ROUTES];

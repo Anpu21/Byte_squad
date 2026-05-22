@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_GUARD } from '@nestjs/core';
 import { getDatabaseConfig } from '@common/config/database.config';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { AuthModule } from '@auth/auth.module';
 import { UsersModule } from '@users/users.module';
 import { BranchesModule } from '@branches/branches.module';
@@ -10,17 +12,30 @@ import { InventoryModule } from '@inventory/inventory.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
-import { SuperAdminModule } from '@super-admin/super-admin.module';
+import { AdminPortalModule } from '@admin-portal/admin-portal.module';
+import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
+import { CustomerOrdersModule } from '@/modules/customer-orders/customer-orders.module';
+import { ShopModule } from '@/modules/shop/shop.module';
+import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
+import { PendingBranchAction } from '@branches/entities/pending-branch-action.entity';
 import { Product } from '@products/entities/product.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Transaction } from '@pos/entities/transaction.entity';
 import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { Notification } from '@notifications/entities/notification.entity';
+import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
+import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
+import { CustomerOrderItem } from '@/modules/customer-orders/entities/customer-order-item.entity';
+import { PayherePaymentAttempt } from '@/modules/customer-orders/entities/payhere-payment-attempt.entity';
+import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
+import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
 
 import appConfig from '@common/config/app.config';
 
@@ -38,14 +53,23 @@ import appConfig from '@common/config/app.config';
     TypeOrmModule.forFeature([
       User,
       Branch,
+      PendingBranchAction,
       Product,
       Inventory,
       Transaction,
       TransactionItem,
+      IdempotencyKey,
       LedgerEntry,
       Expense,
       Notification,
+      StockTransferRequest,
+      CustomerOrder,
+      CustomerOrderItem,
+      PayherePaymentAttempt,
+      LoyaltyAccount,
+      LoyaltyLedgerEntry,
     ]),
+    CloudinaryModule,
     AuthModule,
     UsersModule,
     BranchesModule,
@@ -54,8 +78,12 @@ import appConfig from '@common/config/app.config';
     PosModule,
     AccountingModule,
     NotificationsModule,
-    SuperAdminModule,
+    AdminPortalModule,
+    StockTransfersModule,
+    CustomerOrdersModule,
+    ShopModule,
+    LoyaltyModule,
   ],
-  providers: [AdminSeedService],
+  providers: [AdminSeedService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
 export class AppModule {}

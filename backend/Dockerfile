@@ -3,9 +3,15 @@ FROM node:22-alpine AS development
 
 WORKDIR /app
 
+# Install pnpm globally — pinned to the version in package.json's packageManager field.
+# Using `npm install -g` instead of corepack because npm's HTTP retry behavior is
+# more resilient on flaky networks (corepack downloads the pnpm tarball directly
+# on first use, which fails hard when the container can't reach registry.npmjs.org).
+RUN npm install -g pnpm@10.33.2
+
 # Install dependencies first (Docker layer caching)
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -14,7 +20,7 @@ COPY . .
 EXPOSE 3000
 
 # Start in watch mode
-CMD ["npm", "run", "start:dev"]
+CMD ["pnpm", "run", "start:dev"]
 
 
 # ---- Stage 2: Build ----
@@ -22,16 +28,18 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install -g pnpm@10.33.2
+
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
 # Build the NestJS application
-RUN npm run build
+RUN pnpm run build
 
-# Prune dev dependencies for smaller production image
-RUN npm prune --production
+# Strip dev dependencies for a smaller production image
+RUN pnpm prune --prod
 
 
 # ---- Stage 3: Production ----

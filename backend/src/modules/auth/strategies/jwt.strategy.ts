@@ -8,14 +8,14 @@ interface JwtPayload {
   sub: string;
   email: string;
   role: UserRole;
-  branchId: string;
+  branchId: string | null;
 }
 
 interface ValidatedUser {
   id: string;
   email: string;
   role: UserRole;
-  branchId: string;
+  branchId: string | null;
 }
 
 @Injectable()
@@ -38,7 +38,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       id: payload.sub,
       email: payload.email,
       role: payload.role,
-      branchId: payload.branchId,
+      branchId: payload.branchId ?? null,
     };
   }
 }

@@ -1,5 +1,13 @@
-import { IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 import { UserRole } from '@common/enums/user-roles.enums';
+import { IsSriLankaPhone } from '@common/decorators/is-sri-lanka-phone.decorator';
 
 export class UpdateUserDto {
   @IsEmail()
@@ -20,9 +28,14 @@ export class UpdateUserDto {
 
   @IsUUID()
   @IsOptional()
-  branchId?: string;
+  branchId?: string | null;
 
-  @IsString()
   @IsOptional()
-  avatarUrl?: string;
+  @IsSriLankaPhone()
+  phone?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  address?: string | null;
 }

@@ -1,14 +1,13 @@
 import { useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import type { RootState, AppDispatch } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { loginThunk, logout as logoutAction, clearError } from '@/store/slices/authSlice';
+import { selectAuth } from '@/store/selectors/auth';
 import type { IAuthResponse } from '@/types';
 
 export function useAuth() {
-    const dispatch = useDispatch<AppDispatch>();
-    const { user, token, isAuthenticated, isLoading, error } = useSelector(
-        (state: RootState) => state.auth,
-    );
+    const dispatch = useAppDispatch();
+    const { user, token, isAuthenticated, isLoading, error } =
+        useAppSelector(selectAuth);
 
     const login = useCallback(
         async (email: string, password: string): Promise<IAuthResponse> => {

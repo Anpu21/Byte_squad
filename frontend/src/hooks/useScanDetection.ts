@@ -96,6 +96,22 @@ export function useScanDetection({
                 return;
             }
 
+            // Don't hijack keystrokes when the user is typing in a real input.
+            // Without this, fast typing in any text field (description, search,
+            // password) can be misinterpreted as a barcode scan.
+            const target = event.target as HTMLElement | null;
+            const active = document.activeElement as HTMLElement | null;
+            const editable =
+                (el: HTMLElement | null) =>
+                    !!el &&
+                    (el.tagName === 'INPUT' ||
+                        el.tagName === 'TEXTAREA' ||
+                        el.tagName === 'SELECT' ||
+                        el.isContentEditable);
+            if (editable(target) || editable(active)) {
+                return;
+            }
+
             const now = Date.now();
             const timeSinceLastKey = now - lastKeyTimeRef.current;
 

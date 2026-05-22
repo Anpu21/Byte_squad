@@ -9,8 +9,9 @@ import {
 } from 'class-validator';
 
 export class CreateExpenseDto {
+  @IsOptional()
   @IsUUID()
-  branchId!: string;
+  branchId?: string;
 
   @IsString()
   @IsNotEmpty()

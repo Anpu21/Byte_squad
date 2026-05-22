@@ -7,7 +7,11 @@ export const profileService = {
         return response.data.data;
     },
 
-    updateProfile: async (data: { firstName?: string; lastName?: string }): Promise<IUserProfile> => {
+    updateProfile: async (data: {
+        firstName?: string;
+        lastName?: string;
+        phone?: string | null;
+    }): Promise<IUserProfile> => {
         const response = await api.patch<IApiResponse<IUserProfile>>('/users/profile', data);
         return response.data.data;
     },

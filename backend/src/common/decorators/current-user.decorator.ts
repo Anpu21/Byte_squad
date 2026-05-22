@@ -7,7 +7,7 @@ interface RequestWithUser extends Request {
     id: string;
     email: string;
     role: UserRole;
-    branchId: string;
+    branchId: string | null;
   };
 }
 

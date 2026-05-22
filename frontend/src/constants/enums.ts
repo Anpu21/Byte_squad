@@ -4,11 +4,10 @@
  */
 
 export enum UserRole {
-    SUPER_ADMIN = 'super_admin',
     ADMIN = 'admin',
     MANAGER = 'manager',
-    ACCOUNTANT = 'accountant',
     CASHIER = 'cashier',
+    CUSTOMER = 'customer',
 }
 
 export enum TransactionType {
@@ -38,6 +37,7 @@ export enum PaymentMethod {
     CASH = 'cash',
     CARD = 'card',
     MOBILE = 'mobile',
+    ONLINE = 'online',
 }
 
 export enum LedgerEntryType {
@@ -49,4 +49,21 @@ export enum NotificationType {
     LOW_STOCK = 'low_stock',
     SYSTEM = 'system',
     ALERT = 'alert',
+    STOCK_TRANSFER = 'stock_transfer',
+    CUSTOMER_ORDER = 'customer_order',
+}
+
+export enum TransferStatus {
+    PENDING = 'pending',
+    APPROVED = 'approved',
+    REJECTED = 'rejected',
+    IN_TRANSIT = 'in_transit',
+    COMPLETED = 'completed',
+    CANCELLED = 'cancelled',
+}
+
+export enum ExpenseStatus {
+    PENDING = 'pending',
+    APPROVED = 'approved',
+    REJECTED = 'rejected',
 }

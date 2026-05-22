@@ -1,0 +1,2 @@
+export const BARCODE_MIN_LOOKUP_LENGTH = 4;
+export const BARCODE_SCAN_MIN_LENGTH = 6;
