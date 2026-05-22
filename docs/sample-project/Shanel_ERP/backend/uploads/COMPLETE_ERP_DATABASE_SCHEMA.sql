@@ -1,0 +1,1820 @@
+-- ============================================================================
+-- SHANEL PRODUCT - COMPLETE INTEGRATED ERP SYSTEM
+-- Database Schema - Production Ready
+-- Version: 2.0 (Complete with HR, Payroll, Finance, Inventory, Sales, Production)
+-- Generated: February 13, 2026
+-- MySQL Version: 5.7+ or MariaDB 10.3+
+-- ============================================================================
+
+-- Drop database if exists and create fresh
+DROP DATABASE IF EXISTS shanel_erp;
+CREATE DATABASE shanel_erp CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE shanel_erp;
+
+-- ============================================================================
+-- SECTION 1: SYSTEM & USER MANAGEMENT
+-- ============================================================================
+
+-- 1.1 USER Table (System Users & Authentication)
+CREATE TABLE USER (
+    User_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Username VARCHAR(50) UNIQUE NOT NULL,
+    Password_Hash VARCHAR(255) NOT NULL COMMENT 'bcrypt or argon2 hash',
+    Full_Name VARCHAR(200) NOT NULL,
+    Email VARCHAR(100),
+    Phone VARCHAR(20),
+    User_Type ENUM('Admin', 'Manager', 'Sales_Officer', 'Cashier', 'Production_Staff', 'Finance_Staff') NOT NULL,
+    Employee_ID INT COMMENT 'Links to EMPLOYEE table if user is also an employee',
+    Status ENUM('Active', 'Inactive', 'Suspended') DEFAULT 'Active',
+    Last_Login DATETIME,
+    Failed_Login_Attempts INT DEFAULT 0,
+    Account_Locked_Until DATETIME,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_username (Username),
+    INDEX idx_user_type (User_Type),
+    INDEX idx_status (Status),
+    INDEX idx_employee_link (Employee_ID)
+) ENGINE=InnoDB;
+
+-- 1.2 USER_PERMISSIONS Table (Role-Based Access Control)
+CREATE TABLE USER_PERMISSIONS (
+    Permission_ID INT PRIMARY KEY AUTO_INCREMENT,
+    User_ID INT NOT NULL,
+    Module_Name VARCHAR(50) NOT NULL COMMENT 'HR, Payroll, Finance, Inventory, Sales, Production',
+    Can_View BOOLEAN DEFAULT FALSE,
+    Can_Create BOOLEAN DEFAULT FALSE,
+    Can_Edit BOOLEAN DEFAULT FALSE,
+    Can_Delete BOOLEAN DEFAULT FALSE,
+    Can_Approve BOOLEAN DEFAULT FALSE,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (User_ID) REFERENCES USER(User_ID) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_module (User_ID, Module_Name),
+    INDEX idx_module (Module_Name)
+) ENGINE=InnoDB;
+
+-- 1.3 AUDIT_LOG Table (Track all critical operations)
+CREATE TABLE AUDIT_LOG (
+    Log_ID BIGINT PRIMARY KEY AUTO_INCREMENT,
+    User_ID INT,
+    Action VARCHAR(100) NOT NULL COMMENT 'CREATE, UPDATE, DELETE, LOGIN, etc.',
+    Table_Name VARCHAR(100),
+    Record_ID INT,
+    Old_Value TEXT,
+    New_Value TEXT,
+    IP_Address VARCHAR(45),
+    User_Agent VARCHAR(255),
+    Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (User_ID) REFERENCES USER(User_ID) ON DELETE SET NULL,
+    INDEX idx_user_action (User_ID, Action),
+    INDEX idx_table (Table_Name, Record_ID),
+    INDEX idx_timestamp (Timestamp)
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- SECTION 2: HUMAN RESOURCE MANAGEMENT (HR MODULE)
+-- ============================================================================
+
+-- 2.1 EMPLOYEE Table (Employee Master Data)
+CREATE TABLE EMPLOYEE (
+    Employee_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Employee_Code VARCHAR(50) UNIQUE NOT NULL COMMENT 'e.g., EMP-001',
+    Full_Name VARCHAR(200) NOT NULL,
+    Name_With_Initials VARCHAR(200),
+    NIC VARCHAR(20) UNIQUE COMMENT 'National Identity Card',
+    Date_Of_Birth DATE,
+    Gender ENUM('Male', 'Female', 'Other'),
+    Marital_Status ENUM('Single', 'Married', 'Divorced', 'Widowed'),
+    Contact_Phone VARCHAR(20) NOT NULL,
+    Contact_Phone_2 VARCHAR(20),
+    Email VARCHAR(100),
+    Permanent_Address TEXT,
+    Current_Address TEXT,
+    City VARCHAR(100),
+    Emergency_Contact_Name VARCHAR(200),
+    Emergency_Contact_Phone VARCHAR(20),
+    Emergency_Contact_Relationship VARCHAR(50),
+    
+    -- Employment Details
+    Hire_Date DATE NOT NULL,
+    Confirmation_Date DATE COMMENT 'After probation period',
+    Employee_Type ENUM('Permanent', 'Contract', 'Casual', 'Intern') DEFAULT 'Permanent',
+    Role VARCHAR(100) NOT NULL COMMENT 'Manager, Seller, Production Worker, Driver, etc.',
+    Department ENUM('Production', 'Sales', 'Finance', 'Admin', 'HR', 'Warehouse') NOT NULL,
+    Salary_Category ENUM('Monthly_Fixed', 'Daily_Rate', 'Production_Based', 'Hybrid') NOT NULL,
+    Working_Hours_Start TIME DEFAULT '08:00:00',
+    Working_Hours_End TIME DEFAULT '16:00:00',
+    
+    -- Statutory Deductions
+    EPF_Eligible BOOLEAN DEFAULT FALSE,
+    ETF_Eligible BOOLEAN DEFAULT FALSE,
+    EPF_Number VARCHAR(50),
+    
+    -- Banking Details
+    Bank_Name VARCHAR(100),
+    Bank_Account_No VARCHAR(50),
+    Bank_Branch VARCHAR(100),
+    Bank_Account_Name VARCHAR(200),
+    
+    -- Status
+    Status ENUM('Active', 'On_Leave', 'Suspended', 'Resigned', 'Terminated') DEFAULT 'Active',
+    Resignation_Date DATE,
+    Resignation_Reason TEXT,
+    Termination_Date DATE,
+    Termination_Reason TEXT,
+    
+    Notes TEXT,
+    Photo_Path VARCHAR(255),
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_employee_code (Employee_Code),
+    INDEX idx_nic (NIC),
+    INDEX idx_department (Department),
+    INDEX idx_status (Status),
+    INDEX idx_role (Role),
+    INDEX idx_salary_category (Salary_Category)
+) ENGINE=InnoDB;
+
+-- 2.2 EMPLOYEE_LEAVE Table (Leave Management)
+CREATE TABLE EMPLOYEE_LEAVE (
+    Leave_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Employee_ID INT NOT NULL,
+    Leave_Type ENUM('Annual', 'Sick', 'Casual', 'No_Pay', 'Maternity', 'Paternity') NOT NULL,
+    Start_Date DATE NOT NULL,
+    End_Date DATE NOT NULL,
+    Total_Days DECIMAL(4,1) NOT NULL COMMENT 'Can be 0.5 for half day',
+    Reason TEXT,
+    Status ENUM('Pending', 'Approved', 'Rejected', 'Cancelled') DEFAULT 'Pending',
+    Applied_Date DATE NOT NULL,
+    Approved_By INT,
+    Approved_Date DATE,
+    Rejection_Reason TEXT,
+    Notes TEXT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Employee_ID) REFERENCES EMPLOYEE(Employee_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Approved_By) REFERENCES USER(User_ID),
+    INDEX idx_employee_leave (Employee_ID, Start_Date),
+    INDEX idx_leave_status (Status),
+    INDEX idx_leave_dates (Start_Date, End_Date)
+) ENGINE=InnoDB;
+
+-- 2.3 EMPLOYEE_DOCUMENTS Table (Document Management)
+CREATE TABLE EMPLOYEE_DOCUMENTS (
+    Document_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Employee_ID INT NOT NULL,
+    Document_Type ENUM('NIC', 'CV', 'Educational_Certificate', 'Employment_Contract', 'Medical_Certificate', 'Other') NOT NULL,
+    Document_Name VARCHAR(255) NOT NULL,
+    File_Path VARCHAR(500) NOT NULL,
+    File_Size INT COMMENT 'In bytes',
+    Upload_Date DATE DEFAULT (CURRENT_DATE),
+    Expiry_Date DATE COMMENT 'For documents that expire',
+    Notes TEXT,
+    Uploaded_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Employee_ID) REFERENCES EMPLOYEE(Employee_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Uploaded_By) REFERENCES USER(User_ID),
+    INDEX idx_employee_docs (Employee_ID, Document_Type)
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- SECTION 3: PAYROLL & ATTENDANCE MODULE
+-- ============================================================================
+
+-- 3.1 ATTENDANCE Table (Daily Attendance Records)
+CREATE TABLE ATTENDANCE (
+    Attendance_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Employee_ID INT NOT NULL,
+    Attendance_Date DATE NOT NULL,
+    Check_In_Time TIME,
+    Check_Out_Time TIME,
+    Total_Hours DECIMAL(4,2) COMMENT 'Calculated working hours',
+    Status ENUM('Present', 'Absent', 'Half_Day', 'Leave', 'Holiday', 'Weekend') NOT NULL,
+    Is_Late BOOLEAN DEFAULT FALSE COMMENT 'If check-in after working hours start',
+    Late_Minutes INT DEFAULT 0,
+    Is_Overtime BOOLEAN DEFAULT FALSE,
+    Overtime_Hours DECIMAL(4,2) DEFAULT 0.00 COMMENT 'Hours worked beyond 8-4',
+    Marked_By ENUM('Fingerprint', 'Manual', 'Admin', 'System') DEFAULT 'Manual',
+    Notes TEXT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Employee_ID) REFERENCES EMPLOYEE(Employee_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    UNIQUE KEY unique_employee_date (Employee_ID, Attendance_Date),
+    INDEX idx_attendance_date (Attendance_Date),
+    INDEX idx_employee_attendance (Employee_ID, Attendance_Date),
+    INDEX idx_status (Status)
+) ENGINE=InnoDB;
+
+-- 3.2 ATTENDANCE_SUMMARY Table (Monthly Attendance Summary)
+CREATE TABLE ATTENDANCE_SUMMARY (
+    Summary_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Employee_ID INT NOT NULL,
+    Month INT NOT NULL COMMENT '1-12',
+    Year INT NOT NULL COMMENT 'e.g., 2026',
+    Total_Working_Days INT NOT NULL,
+    Present_Days INT DEFAULT 0,
+    Absent_Days INT DEFAULT 0,
+    Leave_Days INT DEFAULT 0,
+    Half_Days INT DEFAULT 0,
+    Late_Days INT DEFAULT 0,
+    Total_Overtime_Hours DECIMAL(6,2) DEFAULT 0.00,
+    Attendance_Bonus_Eligible BOOLEAN DEFAULT FALSE COMMENT 'TRUE if present_days > 20',
+    Attendance_Bonus_Amount DECIMAL(10,2) DEFAULT 0.00,
+    Summary_Date DATE NOT NULL,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Employee_ID) REFERENCES EMPLOYEE(Employee_ID) ON DELETE CASCADE,
+    UNIQUE KEY unique_employee_month_year (Employee_ID, Month, Year),
+    INDEX idx_month_year (Year, Month),
+    INDEX idx_employee_summary (Employee_ID, Year, Month)
+) ENGINE=InnoDB;
+
+-- 3.3 SALARY_STRUCTURE Table (Employee Salary Configuration)
+CREATE TABLE SALARY_STRUCTURE (
+    Salary_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Employee_ID INT NOT NULL,
+    Salary_Type ENUM('Monthly_Fixed', 'Daily_Rate', 'Production_Based', 'Hybrid') NOT NULL,
+    
+    -- Fixed Salary Employees (Manager, Seller)
+    Monthly_Base_Salary DECIMAL(10,2) DEFAULT 0.00 COMMENT 'For monthly fixed employees',
+    
+    -- Daily Rate Employees
+    Daily_Rate DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Daily wage for daily workers',
+    
+    -- Production-Based Employees (20 employees)
+    Production_Rate_Per_Card DECIMAL(10,2) DEFAULT 0.00 COMMENT 'e.g., Rs. 75 per card',
+    Tea_Allowance_Daily DECIMAL(10,2) DEFAULT 60.00 COMMENT 'Rs. 60 for tea',
+    
+    -- Overtime
+    OT_Rate_Per_Hour DECIMAL(10,2) DEFAULT 400.00 COMMENT 'Rs. 400 per hour for extra hours',
+    
+    -- Bonuses
+    Attendance_Bonus_Amount DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Bonus for >20 days attendance',
+    
+    Effective_From_Date DATE NOT NULL,
+    Effective_To_Date DATE COMMENT 'NULL if currently active',
+    Status ENUM('Active', 'Inactive') DEFAULT 'Active',
+    Notes TEXT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Employee_ID) REFERENCES EMPLOYEE(Employee_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_employee_salary (Employee_ID, Status),
+    INDEX idx_effective_dates (Effective_From_Date, Effective_To_Date)
+) ENGINE=InnoDB;
+
+-- 3.4 PAYROLL Table (Monthly Payroll Processing)
+CREATE TABLE PAYROLL (
+    Payroll_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Employee_ID INT NOT NULL,
+    Pay_Period_Month INT NOT NULL COMMENT '1-12',
+    Pay_Period_Year INT NOT NULL COMMENT 'e.g., 2026',
+    
+    -- Earnings Breakdown
+    Basic_Salary DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Base salary or daily rate total',
+    Production_Earnings DECIMAL(10,2) DEFAULT 0.00 COMMENT 'From production work (cards × rate)',
+    Overtime_Earnings DECIMAL(10,2) DEFAULT 0.00 COMMENT 'OT hours × OT rate',
+    Attendance_Bonus DECIMAL(10,2) DEFAULT 0.00 COMMENT 'If >20 days present',
+    Tea_Allowance DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Daily tea allowance total',
+    Other_Allowances DECIMAL(10,2) DEFAULT 0.00,
+    Gross_Salary DECIMAL(10,2) NOT NULL COMMENT 'Total before deductions',
+    
+    -- Deductions
+    EPF_Employee_Deduction DECIMAL(10,2) DEFAULT 0.00 COMMENT '8% of basic',
+    ETF_Employee_Deduction DECIMAL(10,2) DEFAULT 0.00 COMMENT '3% of basic',
+    Advance_Deduction DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Advance salary repayment',
+    Other_Deductions DECIMAL(10,2) DEFAULT 0.00,
+    Total_Deductions DECIMAL(10,2) NOT NULL,
+    Net_Salary DECIMAL(10,2) NOT NULL COMMENT 'Take home = Gross - Deductions',
+    
+    -- Employer Contributions (Not deducted from employee)
+    EPF_Employer_Contribution DECIMAL(10,2) DEFAULT 0.00 COMMENT '12% of basic',
+    ETF_Employer_Contribution DECIMAL(10,2) DEFAULT 0.00 COMMENT '3% of basic',
+    
+    -- Payment Details
+    Payment_Status ENUM('Pending', 'Approved', 'Paid', 'Cancelled') DEFAULT 'Pending',
+    Payment_Date DATE,
+    Payment_Method ENUM('Cash', 'Bank_Transfer', 'Cheque') DEFAULT 'Bank_Transfer',
+    Bank_Reference_No VARCHAR(100),
+    
+    -- Metadata
+    Pay_Slip_Generated BOOLEAN DEFAULT FALSE,
+    Pay_Slip_Path VARCHAR(255),
+    Email_Sent_To_Bank BOOLEAN DEFAULT FALSE,
+    Email_Sent_Date DATETIME,
+    Notes TEXT,
+    Generated_By INT,
+    Approved_By INT,
+    Generated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Employee_ID) REFERENCES EMPLOYEE(Employee_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Generated_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Approved_By) REFERENCES USER(User_ID),
+    UNIQUE KEY unique_employee_month_year (Employee_ID, Pay_Period_Month, Pay_Period_Year),
+    INDEX idx_pay_period (Pay_Period_Year, Pay_Period_Month),
+    INDEX idx_payment_status (Payment_Status),
+    INDEX idx_employee_payroll (Employee_ID, Pay_Period_Year, Pay_Period_Month)
+) ENGINE=InnoDB;
+
+-- 3.5 ADVANCE_SALARY Table (Advance Payment Management)
+CREATE TABLE ADVANCE_SALARY (
+    Advance_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Employee_ID INT NOT NULL,
+    Advance_Amount DECIMAL(10,2) NOT NULL,
+    Advance_Date DATE NOT NULL,
+    Reason TEXT,
+    Repayment_Months INT NOT NULL COMMENT 'Number of months to deduct',
+    Monthly_Deduction_Amount DECIMAL(10,2) NOT NULL COMMENT 'Amount to deduct each month',
+    Total_Repaid DECIMAL(10,2) DEFAULT 0.00,
+    Balance DECIMAL(10,2) NOT NULL,
+    Status ENUM('Active', 'Fully_Paid', 'Cancelled') DEFAULT 'Active',
+    Approved_By INT,
+    Approved_Date DATE,
+    Notes TEXT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Employee_ID) REFERENCES EMPLOYEE(Employee_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Approved_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_employee_advance (Employee_ID, Status),
+    INDEX idx_advance_status (Status)
+) ENGINE=InnoDB;
+
+-- 3.6 ADVANCE_REPAYMENT Table (Track Monthly Deductions)
+CREATE TABLE ADVANCE_REPAYMENT (
+    Repayment_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Advance_ID INT NOT NULL,
+    Payroll_ID INT NOT NULL,
+    Deduction_Amount DECIMAL(10,2) NOT NULL,
+    Deduction_Date DATE NOT NULL,
+    Balance_After DECIMAL(10,2) NOT NULL,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Advance_ID) REFERENCES ADVANCE_SALARY(Advance_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Payroll_ID) REFERENCES PAYROLL(Payroll_ID) ON DELETE CASCADE,
+    INDEX idx_advance_repayment (Advance_ID),
+    INDEX idx_payroll_repayment (Payroll_ID)
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- SECTION 4: FINANCE & ACCOUNTING MODULE
+-- ============================================================================
+
+-- 4.1 ACCOUNT_CHART Table (Chart of Accounts - Double Entry)
+CREATE TABLE ACCOUNT_CHART (
+    Account_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Account_Code VARCHAR(20) UNIQUE NOT NULL COMMENT 'e.g., 1000, 2000, 3000',
+    Account_Name VARCHAR(200) NOT NULL,
+    Account_Type ENUM('Asset', 'Liability', 'Equity', 'Revenue', 'Expense') NOT NULL,
+    Account_Category VARCHAR(100) COMMENT 'Current Asset, Fixed Asset, Operating Expense, etc.',
+    Parent_Account_ID INT COMMENT 'For hierarchical structure',
+    Is_Active BOOLEAN DEFAULT TRUE,
+    Description TEXT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Parent_Account_ID) REFERENCES ACCOUNT_CHART(Account_ID),
+    INDEX idx_account_code (Account_Code),
+    INDEX idx_account_type (Account_Type),
+    INDEX idx_parent_account (Parent_Account_ID)
+) ENGINE=InnoDB;
+
+-- 4.2 JOURNAL_ENTRY Table (General Journal - Double Entry Bookkeeping)
+CREATE TABLE JOURNAL_ENTRY (
+    Journal_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Journal_No VARCHAR(50) UNIQUE NOT NULL COMMENT 'e.g., JE-2026-001',
+    Entry_Date DATE NOT NULL,
+    Entry_Type ENUM('Manual', 'Auto', 'Adjustment', 'Closing') DEFAULT 'Manual',
+    Reference_Type VARCHAR(50) COMMENT 'Sale, Purchase, Payment, Salary, Production, etc.',
+    Reference_ID INT COMMENT 'Sale_ID, PO_ID, Payroll_ID, etc.',
+    Description TEXT NOT NULL,
+    Total_Debit DECIMAL(15,2) NOT NULL,
+    Total_Credit DECIMAL(15,2) NOT NULL,
+    Status ENUM('Draft', 'Posted', 'Cancelled') DEFAULT 'Draft',
+    Posted_By INT,
+    Posted_Date DATETIME,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Posted_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_journal_no (Journal_No),
+    INDEX idx_entry_date (Entry_Date),
+    INDEX idx_reference (Reference_Type, Reference_ID),
+    INDEX idx_status (Status),
+    CONSTRAINT chk_balanced CHECK (Total_Debit = Total_Credit)
+) ENGINE=InnoDB;
+
+-- 4.3 JOURNAL_ENTRY_LINE Table (Journal Entry Details)
+CREATE TABLE JOURNAL_ENTRY_LINE (
+    Line_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Journal_ID INT NOT NULL,
+    Account_ID INT NOT NULL,
+    Line_Number INT NOT NULL,
+    Debit_Amount DECIMAL(15,2) DEFAULT 0.00,
+    Credit_Amount DECIMAL(15,2) DEFAULT 0.00,
+    Description VARCHAR(500),
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Journal_ID) REFERENCES JOURNAL_ENTRY(Journal_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Account_ID) REFERENCES ACCOUNT_CHART(Account_ID),
+    INDEX idx_journal_lines (Journal_ID, Line_Number),
+    INDEX idx_account_entries (Account_ID, Journal_ID)
+) ENGINE=InnoDB;
+
+-- 4.4 BANK_ACCOUNT Table (Company Bank Accounts)
+CREATE TABLE BANK_ACCOUNT (
+    Bank_Account_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Account_Chart_ID INT NOT NULL COMMENT 'Links to Chart of Accounts',
+    Bank_Name VARCHAR(100) NOT NULL,
+    Account_Name VARCHAR(200) NOT NULL,
+    Account_Number VARCHAR(50) NOT NULL UNIQUE,
+    Branch VARCHAR(100),
+    Account_Type ENUM('Current', 'Savings', 'Fixed_Deposit') DEFAULT 'Current',
+    Opening_Balance DECIMAL(15,2) DEFAULT 0.00,
+    Current_Balance DECIMAL(15,2) DEFAULT 0.00,
+    Currency VARCHAR(3) DEFAULT 'LKR',
+    Status ENUM('Active', 'Inactive', 'Closed') DEFAULT 'Active',
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Account_Chart_ID) REFERENCES ACCOUNT_CHART(Account_ID),
+    INDEX idx_account_number (Account_Number),
+    INDEX idx_status (Status)
+) ENGINE=InnoDB;
+
+-- 4.5 BANK_TRANSACTION Table (Bank Account Transactions)
+CREATE TABLE BANK_TRANSACTION (
+    Transaction_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Bank_Account_ID INT NOT NULL,
+    Transaction_Date DATE NOT NULL,
+    Transaction_Type ENUM('Deposit', 'Withdrawal', 'Transfer_In', 'Transfer_Out') NOT NULL,
+    Reference_Type VARCHAR(50) COMMENT 'Sale, Purchase, Salary, Expense, etc.',
+    Reference_ID INT,
+    Debit_Amount DECIMAL(15,2) DEFAULT 0.00,
+    Credit_Amount DECIMAL(15,2) DEFAULT 0.00,
+    Balance_After DECIMAL(15,2) NOT NULL,
+    Description TEXT,
+    Cheque_No VARCHAR(50),
+    Cleared BOOLEAN DEFAULT TRUE,
+    Cleared_Date DATE,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Bank_Account_ID) REFERENCES BANK_ACCOUNT(Bank_Account_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_transaction_date (Transaction_Date),
+    INDEX idx_bank_transactions (Bank_Account_ID, Transaction_Date),
+    INDEX idx_reference (Reference_Type, Reference_ID)
+) ENGINE=InnoDB;
+
+-- 4.6 EXPENSE Table (Business Expenses)
+CREATE TABLE EXPENSE (
+    Expense_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Expense_Date DATE NOT NULL,
+    Expense_Category ENUM('Salary', 'Rent', 'Utilities', 'Raw_Materials', 'Transport', 'Maintenance', 'Marketing', 'Office_Supplies', 'Other') NOT NULL,
+    Expense_Subcategory VARCHAR(100),
+    Amount DECIMAL(15,2) NOT NULL,
+    Payment_Method ENUM('Cash', 'Bank', 'Cheque', 'Credit_Card') NOT NULL,
+    Bank_Account_ID INT COMMENT 'If paid from bank',
+    Paid_To VARCHAR(200) NOT NULL,
+    Description TEXT,
+    Receipt_No VARCHAR(100),
+    Receipt_File_Path VARCHAR(500),
+    Account_ID INT COMMENT 'Expense account from chart of accounts',
+    Status ENUM('Pending', 'Approved', 'Paid', 'Rejected', 'Cancelled') DEFAULT 'Pending',
+    Approved_By INT,
+    Approved_Date DATE,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Bank_Account_ID) REFERENCES BANK_ACCOUNT(Bank_Account_ID),
+    FOREIGN KEY (Account_ID) REFERENCES ACCOUNT_CHART(Account_ID),
+    FOREIGN KEY (Approved_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_expense_date (Expense_Date),
+    INDEX idx_expense_category (Expense_Category),
+    INDEX idx_status (Status)
+) ENGINE=InnoDB;
+
+-- 4.7 INCOME Table (Other Income)
+CREATE TABLE INCOME (
+    Income_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Income_Date DATE NOT NULL,
+    Income_Category ENUM('Sales', 'Interest', 'Commission', 'Other') NOT NULL,
+    Amount DECIMAL(15,2) NOT NULL,
+    Source VARCHAR(200) NOT NULL,
+    Description TEXT,
+    Receipt_No VARCHAR(100),
+    Account_ID INT COMMENT 'Revenue account from chart of accounts',
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Account_ID) REFERENCES ACCOUNT_CHART(Account_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_income_date (Income_Date),
+    INDEX idx_income_category (Income_Category)
+) ENGINE=InnoDB;
+
+-- 4.8 PROFIT_LOSS_SUMMARY Table (P&L Reports)
+CREATE TABLE PROFIT_LOSS_SUMMARY (
+    PL_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Report_Date DATE NOT NULL,
+    Period_Type ENUM('Daily', 'Monthly', 'Quarterly', 'Yearly') NOT NULL,
+    Period_Start_Date DATE NOT NULL,
+    Period_End_Date DATE NOT NULL,
+    
+    -- Revenue
+    Total_Sales_Revenue DECIMAL(15,2) DEFAULT 0.00,
+    Other_Income DECIMAL(15,2) DEFAULT 0.00,
+    Total_Revenue DECIMAL(15,2) NOT NULL,
+    
+    -- Cost of Goods Sold
+    Cost_Of_Goods_Sold DECIMAL(15,2) DEFAULT 0.00,
+    Gross_Profit DECIMAL(15,2) NOT NULL COMMENT 'Revenue - COGS',
+    
+    -- Operating Expenses
+    Salary_Expenses DECIMAL(15,2) DEFAULT 0.00,
+    Rent_Expenses DECIMAL(15,2) DEFAULT 0.00,
+    Utilities_Expenses DECIMAL(15,2) DEFAULT 0.00,
+    Transport_Expenses DECIMAL(15,2) DEFAULT 0.00,
+    Marketing_Expenses DECIMAL(15,2) DEFAULT 0.00,
+    Other_Operating_Expenses DECIMAL(15,2) DEFAULT 0.00,
+    Total_Operating_Expenses DECIMAL(15,2) NOT NULL,
+    
+    -- Net Profit
+    Net_Profit DECIMAL(15,2) NOT NULL COMMENT 'Gross Profit - Operating Expenses',
+    Net_Profit_Percentage DECIMAL(5,2) COMMENT 'Net Profit / Total Revenue × 100',
+    
+    Generated_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Generated_By) REFERENCES USER(User_ID),
+    INDEX idx_period (Period_Type, Period_Start_Date, Period_End_Date),
+    INDEX idx_report_date (Report_Date)
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- SECTION 5: CORE PRODUCT TABLES
+-- ============================================================================
+
+-- 5.1 PRODUCT Table (Master Product Catalog)
+CREATE TABLE PRODUCT (
+    P_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_Code VARCHAR(50) UNIQUE COMMENT 'Product code e.g., PROD-001',
+    P_Name VARCHAR(200) NOT NULL,
+    P_Name_Sinhala VARCHAR(200),
+    P_Type ENUM('Finished', 'Raw', 'Resale') NOT NULL COMMENT 'Finished=Company Item, Raw=Material, Resale=Supplier Item',
+    Base_Unit VARCHAR(50) NOT NULL COMMENT 'Base unit (Packet, Bottle, Kg, etc.)',
+    Status ENUM('Active', 'Inactive', 'Discontinued') DEFAULT 'Active',
+    
+    -- Pricing (All per BASE UNIT)
+    Cost_Price DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Cost per base unit',
+    Retail_Price DECIMAL(10,2) NOT NULL COMMENT 'Retail price per base unit',
+    Wholesale_Price DECIMAL(10,2) NOT NULL COMMENT 'Wholesale price per base unit',
+    
+    -- Stock Management
+    Min_Stock DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Minimum stock alert level',
+    Max_Stock DECIMAL(10,2) COMMENT 'Maximum stock level',
+    Reorder_Level DECIMAL(10,2) COMMENT 'Reorder point',
+    
+    -- Tax & Barcode
+    Tax_Rate DECIMAL(5,2) DEFAULT 0.00 COMMENT 'Tax percentage',
+    Barcode VARCHAR(50) COMMENT 'Primary barcode (legacy)',
+    Barcode_Type VARCHAR(20) COMMENT 'EAN-13, UPC, CODE128, QR',
+    Auto_Generate_Barcode BOOLEAN DEFAULT FALSE,
+    
+    -- Additional Info
+    Category VARCHAR(100),
+    Subcategory VARCHAR(100),
+    Description TEXT,
+    Image_Path VARCHAR(255),
+    Weight DECIMAL(10,3) COMMENT 'Product weight',
+    Weight_Unit VARCHAR(20) COMMENT 'g, kg, lb',
+    
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_product_code (P_Code),
+    INDEX idx_product_name (P_Name),
+    INDEX idx_product_type (P_Type),
+    INDEX idx_status (Status),
+    INDEX idx_barcode (Barcode)
+) ENGINE=InnoDB;
+
+-- 5.2 UNIT_CONVERSION Table (Product Unit Conversions)
+CREATE TABLE UNIT_CONVERSION (
+    U_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_ID INT NOT NULL,
+    Unit_Name VARCHAR(50) NOT NULL COMMENT 'Packet, Card, Bundle, Pallet, Bottle, Box, Kg, etc.',
+    Unit_Conversion DECIMAL(10,3) NOT NULL COMMENT 'Conversion to base unit (base=1, card=10, bundle=100)',
+    Is_Base_Unit BOOLEAN DEFAULT FALSE,
+    Display_Order INT DEFAULT 0 COMMENT 'For sorting in UI',
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID) ON DELETE CASCADE,
+    UNIQUE KEY unique_product_unit (P_ID, Unit_Name),
+    INDEX idx_product_unit (P_ID, U_ID)
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- SECTION 6: PRODUCTION MODULE
+-- ============================================================================
+
+-- 6.1 PRODUCTION Table (Production Batch Tracking)
+CREATE TABLE PRODUCTION (
+    PR_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_ID INT NOT NULL,
+    Batch_No VARCHAR(50) UNIQUE NOT NULL COMMENT 'e.g., BATCH-2026-001',
+    Production_Date DATE NOT NULL,
+    Exp_Date DATE NOT NULL COMMENT 'Expiry date',
+    Total_Qty_Produced DECIMAL(10,2) NOT NULL COMMENT 'Total quantity in BASE UNIT',
+    Production_Cost DECIMAL(10,2) COMMENT 'Total production cost for this batch',
+    Cost_Per_Unit DECIMAL(10,2) COMMENT 'Production cost per base unit',
+    Status ENUM('In_Progress', 'Completed', 'Quality_Check', 'Approved', 'Rejected') DEFAULT 'In_Progress',
+    Quality_Check_Date DATE,
+    Quality_Checked_By INT,
+    Notes TEXT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (Quality_Checked_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_production_date (Production_Date),
+    INDEX idx_exp_date (Exp_Date),
+    INDEX idx_batch_no (Batch_No),
+    INDEX idx_product_batch (P_ID, PR_ID),
+    INDEX idx_status (Status)
+) ENGINE=InnoDB;
+
+-- 6.2 PRODUCT_COST Table (Labor Cost per Unit)
+CREATE TABLE PRODUCT_COST (
+    PC_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_ID INT NOT NULL,
+    U_ID INT NOT NULL,
+    Labor_Cost_Per_Unit DECIMAL(10,2) NOT NULL COMMENT 'Labor cost for this unit (e.g., Rs. 75 per card)',
+    Effective_Date DATE DEFAULT (CURRENT_DATE),
+    Notes TEXT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (U_ID) REFERENCES UNIT_CONVERSION(U_ID),
+    UNIQUE KEY unique_product_unit_cost (P_ID, U_ID),
+    INDEX idx_product_cost (P_ID, U_ID)
+) ENGINE=InnoDB;
+
+-- 6.3 PRODUCTION_EMPLOYEE Table (Employee Production Tracking)
+CREATE TABLE PRODUCTION_EMPLOYEE (
+    PE_ID INT PRIMARY KEY AUTO_INCREMENT,
+    PR_ID INT NOT NULL COMMENT 'Production batch',
+    Employee_ID INT NOT NULL COMMENT 'Which employee produced',
+    PC_ID INT NOT NULL COMMENT 'Product cost reference',
+    Produced_Qty DECIMAL(10,2) NOT NULL COMMENT 'Quantity produced in BASE UNIT',
+    Calculated_Amount DECIMAL(10,2) NOT NULL COMMENT 'Earnings = Produced_Qty × Labor_Cost',
+    Production_Involvement BOOLEAN DEFAULT TRUE COMMENT 'Directly involved in production?',
+    Production_Date DATE NOT NULL,
+    Notes TEXT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (PR_ID) REFERENCES PRODUCTION(PR_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Employee_ID) REFERENCES EMPLOYEE(Employee_ID),
+    FOREIGN KEY (PC_ID) REFERENCES PRODUCT_COST(PC_ID),
+    INDEX idx_employee_production (Employee_ID, PR_ID),
+    INDEX idx_production_batch (PR_ID),
+    INDEX idx_production_date (Production_Date)
+) ENGINE=InnoDB;
+
+-- 6.4 PRODUCTION_RAW_MATERIAL Table (Raw Materials Used in Production)
+CREATE TABLE PRODUCTION_RAW_MATERIAL (
+    PRM_ID INT PRIMARY KEY AUTO_INCREMENT,
+    PR_ID INT NOT NULL COMMENT 'Production batch',
+    P_ID INT NOT NULL COMMENT 'Raw material product',
+    Qty_Used DECIMAL(10,2) NOT NULL COMMENT 'Quantity in BASE UNIT',
+    Cost_Per_Unit DECIMAL(10,2) COMMENT 'Cost at time of use',
+    Total_Cost DECIMAL(10,2) COMMENT 'Qty_Used × Cost_Per_Unit',
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (PR_ID) REFERENCES PRODUCTION(PR_ID) ON DELETE CASCADE,
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    INDEX idx_production_materials (PR_ID),
+    INDEX idx_material_usage (P_ID)
+) ENGINE=InnoDB;
+
+-- 6.5 PURCHASE_PRODUCT_EXP Table (Expiry Date Tracking)
+CREATE TABLE PURCHASE_PRODUCT_EXP (
+    PPE_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_ID INT NOT NULL,
+    Exp_Date DATE NOT NULL,
+    Qty_Received DECIMAL(10,2) COMMENT 'Quantity with this expiry date',
+    Purchase_Date DATE,
+    Supplier_ID INT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_product_exp (P_ID, Exp_Date),
+    INDEX idx_expiry_alert (Exp_Date)
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- SECTION 7: INVENTORY MODULE
+-- ============================================================================
+
+-- 7.1 INVENTORY Table (Stock Levels by Location & Batch)
+CREATE TABLE INVENTORY (
+    INV_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_ID INT NOT NULL,
+    PR_ID INT COMMENT 'NULL for raw/resale, NOT NULL for finished products',
+    Location ENUM('Shop', 'Production', 'Main_Warehouse') NOT NULL,
+    Qty DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT 'Quantity in BASE UNIT',
+    Last_Updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (PR_ID) REFERENCES PRODUCTION(PR_ID),
+    UNIQUE KEY unique_product_batch_location (P_ID, PR_ID, Location),
+    INDEX idx_location_stock (Location, P_ID),
+    INDEX idx_product_inventory (P_ID, Location),
+    INDEX idx_batch_inventory (PR_ID, Location)
+) ENGINE=InnoDB;
+
+-- 7.2 STOCK_TRANSFER Table (Inter-Location Transfers)
+CREATE TABLE STOCK_TRANSFER (
+    ST_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_ID INT NOT NULL,
+    PR_ID INT COMMENT 'Batch ID if transferring finished product',
+    From_Location ENUM('Shop', 'Production', 'Main_Warehouse') NOT NULL,
+    To_Location ENUM('Shop', 'Production', 'Main_Warehouse') NOT NULL,
+    Qty DECIMAL(10,2) NOT NULL COMMENT 'Quantity in BASE UNIT',
+    Transfer_Date DATE NOT NULL,
+    Transfer_Time TIME,
+    Reason VARCHAR(255),
+    Status ENUM('Pending', 'In_Transit', 'Completed', 'Cancelled') DEFAULT 'Completed',
+    Transferred_By INT,
+    Received_By INT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (PR_ID) REFERENCES PRODUCTION(PR_ID),
+    FOREIGN KEY (Transferred_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Received_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_transfer_date (Transfer_Date),
+    INDEX idx_from_location (From_Location),
+    INDEX idx_to_location (To_Location),
+    INDEX idx_product_transfer (P_ID, Transfer_Date),
+    INDEX idx_status (Status)
+) ENGINE=InnoDB;
+
+-- 7.3 STOCK_MOVEMENT Table (Complete Stock Transaction Log)
+CREATE TABLE STOCK_MOVEMENT (
+    SM_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_ID INT NOT NULL,
+    PR_ID INT COMMENT 'Batch ID if applicable',
+    Location ENUM('Shop', 'Production', 'Main_Warehouse') NOT NULL,
+    Movement_Type ENUM('Production', 'Sale', 'Purchase', 'Transfer_In', 'Transfer_Out', 'Adjustment', 'Return', 'Damage', 'Expired') NOT NULL,
+    Qty_In DECIMAL(10,2) DEFAULT 0 COMMENT 'Quantity added (BASE UNIT)',
+    Qty_Out DECIMAL(10,2) DEFAULT 0 COMMENT 'Quantity removed (BASE UNIT)',
+    Balance_After DECIMAL(10,2) COMMENT 'Stock balance after this movement',
+    Ref_Type VARCHAR(50) COMMENT 'Table name: Production, Sales, StockTransfer, etc.',
+    Ref_ID INT COMMENT 'References PR_ID, Sale_ID, ST_ID, etc.',
+    Move_Date DATE NOT NULL,
+    Move_Time TIME,
+    Notes TEXT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (PR_ID) REFERENCES PRODUCTION(PR_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_movement_date (Move_Date),
+    INDEX idx_movement_type (Movement_Type),
+    INDEX idx_product_movement (P_ID, Move_Date),
+    INDEX idx_location_movement (Location, Move_Date),
+    INDEX idx_reference (Ref_Type, Ref_ID)
+) ENGINE=InnoDB;
+
+-- 7.4 RETURN Table (Customer & Supplier Returns)
+CREATE TABLE PRODUCT_RETURN (
+    RT_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_ID INT NOT NULL,
+    PR_ID INT COMMENT 'Batch ID if applicable',
+    Return_Type ENUM('Customer', 'Supplier') NOT NULL,
+    Ref_ID INT NOT NULL COMMENT 'Sale_ID for customer, PO_ID for supplier',
+    Qty DECIMAL(10,2) NOT NULL COMMENT 'Quantity in BASE UNIT',
+    Reason ENUM('Damaged', 'Expired', 'Wrong_Product', 'Quality_Issue', 'Overstocked', 'Other') NOT NULL,
+    Reason_Details TEXT,
+    Return_Date DATE NOT NULL,
+    Refund_Amount DECIMAL(10,2),
+    Restock BOOLEAN DEFAULT TRUE COMMENT 'Add back to inventory?',
+    Status ENUM('Pending', 'Approved', 'Rejected', 'Completed') DEFAULT 'Pending',
+    Approved_By INT,
+    Approved_Date DATE,
+    Notes TEXT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (PR_ID) REFERENCES PRODUCTION(PR_ID),
+    FOREIGN KEY (Approved_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_return_type (Return_Type),
+    INDEX idx_return_date (Return_Date),
+    INDEX idx_status (Status),
+    INDEX idx_product_return (P_ID, Return_Date)
+) ENGINE=InnoDB;
+
+-- 7.5 STOCK_ADJUSTMENT Table (Stock Count Adjustments)
+CREATE TABLE STOCK_ADJUSTMENT (
+    Adjustment_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_ID INT NOT NULL,
+    PR_ID INT,
+    Location ENUM('Shop', 'Production', 'Main_Warehouse') NOT NULL,
+    System_Qty DECIMAL(10,2) NOT NULL COMMENT 'Quantity in system',
+    Physical_Qty DECIMAL(10,2) NOT NULL COMMENT 'Actual counted quantity',
+    Difference DECIMAL(10,2) NOT NULL COMMENT 'Physical - System',
+    Adjustment_Type ENUM('Stock_Take', 'Damage', 'Theft', 'Expired', 'Other') NOT NULL,
+    Adjustment_Date DATE NOT NULL,
+    Reason TEXT,
+    Status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
+    Approved_By INT,
+    Approved_Date DATE,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (PR_ID) REFERENCES PRODUCTION(PR_ID),
+    FOREIGN KEY (Approved_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_adjustment_date (Adjustment_Date),
+    INDEX idx_location (Location),
+    INDEX idx_status (Status)
+) ENGINE=InnoDB;
+
+-- 7.6 STOCK_ALERT_LOGS Table (Low Stock & Expiry Alerts)
+CREATE TABLE STOCK_ALERT_LOGS (
+    Alert_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_ID INT NOT NULL,
+    Location ENUM('Shop', 'Production', 'Main_Warehouse'),
+    Alert_Type ENUM('Low_Stock', 'Out_Of_Stock', 'Expiry_Soon', 'Expired', 'Overstock') NOT NULL,
+    Current_Stock DECIMAL(10,2),
+    Min_Stock DECIMAL(10,2),
+    Max_Stock DECIMAL(10,2),
+    Expiry_Date DATE COMMENT 'For expiry alerts',
+    Days_To_Expiry INT,
+    Alert_Date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Status ENUM('Active', 'Acknowledged', 'Resolved', 'Ignored') DEFAULT 'Active',
+    Notification_Sent BOOLEAN DEFAULT FALSE,
+    Notification_Method ENUM('Email', 'SMS', 'Dashboard', 'None'),
+    Notification_Phone VARCHAR(20),
+    Notification_Email VARCHAR(100),
+    Acknowledged_By INT,
+    Acknowledged_At DATETIME,
+    Resolved_At DATETIME,
+    Notes TEXT,
+    
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (Acknowledged_By) REFERENCES USER(User_ID),
+    INDEX idx_alert_type (Alert_Type),
+    INDEX idx_alert_status (Status),
+    INDEX idx_alert_date (Alert_Date),
+    INDEX idx_product_alert (P_ID, Alert_Type),
+    INDEX idx_expiry_date (Expiry_Date)
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- SECTION 8: SUPPLIER MODULE
+-- ============================================================================
+
+-- 8.1 SUPPLIER Table (Supplier Master Data)
+CREATE TABLE SUPPLIER (
+    S_ID INT PRIMARY KEY AUTO_INCREMENT,
+    S_Code VARCHAR(50) UNIQUE COMMENT 'e.g., SUP-001',
+    S_Name VARCHAR(200) NOT NULL,
+    Contact_Person VARCHAR(100),
+    Phone_No VARCHAR(20),
+    Phone_No_2 VARCHAR(20),
+    Email VARCHAR(100),
+    Address TEXT,
+    City VARCHAR(100),
+    Country VARCHAR(100) DEFAULT 'Sri Lanka',
+    Payment_Terms VARCHAR(100) COMMENT '30 days, 60 days, COD, etc.',
+    Credit_Limit DECIMAL(15,2) DEFAULT 0.00,
+    Current_Balance DECIMAL(15,2) DEFAULT 0.00 COMMENT 'Amount owed to supplier',
+    Tax_ID VARCHAR(50) COMMENT 'Supplier tax/VAT registration',
+    Bank_Name VARCHAR(100),
+    Bank_Account_No VARCHAR(50),
+    Bank_Branch VARCHAR(100),
+    Status ENUM('Active', 'Inactive', 'Blocked') DEFAULT 'Active',
+    Rating INT COMMENT '1-5 star rating',
+    Notes TEXT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_supplier_name (S_Name),
+    INDEX idx_supplier_code (S_Code),
+    INDEX idx_status (Status)
+) ENGINE=InnoDB;
+
+-- 8.2 SUPPLIER_PRODUCT Table (Supplier Product Pricing)
+CREATE TABLE SUPPLIER_PRODUCT (
+    SP_ID INT PRIMARY KEY AUTO_INCREMENT,
+    S_ID INT NOT NULL,
+    P_ID INT NOT NULL,
+    Purchase_Price DECIMAL(10,2) NOT NULL COMMENT 'Price per BASE UNIT',
+    Effective_Date DATE DEFAULT (CURRENT_DATE),
+    Min_Order_Qty DECIMAL(10,2),
+    Lead_Time_Days INT COMMENT 'Delivery time in days',
+    Is_Primary_Supplier BOOLEAN DEFAULT FALSE COMMENT 'Main supplier for this product',
+    Last_Purchase_Date DATE,
+    Total_Purchased DECIMAL(15,2) DEFAULT 0.00,
+    Notes TEXT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (S_ID) REFERENCES SUPPLIER(S_ID) ON DELETE CASCADE,
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID) ON DELETE CASCADE,
+    UNIQUE KEY unique_supplier_product (S_ID, P_ID),
+    INDEX idx_supplier_products (S_ID, P_ID),
+    INDEX idx_product_suppliers (P_ID, S_ID)
+) ENGINE=InnoDB;
+
+-- 8.3 PURCHASE_ORDER Table (Purchase Orders)
+CREATE TABLE PURCHASE_ORDER (
+    PO_ID INT PRIMARY KEY AUTO_INCREMENT,
+    PO_No VARCHAR(50) UNIQUE NOT NULL COMMENT 'e.g., PO-2026-001',
+    S_ID INT NOT NULL,
+    PO_Date DATE NOT NULL,
+    Expected_Delivery_Date DATE,
+    Actual_Delivery_Date DATE,
+    Subtotal DECIMAL(15,2) NOT NULL,
+    Tax_Amount DECIMAL(15,2) DEFAULT 0.00,
+    Discount_Amount DECIMAL(15,2) DEFAULT 0.00,
+    Total_Amount DECIMAL(15,2) NOT NULL,
+    Payment_Status ENUM('Pending', 'Partial', 'Paid') DEFAULT 'Pending',
+    Paid_Amount DECIMAL(15,2) DEFAULT 0.00,
+    Balance_Due DECIMAL(15,2),
+    Status ENUM('Draft', 'Sent', 'Confirmed', 'Received', 'Cancelled') DEFAULT 'Draft',
+    Notes TEXT,
+    Created_By INT,
+    Approved_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (S_ID) REFERENCES SUPPLIER(S_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Approved_By) REFERENCES USER(User_ID),
+    INDEX idx_po_no (PO_No),
+    INDEX idx_po_date (PO_Date),
+    INDEX idx_supplier_po (S_ID, PO_Date),
+    INDEX idx_status (Status)
+) ENGINE=InnoDB;
+
+-- 8.4 PURCHASE_ORDER_ITEM Table (PO Line Items)
+CREATE TABLE PURCHASE_ORDER_ITEM (
+    PO_Item_ID INT PRIMARY KEY AUTO_INCREMENT,
+    PO_ID INT NOT NULL,
+    P_ID INT NOT NULL,
+    U_ID INT NOT NULL COMMENT 'Unit ordered',
+    Qty_Ordered DECIMAL(10,2) NOT NULL COMMENT 'In specified unit',
+    Base_Unit_Qty DECIMAL(10,2) NOT NULL COMMENT 'Converted to base unit',
+    Unit_Price DECIMAL(10,2) NOT NULL COMMENT 'Price per specified unit',
+    Line_Total DECIMAL(10,2) NOT NULL,
+    Qty_Received DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Quantity actually received',
+    Status ENUM('Pending', 'Partial', 'Received', 'Cancelled') DEFAULT 'Pending',
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (PO_ID) REFERENCES PURCHASE_ORDER(PO_ID) ON DELETE CASCADE,
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (U_ID) REFERENCES UNIT_CONVERSION(U_ID),
+    INDEX idx_po_items (PO_ID),
+    INDEX idx_product_purchase (P_ID)
+) ENGINE=InnoDB;
+
+-- 8.5 SUPPLIER_PAYMENT Table (Payments to Suppliers)
+CREATE TABLE SUPPLIER_PAYMENT (
+    SP_Payment_ID INT PRIMARY KEY AUTO_INCREMENT,
+    S_ID INT NOT NULL,
+    PO_ID INT COMMENT 'Related purchase order',
+    Payment_Date DATE NOT NULL,
+    Payment_Amount DECIMAL(15,2) NOT NULL,
+    Payment_Method ENUM('Cash', 'Bank_Transfer', 'Cheque', 'Credit') NOT NULL,
+    Bank_Account_ID INT,
+    Cheque_No VARCHAR(50),
+    Cheque_Date DATE,
+    Cheque_Status ENUM('Pending', 'Cleared', 'Bounced'),
+    Reference_No VARCHAR(100),
+    Notes TEXT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (S_ID) REFERENCES SUPPLIER(S_ID),
+    FOREIGN KEY (PO_ID) REFERENCES PURCHASE_ORDER(PO_ID),
+    FOREIGN KEY (Bank_Account_ID) REFERENCES BANK_ACCOUNT(Bank_Account_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_supplier_payments (S_ID, Payment_Date),
+    INDEX idx_payment_date (Payment_Date)
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- SECTION 9: SALES & CUSTOMER MODULE
+-- ============================================================================
+
+-- 9.1 CUSTOMER Table (Customer Master Data)
+CREATE TABLE CUSTOMER (
+    C_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Customer_Code VARCHAR(50) UNIQUE COMMENT 'e.g., CUST-001',
+    C_Name VARCHAR(200) NOT NULL,
+    Contact_Person VARCHAR(100) COMMENT 'For business customers',
+    Phone1 VARCHAR(20) NOT NULL,
+    Phone2 VARCHAR(20),
+    Email VARCHAR(100),
+    Address TEXT,
+    City VARCHAR(100),
+    Customer_Type ENUM('Retail', 'Wholesale') DEFAULT 'Retail',
+    Price_Level ENUM('Retail', 'Wholesale') DEFAULT 'Retail' COMMENT 'Which price to use',
+    Credit_Allowed BOOLEAN DEFAULT FALSE,
+    Credit_Limit DECIMAL(10,2) DEFAULT 0.00,
+    Current_Balance DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Outstanding credit',
+    Payment_Terms VARCHAR(100) COMMENT '30 days, 60 days, etc.',
+    Preferred_Payment_Method ENUM('Cash', 'Bank_Deposit', 'Cheque', 'Credit') DEFAULT 'Cash',
+    Tax_ID VARCHAR(50),
+    Status ENUM('Active', 'Inactive', 'Blocked') DEFAULT 'Active',
+    Last_Purchase_Date DATE,
+    Total_Purchases DECIMAL(15,2) DEFAULT 0.00 COMMENT 'Lifetime purchase value',
+    Loyalty_Points INT DEFAULT 0,
+    Notes TEXT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_customer_phone (Phone1),
+    INDEX idx_customer_code (Customer_Code),
+    INDEX idx_customer_type (Customer_Type),
+    INDEX idx_status (Status),
+    INDEX idx_customer_name (C_Name)
+) ENGINE=InnoDB;
+
+-- 9.2 SALES Table (Sales Transaction Header)
+CREATE TABLE SALES (
+    Sale_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Invoice_No VARCHAR(50) UNIQUE NOT NULL,
+    C_ID INT NOT NULL,
+    Sale_Date DATE NOT NULL,
+    Sale_Time TIME NOT NULL,
+    Location ENUM('Shop', 'Production', 'Main_Warehouse') DEFAULT 'Shop',
+    Sale_Type ENUM('Retail', 'Wholesale') NOT NULL,
+    Price_Level ENUM('Retail', 'Wholesale') NOT NULL,
+    
+    -- Amounts
+    Subtotal DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Before discount & tax',
+    Discount_Percentage DECIMAL(5,2) DEFAULT 0.00 COMMENT 'Only for company items',
+    Discount_Amount DECIMAL(10,2) DEFAULT 0.00,
+    Tax_Rate DECIMAL(5,2) DEFAULT 0.00,
+    Tax_Amount DECIMAL(10,2) DEFAULT 0.00,
+    Total_Amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    
+    -- Payment
+    Payment_Status ENUM('Paid', 'Unpaid', 'Partially_Paid') DEFAULT 'Unpaid',
+    Paid_Amount DECIMAL(10,2) DEFAULT 0.00,
+    Balance_Due DECIMAL(10,2) DEFAULT 0.00,
+    Due_Date DATE COMMENT 'For credit sales',
+    
+    -- Bill Printing
+    Bill_Printed BOOLEAN DEFAULT FALSE,
+    Bill_Print_Count INT DEFAULT 0,
+    First_Print_Date DATETIME,
+    Last_Print_Date DATETIME,
+    Bill_Format VARCHAR(20) COMMENT 'A4, Thermal_80mm, Thermal_58mm',
+    Invoice_Barcode VARCHAR(50),
+    
+    Notes TEXT,
+    Cashier_ID INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    Status ENUM('Active', 'Void', 'Cancelled') DEFAULT 'Active',
+    
+    FOREIGN KEY (C_ID) REFERENCES CUSTOMER(C_ID),
+    FOREIGN KEY (Cashier_ID) REFERENCES USER(User_ID),
+    INDEX idx_sale_date (Sale_Date),
+    INDEX idx_customer_sales (C_ID, Sale_Date),
+    INDEX idx_payment_status (Payment_Status),
+    INDEX idx_due_date (Due_Date),
+    INDEX idx_location_sales (Location, Sale_Date),
+    INDEX idx_invoice_no (Invoice_No)
+) ENGINE=InnoDB;
+
+-- 9.3 SALE_ITEM Table (Sales Line Items)
+CREATE TABLE SALE_ITEM (
+    Sale_Item_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Sale_ID INT NOT NULL,
+    P_ID INT NOT NULL,
+    U_ID INT NOT NULL COMMENT 'Which unit sold',
+    PR_ID INT COMMENT 'Production batch (NULL for non-produced)',
+    
+    Quantity DECIMAL(10,2) NOT NULL COMMENT 'In specified unit',
+    Base_Unit_Qty DECIMAL(10,2) NOT NULL COMMENT 'Converted for stock deduction',
+    Unit_Price DECIMAL(10,2) NOT NULL COMMENT 'Price per specified unit',
+    Price_Level_Used ENUM('Retail', 'Wholesale') NOT NULL,
+    
+    Line_Discount_Percentage DECIMAL(5,2) DEFAULT 0.00 COMMENT 'Company items only',
+    Line_Discount_Amount DECIMAL(10,2) DEFAULT 0.00,
+    Line_Subtotal DECIMAL(10,2) NOT NULL COMMENT 'After discount, before tax',
+    Line_Tax_Rate DECIMAL(5,2) DEFAULT 0.00,
+    Line_Tax_Amount DECIMAL(10,2) DEFAULT 0.00,
+    Line_Total DECIMAL(10,2) NOT NULL,
+    
+    Location_Taken_From ENUM('Shop', 'Production', 'Main_Warehouse'),
+    Notes TEXT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Status ENUM('Active', 'Void', 'Returned') DEFAULT 'Active',
+    
+    FOREIGN KEY (Sale_ID) REFERENCES SALES(Sale_ID) ON DELETE CASCADE,
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (U_ID) REFERENCES UNIT_CONVERSION(U_ID),
+    FOREIGN KEY (PR_ID) REFERENCES PRODUCTION(PR_ID),
+    INDEX idx_sale_items (Sale_ID),
+    INDEX idx_product_sales (P_ID, Created_At)
+) ENGINE=InnoDB;
+
+-- 9.4 PAYMENT Table (Payment Records)
+CREATE TABLE PAYMENT (
+    Pay_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Sale_ID INT NOT NULL,
+    Payment_Date DATE NOT NULL,
+    Payment_Time TIME NOT NULL,
+    Payment_Method ENUM('Cash', 'Bank_Deposit', 'Cheque', 'Credit', 'Card') NOT NULL,
+    Payment_Amount DECIMAL(10,2) NOT NULL,
+    
+    -- Cash
+    Cash_Received_By INT,
+    Cash_Tendered DECIMAL(10,2) COMMENT 'Amount given by customer',
+    Cash_Change DECIMAL(10,2) COMMENT 'Change given back',
+    
+    -- Bank Deposit
+    Bank_Name VARCHAR(100),
+    Deposit_Slip_No VARCHAR(100),
+    Deposited_By INT,
+    Deposit_Date DATE,
+    
+    -- Cheque
+    Cheque_No VARCHAR(100),
+    Cheque_Date DATE,
+    Cheque_Bank VARCHAR(100),
+    Cheque_Status ENUM('Pending', 'Cleared', 'Bounced') DEFAULT 'Pending',
+    Cleared_Date DATE,
+    
+    -- Card Payment
+    Card_Type ENUM('Visa', 'MasterCard', 'Amex', 'Other'),
+    Card_Last_4_Digits VARCHAR(4),
+    Card_Transaction_ID VARCHAR(100),
+    
+    -- Credit
+    Credit_Note_No VARCHAR(100),
+    Credit_Terms VARCHAR(100),
+    
+    -- Common
+    Reference_No VARCHAR(100),
+    Notes TEXT,
+    Received_By INT,
+    
+    -- Receipt
+    Receipt_Printed BOOLEAN DEFAULT FALSE,
+    Receipt_Print_Date DATETIME,
+    Receipt_No VARCHAR(30),
+    
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Status ENUM('Active', 'Void') DEFAULT 'Active',
+    
+    FOREIGN KEY (Sale_ID) REFERENCES SALES(Sale_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Cash_Received_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Deposited_By) REFERENCES USER(User_ID),
+    FOREIGN KEY (Received_By) REFERENCES USER(User_ID),
+    INDEX idx_payment_date (Payment_Date),
+    INDEX idx_payment_method (Payment_Method),
+    INDEX idx_cheque_status (Cheque_Status),
+    INDEX idx_sale_payments (Sale_ID)
+) ENGINE=InnoDB;
+
+-- 9.5 CUSTOMER_BUYING_PATTERN Table (AI Purchase Prediction)
+CREATE TABLE CUSTOMER_BUYING_PATTERN (
+    CBP_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Customer_ID INT NOT NULL,
+    P_ID INT NOT NULL,
+    Average_Quantity DECIMAL(10,2),
+    Average_Unit INT COMMENT 'References U_ID',
+    Purchase_Frequency_Days INT COMMENT 'How often they buy (days)',
+    Last_Purchase_Date DATE,
+    Last_Purchase_Qty DECIMAL(10,2),
+    Next_Expected_Purchase_Date DATE COMMENT 'Calculated prediction',
+    Purchase_Count INT DEFAULT 0 COMMENT 'Total times purchased',
+    Total_Quantity_Purchased DECIMAL(15,2) DEFAULT 0,
+    First_Purchase_Date DATE,
+    Confidence_Score DECIMAL(5,2) COMMENT 'Prediction confidence 0-100',
+    Notes TEXT,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    Status ENUM('Active', 'Inactive') DEFAULT 'Active',
+    
+    FOREIGN KEY (Customer_ID) REFERENCES CUSTOMER(C_ID) ON DELETE CASCADE,
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID) ON DELETE CASCADE,
+    UNIQUE KEY unique_customer_product (Customer_ID, P_ID),
+    INDEX idx_next_purchase (Next_Expected_Purchase_Date),
+    INDEX idx_customer_pattern (Customer_ID, P_ID)
+) ENGINE=InnoDB;
+
+-- 9.6 CUSTOMER_NOTIFICATIONS Table (Customer Alerts)
+CREATE TABLE CUSTOMER_NOTIFICATIONS (
+    Notification_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Customer_ID INT NOT NULL,
+    P_ID INT,
+    Notification_Type ENUM('Next_Purchase_Due', 'Credit_Limit_Exceeded', 'Overdue_Payment', 'Special_Offer', 'Birthday', 'Anniversary') NOT NULL,
+    Notification_Date DATE NOT NULL,
+    Notification_Message TEXT NOT NULL,
+    Is_Sent BOOLEAN DEFAULT FALSE,
+    Sent_Date DATETIME,
+    Sent_By INT,
+    Send_Via ENUM('SMS', 'Email', 'WhatsApp', 'Dashboard', 'Call') DEFAULT 'Dashboard',
+    Phone_Number VARCHAR(20),
+    Email_Address VARCHAR(100),
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Status ENUM('Pending', 'Sent', 'Failed', 'Cancelled') DEFAULT 'Pending',
+    
+    FOREIGN KEY (Customer_ID) REFERENCES CUSTOMER(C_ID) ON DELETE CASCADE,
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID),
+    FOREIGN KEY (Sent_By) REFERENCES USER(User_ID),
+    INDEX idx_notification_date (Notification_Date),
+    INDEX idx_notification_status (Status),
+    INDEX idx_customer_notifications (Customer_ID, Notification_Date)
+) ENGINE=InnoDB;
+
+-- 9.7 CREDIT_TRANSACTIONS Table (Credit Ledger)
+CREATE TABLE CREDIT_TRANSACTIONS (
+    Credit_Trans_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Customer_ID INT NOT NULL,
+    Sale_ID INT COMMENT 'For credit taken',
+    Pay_ID INT COMMENT 'For credit paid',
+    Transaction_Date DATE NOT NULL,
+    Transaction_Type ENUM('Credit_Taken', 'Credit_Paid', 'Credit_Adjusted', 'Credit_WriteOff') NOT NULL,
+    Amount DECIMAL(10,2) NOT NULL,
+    Running_Balance DECIMAL(10,2) NOT NULL COMMENT 'Balance after transaction',
+    Reference_No VARCHAR(100),
+    Notes TEXT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Customer_ID) REFERENCES CUSTOMER(C_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Sale_ID) REFERENCES SALES(Sale_ID),
+    FOREIGN KEY (Pay_ID) REFERENCES PAYMENT(Pay_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_customer_credit (Customer_ID, Transaction_Date),
+    INDEX idx_transaction_date (Transaction_Date)
+) ENGINE=InnoDB;
+
+-- 9.8 SALES_SUMMARY_DAILY Table (Daily Sales Reports)
+CREATE TABLE SALES_SUMMARY_DAILY (
+    Summary_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Summary_Date DATE NOT NULL,
+    Location ENUM('Shop', 'Production', 'Main_Warehouse'),
+    Cashier_ID INT,
+    
+    Total_Sales_Count INT DEFAULT 0,
+    Total_Sales_Amount DECIMAL(15,2) DEFAULT 0.00,
+    Total_Cash_Sales DECIMAL(15,2) DEFAULT 0.00,
+    Total_Credit_Sales DECIMAL(15,2) DEFAULT 0.00,
+    Total_Card_Sales DECIMAL(15,2) DEFAULT 0.00,
+    Total_Discount_Given DECIMAL(15,2) DEFAULT 0.00,
+    Total_Tax_Collected DECIMAL(15,2) DEFAULT 0.00,
+    Total_Returns DECIMAL(15,2) DEFAULT 0.00,
+    Total_Payments_Received DECIMAL(15,2) DEFAULT 0.00,
+    
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Cashier_ID) REFERENCES USER(User_ID),
+    UNIQUE KEY unique_date_location_cashier (Summary_Date, Location, Cashier_ID),
+    INDEX idx_summary_date (Summary_Date),
+    INDEX idx_location_summary (Location, Summary_Date)
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- SECTION 10: BARCODE & PRINTING MODULE
+-- ============================================================================
+
+-- 10.1 PRODUCT_BARCODE Table (Multiple Barcodes per Product)
+CREATE TABLE PRODUCT_BARCODE (
+    Barcode_ID INT PRIMARY KEY AUTO_INCREMENT,
+    P_ID INT NOT NULL,
+    U_ID INT NOT NULL COMMENT 'Which unit this barcode represents',
+    Barcode_Value VARCHAR(100) NOT NULL UNIQUE,
+    Barcode_Type ENUM('EAN-13', 'UPC-A', 'CODE128', 'CODE39', 'QR', 'ITF', 'EAN-8') DEFAULT 'EAN-13',
+    Is_Primary BOOLEAN DEFAULT FALSE COMMENT 'Main barcode for this product-unit',
+    Created_Date DATE DEFAULT (CURRENT_DATE),
+    Status ENUM('Active', 'Inactive') DEFAULT 'Active',
+    Notes TEXT,
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (P_ID) REFERENCES PRODUCT(P_ID) ON DELETE CASCADE,
+    FOREIGN KEY (U_ID) REFERENCES UNIT_CONVERSION(U_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_barcode_search (Barcode_Value),
+    INDEX idx_product_barcodes (P_ID, U_ID),
+    INDEX idx_barcode_status (Status)
+) ENGINE=InnoDB;
+
+-- 10.2 COMPANY_INFO Table (Company Details for Invoices)
+CREATE TABLE COMPANY_INFO (
+    Company_ID INT PRIMARY KEY DEFAULT 1,
+    Company_Name VARCHAR(200) NOT NULL,
+    Company_Name_Sinhala VARCHAR(200),
+    Address_Line1 VARCHAR(200),
+    Address_Line2 VARCHAR(200),
+    City VARCHAR(100),
+    Postal_Code VARCHAR(20),
+    Phone1 VARCHAR(20),
+    Phone2 VARCHAR(20),
+    Fax VARCHAR(20),
+    Email VARCHAR(100),
+    Website VARCHAR(200),
+    Tax_ID VARCHAR(50) COMMENT 'VAT/TIN/SVat number',
+    Logo_Path VARCHAR(255),
+    Invoice_Prefix VARCHAR(10) DEFAULT 'INV',
+    Current_Invoice_Number INT DEFAULT 1001,
+    PO_Prefix VARCHAR(10) DEFAULT 'PO',
+    Current_PO_Number INT DEFAULT 1001,
+    Bank_Name VARCHAR(100),
+    Bank_Account_No VARCHAR(50),
+    Bank_Branch VARCHAR(100),
+    Bank_Account_Name VARCHAR(200),
+    Footer_Text TEXT COMMENT 'Default invoice footer',
+    Terms_And_Conditions TEXT,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    CHECK (Company_ID = 1)
+) ENGINE=InnoDB;
+
+-- 10.3 INVOICE_TEMPLATE Table (Bill Formats)
+CREATE TABLE INVOICE_TEMPLATE (
+    Template_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Template_Name VARCHAR(100) NOT NULL,
+    Template_Type ENUM('Invoice', 'Receipt', 'Quotation', 'Credit_Note', 'Purchase_Order') DEFAULT 'Invoice',
+    Paper_Size ENUM('A4', 'A5', 'Letter', 'Thermal_80mm', 'Thermal_58mm') NOT NULL,
+    Orientation ENUM('Portrait', 'Landscape') DEFAULT 'Portrait',
+    Show_Company_Logo BOOLEAN DEFAULT TRUE,
+    Show_Company_Address BOOLEAN DEFAULT TRUE,
+    Header_Text TEXT,
+    Footer_Text TEXT,
+    Show_Tax_Breakdown BOOLEAN DEFAULT TRUE,
+    Show_Discount_Breakdown BOOLEAN DEFAULT TRUE,
+    Show_Terms_And_Conditions BOOLEAN DEFAULT TRUE,
+    Columns_To_Show TEXT COMMENT 'JSON array of columns',
+    Default_For_Sale_Type ENUM('Retail', 'Wholesale', 'All') DEFAULT 'All',
+    Template_HTML LONGTEXT COMMENT 'HTML template',
+    Template_CSS LONGTEXT COMMENT 'CSS styling',
+    Status ENUM('Active', 'Inactive') DEFAULT 'Active',
+    Created_By INT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_template_type (Template_Type),
+    INDEX idx_paper_size (Paper_Size),
+    INDEX idx_sale_type (Default_For_Sale_Type)
+) ENGINE=InnoDB;
+
+-- 10.4 PRINT_QUEUE Table (Print Job Management)
+CREATE TABLE PRINT_QUEUE (
+    Print_Queue_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Document_Type ENUM('Invoice', 'Receipt', 'Return_Note', 'Credit_Note', 'Purchase_Order', 'Barcode_Label') NOT NULL,
+    Document_ID INT NOT NULL COMMENT 'Sale_ID, Pay_ID, Return_ID, etc.',
+    Template_ID INT,
+    Printer_Name VARCHAR(100),
+    Print_Status ENUM('Pending', 'Printing', 'Completed', 'Failed', 'Cancelled') DEFAULT 'Pending',
+    Copies_Requested INT DEFAULT 1,
+    Copies_Printed INT DEFAULT 0,
+    Priority INT DEFAULT 5 COMMENT '1=Highest, 10=Lowest',
+    Queued_At DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Print_Started_At DATETIME,
+    Print_Completed_At DATETIME,
+    Error_Message TEXT,
+    Retry_Count INT DEFAULT 0,
+    Created_By INT,
+    
+    FOREIGN KEY (Template_ID) REFERENCES INVOICE_TEMPLATE(Template_ID),
+    FOREIGN KEY (Created_By) REFERENCES USER(User_ID),
+    INDEX idx_print_status (Print_Status),
+    INDEX idx_queued_at (Queued_At),
+    INDEX idx_priority (Priority, Queued_at)
+) ENGINE=InnoDB;
+
+-- 10.5 PRINTER_SETTINGS Table (Printer Configuration)
+CREATE TABLE PRINTER_SETTINGS (
+    Printer_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Printer_Name VARCHAR(100) NOT NULL UNIQUE,
+    Printer_Type ENUM('Thermal', 'Laser', 'Inkjet', 'Dot_Matrix', 'Label_Printer') NOT NULL,
+    Connection_Type ENUM('USB', 'Network', 'Bluetooth', 'Serial') NOT NULL,
+    IP_Address VARCHAR(45) COMMENT 'For network printers',
+    Port INT COMMENT 'For network printers',
+    Location ENUM('Shop', 'Production', 'Office', 'Warehouse') DEFAULT 'Shop',
+    Default_Template_ID INT,
+    Paper_Size ENUM('80mm', '58mm', 'A4', 'A5', 'Letter') NOT NULL,
+    Is_Default BOOLEAN DEFAULT FALSE,
+    Auto_Print BOOLEAN DEFAULT FALSE COMMENT 'Print automatically or manual',
+    Status ENUM('Active', 'Inactive', 'Offline', 'Error') DEFAULT 'Active',
+    Notes TEXT,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (Default_Template_ID) REFERENCES INVOICE_TEMPLATE(Template_ID),
+    INDEX idx_printer_location (Location),
+    INDEX idx_printer_status (Status)
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- SECTION 11: INITIAL DATA & CONFIGURATION
+-- ============================================================================
+
+-- Insert default admin user (password: admin123 - CHANGE IN PRODUCTION!)
+INSERT INTO USER (Username, Password_Hash, Full_Name, Email, User_Type, Status) 
+VALUES ('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 
+        'System Administrator', 'admin@shanelproduct.lk', 'Admin', 'Active');
+
+-- Insert default company info
+INSERT INTO COMPANY_INFO (
+    Company_ID, Company_Name, Company_Name_Sinhala, 
+    Address_Line1, City, Phone1, Email,
+    Invoice_Prefix, Current_Invoice_Number,
+    PO_Prefix, Current_PO_Number
+) VALUES (
+    1, 'Shanel Product', 'ෂැනල් ප්‍රොඩක්ට්',
+    'No. 123, Main Street', 'Colombo', '0112345678', 'info@shanelproduct.lk',
+    'INV', 1001,
+    'PO', 1001
+);
+
+-- Insert default invoice templates
+INSERT INTO INVOICE_TEMPLATE (Template_Name, Template_Type, Paper_Size, Show_Company_Logo, Show_Tax_Breakdown, Default_For_Sale_Type, Status) 
+VALUES 
+('Retail Thermal Bill', 'Invoice', 'Thermal_80mm', TRUE, TRUE, 'Retail', 'Active'),
+('Wholesale A4 Invoice', 'Invoice', 'A4', TRUE, TRUE, 'Wholesale', 'Active'),
+('Payment Receipt 58mm', 'Receipt', 'Thermal_58mm', TRUE, FALSE, 'All', 'Active'),
+('A4 Receipt', 'Receipt', 'A4', TRUE, TRUE, 'All', 'Active');
+
+-- Insert default chart of accounts (basic structure)
+INSERT INTO ACCOUNT_CHART (Account_Code, Account_Name, Account_Type, Account_Category, Is_Active) VALUES
+('1000', 'Assets', 'Asset', 'Header', TRUE),
+('1100', 'Current Assets', 'Asset', 'Current Asset', TRUE),
+('1110', 'Cash', 'Asset', 'Current Asset', TRUE),
+('1120', 'Bank Account', 'Asset', 'Current Asset', TRUE),
+('1200', 'Inventory', 'Asset', 'Current Asset', TRUE),
+('1300', 'Fixed Assets', 'Asset', 'Fixed Asset', TRUE),
+
+('2000', 'Liabilities', 'Liability', 'Header', TRUE),
+('2100', 'Current Liabilities', 'Liability', 'Current Liability', TRUE),
+('2110', 'Accounts Payable', 'Liability', 'Current Liability', TRUE),
+('2120', 'Credit Card Payable', 'Liability', 'Current Liability', TRUE),
+
+('3000', 'Equity', 'Equity', 'Owner Equity', TRUE),
+('3100', 'Capital', 'Equity', 'Owner Equity', TRUE),
+('3200', 'Retained Earnings', 'Equity', 'Owner Equity', TRUE),
+
+('4000', 'Revenue', 'Revenue', 'Sales Revenue', TRUE),
+('4100', 'Sales Revenue', 'Revenue', 'Sales Revenue', TRUE),
+('4200', 'Other Income', 'Revenue', 'Other Income', TRUE),
+
+('5000', 'Expenses', 'Expense', 'Operating Expense', TRUE),
+('5100', 'Cost of Goods Sold', 'Expense', 'COGS', TRUE),
+('5200', 'Salary Expense', 'Expense', 'Operating Expense', TRUE),
+('5300', 'Rent Expense', 'Expense', 'Operating Expense', TRUE),
+('5400', 'Utilities Expense', 'Expense', 'Operating Expense', TRUE),
+('5500', 'Transport Expense', 'Expense', 'Operating Expense', TRUE);
+
+-- ============================================================================
+-- SECTION 12: VIEWS FOR REPORTING
+-- ============================================================================
+
+-- View: Current Stock Levels
+CREATE OR REPLACE VIEW v_current_stock AS
+SELECT 
+    p.P_ID,
+    p.P_Code,
+    p.P_Name,
+    p.P_Type,
+    p.Base_Unit,
+    i.Location,
+    i.Qty as Stock_Qty,
+    p.Min_Stock,
+    p.Retail_Price,
+    p.Wholesale_Price,
+    pr.Batch_No,
+    pr.Exp_Date,
+    CASE 
+        WHEN i.Qty <= 0 THEN 'Out of Stock'
+        WHEN i.Qty < p.Min_Stock THEN 'Low Stock'
+        WHEN i.Qty < p.Min_Stock * 2 THEN 'Warning'
+        ELSE 'OK'
+    END as Stock_Status
+FROM PRODUCT p
+LEFT JOIN INVENTORY i ON p.P_ID = i.P_ID
+LEFT JOIN PRODUCTION pr ON i.PR_ID = pr.PR_ID
+WHERE p.Status = 'Active';
+
+-- View: Employee Payroll Summary
+CREATE OR REPLACE VIEW v_employee_payroll_current AS
+SELECT 
+    e.Employee_ID,
+    e.Employee_Code,
+    e.Full_Name,
+    e.Role,
+    e.Department,
+    e.Salary_Category,
+    ss.Monthly_Base_Salary,
+    ss.Daily_Rate,
+    ss.Production_Rate_Per_Card,
+    e.EPF_Eligible,
+    e.Status
+FROM EMPLOYEE e
+LEFT JOIN SALARY_STRUCTURE ss ON e.Employee_ID = ss.Employee_ID AND ss.Status = 'Active'
+WHERE e.Status = 'Active';
+
+-- View: Customer Credit Summary
+CREATE OR REPLACE VIEW v_customer_credit_summary AS
+SELECT 
+    c.C_ID,
+    c.Customer_Code,
+    c.C_Name,
+    c.Customer_Type,
+    c.Credit_Limit,
+    c.Current_Balance,
+    (c.Credit_Limit - c.Current_Balance) as Available_Credit,
+    CASE 
+        WHEN c.Current_Balance >= c.Credit_Limit THEN 'Limit Reached'
+        WHEN c.Current_Balance >= c.Credit_Limit * 0.8 THEN 'Near Limit'
+        ELSE 'OK'
+    END as Credit_Status
+FROM CUSTOMER c
+WHERE c.Credit_Allowed = TRUE AND c.Status = 'Active';
+
+-- View: Daily Sales Summary
+CREATE OR REPLACE VIEW v_daily_sales AS
+SELECT 
+    s.Sale_Date,
+    s.Location,
+    COUNT(DISTINCT s.Sale_ID) as Total_Transactions,
+    SUM(s.Total_Amount) as Total_Sales,
+    SUM(CASE WHEN s.Payment_Status = 'Paid' THEN s.Total_Amount ELSE 0 END) as Cash_Sales,
+    SUM(CASE WHEN s.Payment_Status != 'Paid' THEN s.Total_Amount ELSE 0 END) as Credit_Sales,
+    SUM(s.Discount_Amount) as Total_Discounts,
+    SUM(s.Tax_Amount) as Total_Tax
+FROM SALES s
+WHERE s.Status = 'Active'
+GROUP BY s.Sale_Date, s.Location;
+
+-- ============================================================================
+-- SECTION 13: STORED PROCEDURES & TRIGGERS
+-- ============================================================================
+
+DELIMITER $$
+
+-- Procedure: Update Inventory after Production
+CREATE PROCEDURE sp_update_inventory_after_production(
+    IN p_pr_id INT,
+    IN p_p_id INT,
+    IN p_qty DECIMAL(10,2)
+)
+BEGIN
+    DECLARE v_location VARCHAR(50);
+    SET v_location = 'Production';
+    
+    -- Insert or update inventory
+    INSERT INTO INVENTORY (P_ID, PR_ID, Location, Qty)
+    VALUES (p_p_id, p_pr_id, v_location, p_qty)
+    ON DUPLICATE KEY UPDATE Qty = Qty + p_qty;
+    
+    -- Log stock movement
+    INSERT INTO STOCK_MOVEMENT (P_ID, PR_ID, Location, Movement_Type, Qty_In, Ref_Type, Ref_ID, Move_Date)
+    VALUES (p_p_id, p_pr_id, v_location, 'Production', p_qty, 'Production', p_pr_id, CURDATE());
+END$$
+
+-- Procedure: Process Sale and Update Inventory
+CREATE PROCEDURE sp_process_sale(
+    IN p_sale_id INT
+)
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE v_p_id, v_pr_id, v_qty INT;
+    DECLARE v_location VARCHAR(50);
+    
+    DECLARE sale_cursor CURSOR FOR 
+        SELECT P_ID, PR_ID, Base_Unit_Qty, Location_Taken_From 
+        FROM SALE_ITEM 
+        WHERE Sale_ID = p_sale_id AND Status = 'Active';
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    
+    OPEN sale_cursor;
+    
+    read_loop: LOOP
+        FETCH sale_cursor INTO v_p_id, v_pr_id, v_qty, v_location;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        
+        -- Deduct from inventory
+        UPDATE INVENTORY 
+        SET Qty = Qty - v_qty 
+        WHERE P_ID = v_p_id 
+          AND (PR_ID = v_pr_id OR (PR_ID IS NULL AND v_pr_id IS NULL))
+          AND Location = v_location;
+        
+        -- Log stock movement
+        INSERT INTO STOCK_MOVEMENT (P_ID, PR_ID, Location, Movement_Type, Qty_Out, Ref_Type, Ref_ID, Move_Date)
+        VALUES (v_p_id, v_pr_id, v_location, 'Sale', v_qty, 'Sales', p_sale_id, CURDATE());
+    END LOOP;
+    
+    CLOSE sale_cursor;
+END$$
+
+-- Trigger: Update Customer Balance after Credit Sale
+CREATE TRIGGER tr_update_customer_credit_after_sale
+AFTER INSERT ON SALES
+FOR EACH ROW
+BEGIN
+    IF NEW.Payment_Status IN ('Unpaid', 'Partially_Paid') THEN
+        UPDATE CUSTOMER 
+        SET Current_Balance = Current_Balance + NEW.Balance_Due
+        WHERE C_ID = NEW.C_ID;
+        
+        INSERT INTO CREDIT_TRANSACTIONS (Customer_ID, Sale_ID, Transaction_Date, Transaction_Type, Amount, Running_Balance)
+        SELECT NEW.C_ID, NEW.Sale_ID, NEW.Sale_Date, 'Credit_Taken', NEW.Balance_Due, Current_Balance
+        FROM CUSTOMER WHERE C_ID = NEW.C_ID;
+    END IF;
+END$$
+
+-- Trigger: Update Customer Balance after Payment
+CREATE TRIGGER tr_update_customer_credit_after_payment
+AFTER INSERT ON PAYMENT
+FOR EACH ROW
+BEGIN
+    DECLARE v_customer_id INT;
+    DECLARE v_balance_due DECIMAL(10,2);
+    
+    SELECT C_ID, Balance_Due INTO v_customer_id, v_balance_due
+    FROM SALES WHERE Sale_ID = NEW.Sale_ID;
+    
+    IF v_balance_due > 0 THEN
+        UPDATE CUSTOMER 
+        SET Current_Balance = Current_Balance - NEW.Payment_Amount
+        WHERE C_ID = v_customer_id;
+        
+        INSERT INTO CREDIT_TRANSACTIONS (Customer_ID, Pay_ID, Transaction_Date, Transaction_Type, Amount, Running_Balance)
+        SELECT v_customer_id, NEW.Pay_ID, NEW.Payment_Date, 'Credit_Paid', NEW.Payment_Amount, Current_Balance
+        FROM CUSTOMER WHERE C_ID = v_customer_id;
+    END IF;
+END$$
+
+-- Trigger: Check Low Stock and Create Alert
+CREATE TRIGGER tr_check_low_stock_after_update
+AFTER UPDATE ON INVENTORY
+FOR EACH ROW
+BEGIN
+    DECLARE v_min_stock DECIMAL(10,2);
+    
+    SELECT Min_Stock INTO v_min_stock FROM PRODUCT WHERE P_ID = NEW.P_ID;
+    
+    IF NEW.Qty < v_min_stock AND OLD.Qty >= v_min_stock THEN
+        INSERT INTO STOCK_ALERT_LOGS (P_ID, Location, Alert_Type, Current_Stock, Min_Stock, Status)
+        VALUES (NEW.P_ID, NEW.Location, 'Low_Stock', NEW.Qty, v_min_stock, 'Active');
+    END IF;
+    
+    IF NEW.Qty <= 0 AND OLD.Qty > 0 THEN
+        INSERT INTO STOCK_ALERT_LOGS (P_ID, Location, Alert_Type, Current_Stock, Min_Stock, Status)
+        VALUES (NEW.P_ID, NEW.Location, 'Out_Of_Stock', NEW.Qty, v_min_stock, 'Active');
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- ============================================================================
+-- END OF SCHEMA
+-- ============================================================================
+
+-- Grant permissions (adjust as needed)
+-- GRANT ALL PRIVILEGES ON shanel_erp.* TO 'erp_user'@'localhost' IDENTIFIED BY 'your_secure_password';
+-- FLUSH PRIVILEGES;
+
+-- ============================================================================
+-- VERIFICATION QUERIES
+-- ============================================================================
+
+-- Check table count
+SELECT COUNT(*) as Total_Tables 
+FROM information_schema.tables 
+WHERE table_schema = 'shanel_erp';
+
+-- List all tables
+SELECT table_name, table_rows 
+FROM information_schema.tables 
+WHERE table_schema = 'shanel_erp' 
+ORDER BY table_name;
+
+-- Verify foreign keys
+SELECT 
+    TABLE_NAME,
+    CONSTRAINT_NAME,
+    REFERENCED_TABLE_NAME,
+    REFERENCED_COLUMN_NAME
+FROM information_schema.KEY_COLUMN_USAGE
+WHERE REFERENCED_TABLE_SCHEMA = 'shanel_erp'
+ORDER BY TABLE_NAME;
+
+-- ============================================================================
+-- NOTES FOR IMPLEMENTATION
+-- ============================================================================
+/*
+1. PASSWORD SECURITY:
+   - Change default admin password immediately
+   - Use strong password hashing (bcrypt/argon2)
+   - Implement password policies
+
+2. INDEXES:
+   - All important foreign keys are indexed
+   - Add additional indexes based on query patterns
+   - Monitor slow queries and optimize
+
+3. BACKUP STRATEGY:
+   - Daily automated backups
+   - Test restore procedures regularly
+   - Keep offsite backup copies
+
+4. DATA MIGRATION:
+   - Import existing data carefully
+   - Validate data integrity after import
+   - Test thoroughly before going live
+
+5. SECURITY:
+   - Use prepared statements (prevent SQL injection)
+   - Implement role-based access control
+   - Enable SSL for database connections
+   - Regular security audits
+
+6. PERFORMANCE:
+   - Monitor query performance
+   - Optimize slow queries
+   - Consider partitioning large tables
+   - Use connection pooling
+
+7. MAINTENANCE:
+   - Regular ANALYZE TABLE to update statistics
+   - Monitor table fragmentation
+   - Archive old data periodically
+   - Keep MySQL version updated
+
+8. COMPLIANCE:
+   - Ensure EPF/ETF calculations comply with Sri Lankan law
+   - Tax calculations follow current regulations
+   - Data retention policies for financial records
+   - Privacy compliance (GDPR equivalent)
+
+9. TESTING:
+   - Unit test all stored procedures
+   - Integration testing for critical workflows
+   - Load testing for production readiness
+   - User acceptance testing
+
+10. DOCUMENTATION:
+    - Maintain updated schema documentation
+    - Document business rules and calculations
+    - Keep change log for all modifications
+    - Create user manuals for each module
+*/
