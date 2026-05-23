@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type { IProductUnitRow } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { PosUnitSelect } from './PosUnitSelect';
+import { PosCartNumericCell } from './PosCartNumericCell';
 
 interface IPosCartRowProps {
     item: ICartItem;
@@ -11,24 +11,17 @@ interface IPosCartRowProps {
     onRemove: (rowId: string) => void;
 }
 
-type TNumericField =
-    | 'quantity'
-    | 'free'
-    | 'discountPercentage'
-    | 'taxRate';
+const NUMERIC_INPUT_CLASS =
+    'w-16 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30 disabled:opacity-60 disabled:cursor-not-allowed';
 
-interface INumericBounds {
-    min: number;
-    max?: number;
-}
+const QUANTITY_INPUT_CLASS =
+    'w-20 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30';
 
 /**
- * One editable row inside the cart table. Each numeric cell keeps its own
- * string buffer so partial entries like `0.`, `.5`, or a blank string don't
- * collapse to `0` mid-typing. The committed numeric value is written through
- * `onUpdate` on every full-number change and again on blur, and is clamped
- * defensively against `min`/`max` so paste/programmatic-set can't push the
- * field out of range.
+ * One editable row inside the cart table. Each numeric cell is rendered
+ * via `PosCartNumericCell` so partial entries like `0.` or `.5` are
+ * preserved while the cashier is typing, and pasted out-of-range values
+ * are clamped to the field's `min`/`max` defensively.
  *
  * The discount cell is disabled when the product was flagged
  * `discountAllowed: false` on the search row (a Shanel rule used for
@@ -37,85 +30,6 @@ interface INumericBounds {
  * store policy demands.
  */
 export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
-    // Per-cell string buffers preserve in-progress entries like `0.` or
-    // `.5` so the controlled input never collapses a partial decimal to
-    // `0`. We track the upstream numeric value alongside the buffer so a
-    // sibling update (line-math recompute, unit switch) re-seeds the
-    // buffer without trampling unrelated cells. This is the React
-    // "Storing the previous value" pattern — adjusting state during render
-    // — instead of an effect, which would either cascade renders or fight
-    // the no-setState-in-effect lint rule.
-    const [qtyBuffer, setQtyBuffer] = useState<string>(String(item.quantity));
-    const [qtyAnchor, setQtyAnchor] = useState<number>(item.quantity);
-    if (item.quantity !== qtyAnchor) {
-        setQtyAnchor(item.quantity);
-        setQtyBuffer(String(item.quantity));
-    }
-
-    const [freeBuffer, setFreeBuffer] = useState<string>(String(item.free));
-    const [freeAnchor, setFreeAnchor] = useState<number>(item.free);
-    if (item.free !== freeAnchor) {
-        setFreeAnchor(item.free);
-        setFreeBuffer(String(item.free));
-    }
-
-    const [discBuffer, setDiscBuffer] = useState<string>(
-        String(item.discountPercentage),
-    );
-    const [discAnchor, setDiscAnchor] = useState<number>(
-        item.discountPercentage,
-    );
-    if (item.discountPercentage !== discAnchor) {
-        setDiscAnchor(item.discountPercentage);
-        setDiscBuffer(String(item.discountPercentage));
-    }
-
-    const [taxBuffer, setTaxBuffer] = useState<string>(String(item.taxRate));
-    const [taxAnchor, setTaxAnchor] = useState<number>(item.taxRate);
-    if (item.taxRate !== taxAnchor) {
-        setTaxAnchor(item.taxRate);
-        setTaxBuffer(String(item.taxRate));
-    }
-
-    const clamp = (value: number, bounds: INumericBounds): number => {
-        const lower = Math.max(value, bounds.min);
-        return bounds.max !== undefined ? Math.min(lower, bounds.max) : lower;
-    };
-
-    const commitNumeric = (
-        buffer: string,
-        field: TNumericField,
-        bounds: INumericBounds,
-    ): void => {
-        const parsed = parseFloat(buffer);
-        if (!Number.isFinite(parsed)) return;
-        const clamped = clamp(parsed, bounds);
-        if (clamped !== item[field]) {
-            onUpdate(item.rowId, { [field]: clamped });
-        }
-    };
-
-    // A buffer is "complete" when it parses to a finite number and matches
-    // a canonical numeric string (no trailing `.`, no lone `-`, no empty
-    // string). Used to live-commit while still allowing in-progress entries
-    // like `0.` to remain in the buffer.
-    const isCompleteNumber = (raw: string): boolean => {
-        if (raw.trim() === '') return false;
-        return /^-?\d+(\.\d+)?$/.test(raw.trim());
-    };
-
-    const handleChange = (
-        next: string,
-        field: TNumericField,
-        bounds: INumericBounds,
-        setBuffer: (value: string) => void,
-    ): void => {
-        setBuffer(next);
-        if (isCompleteNumber(next)) {
-            commitNumeric(next, field, bounds);
-        }
-    };
-
     function handleUnit(unit: IProductUnitRow) {
         onUpdate(item.rowId, {
             unitId: unit.unitId,
@@ -131,9 +45,7 @@ export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
             </td>
             <td className="px-3 py-2 text-[13px] text-text-1 align-middle">
                 <div className="truncate max-w-[220px]">{item.productName}</div>
-                <div className="text-[11px] text-text-3">
-                    {item.productType}
-                </div>
+                <div className="text-[11px] text-text-3">{item.productType}</div>
             </td>
             <td className="px-2 py-2 align-middle">
                 <PosUnitSelect
@@ -146,96 +58,50 @@ export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
                 {formatCurrency(item.unitPrice)}
             </td>
             <td className="px-2 py-2 align-middle">
-                <input
-                    type="number"
+                <PosCartNumericCell
+                    value={item.discountPercentage}
+                    onCommit={(next) =>
+                        onUpdate(item.rowId, { discountPercentage: next })
+                    }
                     min={0}
                     max={100}
                     step={0.1}
-                    value={discBuffer}
-                    onChange={(e) =>
-                        handleChange(
-                            e.target.value,
-                            'discountPercentage',
-                            { min: 0, max: 100 },
-                            setDiscBuffer,
-                        )
-                    }
-                    onBlur={() =>
-                        commitNumeric(discBuffer, 'discountPercentage', {
-                            min: 0,
-                            max: 100,
-                        })
-                    }
                     disabled={!item.discountAllowed}
-                    aria-label="Discount percentage"
-                    className="w-16 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                    ariaLabel="Discount percentage"
+                    className={NUMERIC_INPUT_CLASS}
                 />
             </td>
             <td className="px-2 py-2 align-middle">
-                <input
-                    type="number"
+                <PosCartNumericCell
+                    value={item.taxRate}
+                    onCommit={(next) =>
+                        onUpdate(item.rowId, { taxRate: next })
+                    }
                     min={0}
                     max={100}
                     step={0.1}
-                    value={taxBuffer}
-                    onChange={(e) =>
-                        handleChange(
-                            e.target.value,
-                            'taxRate',
-                            { min: 0, max: 100 },
-                            setTaxBuffer,
-                        )
-                    }
-                    onBlur={() =>
-                        commitNumeric(taxBuffer, 'taxRate', {
-                            min: 0,
-                            max: 100,
-                        })
-                    }
-                    aria-label="Tax rate"
-                    className="w-16 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30"
+                    ariaLabel="Tax rate"
+                    className={NUMERIC_INPUT_CLASS}
                 />
             </td>
             <td className="px-2 py-2 align-middle">
-                <input
-                    type="number"
+                <PosCartNumericCell
+                    value={item.quantity}
+                    onCommit={(next) =>
+                        onUpdate(item.rowId, { quantity: next })
+                    }
                     min={0}
-                    step={0.01}
-                    value={qtyBuffer}
-                    onChange={(e) =>
-                        handleChange(
-                            e.target.value,
-                            'quantity',
-                            { min: 0 },
-                            setQtyBuffer,
-                        )
-                    }
-                    onBlur={() =>
-                        commitNumeric(qtyBuffer, 'quantity', { min: 0 })
-                    }
-                    aria-label="Quantity"
-                    className="w-20 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30"
+                    ariaLabel="Quantity"
+                    className={QUANTITY_INPUT_CLASS}
                 />
             </td>
             <td className="px-2 py-2 align-middle">
-                <input
-                    type="number"
+                <PosCartNumericCell
+                    value={item.free}
+                    onCommit={(next) => onUpdate(item.rowId, { free: next })}
                     min={0}
-                    step={0.01}
-                    value={freeBuffer}
-                    onChange={(e) =>
-                        handleChange(
-                            e.target.value,
-                            'free',
-                            { min: 0 },
-                            setFreeBuffer,
-                        )
-                    }
-                    onBlur={() =>
-                        commitNumeric(freeBuffer, 'free', { min: 0 })
-                    }
-                    aria-label="Free units"
-                    className="w-16 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30"
+                    ariaLabel="Free units"
+                    className={NUMERIC_INPUT_CLASS}
                 />
             </td>
             <td className="px-3 py-2 text-right text-[13px] font-semibold text-text-1 tabular-nums align-middle">
