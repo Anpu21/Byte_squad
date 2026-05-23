@@ -1,6 +1,5 @@
 import type { ISearchProductRow, TPriceLevel } from '@/types';
-import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 
 interface IPosItemSearchResultsProps {
     results: ISearchProductRow[];
