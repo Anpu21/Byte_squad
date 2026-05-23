@@ -9,7 +9,9 @@ import {
   Headers,
 } from '@nestjs/common';
 import { PosService } from '@pos/pos.service.js';
+import { PosWriteService } from '@pos/pos-write.service';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto';
+import { CreateSaleDto } from '@pos/dto/create-sale.dto';
 import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -39,7 +41,10 @@ interface ActorPayload {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.CASHIER)
 export class PosController {
-  constructor(private readonly posService: PosService) {}
+  constructor(
+    private readonly posService: PosService,
+    private readonly posWriteService: PosWriteService,
+  ) {}
 
   @Get(APP_ROUTES.POS.ADMIN_DASHBOARD)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
@@ -150,5 +155,25 @@ export class PosController {
   @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
   previewNextInvoiceNumber(): Promise<{ invoiceNo: string }> {
     return this.posService.previewNextInvoiceNumber();
+  }
+
+  // -------------------------------------------------------------------
+  // Phase 5 — Shanel-aligned write endpoint
+  // -------------------------------------------------------------------
+
+  /**
+   * `POST /pos/sales` — Shanel multi-tender checkout. Owns the full sale
+   * orchestration (stock decrement, sale + payment insert, customer credit,
+   * stock-movement log, ledger entry). Idempotency via `X-Idempotency-Key`
+   * header; same key replays the original sale instead of creating a new one.
+   */
+  @Post(APP_ROUTES.POS.SALES)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  createSale(
+    @CurrentUser() actor: ActorPayload,
+    @Body() dto: CreateSaleDto,
+    @Headers('x-idempotency-key') idempotencyKey?: string,
+  ): Promise<Sale> {
+    return this.posWriteService.createSale(actor, dto, idempotencyKey);
   }
 }
