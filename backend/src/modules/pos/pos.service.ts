@@ -22,6 +22,7 @@ import type {
   SearchProductRow,
   ProductUnitRow,
   InventoryQuantity,
+  RecentSaleRow,
 } from '@pos/types';
 
 /**
@@ -599,4 +600,56 @@ export class PosService {
       totalAcrossBranches: summary.totalAcrossBranches,
     };
   }
+
+  /**
+   * Returns the cashier's most-recent sales (newest first) shaped for the
+   * "recent sales" panel. Branch-scoped for cashiers/managers; admins see
+   * the whole system (no branchId filter).
+   *
+   * The Shanel row shape includes payment-status flags, void state, and
+   * the customer name for credit sales — fields the cashier UI uses to
+   * render badges without follow-up requests.
+   */
+  async getRecentSales(
+    actor: ActorPayload,
+    limit = 20,
+  ): Promise<RecentSaleRow[]> {
+    const safeLimit = Math.max(1, Math.min(100, Math.trunc(limit)));
+    const branchId = actor.role === UserRole.ADMIN ? null : actor.branchId;
+    const sales = await this.pos.findRecentSales(branchId, safeLimit);
+    return sales.map(toRecentSaleRow);
+  }
+}
+
+/**
+ * Map a Sale entity (with optional `customer` relation eager-loaded) into
+ * the Shanel-aligned RecentSaleRow shape. Bill-print and invoice-number
+ * tracking columns don't exist on Sale yet (they land in Phase 5 alongside
+ * the new write/print endpoints) so we synthesize safe defaults: invoice
+ * number falls back to the transaction number, bill print flags to
+ * "not yet printed". Once the columns exist this mapping reads them
+ * directly.
+ */
+function toRecentSaleRow(sale: Sale): RecentSaleRow {
+  const customer = sale.customer ?? null;
+  const customerName = customer
+    ? `${customer.firstName} ${customer.lastName}`.trim()
+    : null;
+  return {
+    id: sale.id,
+    invoiceNumber: sale.transactionNumber,
+    transactionNumber: sale.transactionNumber,
+    total: Number(sale.total),
+    paidAmount: Number(sale.paidAmount),
+    balanceDue: Number(sale.balanceDue),
+    paymentStatus: sale.paymentStatus,
+    saleType: sale.saleType,
+    status: sale.status,
+    billPrinted: false,
+    billPrintCount: 0,
+    branchId: sale.branchId,
+    customerUserId: sale.customerUserId,
+    customerName,
+    createdAt: sale.createdAt,
+  };
 }

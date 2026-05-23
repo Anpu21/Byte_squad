@@ -10,6 +10,10 @@ import { InventoryRepository } from '@inventory/inventory.repository';
 import { ProductsRepository } from '@products/products.repository';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
+import { Sale } from './entities/sale.entity';
+import { TransactionType } from '@common/enums/transaction.enum';
+import { DiscountType } from '@common/enums/discount.enum';
+import { PaymentMethod } from '@common/enums/payment-method';
 import { UserRole } from '@common/enums/user-roles.enums';
 
 /**
@@ -85,13 +89,51 @@ function makeUnit(
   } as ProductSellableUnit;
 }
 
+function makeSale(overrides: Partial<Sale> = {}): Sale {
+  return {
+    id: 'sale-1',
+    transactionNumber: 'TXN-001',
+    branchId: 'branch-A',
+    branch: undefined as unknown as Sale['branch'],
+    cashierId: 'cashier-1',
+    cashier: undefined as unknown as Sale['cashier'],
+    type: TransactionType.SALE,
+    subtotal: 100,
+    discountAmount: 0,
+    discountType: DiscountType.NONE,
+    taxAmount: 0,
+    total: 100,
+    paymentMethod: PaymentMethod.CASH,
+    saleType: 'Retail',
+    priceLevel: 'Retail',
+    discountPercentage: 0,
+    taxRate: 0,
+    paidAmount: 100,
+    balanceDue: 0,
+    paymentStatus: 'Paid',
+    status: 'Active',
+    location: 'Shop',
+    customerUserId: null,
+    customer: null,
+    voidedReason: null,
+    voidedAt: null,
+    voidedByUserId: null,
+    items: [],
+    createdAt: new Date('2026-05-23T11:00:00Z'),
+    ...overrides,
+  } as Sale;
+}
+
 describe('PosService — Phase 4 read endpoints', () => {
   let service: PosService;
   let productsRepo: jest.Mocked<ProductsRepository>;
   let inventoryRepo: jest.Mocked<InventoryRepository>;
+  let posRepo: jest.Mocked<PosRepository>;
 
   beforeEach(async () => {
-    const posRepoMock = {} as PosRepository;
+    const posRepoMock: Partial<jest.Mocked<PosRepository>> = {
+      findRecentSales: jest.fn(),
+    };
     const accountingRepoMock = {} as AccountingRepository;
     const dataSourceMock = {} as DataSource;
     const productsRepoMock: Partial<jest.Mocked<ProductsRepository>> = {
@@ -116,6 +158,7 @@ describe('PosService — Phase 4 read endpoints', () => {
     service = module.get(PosService);
     productsRepo = module.get(ProductsRepository);
     inventoryRepo = module.get(InventoryRepository);
+    posRepo = module.get(PosRepository);
   });
 
   // -------------------------------------------------------------------
@@ -307,6 +350,73 @@ describe('PosService — Phase 4 read endpoints', () => {
       );
       expect(result.branchQty).toBe(30);
       expect(result.totalAcrossBranches).toBe(47);
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Task 4.5 — getRecentSales
+  // -------------------------------------------------------------------
+  describe('getRecentSales', () => {
+    it('scopes a cashier to their branch and maps Sale rows into RecentSaleRow', async () => {
+      const sale = makeSale({
+        id: 'sale-1',
+        transactionNumber: 'TXN-001',
+        total: 250,
+        paidAmount: 250,
+        balanceDue: 0,
+        paymentStatus: 'Paid',
+        saleType: 'Retail',
+        status: 'Active',
+        branchId: 'branch-A',
+      });
+      posRepo.findRecentSales.mockResolvedValue([sale]);
+
+      const result = await service.getRecentSales(makeCashier(), 5);
+
+      expect(posRepo.findRecentSales).toHaveBeenCalledWith('branch-A', 5);
+      expect(result).toEqual([
+        {
+          id: 'sale-1',
+          invoiceNumber: 'TXN-001',
+          transactionNumber: 'TXN-001',
+          total: 250,
+          paidAmount: 250,
+          balanceDue: 0,
+          paymentStatus: 'Paid',
+          saleType: 'Retail',
+          status: 'Active',
+          billPrinted: false,
+          billPrintCount: 0,
+          branchId: 'branch-A',
+          customerUserId: null,
+          customerName: null,
+          createdAt: sale.createdAt,
+        },
+      ]);
+    });
+
+    it('passes branchId=null when the actor is an admin', async () => {
+      posRepo.findRecentSales.mockResolvedValue([]);
+      await service.getRecentSales(makeAdmin());
+      expect(posRepo.findRecentSales).toHaveBeenCalledWith(null, 20);
+    });
+
+    it('populates customerName from the eager-loaded customer relation', async () => {
+      posRepo.findRecentSales.mockResolvedValue([
+        makeSale({
+          id: 'sale-2',
+          customerUserId: 'u-7',
+          customer: {
+            firstName: 'Asha',
+            lastName: 'Perera',
+          } as unknown as Sale['customer'],
+        }),
+      ]);
+
+      const result = await service.getRecentSales(makeCashier());
+
+      expect(result[0].customerName).toBe('Asha Perera');
+      expect(result[0].customerUserId).toBe('u-7');
     });
   });
 });

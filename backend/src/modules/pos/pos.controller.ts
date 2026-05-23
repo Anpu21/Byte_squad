@@ -25,6 +25,7 @@ import type {
   SearchProductRow,
   ProductUnitRow,
   InventoryQuantity,
+  RecentSaleRow,
 } from '@pos/types';
 
 interface ActorPayload {
@@ -133,5 +134,15 @@ export class PosController {
     @Param('productId') productId: string,
   ): Promise<InventoryQuantity> {
     return this.posService.getProductInventory(actor, productId);
+  }
+
+  @Get(APP_ROUTES.POS.RECENT_SALES)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  getRecentSales(
+    @CurrentUser() actor: ActorPayload,
+    @Query('limit') limit?: string,
+  ): Promise<RecentSaleRow[]> {
+    const parsedLimit = limit !== undefined ? Number(limit) : undefined;
+    return this.posService.getRecentSales(actor, parsedLimit);
   }
 }
