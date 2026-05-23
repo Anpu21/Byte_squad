@@ -2,11 +2,14 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Query,
   UseGuards,
   Headers,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { PosService } from '@pos/pos.service.js';
 import { PosWriteService } from '@pos/pos-write.service';
@@ -182,5 +185,24 @@ export class PosController {
     @Headers('x-idempotency-key') idempotencyKey?: string,
   ): Promise<Sale> {
     return this.posWriteService.createSale(actor, dto, idempotencyKey);
+  }
+
+  // -------------------------------------------------------------------
+  // Phase 6 — Shanel-aligned mutations (print, void)
+  // -------------------------------------------------------------------
+
+  /**
+   * `PATCH /pos/sales/:id/print` — record a receipt print. Bumps
+   * billPrintCount and refreshes lastPrintDate; the first print also
+   * captures firstPrintDate. Branch-scoped for non-admins.
+   */
+  @Patch(APP_ROUTES.POS.SALE_PRINT)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  markSalePrinted(
+    @Param('id') id: string,
+    @CurrentUser() actor: ActorPayload,
+  ): Promise<Sale> {
+    return this.posService.markPrinted(id, actor);
   }
 }

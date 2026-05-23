@@ -19,6 +19,7 @@ import { DiscountType } from '@common/enums/discount.enum';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { InvoiceNumberService } from '@pos/services/invoice-number.service';
+import { SaleRepository } from '@pos/sale.repository';
 import type {
   SearchProductRow,
   ProductUnitRow,
@@ -92,6 +93,7 @@ export class PosService {
     private readonly products: ProductsRepository,
     private readonly inventory: InventoryRepository,
     private readonly invoiceNumbers: InvoiceNumberService,
+    private readonly sales: SaleRepository,
   ) {}
 
   async createTransaction(
@@ -634,6 +636,50 @@ export class PosService {
     const year = new Date().getFullYear();
     const invoiceNo = await this.invoiceNumbers.peek(year);
     return { invoiceNo };
+  }
+
+  // ---------------------------------------------------------------------
+  // Phase 6 — Shanel-aligned mutations (print, void)
+  // ---------------------------------------------------------------------
+
+  /**
+   * Record a receipt print for a sale. Increments `billPrintCount`, sets
+   * `firstPrintDate` on the first print, and refreshes `lastPrintDate`.
+   *
+   * Branch scoping: cashiers/managers can only print sales on their own
+   * branch — cross-branch attempts return `NotFoundException` (not 403)
+   * so we don't leak the existence of sales that exist in other branches.
+   * Admins can print any sale.
+   *
+   * Returns the refreshed sale so the cashier UI can update its row
+   * without a follow-up GET.
+   */
+  async markPrinted(id: string, actor: ActorPayload): Promise<Sale> {
+    const sale = await this.sales.findOneById(id);
+    if (!sale) {
+      throw new NotFoundException('Sale not found');
+    }
+    if (actor.role !== UserRole.ADMIN && sale.branchId !== actor.branchId) {
+      // Defensive 404 across branches — same shape as "not found" so the
+      // existence of foreign-branch sales doesn't leak.
+      throw new NotFoundException('Sale not found');
+    }
+
+    const now = new Date();
+    const nextCount = (sale.billPrintCount ?? 0) + 1;
+    const firstPrintDate = sale.firstPrintDate ?? now;
+    await this.sales.markPrinted(id, {
+      billPrinted: true,
+      billPrintCount: nextCount,
+      firstPrintDate,
+      lastPrintDate: now,
+    });
+
+    const refreshed = await this.sales.findOneById(id);
+    if (!refreshed) {
+      throw new NotFoundException('Sale disappeared during print update');
+    }
+    return refreshed;
   }
 }
 

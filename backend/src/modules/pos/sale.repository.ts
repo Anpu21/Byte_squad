@@ -46,6 +46,32 @@ export class SaleRepository {
     });
   }
 
+  /**
+   * Bump the print-tracking columns on a sale row. The first print sets
+   * `firstPrintDate` while every print updates `lastPrintDate` and
+   * increments `billPrintCount`. The DB is the source of truth so the
+   * caller passes the next count + dates to avoid an extra round-trip.
+   *
+   * Throws NotFoundException when no row matches — defensive against
+   * silent updates that succeed-with-zero-rows in PostgreSQL.
+   */
+  async markPrinted(
+    id: string,
+    patch: {
+      billPrinted: boolean;
+      billPrintCount: number;
+      firstPrintDate: Date | null;
+      lastPrintDate: Date;
+    },
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = manager ? manager.getRepository(Sale) : this.repository;
+    const result = await repo.update(id, patch);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Sale ${id} not found`);
+    }
+  }
+
   async voidById(
     id: string,
     voidedByUserId: string,

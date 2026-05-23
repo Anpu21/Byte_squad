@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 
 import { PosService } from './pos.service';
 import { PosRepository } from './pos.repository';
+import { SaleRepository } from './sale.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
 import { ProductsRepository } from '@products/products.repository';
@@ -137,6 +138,7 @@ describe('PosService — Phase 4 read endpoints', () => {
   let inventoryRepo: jest.Mocked<InventoryRepository>;
   let posRepo: jest.Mocked<PosRepository>;
   let invoiceNumbers: jest.Mocked<InvoiceNumberService>;
+  let salesRepo: jest.Mocked<SaleRepository>;
 
   beforeEach(async () => {
     const posRepoMock: Partial<jest.Mocked<PosRepository>> = {
@@ -154,6 +156,10 @@ describe('PosService — Phase 4 read endpoints', () => {
     const invoiceNumbersMock: Partial<jest.Mocked<InvoiceNumberService>> = {
       peek: jest.fn(),
     };
+    const salesRepoMock: Partial<jest.Mocked<SaleRepository>> = {
+      findOneById: jest.fn(),
+      markPrinted: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -164,6 +170,7 @@ describe('PosService — Phase 4 read endpoints', () => {
         { provide: ProductsRepository, useValue: productsRepoMock },
         { provide: InventoryRepository, useValue: inventoryRepoMock },
         { provide: InvoiceNumberService, useValue: invoiceNumbersMock },
+        { provide: SaleRepository, useValue: salesRepoMock },
       ],
     }).compile();
 
@@ -172,6 +179,7 @@ describe('PosService — Phase 4 read endpoints', () => {
     inventoryRepo = module.get(InventoryRepository);
     posRepo = module.get(PosRepository);
     invoiceNumbers = module.get(InvoiceNumberService);
+    salesRepo = module.get(SaleRepository);
   });
 
   // -------------------------------------------------------------------
@@ -450,6 +458,127 @@ describe('PosService — Phase 4 read endpoints', () => {
       expect(invoiceNumbers.peek).toHaveBeenCalledWith(year);
       expect(result).toEqual({ invoiceNo: `INV-${year}-000042` });
       expect(result.invoiceNo).toMatch(/^INV-\d{4}-\d{6}$/);
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Task 6.1 — markPrinted
+  // -------------------------------------------------------------------
+  describe('markPrinted', () => {
+    it('increments billPrintCount, sets firstPrintDate on the first print, and refreshes lastPrintDate', async () => {
+      const initial = makeSale({
+        id: 'sale-1',
+        billPrinted: false,
+        billPrintCount: 0,
+        firstPrintDate: null,
+        lastPrintDate: null,
+        branchId: 'branch-A',
+      });
+      const refreshed = makeSale({
+        id: 'sale-1',
+        billPrinted: true,
+        billPrintCount: 1,
+        firstPrintDate: new Date('2026-05-23T12:00:00Z'),
+        lastPrintDate: new Date('2026-05-23T12:00:00Z'),
+        branchId: 'branch-A',
+      });
+      salesRepo.findOneById
+        .mockResolvedValueOnce(initial)
+        .mockResolvedValueOnce(refreshed);
+
+      const result = await service.markPrinted('sale-1', makeCashier());
+
+      expect(salesRepo.markPrinted).toHaveBeenCalledWith(
+        'sale-1',
+        expect.objectContaining({
+          billPrinted: true,
+          billPrintCount: 1,
+          firstPrintDate: expect.any(Date) as Date,
+          lastPrintDate: expect.any(Date) as Date,
+        }),
+      );
+      // firstPrintDate and lastPrintDate match on the first print.
+      const patchArg = salesRepo.markPrinted.mock.calls[0][1] as {
+        firstPrintDate: Date;
+        lastPrintDate: Date;
+      };
+      expect(patchArg.firstPrintDate.getTime()).toBe(
+        patchArg.lastPrintDate.getTime(),
+      );
+      expect(result).toBe(refreshed);
+    });
+
+    it('preserves firstPrintDate on subsequent prints and bumps the count', async () => {
+      const original = new Date('2026-05-22T09:00:00Z');
+      const initial = makeSale({
+        id: 'sale-2',
+        billPrinted: true,
+        billPrintCount: 2,
+        firstPrintDate: original,
+        lastPrintDate: new Date('2026-05-22T10:30:00Z'),
+        branchId: 'branch-A',
+      });
+      const refreshed = makeSale({
+        id: 'sale-2',
+        billPrinted: true,
+        billPrintCount: 3,
+        firstPrintDate: original,
+        lastPrintDate: new Date(),
+        branchId: 'branch-A',
+      });
+      salesRepo.findOneById
+        .mockResolvedValueOnce(initial)
+        .mockResolvedValueOnce(refreshed);
+
+      await service.markPrinted('sale-2', makeCashier());
+
+      const patchArg = salesRepo.markPrinted.mock.calls[0][1] as {
+        billPrintCount: number;
+        firstPrintDate: Date;
+      };
+      expect(patchArg.billPrintCount).toBe(3);
+      expect(patchArg.firstPrintDate).toBe(original);
+    });
+
+    it('throws NotFoundException when a cashier targets a sale on another branch', async () => {
+      const foreign = makeSale({
+        id: 'sale-x',
+        branchId: 'branch-B',
+      });
+      salesRepo.findOneById.mockResolvedValue(foreign);
+
+      await expect(
+        service.markPrinted('sale-x', makeCashier({ branchId: 'branch-A' })),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(salesRepo.markPrinted).not.toHaveBeenCalled();
+    });
+
+    it('lets an admin print a sale that lives on any branch', async () => {
+      const onAnotherBranch = makeSale({
+        id: 'sale-z',
+        branchId: 'branch-B',
+        billPrinted: false,
+        billPrintCount: 0,
+        firstPrintDate: null,
+      });
+      salesRepo.findOneById
+        .mockResolvedValueOnce(onAnotherBranch)
+        .mockResolvedValueOnce(onAnotherBranch);
+
+      await service.markPrinted('sale-z', makeAdmin({ branchId: 'branch-A' }));
+
+      expect(salesRepo.markPrinted).toHaveBeenCalledWith(
+        'sale-z',
+        expect.objectContaining({ billPrinted: true, billPrintCount: 1 }),
+      );
+    });
+
+    it('throws NotFoundException when no sale matches the id', async () => {
+      salesRepo.findOneById.mockResolvedValue(null);
+      await expect(
+        service.markPrinted('missing', makeCashier()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(salesRepo.markPrinted).not.toHaveBeenCalled();
     });
   });
 });
