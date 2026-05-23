@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { PosService } from './pos.service';
@@ -207,6 +208,37 @@ describe('PosService — Phase 4 read endpoints', () => {
       productsRepo.listUnits.mockResolvedValue([]);
       const result = await service.listProductUnits('p-1');
       expect(result).toEqual([]);
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Task 4.3 — getBaseUnitQty
+  // -------------------------------------------------------------------
+  describe('getBaseUnitQty', () => {
+    it('returns the conversion factor and isBase flag for a configured unit', async () => {
+      productsRepo.listUnits.mockResolvedValue([
+        makeUnit({ name: 'kg', isBase: true, conversionToBase: 1 }),
+        makeUnit({
+          id: 'u2',
+          name: 'g',
+          isBase: false,
+          conversionToBase: 0.001,
+        }),
+      ]);
+
+      const result = await service.getBaseUnitQty('p-1', 'g');
+
+      expect(result).toEqual({ conversionToBase: 0.001, isBase: false });
+    });
+
+    it('throws NotFoundException when the unit name is not configured', async () => {
+      productsRepo.listUnits.mockResolvedValue([
+        makeUnit({ name: 'kg', isBase: true, conversionToBase: 1 }),
+      ]);
+
+      await expect(service.getBaseUnitQty('p-1', 'lb')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 });

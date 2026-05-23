@@ -547,4 +547,28 @@ export class PosService {
       displayOrder: u.displayOrder ?? 0,
     }));
   }
+
+  /**
+   * Returns the conversion factor used to turn a typed quantity in
+   * `unitName` into the product's base-unit quantity. The cashier UI calls
+   * this to pre-validate stock before checkout (Shanel ships this as a
+   * separate endpoint even though the server also re-validates inside the
+   * sale transaction).
+   */
+  async getBaseUnitQty(
+    productId: string,
+    unitName: string,
+  ): Promise<{ conversionToBase: number; isBase: boolean }> {
+    const units = await this.listProductUnits(productId);
+    const match = units.find((u) => u.unitName === unitName);
+    if (!match) {
+      throw new NotFoundException(
+        `Unit ${unitName} not configured for product ${productId}`,
+      );
+    }
+    return {
+      conversionToBase: match.conversionToBase,
+      isBase: match.isBaseUnit,
+    };
+  }
 }

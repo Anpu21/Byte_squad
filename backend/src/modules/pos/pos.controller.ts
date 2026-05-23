@@ -115,4 +115,13 @@ export class PosController {
   ): Promise<ProductUnitRow[]> {
     return this.posService.listProductUnits(productId);
   }
+
+  @Get(APP_ROUTES.POS.BASE_UNIT_QTY)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  getBaseUnitQty(
+    @Param('productId') productId: string,
+    @Param('unitName') unitName: string,
+  ): Promise<{ conversionToBase: number; isBase: boolean }> {
+    return this.posService.getBaseUnitQty(productId, unitName);
+  }
 }
