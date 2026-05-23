@@ -18,6 +18,7 @@ import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { DiscountType } from '@common/enums/discount.enum';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
+import { InvoiceNumberService } from '@pos/services/invoice-number.service';
 import type {
   SearchProductRow,
   ProductUnitRow,
@@ -90,6 +91,7 @@ export class PosService {
     private readonly dataSource: DataSource,
     private readonly products: ProductsRepository,
     private readonly inventory: InventoryRepository,
+    private readonly invoiceNumbers: InvoiceNumberService,
   ) {}
 
   async createTransaction(
@@ -618,6 +620,19 @@ export class PosService {
     const branchId = actor.role === UserRole.ADMIN ? null : actor.branchId;
     const sales = await this.pos.findRecentSales(branchId, safeLimit);
     return sales.map(toRecentSaleRow);
+  }
+
+  /**
+   * Preview the next invoice number without advancing the counter. The
+   * cashier UI calls this while keying a sale; the authoritative number is
+   * still issued atomically inside `createSale` (Phase 5). Concurrent
+   * cashiers may briefly see the same preview — the UI reconciles on
+   * commit.
+   */
+  async previewNextInvoiceNumber(): Promise<{ invoiceNo: string }> {
+    const year = new Date().getFullYear();
+    const invoiceNo = await this.invoiceNumbers.peek(year);
+    return { invoiceNo };
   }
 }
 

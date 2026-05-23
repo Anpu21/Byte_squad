@@ -145,4 +145,10 @@ export class PosController {
     const parsedLimit = limit !== undefined ? Number(limit) : undefined;
     return this.posService.getRecentSales(actor, parsedLimit);
   }
+
+  @Get(APP_ROUTES.POS.GENERATE_INVOICE_NO)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  previewNextInvoiceNumber(): Promise<{ invoiceNo: string }> {
+    return this.posService.previewNextInvoiceNumber();
+  }
 }

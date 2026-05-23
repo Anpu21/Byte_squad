@@ -8,6 +8,7 @@ import { PosRepository } from './pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
 import { ProductsRepository } from '@products/products.repository';
+import { InvoiceNumberService } from './services/invoice-number.service';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Sale } from './entities/sale.entity';
@@ -129,6 +130,7 @@ describe('PosService — Phase 4 read endpoints', () => {
   let productsRepo: jest.Mocked<ProductsRepository>;
   let inventoryRepo: jest.Mocked<InventoryRepository>;
   let posRepo: jest.Mocked<PosRepository>;
+  let invoiceNumbers: jest.Mocked<InvoiceNumberService>;
 
   beforeEach(async () => {
     const posRepoMock: Partial<jest.Mocked<PosRepository>> = {
@@ -143,6 +145,9 @@ describe('PosService — Phase 4 read endpoints', () => {
     const inventoryRepoMock: Partial<jest.Mocked<InventoryRepository>> = {
       summaryForProduct: jest.fn(),
     };
+    const invoiceNumbersMock: Partial<jest.Mocked<InvoiceNumberService>> = {
+      peek: jest.fn(),
+    };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -152,6 +157,7 @@ describe('PosService — Phase 4 read endpoints', () => {
         { provide: DataSource, useValue: dataSourceMock },
         { provide: ProductsRepository, useValue: productsRepoMock },
         { provide: InventoryRepository, useValue: inventoryRepoMock },
+        { provide: InvoiceNumberService, useValue: invoiceNumbersMock },
       ],
     }).compile();
 
@@ -159,6 +165,7 @@ describe('PosService — Phase 4 read endpoints', () => {
     productsRepo = module.get(ProductsRepository);
     inventoryRepo = module.get(InventoryRepository);
     posRepo = module.get(PosRepository);
+    invoiceNumbers = module.get(InvoiceNumberService);
   });
 
   // -------------------------------------------------------------------
@@ -417,6 +424,22 @@ describe('PosService — Phase 4 read endpoints', () => {
 
       expect(result[0].customerName).toBe('Asha Perera');
       expect(result[0].customerUserId).toBe('u-7');
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Task 4.6 — previewNextInvoiceNumber
+  // -------------------------------------------------------------------
+  describe('previewNextInvoiceNumber', () => {
+    it('returns the formatted next invoice number for the current year', async () => {
+      const year = new Date().getFullYear();
+      invoiceNumbers.peek.mockResolvedValue(`INV-${year}-000042`);
+
+      const result = await service.previewNextInvoiceNumber();
+
+      expect(invoiceNumbers.peek).toHaveBeenCalledWith(year);
+      expect(result).toEqual({ invoiceNo: `INV-${year}-000042` });
+      expect(result.invoiceNo).toMatch(/^INV-\d{4}-\d{6}$/);
     });
   });
 });
