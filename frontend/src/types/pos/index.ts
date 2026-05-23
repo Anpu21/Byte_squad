@@ -17,3 +17,4 @@ export type {
   ICreateSalePaymentPayload,
 } from './create-sale-payload.type';
 export type { IMultiTenderBag } from './multi-tender-bag.type';
+export type { ICustomerSearchRow } from './customer-search-row.type';

@@ -8,6 +8,7 @@ import type {
   IRecentSaleRow,
   IInvoiceNumberResponse,
   ICreateSalePayload,
+  ICustomerSearchRow,
 } from '@/types';
 
 /**
@@ -100,6 +101,17 @@ export const posService = {
     const response = await api.post<IApiResponse<ISale>>(
       `/pos/sales/${saleId}/void`,
       { reason },
+    );
+    return response.data.data;
+  },
+
+  searchCustomers: async (
+    q: string,
+    limit = 10,
+  ): Promise<ICustomerSearchRow[]> => {
+    const response = await api.get<IApiResponse<ICustomerSearchRow[]>>(
+      '/pos/customers/search',
+      { params: { q, limit } },
     );
     return response.data.data;
   },
