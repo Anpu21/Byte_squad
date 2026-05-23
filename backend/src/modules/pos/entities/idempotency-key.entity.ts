@@ -8,7 +8,7 @@ import {
   Index,
 } from 'typeorm';
 
-import { Transaction } from '@pos/entities/transaction.entity';
+import { Sale } from '@pos/entities/sale.entity';
 
 // Stores the X-Idempotency-Key sent by the POS client and the resulting
 // transaction id. A second request with the same (cashier, key) pair returns
@@ -23,12 +23,12 @@ export class IdempotencyKey {
   @Column({ type: 'uuid', name: 'cashier_id' })
   cashierId!: string;
 
-  @Column({ type: 'uuid', name: 'transaction_id' })
-  transactionId!: string;
+  @Column({ type: 'uuid', name: 'sale_id' })
+  saleId!: string;
 
-  @ManyToOne(() => Transaction, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'transaction_id' })
-  transaction!: Transaction;
+  @ManyToOne(() => Sale, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'sale_id' })
+  sale!: Sale;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

@@ -10,13 +10,13 @@ import {
 
 import { Branch } from '@branches/entities/branch.entity';
 import { User } from '@users/entities/user.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { TransactionType } from '@/common/enums/transaction.enum';
 import { DiscountType } from '@/common/enums/discount.enum';
 import { PaymentMethod } from '@/common/enums/payment-method';
 
-@Entity('transactions')
-export class Transaction {
+@Entity('sales')
+export class Sale {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -81,10 +81,10 @@ export class Transaction {
   })
   paymentMethod!: PaymentMethod;
 
-  @OneToMany(() => TransactionItem, (item) => item.transaction, {
+  @OneToMany(() => SaleItem, (item) => item.sale, {
     cascade: true,
   })
-  items!: TransactionItem[];
+  items!: SaleItem[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

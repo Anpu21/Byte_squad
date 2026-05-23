@@ -6,22 +6,22 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { DiscountType } from '@/common/enums/discount.enum';
-import { Transaction } from '@pos/entities/transaction.entity';
+import { Sale } from '@pos/entities/sale.entity';
 import { Product } from '@products/entities/product.entity';
 
-@Entity('transaction_items')
-export class TransactionItem {
+@Entity('sale_items')
+export class SaleItem {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid', name: 'transaction_id' })
-  transactionId!: string;
+  @Column({ type: 'uuid', name: 'sale_id' })
+  saleId!: string;
 
-  @ManyToOne(() => Transaction, (transaction) => transaction.items, {
+  @ManyToOne(() => Sale, (sale) => sale.items, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'transaction_id' })
-  transaction!: Transaction;
+  @JoinColumn({ name: 'sale_id' })
+  sale!: Sale;
 
   @Column({ type: 'uuid', name: 'product_id' })
   productId!: string;

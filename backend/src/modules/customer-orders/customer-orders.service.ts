@@ -27,7 +27,7 @@ import { UsersRepository } from '@users/users.repository';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
-import { Transaction } from '@pos/entities/transaction.entity';
+import { Sale } from '@pos/entities/sale.entity';
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
 import { CustomerOrderPaymentMode } from '@common/enums/customer-order-payment-mode.enum';
 import { CustomerOrderPaymentStatus } from '@common/enums/customer-order-payment-status.enum';
@@ -423,7 +423,7 @@ export class CustomerOrdersService {
     code: string,
     dto: FulfillCustomerOrderDto,
     actor: StaffActor,
-  ): Promise<{ order: CustomerOrder; transaction: Transaction | null }> {
+  ): Promise<{ order: CustomerOrder; transaction: Sale | null }> {
     const order = await this.findByCode(code);
     if (
       order.status !== CustomerOrderStatus.PENDING &&
@@ -595,7 +595,7 @@ export class CustomerOrdersService {
     actorId: string;
     paymentMethod: PaymentMethod;
     effective: EffectiveOrderItem[];
-  }): Promise<Transaction> {
+  }): Promise<Sale> {
     if (params.effective.length === 0) {
       throw new BadRequestException('No items to fulfill');
     }
@@ -668,7 +668,7 @@ export class CustomerOrdersService {
         amount: savedTx.total,
         description: `Customer pickup ${params.order.orderCode} - ${savedTx.transactionNumber}`,
         referenceNumber: savedTx.transactionNumber,
-        transactionId: savedTx.id,
+        saleId: savedTx.id,
       });
     }
 

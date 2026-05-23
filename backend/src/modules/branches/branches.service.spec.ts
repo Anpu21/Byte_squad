@@ -17,8 +17,8 @@ import {
   PendingBranchActionType,
 } from './entities/pending-branch-action.entity';
 import { User } from '@users/entities/user.entity';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { EmailService } from '@/modules/email/email.service';
@@ -142,8 +142,8 @@ describe('BranchesService — two-step mutations', () => {
           provide: getRepositoryToken(User),
           useValue: { findOne: jest.fn().mockResolvedValue(adminUser) },
         },
-        { provide: getRepositoryToken(Transaction), useValue: {} },
-        { provide: getRepositoryToken(TransactionItem), useValue: {} },
+        { provide: getRepositoryToken(Sale), useValue: {} },
+        { provide: getRepositoryToken(SaleItem), useValue: {} },
         { provide: getRepositoryToken(Inventory), useValue: {} },
         { provide: getRepositoryToken(Expense), useValue: {} },
       ],

@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Inventory } from '@inventory/entities/inventory.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 
 @Entity('products')
 export class Product {
@@ -41,8 +41,8 @@ export class Product {
   @OneToMany(() => Inventory, (inventory) => inventory.product)
   inventoryRecords!: Inventory[];
 
-  @OneToMany(() => TransactionItem, (item) => item.product)
-  transactionItems!: TransactionItem[];
+  @OneToMany(() => SaleItem, (item) => item.product)
+  transactionItems!: SaleItem[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

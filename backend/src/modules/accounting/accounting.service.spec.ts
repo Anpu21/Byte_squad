@@ -11,8 +11,8 @@ import { AccountingRepository } from './accounting.repository';
 import { Expense } from './entities/expense.entity';
 import { ExpenseStatus } from '@common/enums/expense-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 
 describe('AccountingService', () => {
   let service: AccountingService;
@@ -36,8 +36,8 @@ describe('AccountingService', () => {
       providers: [
         AccountingService,
         { provide: AccountingRepository, useValue: repoMock },
-        { provide: getRepositoryToken(Transaction), useValue: {} },
-        { provide: getRepositoryToken(TransactionItem), useValue: {} },
+        { provide: getRepositoryToken(Sale), useValue: {} },
+        { provide: getRepositoryToken(SaleItem), useValue: {} },
       ],
     }).compile();
 

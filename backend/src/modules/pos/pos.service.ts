@@ -5,8 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, QueryFailedError } from 'typeorm';
-import { Transaction } from '@pos/entities/transaction.entity.js';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
@@ -73,15 +73,15 @@ export class PosService {
     cashierId: string,
     branchId: string,
     idempotencyKey?: string,
-  ): Promise<Transaction> {
+  ): Promise<Sale> {
     const trimmedKey = idempotencyKey?.trim();
     if (trimmedKey) {
       const existing = await this.pos.findIdempotencyKey(cashierId, trimmedKey);
       if (existing) {
         this.logger.log(
-          `Idempotency replay: cashier=${cashierId} key=${trimmedKey} → txn=${existing.transactionId}`,
+          `Idempotency replay: cashier=${cashierId} key=${trimmedKey} → sale=${existing.saleId}`,
         );
-        const replay = await this.findById(existing.transactionId);
+        const replay = await this.findById(existing.saleId);
         if (!replay) {
           throw new NotFoundException('Original transaction no longer exists');
         }
@@ -153,8 +153,8 @@ export class PosService {
         }
       }
 
-      const txnRepo = manager.getRepository(Transaction);
-      const itemRepo = manager.getRepository(TransactionItem);
+      const txnRepo = manager.getRepository(Sale);
+      const itemRepo = manager.getRepository(SaleItem);
       const txn = await txnRepo.save(
         txnRepo.create({
           transactionNumber,
@@ -170,7 +170,7 @@ export class PosService {
         }),
       );
       await itemRepo.save(
-        items.map((it) => itemRepo.create({ ...it, transactionId: txn.id })),
+        items.map((it) => itemRepo.create({ ...it, saleId: txn.id })),
       );
 
       if (Number(txn.total) > 0) {
@@ -180,7 +180,7 @@ export class PosService {
           amount: txn.total,
           description: `POS Sale — ${txn.transactionNumber}`,
           referenceNumber: txn.transactionNumber,
-          transactionId: txn.id,
+          saleId: txn.id,
         });
       }
 
@@ -192,7 +192,7 @@ export class PosService {
         await this.pos.insertIdempotencyKey({
           key: trimmedKey,
           cashierId,
-          transactionId: saved.id,
+          saleId: saved.id,
         });
       } catch (err) {
         if (err instanceof QueryFailedError) {
@@ -200,11 +200,11 @@ export class PosService {
             cashierId,
             trimmedKey,
           );
-          if (winning && winning.transactionId !== saved.id) {
+          if (winning && winning.saleId !== saved.id) {
             this.logger.warn(
-              `Idempotency race: cashier=${cashierId} key=${trimmedKey} kept=${winning.transactionId} discarded=${saved.id}`,
+              `Idempotency race: cashier=${cashierId} key=${trimmedKey} kept=${winning.saleId} discarded=${saved.id}`,
             );
-            const replay = await this.findById(winning.transactionId);
+            const replay = await this.findById(winning.saleId);
             if (replay) return replay;
           }
         }
@@ -215,11 +215,11 @@ export class PosService {
     return saved;
   }
 
-  async findAll(branchId: string): Promise<Transaction[]> {
+  async findAll(branchId: string): Promise<Sale[]> {
     return this.pos.findTransactionsByBranch(branchId);
   }
 
-  async findById(id: string): Promise<Transaction | null> {
+  async findById(id: string): Promise<Sale | null> {
     return this.pos.findTransactionById(id);
   }
 

@@ -2,8 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Branch } from '@branches/entities/branch.entity';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Product } from '@products/entities/product.entity';
 import { Expense } from '@accounting/entities/expense.entity';
@@ -19,7 +19,7 @@ import { TransactionType } from '@common/enums/transaction.enum';
 // domain repo. Simple read-by-id / count-by-branch operations go through the
 // extracted repos below; bespoke aggregations (sales × products × expenses
 // joined for per-branch comparison) stay inline with @InjectRepository on
-// Transaction / TransactionItem / Product / Expense to avoid bloating those
+// Sale / SaleItem / Product / Expense to avoid bloating those
 // repos with admin-only reporting helpers.
 
 import {
@@ -65,10 +65,10 @@ export class AdminPortalService {
     private readonly branches: BranchesRepository,
     private readonly users: UsersRepository,
     private readonly inventory: InventoryRepository,
-    @InjectRepository(Transaction)
-    private readonly transactionRepo: Repository<Transaction>,
-    @InjectRepository(TransactionItem)
-    private readonly transactionItemRepo: Repository<TransactionItem>,
+    @InjectRepository(Sale)
+    private readonly transactionRepo: Repository<Sale>,
+    @InjectRepository(SaleItem)
+    private readonly transactionItemRepo: Repository<SaleItem>,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
     @InjectRepository(Expense)
@@ -411,7 +411,7 @@ export class AdminPortalService {
       this.users.countByBranch(branch.id),
       this.transactionItemRepo
         .createQueryBuilder('item')
-        .innerJoin('item.transaction', 'txn')
+        .innerJoin('item.sale', 'txn')
         .innerJoin('item.product', 'product')
         .select('product.id', 'productId')
         .addSelect('product.name', 'productName')

@@ -33,8 +33,8 @@ export class LedgerEntry {
   @Column({ type: 'varchar', name: 'reference_number' })
   referenceNumber!: string;
 
-  @Column({ type: 'uuid', name: 'transaction_id', nullable: true })
-  transactionId!: string | null;
+  @Column({ type: 'uuid', name: 'sale_id', nullable: true })
+  saleId!: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

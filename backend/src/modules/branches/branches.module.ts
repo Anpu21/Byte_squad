@@ -7,8 +7,8 @@ import { PendingBranchActionsRepository } from '@branches/pending-branch-actions
 import { Branch } from '@branches/entities/branch.entity';
 import { PendingBranchAction } from '@branches/entities/pending-branch-action.entity';
 import { User } from '@users/entities/user.entity';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { EmailModule } from '@/modules/email/email.module';
@@ -24,8 +24,8 @@ import { EmailModule } from '@/modules/email/email.module';
       Branch,
       PendingBranchAction,
       User,
-      Transaction,
-      TransactionItem,
+      Sale,
+      SaleItem,
       Inventory,
       Expense,
     ]),

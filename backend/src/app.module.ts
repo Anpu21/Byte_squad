@@ -22,8 +22,8 @@ import { Branch } from '@branches/entities/branch.entity';
 import { PendingBranchAction } from '@branches/entities/pending-branch-action.entity';
 import { Product } from '@products/entities/product.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
@@ -56,8 +56,8 @@ import appConfig from '@common/config/app.config';
       PendingBranchAction,
       Product,
       Inventory,
-      Transaction,
-      TransactionItem,
+      Sale,
+      SaleItem,
       IdempotencyKey,
       LedgerEntry,
       Expense,

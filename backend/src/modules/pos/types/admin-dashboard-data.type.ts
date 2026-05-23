@@ -1,4 +1,4 @@
-import { Transaction } from '@pos/entities/transaction.entity';
+import { Sale } from '@pos/entities/sale.entity';
 import { DailyBreakdown } from '@pos/types/daily-breakdown.type';
 import { TopProduct } from '@pos/types/top-product.type';
 
@@ -24,5 +24,5 @@ export interface AdminDashboardData {
   };
   dailyBreakdown: DailyBreakdown[];
   topProducts: TopProduct[];
-  recentTransactions: Transaction[];
+  recentTransactions: Sale[];
 }

@@ -5,8 +5,8 @@ import { DataSource, QueryFailedError } from 'typeorm';
 import { PosService } from './pos.service';
 import { PosRepository } from './pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
-import { Transaction } from './entities/transaction.entity';
-import { TransactionItem } from './entities/transaction-item.entity';
+import { Sale } from './entities/sale.entity';
+import { SaleItem } from './entities/sale-item.entity';
 import { IdempotencyKey } from './entities/idempotency-key.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { TransactionType } from '@common/enums/transaction.enum';
@@ -22,8 +22,8 @@ interface InventoryQB {
 }
 
 interface TxnHarness {
-  savedTxn: Transaction | null;
-  savedItems: TransactionItem[];
+  savedTxn: Sale | null;
+  savedItems: SaleItem[];
   ledgerCalls: Array<Record<string, unknown>>;
   inventoryByProductId: Map<string, Inventory>;
   inventorySaves: Inventory[];
@@ -71,18 +71,18 @@ function makeManager(harness: TxnHarness, txnId = 'txn-new'): unknown {
   };
 
   const transactionRepo = {
-    create: jest.fn((data: Partial<Transaction>) => data),
-    save: jest.fn((data: Partial<Transaction>) => {
-      harness.savedTxn = { ...data, id: txnId } as Transaction;
+    create: jest.fn((data: Partial<Sale>) => data),
+    save: jest.fn((data: Partial<Sale>) => {
+      harness.savedTxn = { ...data, id: txnId } as Sale;
       return Promise.resolve(harness.savedTxn);
     }),
   };
 
   const itemRepo = {
-    create: jest.fn((data: Partial<TransactionItem>) => data),
-    save: jest.fn((rows: Array<Partial<TransactionItem>>) => {
+    create: jest.fn((data: Partial<SaleItem>) => data),
+    save: jest.fn((rows: Array<Partial<SaleItem>>) => {
       const persisted = rows.map(
-        (r, idx) => ({ ...r, id: `ti-${idx + 1}` }) as TransactionItem,
+        (r, idx) => ({ ...r, id: `ti-${idx + 1}` }) as SaleItem,
       );
       harness.savedItems.push(...persisted);
       return Promise.resolve(persisted);
@@ -92,8 +92,8 @@ function makeManager(harness: TxnHarness, txnId = 'txn-new'): unknown {
   return {
     getRepository: jest.fn((entity: unknown) => {
       if (entity === Inventory) return inventoryRepo;
-      if (entity === Transaction) return transactionRepo;
-      if (entity === TransactionItem) return itemRepo;
+      if (entity === Sale) return transactionRepo;
+      if (entity === SaleItem) return itemRepo;
       throw new Error('Unexpected entity in transaction mock');
     }),
   };
@@ -169,11 +169,11 @@ describe('PosService.createTransaction', () => {
 
   it('returns the original transaction when the same idempotency key replays', async () => {
     pos.findIdempotencyKey.mockResolvedValue({
-      transactionId: 'txn-existing',
+      saleId: 'txn-existing',
     } as IdempotencyKey);
     pos.findTransactionById.mockResolvedValue({
       id: 'txn-existing',
-    } as Transaction);
+    } as Sale);
 
     const result = await service.createTransaction(
       baseDto,
@@ -188,7 +188,7 @@ describe('PosService.createTransaction', () => {
 
   it('throws NotFoundException when the idempotency key points at a missing transaction', async () => {
     pos.findIdempotencyKey.mockResolvedValue({
-      transactionId: 'gone',
+      saleId: 'gone',
     } as IdempotencyKey);
     pos.findTransactionById.mockResolvedValue(null);
 
@@ -213,7 +213,7 @@ describe('PosService.createTransaction', () => {
     expect(pos.insertIdempotencyKey).toHaveBeenCalledWith({
       key: 'idem-key',
       cashierId: 'cashier-1',
-      transactionId: 'txn-new',
+      saleId: 'txn-new',
     });
     expect(accounting.createLedgerEntryWithManager).toHaveBeenCalledWith(
       expect.anything(),
@@ -224,7 +224,7 @@ describe('PosService.createTransaction', () => {
 
   it('falls back to the race-winning transaction on unique-violation', async () => {
     pos.findIdempotencyKey.mockResolvedValueOnce(null).mockResolvedValueOnce({
-      transactionId: 'txn-winner',
+      saleId: 'txn-winner',
     } as IdempotencyKey);
     mockSale({
       inventory: [{ productId: 'p1', quantity: 10 }],
@@ -234,7 +234,7 @@ describe('PosService.createTransaction', () => {
     pos.insertIdempotencyKey.mockRejectedValue(violation);
     pos.findTransactionById.mockResolvedValue({
       id: 'txn-winner',
-    } as Transaction);
+    } as Sale);
 
     const result = await service.createTransaction(
       baseDto,

@@ -15,7 +15,7 @@ import { Roles } from '@common/decorators/roles.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { APP_ROUTES } from '@common/routes/app.routes';
-import { Transaction } from '@pos/entities/transaction.entity';
+import { Sale } from '@pos/entities/sale.entity';
 import type {
   CashierDashboardData,
   AdminDashboardData,
@@ -65,7 +65,7 @@ export class PosController {
     @CurrentUser('id') cashierId: string,
     @CurrentUser('branchId') branchId: string,
     @Headers('x-idempotency-key') idempotencyKey?: string,
-  ): Promise<Transaction> {
+  ): Promise<Sale> {
     return this.posService.createTransaction(
       createTransactionDto,
       cashierId,
@@ -75,12 +75,12 @@ export class PosController {
   }
 
   @Get(APP_ROUTES.POS.TRANSACTIONS)
-  findAll(@CurrentUser('branchId') branchId: string): Promise<Transaction[]> {
+  findAll(@CurrentUser('branchId') branchId: string): Promise<Sale[]> {
     return this.posService.findAll(branchId);
   }
 
   @Get(APP_ROUTES.POS.TRANSACTION_BY_ID)
-  findOne(@Param('id') id: string): Promise<Transaction | null> {
+  findOne(@Param('id') id: string): Promise<Sale | null> {
     return this.posService.findById(id);
   }
 }
