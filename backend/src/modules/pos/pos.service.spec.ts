@@ -6,6 +6,7 @@ import { DataSource } from 'typeorm';
 import { PosService } from './pos.service';
 import { PosRepository } from './pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
+import { InventoryRepository } from '@inventory/inventory.repository';
 import { ProductsRepository } from '@products/products.repository';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
@@ -30,6 +31,16 @@ function makeCashier(overrides: Partial<ActorPayload> = {}): ActorPayload {
     id: 'cashier-1',
     email: 'cashier@example.com',
     role: UserRole.CASHIER,
+    branchId: 'branch-A',
+    ...overrides,
+  };
+}
+
+function makeAdmin(overrides: Partial<ActorPayload> = {}): ActorPayload {
+  return {
+    id: 'admin-1',
+    email: 'admin@example.com',
+    role: UserRole.ADMIN,
     branchId: 'branch-A',
     ...overrides,
   };
@@ -77,6 +88,7 @@ function makeUnit(
 describe('PosService — Phase 4 read endpoints', () => {
   let service: PosService;
   let productsRepo: jest.Mocked<ProductsRepository>;
+  let inventoryRepo: jest.Mocked<InventoryRepository>;
 
   beforeEach(async () => {
     const posRepoMock = {} as PosRepository;
@@ -86,6 +98,9 @@ describe('PosService — Phase 4 read endpoints', () => {
       searchByText: jest.fn(),
       listUnits: jest.fn(),
     };
+    const inventoryRepoMock: Partial<jest.Mocked<InventoryRepository>> = {
+      summaryForProduct: jest.fn(),
+    };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -94,11 +109,13 @@ describe('PosService — Phase 4 read endpoints', () => {
         { provide: AccountingRepository, useValue: accountingRepoMock },
         { provide: DataSource, useValue: dataSourceMock },
         { provide: ProductsRepository, useValue: productsRepoMock },
+        { provide: InventoryRepository, useValue: inventoryRepoMock },
       ],
     }).compile();
 
     service = module.get(PosService);
     productsRepo = module.get(ProductsRepository);
+    inventoryRepo = module.get(InventoryRepository);
   });
 
   // -------------------------------------------------------------------
@@ -239,6 +256,57 @@ describe('PosService — Phase 4 read endpoints', () => {
       await expect(service.getBaseUnitQty('p-1', 'lb')).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Task 4.4 — getProductInventory
+  // -------------------------------------------------------------------
+  describe('getProductInventory', () => {
+    it('scopes a cashier to their own branch and surfaces the cross-branch total', async () => {
+      inventoryRepo.summaryForProduct.mockResolvedValue({
+        productId: 'p-1',
+        branchId: 'branch-A',
+        branchName: 'Branch A',
+        branchQty: 12,
+        totalAcrossBranches: 47,
+      });
+
+      const result = await service.getProductInventory(makeCashier(), 'p-1');
+
+      expect(inventoryRepo.summaryForProduct).toHaveBeenCalledWith(
+        'p-1',
+        'branch-A',
+      );
+      expect(result).toEqual({
+        productId: 'p-1',
+        branchId: 'branch-A',
+        branchName: 'Branch A',
+        branchQty: 12,
+        totalAcrossBranches: 47,
+      });
+    });
+
+    it('lets an admin pull another branch row via their assigned branchId', async () => {
+      inventoryRepo.summaryForProduct.mockResolvedValue({
+        productId: 'p-1',
+        branchId: 'branch-B',
+        branchName: 'Branch B',
+        branchQty: 30,
+        totalAcrossBranches: 47,
+      });
+
+      const result = await service.getProductInventory(
+        makeAdmin({ branchId: 'branch-B' }),
+        'p-1',
+      );
+
+      expect(inventoryRepo.summaryForProduct).toHaveBeenCalledWith(
+        'p-1',
+        'branch-B',
+      );
+      expect(result.branchQty).toBe(30);
+      expect(result.totalAcrossBranches).toBe(47);
     });
   });
 });

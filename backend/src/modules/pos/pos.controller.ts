@@ -24,6 +24,7 @@ import type {
   CashierTransactionsSummary,
   SearchProductRow,
   ProductUnitRow,
+  InventoryQuantity,
 } from '@pos/types';
 
 interface ActorPayload {
@@ -123,5 +124,14 @@ export class PosController {
     @Param('unitName') unitName: string,
   ): Promise<{ conversionToBase: number; isBase: boolean }> {
     return this.posService.getBaseUnitQty(productId, unitName);
+  }
+
+  @Get(APP_ROUTES.POS.PRODUCT_INVENTORY)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  getProductInventory(
+    @CurrentUser() actor: ActorPayload,
+    @Param('productId') productId: string,
+  ): Promise<InventoryQuantity> {
+    return this.posService.getProductInventory(actor, productId);
   }
 }

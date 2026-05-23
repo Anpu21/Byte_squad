@@ -12,12 +12,17 @@ import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { ProductsRepository } from '@products/products.repository';
+import { InventoryRepository } from '@inventory/inventory.repository';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { DiscountType } from '@common/enums/discount.enum';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
-import type { SearchProductRow, ProductUnitRow } from '@pos/types';
+import type {
+  SearchProductRow,
+  ProductUnitRow,
+  InventoryQuantity,
+} from '@pos/types';
 
 /**
  * Shape of `@CurrentUser()` payloads injected into POS endpoints. Mirrors the
@@ -83,6 +88,7 @@ export class PosService {
     private readonly accounting: AccountingRepository,
     private readonly dataSource: DataSource,
     private readonly products: ProductsRepository,
+    private readonly inventory: InventoryRepository,
   ) {}
 
   async createTransaction(
@@ -569,6 +575,28 @@ export class PosService {
     return {
       conversionToBase: match.conversionToBase,
       isBase: match.isBaseUnit,
+    };
+  }
+
+  /**
+   * Branch-scoped inventory snapshot for a single product. Non-admin
+   * actors only ever see their own branch's `branchQty`; admins use their
+   * primary `branchId` as the scope (or get an unscoped snapshot when
+   * they have no primary branch). `totalAcrossBranches` is always the sum
+   * across every inventory row regardless of scope.
+   */
+  async getProductInventory(
+    actor: ActorPayload,
+    productId: string,
+  ): Promise<InventoryQuantity> {
+    const branchId = actor.branchId;
+    const summary = await this.inventory.summaryForProduct(productId, branchId);
+    return {
+      productId: summary.productId,
+      branchId: summary.branchId,
+      branchName: summary.branchName,
+      branchQty: summary.branchQty,
+      totalAcrossBranches: summary.totalAcrossBranches,
     };
   }
 }

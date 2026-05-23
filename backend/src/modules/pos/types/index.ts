@@ -19,3 +19,4 @@ export type { PaymentMethod as PosPaymentMethod } from './payment-method.type';
 // Phase 4 — Shanel-aligned row types for the cashier read endpoints.
 export type { SearchProductRow } from './search-product-row.type';
 export type { ProductUnitRow } from './product-unit-row.type';
+export type { InventoryQuantity } from './inventory-quantity.type';
