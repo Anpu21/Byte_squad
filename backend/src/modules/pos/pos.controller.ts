@@ -17,6 +17,7 @@ import { PosVoidService } from '@pos/pos-void.service';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto';
 import { CreateSaleDto } from '@pos/dto/create-sale.dto';
 import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
+import { SearchCustomersQueryDto } from '@pos/dto/search-customers-query.dto';
 import { VoidSaleDto } from '@pos/dto/void-sale.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -181,11 +182,9 @@ export class PosController {
   @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
   searchCustomers(
     @CurrentUser() actor: ActorPayload,
-    @Query('q') q?: string,
-    @Query('limit') limit?: string,
+    @Query() query: SearchCustomersQueryDto,
   ): Promise<CustomerSearchRow[]> {
-    const parsedLimit = limit !== undefined ? Number(limit) : undefined;
-    return this.posService.searchCustomers(actor, q ?? '', parsedLimit);
+    return this.posService.searchCustomers(actor, query);
   }
 
   // -------------------------------------------------------------------

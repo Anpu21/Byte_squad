@@ -9,6 +9,7 @@ import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
 import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
+import { SearchCustomersQueryDto } from '@pos/dto/search-customers-query.dto';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { ProductsRepository } from '@products/products.repository';
@@ -555,12 +556,15 @@ export class PosService {
    */
   async searchCustomers(
     _actor: ActorPayload,
-    q: string,
-    limit?: number,
+    dto: SearchCustomersQueryDto,
   ): Promise<CustomerSearchRow[]> {
-    const term = (q ?? '').trim();
+    const term = (dto.q ?? '').trim();
     if (!term) return [];
-    const bounded = Math.max(1, Math.min(limit ?? 10, 50));
+    // Belt-and-suspenders clamp: the DTO already bounds `limit` via
+    // class-validator (1..50, default 10) at the controller layer, but the
+    // service is also called directly from tests/other callers, so keep
+    // the explicit clamp here so misuse can't yield an unbounded LIMIT.
+    const bounded = Math.max(1, Math.min(dto.limit ?? 10, 50));
     const rows = await this.users.searchCustomersByText(term, bounded);
     return rows.map((u) => ({
       userId: u.id,

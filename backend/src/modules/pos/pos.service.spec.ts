@@ -620,7 +620,10 @@ describe('PosService — Phase 4 read endpoints', () => {
   // -------------------------------------------------------------------
   describe('searchCustomers', () => {
     it('returns an empty array when the trimmed query is empty', async () => {
-      const result = await service.searchCustomers(makeCashier(), '   ', 10);
+      const result = await service.searchCustomers(makeCashier(), {
+        q: '   ',
+        limit: 10,
+      });
       expect(result).toEqual([]);
       expect(usersRepo.searchCustomersByText).not.toHaveBeenCalled();
     });
@@ -639,7 +642,10 @@ describe('PosService — Phase 4 read endpoints', () => {
         }),
       ]);
 
-      const result = await service.searchCustomers(makeCashier(), 'ja', 5);
+      const result = await service.searchCustomers(makeCashier(), {
+        q: 'ja',
+        limit: 5,
+      });
 
       expect(usersRepo.searchCustomersByText).toHaveBeenCalledWith('ja', 5);
       expect(result).toEqual([
@@ -657,10 +663,13 @@ describe('PosService — Phase 4 read endpoints', () => {
     it('defaults limit to 10 when omitted and clamps absurd limits to 50', async () => {
       usersRepo.searchCustomersByText.mockResolvedValue([]);
 
-      await service.searchCustomers(makeCashier(), 'a');
+      await service.searchCustomers(makeCashier(), { q: 'a' });
       expect(usersRepo.searchCustomersByText).toHaveBeenLastCalledWith('a', 10);
 
-      await service.searchCustomers(makeCashier(), 'b', 9999);
+      // The DTO normally bounds limit to [1, 50] via class-validator at
+      // the controller layer; this case exercises the in-service clamp
+      // that protects callers (like tests) bypassing the DTO validator.
+      await service.searchCustomers(makeCashier(), { q: 'b', limit: 9999 });
       expect(usersRepo.searchCustomersByText).toHaveBeenLastCalledWith('b', 50);
     });
   });
