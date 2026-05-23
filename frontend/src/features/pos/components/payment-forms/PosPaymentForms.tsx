@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
-import { usePosCreateSale } from '@/features/pos/hooks/usePosCreateSale';
+import { usePaymentSubmit } from '@/features/pos/hooks/usePaymentSubmit';
 import { tryCalculateMultiTender } from '@/features/pos/lib/multi-tender';
 import { PosPaymentMethod } from '@/features/pos/components/payment-method/PosPaymentMethod';
 import { PosPaymentFormSwitch } from './PosPaymentFormSwitch';
@@ -11,13 +11,11 @@ import { PosTenderSummary } from './PosTenderSummary';
 import { PosPaymentBanners } from './PosPaymentBanners';
 import {
     createInitialTenderBag,
-    buildSalePayload,
     resolveTenderInputs,
     type ITenderBag,
 } from './pos-payment-forms.helpers';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type {
-    ICreateSalePayload,
     ISale,
     TPaymentMethod,
     TPriceLevel,
@@ -41,16 +39,14 @@ export interface IPosPaymentFormsProps {
 
 /**
  * Charge modal that wires the cashier's tender bag and cart into one
- * `POST /pos/sales` call. Wrapped in the shared `<Modal>` primitive.
- *
- * Lifecycle:
- *  - On each open we reset the bag and mint a fresh idempotency key via
- *    an adjust-during-render anchor (no setState-in-effect).
- *  - Charge stays disabled when the calc returns null (overpay without
- *    keep-balance), the tender is empty, or the cart is empty.
- *  - Success: `onSaleCreated(sale)` then close. Failure: keep the modal
- *    open with a danger banner; the same key is reused so a backend
- *    duplicate guard returns the same Sale id on retry.
+ * `POST /pos/sales` call. Submission lives in `usePaymentSubmit`; this
+ * orchestrator owns local UI state (method, bag, idempotency anchor) and
+ * the multi-tender calc that drives the summary + Charge enablement. On
+ * open we reset the bag + mint a fresh idempotency key via an adjust-
+ * during-render anchor. Charge stays disabled when the calc is null
+ * (overpay without keep-balance), the tender is empty, or the cart is
+ * empty. On failure the modal stays open and reuses the same key so the
+ * backend duplicate guard returns the same Sale id on retry.
  */
 export function PosPaymentForms({
     isOpen,
@@ -76,59 +72,30 @@ export function PosPaymentForms({
         }
     }
 
-    const createSale = usePosCreateSale();
     const tenderInputs = useMemo(
         () => resolveTenderInputs(paymentMethod, bag, invoiceTotal),
         [paymentMethod, bag, invoiceTotal],
     );
     const calc = useMemo(() => tryCalculateMultiTender(tenderInputs), [tenderInputs]);
-    // Probe whether the typed tender amounts *would* overpay. The probe
-    // forces `keepBalance: true` so the overpay guard inside
-    // calculateMultiTender is bypassed — letting the cashier opt in to the
-    // toggle is the whole point of the checkbox. Without this probe,
-    // cheque/bank overpay (where credit === 0) traps the user: `calc` is
-    // null because keepBalance is false, but they cannot enable
-    // keepBalance because `canKeepBalance` was gated on `calc`. Cash
-    // overpay already caps cashAmount at invoiceTotal, and credit overpay
-    // skips the guard via `credit > 0`, so this fix specifically unlocks
-    // cheque + bank-transfer overpay scenarios.
+    // Probe whether the typed tender amounts *would* overpay. Forcing
+    // `keepBalance: true` bypasses the overpay guard so the checkbox can
+    // unlock cheque/bank overpay (where credit === 0 leaves `calc` null).
     const overpayProbe = useMemo(
-        () =>
-            tryCalculateMultiTender({
-                ...tenderInputs,
-                keepBalance: true,
-            }),
+        () => tryCalculateMultiTender({ ...tenderInputs, keepBalance: true }),
         [tenderInputs],
     );
+
+    const submit = usePaymentSubmit({
+        cart, customerUserId, saleType, priceLevel, cartDiscountPercentage,
+        paymentMethod, bag, tenderInputs, idempotencyKey, onSaleCreated, onClose,
+    });
 
     const hasError = calc === null;
     const canKeepBalance =
         overpayProbe !== null && overpayProbe.paymentAmount > invoiceTotal;
     const isEmptyTender = calc !== null && calc.paymentAmount === 0;
     const disableCharge =
-        createSale.isPending || hasError || isEmptyTender || cart.length === 0;
-
-    const handleCharge = async () => {
-        if (!calc) return;
-        const payload: ICreateSalePayload = buildSalePayload({
-            cart,
-            customerUserId,
-            saleType,
-            priceLevel,
-            cartDiscountPercentage,
-            paymentMethod,
-            paymentAmount: calc.paymentAmount,
-            bag,
-            cashAmount: tenderInputs.cashAmount,
-        });
-        try {
-            const sale = await createSale.mutateAsync({ payload, idempotencyKey });
-            onSaleCreated(sale);
-            onClose();
-        } catch {
-            // Stay open; banner renders below from `createSale.error`.
-        }
-    };
+        submit.isPending || hasError || isEmptyTender || cart.length === 0;
 
     return (
         <Modal
@@ -169,7 +136,7 @@ export function PosPaymentForms({
 
                 <PosPaymentBanners
                     hasMultiTenderError={hasError}
-                    mutationError={createSale.error as Error | null}
+                    mutationError={submit.error}
                 />
 
                 <div className="flex items-center justify-end gap-2 pt-1">
@@ -177,17 +144,17 @@ export function PosPaymentForms({
                         type="button"
                         variant="secondary"
                         onClick={onClose}
-                        disabled={createSale.isPending}
+                        disabled={submit.isPending}
                     >
                         Cancel
                     </Button>
                     <Button
                         type="button"
-                        onClick={handleCharge}
+                        onClick={() => calc && submit.handleCharge(calc.paymentAmount)}
                         disabled={disableCharge}
                     >
                         {chargeButtonLabel(
-                            createSale.isPending,
+                            submit.isPending,
                             calc?.paidAmount ?? 0,
                             calc?.balanceDue ?? 0,
                         )}
