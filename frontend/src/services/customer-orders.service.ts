@@ -6,7 +6,7 @@ import type {
     ICustomerOrderCreatePayload,
     IFulfillOrderPayload,
     CustomerOrderStatus,
-    ITransaction,
+    ISale,
 } from '@/types';
 
 interface ListOrdersQuery {
@@ -84,11 +84,11 @@ export const customerOrdersService = {
     fulfill: async (
         code: string,
         payload: IFulfillOrderPayload,
-    ): Promise<{ order: ICustomerOrder; transaction: ITransaction | null }> => {
+    ): Promise<{ order: ICustomerOrder; transaction: ISale | null }> => {
         const response = await api.post<
             IApiResponse<{
                 order: ICustomerOrder;
-                transaction: ITransaction | null;
+                transaction: ISale | null;
             }>
         >(`/customer-orders/code/${code}/fulfill`, payload);
         return response.data.data;

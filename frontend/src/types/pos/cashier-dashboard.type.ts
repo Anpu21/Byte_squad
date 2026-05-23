@@ -1,5 +1,5 @@
 import type { IDailyBreakdown } from '@/types/pos/daily-breakdown.type'
-import type { ITransaction } from '@/types/pos/transaction.type'
+import type { ISale } from '@/types/pos/sale.type'
 
 export interface ICashierDashboard {
   today: {
@@ -12,5 +12,5 @@ export interface ICashierDashboard {
     transactionCount: number
   }
   dailyBreakdown: IDailyBreakdown[]
-  recentTransactions: ITransaction[]
+  recentTransactions: ISale[]
 }

@@ -1,6 +1,6 @@
 import type { IDailyBreakdown } from '@/types/pos/daily-breakdown.type'
 import type { ITopProduct } from '@/types/pos/top-product.type'
-import type { ITransaction } from '@/types/pos/transaction.type'
+import type { ISale } from '@/types/pos/sale.type'
 
 export interface IAdminDashboard {
   today: {
@@ -24,5 +24,5 @@ export interface IAdminDashboard {
   }
   dailyBreakdown: IDailyBreakdown[]
   topProducts: ITopProduct[]
-  recentTransactions: ITransaction[]
+  recentTransactions: ISale[]
 }

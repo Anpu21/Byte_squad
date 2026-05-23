@@ -4,7 +4,7 @@ import type {
   PaymentMethod,
 } from '@/constants/enums'
 
-export interface ITransaction {
+export interface ISale {
   id: string
   transactionNumber: string
   branchId: string

@@ -1,5 +1,5 @@
-export * from './transaction.type'
-export * from './transaction-item.type'
+export * from './sale.type'
+export * from './sale-item.type'
 export * from './daily-breakdown.type'
 export * from './top-product.type'
 export * from './admin-dashboard.type'

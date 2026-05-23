@@ -3,7 +3,7 @@ import type {
     IApiResponse,
     ICashierDashboard,
     IAdminDashboard,
-    ITransaction,
+    ISale,
     ICashierTransactionsSummary,
 } from '@/types';
 
@@ -46,14 +46,14 @@ export const posService = {
     createTransaction: async (
         payload: ICreateTransactionPayload,
         idempotencyKey?: string,
-    ): Promise<ITransaction> => {
+    ): Promise<ISale> => {
         // The X-Idempotency-Key header lets the backend safely de-dupe a
         // retried request. Even if the backend currently ignores it, sending
         // the header is harmless and lets the FE drive a single semantic sale.
         const config = idempotencyKey
             ? { headers: { 'X-Idempotency-Key': idempotencyKey } }
             : undefined;
-        const response = await api.post<IApiResponse<ITransaction>>(
+        const response = await api.post<IApiResponse<ISale>>(
             '/pos/transactions',
             payload,
             config,
@@ -61,8 +61,8 @@ export const posService = {
         return response.data.data;
     },
 
-    getTransactions: async (): Promise<ITransaction[]> => {
-        const response = await api.get<IApiResponse<ITransaction[]>>('/pos/transactions');
+    getTransactions: async (): Promise<ISale[]> => {
+        const response = await api.get<IApiResponse<ISale[]>>('/pos/transactions');
         return response.data.data;
     },
 };

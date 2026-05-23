@@ -1,8 +1,8 @@
 import type { DiscountType } from '@/constants/enums'
 
-export interface ITransactionItem {
+export interface ISaleItem {
   id: string
-  transactionId: string
+  saleId: string
   productId: string
   quantity: number
   unitPrice: number
