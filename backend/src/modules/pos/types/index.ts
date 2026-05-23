@@ -11,3 +11,7 @@ export type { SaleStatus } from './sale-status.type';
 export type { SalePaymentStatus } from './sale-payment-status.type';
 export type { PriceLevel } from './price-level.type';
 export type { SaleType } from './sale-type.type';
+// Re-exported as `PosPaymentMethod` to avoid clashing with the existing
+// `PaymentMethod` enum at `@common/enums/payment-method` used by
+// customer-orders.
+export type { PaymentMethod as PosPaymentMethod } from './payment-method.type';
