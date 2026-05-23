@@ -878,6 +878,10 @@ export class AdminSeedService implements OnModuleInit {
 
         const transaction = this.transactionRepository.create({
           transactionNumber: txnNumber,
+          // PHASE-5: replace with InvoiceNumberService.next() once the seed
+          // migrates to PosWriteService.createSale. Until then mirror the
+          // transactionNumber so the NOT NULL + UNIQUE constraint is satisfied.
+          invoiceNumber: txnNumber,
           branchId,
           cashierId: cashier.id,
           type: TransactionType.SALE,
