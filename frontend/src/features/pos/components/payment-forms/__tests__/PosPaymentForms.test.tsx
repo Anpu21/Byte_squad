@@ -324,6 +324,149 @@ describe('PosPaymentForms', () => {
         expect(submitted.payload.payment.paymentAmount).toBe(150);
     });
 
+    it('enables the keep-balance toggle on cheque overpay so the cashier can opt into customer credit', async () => {
+        const persisted = makePersistedSale();
+        const mutateAsync = vi
+            .fn<(args: IMutateArgs) => Promise<ISale>>()
+            .mockResolvedValue(persisted);
+        usePosCreateSaleMock.mockReturnValue({
+            mutateAsync,
+            isPending: false,
+            error: null,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
+
+        renderModal({
+            invoiceTotal: 100,
+            customerUserId: 'cust-1',
+        });
+
+        // Switch to Cheque method.
+        const chequeRadio = screen.getByRole('radio', { name: /cheque/i });
+        await userEvent.click(chequeRadio);
+
+        // Cart total Rs 100, customer hands a cheque worth Rs 150. Pre-fix
+        // this would lock the modal: `calc` is null (overpay+!keepBalance+
+        // credit=0) so canKeepBalance evaluated to false and the checkbox
+        // was disabled. The probe-based fix lets the user opt in.
+        const chequeAmountInput = screen.getByLabelText('Cheque amount');
+        await userEvent.clear(chequeAmountInput);
+        await userEvent.type(chequeAmountInput, '150');
+
+        // The keep-balance checkbox should be enabled even though the live
+        // calc is currently null.
+        const keepBalanceBox = screen.getByLabelText(
+            'Keep balance as customer credit',
+        );
+        await waitFor(() => {
+            expect(keepBalanceBox).toBeEnabled();
+        });
+
+        // Toggle keep-balance on; this should unlock the calc and surface
+        // the surplus as "Kept as credit".
+        await userEvent.click(keepBalanceBox);
+
+        const summary = screen.getByRole('region', {
+            name: /tender summary/i,
+        });
+        await waitFor(() => {
+            const keptCell = Array.from(summary.children).find((node) =>
+                node.textContent?.includes('Kept as credit'),
+            );
+            expect(keptCell?.textContent).toMatch(/LKR\s*50\.00/);
+        });
+
+        // Charge button is now enabled and submits the cheque overpay
+        // payload with keepBalance=true so the backend can record the
+        // Rs 50 surplus as customer credit.
+        const chargeButton = screen.getByRole('button', {
+            name: /^Charge\s+LKR/i,
+        });
+        expect(chargeButton).toBeEnabled();
+        await userEvent.click(chargeButton);
+
+        await waitFor(() => {
+            expect(mutateAsync).toHaveBeenCalledTimes(1);
+        });
+
+        const submitted = mutateAsync.mock.calls[0]?.[0];
+        if (!submitted) throw new Error('mutateAsync was not called');
+        expect(submitted.payload.payment).toMatchObject({
+            paymentMethod: 'Cheque',
+            chequeAmount: 150,
+            keepBalance: true,
+        });
+        expect(submitted.payload.payment.paymentAmount).toBe(150);
+    });
+
+    it('enables the keep-balance toggle on bank-transfer overpay so the cashier can opt into customer credit', async () => {
+        const persisted = makePersistedSale();
+        const mutateAsync = vi
+            .fn<(args: IMutateArgs) => Promise<ISale>>()
+            .mockResolvedValue(persisted);
+        usePosCreateSaleMock.mockReturnValue({
+            mutateAsync,
+            isPending: false,
+            error: null,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
+
+        renderModal({
+            invoiceTotal: 100,
+            customerUserId: 'cust-1',
+        });
+
+        // Switch to Bank transfer method.
+        const bankRadio = screen.getByRole('radio', { name: /bank/i });
+        await userEvent.click(bankRadio);
+
+        // Cart total Rs 100, customer wires Rs 150 (common in Sri Lankan
+        // retail where transfers are rounded up). Without the probe-based
+        // fix the user could not opt into keep-balance because `calc` was
+        // null on overpay+!keepBalance+credit=0.
+        const bankAmountInput = screen.getByLabelText('Bank transfer amount');
+        await userEvent.clear(bankAmountInput);
+        await userEvent.type(bankAmountInput, '150');
+
+        const keepBalanceBox = screen.getByLabelText(
+            'Keep balance as customer credit',
+        );
+        await waitFor(() => {
+            expect(keepBalanceBox).toBeEnabled();
+        });
+
+        await userEvent.click(keepBalanceBox);
+
+        const summary = screen.getByRole('region', {
+            name: /tender summary/i,
+        });
+        await waitFor(() => {
+            const keptCell = Array.from(summary.children).find((node) =>
+                node.textContent?.includes('Kept as credit'),
+            );
+            expect(keptCell?.textContent).toMatch(/LKR\s*50\.00/);
+        });
+
+        const chargeButton = screen.getByRole('button', {
+            name: /^Charge\s+LKR/i,
+        });
+        expect(chargeButton).toBeEnabled();
+        await userEvent.click(chargeButton);
+
+        await waitFor(() => {
+            expect(mutateAsync).toHaveBeenCalledTimes(1);
+        });
+
+        const submitted = mutateAsync.mock.calls[0]?.[0];
+        if (!submitted) throw new Error('mutateAsync was not called');
+        expect(submitted.payload.payment).toMatchObject({
+            paymentMethod: 'Bank',
+            bankTransferAmount: 150,
+            keepBalance: true,
+        });
+        expect(submitted.payload.payment.paymentAmount).toBe(150);
+    });
+
     it('keeps the modal open and surfaces an error banner when the mutation rejects', async () => {
         const failure = new Error('Insufficient stock for product P001');
         const mutateAsync = vi

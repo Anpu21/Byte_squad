@@ -101,6 +101,13 @@ export function calculateMultiTender(
  * Non-throwing wrapper for UI use. Returns `null` when the inputs are
  * invalid (overpay without keepBalance + no credit) so the consumer can
  * disable the Charge button without try/catch.
+ *
+ * Note: to decide whether the user *could* enable keep-balance, callers
+ * should probe with `{ ...input, keepBalance: true }`. That probe never
+ * throws because the overpay guard is bypassed when keepBalance is true,
+ * so the probe answers "would enabling the toggle resolve the overpay?"
+ * without the chicken-and-egg loop where the live calc is null on
+ * overpay + !keepBalance + credit === 0.
  */
 export function tryCalculateMultiTender(
     input: IMultiTenderInputs,

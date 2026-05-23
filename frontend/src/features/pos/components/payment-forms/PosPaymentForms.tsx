@@ -82,9 +82,28 @@ export function PosPaymentForms({
         [paymentMethod, bag, invoiceTotal],
     );
     const calc = useMemo(() => tryCalculateMultiTender(tenderInputs), [tenderInputs]);
+    // Probe whether the typed tender amounts *would* overpay. The probe
+    // forces `keepBalance: true` so the overpay guard inside
+    // calculateMultiTender is bypassed — letting the cashier opt in to the
+    // toggle is the whole point of the checkbox. Without this probe,
+    // cheque/bank overpay (where credit === 0) traps the user: `calc` is
+    // null because keepBalance is false, but they cannot enable
+    // keepBalance because `canKeepBalance` was gated on `calc`. Cash
+    // overpay already caps cashAmount at invoiceTotal, and credit overpay
+    // skips the guard via `credit > 0`, so this fix specifically unlocks
+    // cheque + bank-transfer overpay scenarios.
+    const overpayProbe = useMemo(
+        () =>
+            tryCalculateMultiTender({
+                ...tenderInputs,
+                keepBalance: true,
+            }),
+        [tenderInputs],
+    );
 
     const hasError = calc === null;
-    const canKeepBalance = calc !== null && calc.paymentAmount > invoiceTotal;
+    const canKeepBalance =
+        overpayProbe !== null && overpayProbe.paymentAmount > invoiceTotal;
     const isEmptyTender = calc !== null && calc.paymentAmount === 0;
     const disableCharge =
         createSale.isPending || hasError || isEmptyTender || cart.length === 0;
