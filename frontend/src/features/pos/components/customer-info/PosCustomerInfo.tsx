@@ -12,6 +12,12 @@ import type { ICustomerSearchRow } from '@/types';
 interface IPosCustomerInfoProps {
     customerUserId: string | null;
     onPick: (userId: string | null) => void;
+    /**
+     * Monotonically-increasing signal token. When this changes, the picker
+     * modal opens. Lets the F4 shortcut from `PosActionButtons` open the
+     * picker without lifting the modal state out of this component.
+     */
+    openPickerSignal?: number;
 }
 
 const toSnapshot = (row: ICustomerSearchRow): IPosCustomerSnapshot => ({
@@ -31,6 +37,7 @@ const toSnapshot = (row: ICustomerSearchRow): IPosCustomerSnapshot => ({
 export function PosCustomerInfo({
     customerUserId,
     onPick,
+    openPickerSignal,
 }: IPosCustomerInfoProps) {
     const [pickerOpen, setPickerOpen] = useState(false);
     const [snapshot, setSnapshot] = useState<IPosCustomerSnapshot | null>(
@@ -48,6 +55,23 @@ export function PosCustomerInfo({
     if (customerUserId !== observedId) {
         setObservedId(customerUserId);
         if (customerUserId === null && snapshot !== null) setSnapshot(null);
+    }
+
+    // Adjust-during-render anchor for external picker-open requests (F4).
+    // We track the signal token; when the parent bumps it, we open the
+    // picker exactly once per change without depending on effects.
+    const [observedSignal, setObservedSignal] = useState<number | undefined>(
+        openPickerSignal,
+    );
+    if (openPickerSignal !== observedSignal) {
+        setObservedSignal(openPickerSignal);
+        if (
+            openPickerSignal !== undefined &&
+            observedSignal !== undefined &&
+            !pickerOpen
+        ) {
+            setPickerOpen(true);
+        }
     }
 
     const handleDetach = async () => {

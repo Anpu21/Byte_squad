@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type RefObject } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type { ISearchProductRow, TPriceLevel } from '@/types';
@@ -26,6 +26,11 @@ interface IPosItemTableProps {
     removeItem: (rowId: string) => void;
     priceLevel: TPriceLevel;
     setPriceLevel: (next: TPriceLevel) => void;
+    /**
+     * Optional external ref to the search input so the parent can fire
+     * imperative focus (F2 shortcut, post-checkout refocus).
+     */
+    searchInputRef?: RefObject<HTMLInputElement | null>;
 }
 
 const HEADERS: { label: string; align?: 'left' | 'right' | 'center' }[] = [
@@ -58,6 +63,7 @@ export function PosItemTable({
     removeItem,
     priceLevel,
     setPriceLevel,
+    searchInputRef,
 }: IPosItemTableProps) {
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -113,6 +119,7 @@ export function PosItemTable({
                         onChange={setQuery}
                         onDebouncedChange={setDebouncedQuery}
                         isSearching={searchQuery.isFetching}
+                        inputRef={searchInputRef}
                     />
                     {isDropdownOpen && (
                         <div className="absolute left-0 right-0 top-full mt-1">
