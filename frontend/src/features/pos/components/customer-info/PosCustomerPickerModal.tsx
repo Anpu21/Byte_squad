@@ -49,13 +49,18 @@ export function PosCustomerPickerModal({
         return () => clearTimeout(handle);
     }, [query, debounceMs]);
 
-    // Reset state on close so the next open starts clean.
-    useEffect(() => {
+    // Reset state when the modal transitions from open to closed so the
+    // next mount starts clean. We anchor `isOpen` and adjust during render
+    // rather than via an effect to avoid the cascading-render lint and
+    // skip the extra render cycle a useEffect reset would introduce.
+    const [wasOpen, setWasOpen] = useState(isOpen);
+    if (isOpen !== wasOpen) {
+        setWasOpen(isOpen);
         if (!isOpen) {
             setQuery('');
             setDebouncedQuery('');
         }
-    }, [isOpen]);
+    }
 
     const { data, isLoading, isError } = usePosCustomerSearch(
         debouncedQuery,

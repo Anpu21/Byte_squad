@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { UserRound, Phone, X } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Pill from '@/components/ui/Pill';
@@ -43,13 +43,20 @@ export function PosCustomerInfo({
     const confirm = useConfirm();
 
     // Keep the snapshot consistent with the parent's id — if the parent
-    // detaches the customer between renders (e.g., via a clear-cart flow),
-    // drop the snapshot so the empty state shows.
-    useEffect(() => {
+    // detaches the customer externally (e.g., via a clear-cart flow), drop
+    // the snapshot so the empty state shows. Anchor the parent's last
+    // observed value so we only react to *changes* and don't fight a
+    // freshly-set snapshot that the parent hasn't yet lifted into its own
+    // state (the picker calls setSnapshot + onPick in the same tick).
+    const [lastObservedId, setLastObservedId] = useState<string | null>(
+        customerUserId,
+    );
+    if (customerUserId !== lastObservedId) {
+        setLastObservedId(customerUserId);
         if (customerUserId === null && snapshot !== null) {
             setSnapshot(null);
         }
-    }, [customerUserId, snapshot]);
+    }
 
     const handleDetach = async () => {
         const ok = await confirm({

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type { IProductUnitRow } from '@/types';
@@ -37,29 +37,45 @@ interface INumericBounds {
  * store policy demands.
  */
 export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
+    // Per-cell string buffers preserve in-progress entries like `0.` or
+    // `.5` so the controlled input never collapses a partial decimal to
+    // `0`. We track the upstream numeric value alongside the buffer so a
+    // sibling update (line-math recompute, unit switch) re-seeds the
+    // buffer without trampling unrelated cells. This is the React
+    // "Storing the previous value" pattern — adjusting state during render
+    // — instead of an effect, which would either cascade renders or fight
+    // the no-setState-in-effect lint rule.
     const [qtyBuffer, setQtyBuffer] = useState<string>(String(item.quantity));
+    const [qtyAnchor, setQtyAnchor] = useState<number>(item.quantity);
+    if (item.quantity !== qtyAnchor) {
+        setQtyAnchor(item.quantity);
+        setQtyBuffer(String(item.quantity));
+    }
+
     const [freeBuffer, setFreeBuffer] = useState<string>(String(item.free));
+    const [freeAnchor, setFreeAnchor] = useState<number>(item.free);
+    if (item.free !== freeAnchor) {
+        setFreeAnchor(item.free);
+        setFreeBuffer(String(item.free));
+    }
+
     const [discBuffer, setDiscBuffer] = useState<string>(
         String(item.discountPercentage),
     );
-    const [taxBuffer, setTaxBuffer] = useState<string>(String(item.taxRate));
-
-    // Sync buffers when the upstream item changes (line-math recompute,
-    // unit switch, merge with a sibling row, etc.). Each effect is keyed
-    // on the specific field so unrelated upstream updates don't stomp the
-    // user's in-flight edit on another cell.
-    useEffect(() => {
-        setQtyBuffer(String(item.quantity));
-    }, [item.quantity]);
-    useEffect(() => {
-        setFreeBuffer(String(item.free));
-    }, [item.free]);
-    useEffect(() => {
+    const [discAnchor, setDiscAnchor] = useState<number>(
+        item.discountPercentage,
+    );
+    if (item.discountPercentage !== discAnchor) {
+        setDiscAnchor(item.discountPercentage);
         setDiscBuffer(String(item.discountPercentage));
-    }, [item.discountPercentage]);
-    useEffect(() => {
+    }
+
+    const [taxBuffer, setTaxBuffer] = useState<string>(String(item.taxRate));
+    const [taxAnchor, setTaxAnchor] = useState<number>(item.taxRate);
+    if (item.taxRate !== taxAnchor) {
+        setTaxAnchor(item.taxRate);
         setTaxBuffer(String(item.taxRate));
-    }, [item.taxRate]);
+    }
 
     const clamp = (value: number, bounds: INumericBounds): number => {
         const lower = Math.max(value, bounds.min);
