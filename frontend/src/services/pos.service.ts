@@ -97,6 +97,13 @@ export const posService = {
     return response.data.data;
   },
 
+  findSaleById: async (saleId: string): Promise<ISale | null> => {
+    const response = await api.get<IApiResponse<ISale | null>>(
+      `/pos/transactions/${saleId}`,
+    );
+    return response.data.data;
+  },
+
   voidSale: async (saleId: string, reason: string): Promise<ISale> => {
     const response = await api.post<IApiResponse<ISale>>(
       `/pos/sales/${saleId}/void`,

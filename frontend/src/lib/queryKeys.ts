@@ -144,6 +144,7 @@ export const queryKeys = {
         invoiceNumber: () => ['pos', 'invoiceNumber'] as const,
         customerSearch: (q: string, limit: number) =>
             ['pos', 'customerSearch', q, limit] as const,
+        saleById: (saleId: string) => ['pos', 'saleById', saleId] as const,
     },
 } as const;
 
