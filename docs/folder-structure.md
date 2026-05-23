@@ -114,9 +114,11 @@ frontend/src/
 ├── constants/
 │   ├── enums.ts                    # NotificationType, UserRole, … (mirror of backend enums)
 │   └── routes.ts                   # FRONTEND_ROUTES — single source of paths
+├── features/                       # Feature-scoped UI + hooks + lib + types
+│   └── pos/                        # Cashier checkout workspace (see below)
 ├── hooks/                          # One hook per file — useAuth, useConfirm, useTheme, useNotifications, …
 ├── layouts/                        # AuthLayout, DashboardLayout, CustomerLayout
-├── lib/                            # utils.ts, exportUtils.ts (lazy jspdf/xlsx loaders)
+├── lib/                            # utils.ts, exportUtils.ts (lazy jspdf/xlsx loaders), queryKeys.ts
 ├── pages/                          # Route-level pages, grouped by feature folder
 │   ├── accounting/
 │   ├── admin/
@@ -125,7 +127,7 @@ frontend/src/
 │   ├── dashboard/
 │   ├── inventory/
 │   ├── notifications/
-│   ├── pos/
+│   ├── pos/                        # PosPage.tsx (cashier), ScanOrderPage.tsx, TransactionsPage.tsx
 │   ├── requests/
 │   ├── shop/
 │   ├── transfers/
@@ -143,6 +145,31 @@ frontend/src/
 ├── test/
 │   └── setup.ts                    # Vitest setup — jest-dom matchers + cleanup
 └── types/                          # See "Frontend types" below
+```
+
+### POS workspace (`features/pos/`)
+
+Nine Shanel-shaped sections, plus hooks / lib / types. Page entry is `pages/pos/PosPage.tsx`. See `docs/architecture-frontend.md` for the surface guide.
+
+```
+frontend/src/features/pos/
+├── components/
+│   ├── action-buttons/              # F-key shortcut row
+│   ├── bill-template/               # Print template + portal-to-body host + preview modal
+│   ├── customer-info/               # Walk-in default + picker modal + snapshot card
+│   ├── information-box/             # Invoice no / cashier / branch / date-time card
+│   ├── invoice-total/               # Subtotals, discounts, tax, grand total
+│   ├── item-table/                  # Search input, results, sticky cart, numeric cells, unit + price-level
+│   ├── payment-forms/               # Cash / cheque / bank-transfer / credit forms + keep-balance + banners + summary
+│   ├── payment-method/              # Tender segmented control (CASH / CHEQUE / BANK_TRANSFER / CREDIT / MULTIPLE)
+│   └── recent-sale/                 # Sidebar of recent sales with reprint
+├── hooks/                           # usePosCart, usePosPageState, usePosBarcodeScan, usePaymentSubmit,
+│                                    # usePrintReceipt, usePosProductSearch, usePosProductUnits,
+│                                    # usePosProductInventory, usePosRecentSales, usePosInvoiceNumber,
+│                                    # usePosCustomerSearch, usePosSaleById, usePosCreateSale,
+│                                    # usePosVoidSale, usePosMarkPrinted
+├── lib/                             # cart-item-seed, line-total, multi-tender (mirror of backend math)
+└── types/                           # (note: domain types live under @/types/pos — this folder is for feature-private types only)
 ```
 
 ### Mandatory UI primitives (`components/ui/`)
