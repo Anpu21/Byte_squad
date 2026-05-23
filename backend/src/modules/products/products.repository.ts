@@ -58,4 +58,23 @@ export class ProductsRepository {
   async setActive(id: string, isActive: boolean): Promise<void> {
     await this.repo.update(id, { isActive });
   }
+
+  /**
+   * Prefix-match active products by name OR barcode for the POS cashier
+   * typeahead. ILIKE keeps the lookup case-insensitive; we anchor on
+   * `${term}%` so an empty term short-circuits to "starts with anything"
+   * which the caller filters out separately. Results are sorted by name
+   * (deterministic) and capped at `limit`.
+   */
+  async searchByText(term: string, limit: number): Promise<Product[]> {
+    return this.repo
+      .createQueryBuilder('p')
+      .where('p.is_active = true')
+      .andWhere('(p.name ILIKE :pattern OR p.barcode ILIKE :pattern)', {
+        pattern: `${term}%`,
+      })
+      .orderBy('p.name', 'ASC')
+      .limit(limit)
+      .getMany();
+  }
 }

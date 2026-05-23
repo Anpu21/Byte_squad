@@ -15,3 +15,6 @@ export type { SaleType } from './sale-type.type';
 // `PaymentMethod` enum at `@common/enums/payment-method` used by
 // customer-orders.
 export type { PaymentMethod as PosPaymentMethod } from './payment-method.type';
+
+// Phase 4 — Shanel-aligned row types for the cashier read endpoints.
+export type { SearchProductRow } from './search-product-row.type';

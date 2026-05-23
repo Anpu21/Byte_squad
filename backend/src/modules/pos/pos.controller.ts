@@ -4,11 +4,13 @@ import {
   Post,
   Body,
   Param,
+  Query,
   UseGuards,
   Headers,
 } from '@nestjs/common';
 import { PosService } from '@pos/pos.service.js';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto';
+import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -20,7 +22,15 @@ import type {
   CashierDashboardData,
   AdminDashboardData,
   CashierTransactionsSummary,
+  SearchProductRow,
 } from '@pos/types';
+
+interface ActorPayload {
+  id: string;
+  email: string;
+  role: UserRole;
+  branchId: string | null;
+}
 
 @Controller(APP_ROUTES.POS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -82,5 +92,18 @@ export class PosController {
   @Get(APP_ROUTES.POS.TRANSACTION_BY_ID)
   findOne(@Param('id') id: string): Promise<Sale | null> {
     return this.posService.findById(id);
+  }
+
+  // -------------------------------------------------------------------
+  // Phase 4 — Shanel-aligned read endpoints
+  // -------------------------------------------------------------------
+
+  @Get(APP_ROUTES.POS.SEARCH_PRODUCTS)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  searchProducts(
+    @CurrentUser() actor: ActorPayload,
+    @Query() query: SearchProductsQueryDto,
+  ): Promise<SearchProductRow[]> {
+    return this.posService.searchProducts(actor, query);
   }
 }

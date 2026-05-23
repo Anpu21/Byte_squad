@@ -8,12 +8,28 @@ import { DataSource, QueryFailedError } from 'typeorm';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
+import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
+import { ProductsRepository } from '@products/products.repository';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { DiscountType } from '@common/enums/discount.enum';
 import { TransactionType } from '@common/enums/transaction.enum';
+import { UserRole } from '@common/enums/user-roles.enums';
+import type { SearchProductRow } from '@pos/types';
+
+/**
+ * Shape of `@CurrentUser()` payloads injected into POS endpoints. Mirrors the
+ * decorator's inline type (see `common/decorators/current-user.decorator.ts`)
+ * without leaking the decorator's private interface into this file.
+ */
+interface ActorPayload {
+  id: string;
+  email: string;
+  role: UserRole;
+  branchId: string | null;
+}
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -66,6 +82,7 @@ export class PosService {
     private readonly pos: PosRepository,
     private readonly accounting: AccountingRepository,
     private readonly dataSource: DataSource,
+    private readonly products: ProductsRepository,
   ) {}
 
   async createTransaction(
@@ -469,5 +486,45 @@ export class PosService {
         createdAt: t.createdAt,
       })),
     };
+  }
+
+  // ---------------------------------------------------------------------
+  // Phase 4 — Shanel-aligned read endpoints
+  // ---------------------------------------------------------------------
+
+  /**
+   * Prefix-search active products by name or barcode for the cashier
+   * typeahead. Empty query short-circuits to `[]` so the UI can clear its
+   * dropdown without hitting the DB.
+   *
+   * `actor` is accepted for future branch-scoping (e.g. only return products
+   * stocked at the cashier's branch) — today the query is global because
+   * cashiers can sell any active product as long as inventory exists.
+   */
+  async searchProducts(
+    _actor: ActorPayload,
+    dto: SearchProductsQueryDto,
+  ): Promise<SearchProductRow[]> {
+    const term = (dto.q ?? '').trim();
+    if (!term) return [];
+    const limit = dto.limit ?? 10;
+    const rows = await this.products.searchByText(term, limit);
+    return rows.map((p) => ({
+      productId: p.id,
+      productCode: p.barcode,
+      productName: p.name,
+      productType: p.category,
+      // `Product` does not yet model a multi-unit base; default to 'each' so
+      // the row shape stays Shanel-compatible. Per-product sellable units
+      // come through `GET /pos/products/:id/units`.
+      baseUnit: 'each',
+      status: p.isActive,
+      costPrice: Number(p.costPrice),
+      retailPrice: Number(p.sellingPrice),
+      wholesalePrice: Number(p.wholesalePrice),
+      taxRate: Number(p.taxRate),
+      discountAllowed: p.discountAllowed,
+      imageUrl: p.imageUrl,
+    }));
   }
 }
