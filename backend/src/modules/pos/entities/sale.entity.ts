@@ -14,6 +14,12 @@ import { SaleItem } from '@pos/entities/sale-item.entity';
 import { TransactionType } from '@/common/enums/transaction.enum';
 import { DiscountType } from '@/common/enums/discount.enum';
 import { PaymentMethod } from '@/common/enums/payment-method';
+import type {
+  SaleStatus,
+  SalePaymentStatus,
+  PriceLevel,
+  SaleType,
+} from '@pos/types';
 
 @Entity('sales')
 export class Sale {
@@ -81,6 +87,94 @@ export class Sale {
   })
   paymentMethod!: PaymentMethod;
 
+  // -----------------------------------------------------------------
+  // Phase 2 — Shanel-port columns
+  // -----------------------------------------------------------------
+  @Column({ type: 'varchar', length: 32, name: 'sale_type', default: 'Retail' })
+  saleType!: SaleType;
+
+  @Column({
+    type: 'varchar',
+    length: 32,
+    name: 'price_level',
+    default: 'Retail',
+  })
+  priceLevel!: PriceLevel;
+
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    name: 'discount_percentage',
+    default: 0,
+  })
+  discountPercentage!: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    name: 'tax_rate',
+    default: 0,
+  })
+  taxRate!: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'paid_amount',
+    default: 0,
+  })
+  paidAmount!: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'balance_due',
+    default: 0,
+  })
+  balanceDue!: number;
+
+  @Column({
+    type: 'varchar',
+    length: 32,
+    name: 'payment_status',
+    default: 'Unpaid',
+  })
+  paymentStatus!: SalePaymentStatus;
+
+  @Column({ type: 'varchar', length: 32, default: 'Active' })
+  status!: SaleStatus;
+
+  @Column({ type: 'varchar', length: 64, default: 'Shop' })
+  location!: string;
+
+  @Column({ type: 'uuid', name: 'customer_user_id', nullable: true })
+  customerUserId!: string | null;
+
+  @ManyToOne(() => User, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'customer_user_id' })
+  customer!: User | null;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'voided_reason',
+    nullable: true,
+  })
+  voidedReason!: string | null;
+
+  @Column({ type: 'timestamp', name: 'voided_at', nullable: true })
+  voidedAt!: Date | null;
+
+  @Column({ type: 'uuid', name: 'voided_by_user_id', nullable: true })
+  voidedByUserId!: string | null;
+
+  // -----------------------------------------------------------------
+  // Existing print-tracking & relations
+  // -----------------------------------------------------------------
   @OneToMany(() => SaleItem, (item) => item.sale, {
     cascade: true,
   })
