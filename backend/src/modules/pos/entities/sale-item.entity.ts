@@ -8,6 +8,7 @@ import {
 import { DiscountType } from '@/common/enums/discount.enum';
 import { Sale } from '@pos/entities/sale.entity';
 import { Product } from '@products/entities/product.entity';
+import type { PriceLevel } from '@pos/types';
 
 @Entity('sale_items')
 export class SaleItem {
@@ -57,4 +58,65 @@ export class SaleItem {
 
   @Column({ type: 'decimal', precision: 12, scale: 2, name: 'line_total' })
   lineTotal!: number;
+
+  // -----------------------------------------------------------------
+  // Phase 2 — Shanel-port columns
+  // -----------------------------------------------------------------
+  @Column({
+    type: 'varchar',
+    length: 32,
+    name: 'price_level_used',
+    default: 'Retail',
+  })
+  priceLevelUsed!: PriceLevel;
+
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    name: 'line_discount_percentage',
+    default: 0,
+  })
+  lineDiscountPercentage!: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'line_subtotal',
+    default: 0,
+  })
+  lineSubtotal!: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    name: 'line_tax_rate',
+    default: 0,
+  })
+  lineTaxRate!: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'line_tax_amount',
+    default: 0,
+  })
+  lineTaxAmount!: number;
+
+  @Column({ type: 'decimal', precision: 12, scale: 3, default: 0 })
+  free!: number;
+
+  @Column({
+    type: 'varchar',
+    length: 64,
+    name: 'location_taken_from',
+    default: 'Shop',
+  })
+  locationTakenFrom!: string;
+
+  @Column({ type: 'varchar', length: 32, default: 'Active' })
+  status!: 'Active' | 'Voided';
 }
