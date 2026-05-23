@@ -3,9 +3,16 @@ import type { ISale } from '@/types';
 import { usePosMarkPrinted } from '@/features/pos/hooks/usePosMarkPrinted';
 
 interface IUsePrintReceiptReturn {
-    /** Currently-printing sale, or null when idle. Render the bill template
-     * for this sale in the DOM (with `data-pos-print-area`) and the print
-     * stylesheet will isolate it for the OS print dialog. */
+    /** Currently-printing sale, or null when idle. Consumers MUST render
+     * the print host through `createPortal(..., document.body)` so the
+     * host is a direct child of `<body>` — the @media print rules in
+     * `pos-bill-template.css` hide every `body > *` and only un-hide
+     * `body > [data-pos-print-area]`. Rendering the host inside `#root`
+     * (or any other React tree below body) results in a blank printout
+     * because `#root` itself gets suppressed. Wrap the portalled element
+     * with `data-pos-print-area`; the inner `<PosBillTemplate>` already
+     * carries the same attribute but only the body-level marker matters
+     * for the print isolation rule. */
     printingSale: ISale | null;
     /** Imperatively start the print flow for a given sale. Resolves after
      * the OS print dialog closes (or after the markPrinted round-trip
@@ -24,6 +31,10 @@ interface IUsePrintReceiptReturn {
  * Inline-print (not iframe) was chosen because the print CSS already hides
  * non-print-area body children, and jsdom does not implement iframe
  * `contentDocument.body` reliably for tests.
+ *
+ * NOTE: The consumer is responsible for portalling the print host to
+ * `document.body`. See the docstring on `printingSale` above and the
+ * reference implementation in `PosBillPreviewModal`.
  */
 export function usePrintReceipt(): IUsePrintReceiptReturn {
     const [printingSale, setPrintingSale] = useState<ISale | null>(null);

@@ -31,7 +31,9 @@ export const PosBillTemplate = forwardRef<HTMLDivElement, IPosBillTemplateProps>
         const payment = sale.payment ?? null;
         const customerLabel = formatCustomerLine(sale);
         const printedAt = formatDateTime(sale.createdAt);
-        const isReprint = sale.billPrintCount > 0;
+        // The first printed copy (count=1) is the original receipt — only
+        // count >= 2 is a genuine re-print.
+        const isReprint = sale.billPrintCount > 1;
 
         return (
             <div

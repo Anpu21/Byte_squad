@@ -162,10 +162,22 @@ describe('PosBillTemplate', () => {
         ).toBeInTheDocument();
     });
 
-    it('shows the reprint counter when billPrintCount > 0', () => {
+    it('shows the reprint counter when billPrintCount > 1', () => {
         const sale = buildSale({ billPrintCount: 3 });
         render(<PosBillTemplate sale={sale} />);
         expect(screen.getByText('Reprint #3')).toBeInTheDocument();
+    });
+
+    it('shows "Reprint #2" on the second printed copy', () => {
+        const sale = buildSale({ billPrintCount: 2 });
+        render(<PosBillTemplate sale={sale} />);
+        expect(screen.getByText('Reprint #2')).toBeInTheDocument();
+    });
+
+    it('does not show the reprint counter on the first printed copy (count=1)', () => {
+        const sale = buildSale({ billPrintCount: 1 });
+        render(<PosBillTemplate sale={sale} />);
+        expect(screen.queryByText(/^Reprint/)).not.toBeInTheDocument();
     });
 
     it('renders the danger-toned balance-due row when the sale is short-paid', () => {

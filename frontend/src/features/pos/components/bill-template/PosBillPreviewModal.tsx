@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Printer } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import type { ISale } from '@/types';
@@ -19,9 +20,15 @@ interface IPosBillPreviewModalProps {
  * flow. The sale is passed in directly (no per-id fetch yet — Phase 14
  * will decide whether to introduce `usePosSaleById`). Two affordances:
  * "Print receipt" (fires the print pipeline + marks the bill printed),
- * and "Close" (dismisses). The actively-printing bill renders into a
- * sibling `data-pos-print-area` host so the @media print rules in
- * `pos-bill-template.css` isolate it for the OS print dialog.
+ * and "Close" (dismisses).
+ *
+ * The actively-printing bill is rendered through `createPortal` into
+ * `document.body` (NOT into `#root`). The print stylesheet in
+ * `pos-bill-template.css` hides every direct child of body except an
+ * element bearing `data-pos-print-area`, so the portalled host is the
+ * only thing the OS print dialog captures. Rendering the host inside
+ * `#root` (the previous approach) caused the bill to be hidden because
+ * `#root` itself was suppressed by the print CSS.
  */
 export function PosBillPreviewModal({
     isOpen,
@@ -87,19 +94,27 @@ export function PosBillPreviewModal({
                     </p>
                 )}
             </Modal>
-            {printingSale ? (
-                <div
-                    aria-hidden
-                    style={{ position: 'absolute', left: -10000, top: 0 }}
-                >
-                    <PosBillTemplate
-                        sale={printingSale}
-                        businessName={businessName}
-                        businessAddress={businessAddress}
-                        cashierName={cashierName}
-                    />
-                </div>
-            ) : null}
+            {printingSale
+                ? createPortal(
+                      <div
+                          data-pos-print-area
+                          aria-hidden
+                          style={{
+                              position: 'absolute',
+                              left: -10000,
+                              top: 0,
+                          }}
+                      >
+                          <PosBillTemplate
+                              sale={printingSale}
+                              businessName={businessName}
+                              businessAddress={businessAddress}
+                              cashierName={cashierName}
+                          />
+                      </div>,
+                      document.body,
+                  )
+                : null}
         </>
     );
 }

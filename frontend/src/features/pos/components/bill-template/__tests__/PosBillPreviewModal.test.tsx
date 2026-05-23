@@ -154,4 +154,32 @@ describe('PosBillPreviewModal', () => {
         await userEvent.click(screen.getByRole('button', { name: /^Close$/i }));
         expect(onClose).toHaveBeenCalledTimes(1);
     });
+
+    it('portals the print host as a direct child of document.body while printing', async () => {
+        // Do not resolve markPrinted; the print host should remain mounted
+        // on document.body while the print flow is in progress.
+        markPrintedMock.mockImplementationOnce(
+            () =>
+                new Promise(() => {
+                    /* never resolves */
+                }),
+        );
+        renderModal();
+        const printButton = screen.getByRole('button', {
+            name: /Print receipt/i,
+        });
+        // Click triggers print; we deliberately do NOT dispatch afterprint
+        // here so `printingSale` stays set and the portal remains in DOM.
+        await userEvent.click(printButton);
+        // The print host must be portalled directly under document.body
+        // so the @media print rules (`body > [data-pos-print-area]`) can
+        // un-hide it. If the host nested inside `#root`, the body-level
+        // selector would not match and printing would yield a blank page.
+        await waitFor(() => {
+            const directBodyChildren = Array.from(
+                document.body.children,
+            ).filter((el) => el.hasAttribute('data-pos-print-area'));
+            expect(directBodyChildren.length).toBeGreaterThan(0);
+        });
+    });
 });
