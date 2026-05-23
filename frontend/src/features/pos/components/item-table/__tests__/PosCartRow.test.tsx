@@ -83,8 +83,9 @@ describe('PosCartRow', () => {
     it('writes a numeric patch when quantity changes', async () => {
         const { onUpdate } = renderRow();
         const input = screen.getByLabelText('Quantity');
-        // The input is controlled; typing into a value-of-2 input appends.
-        // The first keystroke fires onChange with the appended string.
+        // The input is controlled; typing into a buffer initialized to "2"
+        // appends. After the first keystroke the buffer reads "25" — a
+        // complete number, so it commits.
         await userEvent.type(input, '5');
         expect(onUpdate).toHaveBeenCalledWith('row-1', { quantity: 25 });
     });
@@ -100,5 +101,29 @@ describe('PosCartRow', () => {
             screen.getByRole('button', { name: /remove basmati rice/i }),
         );
         expect(onRemove).toHaveBeenCalledWith('row-1');
+    });
+
+    it('keeps mid-typing decimal entries and commits on blur', async () => {
+        const { onUpdate } = renderRow({ quantity: 0 });
+        const input = screen.getByLabelText('Quantity') as HTMLInputElement;
+        // Clear the field and re-enter — typing "0." should not collapse to
+        // 0; the user can keep typing and eventually land on 0.5.
+        await userEvent.clear(input);
+        await userEvent.type(input, '0.5');
+        // Final state: full number, commit fires with the decimal value.
+        expect(onUpdate).toHaveBeenLastCalledWith('row-1', { quantity: 0.5 });
+        expect(input.value).toBe('0.5');
+    });
+
+    it('clamps an out-of-range discount paste to the max bound', async () => {
+        const { onUpdate } = renderRow({ discountPercentage: 0 });
+        const input = screen.getByLabelText(
+            'Discount percentage',
+        ) as HTMLInputElement;
+        await userEvent.clear(input);
+        // Programmatic-set / paste of 200 — clamp must pull it back to 100.
+        await userEvent.type(input, '200');
+        const lastCall = onUpdate.mock.calls.at(-1);
+        expect(lastCall).toEqual(['row-1', { discountPercentage: 100 }]);
     });
 });

@@ -1,4 +1,4 @@
-import type { ChangeEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type { IProductUnitRow } from '@/types';
@@ -11,10 +11,24 @@ interface IPosCartRowProps {
     onRemove: (rowId: string) => void;
 }
 
+type TNumericField =
+    | 'quantity'
+    | 'free'
+    | 'discountPercentage'
+    | 'taxRate';
+
+interface INumericBounds {
+    min: number;
+    max?: number;
+}
+
 /**
- * One editable row inside the cart table. Numerical cells (qty, free,
- * discount %, tax %) write live through `onUpdate` so `computeLine` runs
- * on every keystroke — POS UIs want the total to react immediately.
+ * One editable row inside the cart table. Each numeric cell keeps its own
+ * string buffer so partial entries like `0.`, `.5`, or a blank string don't
+ * collapse to `0` mid-typing. The committed numeric value is written through
+ * `onUpdate` on every full-number change and again on blur, and is clamped
+ * defensively against `min`/`max` so paste/programmatic-set can't push the
+ * field out of range.
  *
  * The discount cell is disabled when the product was flagged
  * `discountAllowed: false` on the search row (a Shanel rule used for
@@ -23,14 +37,68 @@ interface IPosCartRowProps {
  * store policy demands.
  */
 export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
-    const numericPatch =
-        (field: keyof ICartItem) =>
-        (e: ChangeEvent<HTMLInputElement>) => {
-            const raw = e.target.value;
-            const value = raw === '' ? 0 : Number(raw);
-            if (Number.isNaN(value)) return;
-            onUpdate(item.rowId, { [field]: value });
-        };
+    const [qtyBuffer, setQtyBuffer] = useState<string>(String(item.quantity));
+    const [freeBuffer, setFreeBuffer] = useState<string>(String(item.free));
+    const [discBuffer, setDiscBuffer] = useState<string>(
+        String(item.discountPercentage),
+    );
+    const [taxBuffer, setTaxBuffer] = useState<string>(String(item.taxRate));
+
+    // Sync buffers when the upstream item changes (line-math recompute,
+    // unit switch, merge with a sibling row, etc.). Each effect is keyed
+    // on the specific field so unrelated upstream updates don't stomp the
+    // user's in-flight edit on another cell.
+    useEffect(() => {
+        setQtyBuffer(String(item.quantity));
+    }, [item.quantity]);
+    useEffect(() => {
+        setFreeBuffer(String(item.free));
+    }, [item.free]);
+    useEffect(() => {
+        setDiscBuffer(String(item.discountPercentage));
+    }, [item.discountPercentage]);
+    useEffect(() => {
+        setTaxBuffer(String(item.taxRate));
+    }, [item.taxRate]);
+
+    const clamp = (value: number, bounds: INumericBounds): number => {
+        const lower = Math.max(value, bounds.min);
+        return bounds.max !== undefined ? Math.min(lower, bounds.max) : lower;
+    };
+
+    const commitNumeric = (
+        buffer: string,
+        field: TNumericField,
+        bounds: INumericBounds,
+    ): void => {
+        const parsed = parseFloat(buffer);
+        if (!Number.isFinite(parsed)) return;
+        const clamped = clamp(parsed, bounds);
+        if (clamped !== item[field]) {
+            onUpdate(item.rowId, { [field]: clamped });
+        }
+    };
+
+    // A buffer is "complete" when it parses to a finite number and matches
+    // a canonical numeric string (no trailing `.`, no lone `-`, no empty
+    // string). Used to live-commit while still allowing in-progress entries
+    // like `0.` to remain in the buffer.
+    const isCompleteNumber = (raw: string): boolean => {
+        if (raw.trim() === '') return false;
+        return /^-?\d+(\.\d+)?$/.test(raw.trim());
+    };
+
+    const handleChange = (
+        next: string,
+        field: TNumericField,
+        bounds: INumericBounds,
+        setBuffer: (value: string) => void,
+    ): void => {
+        setBuffer(next);
+        if (isCompleteNumber(next)) {
+            commitNumeric(next, field, bounds);
+        }
+    };
 
     function handleUnit(unit: IProductUnitRow) {
         onUpdate(item.rowId, {
@@ -67,8 +135,21 @@ export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
                     min={0}
                     max={100}
                     step={0.1}
-                    value={item.discountPercentage}
-                    onChange={numericPatch('discountPercentage')}
+                    value={discBuffer}
+                    onChange={(e) =>
+                        handleChange(
+                            e.target.value,
+                            'discountPercentage',
+                            { min: 0, max: 100 },
+                            setDiscBuffer,
+                        )
+                    }
+                    onBlur={() =>
+                        commitNumeric(discBuffer, 'discountPercentage', {
+                            min: 0,
+                            max: 100,
+                        })
+                    }
                     disabled={!item.discountAllowed}
                     aria-label="Discount percentage"
                     className="w-16 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -80,8 +161,21 @@ export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
                     min={0}
                     max={100}
                     step={0.1}
-                    value={item.taxRate}
-                    onChange={numericPatch('taxRate')}
+                    value={taxBuffer}
+                    onChange={(e) =>
+                        handleChange(
+                            e.target.value,
+                            'taxRate',
+                            { min: 0, max: 100 },
+                            setTaxBuffer,
+                        )
+                    }
+                    onBlur={() =>
+                        commitNumeric(taxBuffer, 'taxRate', {
+                            min: 0,
+                            max: 100,
+                        })
+                    }
                     aria-label="Tax rate"
                     className="w-16 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30"
                 />
@@ -91,8 +185,18 @@ export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
                     type="number"
                     min={0}
                     step={0.01}
-                    value={item.quantity}
-                    onChange={numericPatch('quantity')}
+                    value={qtyBuffer}
+                    onChange={(e) =>
+                        handleChange(
+                            e.target.value,
+                            'quantity',
+                            { min: 0 },
+                            setQtyBuffer,
+                        )
+                    }
+                    onBlur={() =>
+                        commitNumeric(qtyBuffer, 'quantity', { min: 0 })
+                    }
                     aria-label="Quantity"
                     className="w-20 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30"
                 />
@@ -102,8 +206,18 @@ export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
                     type="number"
                     min={0}
                     step={0.01}
-                    value={item.free}
-                    onChange={numericPatch('free')}
+                    value={freeBuffer}
+                    onChange={(e) =>
+                        handleChange(
+                            e.target.value,
+                            'free',
+                            { min: 0 },
+                            setFreeBuffer,
+                        )
+                    }
+                    onBlur={() =>
+                        commitNumeric(freeBuffer, 'free', { min: 0 })
+                    }
                     aria-label="Free units"
                     className="w-16 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30"
                 />
