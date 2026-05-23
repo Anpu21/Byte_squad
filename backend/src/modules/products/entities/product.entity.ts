@@ -32,6 +32,27 @@ export class Product {
   @Column({ type: 'decimal', precision: 12, scale: 2, name: 'selling_price' })
   sellingPrice!: number;
 
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'wholesale_price',
+    default: 0,
+  })
+  wholesalePrice!: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    name: 'tax_rate',
+    default: 0,
+  })
+  taxRate!: number;
+
+  @Column({ type: 'boolean', name: 'discount_allowed', default: true })
+  discountAllowed!: boolean;
+
   @Column({ type: 'varchar', name: 'image_url', nullable: true })
   imageUrl!: string | null;
 
