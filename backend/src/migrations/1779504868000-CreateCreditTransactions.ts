@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - sale_id  FK -> sales(id) ON DELETE SET NULL (nullable)
  * - Indexes on user_id and sale_id
  */
-export class CreateCreditTransactions1779504868000
-  implements MigrationInterface
-{
+export class CreateCreditTransactions1779504868000 implements MigrationInterface {
   public async up(qr: QueryRunner): Promise<void> {
     await qr.query(`
       CREATE TABLE credit_transactions (

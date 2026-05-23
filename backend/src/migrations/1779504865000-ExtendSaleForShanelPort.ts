@@ -10,9 +10,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * All columns have safe defaults so existing rows survive without backfill.
  * Indexes added for status, payment_status, customer_user_id.
  */
-export class ExtendSaleForShanelPort1779504865000
-  implements MigrationInterface
-{
+export class ExtendSaleForShanelPort1779504865000 implements MigrationInterface {
   public async up(qr: QueryRunner): Promise<void> {
     await qr.query(`
       ALTER TABLE sales

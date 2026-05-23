@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { PaymentRepository } from './payment.repository';
@@ -76,7 +75,13 @@ describe('PaymentRepository', () => {
     } as unknown as Parameters<PaymentRepository['create']>[1];
 
     const out = await repo.create(
-      { saleId: 's-3', paymentMethod: 'Card', paymentAmount: 50, invoiceTotal: 50, receiptNo: 'RCPT-y' },
+      {
+        saleId: 's-3',
+        paymentMethod: 'Card',
+        paymentAmount: 50,
+        invoiceTotal: 50,
+        receiptNo: 'RCPT-y',
+      },
       fakeManager,
     );
 
@@ -92,6 +97,8 @@ describe('PaymentRepository', () => {
     typeormRepo.findOne.mockResolvedValue(dummy);
     const out = await repo.findBySaleId('s-9');
     expect(out).toBe(dummy);
-    expect(typeormRepo.findOne).toHaveBeenCalledWith({ where: { saleId: 's-9' } });
+    expect(typeormRepo.findOne).toHaveBeenCalledWith({
+      where: { saleId: 's-9' },
+    });
   });
 });
