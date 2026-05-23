@@ -73,9 +73,7 @@ export class MultiTenderCalculatorService {
     const paymentAmount = cash + cheque + bank + credit;
 
     if (paymentAmount > invoiceTotal && !payment.keepBalance && credit === 0) {
-      throw new BadRequestException(
-        'Overpayment requires keepBalance=true',
-      );
+      throw new BadRequestException('Overpayment requires keepBalance=true');
     }
 
     // Change is derived only from cash tender (Shanel rule). Cheque/bank

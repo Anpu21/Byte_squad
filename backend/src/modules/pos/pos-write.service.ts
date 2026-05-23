@@ -211,9 +211,7 @@ export class PosWriteService {
         ? itemsSubtotal * (cartDiscountPct / 100)
         : Number(dto.cartDiscountAmount ?? 0),
     );
-    const taxTotal = round2(
-      itemRows.reduce((s, i) => s + i.lineTaxAmount, 0),
-    );
+    const taxTotal = round2(itemRows.reduce((s, i) => s + i.lineTaxAmount, 0));
     const total = round2(Math.max(0, itemsSubtotal - cartDiscount + taxTotal));
 
     // ---------------------------------------------------------------
@@ -303,7 +301,12 @@ export class PosWriteService {
         dto.customerUserId &&
         (tender.creditTaken > 0 || tender.overpayKeptBalance > 0)
       ) {
-        await this.applyCreditChanges(manager, sale, dto.customerUserId, tender);
+        await this.applyCreditChanges(
+          manager,
+          sale,
+          dto.customerUserId,
+          tender,
+        );
       }
 
       // 6g. Stock movements (one row per item)
