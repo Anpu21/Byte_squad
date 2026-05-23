@@ -17,7 +17,7 @@ import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { DiscountType } from '@common/enums/discount.enum';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
-import type { SearchProductRow } from '@pos/types';
+import type { SearchProductRow, ProductUnitRow } from '@pos/types';
 
 /**
  * Shape of `@CurrentUser()` payloads injected into POS endpoints. Mirrors the
@@ -525,6 +525,26 @@ export class PosService {
       taxRate: Number(p.taxRate),
       discountAllowed: p.discountAllowed,
       imageUrl: p.imageUrl,
+    }));
+  }
+
+  /**
+   * Returns sellable units for a product (kg/g, L/mL, each, …) sorted by the
+   * configured display order. The cashier picks one of these when entering a
+   * line so the typed quantity can be converted to the canonical base unit
+   * before stock deduction.
+   *
+   * The repository hands back entities; we map to the Shanel-shaped
+   * `ProductUnitRow` here so the pos types stay the public contract.
+   */
+  async listProductUnits(productId: string): Promise<ProductUnitRow[]> {
+    const rows = await this.products.listUnits(productId);
+    return rows.map((u) => ({
+      unitId: u.id,
+      unitName: u.name,
+      isBaseUnit: u.isBase,
+      conversionToBase: Number(u.conversionToBase),
+      displayOrder: u.displayOrder ?? 0,
     }));
   }
 }

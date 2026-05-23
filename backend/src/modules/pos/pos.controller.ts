@@ -23,6 +23,7 @@ import type {
   AdminDashboardData,
   CashierTransactionsSummary,
   SearchProductRow,
+  ProductUnitRow,
 } from '@pos/types';
 
 interface ActorPayload {
@@ -105,5 +106,13 @@ export class PosController {
     @Query() query: SearchProductsQueryDto,
   ): Promise<SearchProductRow[]> {
     return this.posService.searchProducts(actor, query);
+  }
+
+  @Get(APP_ROUTES.POS.PRODUCT_UNITS)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  listProductUnits(
+    @Param('productId') productId: string,
+  ): Promise<ProductUnitRow[]> {
+    return this.posService.listProductUnits(productId);
   }
 }

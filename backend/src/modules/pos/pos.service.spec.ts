@@ -7,6 +7,7 @@ import { PosRepository } from './pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { ProductsRepository } from '@products/products.repository';
 import { Product } from '@products/entities/product.entity';
+import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 
 /**
@@ -55,6 +56,23 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
   } as Product;
 }
 
+function makeUnit(
+  overrides: Partial<ProductSellableUnit> = {},
+): ProductSellableUnit {
+  return {
+    id: 'u-1',
+    productId: 'p-1',
+    product: undefined as unknown as Product,
+    name: 'each',
+    isBase: true,
+    conversionToBase: 1,
+    displayOrder: 0,
+    createdAt: new Date('2026-05-23T10:00:00Z'),
+    updatedAt: new Date('2026-05-23T10:00:00Z'),
+    ...overrides,
+  } as ProductSellableUnit;
+}
+
 describe('PosService — Phase 4 read endpoints', () => {
   let service: PosService;
   let productsRepo: jest.Mocked<ProductsRepository>;
@@ -65,6 +83,7 @@ describe('PosService — Phase 4 read endpoints', () => {
     const dataSourceMock = {} as DataSource;
     const productsRepoMock: Partial<jest.Mocked<ProductsRepository>> = {
       searchByText: jest.fn(),
+      listUnits: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
@@ -138,6 +157,56 @@ describe('PosService — Phase 4 read endpoints', () => {
       productsRepo.searchByText.mockResolvedValue([]);
       await service.searchProducts(makeCashier(), { q: 'tea' });
       expect(productsRepo.searchByText).toHaveBeenCalledWith('tea', 10);
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Task 4.2 — listProductUnits
+  // -------------------------------------------------------------------
+  describe('listProductUnits', () => {
+    it('maps repository rows into ProductUnitRow shape, preserving order', async () => {
+      productsRepo.listUnits.mockResolvedValue([
+        makeUnit({
+          id: 'u1',
+          name: 'kg',
+          isBase: true,
+          conversionToBase: 1,
+          displayOrder: 0,
+        }),
+        makeUnit({
+          id: 'u2',
+          name: 'g',
+          isBase: false,
+          conversionToBase: 0.001,
+          displayOrder: 1,
+        }),
+      ]);
+
+      const result = await service.listProductUnits('p-1');
+
+      expect(productsRepo.listUnits).toHaveBeenCalledWith('p-1');
+      expect(result).toEqual([
+        {
+          unitId: 'u1',
+          unitName: 'kg',
+          isBaseUnit: true,
+          conversionToBase: 1,
+          displayOrder: 0,
+        },
+        {
+          unitId: 'u2',
+          unitName: 'g',
+          isBaseUnit: false,
+          conversionToBase: 0.001,
+          displayOrder: 1,
+        },
+      ]);
+    });
+
+    it('returns an empty array when the product has no configured units', async () => {
+      productsRepo.listUnits.mockResolvedValue([]);
+      const result = await service.listProductUnits('p-1');
+      expect(result).toEqual([]);
     });
   });
 });
