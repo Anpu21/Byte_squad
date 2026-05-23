@@ -29,6 +29,21 @@ export class Sale {
   @Column({ type: 'varchar', name: 'transaction_number', unique: true })
   transactionNumber!: string;
 
+  @Column({ type: 'varchar', name: 'invoice_number', unique: true })
+  invoiceNumber!: string;
+
+  @Column({ type: 'boolean', name: 'bill_printed', default: false })
+  billPrinted!: boolean;
+
+  @Column({ type: 'int', name: 'bill_print_count', default: 0 })
+  billPrintCount!: number;
+
+  @Column({ type: 'timestamp', name: 'first_print_date', nullable: true })
+  firstPrintDate!: Date | null;
+
+  @Column({ type: 'timestamp', name: 'last_print_date', nullable: true })
+  lastPrintDate!: Date | null;
+
   @Column({ type: 'uuid', name: 'branch_id' })
   branchId!: string;
 

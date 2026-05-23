@@ -648,6 +648,11 @@ export class CustomerOrdersService {
 
     const savedTx = await this.pos.createAndSaveTransaction({
       transactionNumber,
+      // PHASE-5: replace with InvoiceNumberService.next() once the customer
+      // pickup path is folded into the createSale flow. Mirroring the
+      // transactionNumber keeps the NOT NULL + UNIQUE sales.invoice_number
+      // constraint satisfied for this legacy writer.
+      invoiceNumber: transactionNumber,
       branchId: params.order.branchId,
       cashierId: params.actorId,
       type: TransactionType.SALE,

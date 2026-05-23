@@ -184,6 +184,10 @@ export class PosService {
       const txn = await txnRepo.save(
         txnRepo.create({
           transactionNumber,
+          // PHASE-5: replace with InvoiceNumberService.next() inside this txn.
+          // Until then, mirror the transactionNumber so the NOT NULL + UNIQUE
+          // constraint on sales.invoice_number is satisfied for legacy writers.
+          invoiceNumber: transactionNumber,
           branchId,
           cashierId,
           type: dto.type,
@@ -523,10 +527,7 @@ export class PosService {
       productCode: p.barcode,
       productName: p.name,
       productType: p.category,
-      // `Product` does not yet model a multi-unit base; default to 'each' so
-      // the row shape stays Shanel-compatible. Per-product sellable units
-      // come through `GET /pos/products/:id/units`.
-      baseUnit: 'each',
+      baseUnit: p.baseUnit,
       status: p.isActive,
       costPrice: Number(p.costPrice),
       retailPrice: Number(p.sellingPrice),
@@ -638,12 +639,8 @@ export class PosService {
 
 /**
  * Map a Sale entity (with optional `customer` relation eager-loaded) into
- * the Shanel-aligned RecentSaleRow shape. Bill-print and invoice-number
- * tracking columns don't exist on Sale yet (they land in Phase 5 alongside
- * the new write/print endpoints) so we synthesize safe defaults: invoice
- * number falls back to the transaction number, bill print flags to
- * "not yet printed". Once the columns exist this mapping reads them
- * directly.
+ * the Shanel-aligned RecentSaleRow shape. Reads invoice-number and
+ * bill-print columns directly off the entity.
  */
 function toRecentSaleRow(sale: Sale): RecentSaleRow {
   const customer = sale.customer ?? null;
@@ -652,7 +649,7 @@ function toRecentSaleRow(sale: Sale): RecentSaleRow {
     : null;
   return {
     id: sale.id,
-    invoiceNumber: sale.transactionNumber,
+    invoiceNumber: sale.invoiceNumber,
     transactionNumber: sale.transactionNumber,
     total: Number(sale.total),
     paidAmount: Number(sale.paidAmount),
@@ -660,8 +657,8 @@ function toRecentSaleRow(sale: Sale): RecentSaleRow {
     paymentStatus: sale.paymentStatus,
     saleType: sale.saleType,
     status: sale.status,
-    billPrinted: false,
-    billPrintCount: 0,
+    billPrinted: sale.billPrinted,
+    billPrintCount: sale.billPrintCount,
     branchId: sale.branchId,
     customerUserId: sale.customerUserId,
     customerName,

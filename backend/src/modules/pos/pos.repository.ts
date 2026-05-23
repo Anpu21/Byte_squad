@@ -95,17 +95,18 @@ export class PosRepository {
 
   /**
    * Shanel-aligned recent-sales fetch backing `GET /pos/recent-sales`.
-   * Always eager-loads the `customer` relation so the row mapper can
-   * populate `customerName` without a follow-up query. When `branchId`
-   * is non-null we scope to a single branch (cashier/manager); admins
-   * pass `null` to see system-wide activity.
+   * Eager-loads only the `customer` relation so the row mapper can populate
+   * `customerName` without a follow-up query — the mapper reads no other
+   * relations and the cashier UI polls this endpoint frequently. When
+   * `branchId` is non-null we scope to a single branch (cashier/manager);
+   * admins pass `null` to see system-wide activity.
    */
   async findRecentSales(
     branchId: string | null,
     take: number,
   ): Promise<Sale[]> {
     const opts = {
-      relations: ['items', 'cashier', 'customer'],
+      relations: ['customer'],
       order: { createdAt: 'DESC' as const },
       take,
     };

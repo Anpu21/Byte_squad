@@ -63,6 +63,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     wholesalePrice: 80,
     taxRate: 10,
     discountAllowed: true,
+    baseUnit: 'each',
     imageUrl: null,
     isActive: true,
     inventoryRecords: [],
@@ -94,6 +95,11 @@ function makeSale(overrides: Partial<Sale> = {}): Sale {
   return {
     id: 'sale-1',
     transactionNumber: 'TXN-001',
+    invoiceNumber: 'INV-2026-000001',
+    billPrinted: false,
+    billPrintCount: 0,
+    firstPrintDate: null,
+    lastPrintDate: null,
     branchId: 'branch-A',
     branch: undefined as unknown as Sale['branch'],
     cashierId: 'cashier-1',
@@ -181,7 +187,7 @@ describe('PosService — Phase 4 read endpoints', () => {
       expect(productsRepo.searchByText).not.toHaveBeenCalled();
     });
 
-    it('maps Product rows into the Shanel SearchProductRow shape', async () => {
+    it('maps Product rows into the Shanel SearchProductRow shape, propagating baseUnit', async () => {
       productsRepo.searchByText.mockResolvedValue([
         makeProduct({
           id: 'p-1',
@@ -193,6 +199,7 @@ describe('PosService — Phase 4 read endpoints', () => {
           wholesalePrice: 80,
           taxRate: 10,
           discountAllowed: true,
+          baseUnit: 'kg',
           imageUrl: 'https://cdn/apple.jpg',
         }),
       ]);
@@ -209,7 +216,7 @@ describe('PosService — Phase 4 read endpoints', () => {
           productCode: '0001',
           productName: 'Apple',
           productType: 'produce',
-          baseUnit: 'each',
+          baseUnit: 'kg',
           status: true,
           costPrice: 40,
           retailPrice: 100,
@@ -364,10 +371,13 @@ describe('PosService — Phase 4 read endpoints', () => {
   // Task 4.5 — getRecentSales
   // -------------------------------------------------------------------
   describe('getRecentSales', () => {
-    it('scopes a cashier to their branch and maps Sale rows into RecentSaleRow', async () => {
+    it('scopes a cashier to their branch and maps Sale rows into RecentSaleRow, surfacing invoice and print columns', async () => {
       const sale = makeSale({
         id: 'sale-1',
         transactionNumber: 'TXN-001',
+        invoiceNumber: 'INV-2026-000007',
+        billPrinted: true,
+        billPrintCount: 2,
         total: 250,
         paidAmount: 250,
         balanceDue: 0,
@@ -384,7 +394,7 @@ describe('PosService — Phase 4 read endpoints', () => {
       expect(result).toEqual([
         {
           id: 'sale-1',
-          invoiceNumber: 'TXN-001',
+          invoiceNumber: 'INV-2026-000007',
           transactionNumber: 'TXN-001',
           total: 250,
           paidAmount: 250,
@@ -392,8 +402,8 @@ describe('PosService — Phase 4 read endpoints', () => {
           paymentStatus: 'Paid',
           saleType: 'Retail',
           status: 'Active',
-          billPrinted: false,
-          billPrintCount: 0,
+          billPrinted: true,
+          billPrintCount: 2,
           branchId: 'branch-A',
           customerUserId: null,
           customerName: null,
