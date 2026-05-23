@@ -206,7 +206,17 @@ export class PosService {
         }),
       );
       await itemRepo.save(
-        items.map((it) => itemRepo.create({ ...it, saleId: txn.id })),
+        items.map((it) =>
+          itemRepo.create({
+            ...it,
+            saleId: txn.id,
+            // PHASE-5: replace with the conversion factor once this path
+            // migrates to PosWriteService.createSale. CreateTransactionDto
+            // pre-dates the sellable-units model, so quantity already equals
+            // the base-unit quantity.
+            baseUnitQty: it.quantity,
+          }),
+        ),
       );
 
       if (Number(txn.total) > 0) {

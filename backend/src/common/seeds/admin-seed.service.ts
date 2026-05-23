@@ -866,6 +866,10 @@ export class AdminSeedService implements OnModuleInit {
           items.push({
             productId: prod.id,
             quantity: qty,
+            // PHASE-5: replace with the real conversion factor once the seed
+            // migrates to PosWriteService.createSale. Seed products have no
+            // sellable-units, so qty already equals the base-unit quantity.
+            baseUnitQty: qty,
             unitPrice: Number(prod.sellingPrice),
             discountAmount: 0,
             discountType: DiscountType.NONE,

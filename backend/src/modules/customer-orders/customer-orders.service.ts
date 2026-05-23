@@ -619,6 +619,10 @@ export class CustomerOrdersService {
       return {
         productId: product.id,
         quantity: it.quantity,
+        // PHASE-5: replace once the customer pickup path folds into the
+        // createSale flow. Customer orders have no sellable-units, so
+        // quantity already equals the base-unit quantity.
+        baseUnitQty: it.quantity,
         unitPrice,
         discountAmount: 0,
         discountType: DiscountType.NONE,
