@@ -35,4 +35,18 @@ export class CreditTransactionRepository {
       .orderBy('ct.created_at', 'DESC')
       .getMany();
   }
+
+  /**
+   * Return every credit_transactions row attached to a sale, ordered by
+   * creation time ASC so the void-sale flow can reverse them in the
+   * same order they were originally written. Returns an empty array
+   * when the sale produced no credit activity (the common case).
+   */
+  async findBySaleId(saleId: string): Promise<CreditTransaction[]> {
+    return this.repository
+      .createQueryBuilder('ct')
+      .where('ct.sale_id = :saleId', { saleId })
+      .orderBy('ct.created_at', 'ASC')
+      .getMany();
+  }
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PosService } from '@pos/pos.service';
 import { PosWriteService } from '@pos/pos-write.service';
+import { PosVoidService } from '@pos/pos-void.service';
 import { PosController } from '@pos/pos.controller';
 import { PosRepository } from '@pos/pos.repository';
 import { SaleRepository } from '@pos/sale.repository';
@@ -41,6 +42,7 @@ import { ProductsModule } from '@products/products.module';
   providers: [
     PosService,
     PosWriteService,
+    PosVoidService,
     PosRepository,
     SaleRepository,
     SaleItemRepository,

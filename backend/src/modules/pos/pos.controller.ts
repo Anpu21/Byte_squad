@@ -13,9 +13,11 @@ import {
 } from '@nestjs/common';
 import { PosService } from '@pos/pos.service.js';
 import { PosWriteService } from '@pos/pos-write.service';
+import { PosVoidService } from '@pos/pos-void.service';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto';
 import { CreateSaleDto } from '@pos/dto/create-sale.dto';
 import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
+import { VoidSaleDto } from '@pos/dto/void-sale.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -50,6 +52,7 @@ export class PosController {
   constructor(
     private readonly posService: PosService,
     private readonly posWriteService: PosWriteService,
+    private readonly posVoidService: PosVoidService,
   ) {}
 
   @Get(APP_ROUTES.POS.ADMIN_DASHBOARD)
@@ -204,5 +207,23 @@ export class PosController {
     @CurrentUser() actor: ActorPayload,
   ): Promise<Sale> {
     return this.posService.markPrinted(id, actor);
+  }
+
+  /**
+   * `POST /pos/sales/:id/void` — reverse a completed sale. Admins and
+   * managers only (cashiers cannot void). Restocks inventory, inserts
+   * Sale_Voided stock-movement rows, reverses credit transactions and
+   * the running balance on the customer, and writes a DEBIT ledger
+   * entry equal to the original total. Already-voided sales return 409.
+   */
+  @Post(APP_ROUTES.POS.SALE_VOID)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.OK)
+  voidSale(
+    @Param('id') id: string,
+    @Body() dto: VoidSaleDto,
+    @CurrentUser() actor: ActorPayload,
+  ): Promise<Sale> {
+    return this.posVoidService.voidSale(actor, id, dto.reason);
   }
 }
