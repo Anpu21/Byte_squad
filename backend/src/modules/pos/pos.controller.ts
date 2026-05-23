@@ -37,9 +37,12 @@ interface ActorPayload {
   branchId: string | null;
 }
 
+// Class-level @Roles(...) is intentionally omitted: every method below
+// declares its own @Roles(...) decorator, which NestJS treats as a full
+// replacement (not a merge). The class-level annotation we used to carry
+// here was dead code that misled readers into thinking it was a default.
 @Controller(APP_ROUTES.POS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.CASHIER)
 export class PosController {
   constructor(
     private readonly posService: PosService,
@@ -53,6 +56,7 @@ export class PosController {
   }
 
   @Get(APP_ROUTES.POS.MY_DASHBOARD)
+  @Roles(UserRole.CASHIER)
   getCashierDashboard(
     @CurrentUser('id') cashierId: string,
     @CurrentUser('branchId') branchId: string,
@@ -78,6 +82,7 @@ export class PosController {
   }
 
   @Post(APP_ROUTES.POS.TRANSACTIONS)
+  @Roles(UserRole.CASHIER)
   create(
     @Body() createTransactionDto: CreateTransactionDto,
     @CurrentUser('id') cashierId: string,
@@ -93,11 +98,13 @@ export class PosController {
   }
 
   @Get(APP_ROUTES.POS.TRANSACTIONS)
+  @Roles(UserRole.CASHIER)
   findAll(@CurrentUser('branchId') branchId: string): Promise<Sale[]> {
     return this.posService.findAll(branchId);
   }
 
   @Get(APP_ROUTES.POS.TRANSACTION_BY_ID)
+  @Roles(UserRole.CASHIER)
   findOne(@Param('id') id: string): Promise<Sale | null> {
     return this.posService.findById(id);
   }

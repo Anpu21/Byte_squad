@@ -8,6 +8,7 @@ import {
 import { DiscountType } from '@/common/enums/discount.enum';
 import { Sale } from '@pos/entities/sale.entity';
 import { Product } from '@products/entities/product.entity';
+import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import type { PriceLevel } from '@pos/types';
 
 @Entity('sale_items')
@@ -35,6 +36,27 @@ export class SaleItem {
 
   @Column({ type: 'integer' })
   quantity!: number;
+
+  // Quantity in the product's canonical base unit, after the per-product
+  // sellable-unit conversion has been applied (e.g. 1000 g typed against a
+  // kg-based product → 1.000 kg here). Mirrors the inventory.quantity scale
+  // exactly so void/return flows can reconstruct what the cashier rang up.
+  @Column({ type: 'decimal', precision: 12, scale: 3, name: 'base_unit_qty' })
+  baseUnitQty!: number;
+
+  // Which ProductSellableUnit row was selected at the till. NULL when the
+  // line was rung in the product's base unit directly (no conversion row
+  // was used). ON DELETE SET NULL because a unit can be retired after the
+  // sale has been printed.
+  @Column({ type: 'uuid', name: 'unit_id', nullable: true })
+  unitId!: string | null;
+
+  @ManyToOne(() => ProductSellableUnit, {
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'unit_id' })
+  unit!: ProductSellableUnit | null;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, name: 'unit_price' })
   unitPrice!: number;

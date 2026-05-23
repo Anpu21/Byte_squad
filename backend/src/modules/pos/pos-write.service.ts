@@ -74,6 +74,13 @@ function mapToLegacyPaymentMethod(method: PosPaymentMethod): PaymentMethod {
       // into ONLINE so the legacy code paths (which only look for CASH vs
       // not-CASH) keep working. The Payment row carries the full detail.
       return PaymentMethod.ONLINE;
+    default: {
+      // Exhaustiveness guard: when a new tender is added to the
+      // PosPaymentMethod union, TypeScript will flag this branch and
+      // refuse to compile until a matching `case` is added above.
+      const _exhaustive: never = method;
+      return _exhaustive;
+    }
   }
 }
 
@@ -164,6 +171,12 @@ export class PosWriteService {
   ): Promise<Sale> {
     // ---------------------------------------------------------------
     // 1. Idempotency replay
+    //
+    // Scope is (cashier_id, key). The unique index on the table is on the
+    // same pair, so two different cashiers can independently submit the
+    // same X-Idempotency-Key without colliding. Replay fires only when the
+    // SAME cashier resubmits the same key. See `IdempotencyKey` entity for
+    // the constraint.
     // ---------------------------------------------------------------
     const trimmedKey = idempotencyKey?.trim();
     if (trimmedKey) {
@@ -223,8 +236,14 @@ export class PosWriteService {
     // 6. Transactional write
     // ---------------------------------------------------------------
     const saved = await this.dataSource.transaction(async (manager) => {
-      // 6a. Stock check + decrement (pessimistic lock per row)
-      await this.decrementInventoryWithLock(manager, branchId, itemRows);
+      // 6a. Stock check + decrement (pessimistic lock per row). Returns the
+      // post-deduct quantity for each product so recordStockMovements can
+      // log balanceAfter without an extra round-trip per item.
+      const postDeductQty = await this.decrementInventoryWithLock(
+        manager,
+        branchId,
+        itemRows,
+      );
 
       // 6b. Invoice number (atomic year-sequential via SELECT FOR UPDATE)
       const invoiceNumber = await this.invoiceNumbers.next(
@@ -309,13 +328,15 @@ export class PosWriteService {
         );
       }
 
-      // 6g. Stock movements (one row per item)
+      // 6g. Stock movements (one row per item) — reads balanceAfter from
+      // the post-deduct map produced in step 6a, so no per-item re-query.
       await this.recordStockMovements(
         manager,
         sale,
         actor.id,
         branchId,
         itemRows,
+        postDeductQty,
       );
 
       // 6h. Ledger entry
@@ -408,16 +429,22 @@ export class PosWriteService {
 
   /**
    * Locks every inventory row touched by the sale via `SELECT ... FOR UPDATE`,
-   * verifies sufficient quantity, and writes the decrement. Throws
-   * ConflictException with a row-specific message if any line is unstocked
-   * or under-stocked.
+   * verifies sufficient quantity, and writes the decrement. Returns a map of
+   * productId → post-deduct quantity so the audit-log helper
+   * (`recordStockMovements`) can fill `balanceAfter` without re-querying
+   * inventory per item — that re-query was adding N round-trips to the
+   * hot transaction.
+   *
+   * Throws ConflictException with a row-specific message if any line is
+   * unstocked or under-stocked.
    */
   private async decrementInventoryWithLock(
     manager: EntityManager,
     branchId: string,
     items: ItemCompute[],
-  ): Promise<void> {
+  ): Promise<Map<string, number>> {
     const invRepo = manager.getRepository(Inventory);
+    const postDeductQty = new Map<string, number>();
     for (const it of items) {
       const inv = await invRepo
         .createQueryBuilder('i')
@@ -438,9 +465,12 @@ export class PosWriteService {
           `Insufficient stock for product ${it.productId}: only ${available} available (requested ${it.baseUnitQty})`,
         );
       }
-      inv.quantity = round3(available - it.baseUnitQty);
+      const remaining = round3(available - it.baseUnitQty);
+      inv.quantity = remaining;
       await invRepo.save(inv);
+      postDeductQty.set(it.productId, remaining);
     }
+    return postDeductQty;
   }
 
   /**
@@ -503,8 +533,10 @@ export class PosWriteService {
 
   /**
    * Append a `stock_movements` row per line item with `qtyOut = baseUnitQty`
-   * and the post-deduction balance. Called after the inventory decrement so
-   * `balanceAfter` reflects the new quantity.
+   * and the post-deduction balance. Reads `balanceAfter` from the map
+   * produced by `decrementInventoryWithLock` — avoids the N extra
+   * `findOne` round-trips per checkout that the previous implementation
+   * paid inside the hot transaction.
    */
   private async recordStockMovements(
     manager: EntityManager,
@@ -512,12 +544,9 @@ export class PosWriteService {
     actorId: string,
     branchId: string,
     items: ItemCompute[],
+    postDeductQty: Map<string, number>,
   ): Promise<void> {
-    const invRepo = manager.getRepository(Inventory);
     for (const it of items) {
-      const invAfter = await invRepo.findOne({
-        where: { productId: it.productId, branchId },
-      });
       await this.stockMovements.create(
         {
           productId: it.productId,
@@ -526,7 +555,7 @@ export class PosWriteService {
           movementType: 'Sale',
           qtyIn: 0,
           qtyOut: it.baseUnitQty,
-          balanceAfter: Number(invAfter?.quantity ?? 0),
+          balanceAfter: postDeductQty.get(it.productId) ?? 0,
           refType: 'Sale',
           refId: sale.id,
           notes: `Sale ${sale.invoiceNumber}`,
