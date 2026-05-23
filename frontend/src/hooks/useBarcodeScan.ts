@@ -5,15 +5,21 @@ import type { IProduct } from '@/types';
 
 const STATUS_CLEAR_MS = 2000;
 
-interface UsePosBarcodeScanOptions {
+interface UseBarcodeScanOptions {
     onProductFound: (product: IProduct) => void;
     enabled: boolean;
 }
 
-export function usePosBarcodeScan({
+/**
+ * Generic barcode scan hook shared by POS and stock-transfer workspaces.
+ * Listens for HID-style scanner input via `useScanDetection`, resolves the
+ * barcode against the inventory service, and exposes a transient status
+ * banner so the consumer can render the latest scan result.
+ */
+export function useBarcodeScan({
     onProductFound,
     enabled,
-}: UsePosBarcodeScanOptions) {
+}: UseBarcodeScanOptions) {
     const [scanStatus, setScanStatus] = useState<string | null>(null);
 
     const handleBarcodeScan = useCallback(

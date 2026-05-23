@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import type { IProduct } from '@/types';
 import { useTransferRequestCreatePage } from '@/features/transfer-request-create/hooks/useTransferRequestCreatePage';
-import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
+import { useBarcodeScan } from '@/hooks/useBarcodeScan';
 import { TransferRequestCartPanel } from '@/features/transfer-request-create/components/TransferRequestCartPanel';
 
 export function NewTransferRequestPage() {
@@ -11,7 +11,7 @@ export function NewTransferRequestPage() {
     const handleAddProduct = (product: IProduct) =>
         p.cart.addToCart(product, 1);
 
-    const scan = usePosBarcodeScan({
+    const scan = useBarcodeScan({
         onProductFound: handleAddProduct,
         enabled: true,
     });

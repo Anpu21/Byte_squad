@@ -1,9 +1,2 @@
-export * from './sale.type'
-export * from './sale-item.type'
-export * from './daily-breakdown.type'
-export * from './top-product.type'
-export * from './admin-dashboard.type'
-export * from './cashier-dashboard.type'
-export * from './cashier-period-stats.type'
-export * from './cashier-transaction-row.type'
-export * from './cashier-transactions-summary.type'
+export type { ISale } from './sale.type';
+export type { ISaleItem } from './sale-item.type';

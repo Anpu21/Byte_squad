@@ -1,57 +1,42 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { posService } from '@/services/pos.service';
-import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import type { IAdminDashboard } from '@/types';
-import { formatDayShort, getGreeting, getTodayLabel } from '../lib/format';
+import type { ISale } from '@/types';
+import { getGreeting, getTodayLabel } from '../lib/format';
 
-const REFETCH_INTERVAL = 30_000;
-
+/**
+ * Admin-dashboard page model.
+ *
+ * Phase 1 of the Shanel POS port deletes the legacy `posService`. Until
+ * Phase 7 rewires this dashboard against the new POS read endpoints we
+ * return an empty data envelope so the dashboard renders the zero state.
+ *
+ * TODO Phase 7: rewire to new pos.service / dashboard endpoint.
+ */
 export function useDashboardPage() {
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
 
-    const { data, isLoading } = useQuery<IAdminDashboard>({
-        queryKey: queryKeys.admin.dashboard(),
-        queryFn: posService.getAdminDashboard,
-        refetchInterval: REFETCH_INTERVAL,
-    });
-
-    const sparkline = useMemo(
-        () =>
-            (data?.dailyBreakdown ?? [])
-                .slice(-10)
-                .map((d) => Number(d.totalSales)),
-        [data?.dailyBreakdown],
-    );
-
-    const chartData = useMemo(
-        () =>
-            (data?.dailyBreakdown ?? []).map((d) => ({
-                name: formatDayShort(d.date),
-                value: Number(d.totalSales),
-            })),
-        [data?.dailyBreakdown],
-    );
-
-    const todayRevenue = Number(data?.today.totalSales ?? 0);
-    const todayCount = Number(data?.today.transactionCount ?? 0);
-    const avgOrderValue = todayCount > 0 ? todayRevenue / todayCount : 0;
-    const lowStockCount = Number(data?.stats.lowStockItems ?? 0);
+    // Stable empty data — mirrors the legacy IAdminDashboard shape just enough
+    // for downstream components to render the zero state without crashing.
+    const data = {
+        today: { totalSales: 0, transactionCount: 0 },
+        month: { totalSales: 0, transactionCount: 0 },
+        stats: { lowStockItems: 0, activeProducts: 0 },
+        topProducts: [] as { productId: string; productName: string; totalQuantity: number; totalRevenue: number }[],
+        recentTransactions: [] as ISale[],
+    };
 
     return {
         user,
         isAdmin,
-        isLoading,
+        isLoading: false,
         data,
-        sparkline,
-        chartData,
-        todayRevenue,
-        todayCount,
-        avgOrderValue,
-        lowStockCount,
+        sparkline: [] as number[],
+        chartData: [] as { name: string; value: number }[],
+        todayRevenue: 0,
+        todayCount: 0,
+        avgOrderValue: 0,
+        lowStockCount: 0,
         greeting: getGreeting(),
         todayLabel: getTodayLabel(),
     };

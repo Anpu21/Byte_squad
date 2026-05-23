@@ -1,37 +1,42 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { posService } from '@/services/pos.service';
-import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import type { ICashierTransactionsSummary } from '@/types';
+import type { ITransactionRow } from '../lib/format';
 
-const REFETCH_INTERVAL = 30_000;
+/**
+ * Transactions page model.
+ *
+ * Phase 1 of the Shanel POS port deletes the legacy `posService`. Until
+ * Phase 7 rewires this list against the new POS read endpoints we return
+ * an empty envelope so the page renders its zero state without crashing.
+ * The `branch`-scope branch in the previous implementation also fell out;
+ * Phase 7 will reinstate per-branch summaries with the new endpoints.
+ *
+ * TODO Phase 7: rewire to new pos.service / transactions list endpoint.
+ */
+type TransactionsScope = 'system' | 'branch' | 'self';
 
 export function useTransactionsPage() {
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
+    const scope: TransactionsScope = isAdmin ? 'system' : 'self';
 
-    const { data, isLoading } = useQuery<ICashierTransactionsSummary>({
-        queryKey: queryKeys.transactions.summary(isAdmin ? 'system' : 'self'),
-        queryFn: isAdmin
-            ? posService.getAllTransactions
-            : posService.getMyTransactions,
-        refetchInterval: REFETCH_INTERVAL,
-    });
+    const data = {
+        scope,
+        today: { totalSales: 0, transactionCount: 0 },
+        month: { totalSales: 0, transactionCount: 0 },
+        year: { totalSales: 0, transactionCount: 0 },
+        recentTransactions: [] as ITransactionRow[],
+    };
 
-    const subtitle = useMemo(() => {
-        const scopeLabel =
-            data?.scope === 'system'
-                ? 'All branches'
-                : data?.scope === 'branch'
-                  ? 'Branch sales'
-                  : `${user?.firstName ?? 'Your'} sales`;
-        return `${scopeLabel} · ${data?.recentTransactions.length ?? 0} records`;
-    }, [data, user]);
+    const scopeLabel =
+        scope === 'system' ? 'All branches' : `${user?.firstName ?? 'Your'} sales`;
+    const subtitle = `${scopeLabel} · 0 records`;
 
-    const showBranchCol = data?.scope === 'system';
-    const showCashierCol = data?.scope === 'branch' || data?.scope === 'system';
-
-    return { data, isLoading, subtitle, showBranchCol, showCashierCol };
+    return {
+        data,
+        isLoading: false,
+        subtitle,
+        showBranchCol: scope === 'system',
+        showCashierCol: scope === 'system',
+    };
 }
