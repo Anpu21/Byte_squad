@@ -9,11 +9,13 @@ import { PaymentRepository } from '@pos/payment.repository';
 import { CreditTransactionRepository } from '@pos/credit-transaction.repository';
 import { StockMovementRepository } from '@pos/stock-movement.repository';
 import { MultiTenderCalculatorService } from '@pos/services/multi-tender-calculator.service';
+import { InvoiceNumberService } from '@pos/services/invoice-number.service';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Payment } from '@pos/entities/payment.entity';
 import { CreditTransaction } from '@pos/entities/credit-transaction.entity';
 import { StockMovement } from '@pos/entities/stock-movement.entity';
+import { InvoiceCounter } from '@pos/entities/invoice-counter.entity';
 import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
 import { AccountingModule } from '@accounting/accounting.module';
 import { InventoryModule } from '@inventory/inventory.module';
@@ -26,6 +28,7 @@ import { InventoryModule } from '@inventory/inventory.module';
       Payment,
       CreditTransaction,
       StockMovement,
+      InvoiceCounter,
       IdempotencyKey,
     ]),
     AccountingModule,
@@ -41,6 +44,7 @@ import { InventoryModule } from '@inventory/inventory.module';
     CreditTransactionRepository,
     StockMovementRepository,
     MultiTenderCalculatorService,
+    InvoiceNumberService,
   ],
   // Public surface: the service for write/read operations and the
   // SaleRepository for accounting joins. PosRepository is still exported

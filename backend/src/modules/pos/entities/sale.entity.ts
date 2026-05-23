@@ -80,6 +80,8 @@ export class Sale {
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   total!: number;
 
+  // PHASE-5: drop this column when pos.service migrates from single-tender to the payments table.
+  // Kept here so the existing pos.service.ts compiles against the renamed Sale entity.
   @Column({
     type: 'enum',
     enum: PaymentMethod,
