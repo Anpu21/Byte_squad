@@ -33,6 +33,7 @@ import type {
   ProductUnitRow,
   InventoryQuantity,
   RecentSaleRow,
+  CustomerSearchRow,
 } from '@pos/types';
 
 interface ActorPayload {
@@ -168,6 +169,23 @@ export class PosController {
   @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
   previewNextInvoiceNumber(): Promise<{ invoiceNo: string }> {
     return this.posService.previewNextInvoiceNumber();
+  }
+
+  /**
+   * `GET /pos/customers/search` — prefix-match customers so the cashier
+   * picker can attach a customer to the in-progress sale. Roles are
+   * intentionally broader than the admin-only `/users` listing because
+   * every POS role needs to look customers up during checkout.
+   */
+  @Get(APP_ROUTES.POS.SEARCH_CUSTOMERS)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  searchCustomers(
+    @CurrentUser() actor: ActorPayload,
+    @Query('q') q?: string,
+    @Query('limit') limit?: string,
+  ): Promise<CustomerSearchRow[]> {
+    const parsedLimit = limit !== undefined ? Number(limit) : undefined;
+    return this.posService.searchCustomers(actor, q ?? '', parsedLimit);
   }
 
   // -------------------------------------------------------------------

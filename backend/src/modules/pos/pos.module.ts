@@ -22,6 +22,7 @@ import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
 import { AccountingModule } from '@accounting/accounting.module';
 import { InventoryModule } from '@inventory/inventory.module';
 import { ProductsModule } from '@products/products.module';
+import { UsersModule } from '@users/users.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { ProductsModule } from '@products/products.module';
     AccountingModule,
     InventoryModule,
     ProductsModule,
+    UsersModule,
   ],
   controllers: [PosController],
   providers: [

@@ -20,11 +20,13 @@ import { TransactionType } from '@common/enums/transaction.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { InvoiceNumberService } from '@pos/services/invoice-number.service';
 import { SaleRepository } from '@pos/sale.repository';
+import { UsersRepository } from '@users/users.repository';
 import type {
   SearchProductRow,
   ProductUnitRow,
   InventoryQuantity,
   RecentSaleRow,
+  CustomerSearchRow,
 } from '@pos/types';
 
 /**
@@ -94,6 +96,7 @@ export class PosService {
     private readonly inventory: InventoryRepository,
     private readonly invoiceNumbers: InvoiceNumberService,
     private readonly sales: SaleRepository,
+    private readonly users: UsersRepository,
   ) {}
 
   async createTransaction(
@@ -537,6 +540,35 @@ export class PosService {
       taxRate: Number(p.taxRate),
       discountAllowed: p.discountAllowed,
       imageUrl: p.imageUrl,
+    }));
+  }
+
+  /**
+   * Prefix-match customers (role = CUSTOMER) so the cashier can attach a
+   * customer to the in-progress sale. Returns a thin Shanel-shaped row so
+   * the picker UI never has to know the full User entity. An empty trimmed
+   * `q` short-circuits to an empty array so the typeahead doesn't blast the
+   * DB on first focus.
+   *
+   * `currentBalance` is decimal in Postgres so TypeORM hands it back as a
+   * string; the explicit `Number(...)` keeps the public contract numeric.
+   */
+  async searchCustomers(
+    _actor: ActorPayload,
+    q: string,
+    limit?: number,
+  ): Promise<CustomerSearchRow[]> {
+    const term = (q ?? '').trim();
+    if (!term) return [];
+    const bounded = Math.max(1, Math.min(limit ?? 10, 50));
+    const rows = await this.users.searchCustomersByText(term, bounded);
+    return rows.map((u) => ({
+      userId: u.id,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      email: u.email,
+      phone: u.phone,
+      currentBalance: Number(u.currentBalance ?? 0),
     }));
   }
 

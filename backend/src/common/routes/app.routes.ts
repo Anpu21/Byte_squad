@@ -80,6 +80,8 @@ export const APP_ROUTES = {
     PRODUCT_INVENTORY: 'products/:productId/inventory',
     RECENT_SALES: 'recent-sales',
     GENERATE_INVOICE_NO: 'invoice-number',
+    // Phase 9 — Shanel-aligned customer search for the POS customer picker.
+    SEARCH_CUSTOMERS: 'customers/search',
     // Phase 5+ placeholders — declared now so subsequent phases don't have
     // to touch this file when wiring the Shanel-shaped sale write/print/void
     // mutations.

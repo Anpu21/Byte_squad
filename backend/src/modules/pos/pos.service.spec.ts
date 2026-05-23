@@ -10,9 +10,11 @@ import { AccountingRepository } from '@accounting/accounting.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
 import { ProductsRepository } from '@products/products.repository';
 import { InvoiceNumberService } from './services/invoice-number.service';
+import { UsersRepository } from '@users/users.repository';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Sale } from './entities/sale.entity';
+import { User } from '@users/entities/user.entity';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { DiscountType } from '@common/enums/discount.enum';
 import { PaymentMethod } from '@common/enums/payment-method';
@@ -92,6 +94,31 @@ function makeUnit(
   } as ProductSellableUnit;
 }
 
+function makeCustomer(overrides: Partial<User> = {}): User {
+  return {
+    id: 'cust-1',
+    email: 'jane@example.com',
+    passwordHash: 'hash',
+    firstName: 'Jane',
+    lastName: 'Doe',
+    avatarUrl: null,
+    role: UserRole.CUSTOMER,
+    branchId: null,
+    branch: null,
+    phone: '+94770000000',
+    address: null,
+    isFirstLogin: false,
+    otpCode: null,
+    otpExpiresAt: null,
+    isVerified: true,
+    lastLoginAt: null,
+    currentBalance: 0,
+    createdAt: new Date('2026-05-23T10:00:00Z'),
+    updatedAt: new Date('2026-05-23T10:00:00Z'),
+    ...overrides,
+  } as User;
+}
+
 function makeSale(overrides: Partial<Sale> = {}): Sale {
   return {
     id: 'sale-1',
@@ -139,6 +166,7 @@ describe('PosService — Phase 4 read endpoints', () => {
   let posRepo: jest.Mocked<PosRepository>;
   let invoiceNumbers: jest.Mocked<InvoiceNumberService>;
   let salesRepo: jest.Mocked<SaleRepository>;
+  let usersRepo: jest.Mocked<UsersRepository>;
 
   beforeEach(async () => {
     const posRepoMock: Partial<jest.Mocked<PosRepository>> = {
@@ -160,6 +188,9 @@ describe('PosService — Phase 4 read endpoints', () => {
       findOneById: jest.fn(),
       markPrinted: jest.fn().mockResolvedValue(undefined),
     };
+    const usersRepoMock: Partial<jest.Mocked<UsersRepository>> = {
+      searchCustomersByText: jest.fn(),
+    };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -171,6 +202,7 @@ describe('PosService — Phase 4 read endpoints', () => {
         { provide: InventoryRepository, useValue: inventoryRepoMock },
         { provide: InvoiceNumberService, useValue: invoiceNumbersMock },
         { provide: SaleRepository, useValue: salesRepoMock },
+        { provide: UsersRepository, useValue: usersRepoMock },
       ],
     }).compile();
 
@@ -180,6 +212,7 @@ describe('PosService — Phase 4 read endpoints', () => {
     posRepo = module.get(PosRepository);
     invoiceNumbers = module.get(InvoiceNumberService);
     salesRepo = module.get(SaleRepository);
+    usersRepo = module.get(UsersRepository);
   });
 
   // -------------------------------------------------------------------
@@ -579,6 +612,56 @@ describe('PosService — Phase 4 read endpoints', () => {
         service.markPrinted('missing', makeCashier()),
       ).rejects.toBeInstanceOf(NotFoundException);
       expect(salesRepo.markPrinted).not.toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Task 9.1 — searchCustomers (Phase 9 cashier customer picker)
+  // -------------------------------------------------------------------
+  describe('searchCustomers', () => {
+    it('returns an empty array when the trimmed query is empty', async () => {
+      const result = await service.searchCustomers(makeCashier(), '   ', 10);
+      expect(result).toEqual([]);
+      expect(usersRepo.searchCustomersByText).not.toHaveBeenCalled();
+    });
+
+    it('maps User rows into the Shanel CustomerSearchRow shape', async () => {
+      usersRepo.searchCustomersByText.mockResolvedValue([
+        makeCustomer({
+          id: 'cust-1',
+          firstName: 'Jane',
+          lastName: 'Doe',
+          email: 'jane@example.com',
+          phone: '+94770000001',
+          // decimal columns return as strings via TypeORM; the service
+          // is responsible for coercing back to number.
+          currentBalance: '250.50' as unknown as number,
+        }),
+      ]);
+
+      const result = await service.searchCustomers(makeCashier(), 'ja', 5);
+
+      expect(usersRepo.searchCustomersByText).toHaveBeenCalledWith('ja', 5);
+      expect(result).toEqual([
+        {
+          userId: 'cust-1',
+          firstName: 'Jane',
+          lastName: 'Doe',
+          email: 'jane@example.com',
+          phone: '+94770000001',
+          currentBalance: 250.5,
+        },
+      ]);
+    });
+
+    it('defaults limit to 10 when omitted and clamps absurd limits to 50', async () => {
+      usersRepo.searchCustomersByText.mockResolvedValue([]);
+
+      await service.searchCustomers(makeCashier(), 'a');
+      expect(usersRepo.searchCustomersByText).toHaveBeenLastCalledWith('a', 10);
+
+      await service.searchCustomers(makeCashier(), 'b', 9999);
+      expect(usersRepo.searchCustomersByText).toHaveBeenLastCalledWith('b', 50);
     });
   });
 });

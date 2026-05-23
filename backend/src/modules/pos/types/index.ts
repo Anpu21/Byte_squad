@@ -21,3 +21,6 @@ export type { SearchProductRow } from './search-product-row.type';
 export type { ProductUnitRow } from './product-unit-row.type';
 export type { InventoryQuantity } from './inventory-quantity.type';
 export type { RecentSaleRow } from './recent-sale-row.type';
+
+// Phase 9 — Shanel-aligned customer picker row.
+export type { CustomerSearchRow } from './customer-search-row.type';
