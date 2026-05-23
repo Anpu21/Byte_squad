@@ -3,7 +3,6 @@ import { UserManagementHeader } from '@/features/user-management/components/User
 import { UserFilters } from '@/features/user-management/components/UserFilters';
 import { UserTable } from '@/features/user-management/components/UserTable';
 import { UserFormModal } from '@/features/user-management/components/UserFormModal';
-import { UserActionOtpModal } from '@/features/user-management/components/UserActionOtpModal';
 
 export function UserManagementPage() {
     const p = useUserManagementPage();
@@ -39,8 +38,8 @@ export function UserManagementPage() {
                 }
                 getBranchName={p.getBranchName}
                 onEdit={(user) => p.setEditingUser(user)}
-                onRequestResetPassword={p.confirmAndRequestReset}
-                onRequestDelete={p.confirmAndRequestDelete}
+                onRequestResetPassword={p.confirmAndReset}
+                onRequestDelete={p.confirmAndDelete}
             />
 
             {formOpen && p.branches.length > 0 && (
@@ -51,18 +50,7 @@ export function UserManagementPage() {
                         p.setShowCreateModal(false);
                         p.setEditingUser(null);
                     }}
-                    onStaged={p.handleStaged}
-                />
-            )}
-
-            {p.pending && (
-                <UserActionOtpModal
-                    actionId={p.pending.response.actionId}
-                    expiresAt={p.pending.response.expiresAt}
-                    action={p.pending.response.action}
-                    targetLabel={p.pending.targetLabel}
-                    onClose={p.closePending}
-                    onConfirmed={p.handleConfirmed}
+                    onSaved={p.handleSaved}
                 />
             )}
         </div>
