@@ -80,14 +80,13 @@ describe('ProductsService', () => {
   });
 
   describe('create', () => {
-    it('persists wholesalePrice, taxRate, and discountAllowed', async () => {
+    it('persists taxRate and discountAllowed', async () => {
       const dto: CreateProductDto = {
-        name: 'Wholesale Widget',
+        name: 'Tax-bearing Widget',
         barcode: '0123456789',
         category: 'general',
         costPrice: 50,
         sellingPrice: 100,
-        wholesalePrice: 80,
         taxRate: 15,
         discountAllowed: false,
       };
@@ -103,12 +102,10 @@ describe('ProductsService', () => {
 
       expect(repo.createAndSave).toHaveBeenCalledWith(
         expect.objectContaining({
-          wholesalePrice: 80,
           taxRate: 15,
           discountAllowed: false,
         }),
       );
-      expect(created.wholesalePrice).toBe(80);
       expect(created.taxRate).toBe(15);
       expect(created.discountAllowed).toBe(false);
     });

@@ -116,8 +116,6 @@ function renderModal(args: IRenderArgs = {}): {
                     ? null
                     : args.customerUserId
             }
-            saleType="Retail"
-            priceLevel="Retail"
             cartDiscountPercentage={0}
             onSaleCreated={onSaleCreated}
         />
@@ -166,8 +164,6 @@ describe('PosPaymentForms', () => {
         expect((callArgs.idempotencyKey ?? '').length).toBeGreaterThan(0);
 
         // Payload shape mirrors the cart + tender bag.
-        expect(callArgs.payload.saleType).toBe('Retail');
-        expect(callArgs.payload.priceLevel).toBe('Retail');
         expect(callArgs.payload.cartDiscountPercentage).toBe(0);
         expect(callArgs.payload.items).toHaveLength(1);
         expect(callArgs.payload.items[0]).toMatchObject({

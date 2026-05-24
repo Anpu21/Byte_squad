@@ -150,11 +150,17 @@ export class CreateSaleDto {
   @IsUUID()
   customerUserId?: string;
 
+  // saleType + priceLevel are persisted on the Sale row for historical
+  // reporting, but the cashier UI no longer surfaces a wholesale toggle —
+  // every new sale rings at retail. Both fields stay optional so the FE
+  // can omit them; the service defaults to 'Retail' when absent.
+  @IsOptional()
   @IsIn(['Retail', 'Wholesale'])
-  saleType!: 'Retail' | 'Wholesale';
+  saleType?: 'Retail' | 'Wholesale';
 
+  @IsOptional()
   @IsIn(['Retail', 'Wholesale'])
-  priceLevel!: 'Retail' | 'Wholesale';
+  priceLevel?: 'Retail' | 'Wholesale';
 
   @IsOptional()
   @IsString()

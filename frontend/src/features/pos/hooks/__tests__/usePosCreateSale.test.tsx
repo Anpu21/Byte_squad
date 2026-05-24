@@ -16,8 +16,6 @@ vi.mock('@/services/pos.service', () => ({
 const createMock = vi.mocked(posService.createSale);
 
 const payload: ICreateSalePayload = {
-    saleType: 'Retail',
-    priceLevel: 'Retail',
     items: [
         {
             productId: 'p1',

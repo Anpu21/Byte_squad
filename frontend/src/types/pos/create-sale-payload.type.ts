@@ -1,6 +1,4 @@
 import type { TPaymentMethod } from './payment-method.type';
-import type { TSaleType } from './sale-type.type';
-import type { TPriceLevel } from './price-level.type';
 
 export interface ICreateSaleItemPayload {
   productId: string;
@@ -30,10 +28,13 @@ export interface ICreateSalePaymentPayload {
   bankRef?: string;
 }
 
+/**
+ * Create-sale request body for `POST /pos/sales`. The wholesale price tier
+ * was removed from the cashier UI; `saleType` / `priceLevel` are no longer
+ * sent and the backend DTO defaults both to `'Retail'` server-side.
+ */
 export interface ICreateSalePayload {
   customerUserId?: string;
-  saleType: TSaleType;
-  priceLevel: TPriceLevel;
   location?: string;
   cartDiscountPercentage?: number;
   cartDiscountAmount?: number;

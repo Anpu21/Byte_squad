@@ -1,10 +1,9 @@
 import { useMemo, useState, type RefObject } from 'react';
 import { Camera, ShoppingCart } from 'lucide-react';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
-import type { ISearchProductRow, TPriceLevel } from '@/types';
+import type { ISearchProductRow } from '@/types';
 import { usePosProductSearch } from '@/features/pos/hooks/usePosProductSearch';
 import EmptyState from '@/components/ui/EmptyState';
-import { PosPriceLevelToggle } from './PosPriceLevelToggle';
 import { PosItemSearchInput } from './PosItemSearchInput';
 import { PosItemSearchResults } from './PosItemSearchResults';
 import { PosCartRow } from './PosCartRow';
@@ -25,8 +24,6 @@ interface IPosItemTableProps {
     ) => void;
     updateItem: (rowId: string, patch: Partial<ICartItem>) => void;
     removeItem: (rowId: string) => void;
-    priceLevel: TPriceLevel;
-    setPriceLevel: (next: TPriceLevel) => void;
     /**
      * Optional external ref to the search input so the parent can fire
      * imperative focus (F2 shortcut, post-checkout refocus).
@@ -70,8 +67,6 @@ export function PosItemTable({
     addItem,
     updateItem,
     removeItem,
-    priceLevel,
-    setPriceLevel,
     searchInputRef,
     onScanBarcode,
 }: IPosItemTableProps) {
@@ -86,8 +81,6 @@ export function PosItemTable({
     );
 
     function handleSelect(row: ISearchProductRow) {
-        const unitPrice =
-            priceLevel === 'Retail' ? row.retailPrice : row.wholesalePrice;
         addItem({
             productId: row.productId,
             productCode: row.productCode,
@@ -96,7 +89,7 @@ export function PosItemTable({
             baseUnit: row.baseUnit,
             unitId: null,
             unitName: row.baseUnit,
-            unitPrice,
+            unitPrice: row.retailPrice,
             conversionFactor: 1,
             quantity: 1,
             free: 0,
@@ -117,10 +110,6 @@ export function PosItemTable({
         >
             <header className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border-strong">
                 <h2 className="text-sm font-semibold text-text-1">Items</h2>
-                <PosPriceLevelToggle
-                    value={priceLevel}
-                    onChange={setPriceLevel}
-                />
             </header>
 
             <div className="px-4 py-3 border-b border-border-strong">
@@ -137,7 +126,6 @@ export function PosItemTable({
                             <div className="absolute left-0 right-0 top-full mt-1 z-dropdown">
                                 <PosItemSearchResults
                                     results={results}
-                                    priceLevel={priceLevel}
                                     onSelect={handleSelect}
                                     isLoading={searchQuery.isFetching}
                                     query={debouncedQuery || query.trim()}

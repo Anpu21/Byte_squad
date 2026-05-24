@@ -9,15 +9,11 @@ import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type {
     ISale,
     TPaymentMethod,
-    TPriceLevel,
-    TSaleType,
 } from '@/types';
 
 interface IUsePaymentSubmitArgs {
     cart: ICartItem[];
     customerUserId: string | null;
-    saleType: TSaleType;
-    priceLevel: TPriceLevel;
     cartDiscountPercentage: number;
     paymentMethod: TPaymentMethod;
     bag: ITenderBag;

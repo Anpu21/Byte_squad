@@ -547,7 +547,6 @@ export class PosService {
       status: p.isActive,
       costPrice: Number(p.costPrice),
       retailPrice: Number(p.sellingPrice),
-      wholesalePrice: Number(p.wholesalePrice),
       taxRate: Number(p.taxRate),
       discountAllowed: p.discountAllowed,
       imageUrl: p.imageUrl,

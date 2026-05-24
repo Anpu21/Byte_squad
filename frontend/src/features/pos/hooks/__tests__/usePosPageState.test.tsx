@@ -4,9 +4,8 @@ import { usePosPageState } from '../usePosPageState';
 import { saleFixture } from './sale-fixture';
 
 describe('usePosPageState', () => {
-    it('starts at Retail with no customer, an empty cart discount, and all modals closed', () => {
+    it('starts with no customer, an empty cart discount, and all modals closed', () => {
         const { result } = renderHook(() => usePosPageState());
-        expect(result.current.priceLevel).toBe('Retail');
         expect(result.current.customerUserId).toBeNull();
         expect(result.current.cartDiscountPercentage).toBe(0);
         expect(result.current.showPayment).toBe(false);
@@ -14,14 +13,6 @@ describe('usePosPageState', () => {
         expect(result.current.previewSaleId).toBeNull();
         expect(result.current.lastSale).toBeNull();
         expect(result.current.customerPickerSignal).toBe(0);
-    });
-
-    it('togglePriceLevel flips Retail<->Wholesale on each call', () => {
-        const { result } = renderHook(() => usePosPageState());
-        act(() => result.current.togglePriceLevel());
-        expect(result.current.priceLevel).toBe('Wholesale');
-        act(() => result.current.togglePriceLevel());
-        expect(result.current.priceLevel).toBe('Retail');
     });
 
     it('openPayment / closePayment toggle showPayment, and resetAfterCheckout clears discount + customer', () => {

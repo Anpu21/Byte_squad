@@ -27,7 +27,6 @@ const searchRow: ISearchProductRow = {
     status: true,
     costPrice: 800,
     retailPrice: 1200,
-    wholesalePrice: 1000,
     taxRate: 0,
     discountAllowed: true,
     imageUrl: null,
@@ -64,8 +63,6 @@ function renderTable(
         addItem: vi.fn(),
         updateItem: vi.fn(),
         removeItem: vi.fn(),
-        priceLevel: 'Retail',
-        setPriceLevel: vi.fn(),
         ...overrides,
     };
     const client = new QueryClient({
@@ -139,24 +136,4 @@ describe('PosItemTable', () => {
         });
     });
 
-    it('uses the wholesale price when the toggle is on Wholesale', async () => {
-        searchMock.mockResolvedValueOnce([searchRow]);
-        const addItem = vi.fn();
-        renderTable({ addItem, priceLevel: 'Wholesale' });
-
-        await userEvent.type(
-            screen.getByRole('textbox', { name: 'Search products' }),
-            'rice',
-        );
-
-        await waitFor(() =>
-            expect(screen.getByText('Basmati Rice')).toBeInTheDocument(),
-        );
-
-        await userEvent.click(
-            screen.getByRole('button', { name: /Basmati Rice/i }),
-        );
-
-        expect(addItem.mock.calls[0][0].unitPrice).toBe(1000);
-    });
 });

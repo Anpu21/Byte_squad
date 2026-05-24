@@ -45,11 +45,6 @@ export class UpdateProductDto {
 
   @IsNumber()
   @Min(0)
-  @IsOptional()
-  wholesalePrice?: number;
-
-  @IsNumber()
-  @Min(0)
   @Max(100)
   @IsOptional()
   taxRate?: number;

@@ -205,11 +205,17 @@ export class PosWriteService {
     // ---------------------------------------------------------------
     const unitsById = await this.resolveSellableUnits(dto);
 
+    // The cashier UI no longer offers a Retail/Wholesale toggle; every new
+    // sale rings at retail. The columns stay on the Sale row for historical
+    // reporting (and to keep older 'Wholesale' rows intact).
+    const saleType = dto.saleType ?? 'Retail';
+    const priceLevel = dto.priceLevel ?? 'Retail';
+
     // ---------------------------------------------------------------
     // 3. Per-item math
     // ---------------------------------------------------------------
     const itemRows: ItemCompute[] = dto.items.map((item) =>
-      computeItem(item, unitsById, dto.priceLevel, dto.location ?? 'Shop'),
+      computeItem(item, unitsById, priceLevel, dto.location ?? 'Shop'),
     );
 
     // ---------------------------------------------------------------
@@ -260,8 +266,8 @@ export class PosWriteService {
           invoiceNumber,
           transactionNumber: `TXN-${Date.now()}-${randomSuffix()}`,
           type: TransactionType.SALE,
-          saleType: dto.saleType,
-          priceLevel: dto.priceLevel,
+          saleType,
+          priceLevel,
           location: dto.location ?? 'Shop',
           subtotal: itemsSubtotal,
           discountAmount: cartDiscount,

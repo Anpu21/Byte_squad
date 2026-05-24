@@ -22,7 +22,6 @@ const row: ISearchProductRow = {
     status: true,
     costPrice: 100,
     retailPrice: 150,
-    wholesalePrice: 120,
     taxRate: 0,
     discountAllowed: true,
     imageUrl: null,

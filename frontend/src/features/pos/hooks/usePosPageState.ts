@@ -1,10 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
-import type { ISale, TPriceLevel } from '@/types';
+import type { ISale } from '@/types';
 
 interface IUsePosPageStateReturn {
-    priceLevel: TPriceLevel;
-    setPriceLevel: (next: TPriceLevel) => void;
-    togglePriceLevel: () => void;
     customerUserId: string | null;
     setCustomerUserId: (next: string | null) => void;
     cartDiscountPercentage: number;
@@ -34,7 +31,6 @@ interface IUsePosPageStateReturn {
  * internal picker without us having to lift the modal state out.
  */
 export function usePosPageState(): IUsePosPageStateReturn {
-    const [priceLevel, setPriceLevel] = useState<TPriceLevel>('Retail');
     const [customerUserId, setCustomerUserId] = useState<string | null>(null);
     const [cartDiscountPercentage, setCartDiscountPercentage] = useState(0);
     const [showPayment, setShowPayment] = useState(false);
@@ -44,17 +40,12 @@ export function usePosPageState(): IUsePosPageStateReturn {
     const [lastSale, setLastSale] = useState<ISale | null>(null);
     const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-    const togglePriceLevel = useCallback(
-        () => setPriceLevel((p) => (p === 'Retail' ? 'Wholesale' : 'Retail')),
-        [],
-    );
     const focusSearch = useCallback(() => searchInputRef.current?.focus(), []);
     const resetAfterCheckout = useCallback(() => {
         setCartDiscountPercentage(0);
         setCustomerUserId(null);
     }, []);
     return {
-        priceLevel, setPriceLevel, togglePriceLevel,
         customerUserId, setCustomerUserId,
         cartDiscountPercentage, setCartDiscountPercentage,
         showPayment, showRecent, customerPickerSignal,

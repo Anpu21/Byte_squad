@@ -17,7 +17,6 @@ interface IRenderArgs {
     isCartEmpty?: boolean;
     hasLastReceipt?: boolean;
     onFocusSearch?: TVoidMock;
-    onTogglePriceLevel?: TVoidMock;
     onOpenCustomerPicker?: TVoidMock;
     onClearCart?: TVoidMock;
     onPrintLastReceipt?: TVoidMock;
@@ -27,7 +26,6 @@ interface IRenderArgs {
 
 function renderBar(args: IRenderArgs = {}): {
     onFocusSearch: TVoidMock;
-    onTogglePriceLevel: TVoidMock;
     onOpenCustomerPicker: TVoidMock;
     onClearCart: TVoidMock;
     onPrintLastReceipt: TVoidMock;
@@ -35,7 +33,6 @@ function renderBar(args: IRenderArgs = {}): {
     onOpenPayment: TVoidMock;
 } {
     const onFocusSearch = args.onFocusSearch ?? vi.fn<() => void>();
-    const onTogglePriceLevel = args.onTogglePriceLevel ?? vi.fn<() => void>();
     const onOpenCustomerPicker = args.onOpenCustomerPicker ?? vi.fn<() => void>();
     const onClearCart = args.onClearCart ?? vi.fn<() => void>();
     const onPrintLastReceipt = args.onPrintLastReceipt ?? vi.fn<() => void>();
@@ -44,7 +41,6 @@ function renderBar(args: IRenderArgs = {}): {
     render(
         <PosActionButtons
             onFocusSearch={onFocusSearch}
-            onTogglePriceLevel={onTogglePriceLevel}
             onOpenCustomerPicker={onOpenCustomerPicker}
             onClearCart={onClearCart}
             onPrintLastReceipt={onPrintLastReceipt}
@@ -56,7 +52,6 @@ function renderBar(args: IRenderArgs = {}): {
     );
     return {
         onFocusSearch,
-        onTogglePriceLevel,
         onOpenCustomerPicker,
         onClearCart,
         onPrintLastReceipt,
@@ -70,9 +65,9 @@ describe('PosActionButtons', () => {
         confirmMock.mockReset();
     });
 
-    it('renders all seven shortcut buttons with their F-key labels', () => {
+    it('renders all six shortcut buttons with their F-key labels', () => {
         renderBar();
-        const labels = ['Search', 'Price level', 'Customer', 'Clear cart', 'Print last', 'Recent sales', 'Charge'];
+        const labels = ['Search', 'Customer', 'Clear cart', 'Print last', 'Recent sales', 'Charge'];
         for (const label of labels) {
             expect(screen.getByRole('button', { name: new RegExp(label, 'i') })).toBeInTheDocument();
         }

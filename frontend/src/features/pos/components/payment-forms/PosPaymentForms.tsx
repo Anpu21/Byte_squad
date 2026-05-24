@@ -18,8 +18,6 @@ import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type {
     ISale,
     TPaymentMethod,
-    TPriceLevel,
-    TSaleType,
 } from '@/types';
 
 export interface IPosPaymentFormsProps {
@@ -29,8 +27,6 @@ export interface IPosPaymentFormsProps {
     /** Cart items in the active sale; flattened into payload at submit time. */
     cart: ICartItem[];
     customerUserId: string | null;
-    saleType: TSaleType;
-    priceLevel: TPriceLevel;
     /** 0-100 cart-level discount percentage; forwarded to the backend. */
     cartDiscountPercentage: number;
     /** Fires with the persisted Sale after a successful checkout. */
@@ -54,8 +50,6 @@ export function PosPaymentForms({
     invoiceTotal,
     cart,
     customerUserId,
-    saleType,
-    priceLevel,
     cartDiscountPercentage,
     onSaleCreated,
 }: IPosPaymentFormsProps) {
@@ -86,7 +80,7 @@ export function PosPaymentForms({
     );
 
     const submit = usePaymentSubmit({
-        cart, customerUserId, saleType, priceLevel, cartDiscountPercentage,
+        cart, customerUserId, cartDiscountPercentage,
         paymentMethod, bag, tenderInputs, idempotencyKey, onSaleCreated, onClose,
     });
 

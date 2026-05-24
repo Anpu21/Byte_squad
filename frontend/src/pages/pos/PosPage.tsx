@@ -28,9 +28,8 @@ export function PosPage(): React.ReactElement {
     const print = usePrintReceipt();
     const previewQuery = usePosSaleById(state.previewSaleId);
     const handleScanHit = useCallback(
-        (row: ISearchProductRow) =>
-            cart.addItem(toCartItemSeed(row, state.priceLevel)),
-        [cart, state.priceLevel],
+        (row: ISearchProductRow) => cart.addItem(toCartItemSeed(row)),
+        [cart],
     );
     const barcode = usePosBarcodeScan({
         onProductFound: handleScanHit,
@@ -67,8 +66,6 @@ export function PosPage(): React.ReactElement {
                 addItem={cart.addItem}
                 updateItem={cart.updateItem}
                 removeItem={cart.removeItem}
-                priceLevel={state.priceLevel}
-                setPriceLevel={state.setPriceLevel}
                 searchInputRef={state.searchInputRef}
                 onScanBarcode={handleCameraScan}
             />
@@ -88,7 +85,6 @@ export function PosPage(): React.ReactElement {
                 />
                 <PosActionButtons
                     onFocusSearch={state.focusSearch}
-                    onTogglePriceLevel={state.togglePriceLevel}
                     onOpenCustomerPicker={state.openCustomerPicker}
                     onClearCart={cart.clear}
                     onPrintLastReceipt={handlePrintLast}
@@ -104,8 +100,6 @@ export function PosPage(): React.ReactElement {
                 invoiceTotal={invoiceTotal}
                 cart={cart.cart}
                 customerUserId={state.customerUserId}
-                saleType="Retail"
-                priceLevel={state.priceLevel}
                 cartDiscountPercentage={state.cartDiscountPercentage}
                 onSaleCreated={handleSaleCreated}
             />

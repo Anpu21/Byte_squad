@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import { Search, Repeat, UserPlus, Trash2, Printer, History, CreditCard, type LucideIcon } from 'lucide-react';
+import { Search, UserPlus, Trash2, Printer, History, CreditCard, type LucideIcon } from 'lucide-react';
 import { useConfirm } from '@/hooks/useConfirm';
 
 interface IPosActionButtonsProps {
     onFocusSearch: () => void;
-    onTogglePriceLevel: () => void;
     onOpenCustomerPicker: () => void;
     onClearCart: () => void;
     onPrintLastReceipt: () => void;
@@ -15,19 +14,18 @@ interface IPosActionButtonsProps {
 }
 
 type TActionKey =
-    | 'focusSearch' | 'togglePriceLevel' | 'openCustomerPicker' | 'clearCart'
+    | 'focusSearch' | 'openCustomerPicker' | 'clearCart'
     | 'printLastReceipt' | 'showRecent' | 'openPayment';
 
 interface IActionDescriptor {
     key: TActionKey;
     label: string;
-    shortcut: 'F2' | 'F3' | 'F4' | 'F5' | 'F9' | 'F10' | 'F12';
+    shortcut: 'F2' | 'F4' | 'F5' | 'F9' | 'F10' | 'F12';
     Icon: LucideIcon;
 }
 
 const ACTIONS: readonly IActionDescriptor[] = [
     { key: 'focusSearch', label: 'Search', shortcut: 'F2', Icon: Search },
-    { key: 'togglePriceLevel', label: 'Price level', shortcut: 'F3', Icon: Repeat },
     { key: 'openCustomerPicker', label: 'Customer', shortcut: 'F4', Icon: UserPlus },
     { key: 'clearCart', label: 'Clear cart', shortcut: 'F5', Icon: Trash2 },
     { key: 'printLastReceipt', label: 'Print last', shortcut: 'F9', Icon: Printer },
@@ -54,7 +52,6 @@ const DISABLED =
  */
 export function PosActionButtons({
     onFocusSearch,
-    onTogglePriceLevel,
     onOpenCustomerPicker,
     onClearCart,
     onPrintLastReceipt,
@@ -74,7 +71,6 @@ export function PosActionButtons({
     const fire = (key: TActionKey): void => {
         if (isDisabled(key)) return;
         if (key === 'focusSearch') return onFocusSearch();
-        if (key === 'togglePriceLevel') return onTogglePriceLevel();
         if (key === 'openCustomerPicker') return onOpenCustomerPicker();
         if (key === 'printLastReceipt') return onPrintLastReceipt();
         if (key === 'showRecent') return onShowRecent();
@@ -82,7 +78,7 @@ export function PosActionButtons({
         // clearCart — gate behind useConfirm; do not call onClearCart on cancel.
         void confirm({
             title: 'Clear the cart?',
-            body: 'All rows in the current sale will be removed. Customer + price level stay attached.',
+            body: 'All rows in the current sale will be removed. Customer stays attached.',
             confirmLabel: 'Clear cart',
             tone: 'danger',
         }).then((ok) => {
@@ -113,7 +109,7 @@ export function PosActionButtons({
         <div
             role="toolbar"
             aria-label="Cashier shortcuts"
-            className="grid grid-cols-3 sm:grid-cols-7 gap-2"
+            className="grid grid-cols-3 sm:grid-cols-6 gap-2"
         >
             {ACTIONS.map(({ key, label, shortcut, Icon }) => {
                 const disabled = isDisabled(key);

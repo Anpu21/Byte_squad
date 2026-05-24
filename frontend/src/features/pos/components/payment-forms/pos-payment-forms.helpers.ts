@@ -5,8 +5,6 @@ import type {
     ICreateSaleItemPayload,
     ICreateSalePaymentPayload,
     TPaymentMethod,
-    TPriceLevel,
-    TSaleType,
 } from '@/types';
 
 /**
@@ -100,8 +98,6 @@ export function createInitialTenderBag(invoiceTotal: number): ITenderBag {
 interface IBuildPayloadArgs {
     cart: ICartItem[];
     customerUserId: string | null;
-    saleType: TSaleType;
-    priceLevel: TPriceLevel;
     cartDiscountPercentage: number;
     paymentMethod: TPaymentMethod;
     paymentAmount: number;
@@ -115,12 +111,13 @@ interface IBuildPayloadArgs {
  * backend expects. Card/Mobile tenders ride the `paymentMethod` field
  * alone — no per-method amount; the backend treats them as Cash-equivalent
  * with `cashAmount = invoice total` so `paidAmount` lands correctly.
+ *
+ * The Retail/Wholesale tier toggle was removed, so we no longer send
+ * `saleType` / `priceLevel`; the backend DTO defaults both to `'Retail'`.
  */
 export function buildSalePayload({
     cart,
     customerUserId,
-    saleType,
-    priceLevel,
     cartDiscountPercentage,
     paymentMethod,
     paymentAmount,
@@ -145,8 +142,6 @@ export function buildSalePayload({
 
     return {
         customerUserId: customerUserId ?? undefined,
-        saleType,
-        priceLevel,
         cartDiscountPercentage,
         items,
         payment,
