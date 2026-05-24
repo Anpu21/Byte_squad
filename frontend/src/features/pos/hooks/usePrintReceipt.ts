@@ -43,11 +43,18 @@ export function usePrintReceipt(): IUsePrintReceiptReturn {
     const printReceipt = useCallback(
         async (sale: ISale): Promise<void> => {
             setPrintingSale(sale);
+            // Swap document.title so the browser's "Save as PDF" default
+            // filename and the printer-queue entry both read as the sale's
+            // invoice number (e.g. "INV-2026-001234.pdf") instead of the
+            // SPA's static "Ledger Pro" title. Restored on afterprint.
+            const previousTitle = document.title;
+            document.title = sale.invoiceNumber || previousTitle;
             // Defer to the next animation frame so React commits the bill
             // template into the DOM before the browser captures it for print.
             return new Promise<void>((resolve) => {
                 const handleAfterPrint = () => {
                     window.removeEventListener('afterprint', handleAfterPrint);
+                    document.title = previousTitle;
                     setPrintingSale(null);
                     markPrinted.mutate(sale.id, {
                         onSettled: () => resolve(),
