@@ -105,6 +105,10 @@ export const queryKeys = {
     adminLoyalty: {
         customers: (params: {
             search?: string;
+            branchId?: string;
+            activeSince?: string;
+            minPoints?: number;
+            maxPoints?: number;
             limit?: number;
             offset?: number;
         }) => ['admin-loyalty', 'customers', params] as const,
