@@ -66,8 +66,6 @@ export function defaultSellableUnitsFor(
   const lowered = baseUnit.toLowerCase();
   const seeds: UnitSeed[] = isSupportedBaseUnit(lowered)
     ? DEFAULTS_BY_BASE_UNIT[lowered]
-    : [
-        { name: baseUnit, isBase: true, conversionToBase: 1, displayOrder: 0 },
-      ];
+    : [{ name: baseUnit, isBase: true, conversionToBase: 1, displayOrder: 0 }];
   return seeds.map((s) => ({ ...s, productId }));
 }
