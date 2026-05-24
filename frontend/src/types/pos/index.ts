@@ -18,3 +18,10 @@ export type {
 } from './create-sale-payload.type';
 export type { IMultiTenderBag } from './multi-tender-bag.type';
 export type { ICustomerSearchRow } from './customer-search-row.type';
+export type { IDailyBreakdown } from './daily-breakdown.type';
+export type { ITopProduct } from './top-product.type';
+export type { ICashierPeriodStats } from './cashier-period-stats.type';
+export type { ICashierTransactionRow } from './cashier-transaction-row.type';
+export type { ICashierTransactionsSummary } from './cashier-transactions-summary.type';
+export type { ICashierDashboard } from './cashier-dashboard.type';
+export type { IAdminDashboard } from './admin-dashboard.type';
