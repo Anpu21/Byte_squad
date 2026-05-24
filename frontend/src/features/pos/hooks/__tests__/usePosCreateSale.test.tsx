@@ -60,6 +60,21 @@ describe('usePosCreateSale', () => {
         expect(spy).toHaveBeenCalledWith({
             queryKey: queryKeys.pos.recentSalesAll(),
         });
+        // Dashboard + transactions surfaces must refresh after a sale so
+        // KPIs and the transactions table reflect the new revenue without
+        // requiring a manual reload.
+        expect(spy).toHaveBeenCalledWith({
+            queryKey: queryKeys.pos.cashierDashboard(),
+        });
+        expect(spy).toHaveBeenCalledWith({
+            queryKey: queryKeys.pos.adminDashboard(),
+        });
+        expect(spy).toHaveBeenCalledWith({
+            queryKey: queryKeys.pos.myTransactions(),
+        });
+        expect(spy).toHaveBeenCalledWith({
+            queryKey: queryKeys.pos.allTransactions(),
+        });
     });
 
     it('surfaces an error when the create-sale request fails', async () => {

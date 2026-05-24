@@ -29,6 +29,20 @@ export function usePosCreateSale() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.pos.invoiceNumber(),
       });
+      // Dashboard + transactions surfaces depend on the sale stream; a new
+      // sale must refresh every visible KPI/table without manual reload.
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pos.cashierDashboard(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pos.adminDashboard(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pos.myTransactions(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pos.allTransactions(),
+      });
     },
   });
 }
