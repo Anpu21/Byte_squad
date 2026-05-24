@@ -571,6 +571,13 @@ export class PosWriteService {
  * Per-item math, extracted so the orchestrator's `.map` step stays short.
  * Mirrors the frontend `lib/line-total.ts` exactly so server and client
  * agree on subtotal/tax/total figures.
+ *
+ * `unitPrice` is the price per BASE unit (e.g. Rs 200 for a kg of carrots),
+ * regardless of which sellable unit the cashier picked. The picked-unit
+ * price is `unitPrice * conversionFactor`, so a kg-stocked carrot sold in
+ * grams (conversionFactor = 0.001) bills out at Rs 0.2/g. Discrete or
+ * base-unit lines have conversionFactor = 1 and the formula collapses to
+ * the original `chargedQty * unitPrice` shape.
  */
 function computeItem(
   item: CreateSaleDto['items'][number],
@@ -585,13 +592,15 @@ function computeItem(
   const disc = Number(item.discountPercentage ?? 0);
   const taxRate = Number(item.taxRate ?? 0);
 
-  const lineSubtotal = round2(chargedQty * unitPrice * (1 - disc / 100));
-  const lineDiscountAmount = round2(chargedQty * unitPrice * (disc / 100));
+  const unit = item.unitId ? unitsById.get(item.unitId) : null;
+  const conversion = unit ? Number(unit.conversionToBase) : 1;
+  const grossPerUnit = unitPrice * conversion;
+
+  const lineSubtotal = round2(chargedQty * grossPerUnit * (1 - disc / 100));
+  const lineDiscountAmount = round2(chargedQty * grossPerUnit * (disc / 100));
   const lineTaxAmount = round2(lineSubtotal * (taxRate / 100));
   const lineTotal = round2(lineSubtotal + lineTaxAmount);
 
-  const unit = item.unitId ? unitsById.get(item.unitId) : null;
-  const conversion = unit ? Number(unit.conversionToBase) : 1;
   const baseUnitQty = round3(qty * conversion);
 
   return {
