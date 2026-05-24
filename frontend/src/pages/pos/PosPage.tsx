@@ -4,8 +4,10 @@ import { usePosPageState } from '@/features/pos/hooks/usePosPageState';
 import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
 import { usePrintReceipt } from '@/features/pos/hooks/usePrintReceipt';
 import { usePosSaleById } from '@/features/pos/hooks/usePosSaleById';
+import { usePosInvoiceNumber } from '@/features/pos/hooks/usePosInvoiceNumber';
 import { PosItemTable } from '@/features/pos/components/item-table/PosItemTable';
 import { PosInvoiceTotal } from '@/features/pos/components/invoice-total/PosInvoiceTotal';
+import { PosBillLivePreview } from '@/features/pos/components/bill-live-preview/PosBillLivePreview';
 import { PosActionButtons } from '@/features/pos/components/action-buttons/PosActionButtons';
 import { PosRecentSaleSidebar } from '@/features/pos/components/recent-sale/PosRecentSaleSidebar';
 import { PosPaymentForms } from '@/features/pos/components/payment-forms/PosPaymentForms';
@@ -25,6 +27,8 @@ export function PosPage(): React.ReactElement {
     const state = usePosPageState();
     const print = usePrintReceipt();
     const previewQuery = usePosSaleById(state.previewSaleId);
+    const invoiceNumberQuery = usePosInvoiceNumber();
+    const previewInvoiceNumber = invoiceNumberQuery.data?.invoiceNo ?? '';
     const handleScanHit = useCallback(
         (row: ISearchProductRow) => cart.addItem(toCartItemSeed(row)),
         [cart],
@@ -68,6 +72,11 @@ export function PosPage(): React.ReactElement {
                 onScanBarcode={handleCameraScan}
             />
             <div className="flex flex-col gap-3">
+                <PosBillLivePreview
+                    cart={cart.cart}
+                    invoiceNumber={previewInvoiceNumber}
+                    cartDiscountPercentage={state.cartDiscountPercentage}
+                />
                 <PosInvoiceTotal
                     itemsSubtotal={cart.itemsSubtotal}
                     totalLineDiscount={cart.totalDiscount}
