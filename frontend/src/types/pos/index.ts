@@ -1,5 +1,9 @@
 export type { ISale, ISaleCustomerSnapshot } from './sale.type';
-export type { ISaleItem, ISaleItemProductSnapshot } from './sale-item.type';
+export type {
+  ISaleItem,
+  ISaleItemProductSnapshot,
+  ISaleItemUnitSnapshot,
+} from './sale-item.type';
 export type { ISalePayment } from './sale-payment.type';
 export type { TPaymentMethod } from './payment-method.type';
 export type { TSalePaymentStatus } from './sale-payment-status.type';
