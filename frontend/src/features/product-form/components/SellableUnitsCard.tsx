@@ -21,6 +21,7 @@ export function SellableUnitsCard({ form }: SellableUnitsCardProps) {
     }
 
     const canRemove = form.units.length > 1;
+    const error = form.errors.sellableUnits;
 
     return (
         <Card>
@@ -33,6 +34,15 @@ export function SellableUnitsCard({ form }: SellableUnitsCardProps) {
                     every sale. Changing the base unit replaces the rows below
                     with the defaults.
                 </p>
+
+                {error && (
+                    <div
+                        role="alert"
+                        className="px-3 py-2 rounded-md bg-danger-soft border border-danger/40 text-xs text-danger"
+                    >
+                        {error}
+                    </div>
+                )}
 
                 <div>
                     <label

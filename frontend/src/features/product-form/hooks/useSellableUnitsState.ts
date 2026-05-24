@@ -14,6 +14,11 @@ export interface SellableUnitsState {
     baseUnit: TBaseUnitFe;
     setBaseUnit: (next: TBaseUnitFe) => void;
     units: ISellableUnitRow[];
+    /**
+     * Replace the entire rows array. Used by `useProductLoader` to hydrate
+     * the editor from an existing product's persisted unit list.
+     */
+    setUnits: (next: ISellableUnitRow[]) => void;
     resetUnitsForBase: (next: TBaseUnitFe) => void;
     addUnit: () => void;
     updateUnit: (
@@ -76,6 +81,7 @@ export function useSellableUnitsState(): SellableUnitsState {
         baseUnit,
         setBaseUnit,
         units,
+        setUnits,
         resetUnitsForBase,
         addUnit,
         updateUnit,

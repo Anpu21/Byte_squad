@@ -4,6 +4,7 @@ import { useProductFormPage } from '@/features/product-form/hooks/useProductForm
 import { ProductFormHeader } from '@/features/product-form/components/ProductFormHeader';
 import { BasicsCard } from '@/features/product-form/components/BasicsCard';
 import { PricingCard } from '@/features/product-form/components/PricingCard';
+import { SellableUnitsCard } from '@/features/product-form/components/SellableUnitsCard';
 import { StockCard } from '@/features/product-form/components/StockCard';
 import { ImageCard } from '@/features/product-form/components/ImageCard';
 import { ScannerTipsCard } from '@/features/product-form/components/ScannerTipsCard';
@@ -47,6 +48,7 @@ export function ProductFormPage() {
                         onOpenCamera={() => p.setShowCameraScanner(true)}
                     />
                     <PricingCard form={form} derived={p.priceDerived} />
+                    <SellableUnitsCard form={form} />
                     {!p.isEditMode && <StockCard form={form} />}
                 </div>
                 <div className="flex flex-col gap-4">

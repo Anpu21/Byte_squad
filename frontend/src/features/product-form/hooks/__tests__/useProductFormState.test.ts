@@ -111,4 +111,26 @@ describe('useProductFormState — sellable-unit state', () => {
         expect(target?.conversionToBase).toBe('1');
         expect(other?.isBase).toBe(false);
     });
+
+    it('setUnits replaces the entire rows array wholesale', () => {
+        const { result } = renderHook(() => useProductFormState());
+        const replacement = [
+            {
+                rowId: 'r-a',
+                name: 'sack',
+                isBase: true,
+                conversionToBase: '1',
+                displayOrder: 0,
+            },
+            {
+                rowId: 'r-b',
+                name: 'kg',
+                isBase: false,
+                conversionToBase: '0.04',
+                displayOrder: 1,
+            },
+        ];
+        act(() => result.current.setUnits(replacement));
+        expect(result.current.units).toEqual(replacement);
+    });
 });

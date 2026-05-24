@@ -9,16 +9,20 @@ import type { TBaseUnitFe } from '../../lib/sellable-units';
 function makeForm(
     units: ISellableUnitRow[],
     baseUnit: TBaseUnitFe = 'each',
+    overrides: Partial<ProductFormState> = {},
 ): ProductFormState {
     return {
         baseUnit,
         setBaseUnit: vi.fn(),
         units,
+        setUnits: vi.fn(),
         resetUnitsForBase: vi.fn(),
         addUnit: vi.fn(),
         updateUnit: vi.fn(),
         removeUnit: vi.fn(),
         setBaseRow: vi.fn(),
+        errors: {},
+        ...overrides,
     } as unknown as ProductFormState;
 }
 
@@ -123,6 +127,15 @@ describe('SellableUnitsCard', () => {
         const removeButtons = screen.getAllByRole('button', { name: /remove/i });
         await userEvent.click(removeButtons[1]);
         expect(form.removeUnit).toHaveBeenCalledWith('r2');
+    });
+
+    it('shows the sellableUnits form-error message when present', () => {
+        const form = makeForm([], 'each', {
+            errors: { sellableUnits: 'Duplicate unit name: kg' },
+        });
+        render(<SellableUnitsCard form={form} />);
+        const alert = screen.getByRole('alert');
+        expect(alert.textContent).toMatch(/duplicate unit name: kg/i);
     });
 
     it('rejects a non-decimal keystroke on the conversion-factor field', async () => {

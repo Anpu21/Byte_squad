@@ -6,6 +6,7 @@ import {
     focusFirstInvalidField,
     validateProductForm,
 } from '../lib/form-validation';
+import { validateUnitsRows } from '../lib/validate-units-rows';
 
 const DEFAULT_THRESHOLD = 10;
 
@@ -40,8 +41,15 @@ export function useProductSubmit({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const newErrors = validateProductForm(form, isEditMode);
-        form.setErrors(newErrors);
+        const unitsResult = validateUnitsRows(form.units);
+        if (!unitsResult.ok) {
+            newErrors.sellableUnits = unitsResult.error;
+            form.setErrors(newErrors);
+            focusFirstInvalidField(newErrors);
+            return;
+        }
         if (Object.keys(newErrors).length > 0) {
+            form.setErrors(newErrors);
             focusFirstInvalidField(newErrors);
             return;
         }
@@ -56,6 +64,8 @@ export function useProductSubmit({
             category: form.category.trim(),
             costPrice: parseFloat(form.costPrice),
             sellingPrice: parseFloat(form.sellingPrice),
+            baseUnit: form.baseUnit,
+            sellableUnits: unitsResult.rows,
         };
 
         try {
