@@ -29,7 +29,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:admin": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/run-admin-seed.ts",
     "migrate:roles": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-roles.ts",
-    "migrate:images": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-images.ts"
+    "migrate:images": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-images.ts",
+    "script:recategorize-products": "ts-node -r ./tsconfig-paths-bootstrap.js src/scripts/recategorize-products.ts"
   },
   "dependencies": {
     "@nestjs/common": "11.1.14",
@@ -46,6 +47,7 @@
     "class-transformer": "0.5.1",
     "class-validator": "0.14.3",
     "cloudinary": "2.10.0",
+    "csv-parse": "5.6.0",
     "nodemailer": "8.0.2",
     "passport-jwt": "4.0.1",
     "pg": "8.18.0",
