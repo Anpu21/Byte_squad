@@ -1,18 +1,10 @@
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
+import type { ITopProduct } from '@/types';
 import { formatRevenue } from '../lib/format';
 
-// TODO Phase 7: switch back to the shared top-product type once the new POS
-// read endpoints land.
-interface ITopProductRow {
-    productId: string;
-    productName: string;
-    totalQuantity: number;
-    totalRevenue: number;
-}
-
 interface TopProductsCardProps {
-    products: ITopProductRow[];
+    products: ITopProduct[];
 }
 
 export function TopProductsCard({ products }: TopProductsCardProps) {

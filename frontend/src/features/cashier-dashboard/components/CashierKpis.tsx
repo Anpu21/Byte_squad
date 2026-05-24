@@ -1,15 +1,9 @@
 import KpiCard from '@/components/ui/KpiCard';
+import type { ICashierDashboard } from '@/types';
 import { formatRevenue } from '@/features/admin-dashboard/lib/format';
 
-// TODO Phase 7: switch back to the shared cashier dashboard type once the new
-// POS read endpoints land.
-interface CashierKpisData {
-    today: { totalSales: number; transactionCount: number; averageSale: number };
-    week: { totalSales: number; transactionCount: number };
-}
-
 interface CashierKpisProps {
-    data: CashierKpisData | undefined;
+    data: ICashierDashboard | undefined;
     sparkline: number[];
 }
 
