@@ -31,8 +31,18 @@ export class ProductsRepository {
     return this.repo.find({ where: { isActive: true } });
   }
 
+  /**
+   * Load a single product with its sellable-unit rows so the manager edit
+   * form (and any other single-product consumer) gets the unit list in the
+   * same response. Units come back sorted by `displayOrder` to match the
+   * editor's expected render order.
+   */
   async findById(id: string): Promise<Product | null> {
-    return this.repo.findOne({ where: { id } });
+    return this.repo.findOne({
+      where: { id },
+      relations: { sellableUnits: true },
+      order: { sellableUnits: { displayOrder: 'ASC' } },
+    });
   }
 
   async findByIds(ids: readonly string[]): Promise<Product[]> {
