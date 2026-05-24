@@ -1,5 +1,5 @@
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { FormField } from './FormField';
+import { PriceFieldWithUnit } from './PriceFieldWithUnit';
 import type { ProductFormState } from '../hooks/useProductFormState';
 import type { PriceDerived } from '../lib/price-math';
 
@@ -16,41 +16,6 @@ interface PricingCardProps {
     derived: PriceDerived;
 }
 
-interface PriceInputProps {
-    id: string;
-    name: 'sellingPrice' | 'costPrice';
-    label: string;
-    value: string;
-    onChange: (v: string) => void;
-    error?: string;
-}
-
-function PriceInput({ id, name, label, value, onChange, error }: PriceInputProps) {
-    return (
-        <FormField label={label} htmlFor={id} error={error}>
-            <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-xs font-medium">
-                    Rs
-                </span>
-                <input
-                    id={id}
-                    name={name}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    aria-invalid={Boolean(error)}
-                    className={`w-full h-[38px] pl-9 pr-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
-                        error ? 'border-danger' : 'border-border-strong hover:border-text-3'
-                    }`}
-                    placeholder="0.00"
-                />
-            </div>
-        </FormField>
-    );
-}
-
 export function PricingCard({ form, derived }: PricingCardProps) {
     return (
         <Card>
@@ -58,20 +23,28 @@ export function PricingCard({ form, derived }: PricingCardProps) {
                 <CardTitle>Pricing</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <PriceInput
+                <PriceFieldWithUnit
                     id="product-selling-price"
                     name="sellingPrice"
                     label="Selling price (LKR)"
                     value={form.sellingPrice}
                     onChange={form.setSellingPrice}
+                    unit={form.sellingPriceUnit}
+                    onUnitChange={form.setSellingPriceUnit}
+                    units={form.units}
+                    baseUnit={form.baseUnit}
                     error={form.errors.sellingPrice}
                 />
-                <PriceInput
+                <PriceFieldWithUnit
                     id="product-cost-price"
                     name="costPrice"
                     label="Cost price (LKR)"
                     value={form.costPrice}
                     onChange={form.setCostPrice}
+                    unit={form.costPriceUnit}
+                    onUnitChange={form.setCostPriceUnit}
+                    units={form.units}
+                    baseUnit={form.baseUnit}
                     error={form.errors.costPrice}
                 />
                 {derived.marginPct !== null && derived.markupPct !== null && (
