@@ -151,7 +151,7 @@ export class CustomerOrdersService {
 
     const loyaltyPointsRequested = dto.loyaltyPointsToRedeem ?? 0;
     const loyaltyPointsRedeemed = await this.loyalty.redeemForOrder({
-      userId,
+      owner: { userId },
       orderId: saved.id,
       orderCode: saved.orderCode,
       subtotal: estimatedTotal,
@@ -449,7 +449,7 @@ export class CustomerOrdersService {
         throw new BadRequestException('Paid online orders cannot be edited');
       }
       const earned = await this.loyalty.awardForOrder({
-        userId: order.userId,
+        owner: order.userId ? { userId: order.userId } : null,
         orderId: order.id,
         orderCode: order.orderCode,
         paidAmount: Number(order.finalTotal),
@@ -478,7 +478,7 @@ export class CustomerOrdersService {
       effective,
     });
     const earned = await this.loyalty.awardForOrder({
-      userId: order.userId,
+      owner: order.userId ? { userId: order.userId } : null,
       orderId: order.id,
       orderCode: order.orderCode,
       paidAmount: Number(transaction.total),
@@ -780,7 +780,7 @@ export class CustomerOrdersService {
   private async reverseLoyaltyRedemption(order: CustomerOrder): Promise<void> {
     if (!order.userId || order.loyaltyPointsRedeemed <= 0) return;
     await this.loyalty.reverseRedemption({
-      userId: order.userId,
+      owner: { userId: order.userId },
       orderId: order.id,
       orderCode: order.orderCode,
     });

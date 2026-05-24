@@ -27,6 +27,15 @@ export class UsersRepository {
     return this.repo.findOne({ where: { email } });
   }
 
+  /**
+   * Exact-match lookup against the (partial-unique) `users.phone`
+   * column. Used by loyalty phone lookup at the POS so an existing
+   * online customer always wins over a walk-in record.
+   */
+  async findByPhone(phone: string): Promise<User | null> {
+    return this.repo.findOne({ where: { phone } });
+  }
+
   async findAllScoped(branchId: string | null): Promise<User[]> {
     return this.repo.find({
       where: branchId === null ? {} : { branchId },

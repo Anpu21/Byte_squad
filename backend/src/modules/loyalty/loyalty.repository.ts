@@ -4,6 +4,7 @@ import { DeepPartial, Repository } from 'typeorm';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
+import type { LoyaltyOwner } from '@/modules/loyalty/types';
 
 @Injectable()
 export class LoyaltyRepository {
@@ -18,16 +19,41 @@ export class LoyaltyRepository {
     return this.accountRepo.findOne({ where: { userId } });
   }
 
-  async createAccount(userId: string): Promise<LoyaltyAccount> {
+  async findAccountByLoyaltyCustomer(
+    loyaltyCustomerId: string,
+  ): Promise<LoyaltyAccount | null> {
+    return this.accountRepo.findOne({ where: { loyaltyCustomerId } });
+  }
+
+  async createAccountForUser(userId: string): Promise<LoyaltyAccount> {
     return this.accountRepo.save(this.accountRepo.create({ userId }));
   }
 
+  async createAccountForLoyaltyCustomer(
+    loyaltyCustomerId: string,
+  ): Promise<LoyaltyAccount> {
+    return this.accountRepo.save(
+      this.accountRepo.create({ loyaltyCustomerId }),
+    );
+  }
+
   async findLedgerEntry(
-    userId: string,
+    owner: LoyaltyOwner,
     orderId: string,
     type: LoyaltyLedgerEntryType,
   ): Promise<LoyaltyLedgerEntry | null> {
-    return this.ledgerRepo.findOne({ where: { userId, orderId, type } });
+    if (owner.userId) {
+      return this.ledgerRepo.findOne({
+        where: { userId: owner.userId, orderId, type },
+      });
+    }
+    return this.ledgerRepo.findOne({
+      where: {
+        loyaltyCustomerId: owner.loyaltyCustomerId,
+        orderId,
+        type,
+      },
+    });
   }
 
   async createLedgerEntry(
@@ -36,42 +62,74 @@ export class LoyaltyRepository {
     return this.ledgerRepo.save(this.ledgerRepo.create(partial));
   }
 
-  async applyRedeem(userId: string, points: number): Promise<boolean> {
-    const result = await this.accountRepo
+  /**
+   * Atomic debit against the owner's wallet. Returns false if the
+   * wallet doesn't have enough points (the UPDATE … WHERE
+   * points_balance >= :points clause keeps the redeem race-free).
+   */
+  async applyRedeem(owner: LoyaltyOwner, points: number): Promise<boolean> {
+    const qb = this.accountRepo
       .createQueryBuilder()
       .update(LoyaltyAccount)
       .set({
         pointsBalance: () => `"points_balance" - ${points}`,
         lifetimePointsRedeemed: () => `"lifetime_points_redeemed" + ${points}`,
       })
-      .where('user_id = :userId', { userId })
-      .andWhere('points_balance >= :points', { points })
-      .execute();
+      .andWhere('points_balance >= :points', { points });
+
+    if (owner.userId) {
+      qb.where('user_id = :userId', { userId: owner.userId });
+    } else {
+      qb.where('loyalty_customer_id = :loyaltyCustomerId', {
+        loyaltyCustomerId: owner.loyaltyCustomerId,
+      });
+    }
+
+    const result = await qb.execute();
     return Number(result.affected ?? 0) > 0;
   }
 
-  async applyRedeemReversal(userId: string, points: number): Promise<void> {
-    await this.accountRepo
+  async applyRedeemReversal(
+    owner: LoyaltyOwner,
+    points: number,
+  ): Promise<void> {
+    const qb = this.accountRepo
       .createQueryBuilder()
       .update(LoyaltyAccount)
       .set({
         pointsBalance: () => `"points_balance" + ${points}`,
         lifetimePointsRedeemed: () => `"lifetime_points_redeemed" - ${points}`,
-      })
-      .where('user_id = :userId', { userId })
-      .execute();
+      });
+
+    if (owner.userId) {
+      qb.where('user_id = :userId', { userId: owner.userId });
+    } else {
+      qb.where('loyalty_customer_id = :loyaltyCustomerId', {
+        loyaltyCustomerId: owner.loyaltyCustomerId,
+      });
+    }
+
+    await qb.execute();
   }
 
-  async applyEarn(userId: string, points: number): Promise<void> {
-    await this.accountRepo
+  async applyEarn(owner: LoyaltyOwner, points: number): Promise<void> {
+    const qb = this.accountRepo
       .createQueryBuilder()
       .update(LoyaltyAccount)
       .set({
         pointsBalance: () => `"points_balance" + ${points}`,
         lifetimePointsEarned: () => `"lifetime_points_earned" + ${points}`,
-      })
-      .where('user_id = :userId', { userId })
-      .execute();
+      });
+
+    if (owner.userId) {
+      qb.where('user_id = :userId', { userId: owner.userId });
+    } else {
+      qb.where('loyalty_customer_id = :loyaltyCustomerId', {
+        loyaltyCustomerId: owner.loyaltyCustomerId,
+      });
+    }
+
+    await qb.execute();
   }
 
   async listEntries(

@@ -7,9 +7,11 @@ import { LoyaltySettings } from '@/modules/loyalty/entities/loyalty-settings.ent
 import { LoyaltyController } from '@/modules/loyalty/loyalty.controller';
 import { LoyaltyAdminController } from '@/modules/loyalty/loyalty-admin.controller';
 import { LoyaltyRepository } from '@/modules/loyalty/loyalty.repository';
+import { LoyaltyCustomersRepository } from '@/modules/loyalty/loyalty-customers.repository';
 import { LoyaltySettingsRepository } from '@/modules/loyalty/loyalty-settings.repository';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
+import { UsersModule } from '@users/users.module';
 
 @Module({
   imports: [
@@ -19,10 +21,12 @@ import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.servi
       LoyaltyLedgerEntry,
       LoyaltySettings,
     ]),
+    UsersModule,
   ],
   controllers: [LoyaltyController, LoyaltyAdminController],
   providers: [
     LoyaltyRepository,
+    LoyaltyCustomersRepository,
     LoyaltySettingsRepository,
     LoyaltyService,
     LoyaltySettingsService,

@@ -146,6 +146,8 @@ export const APP_ROUTES = {
     MINE: 'me',
     HISTORY: 'me/history',
     SETTINGS: 'settings',
+    LOOKUP: 'lookup',
+    ENROLL: 'enroll',
     ADMIN_BASE: `${API_PREFIX}/admin/loyalty`,
     ADMIN_SETTINGS: 'settings',
     ADMIN_CUSTOMERS: 'customers',
