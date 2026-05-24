@@ -2,6 +2,7 @@ import { forwardRef } from 'react';
 import type { ISale } from '@/types';
 import { PosBillItemRows } from './PosBillItemRows';
 import { PosBillTotalsBlock } from './PosBillTotalsBlock';
+import { PosBillLoyaltyFooter } from './PosBillLoyaltyFooter';
 import './pos-bill-template.css';
 
 interface IPosBillTemplateProps {
@@ -73,6 +74,13 @@ export const PosBillTemplate = forwardRef<HTMLDivElement, IPosBillTemplateProps>
                 <hr className="pos-bill__divider my-2 border-t border-dashed border-border" />
 
                 <PosBillTotalsBlock sale={sale} payment={payment} />
+
+                {sale.loyalty ? (
+                    <>
+                        <hr className="pos-bill__divider my-2 border-t border-dashed border-border" />
+                        <PosBillLoyaltyFooter loyalty={sale.loyalty} />
+                    </>
+                ) : null}
 
                 <hr className="pos-bill__divider my-2 border-t border-dashed border-border" />
 

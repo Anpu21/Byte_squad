@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import type { ISale } from '@/types';
+import { useLoyaltyAttach, type IPosLoyaltyOwner } from './useLoyaltyAttach';
 
 interface IUsePosPageStateReturn {
     cartDiscountPercentage: number;
@@ -17,13 +18,18 @@ interface IUsePosPageStateReturn {
     closeRecent: () => void;
     focusSearch: () => void;
     resetAfterCheckout: () => void;
+    loyaltyOwner: IPosLoyaltyOwner | null;
+    setLoyaltyOwner: (owner: IPosLoyaltyOwner | null) => void;
+    loyaltyRedeemPoints: number;
+    setLoyaltyRedeemPoints: (next: number) => void;
 }
 
 /**
  * Owns all transient UI state for the cashier `PosPage` orchestrator so the
  * page itself stays under the 120-line budget and reads as pure composition.
- * The single-shop retail POS no longer tracks walk-in customers, so all
- * customer-attached state has been removed.
+ * Loyalty attach state lives in a child hook (`useLoyaltyAttach`) so each
+ * file stays small and the loyalty card can read the same shape as the
+ * page uses to build the create-sale payload.
  */
 export function usePosPageState(): IUsePosPageStateReturn {
     const [cartDiscountPercentage, setCartDiscountPercentage] = useState(0);
@@ -32,11 +38,13 @@ export function usePosPageState(): IUsePosPageStateReturn {
     const [previewSaleId, setPreviewSaleId] = useState<string | null>(null);
     const [lastSale, setLastSale] = useState<ISale | null>(null);
     const searchInputRef = useRef<HTMLInputElement | null>(null);
+    const loyalty = useLoyaltyAttach();
 
     const focusSearch = useCallback(() => searchInputRef.current?.focus(), []);
     const resetAfterCheckout = useCallback(() => {
         setCartDiscountPercentage(0);
-    }, []);
+        loyalty.resetLoyalty();
+    }, [loyalty]);
     return {
         cartDiscountPercentage, setCartDiscountPercentage,
         showPayment, showRecent,
@@ -46,5 +54,9 @@ export function usePosPageState(): IUsePosPageStateReturn {
         closePayment: useCallback(() => setShowPayment(false), []),
         openRecent: useCallback(() => setShowRecent(true), []),
         closeRecent: useCallback(() => setShowRecent(false), []),
+        loyaltyOwner: loyalty.loyaltyOwner,
+        setLoyaltyOwner: loyalty.setLoyaltyOwner,
+        loyaltyRedeemPoints: loyalty.loyaltyRedeemPoints,
+        setLoyaltyRedeemPoints: loyalty.setLoyaltyRedeemPoints,
     };
 }

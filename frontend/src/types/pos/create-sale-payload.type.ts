@@ -28,11 +28,15 @@ export interface ICreateSalePaymentPayload {
 
 /**
  * Create-sale request body for `POST /pos/sales`. The wholesale price tier
- * and the walk-in customer-picker were removed from the cashier UI, so
- * `saleType` / `priceLevel` / `customerUserId` are no longer sent. The
- * backend DTO still accepts `customerUserId` and the credit/keep-balance
- * tender fields for legacy callers (admin imports, recovery scripts);
- * the FE simply stops emitting them.
+ * was removed from the cashier UI so `saleType` / `priceLevel` are no
+ * longer sent. The walk-in customer-picker was removed at the same time,
+ * but `customerUserId` is re-introduced here as a pure loyalty-intent
+ * field (set when the cashier attaches a registered-customer phone via
+ * the loyalty card). `loyaltyCustomerId` is its walk-in twin, and
+ * `loyaltyRedeemPoints` is the per-sale redeem amount.
+ *
+ * The backend rejects the combination `customerUserId && loyaltyCustomerId`
+ * with a 400, so the FE always sets at most one.
  */
 export interface ICreateSalePayload {
   location?: string;
@@ -40,4 +44,10 @@ export interface ICreateSalePayload {
   cartDiscountAmount?: number;
   items: ICreateSaleItemPayload[];
   payment: ICreateSalePaymentPayload;
+  /** Registered-customer loyalty owner (mutually exclusive with `loyaltyCustomerId`). */
+  customerUserId?: string;
+  /** Walk-in loyalty owner (mutually exclusive with `customerUserId`). */
+  loyaltyCustomerId?: string;
+  /** Whole points to redeem against this sale. BE enforces the cap. */
+  loyaltyRedeemPoints?: number;
 }

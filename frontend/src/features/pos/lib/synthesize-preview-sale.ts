@@ -1,9 +1,12 @@
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type {
+    ILoyaltySettings,
     ISale,
     ISaleItem,
     ISaleItemUnitSnapshot,
+    ISaleLoyaltyResult,
 } from '@/types';
+import type { IPosLoyaltyOwner } from '@/features/pos/hooks/useLoyaltyAttach';
 import { TransactionType, DiscountType, PaymentMethod } from '@/constants/enums';
 import { applyCartDiscount } from '@/features/pos/components/invoice-total/pos-invoice-total.helpers';
 
@@ -11,6 +14,12 @@ interface IPreviewSaleArgs {
     cart: readonly ICartItem[];
     invoiceNumber: string;
     cartDiscountPercentage: number;
+    /** Optional loyalty owner attached upstream; stamps a preview footer. */
+    loyaltyOwner?: IPosLoyaltyOwner | null;
+    /** Whole points the cashier requested to redeem against this sale. */
+    loyaltyRedeemPoints?: number;
+    /** Loyalty rules used to compute the preview earn amount. */
+    loyaltySettings?: ILoyaltySettings | null;
 }
 
 /**
@@ -94,6 +103,9 @@ export function synthesizePreviewSale({
     cart,
     invoiceNumber,
     cartDiscountPercentage,
+    loyaltyOwner,
+    loyaltyRedeemPoints,
+    loyaltySettings,
 }: IPreviewSaleArgs): ISale {
     const items = cart.map(toSaleItem);
 
@@ -109,6 +121,13 @@ export function synthesizePreviewSale({
         totalTax,
         cartDiscountPercentage,
     );
+
+    const loyalty = synthesizeLoyaltyFooter({
+        owner: loyaltyOwner ?? null,
+        redeemPoints: loyaltyRedeemPoints ?? 0,
+        settings: loyaltySettings ?? null,
+        grossPaidAmount: cartTotal,
+    });
 
     return {
         id: `${PREVIEW_ID_PREFIX}sale`,
@@ -145,6 +164,59 @@ export function synthesizePreviewSale({
         voidedByUserId: null,
         items,
         customer: null,
+        loyalty: loyalty ?? undefined,
         createdAt: new Date().toISOString(),
+    };
+}
+
+interface ISynthesizeLoyaltyFooterArgs {
+    owner: IPosLoyaltyOwner | null;
+    redeemPoints: number;
+    settings: ILoyaltySettings | null;
+    grossPaidAmount: number;
+}
+
+/**
+ * Mirror of the BE `applyLoyalty` math used purely for the live
+ * preview. We award points on the **net** paid amount (gross minus
+ * the redeem value), matching `pos-write.service.ts`: the cashier
+ * does not earn points on the value of the points they just spent.
+ * Returns `null` when no owner is attached so the bill template
+ * suppresses the footer block.
+ */
+function synthesizeLoyaltyFooter({
+    owner,
+    redeemPoints,
+    settings,
+    grossPaidAmount,
+}: ISynthesizeLoyaltyFooterArgs): ISaleLoyaltyResult | null {
+    if (!owner) return null;
+    const clampedRedeem = Math.max(
+        0,
+        Math.min(Math.floor(redeemPoints), owner.pointsBalance),
+    );
+    if (!settings) {
+        return {
+            ownerType: owner.ownerType,
+            earned: 0,
+            redeemed: clampedRedeem,
+            newBalance: owner.pointsBalance - clampedRedeem,
+        };
+    }
+    const pointValue = settings.pointValue;
+    const redeemValueLkr = clampedRedeem * pointValue;
+    const netPaidAmount = Math.max(0, grossPaidAmount - redeemValueLkr);
+    const earned =
+        settings.earnPerAmount > 0
+            ? Math.floor(
+                  (netPaidAmount / settings.earnPerAmount) *
+                      settings.earnPoints,
+              )
+            : 0;
+    return {
+        ownerType: owner.ownerType,
+        earned,
+        redeemed: clampedRedeem,
+        newBalance: owner.pointsBalance - clampedRedeem + earned,
     };
 }

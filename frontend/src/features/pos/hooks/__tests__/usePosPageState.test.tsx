@@ -31,4 +31,24 @@ describe('usePosPageState', () => {
         act(() => result.current.setPreviewSaleId('sale-99'));
         expect(result.current.previewSaleId).toBe('sale-99');
     });
+
+    it('resetAfterCheckout clears the attached loyalty owner + redeem points', () => {
+        const { result } = renderHook(() => usePosPageState());
+        act(() =>
+            result.current.setLoyaltyOwner({
+                ownerType: 'user',
+                userId: 'u-1',
+                loyaltyCustomerId: null,
+                firstName: 'Nimal',
+                pointsBalance: 100,
+            }),
+        );
+        act(() => result.current.setLoyaltyRedeemPoints(40));
+        expect(result.current.loyaltyOwner?.firstName).toBe('Nimal');
+        expect(result.current.loyaltyRedeemPoints).toBe(40);
+
+        act(() => result.current.resetAfterCheckout());
+        expect(result.current.loyaltyOwner).toBeNull();
+        expect(result.current.loyaltyRedeemPoints).toBe(0);
+    });
 });

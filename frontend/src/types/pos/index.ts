@@ -1,4 +1,8 @@
-export type { ISale, ISaleCustomerSnapshot } from './sale.type';
+export type {
+  ISale,
+  ISaleCustomerSnapshot,
+  ISaleLoyaltyResult,
+} from './sale.type';
 export type {
   ISaleItem,
   ISaleItemProductSnapshot,

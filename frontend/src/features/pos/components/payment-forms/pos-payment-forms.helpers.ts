@@ -1,5 +1,6 @@
 import type { IMultiTenderInputs } from '@/features/pos/lib/multi-tender';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
+import type { IPosLoyaltyOwner } from '@/features/pos/hooks/useLoyaltyAttach';
 import type {
     ICreateSalePayload,
     ICreateSaleItemPayload,
@@ -98,6 +99,10 @@ interface IBuildPayloadArgs {
     bag: ITenderBag;
     /** Cash portion applied to the invoice (capped at invoiceTotal). */
     cashAmount: number;
+    /** Loyalty owner attached via the cashier card, if any. */
+    loyaltyOwner?: IPosLoyaltyOwner | null;
+    /** Whole-point redeem amount; ignored when 0 or no owner is attached. */
+    loyaltyRedeemPoints?: number;
 }
 
 /**
@@ -107,10 +112,11 @@ interface IBuildPayloadArgs {
  * them as Cash-equivalent with `cashAmount = invoice total` so
  * `paidAmount` lands correctly.
  *
- * The Retail/Wholesale tier toggle and the customer-picker were removed,
- * so we no longer send `saleType` / `priceLevel` / `customerUserId`; the
- * backend DTO defaults the tier fields to `'Retail'` and accepts the
- * sale without a customer attached.
+ * Loyalty intent is layered on top of the tender bag: when the cashier
+ * attached an owner via the loyalty card we send either `customerUserId`
+ * (registered) or `loyaltyCustomerId` (walk-in) — never both — plus the
+ * optional `loyaltyRedeemPoints` when > 0. The backend enforces the
+ * exclusivity and the redeem cap.
  */
 export function buildSalePayload({
     cart,
@@ -119,6 +125,8 @@ export function buildSalePayload({
     paymentAmount,
     bag,
     cashAmount,
+    loyaltyOwner,
+    loyaltyRedeemPoints,
 }: IBuildPayloadArgs): ICreateSalePayload {
     const items: ICreateSaleItemPayload[] = cart.map((row) => ({
         productId: row.productId,
@@ -140,7 +148,31 @@ export function buildSalePayload({
         cartDiscountPercentage,
         items,
         payment,
+        ...buildLoyaltyFields(loyaltyOwner, loyaltyRedeemPoints),
     };
+}
+
+/**
+ * Pick the right loyalty owner field for the payload. The BE rejects
+ * the combination `customerUserId && loyaltyCustomerId` with a 400 so
+ * we always emit at most one. Returns an empty object when no owner
+ * is attached so the spread is a no-op.
+ */
+function buildLoyaltyFields(
+    owner: IPosLoyaltyOwner | null | undefined,
+    redeemPoints: number | undefined,
+): Pick<ICreateSalePayload, 'customerUserId' | 'loyaltyCustomerId' | 'loyaltyRedeemPoints'> {
+    if (!owner) return {};
+    const fields: Pick<ICreateSalePayload, 'customerUserId' | 'loyaltyCustomerId' | 'loyaltyRedeemPoints'> = {};
+    if (owner.ownerType === 'user' && owner.userId) {
+        fields.customerUserId = owner.userId;
+    } else if (owner.ownerType === 'walkIn' && owner.loyaltyCustomerId) {
+        fields.loyaltyCustomerId = owner.loyaltyCustomerId;
+    }
+    if (redeemPoints !== undefined && redeemPoints > 0) {
+        fields.loyaltyRedeemPoints = redeemPoints;
+    }
+    return fields;
 }
 
 function buildPaymentTender(

@@ -14,6 +14,7 @@ import {
     type ITenderBag,
 } from './pos-payment-forms.helpers';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
+import type { IPosLoyaltyOwner } from '@/features/pos/hooks/useLoyaltyAttach';
 import type {
     ISale,
     TPaymentMethod,
@@ -27,6 +28,10 @@ export interface IPosPaymentFormsProps {
     cart: ICartItem[];
     /** 0-100 cart-level discount percentage; forwarded to the backend. */
     cartDiscountPercentage: number;
+    /** Loyalty owner attached via the cashier card; threaded into the BE payload. */
+    loyaltyOwner?: IPosLoyaltyOwner | null;
+    /** Whole points the cashier requested to redeem; 0 when not redeeming. */
+    loyaltyRedeemPoints?: number;
     /** Fires with the persisted Sale after a successful checkout. */
     onSaleCreated: (sale: ISale) => void;
 }
@@ -49,6 +54,8 @@ export function PosPaymentForms({
     invoiceTotal,
     cart,
     cartDiscountPercentage,
+    loyaltyOwner,
+    loyaltyRedeemPoints,
     onSaleCreated,
 }: IPosPaymentFormsProps) {
     const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>('Cash');
@@ -72,7 +79,10 @@ export function PosPaymentForms({
 
     const submit = usePaymentSubmit({
         cart, cartDiscountPercentage,
-        paymentMethod, bag, tenderInputs, idempotencyKey, onSaleCreated, onClose,
+        paymentMethod, bag, tenderInputs, idempotencyKey,
+        loyaltyOwner: loyaltyOwner ?? null,
+        loyaltyRedeemPoints: loyaltyRedeemPoints ?? 0,
+        onSaleCreated, onClose,
     });
 
     const hasError = calc === null;

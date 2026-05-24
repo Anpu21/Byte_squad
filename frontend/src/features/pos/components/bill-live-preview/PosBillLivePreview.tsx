@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { Receipt } from 'lucide-react';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
+import type { IPosLoyaltyOwner } from '@/features/pos/hooks/useLoyaltyAttach';
+import type { ILoyaltySettings } from '@/types';
 import { synthesizePreviewSale } from '@/features/pos/lib/synthesize-preview-sale';
 import { PosBillTemplate } from '@/features/pos/components/bill-template/PosBillTemplate';
 
@@ -8,6 +10,12 @@ interface IPosBillLivePreviewProps {
     cart: readonly ICartItem[];
     invoiceNumber: string;
     cartDiscountPercentage: number;
+    /** Loyalty owner attached upstream; stamps the preview footer when set. */
+    loyaltyOwner?: IPosLoyaltyOwner | null;
+    /** Whole points the cashier requested to redeem against the in-progress sale. */
+    loyaltyRedeemPoints?: number;
+    /** Loyalty rules used to estimate earned points client-side. */
+    loyaltySettings?: ILoyaltySettings | null;
 }
 
 /**
@@ -35,6 +43,9 @@ export function PosBillLivePreview({
     cart,
     invoiceNumber,
     cartDiscountPercentage,
+    loyaltyOwner,
+    loyaltyRedeemPoints,
+    loyaltySettings,
 }: IPosBillLivePreviewProps) {
     const previewSale = useMemo(
         () =>
@@ -42,8 +53,18 @@ export function PosBillLivePreview({
                 cart,
                 invoiceNumber,
                 cartDiscountPercentage,
+                loyaltyOwner,
+                loyaltyRedeemPoints,
+                loyaltySettings,
             }),
-        [cart, invoiceNumber, cartDiscountPercentage],
+        [
+            cart,
+            invoiceNumber,
+            cartDiscountPercentage,
+            loyaltyOwner,
+            loyaltyRedeemPoints,
+            loyaltySettings,
+        ],
     );
 
     if (cart.length === 0) {
