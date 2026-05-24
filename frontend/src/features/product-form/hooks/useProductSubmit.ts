@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '@/services/inventory.service';
+import { queryKeys } from '@/lib/queryKeys';
 import type { ProductFormState } from './useProductFormState';
 import {
     focusFirstInvalidField,
@@ -37,6 +39,7 @@ export function useProductSubmit({
     onSuccess,
 }: UseProductSubmitArgs) {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const queryClient = useQueryClient();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,10 +72,13 @@ export function useProductSubmit({
         };
 
         try {
+            let savedProductId: string | undefined;
             if (isEditMode && productId) {
                 await inventoryService.updateProduct(productId, payload);
+                savedProductId = productId;
             } else {
                 const product = await inventoryService.createProduct(payload);
+                savedProductId = product.id;
                 if (branchId) {
                     await inventoryService.createInventory({
                         productId: product.id,
@@ -98,6 +104,14 @@ export function useProductSubmit({
                     }
                 }
             }
+            if (savedProductId) {
+                void queryClient.invalidateQueries({
+                    queryKey: queryKeys.pos.productUnits(savedProductId),
+                });
+            }
+            void queryClient.invalidateQueries({
+                queryKey: ['pos', 'searchProducts'],
+            });
             onSuccess();
         } catch (err: unknown) {
             form.setErrors(
