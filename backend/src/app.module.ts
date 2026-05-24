@@ -33,6 +33,7 @@ import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order
 import { CustomerOrderItem } from '@/modules/customer-orders/entities/customer-order-item.entity';
 import { PayherePaymentAttempt } from '@/modules/customer-orders/entities/payhere-payment-attempt.entity';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
 import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
@@ -67,6 +68,7 @@ import appConfig from '@common/config/app.config';
       CustomerOrderItem,
       PayherePaymentAttempt,
       LoyaltyAccount,
+      LoyaltyCustomer,
       LoyaltyLedgerEntry,
     ]),
     CloudinaryModule,

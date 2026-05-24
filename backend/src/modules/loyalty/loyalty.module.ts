@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { LoyaltySettings } from '@/modules/loyalty/entities/loyalty-settings.entity';
 import { LoyaltyController } from '@/modules/loyalty/loyalty.controller';
@@ -14,6 +15,7 @@ import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.servi
   imports: [
     TypeOrmModule.forFeature([
       LoyaltyAccount,
+      LoyaltyCustomer,
       LoyaltyLedgerEntry,
       LoyaltySettings,
     ]),
