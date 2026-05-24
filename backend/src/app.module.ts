@@ -17,6 +17,14 @@ import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
 import { CustomerOrdersModule } from '@/modules/customer-orders/customer-orders.module';
 import { ShopModule } from '@/modules/shop/shop.module';
 import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
+import { HrModule } from '@/modules/hr/hr.module';
+import { Attendance } from '@/modules/hr/entities/attendance.entity';
+import { AttendanceSummary } from '@/modules/hr/entities/attendance-summary.entity';
+import { Employee } from '@/modules/hr/entities/employee.entity';
+import { EmployeeLeave } from '@/modules/hr/entities/employee-leave.entity';
+import { Payroll } from '@/modules/hr/entities/payroll.entity';
+import { PayrollSettings } from '@/modules/hr/entities/payroll-settings.entity';
+import { SalaryStructure } from '@/modules/hr/entities/salary-structure.entity';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
@@ -70,6 +78,13 @@ import appConfig from '@common/config/app.config';
       LoyaltyAccount,
       LoyaltyCustomer,
       LoyaltyLedgerEntry,
+      Employee,
+      SalaryStructure,
+      Attendance,
+      AttendanceSummary,
+      EmployeeLeave,
+      Payroll,
+      PayrollSettings,
     ]),
     CloudinaryModule,
     AuthModule,
@@ -85,6 +100,7 @@ import appConfig from '@common/config/app.config';
     CustomerOrdersModule,
     ShopModule,
     LoyaltyModule,
+    HrModule,
   ],
   providers: [AdminSeedService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
