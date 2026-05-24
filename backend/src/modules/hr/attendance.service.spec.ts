@@ -5,7 +5,6 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 import { AttendanceService } from './attendance.service';
 import { AttendanceRepository } from './attendance.repository';
 import { EmployeesRepository } from './employees.repository';
@@ -117,8 +116,6 @@ describe('AttendanceService', () => {
   let service: AttendanceService;
   let attendanceRepo: jest.Mocked<AttendanceRepository>;
   let employeesRepo: jest.Mocked<EmployeesRepository>;
-  let dataSourceMock: { getRepository: jest.Mock };
-  let employeeTypeOrmRepo: { findOne: jest.Mock };
 
   beforeEach(async () => {
     const attendanceRepoMock: Partial<jest.Mocked<AttendanceRepository>> = {
@@ -131,10 +128,7 @@ describe('AttendanceService', () => {
     };
     const employeesRepoMock: Partial<jest.Mocked<EmployeesRepository>> = {
       findById: jest.fn(),
-    };
-    employeeTypeOrmRepo = { findOne: jest.fn() };
-    dataSourceMock = {
-      getRepository: jest.fn().mockReturnValue(employeeTypeOrmRepo),
+      findByUserId: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
@@ -142,7 +136,6 @@ describe('AttendanceService', () => {
         AttendanceService,
         { provide: AttendanceRepository, useValue: attendanceRepoMock },
         { provide: EmployeesRepository, useValue: employeesRepoMock },
-        { provide: DataSource, useValue: dataSourceMock },
       ],
     }).compile();
 
@@ -379,7 +372,7 @@ describe('AttendanceService', () => {
     const NOW = new Date('2026-05-24T08:05:00Z');
 
     function mockEmployeeForUser(employee: Employee | null) {
-      employeeTypeOrmRepo.findOne.mockResolvedValue(employee);
+      employeesRepo.findByUserId.mockResolvedValue(employee);
     }
 
     it('inserts a Present row stamped with Cashier_Self on the happy path', async () => {
@@ -499,7 +492,7 @@ describe('AttendanceService', () => {
     const NOW = new Date('2026-05-24T17:30:00Z');
 
     function mockEmployeeForUser(employee: Employee | null) {
-      employeeTypeOrmRepo.findOne.mockResolvedValue(employee);
+      employeesRepo.findByUserId.mockResolvedValue(employee);
     }
 
     it('computes total_hours and overtime past the scheduled end', async () => {

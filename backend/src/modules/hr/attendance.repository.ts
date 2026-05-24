@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import {
   DataSource,
   type DeepPartial,
@@ -122,6 +122,9 @@ export class AttendanceRepository {
       .into(Attendance)
       .values(input)
       .orUpdate(
+        // `created_by` is intentionally omitted — the original creator
+        // id must survive re-edits. The INSERT side still stamps
+        // `created_by` for brand-new rows.
         [
           'check_in_time',
           'check_out_time',
@@ -134,7 +137,6 @@ export class AttendanceRepository {
           'marked_by',
           'cards_produced',
           'notes',
-          'created_by',
           'updated_at',
         ],
         ['employee_id', 'attendance_date'],
@@ -151,7 +153,9 @@ export class AttendanceRepository {
       // Should be unreachable — we just inserted/updated this row in
       // the same connection. Treat as a hard invariant violation
       // rather than tunneling a `null` back to the service.
-      throw new Error('Attendance row vanished immediately after upsert');
+      throw new InternalServerErrorException(
+        'Attendance row vanished immediately after upsert',
+      );
     }
     return found;
   }
@@ -216,7 +220,7 @@ export class AttendanceRepository {
       },
     });
     if (!found) {
-      throw new Error(
+      throw new InternalServerErrorException(
         'Attendance row vanished immediately after check-in upsert',
       );
     }
@@ -248,7 +252,7 @@ export class AttendanceRepository {
       where: { employeeId, attendanceDate },
     });
     if (!found) {
-      throw new Error(
+      throw new InternalServerErrorException(
         'Attendance row vanished immediately after check-out update',
       );
     }

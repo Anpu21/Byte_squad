@@ -55,6 +55,16 @@ export class EmployeesRepository {
   }
 
   /**
+   * Resolves the employee record that owns a given user account.
+   * Used by the cashier self check-in flow so the service layer can
+   * stay inside the repository pattern (rules §7) instead of reaching
+   * into TypeORM directly.
+   */
+  findByUserId(userId: string): Promise<Employee | null> {
+    return this.repo().findOne({ where: { userId } });
+  }
+
+  /**
    * Branch-scoped + filtered list. `branchId === undefined` widens the
    * query to every branch (admin path); the service layer is the gate
    * that decides whether the caller is allowed to do that. Search is a

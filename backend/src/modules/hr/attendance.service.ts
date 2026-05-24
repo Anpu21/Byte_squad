@@ -4,7 +4,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { AttendanceRepository } from '@/modules/hr/attendance.repository';
 import { EmployeesRepository } from '@/modules/hr/employees.repository';
@@ -15,6 +14,13 @@ import {
   BulkAttendanceDto,
   type BulkAttendanceRowDto,
 } from '@/modules/hr/dto/bulk-attendance.dto';
+import {
+  computeLate,
+  computeOvertime,
+  computeTotalHours,
+  formatClock,
+  todayDate,
+} from '@/modules/hr/attendance-math';
 
 export interface AttendanceActor {
   id: string;
@@ -33,81 +39,11 @@ export interface AttendanceListResponse {
 // the hard-coded fallback agrees with the eventual DB value.
 const DEFAULT_GRACE_MINUTES = 15;
 
-/**
- * Parse a clock time (`HH:mm` or `HH:mm:ss`) into total minutes since
- * midnight. Returns `null` for falsy input so callers can detect a
- * missing time without an extra branch.
- */
-function clockToMinutes(value: string | null | undefined): number | null {
-  if (!value) return null;
-  const [h, m] = value.split(':').map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) return null;
-  return h * 60 + m;
-}
-
-function computeLate(
-  checkInTime: string,
-  scheduledStart: string,
-  graceMinutes: number,
-): { isLate: boolean; lateMinutes: number } {
-  const checkIn = clockToMinutes(checkInTime);
-  const scheduled = clockToMinutes(scheduledStart);
-  if (checkIn === null || scheduled === null) {
-    return { isLate: false, lateMinutes: 0 };
-  }
-  const late = Math.max(0, checkIn - scheduled - graceMinutes);
-  return { isLate: late > 0, lateMinutes: late };
-}
-
-function computeTotalHours(
-  checkInTime: string | null | undefined,
-  checkOutTime: string | null | undefined,
-): number | null {
-  const checkIn = clockToMinutes(checkInTime);
-  const checkOut = clockToMinutes(checkOutTime);
-  if (checkIn === null || checkOut === null) return null;
-  if (checkOut <= checkIn) return 0;
-  return Math.round(((checkOut - checkIn) / 60) * 100) / 100;
-}
-
-function computeOvertime(
-  checkOutTime: string,
-  scheduledEnd: string,
-): { isOvertime: boolean; overtimeHours: number } {
-  const checkOut = clockToMinutes(checkOutTime);
-  const scheduled = clockToMinutes(scheduledEnd);
-  if (checkOut === null || scheduled === null) {
-    return { isOvertime: false, overtimeHours: 0 };
-  }
-  const overtime = Math.max(0, checkOut - scheduled);
-  return {
-    isOvertime: overtime > 0,
-    overtimeHours: Math.round((overtime / 60) * 100) / 100,
-  };
-}
-
-function todayDate(now: Date): Date {
-  // Normalize to date-only at UTC midnight so the `attendance_date`
-  // column (Postgres `date`) round-trips cleanly without time-zone
-  // drift between server and DB.
-  return new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  );
-}
-
-function formatClock(now: Date): string {
-  const hh = String(now.getUTCHours()).padStart(2, '0');
-  const mm = String(now.getUTCMinutes()).padStart(2, '0');
-  const ss = String(now.getUTCSeconds()).padStart(2, '0');
-  return `${hh}:${mm}:${ss}`;
-}
-
 @Injectable()
 export class AttendanceService {
   constructor(
     private readonly attendance: AttendanceRepository,
     private readonly employees: EmployeesRepository,
-    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -277,12 +213,9 @@ export class AttendanceService {
   // Helpers
 
   private async findEmployeeForUser(userId: string): Promise<Employee> {
-    // Direct lookup via the data source — the employees repo doesn't
-    // expose a findByUserId yet and the cashier self-flow doesn't
-    // need any of the heavier filtered list machinery.
-    const employee = await this.dataSource
-      .getRepository(Employee)
-      .findOne({ where: { userId } });
+    // Go through the repository (rules §7) so the data-access path
+    // stays consistent with the rest of the HR module.
+    const employee = await this.employees.findByUserId(userId);
     if (!employee) {
       throw new NotFoundException(
         'No employee profile is linked to this account',
