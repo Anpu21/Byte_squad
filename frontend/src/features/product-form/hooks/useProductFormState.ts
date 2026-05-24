@@ -3,8 +3,12 @@ import type {
     BarcodeLookupStatus,
     ProductFormErrors,
 } from '../types/form-errors.type';
+import {
+    type SellableUnitsState,
+    useSellableUnitsState,
+} from './useSellableUnitsState';
 
-export interface ProductFormState {
+export interface ProductFormState extends SellableUnitsState {
     name: string;
     setName: (value: string) => void;
     barcode: string;
@@ -42,6 +46,7 @@ export function useProductFormState(): ProductFormState {
     const [barcodeStatus, setBarcodeStatus] =
         useState<BarcodeLookupStatus>('idle');
     const [scanDetected, setScanDetected] = useState(false);
+    const sellableUnits = useSellableUnitsState();
 
     return {
         name,
@@ -66,5 +71,6 @@ export function useProductFormState(): ProductFormState {
         setBarcodeStatus,
         scanDetected,
         setScanDetected,
+        ...sellableUnits,
     };
 }
