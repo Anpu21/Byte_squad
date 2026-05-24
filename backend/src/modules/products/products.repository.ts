@@ -123,4 +123,29 @@ export class ProductsRepository {
     const rows = seeds.map((s) => repo.create(s));
     return repo.save(rows);
   }
+
+  /**
+   * Atomically replace the full sellable-units list for a product:
+   * deletes any existing rows, then persists the provided seeds. Use this
+   * when the manager edits a product's baseUnit or unit list — the auto-
+   * seed safety net (Phase A1 migration) plus this replace keep
+   * `product_sellable_units` consistent with the manager's intent.
+   *
+   * Pass an `EntityManager` to participate in a caller's transaction
+   * (recommended for `ProductsService.update` so the product row and its
+   * units commit together).
+   */
+  async replaceUnits(
+    productId: string,
+    seeds: DeepPartial<ProductSellableUnit>[],
+    manager?: EntityManager,
+  ): Promise<ProductSellableUnit[]> {
+    const repo = manager
+      ? manager.getRepository(ProductSellableUnit)
+      : this.dataSource.getRepository(ProductSellableUnit);
+    await repo.delete({ productId });
+    if (seeds.length === 0) return [];
+    const rows = seeds.map((s) => repo.create(s));
+    return repo.save(rows);
+  }
 }
