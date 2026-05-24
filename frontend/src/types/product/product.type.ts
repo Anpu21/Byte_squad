@@ -1,3 +1,5 @@
+import type { IProductSellableUnit } from './product-sellable-unit.type'
+
 export interface IProduct {
   id: string
   name: string
@@ -7,6 +9,8 @@ export interface IProduct {
   costPrice: number
   sellingPrice: number
   imageUrl: string | null
+  baseUnit: string
+  sellableUnits?: IProductSellableUnit[]
   isActive: boolean
   createdAt: string
   updatedAt: string

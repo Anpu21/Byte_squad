@@ -1,3 +1,4 @@
+// Sibling FE mirror: frontend/src/features/product-form/lib/sellable-units.ts
 import type { DeepPartial } from 'typeorm';
 import type { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import {
