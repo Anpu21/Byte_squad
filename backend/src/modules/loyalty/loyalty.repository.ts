@@ -5,7 +5,16 @@ import type { UpdateQueryBuilder } from 'typeorm';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
-import type { LoyaltyOwner } from '@/modules/loyalty/types';
+import {
+  applyLedgerActivityExists,
+  normalizeCustomerRow,
+} from '@/modules/loyalty/loyalty-customer-accounts.helpers';
+import type {
+  LoyaltyCustomerAccountsQueryOptions,
+  LoyaltyCustomerRawRow,
+  LoyaltyCustomerRow,
+  LoyaltyOwner,
+} from '@/modules/loyalty/types';
 
 @Injectable()
 export class LoyaltyRepository {
@@ -165,24 +174,13 @@ export class LoyaltyRepository {
    * `branches` so the name is null when the most recent activity was
    * an online earn (which has no branch).
    *
-   * Filters:
-   *   - branchId       — EXISTS a ledger row at that branch
-   *   - activeSince    — EXISTS a ledger row on/after the date
-   *   - branchId + activeSince — both conditions in the same EXISTS
-   *   - minPoints / maxPoints — range on `acc.points_balance`
-   *
+   * Filter semantics live on `LoyaltyCustomerAccountsQueryOptions`.
    * The EXISTS subqueries lean on `idx_loyalty_ledger_branch_created_at`
    * (added in BE-L1) so the cost stays bounded as the ledger grows.
    */
-  async listCustomerAccounts(opts: {
-    search?: string;
-    branchId?: string;
-    activeSince?: string;
-    minPoints?: number;
-    maxPoints?: number;
-    limit: number;
-    offset: number;
-  }): Promise<{ rows: LoyaltyCustomerRow[]; total: number }> {
+  async listCustomerAccounts(
+    opts: LoyaltyCustomerAccountsQueryOptions,
+  ): Promise<{ rows: LoyaltyCustomerRow[]; total: number }> {
     const qb = this.accountRepo
       .createQueryBuilder('acc')
       .leftJoin('users', 'u', 'u.id = acc.user_id')
@@ -260,30 +258,7 @@ export class LoyaltyRepository {
     }
 
     if (opts.branchId || opts.activeSince) {
-      const params: Record<string, unknown> = {};
-      const conditions: string[] = [];
-      if (opts.branchId) {
-        conditions.push('le3.branch_id = :branchId');
-        params.branchId = opts.branchId;
-      }
-      if (opts.activeSince) {
-        conditions.push('le3.created_at >= :activeSince');
-        params.activeSince = opts.activeSince;
-      }
-      const ledgerWhere = conditions.length
-        ? ` AND ${conditions.join(' AND ')}`
-        : '';
-      qb.andWhere(
-        `EXISTS (
-          SELECT 1 FROM loyalty_ledger_entries le3
-          WHERE (
-            (le3.user_id IS NOT NULL AND le3.user_id = acc.user_id)
-            OR (le3.loyalty_customer_id IS NOT NULL
-                AND le3.loyalty_customer_id = acc.loyalty_customer_id)
-          )${ledgerWhere}
-        )`,
-        params,
-      );
+      applyLedgerActivityExists(qb, opts);
     }
 
     const totalQb = qb.clone();
@@ -296,72 +271,6 @@ export class LoyaltyRepository {
       .offset(opts.offset)
       .getRawMany<LoyaltyCustomerRawRow>();
 
-    const rows: LoyaltyCustomerRow[] = rawRows.map((r) => ({
-      id: r.id,
-      ownerType: r.ownerType,
-      userId: r.userId ?? null,
-      loyaltyCustomerId: r.loyaltyCustomerId ?? null,
-      firstName: r.firstName,
-      lastName: r.lastName ?? null,
-      email: r.email ?? null,
-      phone: r.phone ?? null,
-      pointsBalance: Number(r.pointsBalance),
-      lifetimePointsEarned: Number(r.lifetimePointsEarned),
-      lifetimePointsRedeemed: Number(r.lifetimePointsRedeemed),
-      lastActivityAt: r.lastActivityAt ?? null,
-      lastActivityBranchId: r.lastActivityBranchId ?? null,
-      lastActivityBranchName: r.lastActivityBranchName ?? null,
-    }));
-
-    return { rows, total };
+    return { rows: rawRows.map(normalizeCustomerRow), total };
   }
-}
-
-interface LoyaltyCustomerRawRow {
-  id: string;
-  ownerType: 'user' | 'walkIn';
-  userId: string | null;
-  loyaltyCustomerId: string | null;
-  firstName: string;
-  lastName: string | null;
-  email: string | null;
-  phone: string | null;
-  pointsBalance: string | number;
-  lifetimePointsEarned: string | number;
-  lifetimePointsRedeemed: string | number;
-  lastActivityAt: Date | null;
-  lastActivityBranchId: string | null;
-  lastActivityBranchName: string | null;
-}
-
-export interface LoyaltyCustomerRow {
-  /**
-   * Polymorphic identity: `userId` for online customers,
-   * `loyaltyCustomerId` for walk-ins. Always set, unique per wallet,
-   * used as the table key and as the route-param for the history
-   * modal (walk-in history routing lands in a later phase).
-   */
-  id: string;
-  /** Discriminates which polymorphic owner column is set on the wallet. */
-  ownerType: 'user' | 'walkIn';
-  /** Set when `ownerType === 'user'`; null for walk-ins. */
-  userId: string | null;
-  /** Set when `ownerType === 'walkIn'`; null for online users. */
-  loyaltyCustomerId: string | null;
-  firstName: string;
-  /** Walk-ins may not have a last name. */
-  lastName: string | null;
-  /** Walk-ins have no email. */
-  email: string | null;
-  /** Users may not have a phone. */
-  phone: string | null;
-  pointsBalance: number;
-  lifetimePointsEarned: number;
-  lifetimePointsRedeemed: number;
-  /** Falls back to `acc.updated_at` when the ledger is empty. */
-  lastActivityAt: Date | null;
-  /** Branch id of the most-recent ledger entry; null for online-only activity. */
-  lastActivityBranchId: string | null;
-  /** Branch name for `lastActivityBranchId`; null when the branch is null. */
-  lastActivityBranchName: string | null;
 }

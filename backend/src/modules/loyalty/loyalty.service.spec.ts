@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { LoyaltyService } from './loyalty.service';
 import { LoyaltyRepository } from './loyalty.repository';
-import type { LoyaltyCustomerRow } from './loyalty.repository';
+import type { LoyaltyCustomerRow } from './types';
 import { LoyaltyCustomersRepository } from './loyalty-customers.repository';
 import { LoyaltySettingsService } from './loyalty-settings.service';
 import { UsersRepository } from '@users/users.repository';

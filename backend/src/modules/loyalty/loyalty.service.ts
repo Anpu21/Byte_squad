@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { LoyaltyRepository } from '@/modules/loyalty/loyalty.repository';
-import type { LoyaltyCustomerRow } from '@/modules/loyalty/loyalty.repository';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
 import { LoyaltySettings } from '@/modules/loyalty/entities/loyalty-settings.entity';
 import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
@@ -12,6 +11,7 @@ import { LoyaltyCustomersRepository } from '@/modules/loyalty/loyalty-customers.
 import { UsersRepository } from '@users/users.repository';
 import { normalizeSriLankaPhone } from '@common/utils/phone.util';
 import type {
+  LoyaltyCustomerRow,
   LoyaltyHistoryEntry,
   LoyaltyHistoryResponse,
   LoyaltyLookupResult,
