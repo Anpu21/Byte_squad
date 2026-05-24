@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
 import { Attendance } from '@/modules/hr/entities/attendance.entity';
 import { AttendanceSummary } from '@/modules/hr/entities/attendance-summary.entity';
 import { Employee } from '@/modules/hr/entities/employee.entity';
@@ -7,15 +8,23 @@ import { EmployeeLeave } from '@/modules/hr/entities/employee-leave.entity';
 import { Payroll } from '@/modules/hr/entities/payroll.entity';
 import { PayrollSettings } from '@/modules/hr/entities/payroll-settings.entity';
 import { SalaryStructure } from '@/modules/hr/entities/salary-structure.entity';
+import { EmployeesRepository } from '@/modules/hr/employees.repository';
+import { EmployeesService } from '@/modules/hr/employees.service';
+import { EmployeesController } from '@/modules/hr/employees.controller';
 
 /**
- * Phase BE-H1 of the HR module — schema only.
+ * HR module — built up incrementally:
  *
- * Persistence layer for the attendance + payroll feature. Mirrored on
- * the Shanel ERP HR schema (docs/sample-project) but adapted to
- * LedgerPro's NestJS + TypeORM + UUID + branch-scoped conventions.
+ * - BE-H1 landed the schema (entities + migration).
+ * - BE-H2 (this phase) adds the Employees CRUD + photo upload, with
+ *   strict branch scoping for managers. The service is exported so
+ *   the upcoming attendance + payroll services can resolve employee
+ *   data without re-injecting the repo.
  *
- * Repositories, services, and controllers land in BE-H2 onwards.
+ * CloudinaryModule is `@Global()` elsewhere in the app, but we import
+ * it explicitly here so the dependency is obvious from this module's
+ * surface — and to keep the module self-contained for the spec
+ * harness.
  */
 @Module({
   imports: [
@@ -28,9 +37,10 @@ import { SalaryStructure } from '@/modules/hr/entities/salary-structure.entity';
       Payroll,
       PayrollSettings,
     ]),
+    CloudinaryModule,
   ],
-  providers: [],
-  controllers: [],
-  exports: [TypeOrmModule],
+  providers: [EmployeesRepository, EmployeesService],
+  controllers: [EmployeesController],
+  exports: [EmployeesService, EmployeesRepository, TypeOrmModule],
 })
 export class HrModule {}

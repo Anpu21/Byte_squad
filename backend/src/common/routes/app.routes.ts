@@ -154,6 +154,17 @@ export const APP_ROUTES = {
     ADMIN_CUSTOMER_HISTORY: 'customers/:userId/history',
   },
 
+  // HR — employees, attendance, payroll
+  HR: {
+    BASE: `${API_PREFIX}/hr`,
+    EMPLOYEES: {
+      BASE: `${API_PREFIX}/hr/employees`,
+      BY_ID: ':id',
+      TERMINATE: ':id/terminate',
+      PHOTO: ':id/photo',
+    },
+  },
+
   // Stock Transfers (inter-branch stock movement)
   STOCK_TRANSFERS: {
     BASE: `${API_PREFIX}/stock-transfers`,
