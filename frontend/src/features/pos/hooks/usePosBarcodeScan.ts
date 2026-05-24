@@ -12,6 +12,14 @@ interface IUsePosBarcodeScanOptions {
 
 interface IUsePosBarcodeScanReturn {
     scanStatus: string | null;
+    /**
+     * Imperatively resolve a barcode string through the same
+     * search-then-status-banner pipeline the HID listener uses. The camera
+     * scanner modal calls this when it detects a code so both scanning
+     * surfaces share one resolution path. Always runs regardless of the
+     * `enabled` flag (which only gates the keyboard wedge).
+     */
+    triggerScan: (barcode: string) => Promise<void>;
 }
 
 /**
@@ -20,8 +28,9 @@ interface IUsePosBarcodeScanReturn {
  * `posService.searchProducts(code, 1)` so the result is already shaped as a
  * Shanel `ISearchProductRow` — matching the typeahead's onSelect contract.
  * On hit, fires `onProductFound`; on miss, surfaces a transient status
- * banner. Disabled by `enabled = false` so consumers can pause scanning
- * while a modal owns focus.
+ * banner. The HID listener is disabled by `enabled = false` so consumers can
+ * pause keyboard scanning while a modal owns focus; the returned
+ * `triggerScan` is always available for imperative use (e.g., camera scan).
  */
 export function usePosBarcodeScan({
     onProductFound,
@@ -55,5 +64,5 @@ export function usePosBarcodeScan({
         enabled,
     });
 
-    return { scanStatus };
+    return { scanStatus, triggerScan: handleScan };
 }

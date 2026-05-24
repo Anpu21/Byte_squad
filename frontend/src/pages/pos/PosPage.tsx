@@ -32,13 +32,19 @@ export function PosPage(): React.ReactElement {
             cart.addItem(toCartItemSeed(row, state.priceLevel)),
         [cart, state.priceLevel],
     );
-    usePosBarcodeScan({
+    const barcode = usePosBarcodeScan({
         onProductFound: handleScanHit,
         enabled:
             !state.showPayment &&
             !state.showRecent &&
             state.previewSaleId === null,
     });
+    const handleCameraScan = useCallback(
+        (code: string) => {
+            void barcode.triggerScan(code);
+        },
+        [barcode],
+    );
     const invoiceTotal = applyCartDiscount(
         cart.itemsSubtotal, cart.totalDiscount, cart.totalTax,
         state.cartDiscountPercentage,
@@ -64,6 +70,7 @@ export function PosPage(): React.ReactElement {
                 priceLevel={state.priceLevel}
                 setPriceLevel={state.setPriceLevel}
                 searchInputRef={state.searchInputRef}
+                onScanBarcode={handleCameraScan}
             />
             <div className="flex flex-col gap-3">
                 <PosCustomerInfo

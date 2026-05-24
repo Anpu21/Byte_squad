@@ -1,5 +1,5 @@
 import { useMemo, useState, type RefObject } from 'react';
-import { ShoppingCart } from 'lucide-react';
+import { Camera, ShoppingCart } from 'lucide-react';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type { ISearchProductRow, TPriceLevel } from '@/types';
 import { usePosProductSearch } from '@/features/pos/hooks/usePosProductSearch';
@@ -8,6 +8,7 @@ import { PosPriceLevelToggle } from './PosPriceLevelToggle';
 import { PosItemSearchInput } from './PosItemSearchInput';
 import { PosItemSearchResults } from './PosItemSearchResults';
 import { PosCartRow } from './PosCartRow';
+import { PosCameraScannerModal } from './PosCameraScannerModal';
 
 interface IPosItemTableProps {
     cart: ICartItem[];
@@ -31,6 +32,14 @@ interface IPosItemTableProps {
      * imperative focus (F2 shortcut, post-checkout refocus).
      */
     searchInputRef?: RefObject<HTMLInputElement | null>;
+    /**
+     * Optional camera-barcode resolver. When provided, a camera-icon
+     * button appears beside the search input and opens the camera
+     * scanner modal. The parent owns the resolution (delegates to
+     * `usePosBarcodeScan.triggerScan` so HID and camera scans share
+     * one search-and-status-banner pipeline).
+     */
+    onScanBarcode?: (barcode: string) => void;
 }
 
 const HEADERS: { label: string; align?: 'left' | 'right' | 'center' }[] = [
@@ -64,9 +73,11 @@ export function PosItemTable({
     priceLevel,
     setPriceLevel,
     searchInputRef,
+    onScanBarcode,
 }: IPosItemTableProps) {
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
+    const [showCamera, setShowCamera] = useState(false);
 
     const searchQuery = usePosProductSearch(debouncedQuery);
     const results = useMemo(
@@ -113,27 +124,48 @@ export function PosItemTable({
             </header>
 
             <div className="px-4 py-3 border-b border-border-strong">
-                <div className="relative">
-                    <PosItemSearchInput
-                        value={query}
-                        onChange={setQuery}
-                        onDebouncedChange={setDebouncedQuery}
-                        isSearching={searchQuery.isFetching}
-                        inputRef={searchInputRef}
-                    />
-                    {isDropdownOpen && (
-                        <div className="absolute left-0 right-0 top-full mt-1">
-                            <PosItemSearchResults
-                                results={results}
-                                priceLevel={priceLevel}
-                                onSelect={handleSelect}
-                                isLoading={searchQuery.isFetching}
-                                query={debouncedQuery || query.trim()}
-                            />
-                        </div>
+                <div className="flex items-stretch gap-2">
+                    <div className="relative flex-1">
+                        <PosItemSearchInput
+                            value={query}
+                            onChange={setQuery}
+                            onDebouncedChange={setDebouncedQuery}
+                            isSearching={searchQuery.isFetching}
+                            inputRef={searchInputRef}
+                        />
+                        {isDropdownOpen && (
+                            <div className="absolute left-0 right-0 top-full mt-1 z-dropdown">
+                                <PosItemSearchResults
+                                    results={results}
+                                    priceLevel={priceLevel}
+                                    onSelect={handleSelect}
+                                    isLoading={searchQuery.isFetching}
+                                    query={debouncedQuery || query.trim()}
+                                />
+                            </div>
+                        )}
+                    </div>
+                    {onScanBarcode && (
+                        <button
+                            type="button"
+                            onClick={() => setShowCamera(true)}
+                            className="shrink-0 inline-flex items-center justify-center gap-1.5 px-3 rounded-md border border-border-strong bg-surface-2 text-text-1 hover:bg-primary-soft hover:text-primary-soft-text transition-colors text-[12px] font-medium"
+                            aria-label="Open camera barcode scanner"
+                            title="Scan a barcode with the camera"
+                        >
+                            <Camera size={16} aria-hidden />
+                            <span className="hidden sm:inline">Scan</span>
+                        </button>
                     )}
                 </div>
             </div>
+            {onScanBarcode && (
+                <PosCameraScannerModal
+                    isOpen={showCamera}
+                    onClose={() => setShowCamera(false)}
+                    onScan={onScanBarcode}
+                />
+            )}
 
             {cart.length === 0 ? (
                 <EmptyState
