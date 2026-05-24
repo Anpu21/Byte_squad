@@ -26,6 +26,7 @@ describe('ProductsService', () => {
       update: jest.fn(),
       listDistinctActiveCategories: jest.fn(),
       setActive: jest.fn(),
+      saveUnits: jest.fn().mockResolvedValue([]),
     };
     cloudinary = {
       isEnabled: jest.fn().mockReturnValue(false),
@@ -60,6 +61,7 @@ describe('ProductsService', () => {
       repo.createAndSave.mockImplementation((input) =>
         Promise.resolve({
           id: 'p-new',
+          baseUnit: 'each',
           ...input,
         } as Product),
       );
@@ -76,6 +78,43 @@ describe('ProductsService', () => {
       expect(created.wholesalePrice).toBe(80);
       expect(created.taxRate).toBe(15);
       expect(created.discountAllowed).toBe(false);
+    });
+
+    it('auto-seeds default sellable units for the new product', async () => {
+      const dto: CreateProductDto = {
+        name: 'Bulk Rice',
+        barcode: '9876543210',
+        category: 'grains',
+        costPrice: 1,
+        sellingPrice: 2,
+      };
+      repo.createAndSave.mockImplementation((input) =>
+        Promise.resolve({
+          id: 'p-kg-1',
+          ...input,
+          baseUnit: 'kg',
+        } as Product),
+      );
+
+      await service.create(dto);
+
+      expect(repo.saveUnits).toHaveBeenCalledTimes(1);
+      const seeds = repo.saveUnits.mock.calls[0][0];
+      expect(seeds).toHaveLength(2);
+      expect(seeds[0]).toMatchObject({
+        productId: 'p-kg-1',
+        name: 'kg',
+        isBase: true,
+        conversionToBase: 1,
+        displayOrder: 0,
+      });
+      expect(seeds[1]).toMatchObject({
+        productId: 'p-kg-1',
+        name: 'g',
+        isBase: false,
+        conversionToBase: 0.001,
+        displayOrder: 1,
+      });
     });
   });
 

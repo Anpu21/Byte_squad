@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, DeepPartial, In, Repository } from 'typeorm';
+import {
+  DataSource,
+  DeepPartial,
+  EntityManager,
+  In,
+  Repository,
+} from 'typeorm';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 
@@ -92,5 +98,29 @@ export class ProductsRepository {
       where: { productId },
       order: { displayOrder: 'ASC' },
     });
+  }
+
+  /**
+   * Persist a batch of sellable-unit seeds for a product. Used by
+   * `ProductsService.create` to wire the base-unit-derived companions onto
+   * a freshly-inserted product row (Phase A2 forward-going path) and by the
+   * migration that backfilled existing products (Phase A1). Returns the
+   * saved rows so the caller can hand them back to the UI without a
+   * follow-up `listUnits`.
+   *
+   * Pass an `EntityManager` when invoking from inside a transaction so the
+   * inserts join the surrounding unit-of-work; otherwise the call lands on
+   * the default DataSource repository.
+   */
+  async saveUnits(
+    seeds: DeepPartial<ProductSellableUnit>[],
+    manager?: EntityManager,
+  ): Promise<ProductSellableUnit[]> {
+    if (seeds.length === 0) return [];
+    const repo = manager
+      ? manager.getRepository(ProductSellableUnit)
+      : this.dataSource.getRepository(ProductSellableUnit);
+    const rows = seeds.map((s) => repo.create(s));
+    return repo.save(rows);
   }
 }

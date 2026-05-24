@@ -3,6 +3,7 @@ import { Product } from '@products/entities/product.entity';
 import { ProductsRepository } from '@products/products.repository';
 import { CreateProductDto } from '@products/dto/create-product.dto';
 import { UpdateProductDto } from '@products/dto/update-product.dto';
+import { defaultSellableUnitsFor } from '@products/lib/default-sellable-units';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 
 const CLOUDINARY_FOLDER = 'ledgerpro/products';
@@ -14,8 +15,23 @@ export class ProductsService {
     private readonly cloudinary: CloudinaryService,
   ) {}
 
+  /**
+   * Persist a new product row and immediately seed its default sellable
+   * units (Phase A2). The companions are derived from the row's `baseUnit`
+   * by `defaultSellableUnitsFor` — e.g. a `kg`-based product gets `[kg, g]`,
+   * a discrete `each`-based product gets a single self-mirror row.
+   *
+   * The two writes are not wrapped in a single transaction: the product is
+   * persisted first so we have its id for the seed `productId`, then the
+   * units land in a separate batch. The migration that powered the Phase
+   * A1 backfill (`backfillDefaultSellableUnits`) is idempotent and would
+   * pick up any orphan product that managed to skip the second write.
+   */
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    return this.products.createAndSave(createProductDto);
+    const product = await this.products.createAndSave(createProductDto);
+    const seeds = defaultSellableUnitsFor(product.id, product.baseUnit);
+    await this.products.saveUnits(seeds);
+    return product;
   }
 
   async findAll(): Promise<Product[]> {
