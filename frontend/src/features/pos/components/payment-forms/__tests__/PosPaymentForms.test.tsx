@@ -79,7 +79,7 @@ function makePersistedSale(overrides: Partial<ISale> = {}): ISale {
         paidAmount: 100,
         balanceDue: 0,
         paymentStatus: 'Paid',
-        status: 'Completed',
+        status: 'Active',
         location: 'pos',
         customerUserId: null,
         voidedReason: null,

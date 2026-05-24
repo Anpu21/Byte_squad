@@ -26,11 +26,11 @@ const sample: ICustomerSearchRow = {
 
 function renderPicker(props: Partial<{
     isOpen: boolean;
-    onClose: ReturnType<typeof vi.fn>;
-    onSelect: ReturnType<typeof vi.fn>;
+    onClose: ReturnType<typeof vi.fn<() => void>>;
+    onSelect: ReturnType<typeof vi.fn<(customer: ICustomerSearchRow | null) => void>>;
 }> = {}) {
-    const onClose = props.onClose ?? vi.fn();
-    const onSelect = props.onSelect ?? vi.fn();
+    const onClose = props.onClose ?? vi.fn<() => void>();
+    const onSelect = props.onSelect ?? vi.fn<(customer: ICustomerSearchRow | null) => void>();
     const isOpen = props.isOpen ?? true;
     const client = new QueryClient({
         defaultOptions: { queries: { retry: false, gcTime: 0 } },

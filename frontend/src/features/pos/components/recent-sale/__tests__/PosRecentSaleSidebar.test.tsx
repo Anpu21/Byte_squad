@@ -40,11 +40,11 @@ function makeRow(overrides: Partial<IRecentSaleRow> = {}): IRecentSaleRow {
 
 function renderSidebar(
     isOpen = true,
-    onSelectSale: ReturnType<typeof vi.fn> = vi.fn(),
-    onClose: ReturnType<typeof vi.fn> = vi.fn(),
+    onSelectSale: ReturnType<typeof vi.fn<(saleId: string) => void>> = vi.fn<(saleId: string) => void>(),
+    onClose: ReturnType<typeof vi.fn<() => void>> = vi.fn<() => void>(),
 ): {
-    onSelectSale: ReturnType<typeof vi.fn>;
-    onClose: ReturnType<typeof vi.fn>;
+    onSelectSale: ReturnType<typeof vi.fn<(saleId: string) => void>>;
+    onClose: ReturnType<typeof vi.fn<() => void>>;
 } {
     const client = new QueryClient({
         defaultOptions: {
@@ -141,8 +141,8 @@ describe('PosRecentSaleSidebar', () => {
 
     it('fires onClose when the close button is clicked', async () => {
         getRecentSalesMock.mockResolvedValue([]);
-        const onClose = vi.fn();
-        renderSidebar(true, vi.fn(), onClose);
+        const onClose = vi.fn<() => void>();
+        renderSidebar(true, vi.fn<(saleId: string) => void>(), onClose);
         await userEvent.click(
             screen.getByRole('button', { name: /close recent sales/i }),
         );

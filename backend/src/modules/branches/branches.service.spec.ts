@@ -65,37 +65,47 @@ interface PendingActionOverrides {
 function buildPendingAction(
   overrides: PendingActionOverrides = {},
 ): PendingBranchAction {
-  const pending = new PendingBranchAction();
-  pending.id = overrides.id ?? 'pending-1';
-  pending.userId = overrides.userId ?? adminUser.id;
-  pending.user = adminUser;
-  pending.actionType = overrides.actionType ?? 'create';
-  pending.branchId = overrides.branchId ?? null;
-  pending.branch = null;
-  pending.payload = overrides.payload ?? null;
-  pending.otpCode = overrides.otpCode ?? '123456';
-  pending.expiresAt = overrides.expiresAt ?? new Date(Date.now() + 60_000);
-  pending.consumedAt = overrides.consumedAt ?? null;
-  pending.createdAt = overrides.createdAt ?? new Date();
+  // Use Object.assign with explicit return-type annotation so ESLint's
+  // projectService resolver narrows the value to PendingBranchAction
+  // instead of treating field assignments on `new PendingBranchAction()`
+  // as `any`. This matters under CI's stricter type inference where the
+  // imperative `entity.field = ...` pattern trips `no-unsafe-member-access`.
+  const pending: PendingBranchAction = Object.assign(
+    new PendingBranchAction(),
+    {
+      id: overrides.id ?? 'pending-1',
+      userId: overrides.userId ?? adminUser.id,
+      user: adminUser,
+      actionType: overrides.actionType ?? 'create',
+      branchId: overrides.branchId ?? null,
+      branch: null,
+      payload: overrides.payload ?? null,
+      otpCode: overrides.otpCode ?? '123456',
+      expiresAt: overrides.expiresAt ?? new Date(Date.now() + 60_000),
+      consumedAt: overrides.consumedAt ?? null,
+      createdAt: overrides.createdAt ?? new Date(),
+    },
+  );
   return pending;
 }
 
 function buildBranch(overrides: Partial<Branch> = {}): Branch {
-  const branch = new Branch();
-  branch.id = overrides.id ?? 'b1';
-  branch.code = overrides.code ?? 'BR001';
-  branch.name = overrides.name ?? 'Main';
-  branch.addressLine1 = overrides.addressLine1 ?? '1 Main St';
-  branch.addressLine2 = overrides.addressLine2 ?? null;
-  branch.city = overrides.city ?? null;
-  branch.state = overrides.state ?? null;
-  branch.country = overrides.country ?? null;
-  branch.postalCode = overrides.postalCode ?? null;
-  branch.phone = overrides.phone ?? '+10000000000';
-  branch.email = overrides.email ?? null;
-  branch.isActive = overrides.isActive ?? true;
-  branch.createdAt = overrides.createdAt ?? new Date();
-  branch.updatedAt = overrides.updatedAt ?? new Date();
+  const branch: Branch = Object.assign(new Branch(), {
+    id: overrides.id ?? 'b1',
+    code: overrides.code ?? 'BR001',
+    name: overrides.name ?? 'Main',
+    addressLine1: overrides.addressLine1 ?? '1 Main St',
+    addressLine2: overrides.addressLine2 ?? null,
+    city: overrides.city ?? null,
+    state: overrides.state ?? null,
+    country: overrides.country ?? null,
+    postalCode: overrides.postalCode ?? null,
+    phone: overrides.phone ?? '+10000000000',
+    email: overrides.email ?? null,
+    isActive: overrides.isActive ?? true,
+    createdAt: overrides.createdAt ?? new Date(),
+    updatedAt: overrides.updatedAt ?? new Date(),
+  });
   return branch;
 }
 

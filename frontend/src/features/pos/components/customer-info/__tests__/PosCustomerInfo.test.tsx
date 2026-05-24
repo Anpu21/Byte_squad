@@ -60,7 +60,7 @@ const searchMock = vi.mocked(posService.searchCustomers);
 
 function renderInfo(
     initialCustomerId: string | null = null,
-    onPickSpy: ReturnType<typeof vi.fn> = vi.fn(),
+    onPickSpy: ReturnType<typeof vi.fn<(userId: string | null) => void>> = vi.fn<(userId: string | null) => void>(),
 ) {
     // Lift state in the test so the component sees a parent-owned
     // customerUserId update when its `onPick` fires — without this, the

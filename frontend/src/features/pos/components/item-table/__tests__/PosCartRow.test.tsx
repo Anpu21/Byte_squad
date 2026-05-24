@@ -39,11 +39,11 @@ const item: ICartItem = {
 };
 
 function renderRow(overrides: Partial<ICartItem> = {}, props: {
-    onUpdate?: ReturnType<typeof vi.fn>;
-    onRemove?: ReturnType<typeof vi.fn>;
+    onUpdate?: ReturnType<typeof vi.fn<(rowId: string, patch: Partial<ICartItem>) => void>>;
+    onRemove?: ReturnType<typeof vi.fn<(rowId: string) => void>>;
 } = {}) {
-    const onUpdate = props.onUpdate ?? vi.fn();
-    const onRemove = props.onRemove ?? vi.fn();
+    const onUpdate = props.onUpdate ?? vi.fn<(rowId: string, patch: Partial<ICartItem>) => void>();
+    const onRemove = props.onRemove ?? vi.fn<(rowId: string) => void>();
     const client = new QueryClient({
         defaultOptions: { queries: { retry: false, gcTime: 0 } },
     });

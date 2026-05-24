@@ -11,34 +11,36 @@ vi.mock('@/hooks/useConfirm', () => ({
     useConfirm: () => confirmMock,
 }));
 
+type TVoidMock = ReturnType<typeof vi.fn<() => void>>;
+
 interface IRenderArgs {
     isCartEmpty?: boolean;
     hasLastReceipt?: boolean;
-    onFocusSearch?: ReturnType<typeof vi.fn>;
-    onTogglePriceLevel?: ReturnType<typeof vi.fn>;
-    onOpenCustomerPicker?: ReturnType<typeof vi.fn>;
-    onClearCart?: ReturnType<typeof vi.fn>;
-    onPrintLastReceipt?: ReturnType<typeof vi.fn>;
-    onShowRecent?: ReturnType<typeof vi.fn>;
-    onOpenPayment?: ReturnType<typeof vi.fn>;
+    onFocusSearch?: TVoidMock;
+    onTogglePriceLevel?: TVoidMock;
+    onOpenCustomerPicker?: TVoidMock;
+    onClearCart?: TVoidMock;
+    onPrintLastReceipt?: TVoidMock;
+    onShowRecent?: TVoidMock;
+    onOpenPayment?: TVoidMock;
 }
 
 function renderBar(args: IRenderArgs = {}): {
-    onFocusSearch: ReturnType<typeof vi.fn>;
-    onTogglePriceLevel: ReturnType<typeof vi.fn>;
-    onOpenCustomerPicker: ReturnType<typeof vi.fn>;
-    onClearCart: ReturnType<typeof vi.fn>;
-    onPrintLastReceipt: ReturnType<typeof vi.fn>;
-    onShowRecent: ReturnType<typeof vi.fn>;
-    onOpenPayment: ReturnType<typeof vi.fn>;
+    onFocusSearch: TVoidMock;
+    onTogglePriceLevel: TVoidMock;
+    onOpenCustomerPicker: TVoidMock;
+    onClearCart: TVoidMock;
+    onPrintLastReceipt: TVoidMock;
+    onShowRecent: TVoidMock;
+    onOpenPayment: TVoidMock;
 } {
-    const onFocusSearch = args.onFocusSearch ?? vi.fn();
-    const onTogglePriceLevel = args.onTogglePriceLevel ?? vi.fn();
-    const onOpenCustomerPicker = args.onOpenCustomerPicker ?? vi.fn();
-    const onClearCart = args.onClearCart ?? vi.fn();
-    const onPrintLastReceipt = args.onPrintLastReceipt ?? vi.fn();
-    const onShowRecent = args.onShowRecent ?? vi.fn();
-    const onOpenPayment = args.onOpenPayment ?? vi.fn();
+    const onFocusSearch = args.onFocusSearch ?? vi.fn<() => void>();
+    const onTogglePriceLevel = args.onTogglePriceLevel ?? vi.fn<() => void>();
+    const onOpenCustomerPicker = args.onOpenCustomerPicker ?? vi.fn<() => void>();
+    const onClearCart = args.onClearCart ?? vi.fn<() => void>();
+    const onPrintLastReceipt = args.onPrintLastReceipt ?? vi.fn<() => void>();
+    const onShowRecent = args.onShowRecent ?? vi.fn<() => void>();
+    const onOpenPayment = args.onOpenPayment ?? vi.fn<() => void>();
     render(
         <PosActionButtons
             onFocusSearch={onFocusSearch}
