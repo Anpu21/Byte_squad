@@ -1,5 +1,9 @@
 import type { DeepPartial } from 'typeorm';
 import type { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
+import {
+  isSupportedBaseUnit,
+  type TSupportedBaseUnit,
+} from '@products/lib/supported-base-units';
 
 interface UnitSeed {
   name: string;
@@ -17,7 +21,7 @@ interface UnitSeed {
  * - Discrete (each / bottle / pack / box): single self-mirroring row so the
  *   cashier dropdown always has at least one option but nothing to convert.
  */
-const DEFAULTS_BY_BASE_UNIT: Record<string, UnitSeed[]> = {
+const DEFAULTS_BY_BASE_UNIT: Record<TSupportedBaseUnit, UnitSeed[]> = {
   kg: [
     { name: 'kg', isBase: true, conversionToBase: 1, displayOrder: 0 },
     { name: 'g', isBase: false, conversionToBase: 0.001, displayOrder: 1 },
@@ -59,9 +63,11 @@ export function defaultSellableUnitsFor(
   productId: string,
   baseUnit: string,
 ): DeepPartial<ProductSellableUnit>[] {
-  const lookup = DEFAULTS_BY_BASE_UNIT[baseUnit.toLowerCase()];
-  const seeds: UnitSeed[] = lookup ?? [
-    { name: baseUnit, isBase: true, conversionToBase: 1, displayOrder: 0 },
-  ];
+  const lowered = baseUnit.toLowerCase();
+  const seeds: UnitSeed[] = isSupportedBaseUnit(lowered)
+    ? DEFAULTS_BY_BASE_UNIT[lowered]
+    : [
+        { name: baseUnit, isBase: true, conversionToBase: 1, displayOrder: 0 },
+      ];
   return seeds.map((s) => ({ ...s, productId }));
 }
