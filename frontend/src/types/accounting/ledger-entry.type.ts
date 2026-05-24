@@ -7,6 +7,6 @@ export interface ILedgerEntry {
   amount: number
   description: string
   referenceNumber: string
-  transactionId: string | null
+  saleId: string | null
   createdAt: string
 }

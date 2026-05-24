@@ -1,10 +1,10 @@
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 import Pill from '@/components/ui/Pill';
-import type { ITransaction } from '@/types';
+import type { ISale } from '@/types';
 import { formatRevenue, formatTime } from '../lib/format';
 
-type TransactionWithCashier = ITransaction & {
+type TransactionWithCashier = ISale & {
     cashier?: { firstName: string; lastName: string };
 };
 

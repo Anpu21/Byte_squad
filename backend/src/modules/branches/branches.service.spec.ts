@@ -9,8 +9,8 @@ import { BranchesService } from './branches.service';
 import { BranchesRepository } from './branches.repository';
 import { Branch } from './entities/branch.entity';
 import { User } from '@users/entities/user.entity';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 
@@ -27,21 +27,27 @@ interface BranchesRepoMock {
 const ADMIN_USER_ID = 'admin-1';
 
 function buildBranch(overrides: Partial<Branch> = {}): Branch {
-  const branch = new Branch();
-  branch.id = overrides.id ?? 'b1';
-  branch.code = overrides.code ?? 'BR001';
-  branch.name = overrides.name ?? 'Main';
-  branch.addressLine1 = overrides.addressLine1 ?? '1 Main St';
-  branch.addressLine2 = overrides.addressLine2 ?? null;
-  branch.city = overrides.city ?? null;
-  branch.state = overrides.state ?? null;
-  branch.country = overrides.country ?? null;
-  branch.postalCode = overrides.postalCode ?? null;
-  branch.phone = overrides.phone ?? '+10000000000';
-  branch.email = overrides.email ?? null;
-  branch.isActive = overrides.isActive ?? true;
-  branch.createdAt = overrides.createdAt ?? new Date();
-  branch.updatedAt = overrides.updatedAt ?? new Date();
+  // Use Object.assign with explicit return-type annotation so ESLint's
+  // projectService resolver narrows the value to Branch instead of
+  // treating field assignments on `new Branch()` as `any`. This matters
+  // under CI's stricter type inference where the imperative
+  // `entity.field = ...` pattern trips `no-unsafe-member-access`.
+  const branch: Branch = Object.assign(new Branch(), {
+    id: overrides.id ?? 'b1',
+    code: overrides.code ?? 'BR001',
+    name: overrides.name ?? 'Main',
+    addressLine1: overrides.addressLine1 ?? '1 Main St',
+    addressLine2: overrides.addressLine2 ?? null,
+    city: overrides.city ?? null,
+    state: overrides.state ?? null,
+    country: overrides.country ?? null,
+    postalCode: overrides.postalCode ?? null,
+    phone: overrides.phone ?? '+10000000000',
+    email: overrides.email ?? null,
+    isActive: overrides.isActive ?? true,
+    createdAt: overrides.createdAt ?? new Date(),
+    updatedAt: overrides.updatedAt ?? new Date(),
+  });
   return branch;
 }
 
@@ -65,8 +71,8 @@ describe('BranchesService — direct admin mutations', () => {
         BranchesService,
         { provide: BranchesRepository, useValue: branchesRepo },
         { provide: getRepositoryToken(User), useValue: { findOne: jest.fn() } },
-        { provide: getRepositoryToken(Transaction), useValue: {} },
-        { provide: getRepositoryToken(TransactionItem), useValue: {} },
+        { provide: getRepositoryToken(Sale), useValue: {} },
+        { provide: getRepositoryToken(SaleItem), useValue: {} },
         { provide: getRepositoryToken(Inventory), useValue: {} },
         { provide: getRepositoryToken(Expense), useValue: {} },
       ],

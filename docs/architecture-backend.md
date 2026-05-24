@@ -29,6 +29,66 @@
 
 ---
 
+## POS (cashier checkout)
+
+The `pos` module owns the cashier checkout flow, multi-tender payments, customer credit (AR), stock-movement audit log, and idempotent sale creation. Ported from the Shanel ERP reference UI in the May 2026 implementation plan (`docs/superpowers/plans/2026-05-23-cashier-pos-shanel-port.md`).
+
+> **Prior planning artifacts.** Nine `pos-*.plan.md` files on the `feat/suppliers-master` branch (and on the working checkout outside this worktree) are superseded by the dated plan above. They are not present on this branch — no archive copy is checked in.
+
+### Entities
+
+The legacy `Transaction` / `TransactionItem` pair was replaced by a wider Shanel-shaped model. Renames + additions are tracked in the migration log and applied via `DB_SYNC=true` in dev.
+
+| Entity | Purpose |
+|---|---|
+| `Sale` | One row per checkout. Carries totals, discount, tax, change, status, voided audit fields, and a unique server-generated invoice number. Renamed from `Transaction`. |
+| `SaleItem` | One row per cart line. Carries productId, sellable-unit name, qty, base-qty, unit price, line discount, line total. Renamed from `TransactionItem`. |
+| `Payment` | One row per `Sale`. Multi-tender split across `cashAmount`, `chequeAmount`, `bankTransferAmount`, `creditAmount`, plus `tenderedTotal`, `changeAmount`, `keepBalance` (overpayment-to-credit toggle), and cheque/bank-transfer metadata columns. |
+| `CreditTransaction` | Customer AR ledger. Charge rows on `credit > 0` sales, settlement rows on credit-method payments, refund rows on void. Updates `User.currentBalance` atomically. |
+| `StockMovement` | Audit log row per cart line on `Sale_Created` and `Sale_Voided` (sign-flipped). Plus rows the inventory module emits for transfers, manual adjustments, etc. |
+| `IdempotencyKey` | `pos_idempotency_keys` table, uniqueness `(cashierId, key)`. Replay returns the stored saleId; conflict on different payload returns 409. |
+| `InvoiceCounter` | Per-branch monotonic counter for server-generated invoice numbers (`INV-{branchCode}-{seq}`). Atomic increment in the same transaction as the sale write. |
+
+### Endpoints (all under `APP_ROUTES.POS.*`)
+
+Read:
+- `GET /pos/products/search?q=` — typeahead by name / barcode / SKU.
+- `GET /pos/products/:id/units` — sellable units (e.g. `KG`, `100G`, `500G`) with their base-unit conversion factor.
+- `GET /pos/products/:id/units/:unit/base-qty` — convert a chosen unit + qty back to base-unit qty for the cart line.
+- `GET /pos/products/:id/inventory` — current branch on-hand for the active cashier's branch.
+- `GET /pos/recent-sales?limit=` — sidebar feed for the recent-sales card.
+- `GET /pos/invoice-number` — preview / reserve the next invoice number for the active branch.
+- `GET /pos/customers/search?q=` — customer picker typeahead.
+
+Write:
+- `POST /pos/sales` — multi-tender checkout. Body: items + payments + customerId (optional) + `keepBalance` + idempotency key (header `X-Idempotency-Key`). Validates stock atomically, debits inventory, writes a `Payment` row, records the `Sale`, emits `StockMovement` rows, and (when `credit > 0` or `keepBalance`) writes a `CreditTransaction` and updates `User.currentBalance`.
+- `PATCH /pos/sales/:id/print` — flips the `printedAt` timestamp; idempotent reprints permitted.
+- `POST /pos/sales/:id/void` — soft-void. Refunds the customer's credit ledger if applicable, re-credits inventory, writes sign-flipped `StockMovement` rows, sets `voidedAt` / `voidReason` / `voidedById`. Once printed, voiding requires manager role.
+
+The legacy dashboard endpoints (`/pos/transactions`, `/pos/my-dashboard`, `/pos/admin-dashboard`, etc.) remain in place — they read from `Sale` / `SaleItem` and continue to back the cashier-history dashboards.
+
+### Repository pattern
+
+All POS data access lives in dedicated repositories (Rules.md §7): `pos.repository.ts`, `sale.repository.ts`, `sale-item.repository.ts`, `payment.repository.ts`, `credit-transaction.repository.ts`, `stock-movement.repository.ts`. Each uses `DataSource` injection — no `@InjectRepository` calls in service files.
+
+### Multi-tender model
+
+One `Payment` row per `Sale` splits the bill across cash + cheque + bank transfer + credit. `MultiTenderCalculatorService` (`modules/pos/services/multi-tender-calculator.service.ts`) computes the tendered total, change, and `keepBalance` overpayment. Cheques/bank transfers carry reference + bank metadata columns. Credit settlements draw from `User.currentBalance` and create matching `CreditTransaction` rows.
+
+### Customer credit (AR)
+
+Customer accounts (`role=CUSTOMER`) carry a `currentBalance` column. Every credit movement is journaled as a `CreditTransaction` (charge / settlement / refund), keeping the ledger reconcilable against the running balance.
+
+### Stock-movement audit log
+
+Every cart line emits a `StockMovement` row on sale creation and a sign-flipped row on void. Inventory adjustments, transfers, and manual edits write to the same table, giving a single audit log per product per branch.
+
+### Idempotency
+
+`POST /pos/sales` requires an `X-Idempotency-Key` header. The key is stored in `pos_idempotency_keys` with the cashierId; replays return the original `saleId`. Payload-mismatch replays return 409.
+
+---
+
 ## Stock-transfer state machine
 
 Pessimistic-locked, transactional, audit-tracked. Manager creates → Admin approves/rejects → source Manager ships (decrements stock) → destination Manager receives (increments stock) → COMPLETED. Admin can cancel pre-ship. Every state change emits a notification to the relevant party.

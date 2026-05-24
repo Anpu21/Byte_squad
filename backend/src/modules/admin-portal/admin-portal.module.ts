@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminPortalController } from '@admin-portal/admin-portal.controller';
 import { AdminPortalService } from '@admin-portal/admin-portal.service';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Product } from '@products/entities/product.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { BranchesModule } from '@branches/branches.module';
@@ -12,7 +12,7 @@ import { InventoryModule } from '@inventory/inventory.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction, TransactionItem, Product, Expense]),
+    TypeOrmModule.forFeature([Sale, SaleItem, Product, Expense]),
     BranchesModule,
     UsersModule,
     InventoryModule,

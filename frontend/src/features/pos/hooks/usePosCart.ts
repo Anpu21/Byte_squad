@@ -1,227 +1,101 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useConfirm } from '@/hooks/useConfirm';
-import type { IProduct } from '@/types';
-import type { CartItem } from '../types/cart-item.type';
-import {
-    computeEffectiveLineTotal,
-    computeLineDiscountValue,
-} from '../lib/discount';
+import type { ICartItem } from '@/features/pos/types/cart-item.type';
+import { computeLine } from '@/features/pos/lib/line-total';
 
-function buildLine(
-    product: IProduct,
-    quantity: number,
-    unitPrice: number,
-    discountAmount: number | undefined,
-): CartItem {
-    const lineTotal = Math.round(quantity * unitPrice * 100) / 100;
-    const effectiveLineTotal = computeEffectiveLineTotal(
-        quantity,
-        unitPrice,
-        discountAmount,
-    );
-    return {
-        product,
-        quantity,
-        unitPrice,
-        lineTotal,
-        lineDiscountAmount: discountAmount,
-        effectiveLineTotal,
-    };
+/**
+ * Holds the cashier cart for one in-flight sale. Pure client state — no
+ * server round-trip until checkout. Derived totals (`itemsSubtotal`,
+ * `totalDiscount`, `totalTax`, `cartTotal`) are memoised off `cart` and
+ * stay in sync with each row's `computeLine` output.
+ *
+ * Shanel rule: adding a duplicate productId+unitId stacks the quantity on
+ * the existing row instead of inserting a second row. Lets the cashier
+ * scan a barcode twice and see qty go up.
+ */
+
+type AddItemSeed = Omit<
+    ICartItem,
+    | 'rowId'
+    | 'lineSubtotal'
+    | 'lineDiscountAmount'
+    | 'lineTaxAmount'
+    | 'lineTotal'
+    | 'baseUnitQty'
+>;
+
+export interface UsePosCartReturn {
+    cart: ICartItem[];
+    addItem: (item: AddItemSeed) => void;
+    updateItem: (rowId: string, patch: Partial<ICartItem>) => void;
+    removeItem: (rowId: string) => void;
+    clear: () => void;
+    itemsSubtotal: number;
+    totalDiscount: number;
+    totalTax: number;
+    cartTotal: number;
 }
 
-interface UsePosCartOptions {
-    stockByProductId?: Record<string, number>;
+function newRowId(): string {
+    return crypto.randomUUID();
 }
 
-export function usePosCart(options: UsePosCartOptions = {}) {
-    const confirm = useConfirm();
-    const [cart, setCart] = useState<CartItem[]>([]);
-    const [blockedReason, setBlockedReason] = useState<string | null>(null);
+function recompute(item: ICartItem): ICartItem {
+    return { ...item, ...computeLine(item) };
+}
 
-    const stockMap = options.stockByProductId;
+export function usePosCart(): UsePosCartReturn {
+    const [cart, setCart] = useState<ICartItem[]>([]);
 
-    const clamp = useCallback(
-        (productId: string, desired: number, productName?: string): number => {
-            if (!stockMap) return desired;
-            const stock = stockMap[productId];
-            if (stock === undefined) return desired;
-            if (desired > stock) {
-                setBlockedReason(
-                    productName
-                        ? `Only ${stock} in stock for ${productName}`
-                        : `Only ${stock} in stock`,
+    const addItem = useCallback<UsePosCartReturn['addItem']>((seed) => {
+        setCart((prev) => {
+            const dup = prev.find(
+                (p) =>
+                    p.productId === seed.productId && p.unitId === seed.unitId,
+            );
+            if (dup) {
+                return prev.map((p) =>
+                    p.rowId === dup.rowId
+                        ? recompute({ ...p, quantity: p.quantity + seed.quantity })
+                        : p,
                 );
-                return Math.max(0, stock);
             }
-            return desired;
-        },
-        [stockMap],
-    );
-
-    const addToCart = useCallback(
-        (product: IProduct, qty = 1) => {
-            setBlockedReason(null);
-            setCart((prev) => {
-                const existing = prev.find(
-                    (item) => item.product.id === product.id,
-                );
-                if (existing) {
-                    const next = clamp(
-                        product.id,
-                        existing.quantity + qty,
-                        product.name,
-                    );
-                    if (next === existing.quantity) return prev;
-                    return prev.map((item) =>
-                        item.product.id === product.id
-                            ? buildLine(
-                                  item.product,
-                                  next,
-                                  item.unitPrice,
-                                  item.lineDiscountAmount,
-                              )
-                            : item,
-                    );
-                }
-                const next = clamp(product.id, qty, product.name);
-                if (next <= 0) return prev;
-                return [
-                    ...prev,
-                    buildLine(
-                        product,
-                        next,
-                        Number(product.sellingPrice),
-                        undefined,
-                    ),
-                ];
-            });
-        },
-        [clamp],
-    );
-
-    const removeFromCart = useCallback((productId: string) => {
-        setBlockedReason(null);
-        setCart((prev) =>
-            prev.filter((item) => item.product.id !== productId),
-        );
+            const fresh: ICartItem = {
+                ...seed,
+                rowId: newRowId(),
+                lineSubtotal: 0,
+                lineDiscountAmount: 0,
+                lineTaxAmount: 0,
+                lineTotal: 0,
+                baseUnitQty: 0,
+            };
+            return [...prev, recompute(fresh)];
+        });
     }, []);
 
-    const updateQuantity = useCallback(
-        (productId: string, newQty: number) => {
-            if (newQty <= 0) {
-                removeFromCart(productId);
-                return;
-            }
-            setBlockedReason(null);
-            setCart((prev) => {
-                const existing = prev.find(
-                    (item) => item.product.id === productId,
-                );
-                if (!existing) return prev;
-                const capped = clamp(
-                    productId,
-                    newQty,
-                    existing.product.name,
-                );
-                if (capped === existing.quantity) return prev;
-                return prev.map((item) =>
-                    item.product.id === productId
-                        ? buildLine(
-                              item.product,
-                              capped,
-                              item.unitPrice,
-                              item.lineDiscountAmount,
-                          )
-                        : item,
-                );
-            });
-        },
-        [removeFromCart, clamp],
-    );
-
-    const setItemDiscount = useCallback(
-        (productId: string, amount: number | undefined) => {
+    const updateItem = useCallback<UsePosCartReturn['updateItem']>(
+        (rowId, patch) => {
             setCart((prev) =>
-                prev.map((item) =>
-                    item.product.id === productId
-                        ? buildLine(
-                              item.product,
-                              item.quantity,
-                              item.unitPrice,
-                              amount,
-                          )
-                        : item,
+                prev.map((p) =>
+                    p.rowId === rowId ? recompute({ ...p, ...patch }) : p,
                 ),
             );
         },
         [],
     );
 
-    const clearCart = useCallback(async (): Promise<boolean> => {
-        if (cart.length === 0) return false;
-        const ok = await confirm({
-            title: 'Clear current sale?',
-            body: `Remove all ${cart.length} item${cart.length === 1 ? '' : 's'} from the cart. This cannot be undone.`,
-            confirmLabel: 'Clear sale',
-            tone: 'danger',
-        });
-        if (!ok) return false;
-        setCart([]);
-        setBlockedReason(null);
-        return true;
-    }, [cart.length, confirm]);
+    const removeItem = useCallback((rowId: string) => {
+        setCart((prev) => prev.filter((p) => p.rowId !== rowId));
+    }, []);
 
-    const dismissBlockedReason = useCallback(
-        () => setBlockedReason(null),
-        [],
-    );
+    const clear = useCallback(() => setCart([]), []);
 
     const totals = useMemo(() => {
-        const subtotal =
-            Math.round(
-                cart.reduce((sum, item) => sum + item.lineTotal, 0) * 100,
-            ) / 100;
-        const lineDiscountsTotal =
-            Math.round(
-                cart.reduce(
-                    (sum, item) =>
-                        sum +
-                        computeLineDiscountValue(
-                            item.quantity,
-                            item.unitPrice,
-                            item.lineDiscountAmount,
-                        ),
-                    0,
-                ) * 100,
-            ) / 100;
-        const total = Math.max(
-            0,
-            Math.round((subtotal - lineDiscountsTotal) * 100) / 100,
-        );
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        return {
-            subtotal,
-            lineDiscountsTotal,
-            total,
-            totalItems,
-        };
+        const itemsSubtotal = cart.reduce((s, c) => s + c.lineSubtotal, 0);
+        const totalDiscount = cart.reduce((s, c) => s + c.lineDiscountAmount, 0);
+        const totalTax = cart.reduce((s, c) => s + c.lineTaxAmount, 0);
+        const cartTotal = cart.reduce((s, c) => s + c.lineTotal, 0);
+        return { itemsSubtotal, totalDiscount, totalTax, cartTotal };
     }, [cart]);
 
-    return {
-        cart,
-        setCart,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        setItemDiscount,
-        clearCart,
-        blockedReason,
-        dismissBlockedReason,
-        subtotal: totals.subtotal,
-        lineDiscountsTotal: totals.lineDiscountsTotal,
-        // Kept name for compat with components that bind to it.
-        totalDiscount: totals.lineDiscountsTotal,
-        total: totals.total,
-        totalItems: totals.totalItems,
-    };
+    return { cart, addItem, updateItem, removeItem, clear, ...totals };
 }

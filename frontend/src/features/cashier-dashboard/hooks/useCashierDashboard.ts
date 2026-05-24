@@ -1,51 +1,36 @@
-import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { posService } from '@/services/pos.service';
-import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/hooks/useAuth';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import {
-    formatDayShort,
-    getTodayLabel,
-} from '@/features/admin-dashboard/lib/format';
-import type { ICashierDashboard } from '@/types';
+import type { ISale } from '@/types';
+import { getTodayLabel } from '@/features/admin-dashboard/lib/format';
 
-const REFETCH_INTERVAL = 30_000;
-
+/**
+ * Cashier-dashboard page model.
+ *
+ * Phase 1 of the Shanel POS port deletes the legacy `posService`. Until
+ * Phase 7 rewires this dashboard against the new cashier read endpoint we
+ * return an empty data envelope so the dashboard renders the zero state.
+ *
+ * TODO Phase 7: rewire to new pos.service / cashier-dashboard endpoint.
+ */
 export function useCashierDashboard() {
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    const { data, isLoading } = useQuery<ICashierDashboard>({
-        queryKey: queryKeys.cashierDashboard(),
-        queryFn: posService.getCashierDashboard,
-        refetchInterval: REFETCH_INTERVAL,
-    });
-
-    const sparkline = useMemo(
-        () =>
-            (data?.dailyBreakdown ?? [])
-                .slice(-10)
-                .map((d) => Number(d.totalSales)),
-        [data?.dailyBreakdown],
-    );
-
-    const chartData = useMemo(
-        () =>
-            (data?.dailyBreakdown ?? []).map((d) => ({
-                name: formatDayShort(d.date),
-                value: Number(d.totalSales),
-            })),
-        [data?.dailyBreakdown],
-    );
+    // Stable empty data — mirrors the legacy ICashierDashboard shape just
+    // enough for downstream components to render the zero state.
+    const data = {
+        today: { totalSales: 0, transactionCount: 0, averageSale: 0 },
+        week: { totalSales: 0, transactionCount: 0 },
+        recentTransactions: [] as ISale[],
+    };
 
     return {
         user,
         data,
-        isLoading,
-        sparkline,
-        chartData,
+        isLoading: false,
+        sparkline: [] as number[],
+        chartData: [] as { name: string; value: number }[],
         todayLabel: getTodayLabel(),
         goToPos: () => navigate(FRONTEND_ROUTES.POS),
     };

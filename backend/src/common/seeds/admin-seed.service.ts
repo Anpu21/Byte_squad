@@ -7,8 +7,8 @@ import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -438,10 +438,10 @@ export class AdminSeedService implements OnModuleInit {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Inventory)
     private readonly inventoryRepository: Repository<Inventory>,
-    @InjectRepository(Transaction)
-    private readonly transactionRepository: Repository<Transaction>,
-    @InjectRepository(TransactionItem)
-    private readonly transactionItemRepository: Repository<TransactionItem>,
+    @InjectRepository(Sale)
+    private readonly transactionRepository: Repository<Sale>,
+    @InjectRepository(SaleItem)
+    private readonly transactionItemRepository: Repository<SaleItem>,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepository: Repository<LedgerEntry>,
     @InjectRepository(Expense)
@@ -858,7 +858,7 @@ export class AdminSeedService implements OnModuleInit {
         );
 
         let subtotal = 0;
-        const items: Partial<TransactionItem>[] = [];
+        const items: Partial<SaleItem>[] = [];
         for (const prod of selectedProducts) {
           const qty = Math.floor(Math.random() * 3) + 1;
           const lineTotal = Number(prod.sellingPrice) * qty;
@@ -866,6 +866,10 @@ export class AdminSeedService implements OnModuleInit {
           items.push({
             productId: prod.id,
             quantity: qty,
+            // PHASE-5: replace with the real conversion factor once the seed
+            // migrates to PosWriteService.createSale. Seed products have no
+            // sellable-units, so qty already equals the base-unit quantity.
+            baseUnitQty: qty,
             unitPrice: Number(prod.sellingPrice),
             discountAmount: 0,
             discountType: DiscountType.NONE,
@@ -878,6 +882,10 @@ export class AdminSeedService implements OnModuleInit {
 
         const transaction = this.transactionRepository.create({
           transactionNumber: txnNumber,
+          // PHASE-5: replace with InvoiceNumberService.next() once the seed
+          // migrates to PosWriteService.createSale. Until then mirror the
+          // transactionNumber so the NOT NULL + UNIQUE constraint is satisfied.
+          invoiceNumber: txnNumber,
           branchId,
           cashierId: cashier.id,
           type: TransactionType.SALE,
@@ -888,13 +896,13 @@ export class AdminSeedService implements OnModuleInit {
           total,
           paymentMethod:
             paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-          items: items as TransactionItem[],
+          items: items as SaleItem[],
         });
 
         const saved = await this.transactionRepository.save(transaction);
         await this.transactionRepository
           .createQueryBuilder()
-          .update(Transaction)
+          .update(Sale)
           .set({ createdAt: txnDate })
           .where('id = :id', { id: saved.id })
           .execute();

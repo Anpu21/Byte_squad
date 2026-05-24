@@ -2,10 +2,10 @@ import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 import Pill from '@/components/ui/Pill';
 import { formatRevenue, formatTime } from '@/features/admin-dashboard/lib/format';
-import type { ITransaction } from '@/types';
+import type { ISale } from '@/types';
 
 interface CashierRecentTransactionsProps {
-    transactions: ITransaction[];
+    transactions: ISale[];
 }
 
 export function CashierRecentTransactions({
@@ -54,7 +54,7 @@ export function CashierRecentTransactions({
                                     </td>
                                     <td className="px-5 py-3 text-[13px] text-text-2">
                                         {(
-                                            txn as ITransaction & {
+                                            txn as ISale & {
                                                 items?: unknown[];
                                             }
                                         ).items?.length ?? '—'}

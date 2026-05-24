@@ -1,0 +1,26 @@
+// SCAFFOLD ONLY — Playwright is not yet installed in this project.
+// Rename to `cashier-pos.spec.ts` and add @playwright/test to devDependencies
+// when wiring E2E. The selectors below match the assembled cashier UI as
+// shipped in Phase 14 — do not change them without verifying against the
+// real DOM.
+//
+// import { test, expect } from '@playwright/test';
+//
+// test('cashier completes a cash sale', async ({ page }) => {
+//     await page.goto('/login');
+//     await page.getByLabel('Email').fill('cashier1@ledgerpro.dev');
+//     await page.getByLabel('Password').fill('Cashier@123');
+//     await page.getByRole('button', { name: 'Sign in' }).click();
+//     await page.waitForURL(/\/dashboard|\/pos/);
+//
+//     await page.goto('/pos');
+//     await page.getByPlaceholder(/search by code or name/i).fill('Bread');
+//     await page.getByRole('option', { name: /Bread/ }).first().click();
+//     await expect(page.getByText(/Bread/)).toBeVisible();
+//
+//     await page.getByRole('button', { name: /Charge|F12/i }).click();
+//     await page.getByLabel(/cash tendered/i).fill('500');
+//     await page.getByRole('button', { name: /^Charge / }).click();
+//
+//     await expect(page.getByText(/INV-\d{4}-\d{6}/)).toBeVisible();
+// });

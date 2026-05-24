@@ -8,9 +8,15 @@ import {
   FindByBranchOptions,
   PagedInventory,
 } from '@inventory/types';
+import { InventorySummaryForProduct } from '@inventory/types/inventory-summary-for-product.type';
 
 // Re-export so the service can keep importing from the repo path.
-export type { StockStatus, FindByBranchOptions, PagedInventory };
+export type {
+  StockStatus,
+  FindByBranchOptions,
+  PagedInventory,
+  InventorySummaryForProduct,
+};
 
 @Injectable()
 export class InventoryRepository {
@@ -126,6 +132,45 @@ export class InventoryRepository {
       .leftJoinAndSelect('inventory.branch', 'branch')
       .where('inventory.quantity <= inventory.low_stock_threshold')
       .getMany();
+  }
+
+  /**
+   * Build a branch-scoped inventory snapshot for a single product. The POS
+   * cashier UI calls this through `GET /pos/products/:productId/inventory`
+   * to render "X units at this branch / Y units across all branches".
+   *
+   * `branchId` controls scope:
+   *   - non-null → populate `branchQty`/`branchName` from the row matching
+   *     that branch (zero/empty if no row exists for the branch).
+   *   - null → no per-branch slice; `branchQty` is zero and `branchId`
+   *     comes back empty. `totalAcrossBranches` is always the cross-branch
+   *     sum of every row for the product.
+   *
+   * Eager-loads `branch` so the caller can show the branch name without
+   * a follow-up query.
+   */
+  async summaryForProduct(
+    productId: string,
+    branchId: string | null,
+  ): Promise<InventorySummaryForProduct> {
+    const rows = await this.repo.find({
+      where: { productId },
+      relations: ['branch'],
+    });
+    const totalAcrossBranches = rows.reduce(
+      (sum, r) => sum + Number(r.quantity),
+      0,
+    );
+    const scoped = branchId
+      ? (rows.find((r) => r.branchId === branchId) ?? null)
+      : null;
+    return {
+      productId,
+      branchId: scoped?.branchId ?? branchId ?? '',
+      branchName: scoped?.branch?.name ?? '',
+      branchQty: scoped ? Number(scoped.quantity) : 0,
+      totalAcrossBranches,
+    };
   }
 
   async findByBranchPaged(opts: FindByBranchOptions): Promise<PagedInventory> {

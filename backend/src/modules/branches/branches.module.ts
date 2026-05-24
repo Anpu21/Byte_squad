@@ -5,8 +5,8 @@ import { BranchesController } from '@branches/branches.controller';
 import { BranchesRepository } from '@branches/branches.repository';
 import { Branch } from '@branches/entities/branch.entity';
 import { User } from '@users/entities/user.entity';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 
@@ -20,8 +20,8 @@ import { Expense } from '@accounting/entities/expense.entity';
     TypeOrmModule.forFeature([
       Branch,
       User,
-      Transaction,
-      TransactionItem,
+      Sale,
+      SaleItem,
       Inventory,
       Expense,
     ]),

@@ -1,0 +1,65 @@
+/*
+ * Print-only styles for the 80mm thermal receipt rendered by
+ * `PosBillTemplate`. Tailwind handles the on-screen preview; this file
+ * isolates @media print rules that the design system intentionally does
+ * not encode (paper size, page-margin reset, screen suppression).
+ *
+ * Raw values are acceptable here because these declarations never paint
+ * on screen and are explicitly scoped to print output.
+ */
+
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  /* Suppress every page-level element by default so a single bill prints
+   * cleanly even when the template is mounted inside the main document. */
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: #000000;
+  }
+
+  /* Hide every direct child of body — including the React `#root` that
+   * normally holds the entire app. The previous `:not(...)` rule fired on
+   * `#root` (which lacks the marker), leaving the bill hidden too because
+   * the printable region was nested inside it. The print host must be a
+   * direct body child (portalled via `createPortal(..., document.body)`)
+   * to survive this rule. */
+  body > * {
+    display: none !important;
+  }
+
+  /* …except the portalled print host. Only direct body children get the
+   * exemption, so any preview copy of the bill that still lives inside
+   * `#root` stays suppressed during print. */
+  body > [data-pos-print-area] {
+    display: block !important;
+  }
+
+  [data-pos-print-area] {
+    width: 80mm;
+    padding: 4mm 3mm;
+    font-family: ui-monospace, 'Geist Mono', 'SF Mono', Menlo, Consolas,
+      monospace;
+    font-size: 11px;
+    line-height: 1.35;
+    color: #000000;
+  }
+
+  [data-pos-print-area] .pos-bill__divider {
+    border: 0;
+    border-top: 1px dashed #000000;
+    margin: 4px 0;
+  }
+
+  [data-pos-print-area] .pos-bill__totals,
+  [data-pos-print-area] .pos-bill__items th,
+  [data-pos-print-area] .pos-bill__items td {
+    color: #000000;
+  }
+}

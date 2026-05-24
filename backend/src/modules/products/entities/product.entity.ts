@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Inventory } from '@inventory/entities/inventory.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 
 @Entity('products')
 export class Product {
@@ -32,6 +32,30 @@ export class Product {
   @Column({ type: 'decimal', precision: 12, scale: 2, name: 'selling_price' })
   sellingPrice!: number;
 
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'wholesale_price',
+    default: 0,
+  })
+  wholesalePrice!: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    name: 'tax_rate',
+    default: 0,
+  })
+  taxRate!: number;
+
+  @Column({ type: 'boolean', name: 'discount_allowed', default: true })
+  discountAllowed!: boolean;
+
+  @Column({ type: 'varchar', length: 32, name: 'base_unit', default: 'each' })
+  baseUnit!: string;
+
   @Column({ type: 'varchar', name: 'image_url', nullable: true })
   imageUrl!: string | null;
 
@@ -41,8 +65,8 @@ export class Product {
   @OneToMany(() => Inventory, (inventory) => inventory.product)
   inventoryRecords!: Inventory[];
 
-  @OneToMany(() => TransactionItem, (item) => item.product)
-  transactionItems!: TransactionItem[];
+  @OneToMany(() => SaleItem, (item) => item.product)
+  transactionItems!: SaleItem[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

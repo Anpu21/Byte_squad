@@ -1,74 +1,79 @@
 import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { createElement, type ReactNode } from 'react';
-import { ConfirmContext } from '@/hooks/useConfirm';
 import { usePosCart } from './usePosCart';
-import type { IProduct } from '@/types';
 
-function product(id: string, name = id, price = 10): IProduct {
-    return {
-        id,
-        name,
-        sellingPrice: price,
-        category: 'misc',
-        barcode: id,
-    } as unknown as IProduct;
-}
+const seed = {
+    productId: 'p-1',
+    productCode: 'P001',
+    productName: 'Test',
+    productType: 'Regular',
+    baseUnit: 'kg',
+    unitId: 'u-1',
+    unitName: 'kg',
+    unitPrice: 100,
+    conversionFactor: 1,
+    quantity: 1,
+    free: 0,
+    discountPercentage: 0,
+    taxRate: 0,
+    discountAllowed: true,
+};
 
-function wrapper({ children }: { children: ReactNode }) {
-    return createElement(
-        ConfirmContext.Provider,
-        { value: async () => true },
-        children,
-    );
-}
-
-describe('usePosCart stock cap', () => {
-    it('caps addToCart at the available stock when stock is provided', () => {
-        const { result } = renderHook(
-            () => usePosCart({ stockByProductId: { p1: 3 } }),
-            { wrapper },
-        );
-
-        act(() => result.current.addToCart(product('p1'), 5));
-        expect(result.current.cart[0]?.quantity).toBe(3);
-        expect(result.current.blockedReason).toMatch(/Only 3 in stock/);
+describe('usePosCart', () => {
+    it('adds an item and computes totals', () => {
+        const { result } = renderHook(() => usePosCart());
+        act(() => result.current.addItem(seed));
+        expect(result.current.cart).toHaveLength(1);
+        expect(result.current.cart[0].lineSubtotal).toBe(100);
+        expect(result.current.cart[0].lineTotal).toBe(100);
+        expect(result.current.cartTotal).toBe(100);
+        expect(result.current.itemsSubtotal).toBe(100);
     });
 
-    it('blocks further increments once at the cap', () => {
-        const { result } = renderHook(
-            () => usePosCart({ stockByProductId: { p1: 2 } }),
-            { wrapper },
-        );
-
-        act(() => result.current.addToCart(product('p1'), 2));
-        act(() => result.current.dismissBlockedReason());
-        act(() => result.current.updateQuantity('p1', 5));
-        expect(result.current.cart[0]?.quantity).toBe(2);
-        expect(result.current.blockedReason).toMatch(/Only 2 in stock/);
+    it('merges duplicate productId+unitId by stacking quantity', () => {
+        const { result } = renderHook(() => usePosCart());
+        act(() => result.current.addItem(seed));
+        act(() => result.current.addItem(seed));
+        expect(result.current.cart).toHaveLength(1);
+        expect(result.current.cart[0].quantity).toBe(2);
+        expect(result.current.cartTotal).toBe(200);
     });
 
-    it('allows unlimited quantities when stock map is missing for the product', () => {
-        const { result } = renderHook(
-            () => usePosCart({ stockByProductId: { other: 1 } }),
-            { wrapper },
+    it('keeps distinct rows when unitId differs for the same product', () => {
+        const { result } = renderHook(() => usePosCart());
+        act(() => result.current.addItem(seed));
+        act(() =>
+            result.current.addItem({ ...seed, unitId: 'u-2', unitName: 'g' }),
         );
-
-        act(() => result.current.addToCart(product('p1'), 99));
-        expect(result.current.cart[0]?.quantity).toBe(99);
-        expect(result.current.blockedReason).toBeNull();
+        expect(result.current.cart).toHaveLength(2);
     });
 
-    it('clears blockedReason on a successful mutation', () => {
-        const { result } = renderHook(
-            () => usePosCart({ stockByProductId: { p1: 2 } }),
-            { wrapper },
+    it('updateItem recomputes line totals when discount changes', () => {
+        const { result } = renderHook(() => usePosCart());
+        act(() => result.current.addItem(seed));
+        const rowId = result.current.cart[0].rowId;
+        act(() =>
+            result.current.updateItem(rowId, { discountPercentage: 10 }),
         );
+        expect(result.current.cart[0].lineSubtotal).toBe(90);
+        expect(result.current.cart[0].lineDiscountAmount).toBe(10);
+        expect(result.current.cart[0].lineTotal).toBe(90);
+    });
 
-        act(() => result.current.addToCart(product('p1'), 5));
-        expect(result.current.blockedReason).not.toBeNull();
-        act(() => result.current.updateQuantity('p1', 1));
-        expect(result.current.cart[0]?.quantity).toBe(1);
-        expect(result.current.blockedReason).toBeNull();
+    it('removeItem drops the row', () => {
+        const { result } = renderHook(() => usePosCart());
+        act(() => result.current.addItem(seed));
+        const rowId = result.current.cart[0].rowId;
+        act(() => result.current.removeItem(rowId));
+        expect(result.current.cart).toHaveLength(0);
+        expect(result.current.cartTotal).toBe(0);
+    });
+
+    it('clear empties the cart', () => {
+        const { result } = renderHook(() => usePosCart());
+        act(() => result.current.addItem(seed));
+        act(() => result.current.addItem({ ...seed, unitId: 'u-2' }));
+        act(() => result.current.clear());
+        expect(result.current.cart).toHaveLength(0);
     });
 });

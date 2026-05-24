@@ -34,7 +34,12 @@ export class Inventory {
   @JoinColumn({ name: 'branch_id' })
   branch!: Branch;
 
-  @Column({ type: 'integer', default: 0 })
+  // Stock on hand for this (product, branch) pair. Stored as decimal(12,3)
+  // so fractional sales (loose produce typed in grams against a kg-stocked
+  // product, juice typed in mL against a litre-stocked product) survive the
+  // round-trip from `sale_items.base_unit_qty` (also decimal(12,3)) into the
+  // inventory ledger without silent integer truncation.
+  @Column({ type: 'decimal', precision: 12, scale: 3, default: 0 })
   quantity!: number;
 
   @Column({ type: 'integer', name: 'low_stock_threshold', default: 10 })

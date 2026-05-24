@@ -1,4 +1,4 @@
-import { Transaction } from '@pos/entities/transaction.entity';
+import { Sale } from '@pos/entities/sale.entity';
 import { DailyBreakdown } from '@pos/types/daily-breakdown.type';
 
 export interface CashierDashboardData {
@@ -12,5 +12,5 @@ export interface CashierDashboardData {
     transactionCount: number;
   };
   dailyBreakdown: DailyBreakdown[];
-  recentTransactions: Transaction[];
+  recentTransactions: Sale[];
 }

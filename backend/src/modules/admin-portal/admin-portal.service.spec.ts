@@ -6,8 +6,8 @@ import { AdminPortalService } from './admin-portal.service';
 import { BranchesRepository } from '@branches/branches.repository';
 import { UsersRepository } from '@users/users.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Product } from '@products/entities/product.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 
@@ -41,8 +41,8 @@ describe('AdminPortalService.getBranchComparison', () => {
             countLowStockForBranch: jest.fn(),
           },
         },
-        { provide: getRepositoryToken(Transaction), useValue: {} },
-        { provide: getRepositoryToken(TransactionItem), useValue: {} },
+        { provide: getRepositoryToken(Sale), useValue: {} },
+        { provide: getRepositoryToken(SaleItem), useValue: {} },
         { provide: getRepositoryToken(Product), useValue: {} },
         { provide: getRepositoryToken(Expense), useValue: {} },
       ],

@@ -1,10 +1,17 @@
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
-import type { ICashierTransactionsSummary } from '@/types';
+import type { ITransactionRow } from '../lib/format';
 import { formatDateTime, formatRevenue } from '../lib/format';
 
+// TODO Phase 7: switch back to the shared transactions summary type once the
+// new POS read endpoints land.
+interface TransactionsTableData {
+    scope: 'system' | 'branch' | 'self';
+    recentTransactions: ITransactionRow[];
+}
+
 interface TransactionsTableProps {
-    data: ICashierTransactionsSummary;
+    data: TransactionsTableData;
     showBranchCol: boolean;
     showCashierCol: boolean;
 }
