@@ -17,6 +17,8 @@ import { StockMovementRepository } from './stock-movement.repository';
 import { InvoiceNumberService } from './services/invoice-number.service';
 import { MultiTenderCalculatorService } from './services/multi-tender-calculator.service';
 import { AccountingRepository } from '@accounting/accounting.repository';
+import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
+import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { Sale } from './entities/sale.entity';
@@ -82,6 +84,14 @@ interface MockBag {
   invoiceNumbers: jest.Mocked<InvoiceNumberService>;
   multiTender: MultiTenderCalculatorService;
   accounting: { createLedgerEntryWithManager: jest.Mock };
+  loyalty: {
+    getOrCreateAccount: jest.Mock;
+    getPointValue: jest.Mock;
+  };
+  loyaltyWallet: {
+    awardForOrder: jest.Mock;
+    redeemForOrder: jest.Mock;
+  };
   dataSource: jest.Mocked<DataSource>;
   managerCalls: {
     invSave: jest.Mock;
@@ -95,6 +105,14 @@ interface MockBag {
   inventoryRows: ReturnType<typeof makeInvRow>[];
 }
 
+interface LoyaltyMockOptions {
+  pointsBalance?: number;
+  pointValue?: number;
+  earnedPoints?: number;
+  redeemedPoints?: number;
+  redeemError?: Error;
+}
+
 function buildMocks(
   opts: {
     inventoryRows?: ReturnType<typeof makeInvRow>[];
@@ -103,6 +121,7 @@ function buildMocks(
       { id: string; productId: string; conversionToBase: number }
     >;
     userRows?: Map<string, { id: string; currentBalance: number }>;
+    loyalty?: LoyaltyMockOptions;
   } = {},
 ): Promise<MockBag> {
   const inventoryRows = opts.inventoryRows ?? [makeInvRow('p-1', 50)];
@@ -221,6 +240,38 @@ function buildMocks(
     createLedgerEntryWithManager: jest.fn().mockResolvedValue({ id: 'le-1' }),
   };
 
+  // ---------------------------------------------------------------------
+  // Loyalty mocks — independently overridable per test so suites that
+  // care about a specific earn/redeem/balance triple can dial them in
+  // without re-spinning the whole bag.
+  // ---------------------------------------------------------------------
+  const loyaltyOpts = opts.loyalty ?? {};
+  const pointsBalance = loyaltyOpts.pointsBalance ?? 0;
+  const pointValue = loyaltyOpts.pointValue ?? 1;
+  const earnedPoints = loyaltyOpts.earnedPoints ?? 0;
+  const redeemedPoints = loyaltyOpts.redeemedPoints ?? 0;
+
+  const awardForOrder = jest.fn().mockResolvedValue(earnedPoints);
+  const redeemForOrder = loyaltyOpts.redeemError
+    ? jest.fn().mockRejectedValue(loyaltyOpts.redeemError)
+    : jest.fn().mockResolvedValue(redeemedPoints);
+  const getOrCreateAccount = jest.fn().mockResolvedValue({
+    id: 'acc-1',
+    pointsBalance,
+    lifetimePointsEarned: earnedPoints,
+    lifetimePointsRedeemed: redeemedPoints,
+  });
+  const getPointValue = jest.fn().mockResolvedValue(pointValue);
+
+  const loyaltyServiceMock = {
+    getOrCreateAccount,
+    getPointValue,
+  };
+  const loyaltyWalletServiceMock = {
+    awardForOrder,
+    redeemForOrder,
+  };
+
   return Test.createTestingModule({
     providers: [
       PosWriteService,
@@ -236,6 +287,8 @@ function buildMocks(
         useValue: new MultiTenderCalculatorService(),
       },
       { provide: AccountingRepository, useValue: accountingMock },
+      { provide: LoyaltyService, useValue: loyaltyServiceMock },
+      { provide: LoyaltyWalletService, useValue: loyaltyWalletServiceMock },
       { provide: DataSource, useValue: dataSourceMock },
     ],
   })
@@ -251,6 +304,8 @@ function buildMocks(
       invoiceNumbers: module.get(InvoiceNumberService),
       multiTender: module.get(MultiTenderCalculatorService),
       accounting: accountingMock,
+      loyalty: loyaltyServiceMock,
+      loyaltyWallet: loyaltyWalletServiceMock,
       dataSource: dataSourceMock,
       inventoryRows,
       managerCalls: {
@@ -768,5 +823,192 @@ describe('PosWriteService.createSale', () => {
         description: 'POS Sale — INV-2026-000077',
       }),
     );
+  });
+
+  // -------------------------------------------------------------------
+  // Phase BE-L3 — loyalty wallet wiring
+  // -------------------------------------------------------------------
+
+  it('no loyalty owner: sale persists but response carries no loyalty field', async () => {
+    // Arrange
+    const bag = await buildMocks();
+    const dto = makeDto();
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-no-loyalty',
+      invoiceNumber: 'INV-2026-000200',
+    } as Sale);
+
+    // Act
+    const result = await bag.service.createSale(makeCashier(), dto);
+
+    // Assert: wallet was never touched, response has no loyalty key.
+    expect(bag.loyaltyWallet.awardForOrder).not.toHaveBeenCalled();
+    expect(bag.loyaltyWallet.redeemForOrder).not.toHaveBeenCalled();
+    expect(bag.loyalty.getOrCreateAccount).not.toHaveBeenCalled();
+    expect((result as { loyalty?: unknown }).loyalty).toBeUndefined();
+  });
+
+  it('user-side award only: customerUserId triggers award with branchId + paidAmount', async () => {
+    // Arrange — user-side sale, no redeem
+    const bag = await buildMocks({
+      userRows: new Map([['cust-1', { id: 'cust-1', currentBalance: 0 }]]),
+      loyalty: { earnedPoints: 10, pointsBalance: 10 },
+    });
+    const dto = makeDto({ customerUserId: 'cust-1' });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-user-award',
+      invoiceNumber: 'INV-2026-000201',
+    } as Sale);
+
+    // Act
+    const result = await bag.service.createSale(makeCashier(), dto);
+
+    // Assert
+    expect(bag.loyaltyWallet.redeemForOrder).not.toHaveBeenCalled();
+    expect(bag.loyaltyWallet.awardForOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        owner: { userId: 'cust-1' },
+        orderId: 'sale-user-award',
+        orderCode: 'INV-2026-000201',
+        paidAmount: 100,
+        branchId: 'branch-A',
+      }),
+    );
+    expect((result as { loyalty?: { ownerType: string } }).loyalty).toEqual({
+      ownerType: 'user',
+      earned: 10,
+      redeemed: 0,
+      newBalance: 10,
+    });
+  });
+
+  it('walk-in award only: loyaltyCustomerId triggers award against the walk-in wallet', async () => {
+    // Arrange
+    const bag = await buildMocks({
+      loyalty: { earnedPoints: 5, pointsBalance: 5 },
+    });
+    const dto = makeDto({ loyaltyCustomerId: 'walkin-1' });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-walkin',
+      invoiceNumber: 'INV-2026-000202',
+    } as Sale);
+
+    // Act
+    const result = await bag.service.createSale(makeCashier(), dto);
+
+    // Assert
+    expect(bag.loyaltyWallet.redeemForOrder).not.toHaveBeenCalled();
+    expect(bag.loyaltyWallet.awardForOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        owner: { loyaltyCustomerId: 'walkin-1' },
+        orderId: 'sale-walkin',
+        orderCode: 'INV-2026-000202',
+        paidAmount: 100,
+        branchId: 'branch-A',
+      }),
+    );
+    expect((result as { loyalty?: { ownerType: string } }).loyalty).toEqual({
+      ownerType: 'walkIn',
+      earned: 5,
+      redeemed: 0,
+      newBalance: 5,
+    });
+  });
+
+  it('redeem + award: paidAmount for award is gross MINUS redeem value in LKR', async () => {
+    // Arrange — invoice 1000, redeem 50 pts @ Rs 1/pt → net paid 950
+    const bag = await buildMocks({
+      inventoryRows: [makeInvRow('p-1', 50)],
+      userRows: new Map([['cust-1', { id: 'cust-1', currentBalance: 0 }]]),
+      loyalty: {
+        pointValue: 1,
+        redeemedPoints: 50,
+        earnedPoints: 9,
+        pointsBalance: 150,
+      },
+    });
+    const dto = makeDto({
+      customerUserId: 'cust-1',
+      loyaltyRedeemPoints: 50,
+      items: [{ productId: 'p-1', quantity: 10, unitPrice: 100 }],
+      payment: {
+        paymentMethod: 'Cash',
+        paymentAmount: 1000,
+        cashAmount: 1000,
+        cashTendered: 1000,
+      },
+    });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-redeem-award',
+      invoiceNumber: 'INV-2026-000203',
+    } as Sale);
+
+    // Act
+    await bag.service.createSale(makeCashier(), dto);
+
+    // Assert: redeem invoked first with requestedPoints + subtotal cap.
+    expect(bag.loyaltyWallet.redeemForOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        owner: { userId: 'cust-1' },
+        orderId: 'sale-redeem-award',
+        subtotal: 1000,
+        requestedPoints: 50,
+        branchId: 'branch-A',
+      }),
+    );
+    // Award called with NET paid = 1000 - (50 * 1) = 950.
+    expect(bag.loyaltyWallet.awardForOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        owner: { userId: 'cust-1' },
+        orderId: 'sale-redeem-award',
+        paidAmount: 950,
+        branchId: 'branch-A',
+      }),
+    );
+  });
+
+  it('both ownership fields set → BadRequestException before any DB write', async () => {
+    // Arrange
+    const bag = await buildMocks();
+    const dto = makeDto({
+      customerUserId: 'cust-1',
+      loyaltyCustomerId: 'walkin-1',
+    });
+
+    // Act + Assert
+    await expect(bag.service.createSale(makeCashier(), dto)).rejects.toThrow(
+      BadRequestException,
+    );
+    // Nothing should have hit the DB or the wallet.
+    expect(bag.sales.create).not.toHaveBeenCalled();
+    expect(bag.payments.create).not.toHaveBeenCalled();
+    expect(bag.loyaltyWallet.awardForOrder).not.toHaveBeenCalled();
+    expect(bag.loyaltyWallet.redeemForOrder).not.toHaveBeenCalled();
+  });
+
+  it('redeem fails (insufficient points) → BadRequestException rolls the sale back', async () => {
+    // Arrange — wallet's redeemForOrder throws (insufficient balance).
+    // Throw must propagate out of the dataSource.transaction callback so
+    // the surrounding write (sale + items + payment) is rolled back.
+    const bag = await buildMocks({
+      userRows: new Map([['cust-1', { id: 'cust-1', currentBalance: 0 }]]),
+      loyalty: {
+        redeemError: new BadRequestException('Not enough loyalty points'),
+      },
+    });
+    const dto = makeDto({
+      customerUserId: 'cust-1',
+      loyaltyRedeemPoints: 9999,
+    });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-redeem-fail',
+      invoiceNumber: 'INV-2026-000204',
+    } as Sale);
+
+    // Act + Assert: BadRequestException bubbles, award never runs.
+    await expect(bag.service.createSale(makeCashier(), dto)).rejects.toThrow(
+      BadRequestException,
+    );
+    expect(bag.loyaltyWallet.awardForOrder).not.toHaveBeenCalled();
   });
 });
