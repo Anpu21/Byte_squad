@@ -179,9 +179,9 @@ describe('UsersService', () => {
 
     it('rejects duplicate emails', async () => {
       users.findByEmail.mockResolvedValue({ id: 'existing' } as User);
-      await expect(
-        service.create(ADMIN_USER_ID, dto),
-      ).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.create(ADMIN_USER_ID, dto)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
       expect(users.createAndSave).not.toHaveBeenCalled();
     });
 
@@ -306,10 +306,7 @@ describe('UsersService', () => {
       users.findById.mockResolvedValue(makeTarget());
       users.findByIdWithBranch.mockResolvedValue(makeTarget());
 
-      const result = await service.resetPassword(
-        ADMIN_USER_ID,
-        TARGET_USER_ID,
-      );
+      const result = await service.resetPassword(ADMIN_USER_ID, TARGET_USER_ID);
 
       expect(users.update).toHaveBeenCalledWith(
         TARGET_USER_ID,

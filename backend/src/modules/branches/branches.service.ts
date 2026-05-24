@@ -113,9 +113,7 @@ export class BranchesService {
       await this.assertCodeAvailable(dto.code, branchId);
     }
     await this.branches.update(existing.id, dto);
-    this.logger.log(
-      `Branch ${existing.name} updated by admin ${adminUserId}`,
-    );
+    this.logger.log(`Branch ${existing.name} updated by admin ${adminUserId}`);
     return this.branches.findById(existing.id);
   }
 
@@ -125,9 +123,7 @@ export class BranchesService {
       throw new NotFoundException('Branch not found');
     }
     await this.branches.delete(existing.id);
-    this.logger.log(
-      `Branch ${existing.name} deleted by admin ${adminUserId}`,
-    );
+    this.logger.log(`Branch ${existing.name} deleted by admin ${adminUserId}`);
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
