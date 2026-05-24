@@ -36,7 +36,10 @@ export class PosRepository {
   async findTransactionById(id: string): Promise<Sale | null> {
     return this.transactionRepo.findOne({
       where: { id },
-      relations: ['items', 'items.product', 'cashier'],
+      // `items.unit` is eager-loaded so the FE receipt template (Phase P4)
+      // can render the picked sellable-unit suffix instead of falling back
+      // to the bare base-unit label.
+      relations: ['items', 'items.product', 'items.unit', 'cashier'],
     });
   }
 
