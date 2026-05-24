@@ -13,7 +13,6 @@ import type {
 
 interface IUsePaymentSubmitArgs {
     cart: ICartItem[];
-    customerUserId: string | null;
     cartDiscountPercentage: number;
     paymentMethod: TPaymentMethod;
     bag: ITenderBag;

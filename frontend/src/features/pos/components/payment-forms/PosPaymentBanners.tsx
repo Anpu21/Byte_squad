@@ -1,5 +1,3 @@
-import { MULTI_TENDER_OVERPAY_ERROR } from '@/features/pos/lib/multi-tender';
-
 interface IPosPaymentBannersProps {
     hasMultiTenderError: boolean;
     mutationError: Error | null;
@@ -10,7 +8,9 @@ interface IPosPaymentBannersProps {
  * modal: the validation-level overpay warning (warning tone) and the
  * mutation-level submit failure (danger tone). Either can be present
  * independently — overpay is a frontend-only state and the mutation
- * error appears after a server roundtrip.
+ * error appears after a server roundtrip. The single-shop retail POS
+ * has no walk-in customer accounts, so overpay can no longer be parked
+ * as customer credit; the cashier must reduce the tender to proceed.
  */
 export function PosPaymentBanners({
     hasMultiTenderError,
@@ -33,8 +33,8 @@ export function PosPaymentBanners({
                     role="alert"
                     className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-[12px] font-medium text-text-1"
                 >
-                    {MULTI_TENDER_OVERPAY_ERROR}. Enable "Keep balance" or
-                    reduce the tender.
+                    Tender exceeds the invoice total. Reduce the entered
+                    amount to match the invoice before charging.
                 </p>
             )}
         </>

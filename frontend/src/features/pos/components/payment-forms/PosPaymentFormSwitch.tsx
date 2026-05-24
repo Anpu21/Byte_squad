@@ -2,13 +2,11 @@ import type { TPaymentMethod } from '@/types';
 import { PosCashTenderForm } from './PosCashTenderForm';
 import { PosChequeForm } from './PosChequeForm';
 import { PosBankTransferForm } from './PosBankTransferForm';
-import { PosCreditForm } from './PosCreditForm';
 import type { ITenderBag } from './pos-payment-forms.helpers';
 
 interface IPosPaymentFormSwitchProps {
     paymentMethod: TPaymentMethod;
     invoiceTotal: number;
-    customerUserId: string | null;
     bag: ITenderBag;
     onPatchBag: (patch: Partial<ITenderBag>) => void;
 }
@@ -16,12 +14,14 @@ interface IPosPaymentFormSwitchProps {
 /**
  * Pure router — picks the right tender form for the active method. Card
  * and Mobile share a "no form" placeholder because both record the full
- * invoice total against the chosen method with no extra fields.
+ * invoice total against the chosen method with no extra fields. The
+ * Credit tender is no longer exposed in the cashier UI (single-shop
+ * retail has no walk-in customer accounts), so the Credit branch falls
+ * through to the same external-tender placeholder.
  */
 export function PosPaymentFormSwitch({
     paymentMethod,
     invoiceTotal,
-    customerUserId,
     bag,
     onPatchBag,
 }: IPosPaymentFormSwitchProps) {
@@ -59,18 +59,7 @@ export function PosPaymentFormSwitch({
             />
         );
     }
-    if (paymentMethod === 'Credit') {
-        return (
-            <PosCreditForm
-                customerUserId={customerUserId}
-                creditAmount={bag.creditAmount}
-                onCreditAmountChange={(next) =>
-                    onPatchBag({ creditAmount: next })
-                }
-            />
-        );
-    }
-    // Card / Mobile: external tender; cashier verifies receipt elsewhere.
+    // Card / Mobile / Credit: external tender; cashier verifies receipt elsewhere.
     return (
         <div
             role="note"

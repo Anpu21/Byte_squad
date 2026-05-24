@@ -5,7 +5,6 @@ import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
 import { usePrintReceipt } from '@/features/pos/hooks/usePrintReceipt';
 import { usePosSaleById } from '@/features/pos/hooks/usePosSaleById';
 import { PosItemTable } from '@/features/pos/components/item-table/PosItemTable';
-import { PosCustomerInfo } from '@/features/pos/components/customer-info/PosCustomerInfo';
 import { PosInformationBox } from '@/features/pos/components/information-box/PosInformationBox';
 import { PosInvoiceTotal } from '@/features/pos/components/invoice-total/PosInvoiceTotal';
 import { PosActionButtons } from '@/features/pos/components/action-buttons/PosActionButtons';
@@ -70,11 +69,6 @@ export function PosPage(): React.ReactElement {
                 onScanBarcode={handleCameraScan}
             />
             <div className="flex flex-col gap-3">
-                <PosCustomerInfo
-                    customerUserId={state.customerUserId}
-                    onPick={state.setCustomerUserId}
-                    openPickerSignal={state.customerPickerSignal}
-                />
                 <PosInformationBox />
                 <PosInvoiceTotal
                     itemsSubtotal={cart.itemsSubtotal}
@@ -85,7 +79,6 @@ export function PosPage(): React.ReactElement {
                 />
                 <PosActionButtons
                     onFocusSearch={state.focusSearch}
-                    onOpenCustomerPicker={state.openCustomerPicker}
                     onClearCart={cart.clear}
                     onPrintLastReceipt={handlePrintLast}
                     onShowRecent={state.openRecent}
@@ -99,7 +92,6 @@ export function PosPage(): React.ReactElement {
                 onClose={state.closePayment}
                 invoiceTotal={invoiceTotal}
                 cart={cart.cart}
-                customerUserId={state.customerUserId}
                 cartDiscountPercentage={state.cartDiscountPercentage}
                 onSaleCreated={handleSaleCreated}
             />

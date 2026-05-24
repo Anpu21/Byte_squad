@@ -2,13 +2,10 @@ import { useCallback, useRef, useState } from 'react';
 import type { ISale } from '@/types';
 
 interface IUsePosPageStateReturn {
-    customerUserId: string | null;
-    setCustomerUserId: (next: string | null) => void;
     cartDiscountPercentage: number;
     setCartDiscountPercentage: (next: number) => void;
     showPayment: boolean;
     showRecent: boolean;
-    customerPickerSignal: number;
     previewSaleId: string | null;
     setPreviewSaleId: (saleId: string | null) => void;
     lastSale: ISale | null;
@@ -18,7 +15,6 @@ interface IUsePosPageStateReturn {
     closePayment: () => void;
     openRecent: () => void;
     closeRecent: () => void;
-    openCustomerPicker: () => void;
     focusSearch: () => void;
     resetAfterCheckout: () => void;
 }
@@ -26,16 +22,13 @@ interface IUsePosPageStateReturn {
 /**
  * Owns all transient UI state for the cashier `PosPage` orchestrator so the
  * page itself stays under the 120-line budget and reads as pure composition.
- * The `customerPickerSignal` token is bumped on F4 / Customer-button click;
- * `PosCustomerInfo` reads the change as a render-time anchor and opens its
- * internal picker without us having to lift the modal state out.
+ * The single-shop retail POS no longer tracks walk-in customers, so all
+ * customer-attached state has been removed.
  */
 export function usePosPageState(): IUsePosPageStateReturn {
-    const [customerUserId, setCustomerUserId] = useState<string | null>(null);
     const [cartDiscountPercentage, setCartDiscountPercentage] = useState(0);
     const [showPayment, setShowPayment] = useState(false);
     const [showRecent, setShowRecent] = useState(false);
-    const [customerPickerSignal, setCustomerPickerSignal] = useState(0);
     const [previewSaleId, setPreviewSaleId] = useState<string | null>(null);
     const [lastSale, setLastSale] = useState<ISale | null>(null);
     const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -43,21 +36,15 @@ export function usePosPageState(): IUsePosPageStateReturn {
     const focusSearch = useCallback(() => searchInputRef.current?.focus(), []);
     const resetAfterCheckout = useCallback(() => {
         setCartDiscountPercentage(0);
-        setCustomerUserId(null);
     }, []);
     return {
-        customerUserId, setCustomerUserId,
         cartDiscountPercentage, setCartDiscountPercentage,
-        showPayment, showRecent, customerPickerSignal,
+        showPayment, showRecent,
         previewSaleId, setPreviewSaleId, lastSale, setLastSale,
         searchInputRef, focusSearch, resetAfterCheckout,
         openPayment: useCallback(() => setShowPayment(true), []),
         closePayment: useCallback(() => setShowPayment(false), []),
         openRecent: useCallback(() => setShowRecent(true), []),
         closeRecent: useCallback(() => setShowRecent(false), []),
-        openCustomerPicker: useCallback(
-            () => setCustomerPickerSignal((n) => n + 1),
-            [],
-        ),
     };
 }

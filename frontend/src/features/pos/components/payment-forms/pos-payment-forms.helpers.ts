@@ -10,7 +10,9 @@ import type {
 /**
  * Local state slot for the cashier's in-progress multi-tender bag.
  * Lives only inside `PosPaymentForms` — the values are flattened into
- * `ICreateSalePaymentPayload` at submit time.
+ * `ICreateSalePaymentPayload` at submit time. The Credit tender and the
+ * keep-balance toggle were removed with the customer-picker, so neither
+ * field appears here.
  */
 export interface ITenderBag {
     cashTendered: number;
@@ -23,8 +25,6 @@ export interface ITenderBag {
     chequeDeliveredBy: string;
     bankTransferAmount: number;
     bankRef: string;
-    creditAmount: number;
-    keepBalance: boolean;
 }
 
 /**
@@ -48,7 +48,7 @@ export function resolveTenderInputs(
         chequeAmount: 0,
         bankTransferAmount: 0,
         creditAmount: 0,
-        keepBalance: bag.keepBalance,
+        keepBalance: false,
     };
     if (method === 'Cash') {
         return {
@@ -57,7 +57,7 @@ export function resolveTenderInputs(
             cashTendered: bag.cashTendered,
         };
     }
-    if (method === 'Card' || method === 'Mobile') {
+    if (method === 'Card' || method === 'Mobile' || method === 'Credit') {
         return {
             ...baseline,
             cashAmount: invoiceTotal,
@@ -67,10 +67,7 @@ export function resolveTenderInputs(
     if (method === 'Cheque') {
         return { ...baseline, chequeAmount: bag.chequeAmount };
     }
-    if (method === 'Bank') {
-        return { ...baseline, bankTransferAmount: bag.bankTransferAmount };
-    }
-    return { ...baseline, creditAmount: bag.creditAmount };
+    return { ...baseline, bankTransferAmount: bag.bankTransferAmount };
 }
 
 /**
@@ -90,14 +87,11 @@ export function createInitialTenderBag(invoiceTotal: number): ITenderBag {
         chequeDeliveredBy: '',
         bankTransferAmount: 0,
         bankRef: '',
-        creditAmount: 0,
-        keepBalance: false,
     };
 }
 
 interface IBuildPayloadArgs {
     cart: ICartItem[];
-    customerUserId: string | null;
     cartDiscountPercentage: number;
     paymentMethod: TPaymentMethod;
     paymentAmount: number;
@@ -108,16 +102,18 @@ interface IBuildPayloadArgs {
 
 /**
  * Map cart rows and the tender bag onto the create-sale payload the
- * backend expects. Card/Mobile tenders ride the `paymentMethod` field
- * alone — no per-method amount; the backend treats them as Cash-equivalent
- * with `cashAmount = invoice total` so `paidAmount` lands correctly.
+ * backend expects. Card / Mobile / Credit tenders ride the
+ * `paymentMethod` field alone — no per-method amount; the backend treats
+ * them as Cash-equivalent with `cashAmount = invoice total` so
+ * `paidAmount` lands correctly.
  *
- * The Retail/Wholesale tier toggle was removed, so we no longer send
- * `saleType` / `priceLevel`; the backend DTO defaults both to `'Retail'`.
+ * The Retail/Wholesale tier toggle and the customer-picker were removed,
+ * so we no longer send `saleType` / `priceLevel` / `customerUserId`; the
+ * backend DTO defaults the tier fields to `'Retail'` and accepts the
+ * sale without a customer attached.
  */
 export function buildSalePayload({
     cart,
-    customerUserId,
     cartDiscountPercentage,
     paymentMethod,
     paymentAmount,
@@ -141,7 +137,6 @@ export function buildSalePayload({
     };
 
     return {
-        customerUserId: customerUserId ?? undefined,
         cartDiscountPercentage,
         items,
         payment,
@@ -153,7 +148,7 @@ function buildPaymentTender(
     bag: ITenderBag,
     cashAmount: number,
 ): Partial<ICreateSalePaymentPayload> {
-    if (method === 'Card' || method === 'Mobile') {
+    if (method === 'Card' || method === 'Mobile' || method === 'Credit') {
         // External tender: send no cash/cheque/bank fields. The backend
         // stores the method label and treats `paymentAmount` as the
         // settled total. The cashier verifies receipt externally.
@@ -176,9 +171,6 @@ function buildPaymentTender(
         if (bag.bankTransferAmount > 0)
             tender.bankTransferAmount = bag.bankTransferAmount;
         if (bag.bankRef) tender.bankRef = bag.bankRef;
-    } else if (method === 'Credit') {
-        if (bag.creditAmount > 0) tender.creditAmount = bag.creditAmount;
     }
-    if (bag.keepBalance) tender.keepBalance = bag.keepBalance;
     return tender;
 }

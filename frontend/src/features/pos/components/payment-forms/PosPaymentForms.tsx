@@ -6,7 +6,6 @@ import { usePaymentSubmit } from '@/features/pos/hooks/usePaymentSubmit';
 import { tryCalculateMultiTender } from '@/features/pos/lib/multi-tender';
 import { PosPaymentMethod } from '@/features/pos/components/payment-method/PosPaymentMethod';
 import { PosPaymentFormSwitch } from './PosPaymentFormSwitch';
-import { PosKeepBalanceToggle } from './PosKeepBalanceToggle';
 import { PosTenderSummary } from './PosTenderSummary';
 import { PosPaymentBanners } from './PosPaymentBanners';
 import {
@@ -26,7 +25,6 @@ export interface IPosPaymentFormsProps {
     invoiceTotal: number;
     /** Cart items in the active sale; flattened into payload at submit time. */
     cart: ICartItem[];
-    customerUserId: string | null;
     /** 0-100 cart-level discount percentage; forwarded to the backend. */
     cartDiscountPercentage: number;
     /** Fires with the persisted Sale after a successful checkout. */
@@ -40,16 +38,16 @@ export interface IPosPaymentFormsProps {
  * the multi-tender calc that drives the summary + Charge enablement. On
  * open we reset the bag + mint a fresh idempotency key via an adjust-
  * during-render anchor. Charge stays disabled when the calc is null
- * (overpay without keep-balance), the tender is empty, or the cart is
- * empty. On failure the modal stays open and reuses the same key so the
- * backend duplicate guard returns the same Sale id on retry.
+ * (overpay — no customer credit fallback in single-shop retail), the
+ * tender is empty, or the cart is empty. On failure the modal stays open
+ * and reuses the same key so the backend duplicate guard returns the
+ * same Sale id on retry.
  */
 export function PosPaymentForms({
     isOpen,
     onClose,
     invoiceTotal,
     cart,
-    customerUserId,
     cartDiscountPercentage,
     onSaleCreated,
 }: IPosPaymentFormsProps) {
@@ -71,22 +69,13 @@ export function PosPaymentForms({
         [paymentMethod, bag, invoiceTotal],
     );
     const calc = useMemo(() => tryCalculateMultiTender(tenderInputs), [tenderInputs]);
-    // Probe whether the typed tender amounts *would* overpay. Forcing
-    // `keepBalance: true` bypasses the overpay guard so the checkbox can
-    // unlock cheque/bank overpay (where credit === 0 leaves `calc` null).
-    const overpayProbe = useMemo(
-        () => tryCalculateMultiTender({ ...tenderInputs, keepBalance: true }),
-        [tenderInputs],
-    );
 
     const submit = usePaymentSubmit({
-        cart, customerUserId, cartDiscountPercentage,
+        cart, cartDiscountPercentage,
         paymentMethod, bag, tenderInputs, idempotencyKey, onSaleCreated, onClose,
     });
 
     const hasError = calc === null;
-    const canKeepBalance =
-        overpayProbe !== null && overpayProbe.paymentAmount > invoiceTotal;
     const isEmptyTender = calc !== null && calc.paymentAmount === 0;
     const disableCharge =
         submit.isPending || hasError || isEmptyTender || cart.length === 0;
@@ -108,18 +97,9 @@ export function PosPaymentForms({
                 <PosPaymentFormSwitch
                     paymentMethod={paymentMethod}
                     invoiceTotal={invoiceTotal}
-                    customerUserId={customerUserId}
                     bag={bag}
                     onPatchBag={(patch) =>
                         setBag((prev) => ({ ...prev, ...patch }))
-                    }
-                />
-
-                <PosKeepBalanceToggle
-                    enabled={canKeepBalance}
-                    value={bag.keepBalance}
-                    onChange={(next) =>
-                        setBag((prev) => ({ ...prev, keepBalance: next }))
                     }
                 />
 

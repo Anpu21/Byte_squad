@@ -5,7 +5,6 @@ import {
     Smartphone,
     FileText,
     Building2,
-    Wallet,
     type LucideIcon,
 } from 'lucide-react';
 import type { TPaymentMethod } from '@/types';
@@ -18,8 +17,8 @@ interface IPosPaymentMethodProps {
 interface IMethodOption {
     key: TPaymentMethod;
     label: string;
-    /** Number-row shortcut (1-6). Skipped when modifier keys are held. */
-    shortcut: '1' | '2' | '3' | '4' | '5' | '6';
+    /** Number-row shortcut (1-5). Skipped when modifier keys are held. */
+    shortcut: '1' | '2' | '3' | '4' | '5';
     Icon: LucideIcon;
 }
 
@@ -29,15 +28,14 @@ const METHODS: readonly IMethodOption[] = [
     { key: 'Mobile', label: 'Mobile', shortcut: '3', Icon: Smartphone },
     { key: 'Cheque', label: 'Cheque', shortcut: '4', Icon: FileText },
     { key: 'Bank', label: 'Bank', shortcut: '5', Icon: Building2 },
-    { key: 'Credit', label: 'Credit', shortcut: '6', Icon: Wallet },
 ];
 
 /**
- * Six-pill row to switch the active payment tender. The active pill uses
+ * Five-pill row to switch the active payment tender. The active pill uses
  * the primary token; inactive pills use the muted surface tone so the
  * cashier can scan the row at a glance.
  *
- * Number-row shortcuts (1-6) fire `onChange` when the matching key is
+ * Number-row shortcuts (1-5) fire `onChange` when the matching key is
  * pressed at the document level. Modifier-key combinations (Ctrl/Meta/Alt)
  * are ignored so we don't hijack browser shortcuts, and we bail when the
  * focused element is an input/textarea/contenteditable to avoid swallowing
@@ -72,7 +70,7 @@ export function PosPaymentMethod({
         <div
             role="radiogroup"
             aria-label="Payment method"
-            className="grid grid-cols-3 sm:grid-cols-6 gap-2"
+            className="grid grid-cols-3 sm:grid-cols-5 gap-2"
         >
             {METHODS.map(({ key, label, shortcut, Icon }) => {
                 const isActive = key === value;

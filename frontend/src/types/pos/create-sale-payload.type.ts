@@ -17,8 +17,6 @@ export interface ICreateSalePaymentPayload {
   cashAmount?: number;
   chequeAmount?: number;
   bankTransferAmount?: number;
-  creditAmount?: number;
-  keepBalance?: boolean;
   chequeNo?: string;
   chequeDate?: string;
   chequeBank?: string;
@@ -30,11 +28,13 @@ export interface ICreateSalePaymentPayload {
 
 /**
  * Create-sale request body for `POST /pos/sales`. The wholesale price tier
- * was removed from the cashier UI; `saleType` / `priceLevel` are no longer
- * sent and the backend DTO defaults both to `'Retail'` server-side.
+ * and the walk-in customer-picker were removed from the cashier UI, so
+ * `saleType` / `priceLevel` / `customerUserId` are no longer sent. The
+ * backend DTO still accepts `customerUserId` and the credit/keep-balance
+ * tender fields for legacy callers (admin imports, recovery scripts);
+ * the FE simply stops emitting them.
  */
 export interface ICreateSalePayload {
-  customerUserId?: string;
   location?: string;
   cartDiscountPercentage?: number;
   cartDiscountAmount?: number;
