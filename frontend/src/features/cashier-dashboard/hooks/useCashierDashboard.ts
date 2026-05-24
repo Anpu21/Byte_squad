@@ -1,36 +1,65 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import type { ISale } from '@/types';
+import { useCashierDashboardQuery } from '@/features/pos/hooks/useCashierDashboardQuery';
+import type { ICashierDashboard, IDailyBreakdown } from '@/types';
 import { getTodayLabel } from '@/features/admin-dashboard/lib/format';
 
+interface ChartPoint {
+    name: string;
+    value: number;
+}
+
+function buildSparkline(breakdown: IDailyBreakdown[] | undefined): number[] {
+    if (!breakdown || breakdown.length === 0) return [];
+    return breakdown.map((day) => day.totalSales);
+}
+
+function buildChartData(breakdown: IDailyBreakdown[] | undefined): ChartPoint[] {
+    if (!breakdown || breakdown.length === 0) return [];
+    return breakdown.map((day) => ({
+        name: new Date(`${day.date}T00:00:00`).toLocaleDateString('en-US', {
+            weekday: 'short',
+        }),
+        value: day.totalSales,
+    }));
+}
+
+interface UseCashierDashboardResult {
+    user: ReturnType<typeof useAuth>['user'];
+    data: ICashierDashboard | undefined;
+    isLoading: boolean;
+    sparkline: number[];
+    chartData: ChartPoint[];
+    todayLabel: string;
+    goToPos: () => void;
+}
+
 /**
- * Cashier-dashboard page model.
- *
- * Phase 1 of the Shanel POS port deletes the legacy `posService`. Until
- * Phase 7 rewires this dashboard against the new cashier read endpoint we
- * return an empty data envelope so the dashboard renders the zero state.
- *
- * TODO Phase 7: rewire to new pos.service / cashier-dashboard endpoint.
+ * Cashier-dashboard page model. Wraps `useCashierDashboardQuery` and
+ * derives the sparkline + chart series from the canonical daily breakdown.
  */
-export function useCashierDashboard() {
+export function useCashierDashboard(): UseCashierDashboardResult {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const query = useCashierDashboardQuery();
 
-    // Stable empty data — mirrors the legacy ICashierDashboard shape just
-    // enough for downstream components to render the zero state.
-    const data = {
-        today: { totalSales: 0, transactionCount: 0, averageSale: 0 },
-        week: { totalSales: 0, transactionCount: 0 },
-        recentTransactions: [] as ISale[],
-    };
+    const sparkline = useMemo(
+        () => buildSparkline(query.data?.dailyBreakdown),
+        [query.data?.dailyBreakdown],
+    );
+    const chartData = useMemo(
+        () => buildChartData(query.data?.dailyBreakdown),
+        [query.data?.dailyBreakdown],
+    );
 
     return {
         user,
-        data,
-        isLoading: false,
-        sparkline: [] as number[],
-        chartData: [] as { name: string; value: number }[],
+        data: query.data,
+        isLoading: query.isLoading,
+        sparkline,
+        chartData,
         todayLabel: getTodayLabel(),
         goToPos: () => navigate(FRONTEND_ROUTES.POS),
     };
