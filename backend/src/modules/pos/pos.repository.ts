@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, MoreThanOrEqual, Repository } from 'typeorm';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
 import { TransactionType } from '@common/enums/transaction.enum';
 
@@ -21,28 +21,26 @@ export interface TopProductRow {
 @Injectable()
 export class PosRepository {
   constructor(
-    @InjectRepository(Transaction)
-    private readonly transactionRepo: Repository<Transaction>,
-    @InjectRepository(TransactionItem)
-    private readonly transactionItemRepo: Repository<TransactionItem>,
+    @InjectRepository(Sale)
+    private readonly transactionRepo: Repository<Sale>,
+    @InjectRepository(SaleItem)
+    private readonly transactionItemRepo: Repository<SaleItem>,
     @InjectRepository(IdempotencyKey)
     private readonly idempotencyRepo: Repository<IdempotencyKey>,
   ) {}
 
-  async createAndSaveTransaction(
-    partial: DeepPartial<Transaction>,
-  ): Promise<Transaction> {
+  async createAndSaveTransaction(partial: DeepPartial<Sale>): Promise<Sale> {
     return this.transactionRepo.save(this.transactionRepo.create(partial));
   }
 
-  async findTransactionById(id: string): Promise<Transaction | null> {
+  async findTransactionById(id: string): Promise<Sale | null> {
     return this.transactionRepo.findOne({
       where: { id },
       relations: ['items', 'items.product', 'cashier'],
     });
   }
 
-  async findTransactionsByBranch(branchId: string): Promise<Transaction[]> {
+  async findTransactionsByBranch(branchId: string): Promise<Sale[]> {
     return this.transactionRepo.find({
       where: { branchId },
       relations: ['items', 'items.product', 'cashier'],
@@ -54,7 +52,7 @@ export class PosRepository {
     cashierId: string,
     branchId: string,
     since: Date,
-  ): Promise<Transaction[]> {
+  ): Promise<Sale[]> {
     return this.transactionRepo.find({
       where: { cashierId, branchId, createdAt: MoreThanOrEqual(since) },
     });
@@ -64,7 +62,7 @@ export class PosRepository {
     cashierId: string,
     branchId: string,
     take: number,
-  ): Promise<Transaction[]> {
+  ): Promise<Sale[]> {
     return this.transactionRepo.find({
       where: { cashierId, branchId },
       relations: ['items'],
@@ -73,13 +71,13 @@ export class PosRepository {
     });
   }
 
-  async findTransactionsSince(since: Date): Promise<Transaction[]> {
+  async findTransactionsSince(since: Date): Promise<Sale[]> {
     return this.transactionRepo.find({
       where: { createdAt: MoreThanOrEqual(since) },
     });
   }
 
-  async findRecent(take: number): Promise<Transaction[]> {
+  async findRecent(take: number): Promise<Sale[]> {
     return this.transactionRepo.find({
       relations: ['items', 'cashier'],
       order: { createdAt: 'DESC' },
@@ -87,12 +85,35 @@ export class PosRepository {
     });
   }
 
-  async findRecentWithBranch(take: number): Promise<Transaction[]> {
+  async findRecentWithBranch(take: number): Promise<Sale[]> {
     return this.transactionRepo.find({
       relations: ['items', 'cashier', 'branch'],
       order: { createdAt: 'DESC' },
       take,
     });
+  }
+
+  /**
+   * Shanel-aligned recent-sales fetch backing `GET /pos/recent-sales`.
+   * Eager-loads only the `customer` relation so the row mapper can populate
+   * `customerName` without a follow-up query — the mapper reads no other
+   * relations and the cashier UI polls this endpoint frequently. When
+   * `branchId` is non-null we scope to a single branch (cashier/manager);
+   * admins pass `null` to see system-wide activity.
+   */
+  async findRecentSales(
+    branchId: string | null,
+    take: number,
+  ): Promise<Sale[]> {
+    const opts = {
+      relations: ['customer'],
+      order: { createdAt: 'DESC' as const },
+      take,
+    };
+    if (branchId) {
+      return this.transactionRepo.find({ ...opts, where: { branchId } });
+    }
+    return this.transactionRepo.find(opts);
   }
 
   async periodAggregateForBranch(
@@ -136,7 +157,7 @@ export class PosRepository {
   async findRecentScopedTransactions(where: {
     cashierId?: string;
     branchId: string;
-  }): Promise<Transaction[]> {
+  }): Promise<Sale[]> {
     return this.transactionRepo.find({
       where,
       relations: ['items', 'cashier'],
@@ -152,7 +173,7 @@ export class PosRepository {
       .addSelect('SUM(ti.quantity)', 'totalQuantity')
       .addSelect('SUM(ti.line_total)', 'totalRevenue')
       .innerJoin('ti.product', 'p')
-      .innerJoin('ti.transaction', 't')
+      .innerJoin('ti.sale', 't')
       .where('t.created_at >= :since', { since })
       .groupBy('ti.product_id')
       .addGroupBy('p.name')
@@ -212,7 +233,7 @@ export class PosRepository {
   async insertIdempotencyKey(row: {
     key: string;
     cashierId: string;
-    transactionId: string;
+    saleId: string;
   }): Promise<void> {
     await this.idempotencyRepo.insert(row);
   }

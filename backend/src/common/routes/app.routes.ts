@@ -57,13 +57,34 @@ export const APP_ROUTES = {
   // POS / Transactions
   POS: {
     BASE: `${API_PREFIX}/pos`,
+    // Legacy / Phase 0..3 surface — Phase 5 will deprecate. Kept so callers
+    // built against the dashboard endpoints continue to compile during the
+    // Shanel-port migration.
     TRANSACTIONS: 'transactions',
     TRANSACTION_BY_ID: 'transactions/:id',
+    TRANSACTION_PRINT: 'transactions/:id/print',
     DAILY_REPORT: 'daily-report',
     MY_DASHBOARD: 'my-dashboard',
     MY_TRANSACTIONS: 'my-transactions',
     ALL_TRANSACTIONS: 'all-transactions',
     ADMIN_DASHBOARD: 'admin-dashboard',
+    // Phase 4 — Shanel-aligned read endpoints (search, units, inventory,
+    // recent sales, invoice-number preview).
+    SEARCH_PRODUCTS: 'products/search',
+    PRODUCT_UNITS: 'products/:productId/units',
+    BASE_UNIT_QTY: 'products/:productId/units/:unitName/base-qty',
+    PRODUCT_INVENTORY: 'products/:productId/inventory',
+    RECENT_SALES: 'recent-sales',
+    GENERATE_INVOICE_NO: 'invoice-number',
+    // Phase 9 — Shanel-aligned customer search for the POS customer picker.
+    SEARCH_CUSTOMERS: 'customers/search',
+    // Phase 5+ placeholders — declared now so subsequent phases don't have
+    // to touch this file when wiring the Shanel-shaped sale write/print/void
+    // mutations.
+    SALES: 'sales',
+    SALE_BY_ID: 'sales/:id',
+    SALE_PRINT: 'sales/:id/print',
+    SALE_VOID: 'sales/:id/void',
   },
 
   // Accounting

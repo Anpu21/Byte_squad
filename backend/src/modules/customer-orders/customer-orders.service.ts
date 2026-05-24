@@ -27,7 +27,7 @@ import { UsersRepository } from '@users/users.repository';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
-import { Transaction } from '@pos/entities/transaction.entity';
+import { Sale } from '@pos/entities/sale.entity';
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
 import { CustomerOrderPaymentMode } from '@common/enums/customer-order-payment-mode.enum';
 import { CustomerOrderPaymentStatus } from '@common/enums/customer-order-payment-status.enum';
@@ -423,7 +423,7 @@ export class CustomerOrdersService {
     code: string,
     dto: FulfillCustomerOrderDto,
     actor: StaffActor,
-  ): Promise<{ order: CustomerOrder; transaction: Transaction | null }> {
+  ): Promise<{ order: CustomerOrder; transaction: Sale | null }> {
     const order = await this.findByCode(code);
     if (
       order.status !== CustomerOrderStatus.PENDING &&
@@ -595,7 +595,7 @@ export class CustomerOrdersService {
     actorId: string;
     paymentMethod: PaymentMethod;
     effective: EffectiveOrderItem[];
-  }): Promise<Transaction> {
+  }): Promise<Sale> {
     if (params.effective.length === 0) {
       throw new BadRequestException('No items to fulfill');
     }
@@ -619,6 +619,10 @@ export class CustomerOrdersService {
       return {
         productId: product.id,
         quantity: it.quantity,
+        // PHASE-5: replace once the customer pickup path folds into the
+        // createSale flow. Customer orders have no sellable-units, so
+        // quantity already equals the base-unit quantity.
+        baseUnitQty: it.quantity,
         unitPrice,
         discountAmount: 0,
         discountType: DiscountType.NONE,
@@ -648,6 +652,11 @@ export class CustomerOrdersService {
 
     const savedTx = await this.pos.createAndSaveTransaction({
       transactionNumber,
+      // PHASE-5: replace with InvoiceNumberService.next() once the customer
+      // pickup path is folded into the createSale flow. Mirroring the
+      // transactionNumber keeps the NOT NULL + UNIQUE sales.invoice_number
+      // constraint satisfied for this legacy writer.
+      invoiceNumber: transactionNumber,
       branchId: params.order.branchId,
       cashierId: params.actorId,
       type: TransactionType.SALE,
@@ -668,7 +677,7 @@ export class CustomerOrdersService {
         amount: savedTx.total,
         description: `Customer pickup ${params.order.orderCode} - ${savedTx.transactionNumber}`,
         referenceNumber: savedTx.transactionNumber,
-        transactionId: savedTx.id,
+        saleId: savedTx.id,
       });
     }
 

@@ -1,10 +1,17 @@
 import { Calendar, CalendarDays, TrendingUp } from 'lucide-react';
 import KpiCard from '@/components/ui/KpiCard';
-import type { ICashierTransactionsSummary } from '@/types';
 import { formatRevenue } from '../lib/format';
 
+// TODO Phase 7: switch back to the shared transactions summary type once the
+// new POS read endpoints land.
+interface TransactionsKpisData {
+    today: { totalSales: number; transactionCount: number };
+    month: { totalSales: number; transactionCount: number };
+    year: { totalSales: number; transactionCount: number };
+}
+
 interface TransactionsKpisProps {
-    data: ICashierTransactionsSummary | undefined;
+    data: TransactionsKpisData | undefined;
 }
 
 export function TransactionsKpis({ data }: TransactionsKpisProps) {

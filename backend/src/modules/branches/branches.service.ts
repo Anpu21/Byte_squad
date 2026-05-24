@@ -14,8 +14,8 @@ import { UpdateBranchDto } from '@branches/dto/update-branch.dto';
 // TODO Phase C6 / C8 / C4 / C5 — replace these cross-module borrowings with
 // the corresponding *Repository classes once those modules migrate.
 import { User } from '@users/entities/user.entity';
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -62,10 +62,10 @@ export class BranchesService {
     private readonly branches: BranchesRepository,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Transaction)
-    private readonly transactionRepository: Repository<Transaction>,
-    @InjectRepository(TransactionItem)
-    private readonly transactionItemRepository: Repository<TransactionItem>,
+    @InjectRepository(Sale)
+    private readonly transactionRepository: Repository<Sale>,
+    @InjectRepository(SaleItem)
+    private readonly transactionItemRepository: Repository<SaleItem>,
     @InjectRepository(Inventory)
     private readonly inventoryRepository: Repository<Inventory>,
     @InjectRepository(Expense)
@@ -113,9 +113,7 @@ export class BranchesService {
       await this.assertCodeAvailable(dto.code, branchId);
     }
     await this.branches.update(existing.id, dto);
-    this.logger.log(
-      `Branch ${existing.name} updated by admin ${adminUserId}`,
-    );
+    this.logger.log(`Branch ${existing.name} updated by admin ${adminUserId}`);
     return this.branches.findById(existing.id);
   }
 
@@ -125,9 +123,7 @@ export class BranchesService {
       throw new NotFoundException('Branch not found');
     }
     await this.branches.delete(existing.id);
-    this.logger.log(
-      `Branch ${existing.name} deleted by admin ${adminUserId}`,
-    );
+    this.logger.log(`Branch ${existing.name} deleted by admin ${adminUserId}`);
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
@@ -259,7 +255,7 @@ export class BranchesService {
         }>(),
       this.transactionItemRepository
         .createQueryBuilder('item')
-        .innerJoin('item.transaction', 'txn')
+        .innerJoin('item.sale', 'txn')
         .innerJoin('item.product', 'product')
         .select('product.id', 'productId')
         .addSelect('product.name', 'name')

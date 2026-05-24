@@ -1,4 +1,22 @@
-import type { ICashierTransactionRow } from '@/types';
+/**
+ * Local stub of the dashboard transaction row shape.
+ *
+ * Phase 1 of the Shanel POS port deletes the global `ICashierTransactionRow`
+ * type alongside the legacy `posService`. This local placeholder keeps the
+ * transactions surface compiling until Phase 7 rebuilds the read layer.
+ *
+ * TODO Phase 7: replace with the new shared transaction-row type emitted by
+ * the rebuilt POS read endpoints.
+ */
+export interface ITransactionRow {
+    id: string;
+    transactionNumber: string;
+    createdAt: string;
+    branchName?: string | null;
+    cashierName: string;
+    itemCount: number;
+    total: number;
+}
 
 export function formatRevenue(amount: number): string {
     return new Intl.NumberFormat('en-LK', {
@@ -18,7 +36,7 @@ export function formatDateTime(dateStr: string): string {
 }
 
 export function downloadTransactionsCsv(
-    rows: ICashierTransactionRow[],
+    rows: ITransactionRow[],
     scope: string,
 ): void {
     const header = [

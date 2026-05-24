@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { User } from '@users/entities/user.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
-import { Transaction } from '@pos/entities/transaction.entity';
+import { Sale } from '@pos/entities/sale.entity';
 
 @Entity('branches')
 export class Branch {
@@ -54,8 +54,8 @@ export class Branch {
   @OneToMany(() => Inventory, (inventory) => inventory.branch)
   inventoryItems!: Inventory[];
 
-  @OneToMany(() => Transaction, (transaction) => transaction.branch)
-  transactions!: Transaction[];
+  @OneToMany(() => Sale, (transaction) => transaction.branch)
+  transactions!: Sale[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

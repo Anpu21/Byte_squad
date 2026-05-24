@@ -4,6 +4,7 @@ import { NotFoundException } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { ProductsRepository } from './products.repository';
 import { Product } from './entities/product.entity';
+import { CreateProductDto } from './dto/create-product.dto';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 
 describe('ProductsService', () => {
@@ -42,6 +43,40 @@ describe('ProductsService', () => {
 
     service = module.get(ProductsService);
     repo = module.get(ProductsRepository);
+  });
+
+  describe('create', () => {
+    it('persists wholesalePrice, taxRate, and discountAllowed', async () => {
+      const dto: CreateProductDto = {
+        name: 'Wholesale Widget',
+        barcode: '0123456789',
+        category: 'general',
+        costPrice: 50,
+        sellingPrice: 100,
+        wholesalePrice: 80,
+        taxRate: 15,
+        discountAllowed: false,
+      };
+      repo.createAndSave.mockImplementation((input) =>
+        Promise.resolve({
+          id: 'p-new',
+          ...input,
+        } as Product),
+      );
+
+      const created = await service.create(dto);
+
+      expect(repo.createAndSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          wholesalePrice: 80,
+          taxRate: 15,
+          discountAllowed: false,
+        }),
+      );
+      expect(created.wholesalePrice).toBe(80);
+      expect(created.taxRate).toBe(15);
+      expect(created.discountAllowed).toBe(false);
+    });
   });
 
   describe('update', () => {

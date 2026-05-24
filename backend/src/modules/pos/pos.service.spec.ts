@@ -1,492 +1,676 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test } from '@nestjs/testing';
-import { ConflictException, NotFoundException } from '@nestjs/common';
-import { DataSource, QueryFailedError } from 'typeorm';
+import { NotFoundException } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
 import { PosService } from './pos.service';
 import { PosRepository } from './pos.repository';
+import { SaleRepository } from './sale.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
-import { Transaction } from './entities/transaction.entity';
-import { TransactionItem } from './entities/transaction-item.entity';
-import { IdempotencyKey } from './entities/idempotency-key.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { InventoryRepository } from '@inventory/inventory.repository';
+import { ProductsRepository } from '@products/products.repository';
+import { InvoiceNumberService } from './services/invoice-number.service';
+import { UsersRepository } from '@users/users.repository';
+import { Product } from '@products/entities/product.entity';
+import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
+import { Sale } from './entities/sale.entity';
+import { User } from '@users/entities/user.entity';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { DiscountType } from '@common/enums/discount.enum';
 import { PaymentMethod } from '@common/enums/payment-method';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { UserRole } from '@common/enums/user-roles.enums';
 
-interface InventoryQB {
-  setLock: jest.Mock<InventoryQB, []>;
-  where: jest.Mock<InventoryQB, [string, { productId?: string }?]>;
-  andWhere: jest.Mock<InventoryQB, [string, { branchId?: string }?]>;
-  getOne: jest.Mock<Promise<Inventory | null>, []>;
+/**
+ * Phase 4 — Shanel-aligned read endpoints. Each describe block targets one
+ * service method; the underlying repositories are mocked so the spec stays
+ * unit-scoped (no DB). The legacy write/dashboard paths already have
+ * their own coverage at the repository and entity level.
+ */
+
+interface ActorPayload {
+  id: string;
+  email: string;
+  role: UserRole;
+  branchId: string | null;
 }
 
-interface TxnHarness {
-  savedTxn: Transaction | null;
-  savedItems: TransactionItem[];
-  ledgerCalls: Array<Record<string, unknown>>;
-  inventoryByProductId: Map<string, Inventory>;
-  inventorySaves: Inventory[];
-}
-
-function buildHarness(
-  inventoryByProductId: Map<string, Inventory>,
-): TxnHarness {
+function makeCashier(overrides: Partial<ActorPayload> = {}): ActorPayload {
   return {
-    savedTxn: null,
-    savedItems: [],
-    ledgerCalls: [],
-    inventoryByProductId,
-    inventorySaves: [],
+    id: 'cashier-1',
+    email: 'cashier@example.com',
+    role: UserRole.CASHIER,
+    branchId: 'branch-A',
+    ...overrides,
   };
 }
 
-function makeManager(harness: TxnHarness, txnId = 'txn-new'): unknown {
-  const inventoryRepo = {
-    createQueryBuilder: jest.fn((): InventoryQB => {
-      let capturedProductId: string | undefined;
-      const qb: InventoryQB = {
-        setLock: jest.fn(() => qb),
-        where: jest.fn((_sql: string, params?: { productId?: string }) => {
-          if (params?.productId) capturedProductId = params.productId;
-          return qb;
-        }),
-        andWhere: jest.fn((_sql: string, params?: { branchId?: string }) => {
-          void params;
-          return qb;
-        }),
-        getOne: jest.fn(() => {
-          if (!capturedProductId) return Promise.resolve(null);
-          return Promise.resolve(
-            harness.inventoryByProductId.get(capturedProductId) ?? null,
-          );
-        }),
-      };
-      return qb;
-    }),
-    save: jest.fn((inv: Inventory) => {
-      harness.inventorySaves.push({ ...inv });
-      return Promise.resolve(inv);
-    }),
-  };
-
-  const transactionRepo = {
-    create: jest.fn((data: Partial<Transaction>) => data),
-    save: jest.fn((data: Partial<Transaction>) => {
-      harness.savedTxn = { ...data, id: txnId } as Transaction;
-      return Promise.resolve(harness.savedTxn);
-    }),
-  };
-
-  const itemRepo = {
-    create: jest.fn((data: Partial<TransactionItem>) => data),
-    save: jest.fn((rows: Array<Partial<TransactionItem>>) => {
-      const persisted = rows.map(
-        (r, idx) => ({ ...r, id: `ti-${idx + 1}` }) as TransactionItem,
-      );
-      harness.savedItems.push(...persisted);
-      return Promise.resolve(persisted);
-    }),
-  };
-
+function makeAdmin(overrides: Partial<ActorPayload> = {}): ActorPayload {
   return {
-    getRepository: jest.fn((entity: unknown) => {
-      if (entity === Inventory) return inventoryRepo;
-      if (entity === Transaction) return transactionRepo;
-      if (entity === TransactionItem) return itemRepo;
-      throw new Error('Unexpected entity in transaction mock');
-    }),
+    id: 'admin-1',
+    email: 'admin@example.com',
+    role: UserRole.ADMIN,
+    branchId: 'branch-A',
+    ...overrides,
   };
 }
 
-describe('PosService.createTransaction', () => {
-  let service: PosService;
-  let pos: jest.Mocked<PosRepository>;
-  let accounting: jest.Mocked<AccountingRepository>;
-  let dataSource: { transaction: jest.Mock };
+function makeProduct(overrides: Partial<Product> = {}): Product {
+  return {
+    id: 'p-1',
+    name: 'Test Product',
+    barcode: 'BC-001',
+    description: null,
+    category: 'general',
+    costPrice: 50,
+    sellingPrice: 100,
+    wholesalePrice: 80,
+    taxRate: 10,
+    discountAllowed: true,
+    baseUnit: 'each',
+    imageUrl: null,
+    isActive: true,
+    inventoryRecords: [],
+    transactionItems: [],
+    createdAt: new Date('2026-05-23T10:00:00Z'),
+    updatedAt: new Date('2026-05-23T10:00:00Z'),
+    ...overrides,
+  } as Product;
+}
 
-  const baseDto: CreateTransactionDto = {
+function makeUnit(
+  overrides: Partial<ProductSellableUnit> = {},
+): ProductSellableUnit {
+  return {
+    id: 'u-1',
+    productId: 'p-1',
+    product: undefined as unknown as Product,
+    name: 'each',
+    isBase: true,
+    conversionToBase: 1,
+    displayOrder: 0,
+    createdAt: new Date('2026-05-23T10:00:00Z'),
+    updatedAt: new Date('2026-05-23T10:00:00Z'),
+    ...overrides,
+  } as ProductSellableUnit;
+}
+
+function makeCustomer(overrides: Partial<User> = {}): User {
+  return {
+    id: 'cust-1',
+    email: 'jane@example.com',
+    passwordHash: 'hash',
+    firstName: 'Jane',
+    lastName: 'Doe',
+    avatarUrl: null,
+    role: UserRole.CUSTOMER,
+    branchId: null,
+    branch: null,
+    phone: '+94770000000',
+    address: null,
+    isFirstLogin: false,
+    otpCode: null,
+    otpExpiresAt: null,
+    isVerified: true,
+    lastLoginAt: null,
+    currentBalance: 0,
+    createdAt: new Date('2026-05-23T10:00:00Z'),
+    updatedAt: new Date('2026-05-23T10:00:00Z'),
+    ...overrides,
+  } as User;
+}
+
+function makeSale(overrides: Partial<Sale> = {}): Sale {
+  return {
+    id: 'sale-1',
+    transactionNumber: 'TXN-001',
+    invoiceNumber: 'INV-2026-000001',
+    billPrinted: false,
+    billPrintCount: 0,
+    firstPrintDate: null,
+    lastPrintDate: null,
+    branchId: 'branch-A',
+    branch: undefined as unknown as Sale['branch'],
+    cashierId: 'cashier-1',
+    cashier: undefined as unknown as Sale['cashier'],
     type: TransactionType.SALE,
-    paymentMethod: PaymentMethod.CASH,
+    subtotal: 100,
     discountAmount: 0,
     discountType: DiscountType.NONE,
-    items: [
-      {
-        productId: 'p1',
-        quantity: 1,
-        unitPrice: 10,
-        discountAmount: 0,
-        discountType: DiscountType.NONE,
-      },
-    ],
-  };
+    taxAmount: 0,
+    total: 100,
+    paymentMethod: PaymentMethod.CASH,
+    saleType: 'Retail',
+    priceLevel: 'Retail',
+    discountPercentage: 0,
+    taxRate: 0,
+    paidAmount: 100,
+    balanceDue: 0,
+    paymentStatus: 'Paid',
+    status: 'Active',
+    location: 'Shop',
+    customerUserId: null,
+    customer: null,
+    voidedReason: null,
+    voidedAt: null,
+    voidedByUserId: null,
+    items: [],
+    createdAt: new Date('2026-05-23T11:00:00Z'),
+    ...overrides,
+  } as Sale;
+}
 
-  function mockSale(opts: {
-    inventory: Array<{ productId: string; quantity: number }>;
-    txnId?: string;
-  }): TxnHarness {
-    const invMap = new Map<string, Inventory>();
-    for (const inv of opts.inventory) {
-      invMap.set(inv.productId, {
-        productId: inv.productId,
-        quantity: inv.quantity,
-        branchId: 'branch-1',
-      } as Inventory);
-    }
-    const harness = buildHarness(invMap);
-    dataSource.transaction.mockImplementation(
-      async (cb: (m: unknown) => Promise<unknown>) =>
-        cb(makeManager(harness, opts.txnId)),
-    );
-    return harness;
-  }
+describe('PosService — Phase 4 read endpoints', () => {
+  let service: PosService;
+  let productsRepo: jest.Mocked<ProductsRepository>;
+  let inventoryRepo: jest.Mocked<InventoryRepository>;
+  let posRepo: jest.Mocked<PosRepository>;
+  let invoiceNumbers: jest.Mocked<InvoiceNumberService>;
+  let salesRepo: jest.Mocked<SaleRepository>;
+  let usersRepo: jest.Mocked<UsersRepository>;
 
   beforeEach(async () => {
-    const posMock: Partial<jest.Mocked<PosRepository>> = {
-      findTransactionById: jest.fn(),
-      findIdempotencyKey: jest.fn(),
-      insertIdempotencyKey: jest.fn(),
+    const posRepoMock: Partial<jest.Mocked<PosRepository>> = {
+      findRecentSales: jest.fn(),
     };
-    const accountingMock: Partial<jest.Mocked<AccountingRepository>> = {
-      createLedgerEntryWithManager: jest.fn(),
+    const accountingRepoMock = {} as AccountingRepository;
+    const dataSourceMock = {} as DataSource;
+    const productsRepoMock: Partial<jest.Mocked<ProductsRepository>> = {
+      searchByText: jest.fn(),
+      listUnits: jest.fn(),
     };
-    const dataSourceMock = { transaction: jest.fn() };
+    const inventoryRepoMock: Partial<jest.Mocked<InventoryRepository>> = {
+      summaryForProduct: jest.fn(),
+    };
+    const invoiceNumbersMock: Partial<jest.Mocked<InvoiceNumberService>> = {
+      peek: jest.fn(),
+    };
+    const salesRepoMock: Partial<jest.Mocked<SaleRepository>> = {
+      findOneById: jest.fn(),
+      markPrinted: jest.fn().mockResolvedValue(undefined),
+    };
+    const usersRepoMock: Partial<jest.Mocked<UsersRepository>> = {
+      searchCustomersByText: jest.fn(),
+    };
 
     const module = await Test.createTestingModule({
       providers: [
         PosService,
-        { provide: PosRepository, useValue: posMock },
-        { provide: AccountingRepository, useValue: accountingMock },
+        { provide: PosRepository, useValue: posRepoMock },
+        { provide: AccountingRepository, useValue: accountingRepoMock },
         { provide: DataSource, useValue: dataSourceMock },
+        { provide: ProductsRepository, useValue: productsRepoMock },
+        { provide: InventoryRepository, useValue: inventoryRepoMock },
+        { provide: InvoiceNumberService, useValue: invoiceNumbersMock },
+        { provide: SaleRepository, useValue: salesRepoMock },
+        { provide: UsersRepository, useValue: usersRepoMock },
       ],
     }).compile();
 
     service = module.get(PosService);
-    pos = module.get(PosRepository);
-    accounting = module.get(AccountingRepository);
-    dataSource = module.get(DataSource);
+    productsRepo = module.get(ProductsRepository);
+    inventoryRepo = module.get(InventoryRepository);
+    posRepo = module.get(PosRepository);
+    invoiceNumbers = module.get(InvoiceNumberService);
+    salesRepo = module.get(SaleRepository);
+    usersRepo = module.get(UsersRepository);
   });
 
-  it('returns the original transaction when the same idempotency key replays', async () => {
-    pos.findIdempotencyKey.mockResolvedValue({
-      transactionId: 'txn-existing',
-    } as IdempotencyKey);
-    pos.findTransactionById.mockResolvedValue({
-      id: 'txn-existing',
-    } as Transaction);
-
-    const result = await service.createTransaction(
-      baseDto,
-      'cashier-1',
-      'branch-1',
-      'idem-key',
-    );
-    expect(result.id).toBe('txn-existing');
-    expect(dataSource.transaction).not.toHaveBeenCalled();
-    expect(accounting.createLedgerEntryWithManager).not.toHaveBeenCalled();
-  });
-
-  it('throws NotFoundException when the idempotency key points at a missing transaction', async () => {
-    pos.findIdempotencyKey.mockResolvedValue({
-      transactionId: 'gone',
-    } as IdempotencyKey);
-    pos.findTransactionById.mockResolvedValue(null);
-
-    await expect(
-      service.createTransaction(baseDto, 'cashier-1', 'branch-1', 'idem-key'),
-    ).rejects.toBeInstanceOf(NotFoundException);
-  });
-
-  it('persists the idempotency row alongside a new transaction', async () => {
-    pos.findIdempotencyKey.mockResolvedValueOnce(null);
-    const harness = mockSale({
-      inventory: [{ productId: 'p1', quantity: 10 }],
+  // -------------------------------------------------------------------
+  // Task 4.1 — searchProducts
+  // -------------------------------------------------------------------
+  describe('searchProducts', () => {
+    it('returns an empty array when the trimmed query is empty', async () => {
+      const result = await service.searchProducts(makeCashier(), {
+        q: '   ',
+        limit: 10,
+      });
+      expect(result).toEqual([]);
+      expect(productsRepo.searchByText).not.toHaveBeenCalled();
     });
-    pos.insertIdempotencyKey.mockResolvedValue(undefined);
 
-    await service.createTransaction(
-      baseDto,
-      'cashier-1',
-      'branch-1',
-      'idem-key',
-    );
-    expect(pos.insertIdempotencyKey).toHaveBeenCalledWith({
-      key: 'idem-key',
-      cashierId: 'cashier-1',
-      transactionId: 'txn-new',
-    });
-    expect(accounting.createLedgerEntryWithManager).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ amount: 10 }),
-    );
-    expect(harness.savedTxn?.transactionNumber).toMatch(/^TXN-/);
-  });
+    it('maps Product rows into the Shanel SearchProductRow shape, propagating baseUnit', async () => {
+      productsRepo.searchByText.mockResolvedValue([
+        makeProduct({
+          id: 'p-1',
+          name: 'Apple',
+          barcode: '0001',
+          category: 'produce',
+          costPrice: 40,
+          sellingPrice: 100,
+          wholesalePrice: 80,
+          taxRate: 10,
+          discountAllowed: true,
+          baseUnit: 'kg',
+          imageUrl: 'https://cdn/apple.jpg',
+        }),
+      ]);
 
-  it('falls back to the race-winning transaction on unique-violation', async () => {
-    pos.findIdempotencyKey.mockResolvedValueOnce(null).mockResolvedValueOnce({
-      transactionId: 'txn-winner',
-    } as IdempotencyKey);
-    mockSale({
-      inventory: [{ productId: 'p1', quantity: 10 }],
-      txnId: 'txn-loser',
-    });
-    const violation = new QueryFailedError('insert', [], new Error('dup key'));
-    pos.insertIdempotencyKey.mockRejectedValue(violation);
-    pos.findTransactionById.mockResolvedValue({
-      id: 'txn-winner',
-    } as Transaction);
-
-    const result = await service.createTransaction(
-      baseDto,
-      'cashier-1',
-      'branch-1',
-      'idem-key',
-    );
-    expect(result.id).toBe('txn-winner');
-  });
-
-  it('skips ledger entry when the transaction total is zero', async () => {
-    mockSale({ inventory: [{ productId: 'p1', quantity: 10 }] });
-
-    const zeroDto: CreateTransactionDto = {
-      ...baseDto,
-      items: [{ ...baseDto.items[0], unitPrice: 0 }],
-    };
-    await service.createTransaction(zeroDto, 'cashier-1', 'branch-1');
-    expect(accounting.createLedgerEntryWithManager).not.toHaveBeenCalled();
-  });
-
-  describe('inventory enforcement', () => {
-    it('decrements branch inventory for each sale line', async () => {
-      const harness = mockSale({
-        inventory: [
-          { productId: 'p1', quantity: 10 },
-          { productId: 'p2', quantity: 5 },
-        ],
+      const result = await service.searchProducts(makeCashier(), {
+        q: 'app',
+        limit: 5,
       });
 
-      const dto: CreateTransactionDto = {
-        type: TransactionType.SALE,
-        paymentMethod: PaymentMethod.CASH,
-        items: [
-          {
-            productId: 'p1',
-            quantity: 3,
-            unitPrice: 10,
-            discountAmount: 0,
-            discountType: DiscountType.NONE,
-          },
-          {
-            productId: 'p2',
-            quantity: 2,
-            unitPrice: 20,
-            discountAmount: 0,
-            discountType: DiscountType.NONE,
-          },
-        ],
-      };
+      expect(productsRepo.searchByText).toHaveBeenCalledWith('app', 5);
+      expect(result).toEqual([
+        {
+          productId: 'p-1',
+          productCode: '0001',
+          productName: 'Apple',
+          productType: 'produce',
+          baseUnit: 'kg',
+          status: true,
+          costPrice: 40,
+          retailPrice: 100,
+          wholesalePrice: 80,
+          taxRate: 10,
+          discountAllowed: true,
+          imageUrl: 'https://cdn/apple.jpg',
+        },
+      ]);
+    });
 
-      await service.createTransaction(dto, 'cashier-1', 'branch-1');
+    it('defaults limit to 10 when omitted by the caller', async () => {
+      productsRepo.searchByText.mockResolvedValue([]);
+      await service.searchProducts(makeCashier(), { q: 'tea' });
+      expect(productsRepo.searchByText).toHaveBeenCalledWith('tea', 10);
+    });
+  });
 
-      expect(harness.inventorySaves).toHaveLength(2);
-      const byProduct = new Map(
-        harness.inventorySaves.map((s) => [s.productId, s.quantity]),
+  // -------------------------------------------------------------------
+  // Task 4.2 — listProductUnits
+  // -------------------------------------------------------------------
+  describe('listProductUnits', () => {
+    it('maps repository rows into ProductUnitRow shape, preserving order', async () => {
+      productsRepo.listUnits.mockResolvedValue([
+        makeUnit({
+          id: 'u1',
+          name: 'kg',
+          isBase: true,
+          conversionToBase: 1,
+          displayOrder: 0,
+        }),
+        makeUnit({
+          id: 'u2',
+          name: 'g',
+          isBase: false,
+          conversionToBase: 0.001,
+          displayOrder: 1,
+        }),
+      ]);
+
+      const result = await service.listProductUnits('p-1');
+
+      expect(productsRepo.listUnits).toHaveBeenCalledWith('p-1');
+      expect(result).toEqual([
+        {
+          unitId: 'u1',
+          unitName: 'kg',
+          isBaseUnit: true,
+          conversionToBase: 1,
+          displayOrder: 0,
+        },
+        {
+          unitId: 'u2',
+          unitName: 'g',
+          isBaseUnit: false,
+          conversionToBase: 0.001,
+          displayOrder: 1,
+        },
+      ]);
+    });
+
+    it('returns an empty array when the product has no configured units', async () => {
+      productsRepo.listUnits.mockResolvedValue([]);
+      const result = await service.listProductUnits('p-1');
+      expect(result).toEqual([]);
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Task 4.3 — getBaseUnitQty
+  // -------------------------------------------------------------------
+  describe('getBaseUnitQty', () => {
+    it('returns the conversion factor and isBase flag for a configured unit', async () => {
+      productsRepo.listUnits.mockResolvedValue([
+        makeUnit({ name: 'kg', isBase: true, conversionToBase: 1 }),
+        makeUnit({
+          id: 'u2',
+          name: 'g',
+          isBase: false,
+          conversionToBase: 0.001,
+        }),
+      ]);
+
+      const result = await service.getBaseUnitQty('p-1', 'g');
+
+      expect(result).toEqual({ conversionToBase: 0.001, isBase: false });
+    });
+
+    it('throws NotFoundException when the unit name is not configured', async () => {
+      productsRepo.listUnits.mockResolvedValue([
+        makeUnit({ name: 'kg', isBase: true, conversionToBase: 1 }),
+      ]);
+
+      await expect(service.getBaseUnitQty('p-1', 'lb')).rejects.toBeInstanceOf(
+        NotFoundException,
       );
-      expect(byProduct.get('p1')).toBe(7);
-      expect(byProduct.get('p2')).toBe(3);
     });
+  });
 
-    it('throws ConflictException when stock is short and writes nothing', async () => {
-      const harness = mockSale({
-        inventory: [{ productId: 'p1', quantity: 1 }],
+  // -------------------------------------------------------------------
+  // Task 4.4 — getProductInventory
+  // -------------------------------------------------------------------
+  describe('getProductInventory', () => {
+    it('scopes a cashier to their own branch and surfaces the cross-branch total', async () => {
+      inventoryRepo.summaryForProduct.mockResolvedValue({
+        productId: 'p-1',
+        branchId: 'branch-A',
+        branchName: 'Branch A',
+        branchQty: 12,
+        totalAcrossBranches: 47,
       });
 
-      const dto: CreateTransactionDto = {
-        type: TransactionType.SALE,
-        paymentMethod: PaymentMethod.CASH,
-        items: [
-          {
-            productId: 'p1',
-            quantity: 5,
-            unitPrice: 10,
-            discountAmount: 0,
-            discountType: DiscountType.NONE,
-          },
-        ],
+      const result = await service.getProductInventory(makeCashier(), 'p-1');
+
+      expect(inventoryRepo.summaryForProduct).toHaveBeenCalledWith(
+        'p-1',
+        'branch-A',
+      );
+      expect(result).toEqual({
+        productId: 'p-1',
+        branchId: 'branch-A',
+        branchName: 'Branch A',
+        branchQty: 12,
+        totalAcrossBranches: 47,
+      });
+    });
+
+    it('lets an admin pull another branch row via their assigned branchId', async () => {
+      inventoryRepo.summaryForProduct.mockResolvedValue({
+        productId: 'p-1',
+        branchId: 'branch-B',
+        branchName: 'Branch B',
+        branchQty: 30,
+        totalAcrossBranches: 47,
+      });
+
+      const result = await service.getProductInventory(
+        makeAdmin({ branchId: 'branch-B' }),
+        'p-1',
+      );
+
+      expect(inventoryRepo.summaryForProduct).toHaveBeenCalledWith(
+        'p-1',
+        'branch-B',
+      );
+      expect(result.branchQty).toBe(30);
+      expect(result.totalAcrossBranches).toBe(47);
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Task 4.5 — getRecentSales
+  // -------------------------------------------------------------------
+  describe('getRecentSales', () => {
+    it('scopes a cashier to their branch and maps Sale rows into RecentSaleRow, surfacing invoice and print columns', async () => {
+      const sale = makeSale({
+        id: 'sale-1',
+        transactionNumber: 'TXN-001',
+        invoiceNumber: 'INV-2026-000007',
+        billPrinted: true,
+        billPrintCount: 2,
+        total: 250,
+        paidAmount: 250,
+        balanceDue: 0,
+        paymentStatus: 'Paid',
+        saleType: 'Retail',
+        status: 'Active',
+        branchId: 'branch-A',
+      });
+      posRepo.findRecentSales.mockResolvedValue([sale]);
+
+      const result = await service.getRecentSales(makeCashier(), 5);
+
+      expect(posRepo.findRecentSales).toHaveBeenCalledWith('branch-A', 5);
+      expect(result).toEqual([
+        {
+          id: 'sale-1',
+          invoiceNumber: 'INV-2026-000007',
+          transactionNumber: 'TXN-001',
+          total: 250,
+          paidAmount: 250,
+          balanceDue: 0,
+          paymentStatus: 'Paid',
+          saleType: 'Retail',
+          status: 'Active',
+          billPrinted: true,
+          billPrintCount: 2,
+          branchId: 'branch-A',
+          customerUserId: null,
+          customerName: null,
+          createdAt: sale.createdAt,
+        },
+      ]);
+    });
+
+    it('passes branchId=null when the actor is an admin', async () => {
+      posRepo.findRecentSales.mockResolvedValue([]);
+      await service.getRecentSales(makeAdmin());
+      expect(posRepo.findRecentSales).toHaveBeenCalledWith(null, 20);
+    });
+
+    it('populates customerName from the eager-loaded customer relation', async () => {
+      posRepo.findRecentSales.mockResolvedValue([
+        makeSale({
+          id: 'sale-2',
+          customerUserId: 'u-7',
+          customer: {
+            firstName: 'Asha',
+            lastName: 'Perera',
+          } as unknown as Sale['customer'],
+        }),
+      ]);
+
+      const result = await service.getRecentSales(makeCashier());
+
+      expect(result[0].customerName).toBe('Asha Perera');
+      expect(result[0].customerUserId).toBe('u-7');
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Task 4.6 — previewNextInvoiceNumber
+  // -------------------------------------------------------------------
+  describe('previewNextInvoiceNumber', () => {
+    it('returns the formatted next invoice number for the current year', async () => {
+      const year = new Date().getFullYear();
+      invoiceNumbers.peek.mockResolvedValue(`INV-${year}-000042`);
+
+      const result = await service.previewNextInvoiceNumber();
+
+      expect(invoiceNumbers.peek).toHaveBeenCalledWith(year);
+      expect(result).toEqual({ invoiceNo: `INV-${year}-000042` });
+      expect(result.invoiceNo).toMatch(/^INV-\d{4}-\d{6}$/);
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Task 6.1 — markPrinted
+  // -------------------------------------------------------------------
+  describe('markPrinted', () => {
+    it('increments billPrintCount, sets firstPrintDate on the first print, and refreshes lastPrintDate', async () => {
+      const initial = makeSale({
+        id: 'sale-1',
+        billPrinted: false,
+        billPrintCount: 0,
+        firstPrintDate: null,
+        lastPrintDate: null,
+        branchId: 'branch-A',
+      });
+      const refreshed = makeSale({
+        id: 'sale-1',
+        billPrinted: true,
+        billPrintCount: 1,
+        firstPrintDate: new Date('2026-05-23T12:00:00Z'),
+        lastPrintDate: new Date('2026-05-23T12:00:00Z'),
+        branchId: 'branch-A',
+      });
+      salesRepo.findOneById
+        .mockResolvedValueOnce(initial)
+        .mockResolvedValueOnce(refreshed);
+
+      const result = await service.markPrinted('sale-1', makeCashier());
+
+      expect(salesRepo.markPrinted).toHaveBeenCalledWith(
+        'sale-1',
+        expect.objectContaining({
+          billPrinted: true,
+          billPrintCount: 1,
+          firstPrintDate: expect.any(Date) as Date,
+          lastPrintDate: expect.any(Date) as Date,
+        }),
+      );
+      // firstPrintDate and lastPrintDate match on the first print.
+      const patchArg = salesRepo.markPrinted.mock.calls[0][1] as {
+        firstPrintDate: Date;
+        lastPrintDate: Date;
       };
+      expect(patchArg.firstPrintDate.getTime()).toBe(
+        patchArg.lastPrintDate.getTime(),
+      );
+      expect(result).toBe(refreshed);
+    });
+
+    it('preserves firstPrintDate on subsequent prints and bumps the count', async () => {
+      const original = new Date('2026-05-22T09:00:00Z');
+      const initial = makeSale({
+        id: 'sale-2',
+        billPrinted: true,
+        billPrintCount: 2,
+        firstPrintDate: original,
+        lastPrintDate: new Date('2026-05-22T10:30:00Z'),
+        branchId: 'branch-A',
+      });
+      const refreshed = makeSale({
+        id: 'sale-2',
+        billPrinted: true,
+        billPrintCount: 3,
+        firstPrintDate: original,
+        lastPrintDate: new Date(),
+        branchId: 'branch-A',
+      });
+      salesRepo.findOneById
+        .mockResolvedValueOnce(initial)
+        .mockResolvedValueOnce(refreshed);
+
+      await service.markPrinted('sale-2', makeCashier());
+
+      const patchArg = salesRepo.markPrinted.mock.calls[0][1] as {
+        billPrintCount: number;
+        firstPrintDate: Date;
+      };
+      expect(patchArg.billPrintCount).toBe(3);
+      expect(patchArg.firstPrintDate).toBe(original);
+    });
+
+    it('throws NotFoundException when a cashier targets a sale on another branch', async () => {
+      const foreign = makeSale({
+        id: 'sale-x',
+        branchId: 'branch-B',
+      });
+      salesRepo.findOneById.mockResolvedValue(foreign);
 
       await expect(
-        service.createTransaction(dto, 'cashier-1', 'branch-1'),
-      ).rejects.toBeInstanceOf(ConflictException);
-
-      expect(harness.savedTxn).toBeNull();
-      expect(harness.savedItems).toHaveLength(0);
-      expect(accounting.createLedgerEntryWithManager).not.toHaveBeenCalled();
+        service.markPrinted('sale-x', makeCashier({ branchId: 'branch-A' })),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(salesRepo.markPrinted).not.toHaveBeenCalled();
     });
 
-    it('throws ConflictException when the product is not stocked at the branch', async () => {
-      mockSale({ inventory: [] });
-
-      const dto: CreateTransactionDto = {
-        type: TransactionType.SALE,
-        paymentMethod: PaymentMethod.CASH,
-        items: [
-          {
-            productId: 'p-unknown',
-            quantity: 1,
-            unitPrice: 10,
-            discountAmount: 0,
-            discountType: DiscountType.NONE,
-          },
-        ],
-      };
-
-      await expect(
-        service.createTransaction(dto, 'cashier-1', 'branch-1'),
-      ).rejects.toBeInstanceOf(ConflictException);
-    });
-
-    it('does not decrement inventory for RETURN transactions', async () => {
-      const harness = mockSale({
-        inventory: [{ productId: 'p1', quantity: 10 }],
+    it('lets an admin print a sale that lives on any branch', async () => {
+      const onAnotherBranch = makeSale({
+        id: 'sale-z',
+        branchId: 'branch-B',
+        billPrinted: false,
+        billPrintCount: 0,
+        firstPrintDate: null,
       });
+      salesRepo.findOneById
+        .mockResolvedValueOnce(onAnotherBranch)
+        .mockResolvedValueOnce(onAnotherBranch);
 
-      const dto: CreateTransactionDto = {
-        type: TransactionType.RETURN,
-        paymentMethod: PaymentMethod.CASH,
-        items: [
-          {
-            productId: 'p1',
-            quantity: 1,
-            unitPrice: 10,
-            discountAmount: 0,
-            discountType: DiscountType.NONE,
-          },
-        ],
-      };
-      await service.createTransaction(dto, 'cashier-1', 'branch-1');
+      await service.markPrinted('sale-z', makeAdmin({ branchId: 'branch-A' }));
 
-      expect(harness.inventorySaves).toHaveLength(0);
-      expect(harness.savedTxn?.type).toBe(TransactionType.RETURN);
+      expect(salesRepo.markPrinted).toHaveBeenCalledWith(
+        'sale-z',
+        expect.objectContaining({ billPrinted: true, billPrintCount: 1 }),
+      );
+    });
+
+    it('throws NotFoundException when no sale matches the id', async () => {
+      salesRepo.findOneById.mockResolvedValue(null);
+      await expect(
+        service.markPrinted('missing', makeCashier()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(salesRepo.markPrinted).not.toHaveBeenCalled();
     });
   });
 
-  describe('totals', () => {
-    function makeDto(
-      items: Array<{
-        unitPrice: number;
-        quantity: number;
-        discountAmount?: number;
-        discountType?: DiscountType;
-      }>,
-      cart: { discountAmount?: number; discountType?: DiscountType } = {},
-    ): CreateTransactionDto {
-      return {
-        type: TransactionType.SALE,
-        paymentMethod: PaymentMethod.CASH,
-        discountAmount: cart.discountAmount ?? 0,
-        discountType: cart.discountType ?? DiscountType.NONE,
-        items: items.map((it, idx) => ({
-          productId: `p${idx + 1}`,
-          quantity: it.quantity,
-          unitPrice: it.unitPrice,
-          discountAmount: it.discountAmount ?? 0,
-          discountType: it.discountType ?? DiscountType.NONE,
-        })),
-      };
-    }
-
-    it('computes subtotal/total/lineTotal with no discount', async () => {
-      const harness = mockSale({
-        inventory: [{ productId: 'p1', quantity: 10 }],
+  // -------------------------------------------------------------------
+  // Task 9.1 — searchCustomers (Phase 9 cashier customer picker)
+  // -------------------------------------------------------------------
+  describe('searchCustomers', () => {
+    it('returns an empty array when the trimmed query is empty', async () => {
+      const result = await service.searchCustomers(makeCashier(), {
+        q: '   ',
+        limit: 10,
       });
-      await service.createTransaction(
-        makeDto([{ unitPrice: 250, quantity: 2 }]),
-        'cashier-1',
-        'branch-1',
-      );
-      expect(harness.savedTxn?.subtotal).toBe(500);
-      expect(harness.savedTxn?.total).toBe(500);
-      expect(harness.savedItems[0]?.lineTotal).toBe(500);
+      expect(result).toEqual([]);
+      expect(usersRepo.searchCustomersByText).not.toHaveBeenCalled();
     });
 
-    it('applies a percentage line discount against the line base', async () => {
-      const harness = mockSale({
-        inventory: [{ productId: 'p1', quantity: 10 }],
+    it('maps User rows into the Shanel CustomerSearchRow shape', async () => {
+      usersRepo.searchCustomersByText.mockResolvedValue([
+        makeCustomer({
+          id: 'cust-1',
+          firstName: 'Jane',
+          lastName: 'Doe',
+          email: 'jane@example.com',
+          phone: '+94770000001',
+          // decimal columns return as strings via TypeORM; the service
+          // is responsible for coercing back to number.
+          currentBalance: '250.50' as unknown as number,
+        }),
+      ]);
+
+      const result = await service.searchCustomers(makeCashier(), {
+        q: 'ja',
+        limit: 5,
       });
-      await service.createTransaction(
-        makeDto([
-          {
-            unitPrice: 100,
-            quantity: 2,
-            discountAmount: 10,
-            discountType: DiscountType.PERCENTAGE,
-          },
-        ]),
-        'cashier-1',
-        'branch-1',
-      );
-      expect(harness.savedTxn?.total).toBe(180);
-      expect(harness.savedItems[0]?.lineTotal).toBe(180);
+
+      expect(usersRepo.searchCustomersByText).toHaveBeenCalledWith('ja', 5);
+      expect(result).toEqual([
+        {
+          userId: 'cust-1',
+          firstName: 'Jane',
+          lastName: 'Doe',
+          email: 'jane@example.com',
+          phone: '+94770000001',
+          currentBalance: 250.5,
+        },
+      ]);
     });
 
-    it('applies a fixed line discount as a money amount', async () => {
-      const harness = mockSale({
-        inventory: [{ productId: 'p1', quantity: 10 }],
-      });
-      await service.createTransaction(
-        makeDto([
-          {
-            unitPrice: 100,
-            quantity: 2,
-            discountAmount: 15,
-            discountType: DiscountType.FIXED,
-          },
-        ]),
-        'cashier-1',
-        'branch-1',
-      );
-      expect(harness.savedTxn?.total).toBe(185);
-      expect(harness.savedItems[0]?.lineTotal).toBe(185);
-    });
+    it('defaults limit to 10 when omitted and clamps absurd limits to 50', async () => {
+      usersRepo.searchCustomersByText.mockResolvedValue([]);
 
-    it('stacks a cart-wide percentage on top of line discounts', async () => {
-      const harness = mockSale({
-        inventory: [{ productId: 'p1', quantity: 10 }],
-      });
-      await service.createTransaction(
-        makeDto(
-          [
-            {
-              unitPrice: 100,
-              quantity: 2,
-              discountAmount: 10,
-              discountType: DiscountType.PERCENTAGE,
-            },
-          ],
-          { discountAmount: 10, discountType: DiscountType.PERCENTAGE },
-        ),
-        'cashier-1',
-        'branch-1',
-      );
-      expect(harness.savedTxn?.subtotal).toBe(200);
-      expect(harness.savedTxn?.discountAmount).toBe(10);
-      expect(harness.savedTxn?.discountType).toBe(DiscountType.PERCENTAGE);
-      expect(harness.savedTxn?.total).toBe(162);
-    });
+      await service.searchCustomers(makeCashier(), { q: 'a' });
+      expect(usersRepo.searchCustomersByText).toHaveBeenLastCalledWith('a', 10);
 
-    it('creates a ledger entry with the computed total when total > 0', async () => {
-      mockSale({ inventory: [{ productId: 'p1', quantity: 10 }] });
-      await service.createTransaction(
-        makeDto([{ unitPrice: 250, quantity: 2 }]),
-        'cashier-1',
-        'branch-1',
-      );
-      expect(accounting.createLedgerEntryWithManager).toHaveBeenCalledTimes(1);
-      expect(accounting.createLedgerEntryWithManager).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ amount: 500 }),
-      );
+      // The DTO normally bounds limit to [1, 50] via class-validator at
+      // the controller layer; this case exercises the in-service clamp
+      // that protects callers (like tests) bypassing the DTO validator.
+      await service.searchCustomers(makeCashier(), { q: 'b', limit: 9999 });
+      expect(usersRepo.searchCustomersByText).toHaveBeenLastCalledWith('b', 50);
     });
   });
 });

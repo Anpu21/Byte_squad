@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, In, Repository } from 'typeorm';
+import { DataSource, DeepPartial, In, Repository } from 'typeorm';
 import { Product } from '@products/entities/product.entity';
+import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 
 @Injectable()
 export class ProductsRepository {
   constructor(
     @InjectRepository(Product)
     private readonly repo: Repository<Product>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createAndSave(partial: DeepPartial<Product>): Promise<Product> {
@@ -57,5 +59,38 @@ export class ProductsRepository {
 
   async setActive(id: string, isActive: boolean): Promise<void> {
     await this.repo.update(id, { isActive });
+  }
+
+  /**
+   * Prefix-match active products by name OR barcode for the POS cashier
+   * typeahead. ILIKE keeps the lookup case-insensitive; we anchor on
+   * `${term}%` so an empty term short-circuits to "starts with anything"
+   * which the caller filters out separately. Results are sorted by name
+   * (deterministic) and capped at `limit`.
+   */
+  async searchByText(term: string, limit: number): Promise<Product[]> {
+    return this.repo
+      .createQueryBuilder('p')
+      .where('p.is_active = true')
+      .andWhere('(p.name ILIKE :pattern OR p.barcode ILIKE :pattern)', {
+        pattern: `${term}%`,
+      })
+      .orderBy('p.name', 'ASC')
+      .limit(limit)
+      .getMany();
+  }
+
+  /**
+   * List the sellable-unit rows configured for a product (kg/g, L/mL, each,
+   * …) sorted by `displayOrder`. Callers in the POS layer map the raw
+   * entity into the Shanel-shaped `ProductUnitRow` (kept in
+   * `@pos/types`) — this repository stays free of cross-module types and
+   * just returns entities.
+   */
+  async listUnits(productId: string): Promise<ProductSellableUnit[]> {
+    return this.dataSource.getRepository(ProductSellableUnit).find({
+      where: { productId },
+      order: { displayOrder: 'ASC' },
+    });
   }
 }

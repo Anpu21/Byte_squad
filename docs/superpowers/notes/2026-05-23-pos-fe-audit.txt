@@ -1,0 +1,44 @@
+frontend/src/services/pos.service.ts:4:    ICashierDashboard,
+frontend/src/services/pos.service.ts:5:    IAdminDashboard,
+frontend/src/services/pos.service.ts:6:    ITransaction,
+frontend/src/services/pos.service.ts:7:    ICashierTransactionsSummary,
+frontend/src/services/pos.service.ts:26:    getCashierDashboard: async (): Promise<ICashierDashboard> => {
+frontend/src/services/pos.service.ts:27:        const response = await api.get<IApiResponse<ICashierDashboard>>('/pos/my-dashboard');
+frontend/src/services/pos.service.ts:31:    getMyTransactions: async (): Promise<ICashierTransactionsSummary> => {
+frontend/src/services/pos.service.ts:32:        const response = await api.get<IApiResponse<ICashierTransactionsSummary>>('/pos/my-transactions');
+frontend/src/services/pos.service.ts:36:    getAllTransactions: async (): Promise<ICashierTransactionsSummary> => {
+frontend/src/services/pos.service.ts:37:        const response = await api.get<IApiResponse<ICashierTransactionsSummary>>('/pos/all-transactions');
+frontend/src/services/pos.service.ts:41:    getAdminDashboard: async (): Promise<IAdminDashboard> => {
+frontend/src/services/pos.service.ts:42:        const response = await api.get<IApiResponse<IAdminDashboard>>('/pos/admin-dashboard');
+frontend/src/services/pos.service.ts:49:    ): Promise<ITransaction> => {
+frontend/src/services/pos.service.ts:56:        const response = await api.post<IApiResponse<ITransaction>>(
+frontend/src/services/pos.service.ts:64:    getTransactions: async (): Promise<ITransaction[]> => {
+frontend/src/services/pos.service.ts:65:        const response = await api.get<IApiResponse<ITransaction[]>>('/pos/transactions');
+frontend/src/services/customer-orders.service.ts:9:    ITransaction,
+frontend/src/services/customer-orders.service.ts:87:    ): Promise<{ order: ICustomerOrder; transaction: ITransaction | null }> => {
+frontend/src/services/customer-orders.service.ts:91:                transaction: ITransaction | null;
+frontend/src/types/pos/cashier-transactions-summary.type.ts:4:export interface ICashierTransactionsSummary {
+frontend/src/types/pos/admin-dashboard.type.ts:3:import type { ITransaction } from '@/types/pos/transaction.type'
+frontend/src/types/pos/admin-dashboard.type.ts:5:export interface IAdminDashboard {
+frontend/src/types/pos/admin-dashboard.type.ts:27:  recentTransactions: ITransaction[]
+frontend/src/types/pos/transaction.type.ts:7:export interface ITransaction {
+frontend/src/features/admin-dashboard/components/RecentActivityCard.tsx:4:import type { ITransaction } from '@/types';
+frontend/src/features/admin-dashboard/components/RecentActivityCard.tsx:7:type TransactionWithCashier = ITransaction & {
+frontend/src/features/transactions/components/TransactionsTable.tsx:3:import type { ICashierTransactionsSummary } from '@/types';
+frontend/src/features/transactions/components/TransactionsTable.tsx:7:    data: ICashierTransactionsSummary;
+frontend/src/features/transactions/hooks/useTransactionsPage.ts:7:import type { ICashierTransactionsSummary } from '@/types';
+frontend/src/features/transactions/hooks/useTransactionsPage.ts:15:    const { data, isLoading } = useQuery<ICashierTransactionsSummary>({
+frontend/src/features/cashier-dashboard/components/CashierRecentTransactions.tsx:5:import type { ITransaction } from '@/types';
+frontend/src/features/cashier-dashboard/components/CashierRecentTransactions.tsx:8:    transactions: ITransaction[];
+frontend/src/features/cashier-dashboard/components/CashierRecentTransactions.tsx:57:                                            txn as ITransaction & {
+frontend/src/features/cashier-dashboard/hooks/useCashierDashboard.ts:12:import type { ICashierDashboard } from '@/types';
+frontend/src/features/cashier-dashboard/hooks/useCashierDashboard.ts:20:    const { data, isLoading } = useQuery<ICashierDashboard>({
+frontend/src/types/pos/cashier-dashboard.type.ts:2:import type { ITransaction } from '@/types/pos/transaction.type'
+frontend/src/types/pos/cashier-dashboard.type.ts:4:export interface ICashierDashboard {
+frontend/src/types/pos/cashier-dashboard.type.ts:15:  recentTransactions: ITransaction[]
+frontend/src/features/admin-dashboard/hooks/useDashboardPage.ts:7:import type { IAdminDashboard } from '@/types';
+frontend/src/features/admin-dashboard/hooks/useDashboardPage.ts:16:    const { data, isLoading } = useQuery<IAdminDashboard>({
+frontend/src/features/transactions/components/TransactionsKpis.tsx:3:import type { ICashierTransactionsSummary } from '@/types';
+frontend/src/features/transactions/components/TransactionsKpis.tsx:7:    data: ICashierTransactionsSummary | undefined;
+frontend/src/features/cashier-dashboard/components/CashierKpis.tsx:3:import type { ICashierDashboard } from '@/types';
+frontend/src/features/cashier-dashboard/components/CashierKpis.tsx:6:    data: ICashierDashboard | undefined;

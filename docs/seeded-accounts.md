@@ -9,3 +9,5 @@
 | Cashier | `cashier@ledgerpro.com` | `Cashier@123` | Main |
 
 Plus admin/manager/cashier accounts for Downtown and Suburban branches; full table in `README.md`.
+
+> Customer accounts (`role=CUSTOMER`) carry a `current_balance` column on the `users` table — their running AR balance from the POS multi-tender credit flow. Movements are journaled in `credit_transactions` (charge / settlement / refund). Customers self-register via the storefront; the seeder does not create customer rows.

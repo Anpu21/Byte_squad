@@ -11,8 +11,8 @@ import { Expense } from '@accounting/entities/expense.entity';
 import { AccountingRepository } from '@accounting/accounting.repository';
 // TODO Phase C8 — replace these cross-module borrowings with PosRepository /
 // TransactionItemsRepository once POS migrates.
-import { Transaction } from '@pos/entities/transaction.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
 import { ReviewExpenseDto } from '@accounting/dto/review-expense.dto';
 import { ExpenseStatus } from '@common/enums/expense-status.enum';
@@ -43,10 +43,10 @@ export type {
 export class AccountingService {
   constructor(
     private readonly accounting: AccountingRepository,
-    @InjectRepository(Transaction)
-    private readonly transactionRepository: Repository<Transaction>,
-    @InjectRepository(TransactionItem)
-    private readonly transactionItemRepository: Repository<TransactionItem>,
+    @InjectRepository(Sale)
+    private readonly transactionRepository: Repository<Sale>,
+    @InjectRepository(SaleItem)
+    private readonly transactionItemRepository: Repository<SaleItem>,
   ) {}
 
   async getLedgerEntries(
@@ -213,7 +213,7 @@ export class AccountingService {
       .createQueryBuilder('ti')
       .select('SUM(p.cost_price * ti.quantity)', 'totalCOGS')
       .addSelect('SUM(ti.quantity)', 'itemsSold')
-      .innerJoin('ti.transaction', 't')
+      .innerJoin('ti.sale', 't')
       .innerJoin('ti.product', 'p')
       .where('t.created_at BETWEEN :start AND :end', { start, end });
     if (branchId !== null) {

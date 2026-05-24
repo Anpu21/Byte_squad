@@ -5,15 +5,42 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, QueryFailedError } from 'typeorm';
-import { Transaction } from '@pos/entities/transaction.entity.js';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { Sale } from '@pos/entities/sale.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
+import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
+import { SearchCustomersQueryDto } from '@pos/dto/search-customers-query.dto';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
+import { ProductsRepository } from '@products/products.repository';
+import { InventoryRepository } from '@inventory/inventory.repository';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { DiscountType } from '@common/enums/discount.enum';
 import { TransactionType } from '@common/enums/transaction.enum';
+import { UserRole } from '@common/enums/user-roles.enums';
+import { InvoiceNumberService } from '@pos/services/invoice-number.service';
+import { SaleRepository } from '@pos/sale.repository';
+import { UsersRepository } from '@users/users.repository';
+import type {
+  SearchProductRow,
+  ProductUnitRow,
+  InventoryQuantity,
+  RecentSaleRow,
+  CustomerSearchRow,
+} from '@pos/types';
+
+/**
+ * Shape of `@CurrentUser()` payloads injected into POS endpoints. Mirrors the
+ * decorator's inline type (see `common/decorators/current-user.decorator.ts`)
+ * without leaking the decorator's private interface into this file.
+ */
+interface ActorPayload {
+  id: string;
+  email: string;
+  role: UserRole;
+  branchId: string | null;
+}
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -66,6 +93,11 @@ export class PosService {
     private readonly pos: PosRepository,
     private readonly accounting: AccountingRepository,
     private readonly dataSource: DataSource,
+    private readonly products: ProductsRepository,
+    private readonly inventory: InventoryRepository,
+    private readonly invoiceNumbers: InvoiceNumberService,
+    private readonly sales: SaleRepository,
+    private readonly users: UsersRepository,
   ) {}
 
   async createTransaction(
@@ -73,15 +105,15 @@ export class PosService {
     cashierId: string,
     branchId: string,
     idempotencyKey?: string,
-  ): Promise<Transaction> {
+  ): Promise<Sale> {
     const trimmedKey = idempotencyKey?.trim();
     if (trimmedKey) {
       const existing = await this.pos.findIdempotencyKey(cashierId, trimmedKey);
       if (existing) {
         this.logger.log(
-          `Idempotency replay: cashier=${cashierId} key=${trimmedKey} → txn=${existing.transactionId}`,
+          `Idempotency replay: cashier=${cashierId} key=${trimmedKey} → sale=${existing.saleId}`,
         );
-        const replay = await this.findById(existing.transactionId);
+        const replay = await this.findById(existing.saleId);
         if (!replay) {
           throw new NotFoundException('Original transaction no longer exists');
         }
@@ -153,11 +185,15 @@ export class PosService {
         }
       }
 
-      const txnRepo = manager.getRepository(Transaction);
-      const itemRepo = manager.getRepository(TransactionItem);
+      const txnRepo = manager.getRepository(Sale);
+      const itemRepo = manager.getRepository(SaleItem);
       const txn = await txnRepo.save(
         txnRepo.create({
           transactionNumber,
+          // PHASE-5: replace with InvoiceNumberService.next() inside this txn.
+          // Until then, mirror the transactionNumber so the NOT NULL + UNIQUE
+          // constraint on sales.invoice_number is satisfied for legacy writers.
+          invoiceNumber: transactionNumber,
           branchId,
           cashierId,
           type: dto.type,
@@ -170,7 +206,17 @@ export class PosService {
         }),
       );
       await itemRepo.save(
-        items.map((it) => itemRepo.create({ ...it, transactionId: txn.id })),
+        items.map((it) =>
+          itemRepo.create({
+            ...it,
+            saleId: txn.id,
+            // PHASE-5: replace with the conversion factor once this path
+            // migrates to PosWriteService.createSale. CreateTransactionDto
+            // pre-dates the sellable-units model, so quantity already equals
+            // the base-unit quantity.
+            baseUnitQty: it.quantity,
+          }),
+        ),
       );
 
       if (Number(txn.total) > 0) {
@@ -180,7 +226,7 @@ export class PosService {
           amount: txn.total,
           description: `POS Sale — ${txn.transactionNumber}`,
           referenceNumber: txn.transactionNumber,
-          transactionId: txn.id,
+          saleId: txn.id,
         });
       }
 
@@ -192,7 +238,7 @@ export class PosService {
         await this.pos.insertIdempotencyKey({
           key: trimmedKey,
           cashierId,
-          transactionId: saved.id,
+          saleId: saved.id,
         });
       } catch (err) {
         if (err instanceof QueryFailedError) {
@@ -200,11 +246,11 @@ export class PosService {
             cashierId,
             trimmedKey,
           );
-          if (winning && winning.transactionId !== saved.id) {
+          if (winning && winning.saleId !== saved.id) {
             this.logger.warn(
-              `Idempotency race: cashier=${cashierId} key=${trimmedKey} kept=${winning.transactionId} discarded=${saved.id}`,
+              `Idempotency race: cashier=${cashierId} key=${trimmedKey} kept=${winning.saleId} discarded=${saved.id}`,
             );
-            const replay = await this.findById(winning.transactionId);
+            const replay = await this.findById(winning.saleId);
             if (replay) return replay;
           }
         }
@@ -215,11 +261,11 @@ export class PosService {
     return saved;
   }
 
-  async findAll(branchId: string): Promise<Transaction[]> {
+  async findAll(branchId: string): Promise<Sale[]> {
     return this.pos.findTransactionsByBranch(branchId);
   }
 
-  async findById(id: string): Promise<Transaction | null> {
+  async findById(id: string): Promise<Sale | null> {
     return this.pos.findTransactionById(id);
   }
 
@@ -470,4 +516,244 @@ export class PosService {
       })),
     };
   }
+
+  // ---------------------------------------------------------------------
+  // Phase 4 — Shanel-aligned read endpoints
+  // ---------------------------------------------------------------------
+
+  /**
+   * Prefix-search active products by name or barcode for the cashier
+   * typeahead. Empty query short-circuits to `[]` so the UI can clear its
+   * dropdown without hitting the DB.
+   *
+   * `actor` is accepted for future branch-scoping (e.g. only return products
+   * stocked at the cashier's branch) — today the query is global because
+   * cashiers can sell any active product as long as inventory exists.
+   */
+  async searchProducts(
+    _actor: ActorPayload,
+    dto: SearchProductsQueryDto,
+  ): Promise<SearchProductRow[]> {
+    const term = (dto.q ?? '').trim();
+    if (!term) return [];
+    const limit = dto.limit ?? 10;
+    const rows = await this.products.searchByText(term, limit);
+    return rows.map((p) => ({
+      productId: p.id,
+      productCode: p.barcode,
+      productName: p.name,
+      productType: p.category,
+      baseUnit: p.baseUnit,
+      status: p.isActive,
+      costPrice: Number(p.costPrice),
+      retailPrice: Number(p.sellingPrice),
+      wholesalePrice: Number(p.wholesalePrice),
+      taxRate: Number(p.taxRate),
+      discountAllowed: p.discountAllowed,
+      imageUrl: p.imageUrl,
+    }));
+  }
+
+  /**
+   * Prefix-match customers (role = CUSTOMER) so the cashier can attach a
+   * customer to the in-progress sale. Returns a thin Shanel-shaped row so
+   * the picker UI never has to know the full User entity. An empty trimmed
+   * `q` short-circuits to an empty array so the typeahead doesn't blast the
+   * DB on first focus.
+   *
+   * `currentBalance` is decimal in Postgres so TypeORM hands it back as a
+   * string; the explicit `Number(...)` keeps the public contract numeric.
+   */
+  async searchCustomers(
+    _actor: ActorPayload,
+    dto: SearchCustomersQueryDto,
+  ): Promise<CustomerSearchRow[]> {
+    const term = (dto.q ?? '').trim();
+    if (!term) return [];
+    // Belt-and-suspenders clamp: the DTO already bounds `limit` via
+    // class-validator (1..50, default 10) at the controller layer, but the
+    // service is also called directly from tests/other callers, so keep
+    // the explicit clamp here so misuse can't yield an unbounded LIMIT.
+    const bounded = Math.max(1, Math.min(dto.limit ?? 10, 50));
+    const rows = await this.users.searchCustomersByText(term, bounded);
+    return rows.map((u) => ({
+      userId: u.id,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      email: u.email,
+      phone: u.phone,
+      currentBalance: Number(u.currentBalance ?? 0),
+    }));
+  }
+
+  /**
+   * Returns sellable units for a product (kg/g, L/mL, each, …) sorted by the
+   * configured display order. The cashier picks one of these when entering a
+   * line so the typed quantity can be converted to the canonical base unit
+   * before stock deduction.
+   *
+   * The repository hands back entities; we map to the Shanel-shaped
+   * `ProductUnitRow` here so the pos types stay the public contract.
+   */
+  async listProductUnits(productId: string): Promise<ProductUnitRow[]> {
+    const rows = await this.products.listUnits(productId);
+    return rows.map((u) => ({
+      unitId: u.id,
+      unitName: u.name,
+      isBaseUnit: u.isBase,
+      conversionToBase: Number(u.conversionToBase),
+      displayOrder: u.displayOrder ?? 0,
+    }));
+  }
+
+  /**
+   * Returns the conversion factor used to turn a typed quantity in
+   * `unitName` into the product's base-unit quantity. The cashier UI calls
+   * this to pre-validate stock before checkout (Shanel ships this as a
+   * separate endpoint even though the server also re-validates inside the
+   * sale transaction).
+   */
+  async getBaseUnitQty(
+    productId: string,
+    unitName: string,
+  ): Promise<{ conversionToBase: number; isBase: boolean }> {
+    const units = await this.listProductUnits(productId);
+    const match = units.find((u) => u.unitName === unitName);
+    if (!match) {
+      throw new NotFoundException(
+        `Unit ${unitName} not configured for product ${productId}`,
+      );
+    }
+    return {
+      conversionToBase: match.conversionToBase,
+      isBase: match.isBaseUnit,
+    };
+  }
+
+  /**
+   * Branch-scoped inventory snapshot for a single product. Non-admin
+   * actors only ever see their own branch's `branchQty`; admins use their
+   * primary `branchId` as the scope (or get an unscoped snapshot when
+   * they have no primary branch). `totalAcrossBranches` is always the sum
+   * across every inventory row regardless of scope.
+   */
+  async getProductInventory(
+    actor: ActorPayload,
+    productId: string,
+  ): Promise<InventoryQuantity> {
+    const branchId = actor.branchId;
+    const summary = await this.inventory.summaryForProduct(productId, branchId);
+    return {
+      productId: summary.productId,
+      branchId: summary.branchId,
+      branchName: summary.branchName,
+      branchQty: summary.branchQty,
+      totalAcrossBranches: summary.totalAcrossBranches,
+    };
+  }
+
+  /**
+   * Returns the cashier's most-recent sales (newest first) shaped for the
+   * "recent sales" panel. Branch-scoped for cashiers/managers; admins see
+   * the whole system (no branchId filter).
+   *
+   * The Shanel row shape includes payment-status flags, void state, and
+   * the customer name for credit sales — fields the cashier UI uses to
+   * render badges without follow-up requests.
+   */
+  async getRecentSales(
+    actor: ActorPayload,
+    limit = 20,
+  ): Promise<RecentSaleRow[]> {
+    const safeLimit = Math.max(1, Math.min(100, Math.trunc(limit)));
+    const branchId = actor.role === UserRole.ADMIN ? null : actor.branchId;
+    const sales = await this.pos.findRecentSales(branchId, safeLimit);
+    return sales.map(toRecentSaleRow);
+  }
+
+  /**
+   * Preview the next invoice number without advancing the counter. The
+   * cashier UI calls this while keying a sale; the authoritative number is
+   * still issued atomically inside `createSale` (Phase 5). Concurrent
+   * cashiers may briefly see the same preview — the UI reconciles on
+   * commit.
+   */
+  async previewNextInvoiceNumber(): Promise<{ invoiceNo: string }> {
+    const year = new Date().getFullYear();
+    const invoiceNo = await this.invoiceNumbers.peek(year);
+    return { invoiceNo };
+  }
+
+  // ---------------------------------------------------------------------
+  // Phase 6 — Shanel-aligned mutations (print, void)
+  // ---------------------------------------------------------------------
+
+  /**
+   * Record a receipt print for a sale. Increments `billPrintCount`, sets
+   * `firstPrintDate` on the first print, and refreshes `lastPrintDate`.
+   *
+   * Branch scoping: cashiers/managers can only print sales on their own
+   * branch — cross-branch attempts return `NotFoundException` (not 403)
+   * so we don't leak the existence of sales that exist in other branches.
+   * Admins can print any sale.
+   *
+   * Returns the refreshed sale so the cashier UI can update its row
+   * without a follow-up GET.
+   */
+  async markPrinted(id: string, actor: ActorPayload): Promise<Sale> {
+    const sale = await this.sales.findOneById(id);
+    if (!sale) {
+      throw new NotFoundException('Sale not found');
+    }
+    if (actor.role !== UserRole.ADMIN && sale.branchId !== actor.branchId) {
+      // Defensive 404 across branches — same shape as "not found" so the
+      // existence of foreign-branch sales doesn't leak.
+      throw new NotFoundException('Sale not found');
+    }
+
+    const now = new Date();
+    const nextCount = (sale.billPrintCount ?? 0) + 1;
+    const firstPrintDate = sale.firstPrintDate ?? now;
+    await this.sales.markPrinted(id, {
+      billPrinted: true,
+      billPrintCount: nextCount,
+      firstPrintDate,
+      lastPrintDate: now,
+    });
+
+    const refreshed = await this.sales.findOneById(id);
+    if (!refreshed) {
+      throw new NotFoundException('Sale disappeared during print update');
+    }
+    return refreshed;
+  }
+}
+
+/**
+ * Map a Sale entity (with optional `customer` relation eager-loaded) into
+ * the Shanel-aligned RecentSaleRow shape. Reads invoice-number and
+ * bill-print columns directly off the entity.
+ */
+function toRecentSaleRow(sale: Sale): RecentSaleRow {
+  const customer = sale.customer ?? null;
+  const customerName = customer
+    ? `${customer.firstName} ${customer.lastName}`.trim()
+    : null;
+  return {
+    id: sale.id,
+    invoiceNumber: sale.invoiceNumber,
+    transactionNumber: sale.transactionNumber,
+    total: Number(sale.total),
+    paidAmount: Number(sale.paidAmount),
+    balanceDue: Number(sale.balanceDue),
+    paymentStatus: sale.paymentStatus,
+    saleType: sale.saleType,
+    status: sale.status,
+    billPrinted: sale.billPrinted,
+    billPrintCount: sale.billPrintCount,
+    branchId: sale.branchId,
+    customerUserId: sale.customerUserId,
+    customerName,
+    createdAt: sale.createdAt,
+  };
 }

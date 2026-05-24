@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { IProduct } from '@/types';
 import { useAdminTransferCreatePage } from '@/features/admin-transfer-create/hooks/useAdminTransferCreatePage';
-import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
+import { useBarcodeScan } from '@/hooks/useBarcodeScan';
 import { AdminTransferBranchPickers } from '@/features/admin-transfer-create/components/AdminTransferBranchPickers';
 import { AdminTransferCartPanel } from '@/features/admin-transfer-create/components/AdminTransferCartPanel';
 import { AdminTransferCameraScannerModal } from '@/features/admin-transfer-create/components/AdminTransferCameraScannerModal';
@@ -14,7 +14,7 @@ export function AdminTransferCreatePage() {
     const handleAddProduct = (product: IProduct) =>
         p.cart.addToCart(product, 1);
 
-    const scan = usePosBarcodeScan({
+    const scan = useBarcodeScan({
         onProductFound: handleAddProduct,
         enabled: !showCameraScanner,
     });

@@ -90,4 +90,28 @@ export class UsersRepository {
   async findByBranchAndRole(branchId: string, role: UserRole): Promise<User[]> {
     return this.repo.find({ where: { branchId, role } });
   }
+
+  /**
+   * Prefix-match customer rows for the POS customer picker. Searches across
+   * first/last name, email, and phone with a single ILIKE pattern so the
+   * cashier can type any leading fragment. Always scopes to CUSTOMER rows
+   * so cashier/manager/admin accounts never leak into the picker.
+   *
+   * The repository returns full entities; the calling service is responsible
+   * for projecting to the thin Shanel-shaped row.
+   */
+  async searchCustomersByText(term: string, limit: number): Promise<User[]> {
+    const pattern = `${term}%`;
+    return this.repo
+      .createQueryBuilder('u')
+      .where('u.role = :role', { role: UserRole.CUSTOMER })
+      .andWhere(
+        '(u.first_name ILIKE :pattern OR u.last_name ILIKE :pattern OR u.email ILIKE :pattern OR u.phone ILIKE :pattern)',
+        { pattern },
+      )
+      .orderBy('u.first_name', 'ASC')
+      .addOrderBy('u.last_name', 'ASC')
+      .limit(limit)
+      .getMany();
+  }
 }

@@ -1,41 +1,59 @@
 import { useCallback, useState } from 'react';
 import { useScanDetection } from '@/hooks/useScanDetection';
-import { inventoryService } from '@/services/inventory.service';
-import type { IProduct } from '@/types';
+import { posService } from '@/services/pos.service';
+import type { ISearchProductRow } from '@/types';
 
 const STATUS_CLEAR_MS = 2000;
 
-interface UsePosBarcodeScanOptions {
-    onProductFound: (product: IProduct) => void;
+interface IUsePosBarcodeScanOptions {
+    onProductFound: (row: ISearchProductRow) => void;
     enabled: boolean;
 }
 
+interface IUsePosBarcodeScanReturn {
+    scanStatus: string | null;
+}
+
+/**
+ * POS-specific barcode bridge. Sits on top of `useScanDetection` (HID-style
+ * keyboard wedge) and resolves the scanned code against
+ * `posService.searchProducts(code, 1)` so the result is already shaped as a
+ * Shanel `ISearchProductRow` — matching the typeahead's onSelect contract.
+ * On hit, fires `onProductFound`; on miss, surfaces a transient status
+ * banner. Disabled by `enabled = false` so consumers can pause scanning
+ * while a modal owns focus.
+ */
 export function usePosBarcodeScan({
     onProductFound,
     enabled,
-}: UsePosBarcodeScanOptions) {
+}: IUsePosBarcodeScanOptions): IUsePosBarcodeScanReturn {
     const [scanStatus, setScanStatus] = useState<string | null>(null);
 
-    const handleBarcodeScan = useCallback(
-        async (barcode: string) => {
-            setScanStatus('Scanning...');
-            const product = await inventoryService.getProductByBarcode(barcode);
-            if (product) {
-                onProductFound(product);
-                setScanStatus(`Added: ${product.name}`);
-            } else {
-                setScanStatus(`Product not found: ${barcode}`);
+    const handleScan = useCallback(
+        async (barcode: string): Promise<void> => {
+            setScanStatus('Scanning…');
+            try {
+                const rows = await posService.searchProducts(barcode, 1);
+                const match = rows[0] ?? null;
+                if (match) {
+                    onProductFound(match);
+                    setScanStatus(`Added: ${match.productName}`);
+                } else {
+                    setScanStatus(`Not found: ${barcode}`);
+                }
+            } catch {
+                setScanStatus(`Scan failed: ${barcode}`);
             }
-            setTimeout(() => setScanStatus(null), STATUS_CLEAR_MS);
+            window.setTimeout(() => setScanStatus(null), STATUS_CLEAR_MS);
         },
         [onProductFound],
     );
 
     useScanDetection({
-        onScan: handleBarcodeScan,
+        onScan: handleScan,
         minLength: 4,
         enabled,
     });
 
-    return { scanStatus, handleBarcodeScan };
+    return { scanStatus };
 }

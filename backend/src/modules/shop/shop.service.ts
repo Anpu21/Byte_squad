@@ -5,7 +5,7 @@ import { Product } from '@products/entities/product.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { User } from '@users/entities/user.entity';
-import { TransactionItem } from '@pos/entities/transaction-item.entity';
+import { SaleItem } from '@pos/entities/sale-item.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { TransactionType } from '@common/enums/transaction.enum';
 
@@ -65,8 +65,8 @@ export class ShopService {
     private readonly inventoryRepo: Repository<Inventory>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-    @InjectRepository(TransactionItem)
-    private readonly transactionItemRepo: Repository<TransactionItem>,
+    @InjectRepository(SaleItem)
+    private readonly transactionItemRepo: Repository<SaleItem>,
   ) {}
 
   async listProducts(query: ListProductsQuery): Promise<ShopProduct[]> {
@@ -159,7 +159,7 @@ export class ShopService {
       .createQueryBuilder('ti')
       .select('ti.product_id', 'productId')
       .addSelect('SUM(ti.quantity)', 'totalQuantity')
-      .innerJoin('ti.transaction', 'txn')
+      .innerJoin('ti.sale', 'txn')
       .where('txn.branch_id = :branchId', { branchId: query.branchId })
       .andWhere('txn.type = :type', { type: TransactionType.SALE })
       .groupBy('ti.product_id')

@@ -129,5 +129,22 @@ export const queryKeys = {
         profitLoss: (startDate: string, endDate: string) =>
             ['accounting', 'profit-loss', startDate, endDate] as const,
     },
+    pos: {
+        all: () => ['pos'] as const,
+        searchProducts: (q: string, limit: number) =>
+            ['pos', 'searchProducts', q, limit] as const,
+        productUnits: (productId: string) =>
+            ['pos', 'productUnits', productId] as const,
+        productInventory: (productId: string) =>
+            ['pos', 'productInventory', productId] as const,
+        productInventoryAll: () => ['pos', 'productInventory'] as const,
+        recentSales: (limit: number) =>
+            ['pos', 'recentSales', limit] as const,
+        recentSalesAll: () => ['pos', 'recentSales'] as const,
+        invoiceNumber: () => ['pos', 'invoiceNumber'] as const,
+        customerSearch: (q: string, limit: number) =>
+            ['pos', 'customerSearch', q, limit] as const,
+        saleById: (saleId: string) => ['pos', 'saleById', saleId] as const,
+    },
 } as const;
 

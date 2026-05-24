@@ -1,0 +1,702 @@
+/* eslint-disable @typescript-eslint/unbound-method */
+import { Test } from '@nestjs/testing';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import { DataSource, QueryFailedError } from 'typeorm';
+
+import { PosWriteService, type ActorPayload } from './pos-write.service';
+import { PosRepository } from './pos.repository';
+import { SaleRepository } from './sale.repository';
+import { SaleItemRepository } from './sale-item.repository';
+import { PaymentRepository } from './payment.repository';
+import { CreditTransactionRepository } from './credit-transaction.repository';
+import { StockMovementRepository } from './stock-movement.repository';
+import { InvoiceNumberService } from './services/invoice-number.service';
+import { MultiTenderCalculatorService } from './services/multi-tender-calculator.service';
+import { AccountingRepository } from '@accounting/accounting.repository';
+import { UserRole } from '@common/enums/user-roles.enums';
+import { CreateSaleDto } from './dto/create-sale.dto';
+import { Sale } from './entities/sale.entity';
+
+// ---------------------------------------------------------------------
+// Test helpers
+// ---------------------------------------------------------------------
+
+function makeCashier(overrides: Partial<ActorPayload> = {}): ActorPayload {
+  return {
+    id: 'cashier-1',
+    email: 'cashier@example.com',
+    role: UserRole.CASHIER,
+    branchId: 'branch-A',
+    ...overrides,
+  };
+}
+
+function makeDto(overrides: Partial<CreateSaleDto> = {}): CreateSaleDto {
+  return {
+    saleType: 'Retail',
+    priceLevel: 'Retail',
+    items: [
+      {
+        productId: 'p-1',
+        quantity: 1,
+        unitPrice: 100,
+      },
+    ],
+    payment: {
+      paymentMethod: 'Cash',
+      paymentAmount: 100,
+      cashAmount: 100,
+      cashTendered: 100,
+    },
+    ...overrides,
+  };
+}
+
+/**
+ * Builder for the in-memory inventory rows returned by the locked query
+ * builder. Tests mutate this so we can model "stock decreases as items are
+ * processed" without re-mocking on every line.
+ */
+function makeInvRow(productId: string, qty: number) {
+  return { productId, branchId: 'branch-A', quantity: qty };
+}
+
+// ---------------------------------------------------------------------
+// Mock factories — kept inside the file so each describe gets a fresh
+// instance. The DataSource mock owns its own transaction() that just runs
+// the callback with the same `manager` mock.
+// ---------------------------------------------------------------------
+
+interface MockBag {
+  service: PosWriteService;
+  pos: jest.Mocked<PosRepository>;
+  sales: jest.Mocked<SaleRepository>;
+  saleItems: jest.Mocked<SaleItemRepository>;
+  payments: jest.Mocked<PaymentRepository>;
+  creditTransactions: jest.Mocked<CreditTransactionRepository>;
+  stockMovements: jest.Mocked<StockMovementRepository>;
+  invoiceNumbers: jest.Mocked<InvoiceNumberService>;
+  multiTender: MultiTenderCalculatorService;
+  accounting: { createLedgerEntryWithManager: jest.Mock };
+  dataSource: jest.Mocked<DataSource>;
+  managerCalls: {
+    invSave: jest.Mock;
+    invFindOne: jest.Mock;
+    invQbGetOne: jest.Mock;
+    invLockSpy: jest.Mock;
+    unitFindByIds: jest.Mock;
+    userFindOne: jest.Mock;
+    userUpdate: jest.Mock;
+  };
+  inventoryRows: ReturnType<typeof makeInvRow>[];
+}
+
+function buildMocks(
+  opts: {
+    inventoryRows?: ReturnType<typeof makeInvRow>[];
+    unitsById?: Map<
+      string,
+      { id: string; productId: string; conversionToBase: number }
+    >;
+    userRows?: Map<string, { id: string; currentBalance: number }>;
+  } = {},
+): Promise<MockBag> {
+  const inventoryRows = opts.inventoryRows ?? [makeInvRow('p-1', 50)];
+  const unitsArr = Array.from(opts.unitsById?.values() ?? []);
+  const users = opts.userRows ?? new Map();
+
+  // Inventory operations — locked findOne pulls a row, findOne (post-deduct)
+  // re-reads the same row from the array.
+  const invLockSpy = jest.fn();
+  const invQbGetOne = jest.fn(() => {
+    // We return the most-recent state by index; callers track which item
+    // they're on via a separate counter — but the simpler model is "find
+    // by productId + branchId" because tests rarely test the same product
+    // twice on one sale.
+    const next = inventoryRows.shift();
+    return Promise.resolve(next ?? null);
+  });
+  const invSave = jest
+    .fn()
+    .mockImplementation((row: { productId: string; quantity: number }) => {
+      // Push the modified row back so the post-deduct findOne can locate it.
+      postDecrementRows.set(row.productId, row);
+      return Promise.resolve(row);
+    });
+  const postDecrementRows = new Map<
+    string,
+    { productId: string; quantity: number }
+  >();
+  const invFindOne = jest
+    .fn()
+    .mockImplementation(({ where }: { where: { productId: string } }) => {
+      return Promise.resolve(postDecrementRows.get(where.productId) ?? null);
+    });
+
+  const unitFindByIds = jest.fn().mockResolvedValue(unitsArr);
+  const userFindOne = jest
+    .fn()
+    .mockImplementation(({ where }: { where: { id: string } }) => {
+      return Promise.resolve(users.get(where.id) ?? null);
+    });
+  const userUpdate = jest.fn().mockResolvedValue({ affected: 1 });
+
+  // The "manager" returned by dataSource.transaction(cb) — getRepository
+  // dispatches on the entity name so the same mock can serve Inventory,
+  // ProductSellableUnit, and User reads.
+  const fakeQb = {
+    setLock: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    getOne: invQbGetOne,
+  };
+  invLockSpy.mockImplementation(() => fakeQb);
+
+  const manager = {
+    getRepository: jest.fn().mockImplementation((entity: { name: string }) => {
+      const name =
+        typeof entity === 'function'
+          ? entity.name
+          : (entity as { name: string }).name;
+      if (name === 'Inventory') {
+        return {
+          createQueryBuilder: invLockSpy,
+          findOne: invFindOne,
+          save: invSave,
+        };
+      }
+      if (name === 'User') {
+        return {
+          findOne: userFindOne,
+          update: userUpdate,
+        };
+      }
+      return {};
+    }),
+  };
+
+  const dataSourceMock = {
+    getRepository: jest.fn().mockImplementation((entity: { name: string }) => {
+      if (entity.name === 'ProductSellableUnit') {
+        return { findByIds: unitFindByIds };
+      }
+      return {};
+    }),
+    transaction: jest
+      .fn()
+      .mockImplementation(async (cb: (m: typeof manager) => Promise<unknown>) =>
+        cb(manager),
+      ),
+  } as unknown as jest.Mocked<DataSource>;
+
+  const posRepoMock: Partial<jest.Mocked<PosRepository>> = {
+    findIdempotencyKey: jest.fn().mockResolvedValue(null),
+    insertIdempotencyKey: jest.fn().mockResolvedValue(undefined),
+  };
+  const salesRepoMock: Partial<jest.Mocked<SaleRepository>> = {
+    create: jest.fn(),
+    findOneById: jest.fn(),
+  };
+  const saleItemsRepoMock: Partial<jest.Mocked<SaleItemRepository>> = {
+    createMany: jest.fn().mockResolvedValue([]),
+  };
+  const paymentsRepoMock: Partial<jest.Mocked<PaymentRepository>> = {
+    create: jest.fn(),
+  };
+  const creditTxnsRepoMock: Partial<jest.Mocked<CreditTransactionRepository>> =
+    {
+      create: jest.fn(),
+    };
+  const stockMovementsRepoMock: Partial<jest.Mocked<StockMovementRepository>> =
+    {
+      create: jest.fn(),
+    };
+  const invoiceNumbersMock: Partial<jest.Mocked<InvoiceNumberService>> = {
+    next: jest.fn().mockResolvedValue('INV-2026-000001'),
+  };
+  const accountingMock = {
+    createLedgerEntryWithManager: jest.fn().mockResolvedValue({ id: 'le-1' }),
+  };
+
+  return Test.createTestingModule({
+    providers: [
+      PosWriteService,
+      { provide: PosRepository, useValue: posRepoMock },
+      { provide: SaleRepository, useValue: salesRepoMock },
+      { provide: SaleItemRepository, useValue: saleItemsRepoMock },
+      { provide: PaymentRepository, useValue: paymentsRepoMock },
+      { provide: CreditTransactionRepository, useValue: creditTxnsRepoMock },
+      { provide: StockMovementRepository, useValue: stockMovementsRepoMock },
+      { provide: InvoiceNumberService, useValue: invoiceNumbersMock },
+      {
+        provide: MultiTenderCalculatorService,
+        useValue: new MultiTenderCalculatorService(),
+      },
+      { provide: AccountingRepository, useValue: accountingMock },
+      { provide: DataSource, useValue: dataSourceMock },
+    ],
+  })
+    .compile()
+    .then((module) => ({
+      service: module.get(PosWriteService),
+      pos: module.get(PosRepository),
+      sales: module.get(SaleRepository),
+      saleItems: module.get(SaleItemRepository),
+      payments: module.get(PaymentRepository),
+      creditTransactions: module.get(CreditTransactionRepository),
+      stockMovements: module.get(StockMovementRepository),
+      invoiceNumbers: module.get(InvoiceNumberService),
+      multiTender: module.get(MultiTenderCalculatorService),
+      accounting: accountingMock,
+      dataSource: dataSourceMock,
+      inventoryRows,
+      managerCalls: {
+        invSave,
+        invFindOne,
+        invQbGetOne,
+        invLockSpy,
+        unitFindByIds,
+        userFindOne,
+        userUpdate,
+      },
+    }));
+}
+
+// ---------------------------------------------------------------------
+// Specs
+// ---------------------------------------------------------------------
+
+describe('PosWriteService.createSale', () => {
+  it('happy path: single item single cash tender → Paid with cart math correct', async () => {
+    // Arrange
+    const bag = await buildMocks({ inventoryRows: [makeInvRow('p-1', 50)] });
+    const dto = makeDto();
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-1',
+      invoiceNumber: 'INV-2026-000001',
+    } as Sale);
+
+    // Act
+    await bag.service.createSale(makeCashier(), dto);
+
+    // Assert
+    expect(bag.sales.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        invoiceNumber: 'INV-2026-000001',
+        subtotal: 100,
+        total: 100,
+        paidAmount: 100,
+        balanceDue: 0,
+        paymentStatus: 'Paid',
+        status: 'Active',
+      }),
+      expect.anything(),
+    );
+    expect(bag.saleItems.createMany).toHaveBeenCalled();
+    expect(bag.payments.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        saleId: 'sale-1',
+        paymentMethod: 'Cash',
+        paymentAmount: 100,
+        cashChange: 0,
+      }),
+      expect.anything(),
+    );
+  });
+
+  it('multi-item with line discount + cart discount + tax produces correct totals', async () => {
+    // Arrange
+    const bag = await buildMocks({
+      inventoryRows: [makeInvRow('p-1', 50), makeInvRow('p-2', 50)],
+    });
+    const dto = makeDto({
+      items: [
+        // 2 @ 100 with 10% line discount, 10% tax → subtotal 180, tax 18
+        {
+          productId: 'p-1',
+          quantity: 2,
+          unitPrice: 100,
+          discountPercentage: 10,
+          taxRate: 10,
+        },
+        // 1 @ 50, no line discount, no tax → subtotal 50
+        { productId: 'p-2', quantity: 1, unitPrice: 50 },
+      ],
+      cartDiscountPercentage: 5,
+      payment: {
+        paymentMethod: 'Cash',
+        paymentAmount: 236.5,
+        cashAmount: 236.5,
+        cashTendered: 236.5,
+      },
+    });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-1',
+      invoiceNumber: 'INV-2026-000001',
+    } as Sale);
+
+    // Expected:
+    //  itemsSubtotal = 180 + 50 = 230
+    //  cartDiscount = 230 * 0.05 = 11.5
+    //  taxTotal = 18 + 0 = 18
+    //  total = 230 - 11.5 + 18 = 236.5
+
+    // Act
+    await bag.service.createSale(makeCashier(), dto);
+
+    // Assert
+    expect(bag.sales.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subtotal: 230,
+        discountAmount: 11.5,
+        taxAmount: 18,
+        total: 236.5,
+      }),
+      expect.anything(),
+    );
+  });
+
+  it('split cash + cheque saved on Payment with both fields populated', async () => {
+    // Arrange
+    const bag = await buildMocks();
+    const dto = makeDto({
+      payment: {
+        paymentMethod: 'Cash',
+        paymentAmount: 100,
+        cashAmount: 60,
+        cashTendered: 60,
+        chequeAmount: 40,
+        chequeNo: 'CHK-001',
+      },
+    });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-2',
+      invoiceNumber: 'INV-2026-000001',
+    } as Sale);
+
+    // Act
+    await bag.service.createSale(makeCashier(), dto);
+
+    // Assert
+    expect(bag.payments.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cashAmount: 60,
+        chequeAmount: 40,
+        chequeNo: 'CHK-001',
+        paymentAmount: 100,
+      }),
+      expect.anything(),
+    );
+  });
+
+  it('customer credit creates a CreditTransaction row and bumps user.currentBalance', async () => {
+    // Arrange
+    const bag = await buildMocks({
+      userRows: new Map([['cust-1', { id: 'cust-1', currentBalance: 50 }]]),
+    });
+    const dto = makeDto({
+      customerUserId: 'cust-1',
+      payment: {
+        paymentMethod: 'Credit',
+        paymentAmount: 100,
+        creditAmount: 100,
+      },
+    });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-3',
+      invoiceNumber: 'INV-2026-000003',
+    } as Sale);
+
+    // Act
+    await bag.service.createSale(makeCashier(), dto);
+
+    // Assert
+    expect(bag.creditTransactions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'cust-1',
+        saleId: 'sale-3',
+        transactionType: 'Credit_Taken',
+        amount: 100,
+        runningBalance: 150,
+      }),
+      expect.anything(),
+    );
+    expect(bag.managerCalls.userUpdate).toHaveBeenCalledWith('cust-1', {
+      currentBalance: 150,
+    });
+  });
+
+  it('overpay with keepBalance inserts Credit_Paid and decreases user.currentBalance', async () => {
+    // Arrange
+    const bag = await buildMocks({
+      userRows: new Map([['cust-1', { id: 'cust-1', currentBalance: 80 }]]),
+    });
+    const dto = makeDto({
+      customerUserId: 'cust-1',
+      payment: {
+        paymentMethod: 'Cash',
+        paymentAmount: 120,
+        cashAmount: 120,
+        cashTendered: 120,
+        keepBalance: true,
+      },
+    });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-4',
+      invoiceNumber: 'INV-2026-000004',
+    } as Sale);
+
+    // Act
+    await bag.service.createSale(makeCashier(), dto);
+
+    // Assert: invoice was 100, customer overpaid by 20 → balance drops 80→60
+    expect(bag.creditTransactions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'cust-1',
+        transactionType: 'Credit_Paid',
+        amount: 20,
+        runningBalance: 60,
+      }),
+      expect.anything(),
+    );
+    expect(bag.managerCalls.userUpdate).toHaveBeenCalledWith('cust-1', {
+      currentBalance: 60,
+    });
+  });
+
+  it('insufficient stock throws ConflictException before any sale row writes', async () => {
+    // Arrange
+    const bag = await buildMocks({ inventoryRows: [makeInvRow('p-1', 0.5)] });
+    const dto = makeDto({
+      items: [{ productId: 'p-1', quantity: 1, unitPrice: 100 }],
+    });
+
+    // Act + Assert
+    await expect(bag.service.createSale(makeCashier(), dto)).rejects.toThrow(
+      ConflictException,
+    );
+    expect(bag.sales.create).not.toHaveBeenCalled();
+  });
+
+  it('idempotency replay returns the existing sale without a new write', async () => {
+    // Arrange
+    const bag = await buildMocks();
+    bag.pos.findIdempotencyKey.mockResolvedValue({
+      key: 'KEY-1',
+      cashierId: 'cashier-1',
+      saleId: 'sale-replay',
+    } as never);
+    const existing = {
+      id: 'sale-replay',
+      invoiceNumber: 'INV-2026-000099',
+    } as Sale;
+    bag.sales.findOneById.mockResolvedValue(existing);
+    const dto = makeDto();
+
+    // Act
+    const result = await bag.service.createSale(makeCashier(), dto, 'KEY-1');
+
+    // Assert
+    expect(result).toBe(existing);
+    expect(bag.sales.create).not.toHaveBeenCalled();
+    expect(bag.payments.create).not.toHaveBeenCalled();
+  });
+
+  it('idempotency race: insert fails, winner is fetched and returned', async () => {
+    // Arrange
+    const bag = await buildMocks();
+    const dto = makeDto();
+    const saved = { id: 'sale-new', invoiceNumber: 'INV-2026-000010' } as Sale;
+    const winner = {
+      id: 'sale-winner',
+      invoiceNumber: 'INV-2026-000011',
+    } as Sale;
+    bag.sales.create.mockResolvedValue(saved);
+    bag.sales.findOneById.mockResolvedValue(winner);
+    bag.pos.insertIdempotencyKey.mockRejectedValue(
+      new QueryFailedError('insert', [], new Error('duplicate key')),
+    );
+    bag.pos.findIdempotencyKey
+      .mockResolvedValueOnce(null) // initial lookup (no replay)
+      .mockResolvedValueOnce({
+        key: 'KEY-RACE',
+        cashierId: 'cashier-1',
+        saleId: 'sale-winner',
+      } as never); // race winner
+
+    // Act
+    const result = await bag.service.createSale(makeCashier(), dto, 'KEY-RACE');
+
+    // Assert
+    expect(result).toBe(winner);
+    expect(bag.sales.findOneById).toHaveBeenCalledWith('sale-winner');
+  });
+
+  it('unit conversion: 1000 g typed → 1 kg of stock deducted', async () => {
+    // Arrange
+    const bag = await buildMocks({
+      inventoryRows: [makeInvRow('p-kg', 5)],
+      unitsById: new Map([
+        [
+          'unit-g',
+          { id: 'unit-g', productId: 'p-kg', conversionToBase: 0.001 },
+        ],
+      ]),
+    });
+    const dto = makeDto({
+      items: [
+        {
+          productId: 'p-kg',
+          unitId: 'unit-g',
+          quantity: 1000,
+          unitPrice: 0.5, // 0.5 LKR per g
+        },
+      ],
+      payment: {
+        paymentMethod: 'Cash',
+        paymentAmount: 500,
+        cashAmount: 500,
+        cashTendered: 500,
+      },
+    });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-9',
+      invoiceNumber: 'INV-2026-000009',
+    } as Sale);
+
+    // Act
+    await bag.service.createSale(makeCashier(), dto);
+
+    // Assert: the item was saved with baseUnitQty=1 (1000 g * 0.001 = 1 kg)
+    expect(bag.saleItems.createMany).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ baseUnitQty: 1, quantity: 1000 }),
+      ]),
+      expect.anything(),
+    );
+    // Stock movement recorded with the base unit qty
+    expect(bag.stockMovements.create).toHaveBeenCalledWith(
+      expect.objectContaining({ qtyOut: 1, movementType: 'Sale' }),
+      expect.anything(),
+    );
+  });
+
+  it('missing customer when customerUserId set throws NotFoundException', async () => {
+    // Arrange — no user row registered
+    const bag = await buildMocks({ userRows: new Map() });
+    const dto = makeDto({
+      customerUserId: 'ghost-customer',
+      payment: {
+        paymentMethod: 'Credit',
+        paymentAmount: 100,
+        creditAmount: 100,
+      },
+    });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-ghost',
+      invoiceNumber: 'INV-2026-000010',
+    } as Sale);
+
+    // Act + Assert
+    await expect(bag.service.createSale(makeCashier(), dto)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('overpay without keepBalance throws BadRequestException via the calculator', async () => {
+    // Arrange
+    const bag = await buildMocks();
+    const dto = makeDto({
+      payment: {
+        paymentMethod: 'Cash',
+        paymentAmount: 150,
+        cashAmount: 150,
+        cashTendered: 150,
+      },
+    });
+
+    // Act + Assert
+    await expect(bag.service.createSale(makeCashier(), dto)).rejects.toThrow(
+      BadRequestException,
+    );
+    expect(bag.sales.create).not.toHaveBeenCalled();
+  });
+
+  it('stock-movement audit row created per line item', async () => {
+    // Arrange
+    const bag = await buildMocks({
+      inventoryRows: [makeInvRow('p-1', 50), makeInvRow('p-2', 50)],
+    });
+    const dto = makeDto({
+      items: [
+        { productId: 'p-1', quantity: 2, unitPrice: 100 },
+        { productId: 'p-2', quantity: 1, unitPrice: 50 },
+      ],
+      payment: {
+        paymentMethod: 'Cash',
+        paymentAmount: 250,
+        cashAmount: 250,
+        cashTendered: 250,
+      },
+    });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-stockmove',
+      invoiceNumber: 'INV-2026-000050',
+    } as Sale);
+
+    // Act
+    await bag.service.createSale(makeCashier(), dto);
+
+    // Assert
+    expect(bag.stockMovements.create).toHaveBeenCalledTimes(2);
+    expect(bag.stockMovements.create).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        productId: 'p-1',
+        refType: 'Sale',
+        refId: 'sale-stockmove',
+        movementType: 'Sale',
+        qtyOut: 2,
+      }),
+      expect.anything(),
+    );
+    expect(bag.stockMovements.create).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        productId: 'p-2',
+        refType: 'Sale',
+        movementType: 'Sale',
+        qtyOut: 1,
+      }),
+      expect.anything(),
+    );
+  });
+
+  it('writes a ledger CREDIT entry referencing sale.invoiceNumber and saleId', async () => {
+    // Arrange
+    const bag = await buildMocks();
+    const dto = makeDto();
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-ledger',
+      invoiceNumber: 'INV-2026-000077',
+    } as Sale);
+
+    // Act
+    await bag.service.createSale(makeCashier(), dto);
+
+    // Assert
+    expect(bag.accounting.createLedgerEntryWithManager).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        branchId: 'branch-A',
+        amount: 100,
+        referenceNumber: 'INV-2026-000077',
+        saleId: 'sale-ledger',
+        description: 'POS Sale — INV-2026-000077',
+      }),
+    );
+  });
+});

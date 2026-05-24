@@ -64,6 +64,15 @@ export class User {
   @Column({ type: 'timestamp', name: 'last_login_at', nullable: true })
   lastLoginAt!: Date | null;
 
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'current_balance',
+    default: 0,
+  })
+  currentBalance!: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
