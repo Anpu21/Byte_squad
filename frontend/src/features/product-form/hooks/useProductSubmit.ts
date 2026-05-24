@@ -9,6 +9,7 @@ import {
     validateProductForm,
 } from '../lib/form-validation';
 import { validateUnitsRows } from '../lib/validate-units-rows';
+import { normalizePriceToBaseUnit } from '../lib/normalize-price';
 
 const DEFAULT_THRESHOLD = 10;
 
@@ -57,6 +58,35 @@ export function useProductSubmit({
             return;
         }
 
+        // Normalize the manager-entered prices to the canonical per-base-unit
+        // value before packing the payload. The cost/selling price inputs are
+        // denominated in whichever sellable-unit row the manager picked (e.g.
+        // "Rs 50 per 100g" for a kg-based product); the BE always persists per
+        // base unit (Rs 500 per kg). Done after validation so we know the
+        // units array is sound enough to resolve the conversion factor.
+        let normalizedCostPrice: number;
+        let normalizedSellingPrice: number;
+        try {
+            normalizedCostPrice = normalizePriceToBaseUnit(
+                parseFloat(form.costPrice),
+                form.costPriceUnit,
+                form.units,
+            );
+            normalizedSellingPrice = normalizePriceToBaseUnit(
+                parseFloat(form.sellingPrice),
+                form.sellingPriceUnit,
+                form.units,
+            );
+        } catch (err) {
+            form.setErrors({
+                general:
+                    err instanceof Error
+                        ? `Price normalization failed: ${err.message}`
+                        : 'Price normalization failed',
+            });
+            return;
+        }
+
         setIsSubmitting(true);
         form.setErrors({});
 
@@ -65,8 +95,8 @@ export function useProductSubmit({
             barcode: form.barcode.trim(),
             description: form.description.trim() || undefined,
             category: form.category.trim(),
-            costPrice: parseFloat(form.costPrice),
-            sellingPrice: parseFloat(form.sellingPrice),
+            costPrice: normalizedCostPrice,
+            sellingPrice: normalizedSellingPrice,
             baseUnit: form.baseUnit,
             sellableUnits: unitsResult.rows,
         };

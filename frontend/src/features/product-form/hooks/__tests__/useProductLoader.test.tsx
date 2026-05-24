@@ -138,4 +138,34 @@ describe('useProductLoader hydration', () => {
         expect(result.current.loader.isLoading).toBe(false);
         expect(getProductByIdMock).not.toHaveBeenCalled();
     });
+
+    it('pins both price-unit selectors to the loaded baseUnit', async () => {
+        getProductByIdMock.mockResolvedValueOnce(
+            baseProduct({
+                baseUnit: 'l',
+                sellableUnits: [
+                    {
+                        id: 'u-1',
+                        productId: 'p-1',
+                        name: 'l',
+                        isBase: true,
+                        conversionToBase: 1,
+                        displayOrder: 0,
+                    },
+                    {
+                        id: 'u-2',
+                        productId: 'p-1',
+                        name: 'ml',
+                        isBase: false,
+                        conversionToBase: 0.001,
+                        displayOrder: 1,
+                    },
+                ],
+            }),
+        );
+        const { result } = renderLoader('p-1');
+        await waitFor(() => expect(result.current.form.baseUnit).toBe('l'));
+        expect(result.current.form.costPriceUnit).toBe('l');
+        expect(result.current.form.sellingPriceUnit).toBe('l');
+    });
 });

@@ -22,8 +22,17 @@ vi.mock('react-hot-toast', () => ({
 import { inventoryService } from '@/services/inventory.service';
 import { queryKeys } from '@/lib/queryKeys';
 
-function makeForm(): ProductFormState {
-    const units: ISellableUnitRow[] = [
+interface MakeFormOverrides {
+    units?: ISellableUnitRow[];
+    costPrice?: string;
+    sellingPrice?: string;
+    costPriceUnit?: string;
+    sellingPriceUnit?: string;
+    baseUnit?: string;
+}
+
+function makeForm(overrides: MakeFormOverrides = {}): ProductFormState {
+    const defaultUnits: ISellableUnitRow[] = [
         {
             rowId: 'r1',
             name: 'kg',
@@ -39,6 +48,8 @@ function makeForm(): ProductFormState {
             displayOrder: 1,
         },
     ];
+    const units = overrides.units ?? defaultUnits;
+    const baseUnit = overrides.baseUnit ?? 'kg';
     return {
         name: 'Rice 5kg',
         setName: vi.fn(),
@@ -48,9 +59,9 @@ function makeForm(): ProductFormState {
         setDescription: vi.fn(),
         category: 'Grocery',
         setCategory: vi.fn(),
-        costPrice: '100',
+        costPrice: overrides.costPrice ?? '100',
         setCostPrice: vi.fn(),
-        sellingPrice: '150',
+        sellingPrice: overrides.sellingPrice ?? '150',
         setSellingPrice: vi.fn(),
         initialStock: '20',
         setInitialStock: vi.fn(),
@@ -62,7 +73,7 @@ function makeForm(): ProductFormState {
         setBarcodeStatus: vi.fn(),
         scanDetected: false,
         setScanDetected: vi.fn(),
-        baseUnit: 'kg',
+        baseUnit,
         setBaseUnit: vi.fn(),
         units,
         setUnits: vi.fn(),
@@ -71,6 +82,11 @@ function makeForm(): ProductFormState {
         updateUnit: vi.fn(),
         removeUnit: vi.fn(),
         setBaseRow: vi.fn(),
+        costPriceUnit: overrides.costPriceUnit ?? baseUnit,
+        setCostPriceUnit: vi.fn(),
+        sellingPriceUnit: overrides.sellingPriceUnit ?? baseUnit,
+        setSellingPriceUnit: vi.fn(),
+        resetPriceUnitsTo: vi.fn(),
     } as unknown as ProductFormState;
 }
 
@@ -173,5 +189,169 @@ describe('useProductSubmit cache invalidation', () => {
             queryKey: ['pos', 'searchProducts'],
         });
         expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('useProductSubmit price normalization', () => {
+    beforeEach(() => {
+        vi.mocked(inventoryService.updateProduct).mockResolvedValue(
+            undefined as never,
+        );
+        vi.mocked(inventoryService.createProduct).mockResolvedValue({
+            id: 'new-1',
+        } as never);
+        vi.mocked(inventoryService.createInventory).mockResolvedValue(
+            undefined as never,
+        );
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('normalizes selling price entered against a non-base unit (g) to per-base (kg)', async () => {
+        const { Wrapper } = makeWrapper();
+        const form = makeForm({
+            sellingPrice: '0.5',
+            sellingPriceUnit: 'g',
+        });
+        const { result } = renderHook(
+            () =>
+                useProductSubmit({
+                    form,
+                    isEditMode: true,
+                    productId: 'prod-1',
+                    branchId: null,
+                    pendingImageFile: null,
+                    onSuccess: vi.fn(),
+                }),
+            { wrapper: Wrapper },
+        );
+
+        await act(async () => {
+            await result.current.handleSubmit({
+                preventDefault: vi.fn(),
+            } as unknown as React.FormEvent);
+        });
+
+        expect(inventoryService.updateProduct).toHaveBeenCalledWith(
+            'prod-1',
+            expect.objectContaining({ sellingPrice: 500 }),
+        );
+    });
+
+    it('normalizes cost price entered against a custom unit (100g, conversion 0.1)', async () => {
+        const customUnits: ISellableUnitRow[] = [
+            {
+                rowId: 'r1',
+                name: 'kg',
+                isBase: true,
+                conversionToBase: '1',
+                displayOrder: 0,
+            },
+            {
+                rowId: 'r2',
+                name: '100g',
+                isBase: false,
+                conversionToBase: '0.1',
+                displayOrder: 1,
+            },
+        ];
+        const { Wrapper } = makeWrapper();
+        const form = makeForm({
+            units: customUnits,
+            costPrice: '50',
+            costPriceUnit: '100g',
+        });
+        const { result } = renderHook(
+            () =>
+                useProductSubmit({
+                    form,
+                    isEditMode: true,
+                    productId: 'prod-1',
+                    branchId: null,
+                    pendingImageFile: null,
+                    onSuccess: vi.fn(),
+                }),
+            { wrapper: Wrapper },
+        );
+
+        await act(async () => {
+            await result.current.handleSubmit({
+                preventDefault: vi.fn(),
+            } as unknown as React.FormEvent);
+        });
+
+        expect(inventoryService.updateProduct).toHaveBeenCalledWith(
+            'prod-1',
+            expect.objectContaining({ costPrice: 500 }),
+        );
+    });
+
+    it('passes prices through unchanged when both price units equal the base unit', async () => {
+        const { Wrapper } = makeWrapper();
+        const form = makeForm({
+            costPrice: '300',
+            sellingPrice: '500',
+            costPriceUnit: 'kg',
+            sellingPriceUnit: 'kg',
+        });
+        const { result } = renderHook(
+            () =>
+                useProductSubmit({
+                    form,
+                    isEditMode: true,
+                    productId: 'prod-1',
+                    branchId: null,
+                    pendingImageFile: null,
+                    onSuccess: vi.fn(),
+                }),
+            { wrapper: Wrapper },
+        );
+
+        await act(async () => {
+            await result.current.handleSubmit({
+                preventDefault: vi.fn(),
+            } as unknown as React.FormEvent);
+        });
+
+        expect(inventoryService.updateProduct).toHaveBeenCalledWith(
+            'prod-1',
+            expect.objectContaining({ costPrice: 300, sellingPrice: 500 }),
+        );
+    });
+
+    it('surfaces a general form error and skips the API call when the price unit is unknown', async () => {
+        const { Wrapper } = makeWrapper();
+        const setErrors = vi.fn();
+        const form = {
+            ...makeForm({ sellingPriceUnit: 'sack' }),
+            setErrors,
+        } as ProductFormState;
+        const { result } = renderHook(
+            () =>
+                useProductSubmit({
+                    form,
+                    isEditMode: true,
+                    productId: 'prod-1',
+                    branchId: null,
+                    pendingImageFile: null,
+                    onSuccess: vi.fn(),
+                }),
+            { wrapper: Wrapper },
+        );
+
+        await act(async () => {
+            await result.current.handleSubmit({
+                preventDefault: vi.fn(),
+            } as unknown as React.FormEvent);
+        });
+
+        expect(inventoryService.updateProduct).not.toHaveBeenCalled();
+        expect(setErrors).toHaveBeenCalledWith(
+            expect.objectContaining({
+                general: expect.stringContaining('Price normalization failed'),
+            }),
+        );
     });
 });

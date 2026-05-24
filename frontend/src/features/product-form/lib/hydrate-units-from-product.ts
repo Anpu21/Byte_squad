@@ -9,6 +9,8 @@ interface UnitsTarget {
     setBaseUnit: (next: TBaseUnitFe) => void;
     setUnits: (next: ISellableUnitRow[]) => void;
     resetUnitsForBase: (next: TBaseUnitFe) => void;
+    setCostPriceUnit: (next: string) => void;
+    setSellingPriceUnit: (next: string) => void;
 }
 
 /**
@@ -19,6 +21,14 @@ interface UnitsTarget {
  * one row to render. Persisted rows are sorted by `displayOrder` because
  * the UI assumes a stable render order and the API isn't contractually
  * obliged to sort.
+ *
+ * Both price-unit selectors are pinned to the loaded `baseUnit` so the
+ * editor opens showing the canonical per-base price (matching how the
+ * BE persists `costPrice` / `sellingPrice`). The composer's
+ * `resetUnitsForBase` already cascades to the price units, but the
+ * persisted-rows branch bypasses it (it calls `setBaseUnit` + `setUnits`
+ * directly), so the explicit setters guarantee both paths leave the
+ * editor in the same shape.
  *
  * Pure with respect to its inputs aside from the supplied setters; kept
  * outside the hook so the hydration body stays small and unit-testable
@@ -45,6 +55,8 @@ export function hydrateUnitsFromProduct(
         }));
         target.setBaseUnit(baseUnit);
         target.setUnits(rows);
+        target.setCostPriceUnit(baseUnit);
+        target.setSellingPriceUnit(baseUnit);
         return;
     }
 
