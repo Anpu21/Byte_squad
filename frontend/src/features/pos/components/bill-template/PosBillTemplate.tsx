@@ -8,7 +8,6 @@ interface IPosBillTemplateProps {
     sale: ISale;
     businessName?: string;
     businessAddress?: string;
-    cashierName?: string;
 }
 
 /**
@@ -24,7 +23,7 @@ interface IPosBillTemplateProps {
  */
 export const PosBillTemplate = forwardRef<HTMLDivElement, IPosBillTemplateProps>(
     function PosBillTemplate(
-        { sale, businessName = 'LedgerPro', businessAddress, cashierName },
+        { sale, businessName = 'LedgerPro', businessAddress },
         ref,
     ) {
         const items = sale.items ?? [];
@@ -55,11 +54,6 @@ export const PosBillTemplate = forwardRef<HTMLDivElement, IPosBillTemplateProps>
                         {sale.invoiceNumber}
                     </p>
                     <p className="text-[10px] mt-1 text-text-2">{printedAt}</p>
-                    {cashierName ? (
-                        <p className="text-[10px] text-text-2">
-                            Cashier: {cashierName}
-                        </p>
-                    ) : null}
                 </header>
 
                 <hr className="pos-bill__divider my-2 border-t border-dashed border-border" />

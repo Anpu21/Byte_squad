@@ -5,7 +5,6 @@ import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
 import { usePrintReceipt } from '@/features/pos/hooks/usePrintReceipt';
 import { usePosSaleById } from '@/features/pos/hooks/usePosSaleById';
 import { PosItemTable } from '@/features/pos/components/item-table/PosItemTable';
-import { PosInformationBox } from '@/features/pos/components/information-box/PosInformationBox';
 import { PosInvoiceTotal } from '@/features/pos/components/invoice-total/PosInvoiceTotal';
 import { PosActionButtons } from '@/features/pos/components/action-buttons/PosActionButtons';
 import { PosRecentSaleSidebar } from '@/features/pos/components/recent-sale/PosRecentSaleSidebar';
@@ -69,7 +68,6 @@ export function PosPage(): React.ReactElement {
                 onScanBarcode={handleCameraScan}
             />
             <div className="flex flex-col gap-3">
-                <PosInformationBox />
                 <PosInvoiceTotal
                     itemsSubtotal={cart.itemsSubtotal}
                     totalLineDiscount={cart.totalDiscount}

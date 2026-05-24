@@ -119,7 +119,6 @@ describe('PosBillTemplate', () => {
                 sale={sale}
                 businessName="LedgerPro Mart"
                 businessAddress="12 Marine Drive, Colombo"
-                cashierName="Asha Cashier"
             />,
         );
 
@@ -128,7 +127,6 @@ describe('PosBillTemplate', () => {
             screen.getByText('12 Marine Drive, Colombo'),
         ).toBeInTheDocument();
         expect(screen.getByText('INV-2026-000001')).toBeInTheDocument();
-        expect(screen.getByText(/Cashier: Asha Cashier/)).toBeInTheDocument();
         expect(screen.getByText(/Walk-in customer/)).toBeInTheDocument();
         expect(screen.getByText('Whole-wheat bread')).toBeInTheDocument();
         expect(screen.getByText(/−10% disc/)).toBeInTheDocument();
