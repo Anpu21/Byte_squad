@@ -124,8 +124,21 @@ export class LoyaltyService {
       MAX_LIMIT,
     );
     const offset = Math.max(query.offset ?? 0, 0);
+
+    if (
+      query.minPoints !== undefined &&
+      query.maxPoints !== undefined &&
+      query.minPoints > query.maxPoints
+    ) {
+      throw new BadRequestException('minPoints cannot exceed maxPoints');
+    }
+
     const { rows, total } = await this.loyalty.listCustomerAccounts({
       search: query.search,
+      branchId: query.branchId,
+      activeSince: query.activeSince,
+      minPoints: query.minPoints,
+      maxPoints: query.maxPoints,
       limit,
       offset,
     });

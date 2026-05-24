@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { LoyaltyService } from './loyalty.service';
 import { LoyaltyRepository } from './loyalty.repository';
+import type { LoyaltyCustomerRow } from './loyalty.repository';
 import { LoyaltyCustomersRepository } from './loyalty-customers.repository';
 import { LoyaltySettingsService } from './loyalty-settings.service';
 import { UsersRepository } from '@users/users.repository';
@@ -111,6 +112,7 @@ describe('LoyaltyService', () => {
       findAccountByLoyaltyCustomer: jest.fn(),
       createAccountForUser: jest.fn(),
       createAccountForLoyaltyCustomer: jest.fn(),
+      listCustomerAccounts: jest.fn(),
     };
     const customersRepoMock: Partial<jest.Mocked<LoyaltyCustomersRepository>> =
       {
@@ -366,6 +368,199 @@ describe('LoyaltyService', () => {
         lifetimePointsRedeemed: 100,
       });
       expect(settings.get).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('listCustomers', () => {
+    const BRANCH_ID = '11111111-1111-1111-1111-111111111111';
+    const OTHER_BRANCH_ID = '22222222-2222-2222-2222-222222222222';
+
+    function makeUserRow(
+      overrides: Partial<LoyaltyCustomerRow> = {},
+    ): LoyaltyCustomerRow {
+      return {
+        id: USER_ID,
+        ownerType: 'user',
+        userId: USER_ID,
+        loyaltyCustomerId: null,
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: 'jane@example.com',
+        phone: '+94771234567',
+        pointsBalance: 250,
+        lifetimePointsEarned: 500,
+        lifetimePointsRedeemed: 250,
+        lastActivityAt: new Date('2026-05-15T10:00:00Z'),
+        lastActivityBranchId: BRANCH_ID,
+        lastActivityBranchName: 'Colombo',
+        ...overrides,
+      };
+    }
+
+    function makeWalkInRow(
+      overrides: Partial<LoyaltyCustomerRow> = {},
+    ): LoyaltyCustomerRow {
+      return {
+        id: WALK_IN_ID,
+        ownerType: 'walkIn',
+        userId: null,
+        loyaltyCustomerId: WALK_IN_ID,
+        firstName: 'Walk',
+        lastName: null,
+        email: null,
+        phone: '+94770000000',
+        pointsBalance: 40,
+        lifetimePointsEarned: 40,
+        lifetimePointsRedeemed: 0,
+        lastActivityAt: new Date('2026-05-20T09:00:00Z'),
+        lastActivityBranchId: BRANCH_ID,
+        lastActivityBranchName: 'Colombo',
+        ...overrides,
+      };
+    }
+
+    it('passes branchId through to the repository', async () => {
+      loyaltyRepo.listCustomerAccounts.mockResolvedValue({
+        rows: [makeUserRow()],
+        total: 1,
+      });
+
+      await service.listCustomers({ branchId: BRANCH_ID });
+
+      expect(loyaltyRepo.listCustomerAccounts).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: BRANCH_ID }),
+      );
+    });
+
+    it('passes activeSince through to the repository', async () => {
+      loyaltyRepo.listCustomerAccounts.mockResolvedValue({
+        rows: [makeUserRow()],
+        total: 1,
+      });
+
+      await service.listCustomers({ activeSince: '2026-05-01' });
+
+      expect(loyaltyRepo.listCustomerAccounts).toHaveBeenCalledWith(
+        expect.objectContaining({ activeSince: '2026-05-01' }),
+      );
+    });
+
+    it('passes both branchId and activeSince together', async () => {
+      loyaltyRepo.listCustomerAccounts.mockResolvedValue({
+        rows: [makeUserRow()],
+        total: 1,
+      });
+
+      await service.listCustomers({
+        branchId: BRANCH_ID,
+        activeSince: '2026-05-01',
+      });
+
+      expect(loyaltyRepo.listCustomerAccounts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          branchId: BRANCH_ID,
+          activeSince: '2026-05-01',
+        }),
+      );
+    });
+
+    it('passes minPoints/maxPoints range through to the repository', async () => {
+      loyaltyRepo.listCustomerAccounts.mockResolvedValue({
+        rows: [makeUserRow()],
+        total: 1,
+      });
+
+      await service.listCustomers({ minPoints: 100, maxPoints: 500 });
+
+      expect(loyaltyRepo.listCustomerAccounts).toHaveBeenCalledWith(
+        expect.objectContaining({ minPoints: 100, maxPoints: 500 }),
+      );
+    });
+
+    it('rejects when minPoints exceeds maxPoints', async () => {
+      await expect(
+        service.listCustomers({ minPoints: 500, maxPoints: 100 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(loyaltyRepo.listCustomerAccounts).not.toHaveBeenCalled();
+    });
+
+    it('returns rows that include the new last-activity branch columns', async () => {
+      loyaltyRepo.listCustomerAccounts.mockResolvedValue({
+        rows: [makeUserRow()],
+        total: 1,
+      });
+
+      const result = await service.listCustomers({});
+
+      expect(result.rows[0]).toEqual(
+        expect.objectContaining({
+          ownerType: 'user',
+          loyaltyCustomerId: null,
+          lastActivityBranchId: BRANCH_ID,
+          lastActivityBranchName: 'Colombo',
+        }),
+      );
+    });
+
+    it('includes walk-in customers alongside online users', async () => {
+      loyaltyRepo.listCustomerAccounts.mockResolvedValue({
+        rows: [makeUserRow(), makeWalkInRow()],
+        total: 2,
+      });
+
+      const result = await service.listCustomers({});
+
+      expect(result.rows).toHaveLength(2);
+      const walkIn = result.rows.find((r) => r.ownerType === 'walkIn');
+      expect(walkIn).toBeDefined();
+      expect(walkIn?.userId).toBeNull();
+      expect(walkIn?.loyaltyCustomerId).toBe(WALK_IN_ID);
+      expect(walkIn?.email).toBeNull();
+    });
+
+    it('clamps limit/offset like the legacy contract', async () => {
+      loyaltyRepo.listCustomerAccounts.mockResolvedValue({
+        rows: [],
+        total: 0,
+      });
+
+      await service.listCustomers({ limit: 999, offset: -5 });
+
+      const args = loyaltyRepo.listCustomerAccounts.mock.calls[0][0];
+      expect(args.limit).toBe(100);
+      expect(args.offset).toBe(0);
+    });
+
+    it('forwards an empty filter set as undefined values', async () => {
+      loyaltyRepo.listCustomerAccounts.mockResolvedValue({
+        rows: [],
+        total: 0,
+      });
+
+      await service.listCustomers({});
+
+      const args = loyaltyRepo.listCustomerAccounts.mock.calls[0][0];
+      expect(args.branchId).toBeUndefined();
+      expect(args.activeSince).toBeUndefined();
+      expect(args.minPoints).toBeUndefined();
+      expect(args.maxPoints).toBeUndefined();
+    });
+
+    it('does not query other branches when branchId is specified', async () => {
+      loyaltyRepo.listCustomerAccounts.mockResolvedValue({
+        rows: [makeUserRow({ lastActivityBranchId: OTHER_BRANCH_ID })],
+        total: 1,
+      });
+
+      await service.listCustomers({ branchId: BRANCH_ID });
+
+      // The service just forwards the param; the repository is what
+      // applies the EXISTS filter. We assert here that the value made
+      // it through unchanged so the repo-level test can take over the
+      // SQL contract.
+      expect(loyaltyRepo.listCustomerAccounts).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: BRANCH_ID }),
+      );
     });
   });
 });

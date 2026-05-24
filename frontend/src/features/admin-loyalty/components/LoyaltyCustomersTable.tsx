@@ -12,7 +12,8 @@ interface LoyaltyCustomersTableProps {
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 250;
 
-function formatLastActivity(iso: string): string {
+function formatLastActivity(iso: string | null): string {
+    if (!iso) return '—';
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return '—';
     return d.toLocaleDateString('en-GB', {
@@ -117,13 +118,17 @@ export function LoyaltyCustomersTable({
                             </tr>
                         </thead>
                         <tbody>
-                            {rows.map((row) => (
+                            {rows.map((row) => {
+                                const fullName = [row.firstName, row.lastName]
+                                    .filter(Boolean)
+                                    .join(' ');
+                                return (
                                 <tr
                                     key={row.id}
                                     onClick={() => onSelectCustomer(row)}
                                     tabIndex={0}
                                     role="button"
-                                    aria-label={`View loyalty history for ${row.firstName} ${row.lastName}`}
+                                    aria-label={`View loyalty history for ${fullName}`}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' || e.key === ' ') {
                                             e.preventDefault();
@@ -133,10 +138,10 @@ export function LoyaltyCustomersTable({
                                     className="border-t border-border hover:bg-surface-2/40 cursor-pointer transition-colors focus:outline-none focus:bg-surface-2/40 focus:ring-2 focus:ring-inset focus:ring-primary/30"
                                 >
                                     <td className="px-5 py-3 text-[13px] text-text-1 font-medium">
-                                        {row.firstName} {row.lastName}
+                                        {fullName}
                                     </td>
                                     <td className="px-5 py-3 text-[12px] text-text-2 truncate">
-                                        {row.email}
+                                        {row.email ?? row.phone ?? '—'}
                                     </td>
                                     <td className="px-5 py-3 text-right mono tabular-nums text-[13px] font-bold text-text-1">
                                         {row.pointsBalance}
@@ -151,7 +156,8 @@ export function LoyaltyCustomersTable({
                                         {formatLastActivity(row.lastActivityAt)}
                                     </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
