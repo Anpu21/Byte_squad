@@ -134,3 +134,28 @@ describe('useProductFormState — sellable-unit state', () => {
         expect(result.current.units).toEqual(replacement);
     });
 });
+
+describe('useProductFormState — per-price unit state', () => {
+    it('initialises costPriceUnit and sellingPriceUnit to the base unit', () => {
+        const { result } = renderHook(() => useProductFormState());
+        // baseUnit defaults to 'each' in useSellableUnitsState.
+        expect(result.current.costPriceUnit).toBe('each');
+        expect(result.current.sellingPriceUnit).toBe('each');
+    });
+
+    it('resetUnitsForBase("l") also resets both price units to "l"', () => {
+        const { result } = renderHook(() => useProductFormState());
+        act(() => result.current.resetUnitsForBase('l'));
+        expect(result.current.baseUnit).toBe('l');
+        expect(result.current.costPriceUnit).toBe('l');
+        expect(result.current.sellingPriceUnit).toBe('l');
+    });
+
+    it('setSellingPriceUnit changes only sellingPriceUnit, not costPriceUnit', () => {
+        const { result } = renderHook(() => useProductFormState());
+        act(() => result.current.resetUnitsForBase('kg'));
+        act(() => result.current.setSellingPriceUnit('g'));
+        expect(result.current.sellingPriceUnit).toBe('g');
+        expect(result.current.costPriceUnit).toBe('kg');
+    });
+});

@@ -1,14 +1,21 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type {
     BarcodeLookupStatus,
     ProductFormErrors,
 } from '../types/form-errors.type';
+import type { TBaseUnitFe } from '../lib/sellable-units';
 import {
     type SellableUnitsState,
     useSellableUnitsState,
 } from './useSellableUnitsState';
+import {
+    type ProductPriceUnitsState,
+    useProductPriceUnits,
+} from './useProductPriceUnits';
 
-export interface ProductFormState extends SellableUnitsState {
+export interface ProductFormState
+    extends SellableUnitsState,
+        ProductPriceUnitsState {
     name: string;
     setName: (value: string) => void;
     barcode: string;
@@ -47,6 +54,19 @@ export function useProductFormState(): ProductFormState {
         useState<BarcodeLookupStatus>('idle');
     const [scanDetected, setScanDetected] = useState(false);
     const sellableUnits = useSellableUnitsState();
+    const priceUnits = useProductPriceUnits(sellableUnits.baseUnit);
+
+    // Override resetUnitsForBase so the base-unit change also resets both
+    // price-unit selectors. Without this, switching kg → l would silently
+    // leave the cost/selling price denominated in `g`, producing wrong
+    // stored prices once Phase P3 normalizes on submit.
+    const resetUnitsForBase = useCallback(
+        (next: TBaseUnitFe) => {
+            sellableUnits.resetUnitsForBase(next);
+            priceUnits.resetPriceUnitsTo(next);
+        },
+        [sellableUnits, priceUnits],
+    );
 
     return {
         name,
@@ -72,5 +92,7 @@ export function useProductFormState(): ProductFormState {
         scanDetected,
         setScanDetected,
         ...sellableUnits,
+        ...priceUnits,
+        resetUnitsForBase,
     };
 }
