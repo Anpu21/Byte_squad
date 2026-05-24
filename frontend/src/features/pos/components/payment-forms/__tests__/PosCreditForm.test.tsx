@@ -29,7 +29,8 @@ describe('PosCreditForm', () => {
         );
         const input = screen.getByLabelText('Credit amount');
         expect(input).toBeInTheDocument();
-        expect(input).toHaveValue(200);
+        // PosCartNumericCell renders as type="text" so the DOM value is a string.
+        expect(input).toHaveValue('200');
     });
 
     it('emits onCreditAmountChange when the amount is committed', async () => {

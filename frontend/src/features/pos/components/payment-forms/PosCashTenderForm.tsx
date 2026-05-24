@@ -35,7 +35,6 @@ export function PosCashTenderForm({
                     value={cashTendered}
                     onCommit={onCashTenderedChange}
                     min={0}
-                    step={1}
                     ariaLabel="Cash tendered"
                     className="w-full h-[42px] px-3 bg-surface border border-border-strong rounded-md text-[14px] text-text-1 tabular-nums outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/30"
                 />

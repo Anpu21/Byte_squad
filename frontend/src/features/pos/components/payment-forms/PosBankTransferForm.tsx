@@ -32,7 +32,6 @@ export function PosBankTransferForm({
                         onChange({ bankTransferAmount: next })
                     }
                     min={0}
-                    step={1}
                     ariaLabel="Bank transfer amount"
                     className="w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 tabular-nums outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/30"
                 />

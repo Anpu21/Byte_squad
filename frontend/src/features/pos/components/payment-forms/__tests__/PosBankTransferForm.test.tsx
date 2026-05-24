@@ -12,9 +12,10 @@ describe('PosBankTransferForm', () => {
                 onChange={() => {}}
             />,
         );
+        // PosCartNumericCell renders as type="text" so the DOM value is a string.
         expect(
             screen.getByLabelText('Bank transfer amount'),
-        ).toHaveValue(250);
+        ).toHaveValue('250');
         expect(screen.getByLabelText('Bank reference')).toHaveValue(
             'TX-123',
         );

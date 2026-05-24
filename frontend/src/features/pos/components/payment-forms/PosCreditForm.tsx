@@ -55,7 +55,6 @@ export function PosCreditForm({
                 value={creditAmount}
                 onCommit={onCreditAmountChange}
                 min={0}
-                step={1}
                 ariaLabel="Credit amount"
                 className="w-full h-[42px] px-3 bg-surface border border-border-strong rounded-md text-[14px] text-text-1 tabular-nums outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/30"
             />
