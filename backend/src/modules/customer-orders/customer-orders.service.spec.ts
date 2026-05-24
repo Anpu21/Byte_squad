@@ -17,6 +17,7 @@ import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
+import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationsGateway } from '@notifications/notifications.gateway';
@@ -75,6 +76,12 @@ describe('CustomerOrdersService', () => {
         },
         {
           provide: LoyaltyService,
+          useValue: {
+            getPointValue: jest.fn().mockResolvedValue(1),
+          },
+        },
+        {
+          provide: LoyaltyWalletService,
           useValue: {
             redeemForOrder: jest.fn().mockResolvedValue(0),
             reverseRedemption: jest.fn().mockResolvedValue(0),

@@ -10,6 +10,7 @@ import { LoyaltyRepository } from '@/modules/loyalty/loyalty.repository';
 import { LoyaltyCustomersRepository } from '@/modules/loyalty/loyalty-customers.repository';
 import { LoyaltySettingsRepository } from '@/modules/loyalty/loyalty-settings.repository';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
+import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
 import { UsersModule } from '@users/users.module';
 
@@ -29,8 +30,9 @@ import { UsersModule } from '@users/users.module';
     LoyaltyCustomersRepository,
     LoyaltySettingsRepository,
     LoyaltyService,
+    LoyaltyWalletService,
     LoyaltySettingsService,
   ],
-  exports: [LoyaltyService, LoyaltySettingsService],
+  exports: [LoyaltyService, LoyaltyWalletService, LoyaltySettingsService],
 })
 export class LoyaltyModule {}

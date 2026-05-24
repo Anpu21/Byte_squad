@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
+import type { UpdateQueryBuilder } from 'typeorm';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
@@ -66,6 +67,11 @@ export class LoyaltyRepository {
    * Atomic debit against the owner's wallet. Returns false if the
    * wallet doesn't have enough points (the UPDATE … WHERE
    * points_balance >= :points clause keeps the redeem race-free).
+   *
+   * Owner WHERE is applied first so the balance guard can be added
+   * via `.andWhere` — TypeORM's UpdateQueryBuilder.where() resets
+   * the expression map, which would silently wipe the guard if the
+   * order were reversed.
    */
   async applyRedeem(owner: LoyaltyOwner, points: number): Promise<boolean> {
     const qb = this.accountRepo
@@ -74,16 +80,10 @@ export class LoyaltyRepository {
       .set({
         pointsBalance: () => `"points_balance" - ${points}`,
         lifetimePointsRedeemed: () => `"lifetime_points_redeemed" + ${points}`,
-      })
-      .andWhere('points_balance >= :points', { points });
-
-    if (owner.userId) {
-      qb.where('user_id = :userId', { userId: owner.userId });
-    } else {
-      qb.where('loyalty_customer_id = :loyaltyCustomerId', {
-        loyaltyCustomerId: owner.loyaltyCustomerId,
       });
-    }
+
+    this.applyOwnerWhere(qb, owner);
+    qb.andWhere('points_balance >= :points', { points });
 
     const result = await qb.execute();
     return Number(result.affected ?? 0) > 0;
@@ -101,13 +101,7 @@ export class LoyaltyRepository {
         lifetimePointsRedeemed: () => `"lifetime_points_redeemed" - ${points}`,
       });
 
-    if (owner.userId) {
-      qb.where('user_id = :userId', { userId: owner.userId });
-    } else {
-      qb.where('loyalty_customer_id = :loyaltyCustomerId', {
-        loyaltyCustomerId: owner.loyaltyCustomerId,
-      });
-    }
+    this.applyOwnerWhere(qb, owner);
 
     await qb.execute();
   }
@@ -121,6 +115,20 @@ export class LoyaltyRepository {
         lifetimePointsEarned: () => `"lifetime_points_earned" + ${points}`,
       });
 
+    this.applyOwnerWhere(qb, owner);
+
+    await qb.execute();
+  }
+
+  /**
+   * Sets the owner WHERE on an UpdateQueryBuilder. Must be called
+   * before any `.andWhere(...)` guards, because `.where()` resets
+   * the expression map.
+   */
+  private applyOwnerWhere(
+    qb: UpdateQueryBuilder<LoyaltyAccount>,
+    owner: LoyaltyOwner,
+  ): void {
     if (owner.userId) {
       qb.where('user_id = :userId', { userId: owner.userId });
     } else {
@@ -128,8 +136,6 @@ export class LoyaltyRepository {
         loyaltyCustomerId: owner.loyaltyCustomerId,
       });
     }
-
-    await qb.execute();
   }
 
   async listEntries(

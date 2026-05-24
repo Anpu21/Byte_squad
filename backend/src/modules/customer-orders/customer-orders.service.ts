@@ -21,6 +21,7 @@ import {
   PayhereService,
 } from '@/modules/customer-orders/payhere.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
+import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { ProductsRepository } from '@products/products.repository';
 import { BranchesRepository } from '@branches/branches.repository';
 import { UsersRepository } from '@users/users.repository';
@@ -74,6 +75,7 @@ export class CustomerOrdersService {
     private readonly accounting: AccountingRepository,
     private readonly inventory: InventoryRepository,
     private readonly loyalty: LoyaltyService,
+    private readonly loyaltyWallet: LoyaltyWalletService,
     private readonly notifications: NotificationsService,
     private readonly notificationsGateway: NotificationsGateway,
     private readonly cloudinary: CloudinaryService,
@@ -150,7 +152,7 @@ export class CustomerOrdersService {
     });
 
     const loyaltyPointsRequested = dto.loyaltyPointsToRedeem ?? 0;
-    const loyaltyPointsRedeemed = await this.loyalty.redeemForOrder({
+    const loyaltyPointsRedeemed = await this.loyaltyWallet.redeemForOrder({
       owner: { userId },
       orderId: saved.id,
       orderCode: saved.orderCode,
@@ -448,7 +450,7 @@ export class CustomerOrdersService {
       if (dto.items?.length) {
         throw new BadRequestException('Paid online orders cannot be edited');
       }
-      const earned = await this.loyalty.awardForOrder({
+      const earned = await this.loyaltyWallet.awardForOrder({
         owner: order.userId ? { userId: order.userId } : null,
         orderId: order.id,
         orderCode: order.orderCode,
@@ -477,7 +479,7 @@ export class CustomerOrdersService {
       paymentMethod: dto.paymentMethod,
       effective,
     });
-    const earned = await this.loyalty.awardForOrder({
+    const earned = await this.loyaltyWallet.awardForOrder({
       owner: order.userId ? { userId: order.userId } : null,
       orderId: order.id,
       orderCode: order.orderCode,
@@ -779,7 +781,7 @@ export class CustomerOrdersService {
 
   private async reverseLoyaltyRedemption(order: CustomerOrder): Promise<void> {
     if (!order.userId || order.loyaltyPointsRedeemed <= 0) return;
-    await this.loyalty.reverseRedemption({
+    await this.loyaltyWallet.reverseRedemption({
       owner: { userId: order.userId },
       orderId: order.id,
       orderCode: order.orderCode,
