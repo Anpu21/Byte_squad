@@ -11,15 +11,21 @@ import { SalaryStructure } from '@/modules/hr/entities/salary-structure.entity';
 import { EmployeesRepository } from '@/modules/hr/employees.repository';
 import { EmployeesService } from '@/modules/hr/employees.service';
 import { EmployeesController } from '@/modules/hr/employees.controller';
+import { AttendanceRepository } from '@/modules/hr/attendance.repository';
+import { AttendanceService } from '@/modules/hr/attendance.service';
+import { AttendanceController } from '@/modules/hr/attendance.controller';
 
 /**
  * HR module — built up incrementally:
  *
  * - BE-H1 landed the schema (entities + migration).
- * - BE-H2 (this phase) adds the Employees CRUD + photo upload, with
- *   strict branch scoping for managers. The service is exported so
- *   the upcoming attendance + payroll services can resolve employee
- *   data without re-injecting the repo.
+ * - BE-H2 added the Employees CRUD + photo upload, with strict
+ *   branch scoping for managers.
+ * - BE-H3 (this phase) adds the Attendance CRUD + bulk grid + cashier
+ *   self check-in/out flow. AttendanceService leans on
+ *   EmployeesRepository for branch-scoped resolution of each row's
+ *   employee — that's the same scoping rule the Employees module
+ *   already enforces.
  *
  * CloudinaryModule is `@Global()` elsewhere in the app, but we import
  * it explicitly here so the dependency is obvious from this module's
@@ -39,8 +45,19 @@ import { EmployeesController } from '@/modules/hr/employees.controller';
     ]),
     CloudinaryModule,
   ],
-  providers: [EmployeesRepository, EmployeesService],
-  controllers: [EmployeesController],
-  exports: [EmployeesService, EmployeesRepository, TypeOrmModule],
+  providers: [
+    EmployeesRepository,
+    EmployeesService,
+    AttendanceRepository,
+    AttendanceService,
+  ],
+  controllers: [EmployeesController, AttendanceController],
+  exports: [
+    EmployeesService,
+    EmployeesRepository,
+    AttendanceService,
+    AttendanceRepository,
+    TypeOrmModule,
+  ],
 })
 export class HrModule {}

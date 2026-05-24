@@ -163,6 +163,12 @@ export const APP_ROUTES = {
       TERMINATE: ':id/terminate',
       PHOTO: ':id/photo',
     },
+    ATTENDANCE: {
+      BASE: `${API_PREFIX}/hr/attendance`,
+      BULK: 'bulk',
+      CHECK_IN: 'check-in',
+      CHECK_OUT: 'check-out',
+    },
   },
 
   // Stock Transfers (inter-branch stock movement)
