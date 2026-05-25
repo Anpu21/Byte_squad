@@ -44,6 +44,7 @@ import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entit
 import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
+import { HrSeedService } from '@common/seeds/hr-seed.service';
 import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
 
 import appConfig from '@common/config/app.config';
@@ -102,6 +103,10 @@ import appConfig from '@common/config/app.config';
     LoyaltyModule,
     HrModule,
   ],
-  providers: [AdminSeedService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
+  providers: [
+    AdminSeedService,
+    HrSeedService,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}

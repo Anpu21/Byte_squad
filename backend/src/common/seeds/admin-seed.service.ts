@@ -25,6 +25,7 @@ import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-r
 import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { pickSeedImageUrl } from '@common/seeds/seed-product-images';
+import { HrSeedService } from '@common/seeds/hr-seed.service';
 
 interface SeedDefaults {
   adminEmail: string;
@@ -510,6 +511,7 @@ export class AdminSeedService implements OnModuleInit {
     private readonly stockTransferRepository: Repository<StockTransferRequest>,
     private readonly configService: ConfigService,
     private readonly cloudinary: CloudinaryService,
+    private readonly hrSeed: HrSeedService,
   ) {}
 
   onModuleInit(): void {
@@ -611,7 +613,7 @@ export class AdminSeedService implements OnModuleInit {
       branchId: downtownBranch.id,
     });
 
-    await this.ensureUser({
+    const cashier3 = await this.ensureUser({
       email: 'cashier3@ledgerpro.com',
       password: 'Cashier@123',
       firstName: 'Liam',
@@ -655,6 +657,21 @@ export class AdminSeedService implements OnModuleInit {
       downtownManager,
       suburbanManager,
       products,
+    });
+
+    // 9. HR demo seed — employees, salary structures, attendance,
+    //    leaves, and a previous-month payroll run.
+    await this.hrSeed.seed({
+      admin,
+      mainBranch,
+      downtownBranch,
+      suburbanBranch,
+      mainManager,
+      downtownManager,
+      suburbanManager,
+      cashier1,
+      cashier2,
+      cashier3,
     });
 
     this.logger.log('Supermarket seed completed.');
