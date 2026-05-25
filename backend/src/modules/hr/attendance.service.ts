@@ -7,6 +7,7 @@ import {
 import { UserRole } from '@common/enums/user-roles.enums';
 import { AttendanceRepository } from '@/modules/hr/attendance.repository';
 import { EmployeesRepository } from '@/modules/hr/employees.repository';
+import { PayrollSettingsService } from '@/modules/hr/payroll-settings.service';
 import { Attendance } from '@/modules/hr/entities/attendance.entity';
 import { Employee } from '@/modules/hr/entities/employee.entity';
 import { ListAttendanceQueryDto } from '@/modules/hr/dto/list-attendance-query.dto';
@@ -33,17 +34,22 @@ export interface AttendanceListResponse {
   total: number;
 }
 
-// TODO BE-H5: load late grace from PayrollSettingsRepository.findGlobal()
-// once the settings service lands. The 15-minute default matches the
-// `payroll_settings.late_grace_minutes` seed in the BE-H1 migration so
-// the hard-coded fallback agrees with the eventual DB value.
-const DEFAULT_GRACE_MINUTES = 15;
+/**
+ * Safety net for the late-grace lookup. Matches the
+ * `payroll_settings.late_grace_minutes` seed in the BE-H1 migration so
+ * if `PayrollSettingsService.getEffective` blows up (e.g. the global
+ * row was hand-deleted in a broken environment) we still mark
+ * lateness consistently with the schema default instead of throwing
+ * mid-check-in.
+ */
+const FALLBACK_GRACE_MINUTES = 15;
 
 @Injectable()
 export class AttendanceService {
   constructor(
     private readonly attendance: AttendanceRepository,
     private readonly employees: EmployeesRepository,
+    private readonly payrollSettings: PayrollSettingsService,
   ) {}
 
   /**
@@ -95,6 +101,9 @@ export class AttendanceService {
     const prepared = [] as Array<
       Parameters<AttendanceRepository['upsertManagerEntry']>[0]
     >;
+    // Cache the grace window per branch — a 500-row grid that spans
+    // two branches still resolves payroll settings exactly twice.
+    const graceCache = new Map<string, number>();
 
     for (const row of dto.rows) {
       const employee = await this.resolveEmployee(
@@ -103,12 +112,12 @@ export class AttendanceService {
         employeeCache,
       );
 
+      const grace = await this.resolveGraceMinutes(
+        employee.branchId,
+        graceCache,
+      );
       const { isLate, lateMinutes } = row.checkInTime
-        ? computeLate(
-            row.checkInTime,
-            employee.workingHoursStart,
-            DEFAULT_GRACE_MINUTES,
-          )
+        ? computeLate(row.checkInTime, employee.workingHoursStart, grace)
         : { isLate: false, lateMinutes: 0 };
       const totalHours = computeTotalHours(row.checkInTime, row.checkOutTime);
 
@@ -156,10 +165,11 @@ export class AttendanceService {
     }
 
     const checkInTime = formatClock(now);
+    const grace = await this.resolveGraceMinutes(employee.branchId);
     const { isLate, lateMinutes } = computeLate(
       checkInTime,
       employee.workingHoursStart,
-      DEFAULT_GRACE_MINUTES,
+      grace,
     );
 
     return this.attendance.upsertCheckIn({
@@ -211,6 +221,34 @@ export class AttendanceService {
 
   // -------------------------------------------------------------------
   // Helpers
+
+  /**
+   * Resolve the late-grace window for a branch via the payroll
+   * settings service. Cached per-branch when a cache is provided so a
+   * bulk grid doesn't fan out into repeat lookups for the same row.
+   * If the settings service throws (deployment-level invariant
+   * broken), we fall back to 15 minutes rather than 5xx every
+   * check-in.
+   */
+  private async resolveGraceMinutes(
+    branchId: string | null,
+    cache?: Map<string, number>,
+  ): Promise<number> {
+    const key = branchId ?? '__global__';
+    if (cache) {
+      const cached = cache.get(key);
+      if (cached !== undefined) return cached;
+    }
+    let grace = FALLBACK_GRACE_MINUTES;
+    try {
+      const row = await this.payrollSettings.getEffective(branchId);
+      grace = row.lateGraceMinutes;
+    } catch {
+      grace = FALLBACK_GRACE_MINUTES;
+    }
+    if (cache) cache.set(key, grace);
+    return grace;
+  }
 
   private async findEmployeeForUser(userId: string): Promise<Employee> {
     // Go through the repository (rules §7) so the data-access path

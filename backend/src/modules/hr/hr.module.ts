@@ -17,6 +17,12 @@ import { AttendanceController } from '@/modules/hr/attendance.controller';
 import { EmployeeLeavesRepository } from '@/modules/hr/employee-leaves.repository';
 import { EmployeeLeavesService } from '@/modules/hr/employee-leaves.service';
 import { EmployeeLeavesController } from '@/modules/hr/employee-leaves.controller';
+import { SalaryStructuresRepository } from '@/modules/hr/salary-structures.repository';
+import { SalaryStructuresService } from '@/modules/hr/salary-structures.service';
+import { SalaryStructuresController } from '@/modules/hr/salary-structures.controller';
+import { PayrollSettingsRepository } from '@/modules/hr/payroll-settings.repository';
+import { PayrollSettingsService } from '@/modules/hr/payroll-settings.service';
+import { PayrollSettingsController } from '@/modules/hr/payroll-settings.controller';
 
 /**
  * HR module — built up incrementally:
@@ -24,11 +30,15 @@ import { EmployeeLeavesController } from '@/modules/hr/employee-leaves.controlle
  * - BE-H1 landed the schema (entities + migration).
  * - BE-H2 added the Employees CRUD + photo upload, with strict
  *   branch scoping for managers.
- * - BE-H3 (this phase) adds the Attendance CRUD + bulk grid + cashier
- *   self check-in/out flow. AttendanceService leans on
- *   EmployeesRepository for branch-scoped resolution of each row's
- *   employee — that's the same scoping rule the Employees module
- *   already enforces.
+ * - BE-H3 added the Attendance CRUD + bulk grid + cashier self
+ *   check-in/out flow. AttendanceService leans on EmployeesRepository
+ *   for branch-scoped resolution of each row's employee.
+ * - BE-H4 added the EmployeeLeaves workflow + annual-balance
+ *   accounting (apply / approve / reject / cancel) with atomic
+ *   balance adjustments through EmployeesRepository.
+ * - BE-H5 (this phase) adds SalaryStructure and PayrollSettings CRUD
+ *   — the configurable inputs the BE-H6 payroll generator depends on
+ *   to compute gross / deductions / net per pay period.
  *
  * CloudinaryModule is `@Global()` elsewhere in the app, but we import
  * it explicitly here so the dependency is obvious from this module's
@@ -55,11 +65,17 @@ import { EmployeeLeavesController } from '@/modules/hr/employee-leaves.controlle
     AttendanceService,
     EmployeeLeavesRepository,
     EmployeeLeavesService,
+    SalaryStructuresRepository,
+    SalaryStructuresService,
+    PayrollSettingsRepository,
+    PayrollSettingsService,
   ],
   controllers: [
     EmployeesController,
     AttendanceController,
     EmployeeLeavesController,
+    SalaryStructuresController,
+    PayrollSettingsController,
   ],
   exports: [
     EmployeesService,
@@ -68,6 +84,10 @@ import { EmployeeLeavesController } from '@/modules/hr/employee-leaves.controlle
     AttendanceRepository,
     EmployeeLeavesService,
     EmployeeLeavesRepository,
+    SalaryStructuresService,
+    SalaryStructuresRepository,
+    PayrollSettingsService,
+    PayrollSettingsRepository,
     TypeOrmModule,
   ],
 })

@@ -8,10 +8,12 @@ import {
 import { AttendanceService } from './attendance.service';
 import { AttendanceRepository } from './attendance.repository';
 import { EmployeesRepository } from './employees.repository';
+import { PayrollSettingsService } from './payroll-settings.service';
 import { Attendance } from './entities/attendance.entity';
 import { Employee } from './entities/employee.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { BulkAttendanceDto } from './dto/bulk-attendance.dto';
+import { PayrollSettings } from './entities/payroll-settings.entity';
 
 const BRANCH_A = '11111111-1111-1111-1111-111111111111';
 const BRANCH_B = '22222222-2222-2222-2222-222222222222';
@@ -116,6 +118,7 @@ describe('AttendanceService', () => {
   let service: AttendanceService;
   let attendanceRepo: jest.Mocked<AttendanceRepository>;
   let employeesRepo: jest.Mocked<EmployeesRepository>;
+  let payrollSettings: jest.Mocked<PayrollSettingsService>;
 
   beforeEach(async () => {
     const attendanceRepoMock: Partial<jest.Mocked<AttendanceRepository>> = {
@@ -130,18 +133,28 @@ describe('AttendanceService', () => {
       findById: jest.fn(),
       findByUserId: jest.fn(),
     };
+    const payrollSettingsMock: Partial<jest.Mocked<PayrollSettingsService>> = {
+      // Default to the seed grace window so existing late-window
+      // expectations keep holding without each test wiring its own.
+      getEffective: jest
+        .fn()
+        .mockResolvedValue({ lateGraceMinutes: 15 } as PayrollSettings),
+    };
 
     const module = await Test.createTestingModule({
       providers: [
         AttendanceService,
         { provide: AttendanceRepository, useValue: attendanceRepoMock },
         { provide: EmployeesRepository, useValue: employeesRepoMock },
+        { provide: PayrollSettingsService, useValue: payrollSettingsMock },
       ],
     }).compile();
 
     service = module.get(AttendanceService);
     attendanceRepo = module.get(AttendanceRepository);
     employeesRepo = module.get(EmployeesRepository);
+    payrollSettings = module.get(PayrollSettingsService);
+    void payrollSettings;
   });
 
   describe('list', () => {

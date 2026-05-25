@@ -176,6 +176,17 @@ export const APP_ROUTES = {
       REJECT: ':id/reject',
       CANCEL: ':id/cancel',
     },
+    SALARY_STRUCTURES: {
+      BASE: `${API_PREFIX}/hr/salary-structures`,
+      BY_ID: ':id',
+      DEACTIVATE: ':id/deactivate',
+    },
+    PAYROLL_SETTINGS: {
+      BASE: `${API_PREFIX}/hr/payroll-settings`,
+      GLOBAL: 'global',
+      EFFECTIVE: 'effective',
+      BRANCH: 'branch',
+    },
   },
 
   // Stock Transfers (inter-branch stock movement)
