@@ -169,6 +169,13 @@ export const APP_ROUTES = {
       CHECK_IN: 'check-in',
       CHECK_OUT: 'check-out',
     },
+    LEAVES: {
+      BASE: `${API_PREFIX}/hr/leaves`,
+      BY_ID: ':id',
+      APPROVE: ':id/approve',
+      REJECT: ':id/reject',
+      CANCEL: ':id/cancel',
+    },
   },
 
   // Stock Transfers (inter-branch stock movement)

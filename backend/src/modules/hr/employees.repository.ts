@@ -135,4 +135,28 @@ export class EmployeesRepository {
       },
     );
   }
+
+  /**
+   * Adjusts an employee's running annual-leave balance by a signed
+   * delta inside the caller's transaction. Used by the leaves
+   * approve/cancel flow so a race between two managers approving
+   * overlapping requests can't drive the wallet negative — the SQL
+   * `+ :delta` is atomic at the row level.
+   *
+   * Pass `-totalDays` on approval, `+totalDays` to revert on cancel.
+   */
+  async adjustAnnualLeaveBalance(
+    employeeId: string,
+    delta: number,
+    manager?: EntityManager,
+  ): Promise<void> {
+    await this.repo(manager)
+      .createQueryBuilder()
+      .update(Employee)
+      .set({
+        annualLeaveBalance: () => `"annual_leave_balance" + ${delta}`,
+      })
+      .where('id = :id', { id: employeeId })
+      .execute();
+  }
 }

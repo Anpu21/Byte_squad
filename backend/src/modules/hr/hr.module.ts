@@ -14,6 +14,9 @@ import { EmployeesController } from '@/modules/hr/employees.controller';
 import { AttendanceRepository } from '@/modules/hr/attendance.repository';
 import { AttendanceService } from '@/modules/hr/attendance.service';
 import { AttendanceController } from '@/modules/hr/attendance.controller';
+import { EmployeeLeavesRepository } from '@/modules/hr/employee-leaves.repository';
+import { EmployeeLeavesService } from '@/modules/hr/employee-leaves.service';
+import { EmployeeLeavesController } from '@/modules/hr/employee-leaves.controller';
 
 /**
  * HR module — built up incrementally:
@@ -50,13 +53,21 @@ import { AttendanceController } from '@/modules/hr/attendance.controller';
     EmployeesService,
     AttendanceRepository,
     AttendanceService,
+    EmployeeLeavesRepository,
+    EmployeeLeavesService,
   ],
-  controllers: [EmployeesController, AttendanceController],
+  controllers: [
+    EmployeesController,
+    AttendanceController,
+    EmployeeLeavesController,
+  ],
   exports: [
     EmployeesService,
     EmployeesRepository,
     AttendanceService,
     AttendanceRepository,
+    EmployeeLeavesService,
+    EmployeeLeavesRepository,
     TypeOrmModule,
   ],
 })
