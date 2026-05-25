@@ -19,6 +19,14 @@ export interface AdminInventoryMatrixFilters {
     limit: number;
 }
 
+export interface ListEmployeesQueryKey {
+    branchId?: string;
+    search?: string;
+    status?: 'Active' | 'Resigned' | 'Terminated' | 'OnLeave';
+    limit?: number;
+    offset?: number;
+}
+
 export const queryKeys = {
     admin: {
         inventoryMatrix: (filters: AdminInventoryMatrixFilters) =>
@@ -101,6 +109,12 @@ export const queryKeys = {
          */
         posLookup: (phone: string) =>
             ['loyalty', 'pos-lookup', phone] as const,
+    },
+    hr: {
+        all: () => ['hr'] as const,
+        employees: (params: ListEmployeesQueryKey) =>
+            ['hr', 'employees', params] as const,
+        employee: (id: string) => ['hr', 'employee', id] as const,
     },
     adminLoyalty: {
         customers: (params: {

@@ -17,6 +17,7 @@ import {
     Sparkles,
     Truck,
     UserCog,
+    UserPlus,
     Users,
     Wallet,
     History,
@@ -142,6 +143,13 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.USER_MANAGEMENT,
         roles: [UserRole.ADMIN],
         icon: <Users size={15} />,
+        group: 'People',
+    },
+    {
+        label: 'Employees',
+        path: FRONTEND_ROUTES.ADMIN_EMPLOYEES,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <UserPlus size={15} />,
         group: 'People',
     },
     {

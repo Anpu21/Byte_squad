@@ -51,6 +51,11 @@ export const FRONTEND_ROUTES = {
     // Admin-only loyalty program management
     ADMIN_LOYALTY: '/admin/loyalty',
 
+    // Admin / manager — HR employee management
+    ADMIN_EMPLOYEES: '/admin/employees',
+    ADMIN_EMPLOYEE_NEW: '/admin/employees/new',
+    ADMIN_EMPLOYEE_EDIT: '/admin/employees/:id',
+
     // Notifications
     NOTIFICATIONS: '/notifications',
     NOTIFICATION_DETAIL: '/notifications/:id',
