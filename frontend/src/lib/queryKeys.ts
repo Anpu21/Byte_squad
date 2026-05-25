@@ -34,6 +34,16 @@ export interface ListAttendanceQueryKey {
     endDate: string;
 }
 
+export interface ListLeavesQueryKey {
+    branchId?: string;
+    employeeId?: string;
+    status?: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+}
+
 export const queryKeys = {
     admin: {
         inventoryMatrix: (filters: AdminInventoryMatrixFilters) =>
@@ -125,6 +135,8 @@ export const queryKeys = {
         attendance: (params: ListAttendanceQueryKey) =>
             ['hr', 'attendance', params] as const,
         todayAttendance: () => ['hr', 'attendance', 'today'] as const,
+        leaves: (params: ListLeavesQueryKey) => ['hr', 'leaves', params] as const,
+        leave: (id: string) => ['hr', 'leave', id] as const,
     },
     adminLoyalty: {
         customers: (params: {

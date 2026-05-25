@@ -28,6 +28,7 @@ import { AdminLoyaltyPage } from '@/pages/admin/AdminLoyaltyPage';
 import { AdminEmployeesPage } from '@/pages/admin/AdminEmployeesPage';
 import { AdminEmployeeFormPage } from '@/pages/admin/AdminEmployeeFormPage';
 import { AdminAttendancePage } from '@/pages/admin/AdminAttendancePage';
+import { AdminLeavesPage } from '@/pages/admin/AdminLeavesPage';
 import { TransferRequestsPage } from '@/pages/transfers/TransferRequestsPage';
 import { NewTransferRequestPage } from '@/pages/transfers/NewTransferRequestPage';
 import { TransferHistoryPage } from '@/pages/transfers/TransferHistoryPage';
@@ -257,6 +258,12 @@ export const ROUTES: RouteDef[] = [
         path: FRONTEND_ROUTES.ADMIN_ATTENDANCE,
         element: <AdminAttendancePage />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.ADMIN_LEAVES,
+        element: <AdminLeavesPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
         layout: 'dashboard',
     },
 

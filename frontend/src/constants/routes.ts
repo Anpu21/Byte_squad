@@ -59,6 +59,9 @@ export const FRONTEND_ROUTES = {
     // Admin / manager — HR attendance grid
     ADMIN_ATTENDANCE: '/admin/attendance',
 
+    // Admin / manager / cashier — HR leaves
+    ADMIN_LEAVES: '/admin/leaves',
+
     // Notifications
     NOTIFICATIONS: '/notifications',
     NOTIFICATION_DETAIL: '/notifications/:id',

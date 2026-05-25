@@ -5,6 +5,7 @@ import {
     Boxes,
     Building2,
     CalendarCheck,
+    CalendarRange,
     ChevronRight,
     GitCompareArrows,
     Home,
@@ -158,6 +159,13 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.ADMIN_ATTENDANCE,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <CalendarCheck size={15} />,
+        group: 'People',
+    },
+    {
+        label: 'Leaves',
+        path: FRONTEND_ROUTES.ADMIN_LEAVES,
+        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
+        icon: <CalendarRange size={15} />,
         group: 'People',
     },
     {

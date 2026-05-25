@@ -4,3 +4,6 @@ export * from './attendance-payload.type';
 export * from './employee.type';
 export * from './employee-payload.type';
 export * from './employees-list-response.type';
+export * from './leave.type';
+export * from './apply-leave-payload.type';
+export * from './leaves-list-response.type';
