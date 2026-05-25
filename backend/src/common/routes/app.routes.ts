@@ -187,6 +187,15 @@ export const APP_ROUTES = {
       EFFECTIVE: 'effective',
       BRANCH: 'branch',
     },
+    PAYROLL: {
+      BASE: `${API_PREFIX}/hr/payroll`,
+      BY_ID: ':id',
+      GENERATE: 'generate',
+      APPROVE: ':id/approve',
+      MARK_PAID: ':id/mark-paid',
+      CANCEL: ':id/cancel',
+      CSV: 'csv',
+    },
   },
 
   // Stock Transfers (inter-branch stock movement)

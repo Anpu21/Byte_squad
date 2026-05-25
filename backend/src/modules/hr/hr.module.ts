@@ -23,6 +23,9 @@ import { SalaryStructuresController } from '@/modules/hr/salary-structures.contr
 import { PayrollSettingsRepository } from '@/modules/hr/payroll-settings.repository';
 import { PayrollSettingsService } from '@/modules/hr/payroll-settings.service';
 import { PayrollSettingsController } from '@/modules/hr/payroll-settings.controller';
+import { PayrollRepository } from '@/modules/hr/payroll.repository';
+import { PayrollService } from '@/modules/hr/payroll.service';
+import { PayrollController } from '@/modules/hr/payroll.controller';
 
 /**
  * HR module — built up incrementally:
@@ -36,9 +39,11 @@ import { PayrollSettingsController } from '@/modules/hr/payroll-settings.control
  * - BE-H4 added the EmployeeLeaves workflow + annual-balance
  *   accounting (apply / approve / reject / cancel) with atomic
  *   balance adjustments through EmployeesRepository.
- * - BE-H5 (this phase) adds SalaryStructure and PayrollSettings CRUD
- *   — the configurable inputs the BE-H6 payroll generator depends on
- *   to compute gross / deductions / net per pay period.
+ * - BE-H5 added SalaryStructure and PayrollSettings CRUD — the
+ *   configurable inputs the BE-H6 payroll generator depends on to
+ *   compute gross / deductions / net per pay period.
+ * - BE-H6 (this phase) adds the Payroll engine — monthly generation,
+ *   approve → Paid state machine, and the bank-file CSV export.
  *
  * CloudinaryModule is `@Global()` elsewhere in the app, but we import
  * it explicitly here so the dependency is obvious from this module's
@@ -69,6 +74,8 @@ import { PayrollSettingsController } from '@/modules/hr/payroll-settings.control
     SalaryStructuresService,
     PayrollSettingsRepository,
     PayrollSettingsService,
+    PayrollRepository,
+    PayrollService,
   ],
   controllers: [
     EmployeesController,
@@ -76,6 +83,7 @@ import { PayrollSettingsController } from '@/modules/hr/payroll-settings.control
     EmployeeLeavesController,
     SalaryStructuresController,
     PayrollSettingsController,
+    PayrollController,
   ],
   exports: [
     EmployeesService,
@@ -88,6 +96,8 @@ import { PayrollSettingsController } from '@/modules/hr/payroll-settings.control
     SalaryStructuresRepository,
     PayrollSettingsService,
     PayrollSettingsRepository,
+    PayrollService,
+    PayrollRepository,
     TypeOrmModule,
   ],
 })
