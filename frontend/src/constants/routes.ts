@@ -56,6 +56,9 @@ export const FRONTEND_ROUTES = {
     ADMIN_EMPLOYEE_NEW: '/admin/employees/new',
     ADMIN_EMPLOYEE_EDIT: '/admin/employees/:id',
 
+    // Admin / manager — HR attendance grid
+    ADMIN_ATTENDANCE: '/admin/attendance',
+
     // Notifications
     NOTIFICATIONS: '/notifications',
     NOTIFICATION_DETAIL: '/notifications/:id',

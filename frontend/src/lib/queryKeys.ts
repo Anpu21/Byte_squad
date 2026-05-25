@@ -27,6 +27,13 @@ export interface ListEmployeesQueryKey {
     offset?: number;
 }
 
+export interface ListAttendanceQueryKey {
+    branchId?: string;
+    employeeId?: string;
+    startDate: string;
+    endDate: string;
+}
+
 export const queryKeys = {
     admin: {
         inventoryMatrix: (filters: AdminInventoryMatrixFilters) =>
@@ -115,6 +122,9 @@ export const queryKeys = {
         employees: (params: ListEmployeesQueryKey) =>
             ['hr', 'employees', params] as const,
         employee: (id: string) => ['hr', 'employee', id] as const,
+        attendance: (params: ListAttendanceQueryKey) =>
+            ['hr', 'attendance', params] as const,
+        todayAttendance: () => ['hr', 'attendance', 'today'] as const,
     },
     adminLoyalty: {
         customers: (params: {
