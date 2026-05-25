@@ -44,6 +44,16 @@ export interface ListLeavesQueryKey {
     offset?: number;
 }
 
+export interface ListPayrollQueryKey {
+    branchId?: string;
+    employeeId?: string;
+    month?: number;
+    year?: number;
+    status?: 'Pending' | 'Approved' | 'Paid' | 'Cancelled';
+    limit?: number;
+    offset?: number;
+}
+
 export const queryKeys = {
     admin: {
         inventoryMatrix: (filters: AdminInventoryMatrixFilters) =>
@@ -137,6 +147,8 @@ export const queryKeys = {
         todayAttendance: () => ['hr', 'attendance', 'today'] as const,
         leaves: (params: ListLeavesQueryKey) => ['hr', 'leaves', params] as const,
         leave: (id: string) => ['hr', 'leave', id] as const,
+        payroll: (params: ListPayrollQueryKey) => ['hr', 'payroll', params] as const,
+        payrollOne: (id: string) => ['hr', 'payroll', id] as const,
     },
     adminLoyalty: {
         customers: (params: {

@@ -7,3 +7,6 @@ export * from './employees-list-response.type';
 export * from './leave.type';
 export * from './apply-leave-payload.type';
 export * from './leaves-list-response.type';
+export * from './payroll.type';
+export * from './payroll-list-response.type';
+export * from './generate-payroll-response.type';

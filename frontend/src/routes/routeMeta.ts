@@ -43,6 +43,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.ADMIN_EMPLOYEE_EDIT]: { title: 'Edit employee', crumbs: ['People', 'Employees', 'Edit'] },
     [FRONTEND_ROUTES.ADMIN_ATTENDANCE]: { title: 'Attendance', crumbs: ['People', 'Attendance'] },
     [FRONTEND_ROUTES.ADMIN_LEAVES]: { title: 'Leaves', crumbs: ['People', 'Leaves'] },
+    [FRONTEND_ROUTES.ADMIN_PAYROLL]: { title: 'Payroll', crumbs: ['People', 'Payroll'] },
 
     [FRONTEND_ROUTES.NOTIFICATIONS]: { title: 'Notifications', crumbs: ['Notifications'] },
     [FRONTEND_ROUTES.NOTIFICATION_DETAIL]: { title: 'Notification', crumbs: ['Notifications', 'Detail'] },

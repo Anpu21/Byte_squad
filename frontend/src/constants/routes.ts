@@ -62,6 +62,9 @@ export const FRONTEND_ROUTES = {
     // Admin / manager / cashier — HR leaves
     ADMIN_LEAVES: '/admin/leaves',
 
+    // Admin / manager — HR payroll
+    ADMIN_PAYROLL: '/admin/payroll',
+
     // Notifications
     NOTIFICATIONS: '/notifications',
     NOTIFICATION_DETAIL: '/notifications/:id',

@@ -13,6 +13,7 @@ import {
     Menu as MenuIcon,
     PiggyBank,
     Receipt,
+    Wallet,
     ScanLine,
     ScrollText,
     ShoppingCart,
@@ -21,7 +22,6 @@ import {
     UserCog,
     UserPlus,
     Users,
-    Wallet,
     History,
     Store,
 } from 'lucide-react';
@@ -166,6 +166,13 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.ADMIN_LEAVES,
         roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
         icon: <CalendarRange size={15} />,
+        group: 'People',
+    },
+    {
+        label: 'Payroll',
+        path: FRONTEND_ROUTES.ADMIN_PAYROLL,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <Wallet size={15} />,
         group: 'People',
     },
     {
