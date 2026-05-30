@@ -119,7 +119,6 @@ describe('PosBillTemplate', () => {
                 sale={sale}
                 businessName="LedgerPro Mart"
                 businessAddress="12 Marine Drive, Colombo"
-                cashierName="Asha Cashier"
             />,
         );
 
@@ -128,7 +127,6 @@ describe('PosBillTemplate', () => {
             screen.getByText('12 Marine Drive, Colombo'),
         ).toBeInTheDocument();
         expect(screen.getByText('INV-2026-000001')).toBeInTheDocument();
-        expect(screen.getByText(/Cashier: Asha Cashier/)).toBeInTheDocument();
         expect(screen.getByText(/Walk-in customer/)).toBeInTheDocument();
         expect(screen.getByText('Whole-wheat bread')).toBeInTheDocument();
         expect(screen.getByText(/−10% disc/)).toBeInTheDocument();
@@ -142,6 +140,88 @@ describe('PosBillTemplate', () => {
         expect(screen.getByText('Change')).toBeInTheDocument();
         expect(
             screen.getByText('Thank you for shopping!'),
+        ).toBeInTheDocument();
+    });
+
+    it('prints the picked unit name alongside quantity and per-unit price', () => {
+        // 250 g of a kg-stocked product priced at Rs 200/kg →
+        // "250 g × LKR 0.20/g".
+        const sale = buildSale({
+            items: [
+                buildSaleItem({
+                    quantity: 250,
+                    baseUnitQty: 0.25,
+                    unitId: 'u-g',
+                    unitPrice: 200,
+                    lineTotal: 50,
+                    lineSubtotal: 50,
+                    unit: { id: 'u-g', name: 'g', conversionToBase: 0.001 },
+                    product: {
+                        id: 'p1',
+                        name: 'Basmati rice',
+                        baseUnit: 'kg',
+                    },
+                }),
+            ],
+            subtotal: 50,
+            total: 50,
+        });
+        render(<PosBillTemplate sale={sale} />);
+        expect(
+            screen.getByText((text) => /250 g × LKR\s*0\.20\/g/.test(text)),
+        ).toBeInTheDocument();
+    });
+
+    it('falls back to the product base unit when the picked unit is missing', () => {
+        // Backward-compatible: older sales rows without `unit` eager-loaded
+        // still read "1 kg × LKR 200.00/kg" using `product.baseUnit`.
+        const sale = buildSale({
+            items: [
+                buildSaleItem({
+                    quantity: 1,
+                    baseUnitQty: 1,
+                    unitId: null,
+                    unitPrice: 200,
+                    lineTotal: 200,
+                    lineSubtotal: 200,
+                    unit: null,
+                    product: {
+                        id: 'p1',
+                        name: 'Basmati rice',
+                        baseUnit: 'kg',
+                    },
+                }),
+            ],
+            subtotal: 200,
+            total: 200,
+        });
+        render(<PosBillTemplate sale={sale} />);
+        expect(
+            screen.getByText((text) => /1 kg × LKR\s*200\.00\/kg/.test(text)),
+        ).toBeInTheDocument();
+    });
+
+    it('omits the unit suffix entirely when neither picked nor base unit is known', () => {
+        // Pre-existing sale (Phase 1 or earlier seed) with no unit data —
+        // renderer must not synthesize a label and must not crash.
+        const sale = buildSale({
+            items: [
+                buildSaleItem({
+                    quantity: 2,
+                    baseUnitQty: 2,
+                    unitId: null,
+                    unitPrice: 50,
+                    lineTotal: 100,
+                    lineSubtotal: 100,
+                    unit: null,
+                    product: { id: 'p1', name: 'Loaf of bread' },
+                }),
+            ],
+        });
+        render(<PosBillTemplate sale={sale} />);
+        // No slash means no "/unit" suffix was appended.
+        expect(
+            screen.getByText((text) => /^2 × LKR\s*50\.00$/.test(text)),
         ).toBeInTheDocument();
     });
 

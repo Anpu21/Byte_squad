@@ -6,6 +6,7 @@ export interface ProductFormErrors {
     sellingPrice?: string;
     initialStock?: string;
     lowStockThreshold?: string;
+    sellableUnits?: string;
     general?: string;
 }
 

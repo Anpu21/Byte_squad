@@ -8,16 +8,21 @@ interface IPosTenderSummaryProps {
 }
 
 /**
- * Live mini-ledger surfaced under the active form. Shows invoice total,
- * tender total, what we'd settle on the invoice, change due, and any
- * surplus that would be kept as customer credit. When the calc fails we
- * fall back to the invoice line alone; the orchestrator owns the error
- * banner so the summary stays passive.
+ * Live mini-ledger surfaced under the active form. Shows the invoice
+ * total, the cashier's tender total, and either the change due (cash
+ * overpay handed back) or the balance still outstanding when the tender
+ * is short. The keep-balance / kept-as-credit row was removed alongside
+ * the customer-picker — single-shop retail has no walk-in customer
+ * accounts to credit a surplus to. When the calc fails the summary falls
+ * back to the invoice line alone; the orchestrator owns the error banner
+ * so this surface stays passive.
  */
 export function PosTenderSummary({
     invoiceTotal,
     calc,
 }: IPosTenderSummaryProps) {
+    const change = calc?.cashChange ?? 0;
+    const balanceDue = calc?.balanceDue ?? 0;
     return (
         <section
             aria-label="Tender summary"
@@ -25,37 +30,22 @@ export function PosTenderSummary({
         >
             <Row label="Invoice total" value={formatCurrency(invoiceTotal)} />
             <Row
-                label="Tender total"
+                label="Tendered"
                 value={formatCurrency(calc?.paymentAmount ?? 0)}
             />
-            <Row
-                label="Paid"
-                value={formatCurrency(calc?.paidAmount ?? 0)}
-                emphasis="primary"
-            />
-            <Row
-                label="Change"
-                value={formatCurrency(calc?.cashChange ?? 0)}
-                emphasis={
-                    (calc?.cashChange ?? 0) > 0 ? 'info' : 'muted'
-                }
-            />
-            <Row
-                label="Balance due"
-                value={formatCurrency(calc?.balanceDue ?? 0)}
-                emphasis={
-                    (calc?.balanceDue ?? 0) > 0 ? 'danger' : 'muted'
-                }
-            />
-            <Row
-                label="Kept as credit"
-                value={formatCurrency(calc?.overpayKeptBalance ?? 0)}
-                emphasis={
-                    (calc?.overpayKeptBalance ?? 0) > 0
-                        ? 'info'
-                        : 'muted'
-                }
-            />
+            {balanceDue > 0 ? (
+                <Row
+                    label="Balance due"
+                    value={formatCurrency(balanceDue)}
+                    emphasis="danger"
+                />
+            ) : (
+                <Row
+                    label="Change"
+                    value={formatCurrency(change)}
+                    emphasis={change > 0 ? 'info' : 'muted'}
+                />
+            )}
         </section>
     );
 }

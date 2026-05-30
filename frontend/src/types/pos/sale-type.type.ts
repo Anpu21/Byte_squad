@@ -1,6 +1,7 @@
 /**
- * Top-level sale-type classification. `Retail` is the default walk-in
- * cashier sale; `Wholesale` indicates a B2B / bulk-pricing sale that
- * uses the product's wholesale price column.
+ * Top-level sale-type classification. The cashier UI no longer surfaces a
+ * wholesale path — every new sale rings as `Retail` — but the union stays
+ * here so historical 'Wholesale' rows persisted by the previous build
+ * still type-check on read.
  */
 export type TSaleType = 'Retail' | 'Wholesale';

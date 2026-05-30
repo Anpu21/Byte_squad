@@ -1,18 +1,19 @@
 import type { IMultiTenderInputs } from '@/features/pos/lib/multi-tender';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
+import type { IPosLoyaltyOwner } from '@/features/pos/hooks/useLoyaltyAttach';
 import type {
     ICreateSalePayload,
     ICreateSaleItemPayload,
     ICreateSalePaymentPayload,
     TPaymentMethod,
-    TPriceLevel,
-    TSaleType,
 } from '@/types';
 
 /**
  * Local state slot for the cashier's in-progress multi-tender bag.
  * Lives only inside `PosPaymentForms` — the values are flattened into
- * `ICreateSalePaymentPayload` at submit time.
+ * `ICreateSalePaymentPayload` at submit time. The Credit tender and the
+ * keep-balance toggle were removed with the customer-picker, so neither
+ * field appears here.
  */
 export interface ITenderBag {
     cashTendered: number;
@@ -25,8 +26,6 @@ export interface ITenderBag {
     chequeDeliveredBy: string;
     bankTransferAmount: number;
     bankRef: string;
-    creditAmount: number;
-    keepBalance: boolean;
 }
 
 /**
@@ -50,7 +49,7 @@ export function resolveTenderInputs(
         chequeAmount: 0,
         bankTransferAmount: 0,
         creditAmount: 0,
-        keepBalance: bag.keepBalance,
+        keepBalance: false,
     };
     if (method === 'Cash') {
         return {
@@ -59,7 +58,7 @@ export function resolveTenderInputs(
             cashTendered: bag.cashTendered,
         };
     }
-    if (method === 'Card' || method === 'Mobile') {
+    if (method === 'Card' || method === 'Mobile' || method === 'Credit') {
         return {
             ...baseline,
             cashAmount: invoiceTotal,
@@ -69,10 +68,7 @@ export function resolveTenderInputs(
     if (method === 'Cheque') {
         return { ...baseline, chequeAmount: bag.chequeAmount };
     }
-    if (method === 'Bank') {
-        return { ...baseline, bankTransferAmount: bag.bankTransferAmount };
-    }
-    return { ...baseline, creditAmount: bag.creditAmount };
+    return { ...baseline, bankTransferAmount: bag.bankTransferAmount };
 }
 
 /**
@@ -92,40 +88,45 @@ export function createInitialTenderBag(invoiceTotal: number): ITenderBag {
         chequeDeliveredBy: '',
         bankTransferAmount: 0,
         bankRef: '',
-        creditAmount: 0,
-        keepBalance: false,
     };
 }
 
 interface IBuildPayloadArgs {
     cart: ICartItem[];
-    customerUserId: string | null;
-    saleType: TSaleType;
-    priceLevel: TPriceLevel;
     cartDiscountPercentage: number;
     paymentMethod: TPaymentMethod;
     paymentAmount: number;
     bag: ITenderBag;
     /** Cash portion applied to the invoice (capped at invoiceTotal). */
     cashAmount: number;
+    /** Loyalty owner attached via the cashier card, if any. */
+    loyaltyOwner?: IPosLoyaltyOwner | null;
+    /** Whole-point redeem amount; ignored when 0 or no owner is attached. */
+    loyaltyRedeemPoints?: number;
 }
 
 /**
  * Map cart rows and the tender bag onto the create-sale payload the
- * backend expects. Card/Mobile tenders ride the `paymentMethod` field
- * alone — no per-method amount; the backend treats them as Cash-equivalent
- * with `cashAmount = invoice total` so `paidAmount` lands correctly.
+ * backend expects. Card / Mobile / Credit tenders ride the
+ * `paymentMethod` field alone — no per-method amount; the backend treats
+ * them as Cash-equivalent with `cashAmount = invoice total` so
+ * `paidAmount` lands correctly.
+ *
+ * Loyalty intent is layered on top of the tender bag: when the cashier
+ * attached an owner via the loyalty card we send either `customerUserId`
+ * (registered) or `loyaltyCustomerId` (walk-in) — never both — plus the
+ * optional `loyaltyRedeemPoints` when > 0. The backend enforces the
+ * exclusivity and the redeem cap.
  */
 export function buildSalePayload({
     cart,
-    customerUserId,
-    saleType,
-    priceLevel,
     cartDiscountPercentage,
     paymentMethod,
     paymentAmount,
     bag,
     cashAmount,
+    loyaltyOwner,
+    loyaltyRedeemPoints,
 }: IBuildPayloadArgs): ICreateSalePayload {
     const items: ICreateSaleItemPayload[] = cart.map((row) => ({
         productId: row.productId,
@@ -144,13 +145,34 @@ export function buildSalePayload({
     };
 
     return {
-        customerUserId: customerUserId ?? undefined,
-        saleType,
-        priceLevel,
         cartDiscountPercentage,
         items,
         payment,
+        ...buildLoyaltyFields(loyaltyOwner, loyaltyRedeemPoints),
     };
+}
+
+/**
+ * Pick the right loyalty owner field for the payload. The BE rejects
+ * the combination `customerUserId && loyaltyCustomerId` with a 400 so
+ * we always emit at most one. Returns an empty object when no owner
+ * is attached so the spread is a no-op.
+ */
+function buildLoyaltyFields(
+    owner: IPosLoyaltyOwner | null | undefined,
+    redeemPoints: number | undefined,
+): Pick<ICreateSalePayload, 'customerUserId' | 'loyaltyCustomerId' | 'loyaltyRedeemPoints'> {
+    if (!owner) return {};
+    const fields: Pick<ICreateSalePayload, 'customerUserId' | 'loyaltyCustomerId' | 'loyaltyRedeemPoints'> = {};
+    if (owner.ownerType === 'user' && owner.userId) {
+        fields.customerUserId = owner.userId;
+    } else if (owner.ownerType === 'walkIn' && owner.loyaltyCustomerId) {
+        fields.loyaltyCustomerId = owner.loyaltyCustomerId;
+    }
+    if (redeemPoints !== undefined && redeemPoints > 0) {
+        fields.loyaltyRedeemPoints = redeemPoints;
+    }
+    return fields;
 }
 
 function buildPaymentTender(
@@ -158,7 +180,7 @@ function buildPaymentTender(
     bag: ITenderBag,
     cashAmount: number,
 ): Partial<ICreateSalePaymentPayload> {
-    if (method === 'Card' || method === 'Mobile') {
+    if (method === 'Card' || method === 'Mobile' || method === 'Credit') {
         // External tender: send no cash/cheque/bank fields. The backend
         // stores the method label and treats `paymentAmount` as the
         // settled total. The cashier verifies receipt externally.
@@ -181,9 +203,6 @@ function buildPaymentTender(
         if (bag.bankTransferAmount > 0)
             tender.bankTransferAmount = bag.bankTransferAmount;
         if (bag.bankRef) tender.bankRef = bag.bankRef;
-    } else if (method === 'Credit') {
-        if (bag.creditAmount > 0) tender.creditAmount = bag.creditAmount;
     }
-    if (bag.keepBalance) tender.keepBalance = bag.keepBalance;
     return tender;
 }

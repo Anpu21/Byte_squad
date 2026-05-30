@@ -24,3 +24,9 @@ export type { RecentSaleRow } from './recent-sale-row.type';
 
 // Phase 9 — Shanel-aligned customer picker row.
 export type { CustomerSearchRow } from './customer-search-row.type';
+
+// Phase BE-L3 — POS-write response shape with optional loyalty summary.
+export type {
+  CreateSaleResponse,
+  CreateSaleLoyaltyResult,
+} from './create-sale-response.type';

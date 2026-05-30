@@ -1,9 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
+import type { UpdateQueryBuilder } from 'typeorm';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
+import {
+  applyLedgerActivityExists,
+  normalizeCustomerRow,
+} from '@/modules/loyalty/loyalty-customer-accounts.helpers';
+import type {
+  LoyaltyCustomerAccountsQueryOptions,
+  LoyaltyCustomerRawRow,
+  LoyaltyCustomerRow,
+  LoyaltyOwner,
+} from '@/modules/loyalty/types';
 
 @Injectable()
 export class LoyaltyRepository {
@@ -18,16 +29,41 @@ export class LoyaltyRepository {
     return this.accountRepo.findOne({ where: { userId } });
   }
 
-  async createAccount(userId: string): Promise<LoyaltyAccount> {
+  async findAccountByLoyaltyCustomer(
+    loyaltyCustomerId: string,
+  ): Promise<LoyaltyAccount | null> {
+    return this.accountRepo.findOne({ where: { loyaltyCustomerId } });
+  }
+
+  async createAccountForUser(userId: string): Promise<LoyaltyAccount> {
     return this.accountRepo.save(this.accountRepo.create({ userId }));
   }
 
+  async createAccountForLoyaltyCustomer(
+    loyaltyCustomerId: string,
+  ): Promise<LoyaltyAccount> {
+    return this.accountRepo.save(
+      this.accountRepo.create({ loyaltyCustomerId }),
+    );
+  }
+
   async findLedgerEntry(
-    userId: string,
+    owner: LoyaltyOwner,
     orderId: string,
     type: LoyaltyLedgerEntryType,
   ): Promise<LoyaltyLedgerEntry | null> {
-    return this.ledgerRepo.findOne({ where: { userId, orderId, type } });
+    if (owner.userId) {
+      return this.ledgerRepo.findOne({
+        where: { userId: owner.userId, orderId, type },
+      });
+    }
+    return this.ledgerRepo.findOne({
+      where: {
+        loyaltyCustomerId: owner.loyaltyCustomerId,
+        orderId,
+        type,
+      },
+    });
   }
 
   async createLedgerEntry(
@@ -36,42 +72,79 @@ export class LoyaltyRepository {
     return this.ledgerRepo.save(this.ledgerRepo.create(partial));
   }
 
-  async applyRedeem(userId: string, points: number): Promise<boolean> {
-    const result = await this.accountRepo
+  /**
+   * Atomic debit against the owner's wallet. Returns false if the
+   * wallet doesn't have enough points (the UPDATE … WHERE
+   * points_balance >= :points clause keeps the redeem race-free).
+   *
+   * Owner WHERE is applied first so the balance guard can be added
+   * via `.andWhere` — TypeORM's UpdateQueryBuilder.where() resets
+   * the expression map, which would silently wipe the guard if the
+   * order were reversed.
+   */
+  async applyRedeem(owner: LoyaltyOwner, points: number): Promise<boolean> {
+    const qb = this.accountRepo
       .createQueryBuilder()
       .update(LoyaltyAccount)
       .set({
         pointsBalance: () => `"points_balance" - ${points}`,
         lifetimePointsRedeemed: () => `"lifetime_points_redeemed" + ${points}`,
-      })
-      .where('user_id = :userId', { userId })
-      .andWhere('points_balance >= :points', { points })
-      .execute();
+      });
+
+    this.applyOwnerWhere(qb, owner);
+    qb.andWhere('points_balance >= :points', { points });
+
+    const result = await qb.execute();
     return Number(result.affected ?? 0) > 0;
   }
 
-  async applyRedeemReversal(userId: string, points: number): Promise<void> {
-    await this.accountRepo
+  async applyRedeemReversal(
+    owner: LoyaltyOwner,
+    points: number,
+  ): Promise<void> {
+    const qb = this.accountRepo
       .createQueryBuilder()
       .update(LoyaltyAccount)
       .set({
         pointsBalance: () => `"points_balance" + ${points}`,
         lifetimePointsRedeemed: () => `"lifetime_points_redeemed" - ${points}`,
-      })
-      .where('user_id = :userId', { userId })
-      .execute();
+      });
+
+    this.applyOwnerWhere(qb, owner);
+
+    await qb.execute();
   }
 
-  async applyEarn(userId: string, points: number): Promise<void> {
-    await this.accountRepo
+  async applyEarn(owner: LoyaltyOwner, points: number): Promise<void> {
+    const qb = this.accountRepo
       .createQueryBuilder()
       .update(LoyaltyAccount)
       .set({
         pointsBalance: () => `"points_balance" + ${points}`,
         lifetimePointsEarned: () => `"lifetime_points_earned" + ${points}`,
-      })
-      .where('user_id = :userId', { userId })
-      .execute();
+      });
+
+    this.applyOwnerWhere(qb, owner);
+
+    await qb.execute();
+  }
+
+  /**
+   * Sets the owner WHERE on an UpdateQueryBuilder. Must be called
+   * before any `.andWhere(...)` guards, because `.where()` resets
+   * the expression map.
+   */
+  private applyOwnerWhere(
+    qb: UpdateQueryBuilder<LoyaltyAccount>,
+    owner: LoyaltyOwner,
+  ): void {
+    if (owner.userId) {
+      qb.where('user_id = :userId', { userId: owner.userId });
+    } else {
+      qb.where('loyalty_customer_id = :loyaltyCustomerId', {
+        loyaltyCustomerId: owner.loyaltyCustomerId,
+      });
+    }
   }
 
   async listEntries(
@@ -89,29 +162,103 @@ export class LoyaltyRepository {
     return { rows, total };
   }
 
-  async listCustomerAccounts(opts: {
-    search?: string;
-    limit: number;
-    offset: number;
-  }): Promise<{ rows: LoyaltyCustomerRow[]; total: number }> {
+  /**
+   * Admin customer list, spanning BOTH user-side and walk-in-side
+   * loyalty accounts. The query LEFT JOINs both identity tables and
+   * COALESCEs the display fields so a row is always presentable
+   * regardless of which owner column is set.
+   *
+   * For the "last activity branch" projection we join a correlated
+   * subquery that picks the most-recent ledger entry per account
+   * (by `MAX(created_at)` across both owner columns), then LEFT JOIN
+   * `branches` so the name is null when the most recent activity was
+   * an online earn (which has no branch).
+   *
+   * Filter semantics live on `LoyaltyCustomerAccountsQueryOptions`.
+   * The EXISTS subqueries lean on `idx_loyalty_ledger_branch_created_at`
+   * (added in BE-L1) so the cost stays bounded as the ledger grows.
+   */
+  async listCustomerAccounts(
+    opts: LoyaltyCustomerAccountsQueryOptions,
+  ): Promise<{ rows: LoyaltyCustomerRow[]; total: number }> {
     const qb = this.accountRepo
       .createQueryBuilder('acc')
-      .innerJoin('users', 'u', 'u.id = acc.user_id')
-      .select('u.id', 'id')
-      .addSelect('u.first_name', 'firstName')
-      .addSelect('u.last_name', 'lastName')
+      .leftJoin('users', 'u', 'u.id = acc.user_id')
+      .leftJoin('loyalty_customers', 'lc', 'lc.id = acc.loyalty_customer_id')
+      .leftJoin(
+        (sub) =>
+          sub
+            .from(LoyaltyLedgerEntry, 'le')
+            .select('le.user_id', 'user_id')
+            .addSelect('le.loyalty_customer_id', 'loyalty_customer_id')
+            .addSelect('le.branch_id', 'branch_id')
+            .addSelect('le.created_at', 'created_at')
+            .where(
+              `le.created_at = (
+                SELECT MAX(le2.created_at)
+                FROM loyalty_ledger_entries le2
+                WHERE (
+                  (le2.user_id IS NOT NULL AND le2.user_id = le.user_id)
+                  OR (le2.loyalty_customer_id IS NOT NULL
+                      AND le2.loyalty_customer_id = le.loyalty_customer_id)
+                )
+              )`,
+            ),
+        'last_entry',
+        `(
+          (last_entry.user_id IS NOT NULL AND last_entry.user_id = acc.user_id)
+          OR (last_entry.loyalty_customer_id IS NOT NULL
+              AND last_entry.loyalty_customer_id = acc.loyalty_customer_id)
+        )`,
+      )
+      .leftJoin('branches', 'br', 'br.id = last_entry.branch_id')
+      .select('COALESCE(acc.user_id, acc.loyalty_customer_id)', 'id')
+      .addSelect(
+        `CASE WHEN acc.user_id IS NOT NULL THEN 'user' ELSE 'walkIn' END`,
+        'ownerType',
+      )
+      .addSelect('acc.user_id', 'userId')
+      .addSelect('acc.loyalty_customer_id', 'loyaltyCustomerId')
+      .addSelect('COALESCE(u.first_name, lc.first_name)', 'firstName')
+      .addSelect('COALESCE(u.last_name, lc.last_name)', 'lastName')
       .addSelect('u.email', 'email')
+      .addSelect('COALESCE(u.phone, lc.phone)', 'phone')
       .addSelect('acc.points_balance', 'pointsBalance')
       .addSelect('acc.lifetime_points_earned', 'lifetimePointsEarned')
       .addSelect('acc.lifetime_points_redeemed', 'lifetimePointsRedeemed')
-      .addSelect('acc.updated_at', 'lastActivityAt');
+      .addSelect(
+        'COALESCE(last_entry.created_at, acc.updated_at)',
+        'lastActivityAt',
+      )
+      .addSelect('last_entry.branch_id', 'lastActivityBranchId')
+      .addSelect('br.name', 'lastActivityBranchName');
 
     if (opts.search?.trim()) {
       const term = `%${opts.search.trim().toLowerCase()}%`;
-      qb.where(
-        'LOWER(u.first_name) LIKE :term OR LOWER(u.last_name) LIKE :term OR LOWER(u.email) LIKE :term',
+      qb.andWhere(
+        `(
+          LOWER(COALESCE(u.first_name, lc.first_name)) LIKE :term
+          OR LOWER(COALESCE(u.last_name, lc.last_name)) LIKE :term
+          OR LOWER(u.email) LIKE :term
+          OR COALESCE(u.phone, lc.phone) LIKE :term
+        )`,
         { term },
       );
+    }
+
+    if (opts.minPoints !== undefined) {
+      qb.andWhere('acc.points_balance >= :minPoints', {
+        minPoints: opts.minPoints,
+      });
+    }
+    if (opts.maxPoints !== undefined) {
+      qb.andWhere('acc.points_balance <= :maxPoints', {
+        maxPoints: opts.maxPoints,
+      });
+    }
+
+    if (opts.branchId || opts.activeSince) {
+      applyLedgerActivityExists(qb, opts);
     }
 
     const totalQb = qb.clone();
@@ -122,39 +269,8 @@ export class LoyaltyRepository {
       .addOrderBy('acc.updated_at', 'DESC')
       .limit(opts.limit)
       .offset(opts.offset)
-      .getRawMany<{
-        id: string;
-        firstName: string;
-        lastName: string;
-        email: string;
-        pointsBalance: string | number;
-        lifetimePointsEarned: string | number;
-        lifetimePointsRedeemed: string | number;
-        lastActivityAt: Date;
-      }>();
+      .getRawMany<LoyaltyCustomerRawRow>();
 
-    const rows: LoyaltyCustomerRow[] = rawRows.map((r) => ({
-      id: r.id,
-      firstName: r.firstName,
-      lastName: r.lastName,
-      email: r.email,
-      pointsBalance: Number(r.pointsBalance),
-      lifetimePointsEarned: Number(r.lifetimePointsEarned),
-      lifetimePointsRedeemed: Number(r.lifetimePointsRedeemed),
-      lastActivityAt: r.lastActivityAt,
-    }));
-
-    return { rows, total };
+    return { rows: rawRows.map(normalizeCustomerRow), total };
   }
-}
-
-export interface LoyaltyCustomerRow {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  pointsBalance: number;
-  lifetimePointsEarned: number;
-  lifetimePointsRedeemed: number;
-  lastActivityAt: Date;
 }

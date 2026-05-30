@@ -1,6 +1,4 @@
 import type { TPaymentMethod } from './payment-method.type';
-import type { TSaleType } from './sale-type.type';
-import type { TPriceLevel } from './price-level.type';
 
 export interface ICreateSaleItemPayload {
   productId: string;
@@ -19,8 +17,6 @@ export interface ICreateSalePaymentPayload {
   cashAmount?: number;
   chequeAmount?: number;
   bankTransferAmount?: number;
-  creditAmount?: number;
-  keepBalance?: boolean;
   chequeNo?: string;
   chequeDate?: string;
   chequeBank?: string;
@@ -30,13 +26,28 @@ export interface ICreateSalePaymentPayload {
   bankRef?: string;
 }
 
+/**
+ * Create-sale request body for `POST /pos/sales`. The wholesale price tier
+ * was removed from the cashier UI so `saleType` / `priceLevel` are no
+ * longer sent. The walk-in customer-picker was removed at the same time,
+ * but `customerUserId` is re-introduced here as a pure loyalty-intent
+ * field (set when the cashier attaches a registered-customer phone via
+ * the loyalty card). `loyaltyCustomerId` is its walk-in twin, and
+ * `loyaltyRedeemPoints` is the per-sale redeem amount.
+ *
+ * The backend rejects the combination `customerUserId && loyaltyCustomerId`
+ * with a 400, so the FE always sets at most one.
+ */
 export interface ICreateSalePayload {
-  customerUserId?: string;
-  saleType: TSaleType;
-  priceLevel: TPriceLevel;
   location?: string;
   cartDiscountPercentage?: number;
   cartDiscountAmount?: number;
   items: ICreateSaleItemPayload[];
   payment: ICreateSalePaymentPayload;
+  /** Registered-customer loyalty owner (mutually exclusive with `loyaltyCustomerId`). */
+  customerUserId?: string;
+  /** Walk-in loyalty owner (mutually exclusive with `customerUserId`). */
+  loyaltyCustomerId?: string;
+  /** Whole points to redeem against this sale. BE enforces the cap. */
+  loyaltyRedeemPoints?: number;
 }

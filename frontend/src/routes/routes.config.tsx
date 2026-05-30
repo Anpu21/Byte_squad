@@ -25,6 +25,11 @@ import { BranchManagementPage } from '@/pages/branches/BranchManagementPage';
 import { BranchPerformancePage } from '@/pages/branches/BranchPerformancePage';
 import { BranchComparisonPage } from '@/pages/admin/BranchComparisonPage';
 import { AdminLoyaltyPage } from '@/pages/admin/AdminLoyaltyPage';
+import { AdminEmployeesPage } from '@/pages/admin/AdminEmployeesPage';
+import { AdminEmployeeFormPage } from '@/pages/admin/AdminEmployeeFormPage';
+import { AdminAttendancePage } from '@/pages/admin/AdminAttendancePage';
+import { AdminLeavesPage } from '@/pages/admin/AdminLeavesPage';
+import { AdminPayrollPage } from '@/pages/admin/AdminPayrollPage';
 import { TransferRequestsPage } from '@/pages/transfers/TransferRequestsPage';
 import { NewTransferRequestPage } from '@/pages/transfers/NewTransferRequestPage';
 import { TransferHistoryPage } from '@/pages/transfers/TransferHistoryPage';
@@ -228,6 +233,44 @@ export const ROUTES: RouteDef[] = [
         path: FRONTEND_ROUTES.ADMIN_LOYALTY,
         element: <AdminLoyaltyPage />,
         allowedRoles: [UserRole.ADMIN],
+        layout: 'dashboard',
+    },
+
+    // ─── HR (Admin + Manager) ───
+    {
+        path: FRONTEND_ROUTES.ADMIN_EMPLOYEES,
+        element: <AdminEmployeesPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.ADMIN_EMPLOYEE_NEW,
+        element: <AdminEmployeeFormPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.ADMIN_EMPLOYEE_EDIT,
+        element: <AdminEmployeeFormPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.ADMIN_ATTENDANCE,
+        element: <AdminAttendancePage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.ADMIN_LEAVES,
+        element: <AdminLeavesPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.ADMIN_PAYROLL,
+        element: <AdminPayrollPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
 

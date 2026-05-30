@@ -15,6 +15,10 @@ export interface UpdateLoyaltySettingsPayload {
 
 export interface ListCustomersQuery {
     search?: string;
+    branchId?: string;
+    activeSince?: string;
+    minPoints?: number;
+    maxPoints?: number;
     limit?: number;
     offset?: number;
 }

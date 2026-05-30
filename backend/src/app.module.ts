@@ -17,9 +17,18 @@ import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
 import { CustomerOrdersModule } from '@/modules/customer-orders/customer-orders.module';
 import { ShopModule } from '@/modules/shop/shop.module';
 import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
+import { HrModule } from '@/modules/hr/hr.module';
+import { Attendance } from '@/modules/hr/entities/attendance.entity';
+import { AttendanceSummary } from '@/modules/hr/entities/attendance-summary.entity';
+import { Employee } from '@/modules/hr/entities/employee.entity';
+import { EmployeeLeave } from '@/modules/hr/entities/employee-leave.entity';
+import { Payroll } from '@/modules/hr/entities/payroll.entity';
+import { PayrollSettings } from '@/modules/hr/entities/payroll-settings.entity';
+import { SalaryStructure } from '@/modules/hr/entities/salary-structure.entity';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
+import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
@@ -32,8 +41,10 @@ import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order
 import { CustomerOrderItem } from '@/modules/customer-orders/entities/customer-order-item.entity';
 import { PayherePaymentAttempt } from '@/modules/customer-orders/entities/payhere-payment-attempt.entity';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
+import { HrSeedService } from '@common/seeds/hr-seed.service';
 import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
 
 import appConfig from '@common/config/app.config';
@@ -53,6 +64,7 @@ import appConfig from '@common/config/app.config';
       User,
       Branch,
       Product,
+      ProductSellableUnit,
       Inventory,
       Sale,
       SaleItem,
@@ -65,7 +77,15 @@ import appConfig from '@common/config/app.config';
       CustomerOrderItem,
       PayherePaymentAttempt,
       LoyaltyAccount,
+      LoyaltyCustomer,
       LoyaltyLedgerEntry,
+      Employee,
+      SalaryStructure,
+      Attendance,
+      AttendanceSummary,
+      EmployeeLeave,
+      Payroll,
+      PayrollSettings,
     ]),
     CloudinaryModule,
     AuthModule,
@@ -81,7 +101,12 @@ import appConfig from '@common/config/app.config';
     CustomerOrdersModule,
     ShopModule,
     LoyaltyModule,
+    HrModule,
   ],
-  providers: [AdminSeedService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
+  providers: [
+    AdminSeedService,
+    HrSeedService,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}

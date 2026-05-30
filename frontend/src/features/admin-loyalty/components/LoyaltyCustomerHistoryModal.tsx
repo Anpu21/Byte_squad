@@ -19,9 +19,10 @@ export function LoyaltyCustomerHistoryModal({
         limit: 50,
     });
 
-    const title = customer
-        ? `${customer.firstName} ${customer.lastName} · loyalty`
-        : 'Loyalty history';
+    const fullName = customer
+        ? [customer.firstName, customer.lastName].filter(Boolean).join(' ')
+        : '';
+    const title = customer ? `${fullName} · loyalty` : 'Loyalty history';
 
     return (
         <Modal

@@ -1,9 +1,11 @@
 /**
  * Shanel-aligned row returned by `GET /pos/products/search`. Mirrors what the
  * cashier typeahead needs to render a result and stage a cart line: identity
- * (id/code/name), classification (type/baseUnit), pricing surfaces for both
- * retail and wholesale, taxability, discount eligibility, and the optional
- * image URL.
+ * (id/code/name), classification (type/baseUnit), the single (retail) price
+ * the cashier rings against, taxability, discount eligibility, and the
+ * optional image URL. The wholesale tier was removed alongside the POS
+ * Retail/Wholesale toggle — the column stays on the products table but is
+ * no longer surfaced to the cashier.
  */
 export interface SearchProductRow {
   productId: string;
@@ -14,7 +16,6 @@ export interface SearchProductRow {
   status: boolean;
   costPrice: number;
   retailPrice: number;
-  wholesalePrice: number;
   taxRate: number;
   discountAllowed: boolean;
   imageUrl: string | null;

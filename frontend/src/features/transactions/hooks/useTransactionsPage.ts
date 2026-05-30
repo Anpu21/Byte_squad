@@ -1,42 +1,54 @@
+import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import type { ITransactionRow } from '../lib/format';
+import { useTransactionsQuery } from '@/features/pos/hooks/useTransactionsQuery';
+import type { ICashierTransactionsSummary } from '@/types';
+
+interface UseTransactionsPageResult {
+    data: ICashierTransactionsSummary | undefined;
+    isLoading: boolean;
+    subtitle: string;
+    showBranchCol: boolean;
+    showCashierCol: boolean;
+}
+
+function buildSubtitle(
+    summary: ICashierTransactionsSummary | undefined,
+    firstName: string | undefined,
+): string {
+    const count = summary?.recentTransactions.length ?? 0;
+    const scope = summary?.scope;
+    let label: string;
+    if (scope === 'system') label = 'All branches';
+    else if (scope === 'branch') label = 'Branch sales';
+    else label = `${firstName ?? 'Your'} sales`;
+    return `${label} · ${count} records`;
+}
 
 /**
- * Transactions page model.
- *
- * Phase 1 of the Shanel POS port deletes the legacy `posService`. Until
- * Phase 7 rewires this list against the new POS read endpoints we return
- * an empty envelope so the page renders its zero state without crashing.
- * The `branch`-scope branch in the previous implementation also fell out;
- * Phase 7 will reinstate per-branch summaries with the new endpoints.
- *
- * TODO Phase 7: rewire to new pos.service / transactions list endpoint.
+ * Transactions page model. Routes the query scope by role: admin pulls the
+ * system-wide rollup, while managers and cashiers pull `/pos/my-transactions`
+ * (the server then narrows to branch or cashier scope from the JWT). Column
+ * visibility is driven by the scope the server actually returned.
  */
-type TransactionsScope = 'system' | 'branch' | 'self';
-
-export function useTransactionsPage() {
+export function useTransactionsPage(): UseTransactionsPageResult {
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
-    const scope: TransactionsScope = isAdmin ? 'system' : 'self';
+    const query = useTransactionsQuery({ scope: isAdmin ? 'all' : 'mine' });
 
-    const data = {
-        scope,
-        today: { totalSales: 0, transactionCount: 0 },
-        month: { totalSales: 0, transactionCount: 0 },
-        year: { totalSales: 0, transactionCount: 0 },
-        recentTransactions: [] as ITransactionRow[],
-    };
-
-    const scopeLabel =
-        scope === 'system' ? 'All branches' : `${user?.firstName ?? 'Your'} sales`;
-    const subtitle = `${scopeLabel} · 0 records`;
+    const data = query.data;
+    const showBranchCol = data?.scope === 'system';
+    const showCashierCol = data?.scope === 'system' || data?.scope === 'branch';
+    const subtitle = useMemo(
+        () => buildSubtitle(data, user?.firstName),
+        [data, user?.firstName],
+    );
 
     return {
         data,
-        isLoading: false,
+        isLoading: query.isLoading,
         subtitle,
-        showBranchCol: scope === 'system',
-        showCashierCol: scope === 'system',
+        showBranchCol,
+        showCashierCol,
     };
 }

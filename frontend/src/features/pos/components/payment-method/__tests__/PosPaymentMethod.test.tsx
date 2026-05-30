@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { PosPaymentMethod } from '../PosPaymentMethod';
 
 describe('PosPaymentMethod', () => {
-    it('renders all six payment-method pills and marks the active one', () => {
+    it('renders all five payment-method pills and marks the active one', () => {
         render(<PosPaymentMethod value="Cash" onChange={() => {}} />);
-        const labels = ['Cash', 'Card', 'Mobile', 'Cheque', 'Bank', 'Credit'];
+        const labels = ['Cash', 'Card', 'Mobile', 'Cheque', 'Bank'];
         for (const label of labels) {
             expect(screen.getByRole('radio', { name: new RegExp(label, 'i') })).toBeInTheDocument();
         }

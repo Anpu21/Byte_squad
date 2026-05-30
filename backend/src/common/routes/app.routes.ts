@@ -146,10 +146,56 @@ export const APP_ROUTES = {
     MINE: 'me',
     HISTORY: 'me/history',
     SETTINGS: 'settings',
+    LOOKUP: 'lookup',
+    ENROLL: 'enroll',
     ADMIN_BASE: `${API_PREFIX}/admin/loyalty`,
     ADMIN_SETTINGS: 'settings',
     ADMIN_CUSTOMERS: 'customers',
     ADMIN_CUSTOMER_HISTORY: 'customers/:userId/history',
+  },
+
+  // HR — employees, attendance, payroll
+  HR: {
+    BASE: `${API_PREFIX}/hr`,
+    EMPLOYEES: {
+      BASE: `${API_PREFIX}/hr/employees`,
+      BY_ID: ':id',
+      TERMINATE: ':id/terminate',
+      PHOTO: ':id/photo',
+    },
+    ATTENDANCE: {
+      BASE: `${API_PREFIX}/hr/attendance`,
+      BULK: 'bulk',
+      CHECK_IN: 'check-in',
+      CHECK_OUT: 'check-out',
+    },
+    LEAVES: {
+      BASE: `${API_PREFIX}/hr/leaves`,
+      BY_ID: ':id',
+      APPROVE: ':id/approve',
+      REJECT: ':id/reject',
+      CANCEL: ':id/cancel',
+    },
+    SALARY_STRUCTURES: {
+      BASE: `${API_PREFIX}/hr/salary-structures`,
+      BY_ID: ':id',
+      DEACTIVATE: ':id/deactivate',
+    },
+    PAYROLL_SETTINGS: {
+      BASE: `${API_PREFIX}/hr/payroll-settings`,
+      GLOBAL: 'global',
+      EFFECTIVE: 'effective',
+      BRANCH: 'branch',
+    },
+    PAYROLL: {
+      BASE: `${API_PREFIX}/hr/payroll`,
+      BY_ID: ':id',
+      GENERATE: 'generate',
+      APPROVE: ':id/approve',
+      MARK_PAID: ':id/mark-paid',
+      CANCEL: ':id/cancel',
+      CSV: 'csv',
+    },
   },
 
   // Stock Transfers (inter-branch stock movement)

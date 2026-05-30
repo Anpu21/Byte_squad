@@ -17,8 +17,6 @@ interface IRenderArgs {
     isCartEmpty?: boolean;
     hasLastReceipt?: boolean;
     onFocusSearch?: TVoidMock;
-    onTogglePriceLevel?: TVoidMock;
-    onOpenCustomerPicker?: TVoidMock;
     onClearCart?: TVoidMock;
     onPrintLastReceipt?: TVoidMock;
     onShowRecent?: TVoidMock;
@@ -27,16 +25,12 @@ interface IRenderArgs {
 
 function renderBar(args: IRenderArgs = {}): {
     onFocusSearch: TVoidMock;
-    onTogglePriceLevel: TVoidMock;
-    onOpenCustomerPicker: TVoidMock;
     onClearCart: TVoidMock;
     onPrintLastReceipt: TVoidMock;
     onShowRecent: TVoidMock;
     onOpenPayment: TVoidMock;
 } {
     const onFocusSearch = args.onFocusSearch ?? vi.fn<() => void>();
-    const onTogglePriceLevel = args.onTogglePriceLevel ?? vi.fn<() => void>();
-    const onOpenCustomerPicker = args.onOpenCustomerPicker ?? vi.fn<() => void>();
     const onClearCart = args.onClearCart ?? vi.fn<() => void>();
     const onPrintLastReceipt = args.onPrintLastReceipt ?? vi.fn<() => void>();
     const onShowRecent = args.onShowRecent ?? vi.fn<() => void>();
@@ -44,8 +38,6 @@ function renderBar(args: IRenderArgs = {}): {
     render(
         <PosActionButtons
             onFocusSearch={onFocusSearch}
-            onTogglePriceLevel={onTogglePriceLevel}
-            onOpenCustomerPicker={onOpenCustomerPicker}
             onClearCart={onClearCart}
             onPrintLastReceipt={onPrintLastReceipt}
             onShowRecent={onShowRecent}
@@ -56,8 +48,6 @@ function renderBar(args: IRenderArgs = {}): {
     );
     return {
         onFocusSearch,
-        onTogglePriceLevel,
-        onOpenCustomerPicker,
         onClearCart,
         onPrintLastReceipt,
         onShowRecent,
@@ -70,21 +60,14 @@ describe('PosActionButtons', () => {
         confirmMock.mockReset();
     });
 
-    it('renders all seven shortcut buttons with their F-key labels', () => {
+    it('renders all five shortcut buttons with their F-key labels', () => {
         renderBar();
-        const labels = ['Search', 'Price level', 'Customer', 'Clear cart', 'Print last', 'Recent sales', 'Charge'];
+        const labels = ['Search', 'Clear cart', 'Print last', 'Recent sales', 'Charge'];
         for (const label of labels) {
             expect(screen.getByRole('button', { name: new RegExp(label, 'i') })).toBeInTheDocument();
         }
         expect(screen.getByRole('button', { name: /Search/i })).toHaveTextContent('F2');
-        expect(screen.getByRole('button', { name: /Customer/i })).toHaveTextContent('F4');
         expect(screen.getByRole('button', { name: /Charge/i })).toHaveTextContent('F12');
-    });
-
-    it('fires onOpenCustomerPicker when the Customer (F4) button is clicked', async () => {
-        const { onOpenCustomerPicker } = renderBar();
-        await userEvent.click(screen.getByRole('button', { name: /Customer/i }));
-        expect(onOpenCustomerPicker).toHaveBeenCalledTimes(1);
     });
 
     it('fires onOpenPayment when the F12 key is pressed at document level', async () => {

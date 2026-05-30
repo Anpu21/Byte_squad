@@ -64,7 +64,6 @@ export function PosInvoiceTotal({
                             onCommit={onCartDiscountChange}
                             min={0}
                             max={100}
-                            step={0.1}
                             ariaLabel="Cart discount percentage"
                             className="w-20 h-8 pl-2 pr-7 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30"
                         />

@@ -23,6 +23,7 @@ import { AccountingModule } from '@accounting/accounting.module';
 import { InventoryModule } from '@inventory/inventory.module';
 import { ProductsModule } from '@products/products.module';
 import { UsersModule } from '@users/users.module';
+import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { UsersModule } from '@users/users.module';
     InventoryModule,
     ProductsModule,
     UsersModule,
+    LoyaltyModule,
   ],
   controllers: [PosController],
   providers: [

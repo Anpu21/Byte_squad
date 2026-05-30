@@ -1,5 +1,13 @@
-export type { ISale, ISaleCustomerSnapshot } from './sale.type';
-export type { ISaleItem, ISaleItemProductSnapshot } from './sale-item.type';
+export type {
+  ISale,
+  ISaleCustomerSnapshot,
+  ISaleLoyaltyResult,
+} from './sale.type';
+export type {
+  ISaleItem,
+  ISaleItemProductSnapshot,
+  ISaleItemUnitSnapshot,
+} from './sale-item.type';
 export type { ISalePayment } from './sale-payment.type';
 export type { TPaymentMethod } from './payment-method.type';
 export type { TSalePaymentStatus } from './sale-payment-status.type';
@@ -18,3 +26,10 @@ export type {
 } from './create-sale-payload.type';
 export type { IMultiTenderBag } from './multi-tender-bag.type';
 export type { ICustomerSearchRow } from './customer-search-row.type';
+export type { IDailyBreakdown } from './daily-breakdown.type';
+export type { ITopProduct } from './top-product.type';
+export type { ICashierPeriodStats } from './cashier-period-stats.type';
+export type { ICashierTransactionRow } from './cashier-transaction-row.type';
+export type { ICashierTransactionsSummary } from './cashier-transactions-summary.type';
+export type { ICashierDashboard } from './cashier-dashboard.type';
+export type { IAdminDashboard } from './admin-dashboard.type';

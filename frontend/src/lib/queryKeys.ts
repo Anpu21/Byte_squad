@@ -19,6 +19,41 @@ export interface AdminInventoryMatrixFilters {
     limit: number;
 }
 
+export interface ListEmployeesQueryKey {
+    branchId?: string;
+    search?: string;
+    status?: 'Active' | 'Resigned' | 'Terminated' | 'OnLeave';
+    limit?: number;
+    offset?: number;
+}
+
+export interface ListAttendanceQueryKey {
+    branchId?: string;
+    employeeId?: string;
+    startDate: string;
+    endDate: string;
+}
+
+export interface ListLeavesQueryKey {
+    branchId?: string;
+    employeeId?: string;
+    status?: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+}
+
+export interface ListPayrollQueryKey {
+    branchId?: string;
+    employeeId?: string;
+    month?: number;
+    year?: number;
+    status?: 'Pending' | 'Approved' | 'Paid' | 'Cancelled';
+    limit?: number;
+    offset?: number;
+}
+
 export const queryKeys = {
     admin: {
         inventoryMatrix: (filters: AdminInventoryMatrixFilters) =>
@@ -94,10 +129,34 @@ export const queryKeys = {
         history: (params: { limit?: number; offset?: number }) =>
             ['loyalty', 'history', params] as const,
         settings: () => ['loyalty', 'settings'] as const,
+        /**
+         * Cashier-side phone lookup. Keyed on the normalised phone so
+         * a successful enrol can invalidate the exact pending query and
+         * transition the card from miss → hit without a manual refetch.
+         */
+        posLookup: (phone: string) =>
+            ['loyalty', 'pos-lookup', phone] as const,
+    },
+    hr: {
+        all: () => ['hr'] as const,
+        employees: (params: ListEmployeesQueryKey) =>
+            ['hr', 'employees', params] as const,
+        employee: (id: string) => ['hr', 'employee', id] as const,
+        attendance: (params: ListAttendanceQueryKey) =>
+            ['hr', 'attendance', params] as const,
+        todayAttendance: () => ['hr', 'attendance', 'today'] as const,
+        leaves: (params: ListLeavesQueryKey) => ['hr', 'leaves', params] as const,
+        leave: (id: string) => ['hr', 'leave', id] as const,
+        payroll: (params: ListPayrollQueryKey) => ['hr', 'payroll', params] as const,
+        payrollOne: (id: string) => ['hr', 'payroll', id] as const,
     },
     adminLoyalty: {
         customers: (params: {
             search?: string;
+            branchId?: string;
+            activeSince?: string;
+            minPoints?: number;
+            maxPoints?: number;
             limit?: number;
             offset?: number;
         }) => ['admin-loyalty', 'customers', params] as const,
@@ -145,6 +204,10 @@ export const queryKeys = {
         customerSearch: (q: string, limit: number) =>
             ['pos', 'customerSearch', q, limit] as const,
         saleById: (saleId: string) => ['pos', 'saleById', saleId] as const,
+        cashierDashboard: () => ['pos', 'cashierDashboard'] as const,
+        adminDashboard: () => ['pos', 'adminDashboard'] as const,
+        myTransactions: () => ['pos', 'myTransactions'] as const,
+        allTransactions: () => ['pos', 'allTransactions'] as const,
     },
 } as const;
 

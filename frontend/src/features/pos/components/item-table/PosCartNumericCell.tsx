@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isCompleteNumber, isPartialDecimal } from '@/lib/numeric-input';
 
 interface IPosCartNumericCellProps {
     /**
@@ -11,7 +12,6 @@ interface IPosCartNumericCellProps {
     onCommit: (next: number) => void;
     min: number;
     max?: number;
-    step?: number;
     disabled?: boolean;
     ariaLabel: string;
     className: string;
@@ -29,13 +29,19 @@ interface IPosCartNumericCellProps {
  * The "adjust during render" anchor pattern resyncs the buffer when the
  * upstream value changes (e.g., line-math recompute, unit swap) without
  * fighting the no-setState-in-effect lint rule.
+ *
+ * Renders as a plain text input (`type="text"`) with `inputMode="decimal"`
+ * so mobile keyboards still surface a numeric keypad. Non-numeric
+ * keystrokes are silently dropped by `isPartialDecimal` (see
+ * `@/lib/numeric-input`), which avoids the spinner arrows + scroll-wheel
+ * value mutation + scientific-notation acceptance of native
+ * `type="number"` inputs.
  */
 export function PosCartNumericCell({
     value,
     onCommit,
     min,
     max,
-    step = 0.01,
     disabled = false,
     ariaLabel,
     className,
@@ -59,20 +65,18 @@ export function PosCartNumericCell({
         if (next !== value) onCommit(next);
     };
 
-    const isCompleteNumber = (raw: string): boolean => {
-        if (raw.trim() === '') return false;
-        return /^-?\d+(\.\d+)?$/.test(raw.trim());
-    };
-
     return (
         <input
-            type="number"
-            min={min}
-            max={max}
-            step={step}
+            type="text"
+            inputMode="decimal"
+            pattern="[0-9]*\.?[0-9]*"
+            autoComplete="off"
             value={buffer}
             onChange={(e) => {
                 const next = e.target.value;
+                // Silently drop keystrokes that would produce an invalid buffer
+                // (letters, scientific notation, thousands separators, etc.).
+                if (!isPartialDecimal(next)) return;
                 setBuffer(next);
                 if (isCompleteNumber(next)) commit(next);
             }}

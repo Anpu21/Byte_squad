@@ -4,6 +4,7 @@ import {
   IsBoolean,
   IsDateString,
   IsIn,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -150,11 +151,37 @@ export class CreateSaleDto {
   @IsUUID()
   customerUserId?: string;
 
-  @IsIn(['Retail', 'Wholesale'])
-  saleType!: 'Retail' | 'Wholesale';
+  /**
+   * Walk-in loyalty customer attached to the sale (mutually exclusive
+   * with `customerUserId`). The service rejects the request with a
+   * BadRequestException when both ownership fields are set.
+   */
+  @IsOptional()
+  @IsUUID()
+  loyaltyCustomerId?: string;
 
+  /**
+   * Points the cashier wants to redeem against this sale. Capped server-
+   * side by the redeem-cap-percent setting + available balance; the
+   * wallet service throws BadRequestException if the cap is breached.
+   * Ignored when no loyalty owner is attached.
+   */
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  loyaltyRedeemPoints?: number;
+
+  // saleType + priceLevel are persisted on the Sale row for historical
+  // reporting, but the cashier UI no longer surfaces a wholesale toggle —
+  // every new sale rings at retail. Both fields stay optional so the FE
+  // can omit them; the service defaults to 'Retail' when absent.
+  @IsOptional()
   @IsIn(['Retail', 'Wholesale'])
-  priceLevel!: 'Retail' | 'Wholesale';
+  saleType?: 'Retail' | 'Wholesale';
+
+  @IsOptional()
+  @IsIn(['Retail', 'Wholesale'])
+  priceLevel?: 'Retail' | 'Wholesale';
 
   @IsOptional()
   @IsString()

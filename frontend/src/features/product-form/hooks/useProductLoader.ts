@@ -4,6 +4,7 @@ import { inventoryService } from '@/services/inventory.service';
 import { queryKeys } from '@/lib/queryKeys';
 import type { IProduct } from '@/types';
 import type { ProductFormState } from './useProductFormState';
+import { hydrateUnitsFromProduct } from '../lib/hydrate-units-from-product';
 
 interface UseProductLoaderArgs {
     productId: string | undefined;
@@ -32,6 +33,7 @@ export function useProductLoader({
         form.setCostPrice(String(product.costPrice));
         form.setSellingPrice(String(product.sellingPrice));
         setImageUrl(product.imageUrl);
+        hydrateUnitsFromProduct(product, form);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [query.data]);
 

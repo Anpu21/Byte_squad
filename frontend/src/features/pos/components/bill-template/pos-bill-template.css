@@ -41,6 +41,18 @@
     display: block !important;
   }
 
+  /* Reset the off-screen positioning that PosPrintHost applies inline for
+   * on-screen rendering. Without the !important resets, inline
+   * `position:absolute; left:-10000px; top:0` wins the cascade in print
+   * context too and the receipt prints 10 metres to the left of the page
+   * (blank output, blank PDF). */
+  body > [data-pos-print-area] {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    margin: 0 !important;
+  }
+
   [data-pos-print-area] {
     width: 80mm;
     padding: 4mm 3mm;

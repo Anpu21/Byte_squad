@@ -1,18 +1,23 @@
 import { useCallback } from 'react';
+import { UserRole } from '@/constants/enums';
+import { useAuth } from '@/hooks/useAuth';
 import { usePosCart } from '@/features/pos/hooks/usePosCart';
 import { usePosPageState } from '@/features/pos/hooks/usePosPageState';
 import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
 import { usePrintReceipt } from '@/features/pos/hooks/usePrintReceipt';
 import { usePosSaleById } from '@/features/pos/hooks/usePosSaleById';
+import { usePosInvoiceNumber } from '@/features/pos/hooks/usePosInvoiceNumber';
+import { usePosLoyaltySettings } from '@/features/pos/hooks/usePosLoyaltySettings';
 import { PosItemTable } from '@/features/pos/components/item-table/PosItemTable';
-import { PosCustomerInfo } from '@/features/pos/components/customer-info/PosCustomerInfo';
-import { PosInformationBox } from '@/features/pos/components/information-box/PosInformationBox';
 import { PosInvoiceTotal } from '@/features/pos/components/invoice-total/PosInvoiceTotal';
+import { PosBillLivePreview } from '@/features/pos/components/bill-live-preview/PosBillLivePreview';
 import { PosActionButtons } from '@/features/pos/components/action-buttons/PosActionButtons';
+import { PosLoyaltyCard } from '@/features/pos/components/loyalty-card/PosLoyaltyCard';
 import { PosRecentSaleSidebar } from '@/features/pos/components/recent-sale/PosRecentSaleSidebar';
 import { PosPaymentForms } from '@/features/pos/components/payment-forms/PosPaymentForms';
 import { PosBillPreviewModal } from '@/features/pos/components/bill-template/PosBillPreviewModal';
 import { PosPrintHost } from '@/features/pos/components/bill-template/PosPrintHost';
+import { PosAttendanceWidget } from '@/features/pos/components/attendance-widget/PosAttendanceWidget';
 import { applyCartDiscount } from '@/features/pos/components/invoice-total/pos-invoice-total.helpers';
 import { toCartItemSeed } from '@/features/pos/lib/cart-item-seed';
 import type { ISale, ISearchProductRow } from '@/types';
@@ -23,22 +28,27 @@ import type { ISale, ISearchProductRow } from '@/types';
  * pauses while any modal owns focus.
  */
 export function PosPage(): React.ReactElement {
+    const { user } = useAuth();
+    const isCashier = user?.role === UserRole.CASHIER;
     const cart = usePosCart();
     const state = usePosPageState();
     const print = usePrintReceipt();
     const previewQuery = usePosSaleById(state.previewSaleId);
+    const invoiceNumberQuery = usePosInvoiceNumber();
+    const loyaltySettingsQuery = usePosLoyaltySettings();
+    const previewInvoiceNumber = invoiceNumberQuery.data?.invoiceNo ?? '';
     const handleScanHit = useCallback(
-        (row: ISearchProductRow) =>
-            cart.addItem(toCartItemSeed(row, state.priceLevel)),
-        [cart, state.priceLevel],
+        (row: ISearchProductRow) => cart.addItem(toCartItemSeed(row)),
+        [cart],
     );
-    usePosBarcodeScan({
+    const barcode = usePosBarcodeScan({
         onProductFound: handleScanHit,
-        enabled:
-            !state.showPayment &&
-            !state.showRecent &&
-            state.previewSaleId === null,
+        enabled: !state.showPayment && !state.showRecent && state.previewSaleId === null,
     });
+    const handleCameraScan = useCallback(
+        (code: string) => { void barcode.triggerScan(code); },
+        [barcode],
+    );
     const invoiceTotal = applyCartDiscount(
         cart.itemsSubtotal, cart.totalDiscount, cart.totalTax,
         state.cartDiscountPercentage,
@@ -55,62 +65,65 @@ export function PosPage(): React.ReactElement {
     }, [print, state.lastSale]);
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4 min-h-[calc(100dvh-6.5rem)] pb-4">
-            <PosItemTable
-                cart={cart.cart}
-                addItem={cart.addItem}
-                updateItem={cart.updateItem}
-                removeItem={cart.removeItem}
-                priceLevel={state.priceLevel}
-                setPriceLevel={state.setPriceLevel}
-                searchInputRef={state.searchInputRef}
-            />
-            <div className="flex flex-col gap-3">
-                <PosCustomerInfo
-                    customerUserId={state.customerUserId}
-                    onPick={state.setCustomerUserId}
-                    openPickerSignal={state.customerPickerSignal}
+        <div className="flex flex-col gap-3 min-h-[calc(100dvh-6.5rem)] pb-4">
+            {isCashier && (
+                <div className="flex items-center justify-end">
+                    <PosAttendanceWidget />
+                </div>
+            )}
+            <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4 flex-1">
+                <PosItemTable
+                    cart={cart.cart}
+                    addItem={cart.addItem}
+                    updateItem={cart.updateItem}
+                    removeItem={cart.removeItem}
+                    searchInputRef={state.searchInputRef}
+                    onScanBarcode={handleCameraScan}
                 />
-                <PosInformationBox />
-                <PosInvoiceTotal
-                    itemsSubtotal={cart.itemsSubtotal}
-                    totalLineDiscount={cart.totalDiscount}
-                    totalTax={cart.totalTax}
-                    cartDiscountPercentage={state.cartDiscountPercentage}
-                    onCartDiscountChange={state.setCartDiscountPercentage}
-                />
-                <PosActionButtons
-                    onFocusSearch={state.focusSearch}
-                    onTogglePriceLevel={state.togglePriceLevel}
-                    onOpenCustomerPicker={state.openCustomerPicker}
-                    onClearCart={cart.clear}
-                    onPrintLastReceipt={handlePrintLast}
-                    onShowRecent={state.openRecent}
-                    onOpenPayment={state.openPayment}
-                    isCartEmpty={cart.cart.length === 0}
-                    hasLastReceipt={state.lastSale !== null}
-                />
+                <div className="flex flex-col gap-3">
+                    <PosLoyaltyCard
+                        loyaltyOwner={state.loyaltyOwner} onAttach={state.setLoyaltyOwner}
+                        onDetach={() => state.setLoyaltyOwner(null)}
+                        redeemPoints={state.loyaltyRedeemPoints}
+                        onRedeemChange={state.setLoyaltyRedeemPoints}
+                    />
+                    <PosBillLivePreview
+                        cart={cart.cart} invoiceNumber={previewInvoiceNumber}
+                        cartDiscountPercentage={state.cartDiscountPercentage}
+                        loyaltyOwner={state.loyaltyOwner}
+                        loyaltyRedeemPoints={state.loyaltyRedeemPoints}
+                        loyaltySettings={loyaltySettingsQuery.data ?? null}
+                    />
+                    <PosInvoiceTotal
+                        itemsSubtotal={cart.itemsSubtotal}
+                        totalLineDiscount={cart.totalDiscount}
+                        totalTax={cart.totalTax}
+                        cartDiscountPercentage={state.cartDiscountPercentage}
+                        onCartDiscountChange={state.setCartDiscountPercentage}
+                    />
+                    <PosActionButtons
+                        onFocusSearch={state.focusSearch} onClearCart={cart.clear}
+                        onPrintLastReceipt={handlePrintLast} onShowRecent={state.openRecent}
+                        onOpenPayment={state.openPayment} isCartEmpty={cart.cart.length === 0}
+                        hasLastReceipt={state.lastSale !== null}
+                    />
+                </div>
             </div>
             <PosPaymentForms
-                isOpen={state.showPayment}
-                onClose={state.closePayment}
-                invoiceTotal={invoiceTotal}
-                cart={cart.cart}
-                customerUserId={state.customerUserId}
-                saleType="Retail"
-                priceLevel={state.priceLevel}
+                isOpen={state.showPayment} onClose={state.closePayment}
+                invoiceTotal={invoiceTotal} cart={cart.cart}
                 cartDiscountPercentage={state.cartDiscountPercentage}
+                loyaltyOwner={state.loyaltyOwner}
+                loyaltyRedeemPoints={state.loyaltyRedeemPoints}
                 onSaleCreated={handleSaleCreated}
             />
             <PosRecentSaleSidebar
-                isOpen={state.showRecent}
-                onClose={state.closeRecent}
+                isOpen={state.showRecent} onClose={state.closeRecent}
                 onSelectSale={state.setPreviewSaleId}
             />
             <PosBillPreviewModal
-                isOpen={state.previewSaleId !== null}
+                isOpen={state.previewSaleId !== null} sale={previewQuery.data ?? null}
                 onClose={() => state.setPreviewSaleId(null)}
-                sale={previewQuery.data ?? null}
             />
             <PosPrintHost sale={print.printingSale} />
         </div>
