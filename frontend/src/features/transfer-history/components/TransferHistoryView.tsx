@@ -1,21 +1,27 @@
-import { useTransferHistoryPage } from '@/features/transfer-history/hooks/useTransferHistoryPage';
-import { TransferHistoryHeader } from '@/features/transfer-history/components/TransferHistoryHeader';
-import { TransferHistoryFilters } from '@/features/transfer-history/components/TransferHistoryFilters';
-import { TransferHistoryTable } from '@/features/transfer-history/components/TransferHistoryTable';
+import { useTransferHistoryPage } from '../hooks/useTransferHistoryPage';
+import { TransferHistoryHeader } from './TransferHistoryHeader';
+import { TransferHistoryFilters } from './TransferHistoryFilters';
+import { TransferHistoryTable } from './TransferHistoryTable';
 
-export function TransferHistoryPage() {
+interface TransferHistoryViewProps {
+    showHeader?: boolean;
+}
+
+export function TransferHistoryView({ showHeader = true }: TransferHistoryViewProps) {
     const p = useTransferHistoryPage();
     const f = p.filters;
     const th = f.transferHistory;
 
     return (
         <div className="animate-in fade-in duration-300">
-            <TransferHistoryHeader
-                isAdmin={p.isAdmin}
-                total={th.total}
-                hasActiveFilters={f.hasActiveFilters}
-                onClearFilters={f.clearFilters}
-            />
+            {showHeader && (
+                <TransferHistoryHeader
+                    isAdmin={p.isAdmin}
+                    total={th.total}
+                    hasActiveFilters={f.hasActiveFilters}
+                    onClearFilters={f.clearFilters}
+                />
+            )}
 
             <TransferHistoryFilters
                 isAdmin={p.isAdmin}

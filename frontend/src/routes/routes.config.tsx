@@ -25,16 +25,12 @@ import { BranchManagementPage } from '@/pages/branches/BranchManagementPage';
 import { BranchPerformancePage } from '@/pages/branches/BranchPerformancePage';
 import { BranchComparisonPage } from '@/pages/admin/BranchComparisonPage';
 import { AdminLoyaltyPage } from '@/pages/admin/AdminLoyaltyPage';
-import { AdminEmployeesPage } from '@/pages/admin/AdminEmployeesPage';
+import { AdminHrPage } from '@/pages/admin/AdminHrPage';
 import { AdminEmployeeFormPage } from '@/pages/admin/AdminEmployeeFormPage';
-import { AdminAttendancePage } from '@/pages/admin/AdminAttendancePage';
-import { AdminLeavesPage } from '@/pages/admin/AdminLeavesPage';
-import { AdminPayrollPage } from '@/pages/admin/AdminPayrollPage';
 import { TransferRequestsPage } from '@/pages/transfers/TransferRequestsPage';
 import { NewTransferRequestPage } from '@/pages/transfers/NewTransferRequestPage';
-import { TransferHistoryPage } from '@/pages/transfers/TransferHistoryPage';
 import { TransferDetailPage } from '@/pages/transfers/TransferDetailPage';
-import { AdminTransfersPage } from '@/pages/admin/AdminTransfersPage';
+import { AdminTransfersPage } from '@/pages/transfers/AdminTransfersPage';
 import { AdminTransferCreatePage } from '@/pages/transfers/AdminTransferCreatePage';
 import { CustomerOrdersPage } from '@/pages/orders/CustomerOrdersPage';
 import { ScanOrderPage } from '@/pages/pos/ScanOrderPage';
@@ -50,6 +46,9 @@ import { RewardsPage } from '@/pages/shop/RewardsPage';
 import { InventoryByRole } from './InventoryByRole';
 import { FirstSetupOnly } from './FirstSetupOnly';
 import { LegacyOrderConfirmationRedirect } from './LegacyOrderConfirmationRedirect';
+import { TransferHistoryRedirect } from './TransferHistoryRedirect';
+import { AdminHrRedirect } from './AdminHrRedirect';
+import { LeavesRouteEntry } from './LeavesRouteEntry';
 
 export type Guard = 'public' | 'protected' | 'none';
 export type Layout =
@@ -236,10 +235,16 @@ export const ROUTES: RouteDef[] = [
         layout: 'dashboard',
     },
 
-    // ─── HR (Admin + Manager) ───
+    // ─── HR (Admin + Manager) — unified workspace ───
+    {
+        path: FRONTEND_ROUTES.ADMIN_HR,
+        element: <AdminHrPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
     {
         path: FRONTEND_ROUTES.ADMIN_EMPLOYEES,
-        element: <AdminEmployeesPage />,
+        element: <AdminHrRedirect tab="employees" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
@@ -257,19 +262,19 @@ export const ROUTES: RouteDef[] = [
     },
     {
         path: FRONTEND_ROUTES.ADMIN_ATTENDANCE,
-        element: <AdminAttendancePage />,
+        element: <AdminHrRedirect tab="attendance" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.ADMIN_LEAVES,
-        element: <AdminLeavesPage />,
+        element: <LeavesRouteEntry />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.ADMIN_PAYROLL,
-        element: <AdminPayrollPage />,
+        element: <AdminHrRedirect tab="payroll" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
@@ -289,7 +294,7 @@ export const ROUTES: RouteDef[] = [
     },
     {
         path: FRONTEND_ROUTES.TRANSFER_HISTORY,
-        element: <TransferHistoryPage />,
+        element: <TransferHistoryRedirect />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },

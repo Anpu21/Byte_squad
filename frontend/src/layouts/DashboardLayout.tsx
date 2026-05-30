@@ -3,8 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Bell,
     Boxes,
+    Briefcase,
     Building2,
-    CalendarCheck,
     CalendarRange,
     ChevronRight,
     GitCompareArrows,
@@ -20,9 +20,7 @@ import {
     Sparkles,
     Truck,
     UserCog,
-    UserPlus,
     Users,
-    History,
     Store,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -148,31 +146,17 @@ const NAV_ITEMS: NavItem[] = [
         group: 'People',
     },
     {
-        label: 'Employees',
-        path: FRONTEND_ROUTES.ADMIN_EMPLOYEES,
+        label: 'HR',
+        path: FRONTEND_ROUTES.ADMIN_HR,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <UserPlus size={15} />,
-        group: 'People',
-    },
-    {
-        label: 'Attendance',
-        path: FRONTEND_ROUTES.ADMIN_ATTENDANCE,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <CalendarCheck size={15} />,
+        icon: <Briefcase size={15} />,
         group: 'People',
     },
     {
         label: 'Leaves',
         path: FRONTEND_ROUTES.ADMIN_LEAVES,
-        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
+        roles: [UserRole.CASHIER],
         icon: <CalendarRange size={15} />,
-        group: 'People',
-    },
-    {
-        label: 'Payroll',
-        path: FRONTEND_ROUTES.ADMIN_PAYROLL,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Wallet size={15} />,
         group: 'People',
     },
     {
@@ -181,13 +165,6 @@ const NAV_ITEMS: NavItem[] = [
         pathByRole: { [UserRole.ADMIN]: FRONTEND_ROUTES.ADMIN_TRANSFERS },
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Truck size={15} />,
-        group: 'Inventory',
-    },
-    {
-        label: 'Transfer History',
-        path: FRONTEND_ROUTES.TRANSFER_HISTORY,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <History size={15} />,
         group: 'Inventory',
     },
     {

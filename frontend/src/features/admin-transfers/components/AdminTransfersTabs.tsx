@@ -1,18 +1,26 @@
-import { TABS, type ScopeTab } from '../hooks/useTransferRequestsPage';
+import type { AdminTransfersTab } from '../hooks/useAdminTransfersTab';
 
-interface TransferScopeTabsProps {
-    active: ScopeTab;
-    onChange: (tab: ScopeTab) => void;
-    myCount: number;
-    incomingCount: number;
+interface TabDef {
+    key: AdminTransfersTab;
+    label: string;
 }
 
-export function TransferScopeTabs({
+const TABS: TabDef[] = [
+    { key: 'board', label: 'Active board' },
+    { key: 'history', label: 'History' },
+];
+
+interface AdminTransfersTabsProps {
+    active: AdminTransfersTab;
+    onChange: (tab: AdminTransfersTab) => void;
+    boardCount: number;
+}
+
+export function AdminTransfersTabs({
     active,
     onChange,
-    myCount,
-    incomingCount,
-}: TransferScopeTabsProps) {
+    boardCount,
+}: AdminTransfersTabsProps) {
     return (
         <div
             className="flex items-center gap-1 mb-6 p-1 bg-surface-2 rounded-xl border border-border w-fit"
@@ -21,9 +29,7 @@ export function TransferScopeTabs({
         >
             {TABS.map((t) => {
                 const isActive = active === t.key;
-                const showCount = t.key !== 'history';
-                const count =
-                    t.key === 'my-requests' ? myCount : incomingCount;
+                const showCount = t.key === 'board';
                 return (
                     <button
                         key={t.key}
@@ -46,7 +52,7 @@ export function TransferScopeTabs({
                                         : 'bg-surface text-text-3'
                                 }`}
                             >
-                                {count}
+                                {boardCount}
                             </span>
                         )}
                     </button>
