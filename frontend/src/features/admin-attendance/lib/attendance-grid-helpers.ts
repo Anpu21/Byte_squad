@@ -166,6 +166,11 @@ export function statusUsesTimes(status: AttendanceStatus): boolean {
     return status === 'Present' || status === 'Half_Day';
 }
 
+/** Statuses for which manually entered duration hours are meaningful. */
+export function statusUsesDuration(status: AttendanceStatus): boolean {
+    return status === 'Present' || status === 'Half_Day';
+}
+
 /**
  * Chunk a month into a Mon-Sun calendar grid. Leading and trailing
  * cells outside the month are returned as `null` so callers can fade

@@ -119,7 +119,8 @@ export class AttendanceService {
       const { isLate, lateMinutes } = row.checkInTime
         ? computeLate(row.checkInTime, employee.workingHoursStart, grace)
         : { isLate: false, lateMinutes: 0 };
-      const totalHours = computeTotalHours(row.checkInTime, row.checkOutTime);
+      const totalHours =
+        row.totalHours ?? computeTotalHours(row.checkInTime, row.checkOutTime);
 
       prepared.push(
         this.toManagerEntry(row, actor, markedBy, {

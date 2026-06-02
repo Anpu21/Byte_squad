@@ -2,7 +2,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';
-import type { IEmployee } from '@/types';
 import {
     formatIsoMonth,
     shiftIsoMonth,
@@ -13,10 +12,7 @@ interface IAttendanceFiltersProps {
     onMonthChange: (value: string) => void;
     branchId: string;
     onBranchIdChange: (id: string) => void;
-    employeeId: string;
-    onEmployeeIdChange: (id: string) => void;
     canPickBranch: boolean;
-    employees: IEmployee[];
 }
 
 const INPUT_CLASS =
@@ -42,10 +38,7 @@ export function AttendanceFilters({
     onMonthChange,
     branchId,
     onBranchIdChange,
-    employeeId,
-    onEmployeeIdChange,
     canPickBranch,
-    employees,
 }: IAttendanceFiltersProps) {
     const branchesQuery = useQuery({
         queryKey: queryKeys.admin.branches(),
@@ -117,24 +110,6 @@ export function AttendanceFilters({
                 </label>
             )}
 
-            <label className="flex items-center gap-1.5">
-                <span className="text-[11px] uppercase tracking-wide text-text-3">
-                    Employee
-                </span>
-                <select
-                    value={employeeId}
-                    onChange={(e) => onEmployeeIdChange(e.target.value)}
-                    aria-label="Filter by employee"
-                    className={`${INPUT_CLASS} w-52`}
-                >
-                    <option value="">All employees (roster)</option>
-                    {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id}>
-                            {emp.fullName} ({emp.employeeCode})
-                        </option>
-                    ))}
-                </select>
-            </label>
         </div>
     );
 }

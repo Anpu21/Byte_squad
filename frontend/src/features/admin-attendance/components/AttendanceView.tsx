@@ -4,6 +4,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import { UserRole } from '@/constants/enums';
 import { useAuth } from '@/hooks/useAuth';
 import { useEmployees } from '@/features/admin-employees/hooks/useEmployees';
+import type { IEmployee } from '@/types';
 import { useAttendance } from '../hooks/useAttendance';
 import {
     firstDayOfMonth,
@@ -12,8 +13,7 @@ import {
     parseIsoMonth,
 } from '../lib/attendance-grid-helpers';
 import { AttendanceFilters } from './AttendanceFilters';
-import { AttendanceCalendar } from './AttendanceCalendar';
-import { AttendanceRosterTable } from './AttendanceRosterTable';
+import { AttendanceWeeklyTables } from './AttendanceWeeklyTables';
 import { AttendanceEditModal } from './AttendanceEditModal';
 
 function currentMonthValue(): string {
@@ -27,11 +27,16 @@ interface AttendanceViewProps {
     showHeader?: boolean;
 }
 
+interface EditingTarget {
+    employee: IEmployee;
+    date: string;
+}
+
 /**
- * Admin / manager attendance workspace. Drives a Mon-Sun calendar
- * for a single employee, or a roster summary when none is picked.
- * Edits live behind a click-to-edit modal that targets one cell at
- * a time and reuses the existing bulk endpoint.
+ * Admin / manager attendance workspace. Renders one Monday-Sunday
+ * attendance table per week in the selected month, with one row per
+ * employee. Edits live behind a click-to-edit modal and reuse the
+ * existing bulk endpoint.
  */
 export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
     const { user } = useAuth();
@@ -39,8 +44,9 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
 
     const [monthValue, setMonthValue] = useState<string>(currentMonthValue);
     const [branchId, setBranchId] = useState<string>('');
-    const [employeeId, setEmployeeId] = useState<string>('');
-    const [editingDate, setEditingDate] = useState<string | null>(null);
+    const [editingTarget, setEditingTarget] = useState<EditingTarget | null>(
+        null,
+    );
 
     const { year, month } = parseIsoMonth(monthValue);
     const startDate = useMemo(
@@ -70,7 +76,6 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
 
     const attendanceQuery = useAttendance({
         branchId: canPickBranch ? branchId || undefined : undefined,
-        employeeId: employeeId || undefined,
         startDate,
         endDate,
     });
@@ -79,23 +84,19 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
         [attendanceQuery.data],
     );
 
-    const selectedEmployee = useMemo(
-        () => employees.find((e) => e.id === employeeId) ?? null,
-        [employees, employeeId],
-    );
     const editingRow = useMemo(() => {
-        if (!editingDate || !selectedEmployee) return null;
+        if (!editingTarget) return null;
         return (
             rows.find(
                 (r) =>
-                    r.employeeId === selectedEmployee.id &&
-                    r.attendanceDate === editingDate,
+                    r.employeeId === editingTarget.employee.id &&
+                    r.attendanceDate === editingTarget.date,
             ) ?? null
         );
-    }, [editingDate, selectedEmployee, rows]);
+    }, [editingTarget, rows]);
 
-    const handleCellClick = useCallback((date: string) => {
-        setEditingDate(date);
+    const handleCellClick = useCallback((employee: IEmployee, date: string) => {
+        setEditingTarget({ employee, date });
     }, []);
 
     return (
@@ -104,11 +105,7 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
                 <PageHeader
                     eyebrow="People"
                     title="Attendance"
-                    subtitle={
-                        selectedEmployee
-                            ? `${selectedEmployee.fullName} — ${monthLabel}.`
-                            : `${monthLabel}. Pick an employee to open their calendar, or review the roster summary below.`
-                    }
+                    subtitle={`${monthLabel}. Review and edit weekly attendance by employee.`}
                 />
             )}
             <Card className="overflow-hidden">
@@ -117,36 +114,24 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
                     onMonthChange={setMonthValue}
                     branchId={branchId}
                     onBranchIdChange={setBranchId}
-                    employeeId={employeeId}
-                    onEmployeeIdChange={setEmployeeId}
                     canPickBranch={canPickBranch}
-                    employees={employees}
                 />
-                {selectedEmployee ? (
-                    <AttendanceCalendar
-                        employee={selectedEmployee}
-                        monthValue={monthValue}
-                        rows={rows}
-                        onCellClick={handleCellClick}
-                    />
-                ) : (
-                    <AttendanceRosterTable
-                        employees={employees}
-                        rows={rows}
-                        isLoading={
-                            attendanceQuery.isLoading ||
-                            employeesQuery.isLoading
-                        }
-                        onEmployeeSelect={setEmployeeId}
-                    />
-                )}
+                <AttendanceWeeklyTables
+                    employees={employees}
+                    rows={rows}
+                    monthValue={monthValue}
+                    isLoading={
+                        attendanceQuery.isLoading || employeesQuery.isLoading
+                    }
+                    onCellClick={handleCellClick}
+                />
             </Card>
 
             <AttendanceEditModal
-                isOpen={editingDate !== null}
-                onClose={() => setEditingDate(null)}
-                employee={selectedEmployee}
-                date={editingDate}
+                isOpen={editingTarget !== null}
+                onClose={() => setEditingTarget(null)}
+                employee={editingTarget?.employee ?? null}
+                date={editingTarget?.date ?? null}
                 existing={editingRow}
             />
         </>

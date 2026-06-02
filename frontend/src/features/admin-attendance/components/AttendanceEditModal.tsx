@@ -10,8 +10,9 @@ import type {
 } from '@/types';
 import { useBulkUpsertAttendance } from '../hooks/useBulkUpsertAttendance';
 import {
+    isWeekend,
     STATUS_OPTIONS,
-    statusUsesTimes,
+    statusUsesDuration,
 } from '../lib/attendance-grid-helpers';
 
 interface AttendanceEditModalProps {
@@ -30,22 +31,31 @@ const DAY_LABEL_FORMATTER = new Intl.DateTimeFormat('en-GB', {
 });
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 
 function defaultStatusFor(
     existing: IAttendance | null,
-    fallback: AttendanceStatus,
+    date: string | null,
 ): AttendanceStatus {
-    return existing?.status ?? fallback;
+    if (existing) return existing.status;
+    return date && isWeekend(date) ? 'Weekend' : 'Absent';
 }
 
-/**
- * Trim a clock-time string to `HH:mm` for the `<input type="time">`.
- * The BE sends `HH:mm:ss`; the input shows seconds only when enabled.
- */
-function toHHmm(value: string | null | undefined): string {
-    if (!value) return '';
-    return value.length > 5 ? value.slice(0, 5) : value;
+function durationInputFor(totalHours: number | null | undefined): string {
+    return totalHours == null ? '' : String(totalHours);
+}
+
+function parseDuration(value: string): number | null {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) {
+        throw new Error('Duration must use up to 2 decimal places');
+    }
+    const duration = Number(trimmed);
+    if (!Number.isFinite(duration) || duration < 0 || duration > 24) {
+        throw new Error('Duration must be between 0 and 24 hours');
+    }
+    return duration;
 }
 
 export function AttendanceEditModal({
@@ -56,22 +66,28 @@ export function AttendanceEditModal({
     existing,
 }: AttendanceEditModalProps) {
     const initialStatus = useMemo<AttendanceStatus>(
-        () => defaultStatusFor(existing, 'Present'),
-        [existing],
+        () => defaultStatusFor(existing, date),
+        [existing, date],
     );
     const [status, setStatus] = useState<AttendanceStatus>(initialStatus);
-    const [checkIn, setCheckIn] = useState(toHHmm(existing?.checkInTime));
-    const [checkOut, setCheckOut] = useState(toHHmm(existing?.checkOutTime));
+    const [duration, setDuration] = useState(
+        durationInputFor(existing?.totalHours),
+    );
 
     useEffect(() => {
         if (!isOpen) return;
         setStatus(initialStatus);
-        setCheckIn(toHHmm(existing?.checkInTime));
-        setCheckOut(toHHmm(existing?.checkOutTime));
+        setDuration(durationInputFor(existing?.totalHours));
     }, [isOpen, initialStatus, existing]);
 
     const bulkMutation = useBulkUpsertAttendance();
-    const showTimes = statusUsesTimes(status);
+    const canUseDuration = statusUsesDuration(status);
+
+    useEffect(() => {
+        if (!canUseDuration) {
+            setDuration('');
+        }
+    }, [canUseDuration]);
 
     const dayLabel = useMemo(() => {
         if (!date) return '';
@@ -86,16 +102,29 @@ export function AttendanceEditModal({
             attendanceDate: date,
             status,
         };
-        if (showTimes) {
-            if (checkIn) row.checkInTime = checkIn;
-            if (checkOut) row.checkOutTime = checkOut;
+
+        if (canUseDuration) {
+            try {
+                const parsedDuration = parseDuration(duration);
+                if (parsedDuration != null) {
+                    row.totalHours = parsedDuration;
+                }
+            } catch (error) {
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : 'Duration is invalid',
+                );
+                return;
+            }
         }
+
         try {
             await bulkMutation.mutateAsync({ rows: [row] });
             toast.success('Attendance saved');
             onClose();
         } catch {
-            toast.error('Could not save attendance — please retry');
+            toast.error('Could not save attendance - please retry');
         }
     }
 
@@ -114,7 +143,7 @@ export function AttendanceEditModal({
                         {employee.fullName}
                     </p>
                     <p className="text-[11px] text-text-3 tabular-nums">
-                        {employee.employeeCode} · {dayLabel}
+                        {employee.employeeCode} - {dayLabel}
                     </p>
                 </div>
 
@@ -138,34 +167,23 @@ export function AttendanceEditModal({
                     </select>
                 </label>
 
-                {showTimes && (
-                    <div className="grid grid-cols-2 gap-3">
-                        <label className="flex flex-col gap-1.5">
-                            <span className="text-[11px] uppercase tracking-wide text-text-3">
-                                Check in
-                            </span>
-                            <input
-                                type="time"
-                                value={checkIn}
-                                onChange={(e) => setCheckIn(e.target.value)}
-                                aria-label="Check-in time"
-                                className={INPUT_CLASS}
-                            />
-                        </label>
-                        <label className="flex flex-col gap-1.5">
-                            <span className="text-[11px] uppercase tracking-wide text-text-3">
-                                Check out
-                            </span>
-                            <input
-                                type="time"
-                                value={checkOut}
-                                onChange={(e) => setCheckOut(e.target.value)}
-                                aria-label="Check-out time"
-                                className={INPUT_CLASS}
-                            />
-                        </label>
-                    </div>
-                )}
+                <label className="flex flex-col gap-1.5">
+                    <span className="text-[11px] uppercase tracking-wide text-text-3">
+                        Duration hours
+                    </span>
+                    <input
+                        type="number"
+                        min="0"
+                        max="24"
+                        step="0.25"
+                        inputMode="decimal"
+                        value={duration}
+                        disabled={!canUseDuration}
+                        onChange={(e) => setDuration(e.target.value)}
+                        aria-label="Duration hours"
+                        className={INPUT_CLASS}
+                    />
+                </label>
 
                 <div className="flex items-center justify-end gap-2 pt-1">
                     <Button
@@ -184,7 +202,7 @@ export function AttendanceEditModal({
                         onClick={handleSave}
                         disabled={bulkMutation.isPending}
                     >
-                        {bulkMutation.isPending ? 'Saving…' : 'Save'}
+                        {bulkMutation.isPending ? 'Saving...' : 'Save'}
                     </Button>
                 </div>
             </div>

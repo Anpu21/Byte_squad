@@ -2,8 +2,8 @@ import { AttendanceView } from '@/features/admin-attendance/components/Attendanc
 
 /**
  * Admin / manager attendance editor. Drives the grid through a
- * month picker + branch + employee filter. The grid itself owns the
- * cell buffer and "Save grid" action.
+ * month picker + branch filter, with weekly roster cells edited
+ * through the attendance modal.
  */
 export function AdminAttendancePage() {
     return (
