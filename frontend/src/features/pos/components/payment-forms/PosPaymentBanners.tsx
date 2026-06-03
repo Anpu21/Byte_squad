@@ -24,7 +24,7 @@ export function PosPaymentBanners({
                     className="rounded-md border border-danger/40 bg-danger-soft px-3 py-2 text-[12px] font-medium text-danger"
                 >
                     Could not record the sale.{' '}
-                    {mutationError.message ?? 'Retry the charge.'}
+                    {((mutationError as any)?.response?.data?.message) || mutationError.message || 'Retry the charge.'}
                 </p>
             )}
 

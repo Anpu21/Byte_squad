@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import { computeLine } from '@/features/pos/lib/line-total';
 
@@ -43,8 +43,21 @@ function recompute(item: ICartItem): ICartItem {
     return { ...item, ...computeLine(item) };
 }
 
+const CART_STORAGE_KEY = 'ledgerpro_pos_cart';
+
 export function usePosCart(): UsePosCartReturn {
-    const [cart, setCart] = useState<ICartItem[]>([]);
+    const [cart, setCart] = useState<ICartItem[]>(() => {
+        try {
+            const saved = localStorage.getItem(CART_STORAGE_KEY);
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
+
+    useEffect(() => {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    }, [cart]);
 
     const addItem = useCallback<UsePosCartReturn['addItem']>((seed) => {
         setCart((prev) => {

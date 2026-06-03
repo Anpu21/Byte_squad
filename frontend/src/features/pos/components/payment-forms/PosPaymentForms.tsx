@@ -4,7 +4,6 @@ import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
 import { usePaymentSubmit } from '@/features/pos/hooks/usePaymentSubmit';
 import { tryCalculateMultiTender } from '@/features/pos/lib/multi-tender';
-import { PosPaymentMethod } from '@/features/pos/components/payment-method/PosPaymentMethod';
 import { PosPaymentFormSwitch } from './PosPaymentFormSwitch';
 import { PosTenderSummary } from './PosTenderSummary';
 import { PosPaymentBanners } from './PosPaymentBanners';
@@ -99,11 +98,6 @@ export function PosPaymentForms({
             closeOnBackdrop={false}
         >
             <div className="flex flex-col gap-4">
-                <PosPaymentMethod
-                    value={paymentMethod}
-                    onChange={setPaymentMethod}
-                />
-
                 <PosPaymentFormSwitch
                     paymentMethod={paymentMethod}
                     invoiceTotal={invoiceTotal}

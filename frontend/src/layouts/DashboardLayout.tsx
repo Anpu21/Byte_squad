@@ -500,7 +500,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </div>
                 </header>
 
-                <main id="main-content" className="flex-1 overflow-y-auto p-6 lg:p-8">
+                <main id="main-content" className="flex-1 overflow-y-auto p-2 lg:p-4">
                     <div className="max-w-7xl mx-auto">{children}</div>
                 </main>
             </div>
