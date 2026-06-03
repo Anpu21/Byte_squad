@@ -82,6 +82,7 @@ function makePersistedSale(overrides: Partial<ISale> = {}): ISale {
         status: 'Active',
         location: 'pos',
         customerUserId: null,
+        loyaltyCustomerId: null,
         voidedReason: null,
         voidedAt: null,
         voidedByUserId: null,

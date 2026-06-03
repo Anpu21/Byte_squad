@@ -22,6 +22,7 @@ export interface LoyaltyCustomerRow {
   userId: string | null;
   /** Set when `ownerType === 'walkIn'`; null for online users. */
   loyaltyCustomerId: string | null;
+  tier: 'bronze' | 'silver' | 'gold';
   firstName: string;
   /** Walk-ins may not have a last name. */
   lastName: string | null;

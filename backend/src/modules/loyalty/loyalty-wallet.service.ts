@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import type { EntityManager } from 'typeorm';
 import { LoyaltyRepository } from '@/modules/loyalty/loyalty.repository';
 import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
@@ -32,7 +33,11 @@ export class LoyaltyWalletService {
     const value = settings.pointValue > 0 ? settings.pointValue : 1;
     const capLkr = (subtotal * settings.redeemCapPercent) / 100;
     const pointsForCap = Math.floor(capLkr / value);
-    return Math.max(0, Math.min(availablePoints, pointsForCap));
+    const redeemableBalance = Math.max(
+      0,
+      availablePoints - settings.minRedeemablePoints,
+    );
+    return Math.max(0, Math.min(redeemableBalance, pointsForCap));
   }
 
   async calculateEarnedPoints(paidAmount: number): Promise<number> {
@@ -51,11 +56,15 @@ export class LoyaltyWalletService {
     subtotal: number;
     requestedPoints: number;
     branchId?: string | null;
+    manager?: EntityManager;
   }): Promise<number> {
     const requestedPoints = Math.floor(params.requestedPoints);
     if (requestedPoints <= 0) return 0;
 
-    const account = await this.loyaltyService.getOrCreateAccount(params.owner);
+    const account = await this.loyaltyService.getOrCreateAccount(
+      params.owner,
+      params.manager,
+    );
     const max = await this.calculateMaxRedeemable(
       params.subtotal,
       account.pointsBalance,
@@ -70,27 +79,32 @@ export class LoyaltyWalletService {
       params.owner,
       params.orderId,
       LoyaltyLedgerEntryType.REDEEMED,
+      params.manager,
     );
     if (alreadyRedeemed) return alreadyRedeemed.points;
 
     const applied = await this.loyalty.applyRedeem(
       params.owner,
       requestedPoints,
+      params.manager,
     );
     if (!applied) {
       throw new BadRequestException('Not enough loyalty points');
     }
 
-    await this.loyalty.createLedgerEntry({
-      userId: params.owner.userId ?? null,
-      loyaltyCustomerId: params.owner.loyaltyCustomerId ?? null,
-      branchId: params.branchId ?? null,
-      orderId: params.orderId,
-      type: LoyaltyLedgerEntryType.REDEEMED,
-      points: requestedPoints,
-      description: `Redeemed points for order ${params.orderCode}`,
-      metadata: { orderCode: params.orderCode },
-    });
+    await this.loyalty.createLedgerEntry(
+      {
+        userId: params.owner.userId ?? null,
+        loyaltyCustomerId: params.owner.loyaltyCustomerId ?? null,
+        branchId: params.branchId ?? null,
+        orderId: params.orderId,
+        type: LoyaltyLedgerEntryType.REDEEMED,
+        points: requestedPoints,
+        description: `Redeemed points for order ${params.orderCode}`,
+        metadata: { orderCode: params.orderCode },
+      },
+      params.manager,
+    );
 
     return requestedPoints;
   }
@@ -100,11 +114,13 @@ export class LoyaltyWalletService {
     orderId: string;
     orderCode: string;
     branchId?: string | null;
+    manager?: EntityManager;
   }): Promise<number> {
     const redeemed = await this.loyalty.findLedgerEntry(
       params.owner,
       params.orderId,
       LoyaltyLedgerEntryType.REDEEMED,
+      params.manager,
     );
     if (!redeemed) return 0;
 
@@ -112,21 +128,100 @@ export class LoyaltyWalletService {
       params.owner,
       params.orderId,
       LoyaltyLedgerEntryType.REVERSED,
+      params.manager,
     );
     if (reversed) return 0;
 
-    await this.loyalty.applyRedeemReversal(params.owner, redeemed.points);
-    await this.loyalty.createLedgerEntry({
-      userId: params.owner.userId ?? null,
-      loyaltyCustomerId: params.owner.loyaltyCustomerId ?? null,
-      branchId: params.branchId ?? null,
-      orderId: params.orderId,
-      type: LoyaltyLedgerEntryType.REVERSED,
-      points: redeemed.points,
-      description: `Reversed redeemed points for order ${params.orderCode}`,
-      metadata: { orderCode: params.orderCode },
-    });
+    await this.loyalty.applyRedeemReversal(
+      params.owner,
+      redeemed.points,
+      params.manager,
+    );
+    await this.loyalty.createLedgerEntry(
+      {
+        userId: params.owner.userId ?? null,
+        loyaltyCustomerId: params.owner.loyaltyCustomerId ?? null,
+        branchId: params.branchId ?? null,
+        orderId: params.orderId,
+        type: LoyaltyLedgerEntryType.REVERSED,
+        points: redeemed.points,
+        description: `Reversed redeemed points for order ${params.orderCode}`,
+        metadata: { orderCode: params.orderCode },
+      },
+      params.manager,
+    );
     return redeemed.points;
+  }
+
+  async reverseEarnForOrder(params: {
+    owner: LoyaltyOwner;
+    orderId: string;
+    orderCode: string;
+    branchId?: string | null;
+    manager?: EntityManager;
+  }): Promise<number> {
+    const earned = await this.loyalty.findLedgerEntry(
+      params.owner,
+      params.orderId,
+      LoyaltyLedgerEntryType.EARNED,
+      params.manager,
+    );
+    if (!earned) return 0;
+
+    const reversed = await this.loyalty.findLedgerEntry(
+      params.owner,
+      params.orderId,
+      LoyaltyLedgerEntryType.EARN_REVERSED,
+      params.manager,
+    );
+    if (reversed) return 0;
+
+    await this.loyalty.applyEarnReversal(
+      params.owner,
+      earned.points,
+      params.manager,
+    );
+    await this.loyalty.createLedgerEntry(
+      {
+        userId: params.owner.userId ?? null,
+        loyaltyCustomerId: params.owner.loyaltyCustomerId ?? null,
+        branchId: params.branchId ?? null,
+        orderId: params.orderId,
+        type: LoyaltyLedgerEntryType.EARN_REVERSED,
+        points: earned.points,
+        description: `Reversed earned points for order ${params.orderCode}`,
+        metadata: { orderCode: params.orderCode },
+      },
+      params.manager,
+    );
+    return earned.points;
+  }
+
+  async reverseOrderEffects(params: {
+    owner: LoyaltyOwner | null;
+    orderId: string;
+    orderCode: string;
+    branchId?: string | null;
+    manager?: EntityManager;
+  }): Promise<{ earnedReversed: number; redeemedRestored: number }> {
+    if (!params.owner) {
+      return { earnedReversed: 0, redeemedRestored: 0 };
+    }
+    const earnedReversed = await this.reverseEarnForOrder({
+      owner: params.owner,
+      orderId: params.orderId,
+      orderCode: params.orderCode,
+      branchId: params.branchId,
+      manager: params.manager,
+    });
+    const redeemedRestored = await this.reverseRedemption({
+      owner: params.owner,
+      orderId: params.orderId,
+      orderCode: params.orderCode,
+      branchId: params.branchId,
+      manager: params.manager,
+    });
+    return { earnedReversed, redeemedRestored };
   }
 
   async awardForOrder(params: {
@@ -135,31 +230,39 @@ export class LoyaltyWalletService {
     orderCode: string;
     paidAmount: number;
     branchId?: string | null;
+    manager?: EntityManager;
   }): Promise<number> {
     if (!params.owner) return 0;
     const points = await this.calculateEarnedPoints(params.paidAmount);
     if (points <= 0) return 0;
 
-    await this.loyaltyService.getOrCreateAccount(params.owner);
+    await this.loyaltyService.getOrCreateAccount(params.owner, params.manager);
 
     const existing = await this.loyalty.findLedgerEntry(
       params.owner,
       params.orderId,
       LoyaltyLedgerEntryType.EARNED,
+      params.manager,
     );
     if (existing) return existing.points;
 
-    await this.loyalty.applyEarn(params.owner, points);
-    await this.loyalty.createLedgerEntry({
-      userId: params.owner.userId ?? null,
-      loyaltyCustomerId: params.owner.loyaltyCustomerId ?? null,
-      branchId: params.branchId ?? null,
-      orderId: params.orderId,
-      type: LoyaltyLedgerEntryType.EARNED,
-      points,
-      description: `Earned points for order ${params.orderCode}`,
-      metadata: { orderCode: params.orderCode, paidAmount: params.paidAmount },
-    });
+    await this.loyalty.applyEarn(params.owner, points, params.manager);
+    await this.loyalty.createLedgerEntry(
+      {
+        userId: params.owner.userId ?? null,
+        loyaltyCustomerId: params.owner.loyaltyCustomerId ?? null,
+        branchId: params.branchId ?? null,
+        orderId: params.orderId,
+        type: LoyaltyLedgerEntryType.EARNED,
+        points,
+        description: `Earned points for order ${params.orderCode}`,
+        metadata: {
+          orderCode: params.orderCode,
+          paidAmount: params.paidAmount,
+        },
+      },
+      params.manager,
+    );
     return points;
   }
 }

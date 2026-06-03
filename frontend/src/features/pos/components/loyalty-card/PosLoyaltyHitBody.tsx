@@ -19,6 +19,12 @@ export function PosLoyaltyHitBody({
     onRedeemChange,
 }: IPosLoyaltyHitBodyProps) {
     const maxRedeemable = Math.max(0, owner.pointsBalance);
+    const tierLabel =
+        owner.tier === 'gold'
+            ? 'Gold'
+            : owner.tier === 'silver'
+              ? 'Silver'
+              : 'Bronze';
     return (
         <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -27,9 +33,8 @@ export function PosLoyaltyHitBody({
                         {owner.firstName}
                     </span>
                     <span className="text-[10px] uppercase tracking-wide text-text-3">
-                        {owner.ownerType === 'user'
-                            ? 'Registered member'
-                            : 'Walk-in member'}
+                        {tierLabel} ·{' '}
+                        {owner.ownerType === 'user' ? 'Registered' : 'Walk-in'}
                     </span>
                 </div>
                 <div className="text-right">

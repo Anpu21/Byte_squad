@@ -30,6 +30,15 @@ export class LoyaltySettings {
   @Column({ type: 'int', name: 'redeem_cap_percent', default: 20 })
   redeemCapPercent!: number;
 
+  @Column({ type: 'int', name: 'min_redeemable_points', default: 100 })
+  minRedeemablePoints!: number;
+
+  @Column({ type: 'int', name: 'silver_tier_points', default: 1000 })
+  silverTierPoints!: number;
+
+  @Column({ type: 'int', name: 'gold_tier_points', default: 5000 })
+  goldTierPoints!: number;
+
   @Column({ type: 'uuid', name: 'updated_by_user_id', nullable: true })
   updatedByUserId!: string | null;
 

@@ -30,6 +30,10 @@ function parsePointsInput(raw: string): number | undefined {
     return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
+function formatTier(tier: ILoyaltyCustomerRow['tier']): string {
+    return tier === 'gold' ? 'Gold' : tier === 'silver' ? 'Silver' : 'Bronze';
+}
+
 export function LoyaltyCustomersTable({
     onSelectCustomer,
 }: LoyaltyCustomersTableProps) {
@@ -117,6 +121,7 @@ export function LoyaltyCustomersTable({
                             <tr className="text-[11px] uppercase tracking-[0.08em] text-text-3 bg-surface-2">
                                 <th className="px-5 py-2.5 font-semibold">Customer</th>
                                 <th className="px-5 py-2.5 font-semibold">Contact</th>
+                                <th className="px-5 py-2.5 font-semibold">Tier</th>
                                 <th className="px-5 py-2.5 font-semibold text-right">Balance</th>
                                 <th className="px-5 py-2.5 font-semibold text-right">Lifetime earned</th>
                                 <th className="px-5 py-2.5 font-semibold text-right">Lifetime redeemed</th>
@@ -149,6 +154,9 @@ export function LoyaltyCustomersTable({
                                         </td>
                                         <td className="px-5 py-3 text-[12px] text-text-2 truncate">
                                             {row.email ?? row.phone ?? '—'}
+                                        </td>
+                                        <td className="px-5 py-3 text-[12px] text-text-2">
+                                            {formatTier(row.tier)}
                                         </td>
                                         <td className="px-5 py-3 text-right mono tabular-nums text-[13px] font-bold text-text-1">
                                             {row.pointsBalance}

@@ -54,6 +54,9 @@ function makeSettings(): LoyaltySettings {
     earnPerAmount: 100,
     pointValue: 1,
     redeemCapPercent: 20,
+    minRedeemablePoints: 100,
+    silverTierPoints: 1000,
+    goldTierPoints: 5000,
     updatedByUserId: null,
     updatedAt: new Date(),
   } as LoyaltySettings;
@@ -71,6 +74,7 @@ describe('LoyaltyWalletService', () => {
       applyRedeem: jest.fn(),
       applyRedeemReversal: jest.fn(),
       applyEarn: jest.fn(),
+      applyEarnReversal: jest.fn(),
     };
     const loyaltyServiceMock: Partial<jest.Mocked<LoyaltyService>> = {
       getOrCreateAccount: jest.fn(),
@@ -121,6 +125,7 @@ describe('LoyaltyWalletService', () => {
       expect(loyaltyRepo.applyEarn).toHaveBeenCalledWith(
         { userId: USER_ID },
         10,
+        undefined,
       );
       const ledger = loyaltyRepo.createLedgerEntry.mock.calls[0][0];
       expect(ledger).toMatchObject({
@@ -149,6 +154,7 @@ describe('LoyaltyWalletService', () => {
       expect(loyaltyRepo.applyEarn).toHaveBeenCalledWith(
         { loyaltyCustomerId: WALK_IN_ID },
         5,
+        undefined,
       );
       const ledger = loyaltyRepo.createLedgerEntry.mock.calls[0][0];
       expect(ledger).toMatchObject({
@@ -209,6 +215,7 @@ describe('LoyaltyWalletService', () => {
       expect(loyaltyRepo.applyRedeem).toHaveBeenCalledWith(
         { userId: USER_ID },
         100,
+        undefined,
       );
     });
 
@@ -233,6 +240,7 @@ describe('LoyaltyWalletService', () => {
       expect(loyaltyRepo.applyRedeem).toHaveBeenCalledWith(
         { loyaltyCustomerId: WALK_IN_ID },
         100,
+        undefined,
       );
       const ledger = loyaltyRepo.createLedgerEntry.mock.calls[0][0];
       expect(ledger).toMatchObject({
@@ -246,7 +254,7 @@ describe('LoyaltyWalletService', () => {
     it('rejects when requested points exceed the redeem cap', async () => {
       loyaltyService.getOrCreateAccount.mockResolvedValue(makeUserAccount());
 
-      // 20% of 1000 = 200 cap, point value 1 -> max 200 points
+      // 20% of 1000 = 200 cap, point value 1, reserve 100 -> max 150 points
       await expect(
         service.redeemForOrder({
           owner: { userId: USER_ID },
@@ -322,6 +330,7 @@ describe('LoyaltyWalletService', () => {
       expect(loyaltyRepo.applyRedeemReversal).toHaveBeenCalledWith(
         { loyaltyCustomerId: WALK_IN_ID },
         50,
+        undefined,
       );
       const ledger = loyaltyRepo.createLedgerEntry.mock.calls[0][0];
       expect(ledger).toMatchObject({
@@ -345,6 +354,51 @@ describe('LoyaltyWalletService', () => {
 
       expect(result).toBe(0);
       expect(loyaltyRepo.applyRedeemReversal).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reverseEarnForOrder', () => {
+    it('subtracts earned points and writes an earn_reversed ledger row', async () => {
+      loyaltyRepo.findLedgerEntry
+        .mockResolvedValueOnce({ points: 30 } as LoyaltyLedgerEntry)
+        .mockResolvedValueOnce(null);
+      loyaltyRepo.createLedgerEntry.mockResolvedValue({} as LoyaltyLedgerEntry);
+
+      const result = await service.reverseEarnForOrder({
+        owner: { userId: USER_ID },
+        orderId: ORDER_ID,
+        orderCode: ORDER_CODE,
+        branchId: 'branch-1',
+      });
+
+      expect(result).toBe(30);
+      expect(loyaltyRepo.applyEarnReversal).toHaveBeenCalledWith(
+        { userId: USER_ID },
+        30,
+        undefined,
+      );
+      const ledger = loyaltyRepo.createLedgerEntry.mock.calls[0][0];
+      expect(ledger).toMatchObject({
+        userId: USER_ID,
+        branchId: 'branch-1',
+        type: LoyaltyLedgerEntryType.EARN_REVERSED,
+        points: 30,
+      });
+    });
+
+    it('is idempotent when earn reversal already exists', async () => {
+      loyaltyRepo.findLedgerEntry
+        .mockResolvedValueOnce({ points: 30 } as LoyaltyLedgerEntry)
+        .mockResolvedValueOnce({ points: 30 } as LoyaltyLedgerEntry);
+
+      const result = await service.reverseEarnForOrder({
+        owner: { userId: USER_ID },
+        orderId: ORDER_ID,
+        orderCode: ORDER_CODE,
+      });
+
+      expect(result).toBe(0);
+      expect(loyaltyRepo.applyEarnReversal).not.toHaveBeenCalled();
     });
   });
 });

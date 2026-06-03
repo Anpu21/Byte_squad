@@ -159,6 +159,7 @@ export function synthesizePreviewSale({
         status: 'Active',
         location: 'Shop',
         customerUserId: null,
+        loyaltyCustomerId: null,
         voidedReason: null,
         voidedAt: null,
         voidedByUserId: null,
@@ -191,9 +192,20 @@ function synthesizeLoyaltyFooter({
     grossPaidAmount,
 }: ISynthesizeLoyaltyFooterArgs): ISaleLoyaltyResult | null {
     if (!owner) return null;
+    const pointValue =
+        settings && settings.pointValue > 0 ? settings.pointValue : 1;
+    const maxBySettings = settings
+        ? Math.min(
+              Math.max(0, owner.pointsBalance - settings.minRedeemablePoints),
+              Math.floor(
+                  ((grossPaidAmount * settings.redeemCapPercent) / 100) /
+                      pointValue,
+              ),
+          )
+        : owner.pointsBalance;
     const clampedRedeem = Math.max(
         0,
-        Math.min(Math.floor(redeemPoints), owner.pointsBalance),
+        Math.min(Math.floor(redeemPoints), maxBySettings),
     );
     if (!settings) {
         return {
@@ -203,7 +215,6 @@ function synthesizeLoyaltyFooter({
             newBalance: owner.pointsBalance - clampedRedeem,
         };
     }
-    const pointValue = settings.pointValue;
     const redeemValueLkr = clampedRedeem * pointValue;
     const netPaidAmount = Math.max(0, grossPaidAmount - redeemValueLkr);
     const earned =

@@ -1,9 +1,12 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import type { Repository, UpdateQueryBuilder } from 'typeorm';
 import { LoyaltyRepository } from './loyalty.repository';
 import { LoyaltyAccount } from './entities/loyalty-account.entity';
+import { LoyaltyCustomer } from './entities/loyalty-customer.entity';
 import { LoyaltyLedgerEntry } from './entities/loyalty-ledger-entry.entity';
+import { Sale } from '@pos/entities/sale.entity';
 
 /**
  * Captures the full chain of method calls made against a fluent
@@ -35,6 +38,7 @@ function makeFluentChainSpy(
 describe('LoyaltyRepository', () => {
   let repo: LoyaltyRepository;
   let accountRepo: jest.Mocked<Repository<LoyaltyAccount>>;
+  let dataSource: jest.Mocked<DataSource>;
 
   beforeEach(async () => {
     const accountRepoMock: Partial<jest.Mocked<Repository<LoyaltyAccount>>> = {
@@ -51,14 +55,23 @@ describe('LoyaltyRepository', () => {
           useValue: accountRepoMock,
         },
         {
+          provide: getRepositoryToken(LoyaltyCustomer),
+          useValue: {},
+        },
+        {
           provide: getRepositoryToken(LoyaltyLedgerEntry),
           useValue: ledgerRepoMock,
+        },
+        {
+          provide: DataSource,
+          useValue: { transaction: jest.fn() },
         },
       ],
     }).compile();
 
     repo = module.get(LoyaltyRepository);
     accountRepo = module.get(getRepositoryToken(LoyaltyAccount));
+    dataSource = module.get(DataSource);
   });
 
   describe('applyRedeem', () => {
@@ -172,4 +185,138 @@ describe('LoyaltyRepository', () => {
       expect(String(whereCalls[0].args[0])).toMatch(/loyalty_customer_id/);
     });
   });
+
+  describe('applyEarnReversal', () => {
+    it('caps balance and lifetime earned at zero', async () => {
+      const { qb, calls } = makeFluentChainSpy({ affected: 1 });
+      accountRepo.createQueryBuilder.mockReturnValue(
+        qb as unknown as ReturnType<
+          Repository<LoyaltyAccount>['createQueryBuilder']
+        >,
+      );
+
+      await repo.applyEarnReversal({ userId: 'user-1' }, 25);
+
+      const setCall = calls.find((c) => c.name === 'set');
+      const setArg = setCall?.args[0] as
+        | {
+            pointsBalance?: () => string;
+            lifetimePointsEarned?: () => string;
+          }
+        | undefined;
+      expect(setArg?.pointsBalance?.()).toMatch(/GREATEST/);
+      expect(setArg?.lifetimePointsEarned?.()).toMatch(/GREATEST/);
+      const whereCalls = calls.filter((c) => c.name === 'where');
+      expect(whereCalls.length).toBe(1);
+      expect(String(whereCalls[0].args[0])).toMatch(/user_id/);
+    });
+  });
+
+  describe('mergeWalkInIntoUser', () => {
+    it('reassigns historical walk-in sales before deleting the walk-in identity', async () => {
+      const walkIn = {
+        id: 'walkin-1',
+        phone: '+94771234567',
+      } as LoyaltyCustomer;
+      const walkInAccount = {
+        id: 'acc-walkin',
+        pointsBalance: 20,
+        lifetimePointsEarned: 40,
+        lifetimePointsRedeemed: 5,
+      } as LoyaltyAccount;
+      const userAccount = {
+        id: 'acc-user',
+        userId: 'user-1',
+        pointsBalance: 100,
+        lifetimePointsEarned: 200,
+        lifetimePointsRedeemed: 10,
+      } as LoyaltyAccount;
+
+      const saleQb = makeUpdateBuilder();
+      const accountUpdateQb = makeUpdateBuilder();
+      const accountsRepo = {
+        createQueryBuilder: jest
+          .fn()
+          .mockReturnValueOnce(makeLockBuilder(walkInAccount))
+          .mockReturnValueOnce(makeLockBuilder(userAccount))
+          .mockReturnValueOnce(accountUpdateQb),
+        delete: jest.fn().mockResolvedValue({ affected: 1 }),
+        findOne: jest.fn().mockResolvedValue(userAccount),
+      };
+      const customersRepo = {
+        findOne: jest.fn().mockResolvedValue(walkIn),
+        delete: jest.fn().mockResolvedValue({ affected: 1 }),
+      };
+      const ledgerRepo = {
+        update: jest.fn().mockResolvedValue({ affected: 1 }),
+        create: jest.fn((partial: Partial<LoyaltyLedgerEntry>) => partial),
+        save: jest.fn().mockResolvedValue({} as LoyaltyLedgerEntry),
+      };
+      const salesRepo = {
+        createQueryBuilder: jest.fn().mockReturnValue(saleQb),
+      };
+      const manager = {
+        getRepository: jest.fn((target: unknown) => {
+          if (target === LoyaltyAccount) return accountsRepo;
+          if (target === LoyaltyCustomer) return customersRepo;
+          if (target === LoyaltyLedgerEntry) return ledgerRepo;
+          if (target === Sale) return salesRepo;
+          throw new Error('Unexpected repository target');
+        }),
+      };
+      const dataSourceMock = dataSource as unknown as {
+        transaction: jest.Mock;
+      };
+      dataSourceMock.transaction.mockImplementation(
+        async (cb: (manager: unknown) => Promise<LoyaltyAccount>) =>
+          cb(manager),
+      );
+
+      const result = await repo.mergeWalkInIntoUser({
+        userId: 'user-1',
+        loyaltyCustomerId: 'walkin-1',
+      });
+
+      expect(result).toBe(userAccount);
+      expect(saleQb.set).toHaveBeenCalledWith({
+        customerUserId: 'user-1',
+        loyaltyCustomerId: null,
+      });
+      expect(saleQb.where).toHaveBeenCalledWith(
+        'loyalty_customer_id = :loyaltyCustomerId',
+        { loyaltyCustomerId: 'walkin-1' },
+      );
+      expect(saleQb.andWhere).toHaveBeenCalledWith('customer_user_id IS NULL');
+      expect(saleQb.execute).toHaveBeenCalledTimes(1);
+      expect(customersRepo.delete).toHaveBeenCalledWith('walkin-1');
+    });
+  });
 });
+
+function makeLockBuilder(result: LoyaltyAccount): {
+  setLock: jest.Mock;
+  where: jest.Mock;
+  getOne: jest.Mock;
+} {
+  return {
+    setLock: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    getOne: jest.fn().mockResolvedValue(result),
+  };
+}
+
+function makeUpdateBuilder(): {
+  update: jest.Mock;
+  set: jest.Mock;
+  where: jest.Mock;
+  andWhere: jest.Mock;
+  execute: jest.Mock;
+} {
+  return {
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockResolvedValue({ affected: 1 }),
+  };
+}

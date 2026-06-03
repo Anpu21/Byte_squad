@@ -56,6 +56,7 @@ export function normalizeCustomerRow(
     ownerType: r.ownerType,
     userId: r.userId ?? null,
     loyaltyCustomerId: r.loyaltyCustomerId ?? null,
+    tier: 'bronze',
     firstName: r.firstName,
     lastName: r.lastName ?? null,
     email: r.email ?? null,

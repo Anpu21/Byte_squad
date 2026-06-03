@@ -1,9 +1,12 @@
 import {
+  BadRequestException,
   Injectable,
   ConflictException,
   ForbiddenException,
   NotFoundException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -15,6 +18,8 @@ import { UpdateUserDto } from '@users/dto/update-user.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { EmailService } from '../email/email.service';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
+import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
+import { normalizeSriLankaPhone } from '@common/utils/phone.util';
 import randomPasswordGenerator from '@/common/utils/random-password-generator';
 
 const AVATAR_CLOUDINARY_FOLDER = 'ledgerpro/avatars';
@@ -41,6 +46,8 @@ export class UsersService {
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly cloudinary: CloudinaryService,
+    @Inject(forwardRef(() => LoyaltyService))
+    private readonly loyalty: LoyaltyService,
   ) {}
 
   // ── Read paths ─────────────────────────────────────────────────────────
@@ -96,7 +103,7 @@ export class UsersService {
       passwordHash: data.passwordHash,
       firstName: data.firstName,
       lastName: data.lastName,
-      phone: data.phone,
+      phone: this.normalizeOptionalPhone(data.phone),
       role: UserRole.CUSTOMER,
       branchId: null,
       isFirstLogin: false,
@@ -116,6 +123,7 @@ export class UsersService {
       otpCode: null,
       otpExpiresAt: null,
     });
+    await this.syncLoyaltyIfCustomer(id);
   }
 
   // Internal: hard-delete a user row without RBAC checks. Used by AuthService
@@ -139,11 +147,13 @@ export class UsersService {
     if (data.firstName) updateData.firstName = data.firstName;
     if (data.lastName) updateData.lastName = data.lastName;
     if (data.phone !== undefined) {
-      const trimmed = data.phone?.trim();
-      updateData.phone = trimmed && trimmed.length > 0 ? trimmed : null;
+      updateData.phone = this.normalizeOptionalPhone(data.phone);
     }
     if (Object.keys(updateData).length > 0) {
       await this.users.update(id, updateData);
+    }
+    if (user.role === UserRole.CUSTOMER && updateData.phone) {
+      await this.loyalty.syncVerifiedUserByPhone(id);
     }
     return this.findById(id);
   }
@@ -222,7 +232,7 @@ export class UsersService {
       lastName: dto.lastName,
       role: dto.role,
       branchId: dto.branchId,
-      phone: dto.phone ?? null,
+      phone: this.normalizeOptionalPhone(dto.phone ?? null),
       address: dto.address ?? null,
       passwordHash,
       isFirstLogin: true,
@@ -265,7 +275,12 @@ export class UsersService {
       await this.assertEmailAvailable(dto.email, targetUserId);
     }
 
-    await this.users.update(target.id, { ...dto });
+    const updateData: Partial<User> = { ...dto };
+    if (dto.phone !== undefined) {
+      updateData.phone = this.normalizeOptionalPhone(dto.phone);
+    }
+
+    await this.users.update(target.id, updateData);
     this.logger.log(`User ${target.email} updated by admin ${adminUserId}`);
     return this.findById(target.id);
   }
@@ -344,6 +359,24 @@ export class UsersService {
         'You cannot manage your own account through this endpoint',
       );
     }
+  }
+
+  private normalizeOptionalPhone(
+    phone: string | null | undefined,
+  ): string | null {
+    const trimmed = phone?.trim();
+    if (!trimmed) return null;
+    const normalized = normalizeSriLankaPhone(trimmed);
+    if (!normalized) {
+      throw new BadRequestException('Invalid phone number');
+    }
+    return normalized;
+  }
+
+  private async syncLoyaltyIfCustomer(userId: string): Promise<void> {
+    const user = await this.users.findById(userId);
+    if (user?.role !== UserRole.CUSTOMER || !user.phone) return;
+    await this.loyalty.syncVerifiedUserByPhone(user.id);
   }
 
   private stripPassword(user: User): User {

@@ -18,6 +18,7 @@ const hit: ILoyaltyLookupResult = {
     ownerType: 'user',
     userId: 'u-1',
     loyaltyCustomerId: null,
+    tier: 'bronze',
     firstName: 'Nimal',
     lastName: 'Perera',
     phone: '+94770000001',

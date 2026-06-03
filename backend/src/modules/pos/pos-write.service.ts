@@ -309,6 +309,7 @@ export class PosWriteService {
             branchId,
             cashierId: actor.id,
             customerUserId: dto.customerUserId ?? null,
+            loyaltyCustomerId: dto.loyaltyCustomerId ?? null,
             invoiceNumber,
             transactionNumber: `TXN-${Date.now()}-${randomSuffix()}`,
             type: TransactionType.SALE,
@@ -406,13 +407,8 @@ export class PosWriteService {
         }
 
         // 6i. Loyalty wallet writes. Stay inside the transaction so an
-        // insufficient-balance redeem or any award failure rolls the
-        // whole sale back. The wallet service runs through its own
-        // injected repositories (no manager threading) — acceptable
-        // because the loyalty tables are write-once + balance-guarded;
-        // a rollback simply leaves the ledger entry orphaned, which
-        // never happens here because we throw before persisting if the
-        // redeem fails.
+        // insufficient-balance redeem, award failure, or ledger failure
+        // rolls the whole sale back with stock, payment, and accounting.
         const loyaltyResult = await this.applyLoyalty({
           owner: loyaltyOwner,
           ownerType: loyaltyOwnerType,
@@ -421,6 +417,7 @@ export class PosWriteService {
           redeemPoints: dto.loyaltyRedeemPoints ?? 0,
           subtotal: itemsSubtotal,
           branchId,
+          manager,
         });
 
         return { sale, loyaltyResult };
@@ -478,6 +475,7 @@ export class PosWriteService {
     redeemPoints: number;
     subtotal: number;
     branchId: string;
+    manager: EntityManager;
   }): Promise<CreateSaleLoyaltyResult | null> {
     if (!params.owner || !params.ownerType) return null;
 
@@ -490,6 +488,7 @@ export class PosWriteService {
             subtotal: params.subtotal,
             requestedPoints: params.redeemPoints,
             branchId: params.branchId,
+            manager: params.manager,
           })
         : 0;
 
@@ -505,9 +504,13 @@ export class PosWriteService {
       orderCode: params.sale.invoiceNumber,
       paidAmount: netPaidAmount,
       branchId: params.branchId,
+      manager: params.manager,
     });
 
-    const account = await this.loyalty.getOrCreateAccount(params.owner);
+    const account = await this.loyalty.getOrCreateAccount(
+      params.owner,
+      params.manager,
+    );
 
     return {
       ownerType: params.ownerType,

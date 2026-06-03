@@ -43,6 +43,7 @@ function makeSale(): ISale {
         status: 'Active',
         location: 'Shop',
         customerUserId: null,
+        loyaltyCustomerId: null,
         voidedReason: null,
         voidedAt: null,
         voidedByUserId: null,

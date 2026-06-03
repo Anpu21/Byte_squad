@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
 import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
@@ -22,7 +22,7 @@ import { UsersModule } from '@users/users.module';
       LoyaltyLedgerEntry,
       LoyaltySettings,
     ]),
-    UsersModule,
+    forwardRef(() => UsersModule),
   ],
   controllers: [LoyaltyController, LoyaltyAdminController],
   providers: [

@@ -8,6 +8,7 @@ import {
     formatEarnRule,
     formatPointValueRule,
     formatRedeemCapRule,
+    formatTierRule,
 } from '@/features/loyalty/lib/format-loyalty-rules';
 import { useLoyaltySettingsAdmin } from '../hooks/useLoyaltySettingsAdmin';
 
@@ -16,6 +17,9 @@ interface FormState {
     earnPerAmount: string;
     pointValue: string;
     redeemCapPercent: string;
+    minRedeemablePoints: string;
+    silverTierPoints: string;
+    goldTierPoints: string;
 }
 
 function toForm(s: ILoyaltySettings | undefined): FormState {
@@ -24,6 +28,9 @@ function toForm(s: ILoyaltySettings | undefined): FormState {
         earnPerAmount: String(s?.earnPerAmount ?? 100),
         pointValue: String(s?.pointValue ?? 1),
         redeemCapPercent: String(s?.redeemCapPercent ?? 20),
+        minRedeemablePoints: String(s?.minRedeemablePoints ?? 100),
+        silverTierPoints: String(s?.silverTierPoints ?? 1000),
+        goldTierPoints: String(s?.goldTierPoints ?? 5000),
     };
 }
 
@@ -34,6 +41,9 @@ function toPreview(form: FormState): ILoyaltySettings {
         earnPerAmount: Number(form.earnPerAmount) || 1,
         pointValue: Number(form.pointValue) || 0,
         redeemCapPercent: Number(form.redeemCapPercent) || 0,
+        minRedeemablePoints: Number(form.minRedeemablePoints) || 0,
+        silverTierPoints: Number(form.silverTierPoints) || 0,
+        goldTierPoints: Number(form.goldTierPoints) || 0,
         updatedByUserId: null,
         updatedAt: new Date().toISOString(),
     };
@@ -44,6 +54,9 @@ function validate(form: FormState): string | null {
     const earnPerAmount = Number(form.earnPerAmount);
     const pointValue = Number(form.pointValue);
     const cap = Number(form.redeemCapPercent);
+    const minRedeemablePoints = Number(form.minRedeemablePoints);
+    const silverTierPoints = Number(form.silverTierPoints);
+    const goldTierPoints = Number(form.goldTierPoints);
     if (!Number.isInteger(earnPoints) || earnPoints < 0) {
         return 'Points earned must be a non-negative integer.';
     }
@@ -55,6 +68,18 @@ function validate(form: FormState): string | null {
     }
     if (!Number.isInteger(cap) || cap < 0 || cap > 100) {
         return 'Redemption cap must be between 0 and 100.';
+    }
+    if (!Number.isInteger(minRedeemablePoints) || minRedeemablePoints < 0) {
+        return 'Minimum redeemable reserve must be a non-negative integer.';
+    }
+    if (!Number.isInteger(silverTierPoints) || silverTierPoints < 0) {
+        return 'Silver tier threshold must be a non-negative integer.';
+    }
+    if (!Number.isInteger(goldTierPoints) || goldTierPoints < 0) {
+        return 'Gold tier threshold must be a non-negative integer.';
+    }
+    if (silverTierPoints > goldTierPoints) {
+        return 'Silver tier threshold cannot exceed Gold.';
     }
     return null;
 }
@@ -89,6 +114,9 @@ export function LoyaltySettingsForm() {
             earnPerAmount: Number(form.earnPerAmount),
             pointValue: Number(form.pointValue),
             redeemCapPercent: Number(form.redeemCapPercent),
+            minRedeemablePoints: Number(form.minRedeemablePoints),
+            silverTierPoints: Number(form.silverTierPoints),
+            goldTierPoints: Number(form.goldTierPoints),
         });
     };
 
@@ -159,20 +187,75 @@ export function LoyaltySettingsForm() {
                     <p className="text-[11px] uppercase tracking-[0.1em] text-text-3 font-semibold mb-2">
                         Redemption cap
                     </p>
-                    <Input
-                        label="Cap (% of order subtotal)"
-                        type="number"
-                        min={0}
-                        max={100}
-                        step={1}
-                        inputMode="numeric"
-                        value={form.redeemCapPercent}
-                        onChange={(e) =>
-                            handleChange('redeemCapPercent', e.target.value)
-                        }
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Input
+                            label="Cap (% of order subtotal)"
+                            type="number"
+                            min={0}
+                            max={100}
+                            step={1}
+                            inputMode="numeric"
+                            value={form.redeemCapPercent}
+                            onChange={(e) =>
+                                handleChange(
+                                    'redeemCapPercent',
+                                    e.target.value,
+                                )
+                            }
+                        />
+                        <Input
+                            label="Keep reserve (points)"
+                            type="number"
+                            min={0}
+                            step={1}
+                            inputMode="numeric"
+                            value={form.minRedeemablePoints}
+                            onChange={(e) =>
+                                handleChange(
+                                    'minRedeemablePoints',
+                                    e.target.value,
+                                )
+                            }
+                        />
+                    </div>
                     <p className="text-[12px] text-text-2 mt-2">
                         {formatRedeemCapRule(preview)}
+                    </p>
+                </div>
+
+                <div>
+                    <p className="text-[11px] uppercase tracking-[0.1em] text-text-3 font-semibold mb-2">
+                        Member tiers
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Input
+                            label="Silver from"
+                            type="number"
+                            min={0}
+                            step={1}
+                            inputMode="numeric"
+                            value={form.silverTierPoints}
+                            onChange={(e) =>
+                                handleChange(
+                                    'silverTierPoints',
+                                    e.target.value,
+                                )
+                            }
+                        />
+                        <Input
+                            label="Gold from"
+                            type="number"
+                            min={0}
+                            step={1}
+                            inputMode="numeric"
+                            value={form.goldTierPoints}
+                            onChange={(e) =>
+                                handleChange('goldTierPoints', e.target.value)
+                            }
+                        />
+                    </div>
+                    <p className="text-[12px] text-text-2 mt-2">
+                        {formatTierRule(preview)}
                     </p>
                 </div>
 

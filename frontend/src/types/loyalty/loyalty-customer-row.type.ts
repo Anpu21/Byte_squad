@@ -1,3 +1,5 @@
+import type { LoyaltyTier } from './loyalty-tier.type';
+
 export interface ILoyaltyCustomerRow {
     id: string;
     /** Discriminates which polymorphic owner column is set. */
@@ -6,6 +8,7 @@ export interface ILoyaltyCustomerRow {
     userId: string | null;
     /** Set when `ownerType === 'walkIn'`; null for online users. */
     loyaltyCustomerId: string | null;
+    tier: LoyaltyTier;
     firstName: string;
     /** Walk-ins may not have a last name. */
     lastName: string | null;

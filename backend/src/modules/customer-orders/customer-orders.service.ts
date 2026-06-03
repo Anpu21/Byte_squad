@@ -158,6 +158,7 @@ export class CustomerOrdersService {
       orderCode: saved.orderCode,
       subtotal: estimatedTotal,
       requestedPoints: loyaltyPointsRequested,
+      branchId: dto.branchId,
     });
     const pointValue = await this.loyalty.getPointValue();
     const loyaltyDiscountAmount = this.roundMoney(
@@ -455,6 +456,7 @@ export class CustomerOrdersService {
         orderId: order.id,
         orderCode: order.orderCode,
         paidAmount: Number(order.finalTotal),
+        branchId: order.branchId,
       });
       await this.orders.updateStatus(order.id, CustomerOrderStatus.COMPLETED, {
         loyaltyPointsEarned: earned,
@@ -484,6 +486,7 @@ export class CustomerOrdersService {
       orderId: order.id,
       orderCode: order.orderCode,
       paidAmount: Number(transaction.total),
+      branchId: order.branchId,
     });
 
     await this.orders.updateStatus(order.id, CustomerOrderStatus.COMPLETED, {
@@ -785,6 +788,7 @@ export class CustomerOrdersService {
       owner: { userId: order.userId },
       orderId: order.id,
       orderCode: order.orderCode,
+      branchId: order.branchId,
     });
   }
 

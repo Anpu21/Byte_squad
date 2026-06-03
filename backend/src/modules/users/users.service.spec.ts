@@ -11,6 +11,7 @@ import { UsersRepository } from './users.repository';
 import { BranchesRepository } from '@branches/branches.repository';
 import { EmailService } from '../email/email.service';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
+import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { User } from './entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -60,6 +61,7 @@ describe('UsersService', () => {
   let users: jest.Mocked<UsersRepository>;
   let branches: jest.Mocked<BranchesRepository>;
   let emailService: jest.Mocked<EmailService>;
+  let loyalty: jest.Mocked<LoyaltyService>;
 
   beforeEach(async () => {
     const usersMock: Partial<jest.Mocked<UsersRepository>> = {
@@ -99,6 +101,10 @@ describe('UsersService', () => {
             uploadImage: jest.fn(),
           },
         },
+        {
+          provide: LoyaltyService,
+          useValue: { syncVerifiedUserByPhone: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -106,6 +112,7 @@ describe('UsersService', () => {
     users = module.get(UsersRepository);
     branches = module.get(BranchesRepository);
     emailService = module.get(EmailService);
+    loyalty = module.get(LoyaltyService);
   });
 
   describe('findAll', () => {
@@ -154,6 +161,52 @@ describe('UsersService', () => {
       } as Branch);
       await expect(service.updateMyBranch('u1', 'b1')).rejects.toBeInstanceOf(
         NotFoundException,
+      );
+    });
+  });
+
+  describe('loyalty sync', () => {
+    it('syncs a customer wallet after email verification when phone is present', async () => {
+      users.findById.mockResolvedValue(
+        makeTarget({
+          id: 'customer-1',
+          role: UserRole.CUSTOMER,
+          phone: '+94771234567',
+        }),
+      );
+      await service.markVerified('customer-1');
+
+      expect(users.update).toHaveBeenCalledWith(
+        'customer-1',
+        expect.objectContaining({ isVerified: true }),
+      );
+      expect(loyalty.syncVerifiedUserByPhone).toHaveBeenCalledWith(
+        'customer-1',
+      );
+    });
+
+    it('normalizes profile phone updates before syncing loyalty', async () => {
+      users.findById.mockResolvedValue(
+        makeTarget({
+          id: 'customer-1',
+          role: UserRole.CUSTOMER,
+          phone: null,
+        }),
+      );
+      users.findByIdWithBranch.mockResolvedValue(
+        makeTarget({
+          id: 'customer-1',
+          role: UserRole.CUSTOMER,
+          phone: '+94771234567',
+        }),
+      );
+      await service.updateProfile('customer-1', { phone: '077 123 4567' });
+
+      expect(users.update).toHaveBeenCalledWith('customer-1', {
+        phone: '+94771234567',
+      });
+      expect(loyalty.syncVerifiedUserByPhone).toHaveBeenCalledWith(
+        'customer-1',
       );
     });
   });
