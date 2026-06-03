@@ -312,12 +312,17 @@ export class LoyaltyService {
     return this.loyalty.getDashboardStats(branchId);
   }
 
-  async adjustPoints(userId: string, dto: AdjustLoyaltyPointsDto): Promise<void> {
+  async adjustPoints(
+    userId: string,
+    dto: AdjustLoyaltyPointsDto,
+  ): Promise<void> {
     const account = await this.getOrCreateAccount({ userId });
-    
+
     // Prevent negative balance
     if (dto.points < 0 && account.pointsBalance + dto.points < 0) {
-      throw new BadRequestException('Cannot deduct more points than the current balance');
+      throw new BadRequestException(
+        'Cannot deduct more points than the current balance',
+      );
     }
 
     await this.loyalty.applyManualAdjustment({ userId }, dto.points);

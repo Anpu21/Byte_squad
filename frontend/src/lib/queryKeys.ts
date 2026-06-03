@@ -62,6 +62,8 @@ export const queryKeys = {
         branches: () => ['admin', 'branches'] as const,
         comparison: (submitted: unknown) =>
             ['admin', 'comparison', submitted] as const,
+        branchAnalyticsComparison: (submitted: unknown) =>
+            ['admin', 'branch-analytics-comparison', submitted] as const,
         dashboard: () => ['admin', 'dashboard'] as const,
     },
     inventory: {
@@ -210,4 +212,3 @@ export const queryKeys = {
         allTransactions: () => ['pos', 'allTransactions'] as const,
     },
 } as const;
-

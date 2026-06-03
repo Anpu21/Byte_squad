@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { UserRole } from '@/constants/enums';
-import { useAuth } from '@/hooks/useAuth';
 import { usePosCart } from '@/features/pos/hooks/usePosCart';
 import { usePosPageState } from '@/features/pos/hooks/usePosPageState';
 import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
@@ -31,8 +29,6 @@ import type { ISale, ISearchProductRow } from '@/types';
  * pauses while any modal owns focus.
  */
 export function PosPage(): React.ReactElement {
-    const { user } = useAuth();
-    const isCashier = user?.role === UserRole.CASHIER;
     const cart = usePosCart();
     const state = usePosPageState();
     const print = usePrintReceipt();

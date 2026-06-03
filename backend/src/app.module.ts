@@ -13,6 +13,7 @@ import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
 import { AdminPortalModule } from '@admin-portal/admin-portal.module';
+import { BranchAnalyticsModule } from '@/modules/branch-analytics/branch-analytics.module';
 import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
 import { CustomerOrdersModule } from '@/modules/customer-orders/customer-orders.module';
 import { ShopModule } from '@/modules/shop/shop.module';
@@ -32,6 +33,7 @@ import { ProductSellableUnit } from '@products/entities/product-sellable-unit.en
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
+import { Payment } from '@pos/entities/payment.entity';
 import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
@@ -68,6 +70,7 @@ import appConfig from '@common/config/app.config';
       Inventory,
       Sale,
       SaleItem,
+      Payment,
       IdempotencyKey,
       LedgerEntry,
       Expense,
@@ -97,6 +100,7 @@ import appConfig from '@common/config/app.config';
     AccountingModule,
     NotificationsModule,
     AdminPortalModule,
+    BranchAnalyticsModule,
     StockTransfersModule,
     CustomerOrdersModule,
     ShopModule,

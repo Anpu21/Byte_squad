@@ -15,6 +15,10 @@ vi.mock('@/services/pos.service', () => ({
     },
 }));
 
+vi.mock('@/hooks/useConfirm', () => ({
+    useConfirm: () => vi.fn().mockResolvedValue(true),
+}));
+
 const searchMock = vi.mocked(posService.searchProducts);
 const unitsMock = vi.mocked(posService.listProductUnits);
 
@@ -64,6 +68,7 @@ function renderTable(
         addItem: vi.fn(),
         updateItem: vi.fn(),
         removeItem: vi.fn(),
+        onClear: vi.fn(),
         ...overrides,
     };
     const client = new QueryClient({

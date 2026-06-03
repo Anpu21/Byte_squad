@@ -11,6 +11,7 @@ import { defaultSellableUnitsFor } from '@products/lib/default-sellable-units';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
+import { Payment } from '@pos/entities/payment.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -22,6 +23,15 @@ import { Notification } from '@notifications/entities/notification.entity';
 import { NotificationType } from '@common/enums/notification.enum';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
+import { ExpenseStatus } from '@common/enums/expense-status.enum';
+import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
+import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
+import { CustomerOrderPaymentMode } from '@common/enums/customer-order-payment-mode.enum';
+import { CustomerOrderPaymentStatus } from '@common/enums/customer-order-payment-status.enum';
+import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
+import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
+import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { pickSeedImageUrl } from '@common/seeds/seed-product-images';
 import { HrSeedService } from '@common/seeds/hr-seed.service';
@@ -33,6 +43,7 @@ import {
   buildSeedSaleLine,
   generateSeedQuantity,
 } from '@common/seeds/seed-quantity';
+import type { PosPaymentMethod } from '@pos/types';
 
 interface SeedDefaults {
   adminEmail: string;
@@ -43,6 +54,24 @@ interface SeedDefaults {
   branchAddress: string;
   branchPhone: string;
 }
+
+interface BranchComparisonSeedProfile {
+  branch: Branch;
+  cashier: User;
+  code: string;
+  dailyBaseCount: number;
+  basketScale: number;
+  paymentMethods: PosPaymentMethod[];
+  expenseBase: number;
+  orderCounts: {
+    completed: number;
+    cancelled: number;
+    rejected: number;
+  };
+  loyaltyScale: number;
+}
+
+export const STANDALONE_SEED_ENV = 'LEDGERPRO_STANDALONE_SEED';
 
 @Injectable()
 export class AdminSeedService implements OnModuleInit {
@@ -63,10 +92,20 @@ export class AdminSeedService implements OnModuleInit {
     private readonly transactionRepository: Repository<Sale>,
     @InjectRepository(SaleItem)
     private readonly transactionItemRepository: Repository<SaleItem>,
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepository: Repository<LedgerEntry>,
     @InjectRepository(Expense)
     private readonly expenseRepository: Repository<Expense>,
+    @InjectRepository(CustomerOrder)
+    private readonly customerOrderRepository: Repository<CustomerOrder>,
+    @InjectRepository(LoyaltyAccount)
+    private readonly loyaltyAccountRepository: Repository<LoyaltyAccount>,
+    @InjectRepository(LoyaltyCustomer)
+    private readonly loyaltyCustomerRepository: Repository<LoyaltyCustomer>,
+    @InjectRepository(LoyaltyLedgerEntry)
+    private readonly loyaltyLedgerRepository: Repository<LoyaltyLedgerEntry>,
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
     @InjectRepository(StockTransferRequest)
@@ -77,6 +116,8 @@ export class AdminSeedService implements OnModuleInit {
   ) {}
 
   onModuleInit(): void {
+    if (process.env[STANDALONE_SEED_ENV] === 'true') return;
+
     // Run the seed in the background so Cloudinary or any slow step never
     // blocks Nest from calling app.listen(). The critical rows (branches +
     // users) finish in seconds, well before a real login attempt arrives;
@@ -184,6 +225,41 @@ export class AdminSeedService implements OnModuleInit {
       branchId: suburbanBranch.id,
     });
 
+    const customerUsers = await Promise.all([
+      this.ensureUser({
+        email: 'customer.ayesha@ledgerpro.com',
+        password: 'Customer@123',
+        firstName: 'Ayesha',
+        lastName: 'Perera',
+        role: UserRole.CUSTOMER,
+        branchId: mainBranch.id,
+      }),
+      this.ensureUser({
+        email: 'customer.nuwan@ledgerpro.com',
+        password: 'Customer@123',
+        firstName: 'Nuwan',
+        lastName: 'Fernando',
+        role: UserRole.CUSTOMER,
+        branchId: downtownBranch.id,
+      }),
+      this.ensureUser({
+        email: 'customer.malini@ledgerpro.com',
+        password: 'Customer@123',
+        firstName: 'Malini',
+        lastName: 'Silva',
+        role: UserRole.CUSTOMER,
+        branchId: suburbanBranch.id,
+      }),
+      this.ensureUser({
+        email: 'customer.dinesh@ledgerpro.com',
+        password: 'Customer@123',
+        firstName: 'Dinesh',
+        lastName: 'Jayasinghe',
+        role: UserRole.CUSTOMER,
+        branchId: mainBranch.id,
+      }),
+    ]);
+
     // 3. Products — supermarket catalogue (idempotent by barcode)
     const products = await this.ensureProducts();
 
@@ -196,6 +272,22 @@ export class AdminSeedService implements OnModuleInit {
     // 5. Transactions — last 7 days of POS sales
     await this.ensureTransactions(cashier1, mainBranch.id, products);
     await this.ensureTransactions(cashier2, downtownBranch.id, products);
+    await this.ensureTransactions(cashier3, suburbanBranch.id, products);
+
+    // 5b. Deterministic analytics data for the branch comparison dashboard.
+    await this.ensureBranchComparisonDemoData({
+      mainBranch,
+      downtownBranch,
+      suburbanBranch,
+      admin,
+      cashiers: {
+        [mainBranch.id]: cashier1,
+        [downtownBranch.id]: cashier2,
+        [suburbanBranch.id]: cashier3,
+      },
+      customerUsers,
+      products,
+    });
 
     // 6. Ledger entries & expenses — supermarket-themed
     await this.ensureLedgerAndExpenses(
@@ -580,6 +672,606 @@ export class AdminSeedService implements OnModuleInit {
       }
     }
     this.logger.log(`Transactions seeded for cashier ${cashier.email}.`);
+  }
+
+  private async ensureBranchComparisonDemoData(ctx: {
+    mainBranch: Branch;
+    downtownBranch: Branch;
+    suburbanBranch: Branch;
+    admin: User;
+    cashiers: Record<string, User>;
+    customerUsers: User[];
+    products: Product[];
+  }): Promise<void> {
+    const productByBarcode = new Map(ctx.products.map((p) => [p.barcode, p]));
+    const demoProducts = [
+      'BVG-001',
+      'DRY-001',
+      'DRY-006',
+      'BKY-001',
+      'PRD-001',
+      'PRD-002',
+      'PRD-003',
+      'PNT-001',
+      'PNT-007',
+    ]
+      .map((barcode) => productByBarcode.get(barcode))
+      .filter((product): product is Product => !!product);
+
+    if (demoProducts.length < 5) {
+      this.logger.warn(
+        'Branch comparison demo seed skipped — required products not found.',
+      );
+      return;
+    }
+
+    const profiles: BranchComparisonSeedProfile[] = [
+      {
+        branch: ctx.mainBranch,
+        cashier: ctx.cashiers[ctx.mainBranch.id],
+        code: 'MAIN',
+        dailyBaseCount: 10,
+        basketScale: 1.22,
+        paymentMethods: ['Cash', 'Card', 'Card', 'Mobile', 'Bank'],
+        expenseBase: 13200,
+        orderCounts: { completed: 14, cancelled: 2, rejected: 1 },
+        loyaltyScale: 1.3,
+      },
+      {
+        branch: ctx.downtownBranch,
+        cashier: ctx.cashiers[ctx.downtownBranch.id],
+        code: 'DOWN',
+        dailyBaseCount: 7,
+        basketScale: 0.96,
+        paymentMethods: ['Cash', 'Cash', 'Card', 'Mobile', 'Cheque'],
+        expenseBase: 9800,
+        orderCounts: { completed: 10, cancelled: 3, rejected: 2 },
+        loyaltyScale: 0.95,
+      },
+      {
+        branch: ctx.suburbanBranch,
+        cashier: ctx.cashiers[ctx.suburbanBranch.id],
+        code: 'SUB',
+        dailyBaseCount: 5,
+        basketScale: 0.74,
+        paymentMethods: ['Cash', 'Mobile', 'Credit', 'Card'],
+        expenseBase: 7600,
+        orderCounts: { completed: 7, cancelled: 4, rejected: 3 },
+        loyaltyScale: 0.72,
+      },
+    ];
+
+    await this.ensureBranchComparisonSales(profiles, demoProducts);
+    await this.ensureBranchComparisonExpenses(profiles, ctx.admin.id);
+    const orderIdsByBranch = await this.ensureBranchComparisonOrders(
+      profiles,
+      demoProducts,
+      ctx.customerUsers,
+    );
+    await this.ensureBranchComparisonLoyalty(profiles, orderIdsByBranch);
+  }
+
+  private async ensureBranchComparisonSales(
+    profiles: BranchComparisonSeedProfile[],
+    products: Product[],
+  ): Promise<void> {
+    let createdSales = 0;
+    let createdPayments = 0;
+
+    for (const profile of profiles) {
+      for (let daysAgo = 6; daysAgo >= 0; daysAgo--) {
+        const saleCount = profile.dailyBaseCount + ((6 - daysAgo) % 3);
+        for (let index = 0; index < saleCount; index++) {
+          const saleDate = this.branchComparisonDate(daysAgo, 9 + index);
+          const saleNo = `BCMP-${profile.code}-${daysAgo}-${index}`;
+          const itemCount = 2 + ((daysAgo + index) % 3);
+          const items: Partial<SaleItem>[] = [];
+          let subtotal = 0;
+
+          for (let itemIndex = 0; itemIndex < itemCount; itemIndex++) {
+            const product =
+              products[(index + itemIndex + daysAgo) % products.length];
+            const quantity = this.demoQuantity(product, index + itemIndex);
+            const unitPrice = Number(product.sellingPrice);
+            const lineSubtotal =
+              Math.round(quantity * unitPrice * profile.basketScale * 100) /
+              100;
+            subtotal += lineSubtotal;
+            items.push({
+              productId: product.id,
+              quantity,
+              baseUnitQty: quantity,
+              unitId: null,
+              unitPrice,
+              discountAmount: 0,
+              discountType: DiscountType.NONE,
+              lineSubtotal,
+              lineDiscountPercentage: 0,
+              lineTaxRate: 0,
+              lineTaxAmount: 0,
+              lineTotal: lineSubtotal,
+              priceLevelUsed: 'Retail',
+              free: 0,
+              status: 'Active',
+            });
+          }
+
+          const discountAmount =
+            index % 5 === 0 ? Math.round(subtotal * 0.04 * 100) / 100 : 0;
+          const taxAmount =
+            index % 4 === 0 ? Math.round(subtotal * 0.025 * 100) / 100 : 0;
+          const total = Math.max(
+            0,
+            Math.round((subtotal - discountAmount + taxAmount) * 100) / 100,
+          );
+          const paymentMethod =
+            profile.paymentMethods[index % profile.paymentMethods.length];
+          const existingSale = await this.transactionRepository.findOne({
+            where: { transactionNumber: saleNo },
+          });
+
+          if (existingSale) {
+            const paymentCreated = await this.ensureBranchComparisonPayment({
+              saleId: existingSale.id,
+              saleNo,
+              paymentMethod,
+              total: Number(existingSale.total),
+            });
+            if (paymentCreated) createdPayments++;
+            continue;
+          }
+
+          const sale = await this.transactionRepository.save(
+            this.transactionRepository.create({
+              transactionNumber: saleNo,
+              invoiceNumber: saleNo,
+              branchId: profile.branch.id,
+              cashierId: profile.cashier.id,
+              type: TransactionType.SALE,
+              subtotal,
+              discountAmount,
+              discountType:
+                discountAmount > 0 ? DiscountType.FIXED : DiscountType.NONE,
+              taxAmount,
+              total,
+              paymentMethod: this.legacyPaymentMethod(paymentMethod),
+              paidAmount: total,
+              balanceDue: 0,
+              paymentStatus: 'Paid',
+              status: 'Active',
+              location: 'Shop',
+              items: items as SaleItem[],
+            }),
+          );
+          await this.transactionRepository
+            .createQueryBuilder()
+            .update(Sale)
+            .set({ createdAt: saleDate })
+            .where('id = :id', { id: sale.id })
+            .execute();
+
+          createdSales++;
+          const paymentCreated = await this.ensureBranchComparisonPayment({
+            saleId: sale.id,
+            saleNo,
+            paymentMethod,
+            total,
+          });
+          if (paymentCreated) createdPayments++;
+        }
+      }
+    }
+
+    this.logger.log(
+      `Branch comparison POS seed ready (${createdSales} sales, ${createdPayments} payments created).`,
+    );
+  }
+
+  private async ensureBranchComparisonPayment(data: {
+    saleId: string;
+    saleNo: string;
+    paymentMethod: PosPaymentMethod;
+    total: number;
+  }): Promise<boolean> {
+    const receiptNo = `RCPT-${data.saleNo}`;
+    const existing = await this.paymentRepository.findOne({
+      where: { receiptNo },
+    });
+    if (existing) return false;
+
+    await this.paymentRepository.save(
+      this.paymentRepository.create({
+        saleId: data.saleId,
+        receiptNo,
+        paymentMethod: data.paymentMethod,
+        paymentAmount: data.total,
+        invoiceTotal: data.total,
+        ...this.demoPaymentAmounts(data.paymentMethod, data.total),
+        status: 'Active',
+      }),
+    );
+    return true;
+  }
+
+  private async ensureBranchComparisonExpenses(
+    profiles: BranchComparisonSeedProfile[],
+    adminId: string,
+  ): Promise<void> {
+    const categories = ['Rent', 'Utilities', 'Spoilage', 'Local Marketing'];
+    let createdCount = 0;
+    for (const profile of profiles) {
+      for (let index = 0; index < categories.length; index++) {
+        const amount = Math.round(profile.expenseBase * (0.16 + index * 0.08));
+        const expenseDate = this.branchComparisonDate(6 - index, 10 + index);
+        const description = `Branch compare demo: ${profile.code} ${categories[index]}`;
+        const existing = await this.expenseRepository.findOne({
+          where: { description },
+        });
+        if (existing) continue;
+
+        await this.expenseRepository.save(
+          this.expenseRepository.create({
+            branchId: profile.branch.id,
+            createdBy: adminId,
+            category: categories[index],
+            amount,
+            description,
+            expenseDate,
+            status: ExpenseStatus.APPROVED,
+            reviewedBy: adminId,
+            reviewedAt: expenseDate,
+            reviewNote: 'Approved by demo seed for branch comparison charts.',
+          }),
+        );
+        createdCount++;
+      }
+    }
+    this.logger.log(
+      `Branch comparison approved expenses ready (${createdCount} created).`,
+    );
+  }
+
+  private async ensureBranchComparisonOrders(
+    profiles: BranchComparisonSeedProfile[],
+    products: Product[],
+    customerUsers: User[],
+  ): Promise<Map<string, string[]>> {
+    const existingOrders = await this.customerOrderRepository
+      .createQueryBuilder('orders')
+      .where('orders.order_code LIKE :prefix', { prefix: 'BCMP-ORD-%' })
+      .getMany();
+    const ordersByCode = new Map(
+      existingOrders.map((order) => [order.orderCode, order]),
+    );
+
+    const statusesFor = (profile: BranchComparisonSeedProfile) => [
+      ...Array.from(
+        { length: profile.orderCounts.completed },
+        () => CustomerOrderStatus.COMPLETED,
+      ),
+      ...Array.from(
+        { length: profile.orderCounts.cancelled },
+        () => CustomerOrderStatus.CANCELLED,
+      ),
+      ...Array.from(
+        { length: profile.orderCounts.rejected },
+        () => CustomerOrderStatus.REJECTED,
+      ),
+    ];
+
+    const savedOrders: CustomerOrder[] = [];
+    let createdCount = 0;
+    for (const profile of profiles) {
+      const statuses = statusesFor(profile);
+      for (let index = 0; index < statuses.length; index++) {
+        const product =
+          products[(index + profile.code.length) % products.length];
+        const quantity = 1 + (index % 4);
+        const estimatedTotal = quantity * Number(product.sellingPrice);
+        const status = statuses[index];
+        const orderDate = this.branchComparisonDate(index % 7, 11 + index);
+        const user = customerUsers[index % customerUsers.length];
+        const paid = status !== CustomerOrderStatus.REJECTED;
+        const orderCode = `BCMP-ORD-${profile.code}-${String(index + 1).padStart(2, '0')}`;
+        const existing = ordersByCode.get(orderCode);
+        if (existing) {
+          savedOrders.push(existing);
+          continue;
+        }
+
+        const order = await this.customerOrderRepository.save(
+          this.customerOrderRepository.create({
+            orderCode,
+            userId: user.id,
+            branchId: profile.branch.id,
+            status,
+            estimatedTotal,
+            loyaltyDiscountAmount: index % 5 === 0 ? 120 : 0,
+            finalTotal: Math.max(
+              0,
+              estimatedTotal - (index % 5 === 0 ? 120 : 0),
+            ),
+            paymentMode:
+              index % 3 === 0
+                ? CustomerOrderPaymentMode.ONLINE
+                : CustomerOrderPaymentMode.MANUAL,
+            paymentStatus: paid
+              ? CustomerOrderPaymentStatus.PAID
+              : CustomerOrderPaymentStatus.CANCELLED,
+            loyaltyPointsRedeemed: index % 5 === 0 ? 120 : 0,
+            loyaltyPointsEarned: paid ? Math.round(estimatedTotal / 100) : 0,
+            note: 'Branch compare demo pickup order',
+            items: [
+              {
+                productId: product.id,
+                quantity,
+                unitPriceSnapshot: Number(product.sellingPrice),
+              },
+            ],
+          }),
+        );
+        await this.customerOrderRepository
+          .createQueryBuilder()
+          .update(CustomerOrder)
+          .set({ createdAt: orderDate })
+          .where('id = :id', { id: order.id })
+          .execute();
+        savedOrders.push({ ...order, branchId: profile.branch.id });
+        createdCount++;
+      }
+    }
+    this.logger.log(
+      `Branch comparison customer pickup orders ready (${createdCount} created).`,
+    );
+    return this.groupOrderIdsByBranch(savedOrders);
+  }
+
+  private async ensureBranchComparisonLoyalty(
+    profiles: BranchComparisonSeedProfile[],
+    orderIdsByBranch: Map<string, string[]>,
+  ): Promise<void> {
+    let createdCount = 0;
+    for (const profile of profiles) {
+      const members = await Promise.all(
+        [1, 2, 3].map((index) => this.ensureDemoLoyaltyMember(profile, index)),
+      );
+      const orderIds = orderIdsByBranch.get(profile.branch.id) ?? [];
+
+      for (let index = 0; index < members.length; index++) {
+        const member = members[index];
+        const earnedPoints = Math.round(
+          (180 + index * 70) * profile.loyaltyScale,
+        );
+        const redeemedPoints = Math.round(
+          (40 + index * 20) * profile.loyaltyScale,
+        );
+        if (
+          await this.createDemoLoyaltyEntry({
+            member,
+            branchId: profile.branch.id,
+            orderId: null,
+            type: LoyaltyLedgerEntryType.EARNED,
+            points: earnedPoints,
+            description: `Branch compare demo: ${profile.code} POS earn ${index + 1}`,
+            createdAt: this.branchComparisonDate(6 - index, 13 + index),
+          })
+        ) {
+          createdCount++;
+        }
+        if (
+          await this.createDemoLoyaltyEntry({
+            member,
+            branchId: profile.branch.id,
+            orderId: orderIds[index % Math.max(orderIds.length, 1)] ?? null,
+            type: LoyaltyLedgerEntryType.EARNED,
+            points: Math.round(earnedPoints * 0.7),
+            description: `Branch compare demo: ${profile.code} online earn ${index + 1}`,
+            createdAt: this.branchComparisonDate(5 - index, 14 + index),
+          })
+        ) {
+          createdCount++;
+        }
+        if (index < 2) {
+          if (
+            await this.createDemoLoyaltyEntry({
+              member,
+              branchId: profile.branch.id,
+              orderId:
+                orderIds[(index + 2) % Math.max(orderIds.length, 1)] ?? null,
+              type: LoyaltyLedgerEntryType.REDEEMED,
+              points: redeemedPoints,
+              description: `Branch compare demo: ${profile.code} redeem ${index + 1}`,
+              createdAt: this.branchComparisonDate(3 - index, 15 + index),
+            })
+          ) {
+            createdCount++;
+          }
+        }
+      }
+
+      if (
+        await this.createDemoLoyaltyEntry({
+          member: members[0],
+          branchId: profile.branch.id,
+          orderId: null,
+          type: LoyaltyLedgerEntryType.EARN_REVERSED,
+          points: Math.round(25 * profile.loyaltyScale),
+          description: `Branch compare demo: ${profile.code} reversal`,
+          createdAt: this.branchComparisonDate(1, 16),
+        })
+      ) {
+        createdCount++;
+      }
+    }
+
+    this.logger.log(
+      `Branch comparison loyalty movements ready (${createdCount} created).`,
+    );
+  }
+
+  private async ensureDemoLoyaltyMember(
+    profile: BranchComparisonSeedProfile,
+    index: number,
+  ): Promise<LoyaltyCustomer> {
+    const phone = `+9477${profile.code === 'MAIN' ? '10' : profile.code === 'DOWN' ? '20' : '30'}00${index}`;
+    let customer = await this.loyaltyCustomerRepository.findOne({
+      where: { phone },
+    });
+    if (!customer) {
+      customer = await this.loyaltyCustomerRepository.save(
+        this.loyaltyCustomerRepository.create({
+          phone,
+          firstName: `${profile.code} Member ${index}`,
+          lastName: 'Demo',
+        }),
+      );
+    }
+
+    let account = await this.loyaltyAccountRepository.findOne({
+      where: { loyaltyCustomerId: customer.id },
+    });
+    const pointsBalance = Math.round(
+      (900 + index * 850) * profile.loyaltyScale,
+    );
+    const lifetimePointsEarned = Math.round(
+      (1200 + index * 1700) * profile.loyaltyScale,
+    );
+    if (!account) {
+      account = this.loyaltyAccountRepository.create({
+        loyaltyCustomerId: customer.id,
+        userId: null,
+      });
+    }
+    account.pointsBalance = pointsBalance;
+    account.lifetimePointsEarned = lifetimePointsEarned;
+    account.lifetimePointsRedeemed = Math.round(pointsBalance * 0.28);
+    await this.loyaltyAccountRepository.save(account);
+    return customer;
+  }
+
+  private async createDemoLoyaltyEntry(data: {
+    member: LoyaltyCustomer;
+    branchId: string;
+    orderId: string | null;
+    type: LoyaltyLedgerEntryType;
+    points: number;
+    description: string;
+    createdAt: Date;
+  }): Promise<boolean> {
+    const existing = await this.loyaltyLedgerRepository.findOne({
+      where: { description: data.description },
+    });
+    if (existing) return false;
+
+    const entry = await this.loyaltyLedgerRepository.save(
+      this.loyaltyLedgerRepository.create({
+        loyaltyCustomerId: data.member.id,
+        userId: null,
+        branchId: data.branchId,
+        orderId: data.orderId,
+        type: data.type,
+        points: data.points,
+        description: data.description,
+        metadata: { seed: 'branch-comparison' },
+      }),
+    );
+    await this.loyaltyLedgerRepository
+      .createQueryBuilder()
+      .update(LoyaltyLedgerEntry)
+      .set({ createdAt: data.createdAt })
+      .where('id = :id', { id: entry.id })
+      .execute();
+    return true;
+  }
+
+  private groupOrderIdsByBranch(
+    orders: CustomerOrder[],
+  ): Map<string, string[]> {
+    const grouped = new Map<string, string[]>();
+    for (const order of orders) {
+      const rows = grouped.get(order.branchId) ?? [];
+      rows.push(order.id);
+      grouped.set(order.branchId, rows);
+    }
+    return grouped;
+  }
+
+  private branchComparisonDate(daysAgo: number, hour: number): Date {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    date.setHours(hour, (daysAgo * 9 + hour) % 60, 0, 0);
+    return date;
+  }
+
+  private demoQuantity(product: Product, seed: number): number {
+    const baseUnit = product.baseUnit.toLowerCase();
+    if (baseUnit === 'kg') {
+      const quantities = [0.25, 0.5, 0.75, 1, 1.25, 1.5];
+      return quantities[seed % quantities.length];
+    }
+    if (baseUnit === 'l') {
+      const quantities = [0.25, 0.5, 0.75, 1, 1.5, 2];
+      return quantities[seed % quantities.length];
+    }
+    return 1 + (seed % 4);
+  }
+
+  private legacyPaymentMethod(method: PosPaymentMethod): PaymentMethod {
+    switch (method) {
+      case 'Cash':
+        return PaymentMethod.CASH;
+      case 'Card':
+        return PaymentMethod.CARD;
+      case 'Mobile':
+        return PaymentMethod.MOBILE;
+      case 'Cheque':
+      case 'Bank':
+      case 'Credit':
+        return PaymentMethod.ONLINE;
+      default: {
+        const exhaustive: never = method;
+        return exhaustive;
+      }
+    }
+  }
+
+  private demoPaymentAmounts(
+    method: PosPaymentMethod,
+    total: number,
+  ): Partial<Payment> {
+    const roundedTotal = Math.round(total * 100) / 100;
+    switch (method) {
+      case 'Cash': {
+        const cashTendered = Math.ceil(roundedTotal / 100) * 100;
+        return {
+          cashAmount: roundedTotal,
+          cashTendered,
+          cashChange: Math.round((cashTendered - roundedTotal) * 100) / 100,
+        };
+      }
+      case 'Cheque':
+        return {
+          chequeAmount: roundedTotal,
+          chequeNo: `CHQ-${Math.round(roundedTotal * 10)}`,
+          chequeDate: this.branchComparisonDate(0, 12),
+          chequeBank: 'Demo Bank',
+          chequeBranch: 'Colombo',
+        };
+      case 'Bank':
+        return {
+          bankTransferAmount: roundedTotal,
+          bankRef: `BANK-${Math.round(roundedTotal * 10)}`,
+        };
+      case 'Credit':
+        return { creditAmount: roundedTotal };
+      case 'Card':
+      case 'Mobile':
+        return {};
+      default: {
+        const exhaustive: never = method;
+        return exhaustive;
+      }
+    }
   }
 
   // ── Ledger & Expenses ──────────────────────────────────

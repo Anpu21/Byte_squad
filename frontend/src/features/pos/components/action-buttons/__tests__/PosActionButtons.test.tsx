@@ -20,7 +20,7 @@ interface IRenderArgs {
     onClearCart?: TVoidMock;
     onPrintLastReceipt?: TVoidMock;
     onShowRecent?: TVoidMock;
-    onOpenPayment?: TVoidMock;
+    onCharge?: TVoidMock;
 }
 
 function renderBar(args: IRenderArgs = {}): {
@@ -28,22 +28,23 @@ function renderBar(args: IRenderArgs = {}): {
     onClearCart: TVoidMock;
     onPrintLastReceipt: TVoidMock;
     onShowRecent: TVoidMock;
-    onOpenPayment: TVoidMock;
+    onCharge: TVoidMock;
 } {
     const onFocusSearch = args.onFocusSearch ?? vi.fn<() => void>();
     const onClearCart = args.onClearCart ?? vi.fn<() => void>();
     const onPrintLastReceipt = args.onPrintLastReceipt ?? vi.fn<() => void>();
     const onShowRecent = args.onShowRecent ?? vi.fn<() => void>();
-    const onOpenPayment = args.onOpenPayment ?? vi.fn<() => void>();
+    const onCharge = args.onCharge ?? vi.fn<() => void>();
     render(
         <PosActionButtons
             onFocusSearch={onFocusSearch}
             onClearCart={onClearCart}
             onPrintLastReceipt={onPrintLastReceipt}
             onShowRecent={onShowRecent}
-            onOpenPayment={onOpenPayment}
+            onCharge={onCharge}
             isCartEmpty={args.isCartEmpty ?? false}
             hasLastReceipt={args.hasLastReceipt ?? true}
+            disableCharge={args.isCartEmpty ?? false}
         />,
     );
     return {
@@ -51,7 +52,7 @@ function renderBar(args: IRenderArgs = {}): {
         onClearCart,
         onPrintLastReceipt,
         onShowRecent,
-        onOpenPayment,
+        onCharge,
     };
 }
 
@@ -70,14 +71,14 @@ describe('PosActionButtons', () => {
         expect(screen.getByRole('button', { name: /Charge/i })).toHaveTextContent('F12');
     });
 
-    it('fires onOpenPayment when the F12 key is pressed at document level', async () => {
-        const { onOpenPayment } = renderBar();
+    it('fires onCharge when the F12 key is pressed at document level', async () => {
+        const { onCharge } = renderBar();
         await userEvent.keyboard('{F12}');
-        expect(onOpenPayment).toHaveBeenCalledTimes(1);
+        expect(onCharge).toHaveBeenCalledTimes(1);
     });
 
     it('disables the clear-cart and charge buttons and ignores F5/F12 when the cart is empty', async () => {
-        const { onClearCart, onOpenPayment } = renderBar({ isCartEmpty: true });
+        const { onClearCart, onCharge } = renderBar({ isCartEmpty: true });
         expect(screen.getByRole('button', { name: /Clear cart/i })).toBeDisabled();
         expect(screen.getByRole('button', { name: /Charge/i })).toBeDisabled();
         await userEvent.keyboard('{F5}');
@@ -86,7 +87,7 @@ describe('PosActionButtons', () => {
         // *before* opening the confirm. Both spies stay un-invoked.
         expect(confirmMock).not.toHaveBeenCalled();
         expect(onClearCart).not.toHaveBeenCalled();
-        expect(onOpenPayment).not.toHaveBeenCalled();
+        expect(onCharge).not.toHaveBeenCalled();
     });
 
     it('opens the confirm prompt on F5 with a non-empty cart and clears only on confirm', async () => {
@@ -109,9 +110,9 @@ describe('PosActionButtons', () => {
     });
 
     it('ignores F12 when a modifier key is held so browser shortcuts keep working', async () => {
-        const { onOpenPayment } = renderBar();
+        const { onCharge } = renderBar();
         await userEvent.keyboard('{Control>}{F12}{/Control}');
-        expect(onOpenPayment).not.toHaveBeenCalled();
+        expect(onCharge).not.toHaveBeenCalled();
     });
 
     it('disables F9 (print last) until a receipt is available', () => {

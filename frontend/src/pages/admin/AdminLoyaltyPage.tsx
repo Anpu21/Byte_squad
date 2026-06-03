@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Sparkles } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import Segmented from '@/components/ui/Segmented';
 import type { ILoyaltyCustomerRow } from '@/types';

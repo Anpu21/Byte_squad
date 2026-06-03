@@ -4,9 +4,14 @@
  */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '@/app.module.js';
-import { AdminSeedService } from '@common/seeds/admin-seed.service';
+import {
+  AdminSeedService,
+  STANDALONE_SEED_ENV,
+} from '@common/seeds/admin-seed.service';
 
 async function bootstrap() {
+  process.env[STANDALONE_SEED_ENV] = 'true';
+
   const app = await NestFactory.createApplicationContext(AppModule);
   const seeder = app.get(AdminSeedService);
   await seeder.seed();

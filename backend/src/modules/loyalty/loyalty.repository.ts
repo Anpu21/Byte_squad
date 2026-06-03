@@ -18,6 +18,19 @@ import type {
   LoyaltyOwner,
 } from '@/modules/loyalty/types';
 
+interface LoyaltyDashboardAccountStatsRaw {
+  totalMembers: string | null;
+  totalPointsInCirculation: string | null;
+}
+
+interface LoyaltyDashboardEarnedStatsRaw {
+  pointsEarned: string | null;
+}
+
+interface LoyaltyDashboardRedeemedStatsRaw {
+  pointsRedeemed: string | null;
+}
+
 @Injectable()
 export class LoyaltyRepository {
   constructor(
@@ -484,17 +497,17 @@ export class LoyaltyRepository {
       .select('COUNT(acc.id)', 'totalMembers')
       .addSelect('SUM(acc.points_balance)', 'totalPointsInCirculation')
       .where(branchFilter, { branchId })
-      .getRawOne();
+      .getRawOne<LoyaltyDashboardAccountStatsRaw>();
 
     const ledgerFilter = branchId ? `le.branch_id = :branchId` : '1=1';
-    
+
     const earnedStats = await this.ledgerRepo
       .createQueryBuilder('le')
       .select('SUM(le.points)', 'pointsEarned')
       .where('le.type = :type', { type: LoyaltyLedgerEntryType.EARNED })
       .andWhere('le.created_at >= :startOfMonth', { startOfMonth })
       .andWhere(ledgerFilter, { branchId })
-      .getRawOne();
+      .getRawOne<LoyaltyDashboardEarnedStatsRaw>();
 
     const redeemedStats = await this.ledgerRepo
       .createQueryBuilder('le')
@@ -502,14 +515,15 @@ export class LoyaltyRepository {
       .where('le.type = :type', { type: LoyaltyLedgerEntryType.REDEEMED })
       .andWhere('le.created_at >= :startOfMonth', { startOfMonth })
       .andWhere(ledgerFilter, { branchId })
-      .getRawOne();
+      .getRawOne<LoyaltyDashboardRedeemedStatsRaw>();
 
     return {
       totalMembers: Number(accountStats?.totalMembers ?? 0),
-      totalPointsInCirculation: Number(accountStats?.totalPointsInCirculation ?? 0),
+      totalPointsInCirculation: Number(
+        accountStats?.totalPointsInCirculation ?? 0,
+      ),
       pointsEarnedThisMonth: Number(earnedStats?.pointsEarned ?? 0),
       pointsRedeemedThisMonth: Number(redeemedStats?.pointsRedeemed ?? 0),
     };
   }
 }
-

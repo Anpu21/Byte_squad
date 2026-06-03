@@ -7,7 +7,6 @@ import {
     Building2,
     CalendarRange,
     ChevronRight,
-    GitCompareArrows,
     Home,
     LogOut,
     Menu as MenuIcon,
@@ -21,7 +20,6 @@ import {
     Truck,
     UserCog,
     Users,
-    Store,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -175,24 +173,10 @@ const NAV_ITEMS: NavItem[] = [
         group: 'Inventory',
     },
     {
-        label: 'My Branch',
-        path: FRONTEND_ROUTES.BRANCHES,
-        roles: [UserRole.MANAGER],
-        icon: <Store size={15} />,
-        group: 'Branches',
-    },
-    {
         label: 'Branches',
-        path: FRONTEND_ROUTES.BRANCHES_HUB,
-        roles: [UserRole.ADMIN],
+        path: FRONTEND_ROUTES.BRANCHES,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Building2 size={15} />,
-        group: 'Branches',
-    },
-    {
-        label: 'Compare',
-        path: FRONTEND_ROUTES.BRANCH_COMPARE,
-        roles: [UserRole.ADMIN],
-        icon: <GitCompareArrows size={15} />,
         group: 'Branches',
     },
     {

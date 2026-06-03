@@ -21,9 +21,7 @@ import { UserManagementPage } from '@/pages/users/UserManagementPage';
 import { ProfilePage } from '@/pages/users/ProfilePage';
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage';
 import { NotificationDetailPage } from '@/pages/notifications/NotificationDetailPage';
-import { BranchManagementPage } from '@/pages/branches/BranchManagementPage';
-import { BranchPerformancePage } from '@/pages/branches/BranchPerformancePage';
-import { BranchComparisonPage } from '@/pages/admin/BranchComparisonPage';
+import { BranchHubPage } from '@/pages/branches/BranchHubPage';
 import { AdminLoyaltyPage } from '@/pages/admin/AdminLoyaltyPage';
 import { ManagerLoyaltyPage } from '@/pages/manager/ManagerLoyaltyPage';
 import { AdminHrPage } from '@/pages/admin/AdminHrPage';
@@ -205,29 +203,29 @@ export const ROUTES: RouteDef[] = [
     },
 
     // ─── Branches ───
+    // ─── Branches Hub (Admin + Manager) ───
     {
         path: FRONTEND_ROUTES.BRANCHES,
-        element: <BranchPerformancePage />,
-        allowedRoles: [UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.BRANCH_MANAGEMENT,
-        element: <BranchManagementPage />,
-        allowedRoles: [UserRole.ADMIN],
+        element: <BranchHubPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.BRANCHES_HUB,
-        element: <BranchManagementPage />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
+        element: <Navigate to={FRONTEND_ROUTES.BRANCHES} replace />,
     },
     {
         path: FRONTEND_ROUTES.BRANCH_COMPARE,
-        element: <BranchComparisonPage />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
+        element: (
+            <Navigate
+                to={`${FRONTEND_ROUTES.BRANCHES}?tab=compare&view=summary`}
+                replace
+            />
+        ),
+    },
+    {
+        path: FRONTEND_ROUTES.BRANCH_MANAGEMENT,
+        element: <Navigate to={FRONTEND_ROUTES.BRANCHES} replace />,
     },
     {
         path: FRONTEND_ROUTES.ADMIN_LOYALTY,

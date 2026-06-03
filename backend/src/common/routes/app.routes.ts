@@ -117,6 +117,12 @@ export const APP_ROUTES = {
     INVENTORY_MATRIX: 'inventory/matrix',
   },
 
+  // Branch analytics (admin + manager aggregate comparison)
+  BRANCH_ANALYTICS: {
+    BASE: `${API_PREFIX}/branch-analytics`,
+    COMPARISON: 'comparison',
+  },
+
   // Storefront catalog (CUSTOMER role only)
   SHOP: {
     BASE: `${API_PREFIX}/shop`,

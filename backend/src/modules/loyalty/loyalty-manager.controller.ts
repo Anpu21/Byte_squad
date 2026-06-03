@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Param,
@@ -15,7 +16,7 @@ import { APP_ROUTES } from '@common/routes/app.routes';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { ListLoyaltyCustomersQueryDto } from '@/modules/loyalty/dto/list-loyalty-customers-query.dto';
 import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
-import { AuthUser } from '@common/types/auth-user.type';
+import type { AuthUser } from '@common/types/auth-user.type';
 
 @Controller(APP_ROUTES.LOYALTY.MANAGER_BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -28,6 +29,9 @@ export class LoyaltyManagerController {
     @CurrentUser() user: AuthUser,
     @Query() query: ListLoyaltyCustomersQueryDto,
   ) {
+    if (!user.branchId) {
+      throw new BadRequestException('Manager must be assigned to a branch');
+    }
     return this.loyalty.listCustomers({
       ...query,
       branchId: user.branchId,

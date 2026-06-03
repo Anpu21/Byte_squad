@@ -28,6 +28,7 @@ export class AdminPortalController {
   }
 
   @Get(APP_ROUTES.ADMIN_PORTAL.BRANCHES)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   listBranches(): Promise<BranchWithMeta[]> {
     return this.adminPortalService.listBranchesWithMeta();
   }
@@ -43,6 +44,7 @@ export class AdminPortalController {
   }
 
   @Post(APP_ROUTES.ADMIN_PORTAL.COMPARISON)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   compareBranches(
     @Body() dto: BranchComparisonDto,
   ): Promise<BranchComparisonResponse> {
