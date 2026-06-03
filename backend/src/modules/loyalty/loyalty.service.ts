@@ -21,6 +21,8 @@ import type {
 import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
 import { ListLoyaltyCustomersQueryDto } from '@/modules/loyalty/dto/list-loyalty-customers-query.dto';
 import { EnrollWalkInCustomerDto } from '@/modules/loyalty/dto/enroll-walk-in-customer.dto';
+import { AdjustLoyaltyPointsDto } from '@/modules/loyalty/dto/adjust-loyalty-points.dto';
+import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 
 export interface LoyaltySummary {
   pointsBalance: number;
@@ -303,6 +305,31 @@ export class LoyaltyService {
     return this.loyalty.mergeWalkInIntoUser({
       userId,
       loyaltyCustomerId: walkIn.id,
+    });
+  }
+
+  async getDashboardStats(branchId?: string) {
+    return this.loyalty.getDashboardStats(branchId);
+  }
+
+  async adjustPoints(userId: string, dto: AdjustLoyaltyPointsDto): Promise<void> {
+    const account = await this.getOrCreateAccount({ userId });
+    
+    // Prevent negative balance
+    if (dto.points < 0 && account.pointsBalance + dto.points < 0) {
+      throw new BadRequestException('Cannot deduct more points than the current balance');
+    }
+
+    await this.loyalty.applyManualAdjustment({ userId }, dto.points);
+    await this.loyalty.createLedgerEntry({
+      userId,
+      loyaltyCustomerId: null,
+      branchId: null,
+      orderId: null,
+      type: LoyaltyLedgerEntryType.ADJUSTED,
+      points: dto.points,
+      description: dto.reason,
+      metadata: { adjustedByAdmin: true },
     });
   }
 

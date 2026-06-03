@@ -4,8 +4,10 @@ import EmptyState from '@/components/ui/EmptyState';
 import type { ILoyaltyCustomerRow } from '@/types';
 import { useLoyaltyCustomers } from '../hooks/useLoyaltyCustomers';
 import { LoyaltyCustomersFilters } from './LoyaltyCustomersFilters';
+import { LoyaltyTierBadge } from './LoyaltyTierBadge';
 
 interface LoyaltyCustomersTableProps {
+    role: 'admin' | 'manager';
     onSelectCustomer: (row: ILoyaltyCustomerRow) => void;
 }
 
@@ -30,11 +32,10 @@ function parsePointsInput(raw: string): number | undefined {
     return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
-function formatTier(tier: ILoyaltyCustomerRow['tier']): string {
-    return tier === 'gold' ? 'Gold' : tier === 'silver' ? 'Silver' : 'Bronze';
-}
+
 
 export function LoyaltyCustomersTable({
+    role,
     onSelectCustomer,
 }: LoyaltyCustomersTableProps) {
     const [searchDraft, setSearchDraft] = useState('');
@@ -70,6 +71,7 @@ export function LoyaltyCustomersTable({
     }
 
     const { data, isLoading } = useLoyaltyCustomers({
+        role,
         search: search || undefined,
         branchId: branchId || undefined,
         activeSince: activeSince || undefined,
@@ -114,6 +116,22 @@ export function LoyaltyCustomersTable({
                             : 'Customer balances will appear here once they place pickup orders or visit a branch.'
                     }
                 />
+            ) : isLoading ? (
+                <div className="flex flex-col" role="status" aria-label="Loading customers">
+                    {Array.from({ length: 10 }).map((_, idx) => (
+                        <div
+                            key={idx}
+                            className="px-5 py-4 border-b border-border flex items-center justify-between animate-pulse"
+                        >
+                            <div className="flex flex-col gap-2 w-1/3">
+                                <div className="h-4 w-32 bg-surface-2 rounded"></div>
+                                <div className="h-3 w-48 bg-surface-2 rounded"></div>
+                            </div>
+                            <div className="h-6 w-16 bg-surface-2 rounded-full"></div>
+                            <div className="h-4 w-12 bg-surface-2 rounded"></div>
+                        </div>
+                    ))}
+                </div>
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
@@ -155,8 +173,8 @@ export function LoyaltyCustomersTable({
                                         <td className="px-5 py-3 text-[12px] text-text-2 truncate">
                                             {row.email ?? row.phone ?? '—'}
                                         </td>
-                                        <td className="px-5 py-3 text-[12px] text-text-2">
-                                            {formatTier(row.tier)}
+                                        <td className="px-5 py-3">
+                                            <LoyaltyTierBadge tier={row.tier} />
                                         </td>
                                         <td className="px-5 py-3 text-right mono tabular-nums text-[13px] font-bold text-text-1">
                                             {row.pointsBalance}

@@ -139,6 +139,13 @@ const NAV_ITEMS: NavItem[] = [
         group: 'People',
     },
     {
+        label: 'Customer loyalty',
+        path: FRONTEND_ROUTES.MANAGER_LOYALTY,
+        roles: [UserRole.MANAGER],
+        icon: <Sparkles size={15} />,
+        group: 'People',
+    },
+    {
         label: 'Users',
         path: FRONTEND_ROUTES.USER_MANAGEMENT,
         roles: [UserRole.ADMIN],

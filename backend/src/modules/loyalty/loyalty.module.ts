@@ -6,6 +6,7 @@ import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-en
 import { LoyaltySettings } from '@/modules/loyalty/entities/loyalty-settings.entity';
 import { LoyaltyController } from '@/modules/loyalty/loyalty.controller';
 import { LoyaltyAdminController } from '@/modules/loyalty/loyalty-admin.controller';
+import { LoyaltyManagerController } from '@/modules/loyalty/loyalty-manager.controller';
 import { LoyaltyRepository } from '@/modules/loyalty/loyalty.repository';
 import { LoyaltyCustomersRepository } from '@/modules/loyalty/loyalty-customers.repository';
 import { LoyaltySettingsRepository } from '@/modules/loyalty/loyalty-settings.repository';
@@ -24,7 +25,11 @@ import { UsersModule } from '@users/users.module';
     ]),
     forwardRef(() => UsersModule),
   ],
-  controllers: [LoyaltyController, LoyaltyAdminController],
+  controllers: [
+    LoyaltyController,
+    LoyaltyAdminController,
+    LoyaltyManagerController,
+  ],
   providers: [
     LoyaltyRepository,
     LoyaltyCustomersRepository,

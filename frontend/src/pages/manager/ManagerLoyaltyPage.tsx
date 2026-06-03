@@ -1,52 +1,40 @@
 import { useState } from 'react';
-import { Sparkles } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
-import Segmented from '@/components/ui/Segmented';
 import type { ILoyaltyCustomerRow } from '@/types';
-import { LoyaltySettingsForm } from '@/features/admin-loyalty/components/LoyaltySettingsForm';
 import { LoyaltyCustomersTable } from '@/features/admin-loyalty/components/LoyaltyCustomersTable';
 import { LoyaltyCustomerHistorySidebar } from '@/features/admin-loyalty/components/LoyaltyCustomerHistorySidebar';
 import { LoyaltyDashboardKpis } from '@/features/admin-loyalty/components/LoyaltyDashboardKpis';
 import { LoyaltyAdjustPointsDialog } from '@/features/admin-loyalty/components/LoyaltyAdjustPointsDialog';
 
-type Tab = 'settings' | 'customers';
-
-const TAB_OPTIONS = [
-    { label: 'Settings', value: 'settings' as const },
-    { label: 'Customers', value: 'customers' as const },
-];
-
-export function AdminLoyaltyPage() {
-    const [tab, setTab] = useState<Tab>('settings');
+export function ManagerLoyaltyPage() {
     const [selectedCustomer, setSelectedCustomer] = useState<ILoyaltyCustomerRow | null>(null);
     const [adjustingCustomer, setAdjustingCustomer] = useState<ILoyaltyCustomerRow | null>(null);
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <PageHeader
-                eyebrow="Admin"
+                eyebrow="Manager"
                 title="Customer loyalty"
-                subtitle="Tune the earn and redemption rules, and review who is earning points."
-                actions={
-                    <Segmented
-                        value={tab}
-                        options={TAB_OPTIONS}
-                        onChange={setTab}
-                    />
-                }
+                subtitle="Review who is earning points at your branch and adjust balances if needed."
             />
 
-            {tab === 'settings' ? (
-                <LoyaltySettingsForm />
-            ) : (
-                <div className="space-y-6">
-                    <LoyaltyDashboardKpis role="admin" />
-                    <LoyaltyCustomersTable role="admin" onSelectCustomer={setSelectedCustomer} />
-                </div>
-            )}
+            <div className="space-y-6">
+                <LoyaltyDashboardKpis role="manager" />
+                {/* 
+                  LoyaltyCustomersTable internally fetches with useLoyaltyCustomers,
+                  which will automatically scope to the manager's branch on the backend 
+                  via the /admin/loyalty/customers endpoint or a /manager counterpart.
+                  Wait, does it use /admin or /manager? 
+                  The backend plan exposed manager routes at /manager/loyalty/customers.
+                  If LoyaltyCustomersTable uses useLoyaltyCustomers which uses loyaltyAdminService which hardcodes /admin/loyalty, 
+                  the manager's request to /admin/loyalty will be forbidden!
+                  I need to check how useLoyaltyCustomers fetches data. 
+                */}
+                <LoyaltyCustomersTable role="manager" onSelectCustomer={setSelectedCustomer} />
+            </div>
 
             <LoyaltyCustomerHistorySidebar
-                role="admin"
+                role="manager"
                 customer={selectedCustomer}
                 onClose={() => setSelectedCustomer(null)}
                 onAdjustPoints={() => {

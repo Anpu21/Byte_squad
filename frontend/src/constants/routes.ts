@@ -50,6 +50,9 @@ export const FRONTEND_ROUTES = {
 
     // Admin-only loyalty program management
     ADMIN_LOYALTY: '/admin/loyalty',
+    
+    // Manager loyalty program management
+    MANAGER_LOYALTY: '/manager/loyalty',
 
     // Admin / manager — unified HR workspace (Employees / Attendance / Leaves / Payroll tabs)
     ADMIN_HR: '/admin/hr',

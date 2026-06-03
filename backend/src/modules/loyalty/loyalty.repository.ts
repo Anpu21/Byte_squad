@@ -187,6 +187,23 @@ export class LoyaltyRepository {
     await qb.execute();
   }
 
+  async applyManualAdjustment(
+    owner: LoyaltyOwner,
+    points: number,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const qb = this.accounts(manager)
+      .createQueryBuilder()
+      .update(LoyaltyAccount)
+      .set({
+        pointsBalance: () => `GREATEST(0, "points_balance" + ${points})`,
+      });
+
+    this.applyOwnerWhere(qb, owner);
+
+    await qb.execute();
+  }
+
   async mergeWalkInIntoUser(params: {
     userId: string;
     loyaltyCustomerId: string;
@@ -448,4 +465,51 @@ export class LoyaltyRepository {
 
     return { rows: rawRows.map(normalizeCustomerRow), total };
   }
+
+  async getDashboardStats(branchId?: string): Promise<{
+    totalMembers: number;
+    totalPointsInCirculation: number;
+    pointsEarnedThisMonth: number;
+    pointsRedeemedThisMonth: number;
+  }> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const branchFilter = branchId
+      ? `EXISTS (SELECT 1 FROM loyalty_ledger_entries le WHERE (le.user_id = acc.user_id OR le.loyalty_customer_id = acc.loyalty_customer_id) AND le.branch_id = :branchId)`
+      : '1=1';
+
+    const accountStats = await this.accountRepo
+      .createQueryBuilder('acc')
+      .select('COUNT(acc.id)', 'totalMembers')
+      .addSelect('SUM(acc.points_balance)', 'totalPointsInCirculation')
+      .where(branchFilter, { branchId })
+      .getRawOne();
+
+    const ledgerFilter = branchId ? `le.branch_id = :branchId` : '1=1';
+    
+    const earnedStats = await this.ledgerRepo
+      .createQueryBuilder('le')
+      .select('SUM(le.points)', 'pointsEarned')
+      .where('le.type = :type', { type: LoyaltyLedgerEntryType.EARNED })
+      .andWhere('le.created_at >= :startOfMonth', { startOfMonth })
+      .andWhere(ledgerFilter, { branchId })
+      .getRawOne();
+
+    const redeemedStats = await this.ledgerRepo
+      .createQueryBuilder('le')
+      .select('SUM(le.points)', 'pointsRedeemed')
+      .where('le.type = :type', { type: LoyaltyLedgerEntryType.REDEEMED })
+      .andWhere('le.created_at >= :startOfMonth', { startOfMonth })
+      .andWhere(ledgerFilter, { branchId })
+      .getRawOne();
+
+    return {
+      totalMembers: Number(accountStats?.totalMembers ?? 0),
+      totalPointsInCirculation: Number(accountStats?.totalPointsInCirculation ?? 0),
+      pointsEarnedThisMonth: Number(earnedStats?.pointsEarned ?? 0),
+      pointsRedeemedThisMonth: Number(redeemedStats?.pointsRedeemed ?? 0),
+    };
+  }
 }
+

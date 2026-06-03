@@ -1,10 +1,11 @@
 export function formatStockQuantity(
-    quantity: number,
+    quantity: number | string,
     baseUnit: string | null | undefined,
 ): string {
+    const num = Number(quantity);
     const unit = (baseUnit ?? 'unit').toUpperCase();
     if (unit === 'UNIT') {
-        return `${Math.round(quantity)} UNIT`;
+        return `${Math.round(num)} UNIT`;
     }
-    return `${quantity.toFixed(3)} ${unit}`;
+    return `${num.toFixed(3)} ${unit}`;
 }

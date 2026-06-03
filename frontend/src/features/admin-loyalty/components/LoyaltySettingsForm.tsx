@@ -84,6 +84,32 @@ function validate(form: FormState): string | null {
     return null;
 }
 
+function SettingSection({
+    title,
+    description,
+    children,
+}: {
+    title: string;
+    description: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-6 border-b border-border-strong last:border-0">
+            <div className="lg:col-span-1">
+                <h3 className="text-[14px] font-semibold text-text-1 mb-1.5">{title}</h3>
+                <p className="text-[13px] text-text-2 leading-relaxed pr-4">
+                    {description}
+                </p>
+            </div>
+            <div className="lg:col-span-2">
+                <Card className="p-5 shadow-sm space-y-4">
+                    {children}
+                </Card>
+            </div>
+        </div>
+    );
+}
+
 export function LoyaltySettingsForm() {
     const { query, mutation } = useLoyaltySettingsAdmin();
     const settings = query.data;
@@ -107,6 +133,7 @@ export function LoyaltySettingsForm() {
         const validation = validate(form);
         if (validation) {
             setError(validation);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
         mutation.mutate({
@@ -127,14 +154,51 @@ export function LoyaltySettingsForm() {
 
     const preview = toPreview(form);
 
+    const rightAdornment = (text: string) => (
+        <span className="text-[11px] font-semibold tracking-wider text-text-3 px-2 uppercase">
+            {text}
+        </span>
+    );
+
     return (
-        <Card className="p-5">
-            <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-full">
+            <div className="flex items-center justify-between bg-surface border border-border-strong rounded-lg p-4 mb-6 shadow-sm">
                 <div>
-                    <p className="text-[11px] uppercase tracking-[0.1em] text-text-3 font-semibold mb-2">
-                        Earn rule
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <h2 className="text-[14px] font-semibold text-text-1">Loyalty Configuration</h2>
+                    <p className="text-[12px] text-text-2 mt-0.5">Manage earn rules, redemption caps, and member tiers.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleReset}
+                        disabled={mutation.isPending}
+                    >
+                        <RotateCcw size={14} />
+                        Discard changes
+                    </Button>
+                    <Button type="submit" disabled={mutation.isPending}>
+                        <Save size={14} />
+                        {mutation.isPending ? 'Saving…' : 'Save changes'}
+                    </Button>
+                </div>
+            </div>
+
+            {error && (
+                <div
+                    role="alert"
+                    className="p-3 mb-6 bg-danger-soft border border-danger/30 rounded-md text-[13px] font-medium text-danger animate-in fade-in"
+                >
+                    {error}
+                </div>
+            )}
+
+            <div className="bg-surface rounded-lg border border-border-strong px-6 mb-16 shadow-sm">
+                <SettingSection
+                    title="Points Generation"
+                    description="Determine how customers earn points from their purchases. This applies to the subtotal amount after discounts."
+                >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
                             label="Points earned"
                             type="number"
@@ -142,148 +206,117 @@ export function LoyaltySettingsForm() {
                             step={1}
                             inputMode="numeric"
                             value={form.earnPoints}
-                            onChange={(e) =>
-                                handleChange('earnPoints', e.target.value)
-                            }
+                            onChange={(e) => handleChange('earnPoints', e.target.value)}
+                            rightSlot={rightAdornment('pts')}
                         />
                         <Input
-                            label="Per LKR amount"
+                            label="Per spend amount"
                             type="number"
                             min={1}
                             step={1}
                             inputMode="numeric"
                             value={form.earnPerAmount}
-                            onChange={(e) =>
-                                handleChange('earnPerAmount', e.target.value)
-                            }
+                            onChange={(e) => handleChange('earnPerAmount', e.target.value)}
+                            rightSlot={rightAdornment('LKR')}
                         />
                     </div>
-                    <p className="text-[12px] text-text-2 mt-2">
-                        {formatEarnRule(preview)}
-                    </p>
-                </div>
+                    <div className="p-3 bg-surface-2 rounded-md border border-border mt-2">
+                        <p className="text-[12px] text-text-2 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                            {formatEarnRule(preview)}
+                        </p>
+                    </div>
+                </SettingSection>
 
-                <div>
-                    <p className="text-[11px] uppercase tracking-[0.1em] text-text-3 font-semibold mb-2">
-                        Point value
-                    </p>
-                    <Input
-                        label="Value of 1 point (LKR)"
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        inputMode="decimal"
-                        value={form.pointValue}
-                        onChange={(e) =>
-                            handleChange('pointValue', e.target.value)
-                        }
-                    />
-                    <p className="text-[12px] text-text-2 mt-2">
-                        {formatPointValueRule(preview)}
-                    </p>
-                </div>
-
-                <div>
-                    <p className="text-[11px] uppercase tracking-[0.1em] text-text-3 font-semibold mb-2">
-                        Redemption cap
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <SettingSection
+                    title="Value & Redemption"
+                    description="Configure the monetary value of points and place guardrails on how much can be redeemed per order."
+                >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <Input
-                            label="Cap (% of order subtotal)"
+                            label="Value of 1 point"
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            inputMode="decimal"
+                            value={form.pointValue}
+                            onChange={(e) => handleChange('pointValue', e.target.value)}
+                            rightSlot={rightAdornment('LKR')}
+                            className="sm:col-span-2"
+                        />
+                    </div>
+                    <div className="p-3 bg-surface-2 rounded-md border border-border mb-6">
+                        <p className="text-[12px] text-text-2 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                            {formatPointValueRule(preview)}
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Input
+                            label="Redemption Cap"
                             type="number"
                             min={0}
                             max={100}
                             step={1}
                             inputMode="numeric"
                             value={form.redeemCapPercent}
-                            onChange={(e) =>
-                                handleChange(
-                                    'redeemCapPercent',
-                                    e.target.value,
-                                )
-                            }
+                            onChange={(e) => handleChange('redeemCapPercent', e.target.value)}
+                            rightSlot={rightAdornment('%')}
                         />
                         <Input
-                            label="Keep reserve (points)"
+                            label="Minimum Reserve"
                             type="number"
                             min={0}
                             step={1}
                             inputMode="numeric"
                             value={form.minRedeemablePoints}
-                            onChange={(e) =>
-                                handleChange(
-                                    'minRedeemablePoints',
-                                    e.target.value,
-                                )
-                            }
+                            onChange={(e) => handleChange('minRedeemablePoints', e.target.value)}
+                            rightSlot={rightAdornment('pts')}
                         />
                     </div>
-                    <p className="text-[12px] text-text-2 mt-2">
-                        {formatRedeemCapRule(preview)}
-                    </p>
-                </div>
+                    <div className="p-3 bg-surface-2 rounded-md border border-border mt-2">
+                        <p className="text-[12px] text-text-2 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                            {formatRedeemCapRule(preview)}
+                        </p>
+                    </div>
+                </SettingSection>
 
-                <div>
-                    <p className="text-[11px] uppercase tracking-[0.1em] text-text-3 font-semibold mb-2">
-                        Member tiers
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <SettingSection
+                    title="VIP Tiers"
+                    description="Reward your best customers with automatic status upgrades based on lifetime points."
+                >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
-                            label="Silver from"
+                            label="Silver tier threshold"
                             type="number"
                             min={0}
                             step={1}
                             inputMode="numeric"
                             value={form.silverTierPoints}
-                            onChange={(e) =>
-                                handleChange(
-                                    'silverTierPoints',
-                                    e.target.value,
-                                )
-                            }
+                            onChange={(e) => handleChange('silverTierPoints', e.target.value)}
+                            rightSlot={rightAdornment('pts')}
                         />
                         <Input
-                            label="Gold from"
+                            label="Gold tier threshold"
                             type="number"
                             min={0}
                             step={1}
                             inputMode="numeric"
                             value={form.goldTierPoints}
-                            onChange={(e) =>
-                                handleChange('goldTierPoints', e.target.value)
-                            }
+                            onChange={(e) => handleChange('goldTierPoints', e.target.value)}
+                            rightSlot={rightAdornment('pts')}
                         />
                     </div>
-                    <p className="text-[12px] text-text-2 mt-2">
-                        {formatTierRule(preview)}
-                    </p>
-                </div>
-
-                {error && (
-                    <div
-                        role="alert"
-                        className="p-2.5 bg-danger-soft border border-danger/30 rounded-md text-xs text-danger"
-                    >
-                        {error}
+                    <div className="p-3 bg-surface-2 rounded-md border border-border mt-2">
+                        <p className="text-[12px] text-text-2 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                            {formatTierRule(preview)}
+                        </p>
                     </div>
-                )}
-
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={handleReset}
-                        disabled={mutation.isPending}
-                    >
-                        <RotateCcw size={13} />
-                        Reset
-                    </Button>
-                    <Button type="submit" disabled={mutation.isPending}>
-                        <Save size={13} />
-                        {mutation.isPending ? 'Saving…' : 'Save changes'}
-                    </Button>
-                </div>
-            </form>
-        </Card>
+                </SettingSection>
+            </div>
+        </form>
     );
 }

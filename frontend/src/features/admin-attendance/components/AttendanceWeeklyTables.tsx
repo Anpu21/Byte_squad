@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import EmptyState from '@/components/ui/EmptyState';
+import Avatar from '@/components/ui/Avatar';
 import type { AttendanceStatus, IAttendance, IEmployee } from '@/types';
 import {
     formatHoursDuration,
@@ -122,15 +123,21 @@ export function AttendanceWeeklyTables({
                                     >
                                         Employee
                                     </th>
-                                    {WEEKDAYS.map((day) => (
-                                        <th
-                                            key={day.key}
-                                            scope="col"
-                                            className="px-3 py-2.5 font-semibold"
-                                        >
-                                            {day.label}
-                                        </th>
-                                    ))}
+                                    {WEEKDAYS.map((day, dayIndex) => {
+                                        const date = week[dayIndex];
+                                        const dayNumber = date ? Number(date.slice(8, 10)) : null;
+                                        const isWknd = day.key === 'sat' || day.key === 'sun';
+                                        return (
+                                            <th
+                                                key={day.key}
+                                                scope="col"
+                                                className={`px-3 py-2.5 font-semibold ${isWknd ? 'bg-surface-2/40' : ''}`}
+                                            >
+                                                {day.label} 
+                                                {dayNumber && <span className="text-text-2 font-medium ml-1.5 tabular-nums">{dayNumber}</span>}
+                                            </th>
+                                        );
+                                    })}
                                 </tr>
                             </thead>
                             <tbody>
@@ -159,23 +166,29 @@ export function AttendanceWeeklyTables({
                                           >
                                               <th
                                                   scope="row"
-                                                  className="px-4 py-3 align-top"
+                                                  className="px-4 py-3 align-middle"
                                               >
-                                                  <span className="block text-[13px] font-medium text-text-1">
-                                                      {employee.fullName}
-                                                  </span>
-                                                  <span className="block text-[11px] text-text-3 tabular-nums">
-                                                      {employee.employeeCode}
-                                                  </span>
+                                                  <div className="flex items-center gap-3">
+                                                      <Avatar name={employee.fullName} size={32} />
+                                                      <div className="flex flex-col">
+                                                          <span className="block text-[13px] font-semibold text-text-1">
+                                                              {employee.fullName}
+                                                          </span>
+                                                          <span className="block text-[11px] text-text-3 tabular-nums mt-0.5">
+                                                              {employee.employeeCode}
+                                                          </span>
+                                                      </div>
+                                                  </div>
                                               </th>
                                               {week.map((date, dayIndex) => {
                                                   if (!date) {
+                                                      const isWknd = dayIndex === 5 || dayIndex === 6;
                                                       return (
                                                           <td
                                                               key={`pad-${dayIndex}`}
-                                                              className="px-3 py-3 align-top bg-surface-2/30 text-text-3"
+                                                              className={`px-3 py-3 align-top border-l border-border ${isWknd ? 'bg-surface-2/40' : 'bg-surface-2/10'}`}
                                                           >
-                                                              <span aria-hidden="true">
+                                                              <span aria-hidden="true" className="opacity-0">
                                                                   -
                                                               </span>
                                                           </td>
@@ -198,18 +211,16 @@ export function AttendanceWeeklyTables({
                                                           row?.totalHours ??
                                                               null,
                                                       );
-                                                  const dayNumber = Number(
-                                                      date.slice(8, 10),
-                                                  );
                                                   const statusLabel =
                                                       attendanceStatusLabel(
                                                           status,
                                                       );
+                                                  const isWknd = dayIndex === 5 || dayIndex === 6;
 
                                                   return (
                                                       <td
                                                           key={date}
-                                                          className="p-0 align-top border-l border-border"
+                                                          className={`p-0 align-top border-l border-border ${isWknd ? 'bg-surface-2/40' : ''}`}
                                                       >
                                                           <button
                                                               type="button"
@@ -220,26 +231,20 @@ export function AttendanceWeeklyTables({
                                                                   )
                                                               }
                                                               aria-label={`Edit attendance for ${employee.fullName} on ${date}, currently ${statusLabel}`}
-                                                              className={`flex min-h-[78px] w-full flex-col items-start justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-surface-2 focus:outline-none focus:ring-[2px] focus:ring-inset focus:ring-primary/40 ${
-                                                                  date ===
-                                                                  todayIso
-                                                                      ? 'ring-[2px] ring-inset ring-primary/70'
+                                                              className={`flex h-full min-h-[76px] w-full flex-col items-center justify-center gap-1.5 px-2 py-3 text-center transition-colors hover:bg-surface-2 focus:outline-none focus:ring-[2px] focus:ring-inset focus:ring-primary/40 ${
+                                                                  date === todayIso
+                                                                      ? 'bg-primary-soft/10 ring-[1px] ring-inset ring-primary/40'
                                                                       : ''
                                                               }`}
                                                           >
-                                                              <span className="text-[12px] font-semibold text-text-2 tabular-nums">
-                                                                  {dayNumber}
-                                                              </span>
-                                                              <span className="flex flex-col items-start gap-1">
-                                                                  <AttendanceStatusPill
-                                                                      status={
-                                                                          status
-                                                                      }
-                                                                  />
-                                                                  <span className="text-[11px] text-text-3 tabular-nums">
+                                                              <AttendanceStatusPill
+                                                                  status={status}
+                                                              />
+                                                              {duration !== '0h' && (
+                                                                  <span className="text-[11px] font-medium text-text-3 tabular-nums">
                                                                       {duration}
                                                                   </span>
-                                                              </span>
+                                                              )}
                                                           </button>
                                                       </td>
                                                   );

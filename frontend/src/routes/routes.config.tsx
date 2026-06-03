@@ -25,6 +25,7 @@ import { BranchManagementPage } from '@/pages/branches/BranchManagementPage';
 import { BranchPerformancePage } from '@/pages/branches/BranchPerformancePage';
 import { BranchComparisonPage } from '@/pages/admin/BranchComparisonPage';
 import { AdminLoyaltyPage } from '@/pages/admin/AdminLoyaltyPage';
+import { ManagerLoyaltyPage } from '@/pages/manager/ManagerLoyaltyPage';
 import { AdminHrPage } from '@/pages/admin/AdminHrPage';
 import { AdminEmployeeFormPage } from '@/pages/admin/AdminEmployeeFormPage';
 import { TransferRequestsPage } from '@/pages/transfers/TransferRequestsPage';
@@ -232,6 +233,12 @@ export const ROUTES: RouteDef[] = [
         path: FRONTEND_ROUTES.ADMIN_LOYALTY,
         element: <AdminLoyaltyPage />,
         allowedRoles: [UserRole.ADMIN],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.MANAGER_LOYALTY,
+        element: <ManagerLoyaltyPage />,
+        allowedRoles: [UserRole.MANAGER],
         layout: 'dashboard',
     },
 

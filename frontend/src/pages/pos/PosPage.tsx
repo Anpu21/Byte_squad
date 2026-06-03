@@ -113,13 +113,15 @@ export function PosPage(): React.ReactElement {
                         onClear={cart.clear}
                         searchInputRef={state.searchInputRef}
                         onScanBarcode={handleCameraScan}
-                    />
-                    <PosInvoiceTotal
-                        itemsSubtotal={cart.itemsSubtotal}
-                        totalLineDiscount={cart.totalDiscount}
-                        totalTax={cart.totalTax}
-                        cartDiscountPercentage={state.cartDiscountPercentage}
-                        onCartDiscountChange={state.setCartDiscountPercentage}
+                        footerSlot={
+                            <PosInvoiceTotal
+                                itemsSubtotal={cart.itemsSubtotal}
+                                totalLineDiscount={cart.totalDiscount}
+                                totalTax={cart.totalTax}
+                                cartDiscountPercentage={state.cartDiscountPercentage}
+                                onCartDiscountChange={state.setCartDiscountPercentage}
+                            />
+                        }
                     />
                 </div>
                 <div className="flex flex-col gap-3">

@@ -40,6 +40,8 @@ interface IPosItemTableProps {
      * one search-and-status-banner pipeline).
      */
     onScanBarcode?: (barcode: string) => void;
+    /** Slot for totals or other footer content pinned to the bottom */
+    footerSlot?: React.ReactNode;
 }
 
 const HEADERS: { label: string; align?: 'left' | 'right' | 'center' }[] = [
@@ -73,6 +75,7 @@ export function PosItemTable({
     onClear,
     searchInputRef,
     onScanBarcode,
+    footerSlot,
 }: IPosItemTableProps) {
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -96,7 +99,7 @@ export function PosItemTable({
     return (
         <section
             aria-label="Cart items"
-            className="bg-surface border border-border-strong rounded-md flex flex-col h-[500px]"
+            className="bg-surface border border-border-strong rounded-md flex flex-col h-[calc(100vh-130px)] min-h-[600px]"
         >
             <header className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-b border-border-strong">
                 <h2 className="text-sm font-semibold text-text-1">Items</h2>
@@ -203,6 +206,12 @@ export function PosItemTable({
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+            
+            {footerSlot && (
+                <div className="shrink-0 border-t border-border-strong mt-auto">
+                    {footerSlot}
                 </div>
             )}
         </section>
