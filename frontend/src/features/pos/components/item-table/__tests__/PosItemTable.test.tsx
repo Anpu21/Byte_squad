@@ -30,6 +30,7 @@ const searchRow: ISearchProductRow = {
     taxRate: 0,
     discountAllowed: true,
     imageUrl: null,
+    matchedUnit: null,
 };
 
 const stagedItem: ICartItem = {

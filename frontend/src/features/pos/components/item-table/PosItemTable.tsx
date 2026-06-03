@@ -3,6 +3,7 @@ import { Camera, ShoppingCart } from 'lucide-react';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type { ISearchProductRow } from '@/types';
 import { usePosProductSearch } from '@/features/pos/hooks/usePosProductSearch';
+import { toCartItemSeed } from '@/features/pos/lib/cart-item-seed';
 import EmptyState from '@/components/ui/EmptyState';
 import { PosItemSearchInput } from './PosItemSearchInput';
 import { PosItemSearchResults } from './PosItemSearchResults';
@@ -81,22 +82,7 @@ export function PosItemTable({
     );
 
     function handleSelect(row: ISearchProductRow) {
-        addItem({
-            productId: row.productId,
-            productCode: row.productCode,
-            productName: row.productName,
-            productType: row.productType,
-            baseUnit: row.baseUnit,
-            unitId: null,
-            unitName: row.baseUnit,
-            unitPrice: row.retailPrice,
-            conversionFactor: 1,
-            quantity: 1,
-            free: 0,
-            discountPercentage: 0,
-            taxRate: row.taxRate,
-            discountAllowed: row.discountAllowed,
-        });
+        addItem(toCartItemSeed(row));
         setQuery('');
         setDebouncedQuery('');
     }

@@ -16,6 +16,7 @@ import { CreditTransactionRepository } from './credit-transaction.repository';
 import { StockMovementRepository } from './stock-movement.repository';
 import { InvoiceNumberService } from './services/invoice-number.service';
 import { MultiTenderCalculatorService } from './services/multi-tender-calculator.service';
+import { ProductsRepository } from '@products/products.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
@@ -83,6 +84,7 @@ interface MockBag {
   stockMovements: jest.Mocked<StockMovementRepository>;
   invoiceNumbers: jest.Mocked<InvoiceNumberService>;
   multiTender: MultiTenderCalculatorService;
+  products: jest.Mocked<ProductsRepository>;
   accounting: { createLedgerEntryWithManager: jest.Mock };
   loyalty: {
     getOrCreateAccount: jest.Mock;
@@ -118,14 +120,26 @@ function buildMocks(
     inventoryRows?: ReturnType<typeof makeInvRow>[];
     unitsById?: Map<
       string,
-      { id: string; productId: string; conversionToBase: number }
+      {
+        id: string;
+        productId: string;
+        conversionToBase: number;
+        sellingPrice: number;
+      }
     >;
+    productPrices?: Map<string, number>;
     userRows?: Map<string, { id: string; currentBalance: number }>;
     loyalty?: LoyaltyMockOptions;
   } = {},
 ): Promise<MockBag> {
   const inventoryRows = opts.inventoryRows ?? [makeInvRow('p-1', 50)];
   const unitsArr = Array.from(opts.unitsById?.values() ?? []);
+  const productPrices =
+    opts.productPrices ??
+    new Map([
+      ['p-1', 100],
+      ['p-2', 50],
+    ]);
   const users = opts.userRows ?? new Map();
 
   // Inventory operations — locked findOne pulls a row, findOne (post-deduct)
@@ -233,6 +247,18 @@ function buildMocks(
     {
       create: jest.fn(),
     };
+  const productsRepoMock: Partial<jest.Mocked<ProductsRepository>> = {
+    findActiveByIds: jest.fn().mockImplementation((ids: readonly string[]) =>
+      Promise.resolve(
+        ids
+          .filter((id) => productPrices.has(id))
+          .map((id) => ({
+            id,
+            sellingPrice: productPrices.get(id),
+          })),
+      ),
+    ),
+  };
   const invoiceNumbersMock: Partial<jest.Mocked<InvoiceNumberService>> = {
     next: jest.fn().mockResolvedValue('INV-2026-000001'),
   };
@@ -286,6 +312,7 @@ function buildMocks(
         provide: MultiTenderCalculatorService,
         useValue: new MultiTenderCalculatorService(),
       },
+      { provide: ProductsRepository, useValue: productsRepoMock },
       { provide: AccountingRepository, useValue: accountingMock },
       { provide: LoyaltyService, useValue: loyaltyServiceMock },
       { provide: LoyaltyWalletService, useValue: loyaltyWalletServiceMock },
@@ -303,6 +330,7 @@ function buildMocks(
       stockMovements: module.get(StockMovementRepository),
       invoiceNumbers: module.get(InvoiceNumberService),
       multiTender: module.get(MultiTenderCalculatorService),
+      products: module.get(ProductsRepository),
       accounting: accountingMock,
       loyalty: loyaltyServiceMock,
       loyaltyWallet: loyaltyWalletServiceMock,
@@ -590,35 +618,24 @@ describe('PosWriteService.createSale', () => {
     expect(bag.sales.findOneById).toHaveBeenCalledWith('sale-winner');
   });
 
-  it('unit conversion: 1000 g typed → 1 kg of stock deducted and Rs/kg price scaled per g', async () => {
-    // Arrange — carrot stocked in kg at Rs 500/kg, cashier picks the `g`
-    // sub-unit (conversionToBase 0.001) and types 1000 g. The fix to
-    // computeItem multiplies unitPrice by conversion, so:
-    //   subtotal = 1000 * 500 * 0.001 = 500
-    //   baseUnitQty = 1000 * 0.001 = 1 (kg)
+  it('weighted sale: 0.250 KG bills at the base KG price and deducts 0.250 KG', async () => {
     const bag = await buildMocks({
-      inventoryRows: [makeInvRow('p-kg', 5)],
-      unitsById: new Map([
-        [
-          'unit-g',
-          { id: 'unit-g', productId: 'p-kg', conversionToBase: 0.001 },
-        ],
-      ]),
+      inventoryRows: [makeInvRow('p-banana', 5)],
+      productPrices: new Map([['p-banana', 400]]),
     });
     const dto = makeDto({
       items: [
         {
-          productId: 'p-kg',
-          unitId: 'unit-g',
-          quantity: 1000,
-          unitPrice: 500, // Rs 500 / kg (base unit)
+          productId: 'p-banana',
+          quantity: 0.25,
+          unitPrice: 400,
         },
       ],
       payment: {
         paymentMethod: 'Cash',
-        paymentAmount: 500,
-        cashAmount: 500,
-        cashTendered: 500,
+        paymentAmount: 100,
+        cashAmount: 100,
+        cashTendered: 100,
       },
     });
     bag.sales.create.mockResolvedValue({
@@ -629,58 +646,59 @@ describe('PosWriteService.createSale', () => {
     // Act
     await bag.service.createSale(makeCashier(), dto);
 
-    // Assert: baseUnitQty respects the conversion, subtotal scales by it.
     expect(bag.saleItems.createMany).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({
-          baseUnitQty: 1,
-          quantity: 1000,
-          lineSubtotal: 500,
-          lineTotal: 500,
+          productId: 'p-banana',
+          baseUnitQty: 0.25,
+          quantity: 0.25,
+          unitPrice: 400,
+          lineSubtotal: 100,
+          lineTotal: 100,
         }),
       ]),
       expect.anything(),
     );
-    // Stock movement recorded with the base unit qty
     expect(bag.stockMovements.create).toHaveBeenCalledWith(
-      expect.objectContaining({ qtyOut: 1, movementType: 'Sale' }),
+      expect.objectContaining({ qtyOut: 0.25, movementType: 'Sale' }),
       expect.anything(),
     );
-    // Sale-level totals reflect the per-gram bill, not the per-kg price.
     expect(bag.sales.create).toHaveBeenCalledWith(
-      expect.objectContaining({ subtotal: 500, total: 500 }),
+      expect.objectContaining({ subtotal: 100, total: 100 }),
       expect.anything(),
     );
   });
 
-  it('unit conversion super-unit: 2 kg typed against g-stocked product bills at Rs/g x 1000', async () => {
-    // Arrange — product stocked in g at Rs 0.5/g, cashier picks kg
-    // sub-unit (conversionToBase = 1000) and types 2 kg.
-    //   subtotal = 2 * 0.5 * 1000 = 1000
-    //   baseUnitQty = 2 * 1000 = 2000 (g)
+  it('pack sale: selected 12-PACK bills at pack price and deducts 12 UNIT', async () => {
     const bag = await buildMocks({
-      inventoryRows: [makeInvRow('p-g', 5000)],
+      inventoryRows: [makeInvRow('p-eggs', 24)],
+      productPrices: new Map([['p-eggs', 60]]),
       unitsById: new Map([
         [
-          'unit-kg',
-          { id: 'unit-kg', productId: 'p-g', conversionToBase: 1000 },
+          'unit-pack',
+          {
+            id: 'unit-pack',
+            productId: 'p-eggs',
+            conversionToBase: 12,
+            sellingPrice: 650,
+          },
         ],
       ]),
     });
     const dto = makeDto({
       items: [
         {
-          productId: 'p-g',
-          unitId: 'unit-kg',
-          quantity: 2,
-          unitPrice: 0.5, // Rs 0.5 / g (base unit)
+          productId: 'p-eggs',
+          unitId: 'unit-pack',
+          quantity: 1,
+          unitPrice: 650,
         },
       ],
       payment: {
         paymentMethod: 'Cash',
-        paymentAmount: 1000,
-        cashAmount: 1000,
-        cashTendered: 1000,
+        paymentAmount: 650,
+        cashAmount: 650,
+        cashTendered: 650,
       },
     });
     bag.sales.create.mockResolvedValue({
@@ -695,18 +713,62 @@ describe('PosWriteService.createSale', () => {
     expect(bag.saleItems.createMany).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({
-          baseUnitQty: 2000,
-          quantity: 2,
-          lineSubtotal: 1000,
-          lineTotal: 1000,
+          baseUnitQty: 12,
+          quantity: 1,
+          unitPrice: 650,
+          lineSubtotal: 650,
+          lineTotal: 650,
         }),
       ]),
       expect.anything(),
     );
-    expect(bag.sales.create).toHaveBeenCalledWith(
-      expect.objectContaining({ subtotal: 1000, total: 1000 }),
+    expect(bag.stockMovements.create).toHaveBeenCalledWith(
+      expect.objectContaining({ qtyOut: 12, movementType: 'Sale' }),
       expect.anything(),
     );
+    expect(bag.sales.create).toHaveBeenCalledWith(
+      expect.objectContaining({ subtotal: 650, total: 650 }),
+      expect.anything(),
+    );
+  });
+
+  it('rejects a stale or tampered unitPrice payload', async () => {
+    const bag = await buildMocks({
+      inventoryRows: [makeInvRow('p-eggs', 24)],
+      productPrices: new Map([['p-eggs', 60]]),
+      unitsById: new Map([
+        [
+          'unit-pack',
+          {
+            id: 'unit-pack',
+            productId: 'p-eggs',
+            conversionToBase: 12,
+            sellingPrice: 650,
+          },
+        ],
+      ]),
+    });
+    const dto = makeDto({
+      items: [
+        {
+          productId: 'p-eggs',
+          unitId: 'unit-pack',
+          quantity: 1,
+          unitPrice: 1,
+        },
+      ],
+      payment: {
+        paymentMethod: 'Cash',
+        paymentAmount: 1,
+        cashAmount: 1,
+        cashTendered: 1,
+      },
+    });
+
+    await expect(bag.service.createSale(makeCashier(), dto)).rejects.toThrow(
+      ConflictException,
+    );
+    expect(bag.sales.create).not.toHaveBeenCalled();
   });
 
   it('missing customer when customerUserId set throws NotFoundException', async () => {

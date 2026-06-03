@@ -9,9 +9,9 @@ import type { ISellableUnitRow } from '../types/sellable-unit-row.type';
  *
  * Math: `pricePerBaseUnit = enteredPrice / unit.conversionToBase`.
  *
- * Example: Rs 50 entered against the `100g` row (conversion 0.1) yields
- * Rs 500 per kg. Rs 100 entered against `250ml` (conversion 0.25) yields
- * Rs 400 per litre.
+ * Example: Rs 650 entered against a `12-PACK` row (conversion 12) yields
+ * Rs 54.17 per base unit. Rs 100 entered against a `0.250 L` row
+ * (conversion 0.25) yields Rs 400 per litre.
  *
  * Throws on:
  * - Unknown unit name (case-insensitive lookup against `units`).

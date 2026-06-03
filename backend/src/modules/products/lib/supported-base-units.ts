@@ -8,19 +8,10 @@
  *   on the inbound `baseUnit` field so managers cannot create a product
  *   with an unsupported base.
  *
- * Adding a new unit (e.g. `tonne`) is a single tuple entry plus a default
- * row in `default-sellable-units.ts`.
+ * Adding a new stock unit is a single tuple entry plus a default row in
+ * `default-sellable-units.ts`.
  */
-export const SUPPORTED_BASE_UNITS = [
-  'kg',
-  'g',
-  'l',
-  'ml',
-  'each',
-  'bottle',
-  'pack',
-  'box',
-] as const;
+export const SUPPORTED_BASE_UNITS = ['kg', 'l', 'unit'] as const;
 
 export type TSupportedBaseUnit = (typeof SUPPORTED_BASE_UNITS)[number];
 

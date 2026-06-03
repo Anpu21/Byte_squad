@@ -5,6 +5,7 @@ export interface InventoryMatrixRow {
   productName: string;
   barcode: string;
   category: string;
+  baseUnit: string;
   sellingPrice: number;
   cells: InventoryMatrixCell[];
   totalQuantity: number;

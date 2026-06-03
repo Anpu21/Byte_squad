@@ -1,4 +1,5 @@
 import type { ProductFormErrors } from '../types/form-errors.type';
+import type { TBaseUnitFe } from './sellable-units';
 
 export interface ProductFormValues {
     name: string;
@@ -6,8 +7,14 @@ export interface ProductFormValues {
     category: string;
     costPrice: string;
     sellingPrice: string;
+    baseUnit: TBaseUnitFe;
     initialStock: string;
     lowStockThreshold: string;
+}
+
+function hasAtMostThreeDecimals(value: number): boolean {
+    const scaled = value * 1000;
+    return Math.abs(scaled - Math.round(scaled)) < 1e-9;
 }
 
 export function validateProductForm(
@@ -28,9 +35,21 @@ export function validateProductForm(
         errors.sellingPrice = 'Selling price must be a positive number';
 
     if (!isEditMode) {
-        const qty = parseInt(values.initialStock, 10);
-        if (values.initialStock !== '' && (isNaN(qty) || qty < 0))
+        const qty = Number(values.initialStock);
+        if (values.initialStock !== '' && (Number.isNaN(qty) || qty < 0)) {
             errors.initialStock = 'Stock must be 0 or more';
+        } else if (
+            values.initialStock !== '' &&
+            values.baseUnit === 'unit' &&
+            !Number.isInteger(qty)
+        ) {
+            errors.initialStock = 'UNIT stock must be a whole number';
+        } else if (
+            values.initialStock !== '' &&
+            !hasAtMostThreeDecimals(qty)
+        ) {
+            errors.initialStock = 'Stock supports up to 3 decimal places';
+        }
         const threshold = parseInt(values.lowStockThreshold, 10);
         if (isNaN(threshold) || threshold < 1)
             errors.lowStockThreshold = 'Threshold must be at least 1';

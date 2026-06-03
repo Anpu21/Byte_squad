@@ -43,7 +43,12 @@ describe('usePosCart', () => {
         const { result } = renderHook(() => usePosCart());
         act(() => result.current.addItem(seed));
         act(() =>
-            result.current.addItem({ ...seed, unitId: 'u-2', unitName: 'g' }),
+            result.current.addItem({
+                ...seed,
+                unitId: 'u-2',
+                unitName: '0.250 KG',
+                conversionFactor: 0.25,
+            }),
         );
         expect(result.current.cart).toHaveLength(2);
     });

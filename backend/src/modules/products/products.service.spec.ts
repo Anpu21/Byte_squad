@@ -17,9 +17,11 @@ import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
  */
 function unit(partial: Partial<SellableUnitDto>): SellableUnitDto {
   return {
-    name: 'each',
+    name: 'unit',
+    barcode: null,
     isBase: false,
     conversionToBase: 1,
+    sellingPrice: 10,
     displayOrder: 0,
     ...partial,
   } as SellableUnitDto;
@@ -42,6 +44,9 @@ describe('ProductsService', () => {
       findActive: jest.fn(),
       findById: jest.fn(),
       findByBarcode: jest.fn(),
+      findByBarcodes: jest.fn().mockResolvedValue([]),
+      findUnitByBarcode: jest.fn().mockResolvedValue(null),
+      findUnitsByBarcodes: jest.fn().mockResolvedValue([]),
       update: jest.fn(),
       listDistinctActiveCategories: jest.fn(),
       setActive: jest.fn(),
@@ -93,7 +98,7 @@ describe('ProductsService', () => {
       repo.createAndSave.mockImplementation((input) =>
         Promise.resolve({
           id: 'p-new',
-          baseUnit: 'each',
+          baseUnit: 'unit',
           ...input,
         } as Product),
       );
@@ -105,6 +110,7 @@ describe('ProductsService', () => {
           taxRate: 15,
           discountAllowed: false,
         }),
+        expect.anything(),
       );
       expect(created.taxRate).toBe(15);
       expect(created.discountAllowed).toBe(false);
@@ -130,20 +136,14 @@ describe('ProductsService', () => {
 
       expect(repo.saveUnits).toHaveBeenCalledTimes(1);
       const seeds = repo.saveUnits.mock.calls[0][0];
-      expect(seeds).toHaveLength(2);
+      expect(seeds).toHaveLength(1);
       expect(seeds[0]).toMatchObject({
         productId: 'p-kg-1',
         name: 'kg',
         isBase: true,
         conversionToBase: 1,
+        sellingPrice: 2,
         displayOrder: 0,
-      });
-      expect(seeds[1]).toMatchObject({
-        productId: 'p-kg-1',
-        name: 'g',
-        isBase: false,
-        conversionToBase: 0.001,
-        displayOrder: 1,
       });
     });
 
@@ -151,20 +151,26 @@ describe('ProductsService', () => {
       const customUnits: SellableUnitDto[] = [
         unit({
           name: 'kg',
+          barcode: null,
           isBase: true,
           conversionToBase: 1,
+          sellingPrice: 2,
           displayOrder: 0,
         }),
         unit({
-          name: 'g',
+          name: '12-PACK',
+          barcode: 'RICE-12',
           isBase: false,
-          conversionToBase: 0.001,
+          conversionToBase: 12,
+          sellingPrice: 2200,
           displayOrder: 1,
         }),
         unit({
           name: 'case-12',
+          barcode: 'RICE-CASE',
           isBase: false,
           conversionToBase: 12,
+          sellingPrice: 2000,
           displayOrder: 2,
         }),
       ];
@@ -219,6 +225,7 @@ describe('ProductsService', () => {
       await service.update('p1', { name: 'New' });
       expect(repo.save).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'p1', name: 'New', sellingPrice: 5 }),
+        expect.anything(),
       );
     });
 
@@ -226,7 +233,8 @@ describe('ProductsService', () => {
       const existing = {
         id: 'p-1',
         name: 'Migrating Item',
-        baseUnit: 'each',
+        baseUnit: 'unit',
+        sellingPrice: 20,
       } as Product;
       repo.findById.mockResolvedValue(existing);
       repo.save.mockImplementation((p) => Promise.resolve(p));
@@ -237,17 +245,12 @@ describe('ProductsService', () => {
       expect(repo.replaceUnits).toHaveBeenCalledTimes(1);
       const [productId, seeds] = repo.replaceUnits.mock.calls[0];
       expect(productId).toBe('p-1');
-      expect(seeds).toHaveLength(2);
+      expect(seeds).toHaveLength(1);
       expect(seeds[0]).toMatchObject({
         name: 'kg',
         isBase: true,
         conversionToBase: 1,
-        productId: 'p-1',
-      });
-      expect(seeds[1]).toMatchObject({
-        name: 'g',
-        isBase: false,
-        conversionToBase: 0.001,
+        sellingPrice: 20,
         productId: 'p-1',
       });
     });
@@ -263,20 +266,26 @@ describe('ProductsService', () => {
       const customUnits: SellableUnitDto[] = [
         unit({
           name: 'kg',
+          barcode: null,
           isBase: true,
           conversionToBase: 1,
+          sellingPrice: 100,
           displayOrder: 0,
         }),
         unit({
-          name: 'g',
+          name: '12-PACK',
+          barcode: 'SUGAR-12',
           isBase: false,
-          conversionToBase: 0.001,
+          conversionToBase: 12,
+          sellingPrice: 1100,
           displayOrder: 1,
         }),
         unit({
           name: 'sack-50',
+          barcode: 'SUGAR-50',
           isBase: false,
           conversionToBase: 50,
+          sellingPrice: 4800,
           displayOrder: 2,
         }),
       ];

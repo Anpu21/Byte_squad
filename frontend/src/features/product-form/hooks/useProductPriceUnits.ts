@@ -6,7 +6,7 @@ import type { TBaseUnitFe } from '../lib/sellable-units';
  * Both fields track which row in `units` the entered price is denominated
  * in. They default to the current base unit, and the composer in
  * `useProductFormState` resets them whenever the base unit changes so that
- * flipping kg → l cannot silently leave the price unit as `g`.
+ * flipping kg to l cannot silently leave the price unit on an old custom row.
  */
 export interface ProductPriceUnitsState {
     costPriceUnit: string;

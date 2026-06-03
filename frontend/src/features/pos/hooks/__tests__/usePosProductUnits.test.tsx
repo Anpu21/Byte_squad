@@ -16,8 +16,10 @@ const unitsMock = vi.mocked(posService.listProductUnits);
 const unit: IProductUnitRow = {
     unitId: 'u1',
     unitName: 'kg',
+    barcode: null,
     isBaseUnit: true,
     conversionToBase: 1,
+    sellingPrice: 150,
     displayOrder: 0,
 };
 

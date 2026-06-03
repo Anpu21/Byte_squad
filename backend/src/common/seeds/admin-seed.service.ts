@@ -8,7 +8,6 @@ import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { defaultSellableUnitsFor } from '@products/lib/default-sellable-units';
-import type { TSupportedBaseUnit } from '@products/lib/supported-base-units';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
@@ -26,6 +25,14 @@ import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { pickSeedImageUrl } from '@common/seeds/seed-product-images';
 import { HrSeedService } from '@common/seeds/hr-seed.service';
+import {
+  CATEGORY_THRESHOLDS,
+  SUPERMARKET_PRODUCTS,
+} from '@common/seeds/supermarket-products.seed';
+import {
+  buildSeedSaleLine,
+  generateSeedQuantity,
+} from '@common/seeds/seed-quantity';
 
 interface SeedDefaults {
   adminEmail: string;
@@ -36,451 +43,6 @@ interface SeedDefaults {
   branchAddress: string;
   branchPhone: string;
 }
-
-interface SupermarketProductSeed {
-  name: string;
-  barcode: string;
-  category: string;
-  /**
-   * Canonical base unit for the product. Drives the auto-seeded
-   * sellable-units list (kg → [kg, g], l → [l, ml], pack/each/etc. →
-   * single self row) so the cashier POS dropdown surfaces the right
-   * options without manager intervention.
-   */
-  baseUnit: TSupportedBaseUnit;
-  costPrice: number;
-  sellingPrice: number;
-  description: string;
-}
-
-const SUPERMARKET_PRODUCTS: SupermarketProductSeed[] = [
-  {
-    name: 'Coca-Cola 1.5L',
-    barcode: 'BVG-001',
-    category: 'Beverages',
-    baseUnit: 'l',
-    costPrice: 315,
-    sellingPrice: 420,
-    description: 'Classic Coca-Cola, 1.5 litre bottle',
-  },
-  {
-    name: 'Pepsi 1.5L',
-    barcode: 'BVG-002',
-    category: 'Beverages',
-    baseUnit: 'l',
-    costPrice: 315,
-    sellingPrice: 420,
-    description: 'Pepsi cola, 1.5 litre bottle',
-  },
-  {
-    name: 'Sprite 1.5L',
-    barcode: 'BVG-003',
-    category: 'Beverages',
-    baseUnit: 'l',
-    costPrice: 315,
-    sellingPrice: 420,
-    description: 'Sprite lemon-lime, 1.5 litre bottle',
-  },
-  {
-    name: 'Orange Juice 1L',
-    barcode: 'BVG-004',
-    category: 'Beverages',
-    baseUnit: 'l',
-    costPrice: 840,
-    sellingPrice: 1050,
-    description: '100% pure orange juice, 1 litre',
-  },
-  {
-    name: 'Bottled Water 1.5L',
-    barcode: 'BVG-005',
-    category: 'Beverages',
-    baseUnit: 'l',
-    costPrice: 100,
-    sellingPrice: 130,
-    description: 'Spring water, 1.5 litre',
-  },
-  {
-    name: 'Tea Bags (100)',
-    barcode: 'BVG-006',
-    category: 'Beverages',
-    baseUnit: 'pack',
-    costPrice: 600,
-    sellingPrice: 790,
-    description: 'Black tea, 100 bags',
-  },
-  {
-    name: 'Instant Coffee 100g',
-    barcode: 'BVG-007',
-    category: 'Beverages',
-    baseUnit: 'g',
-    costPrice: 1320,
-    sellingPrice: 1660,
-    description: 'Instant coffee jar, 100g',
-  },
-  {
-    name: 'Whole Milk 1L',
-    barcode: 'DRY-001',
-    category: 'Dairy',
-    baseUnit: 'l',
-    costPrice: 440,
-    sellingPrice: 550,
-    description: 'Fresh whole milk, 1 litre',
-  },
-  {
-    name: 'Low-Fat Milk 1L',
-    barcode: 'DRY-002',
-    category: 'Dairy',
-    baseUnit: 'l',
-    costPrice: 416,
-    sellingPrice: 520,
-    description: 'Low-fat milk, 1 litre',
-  },
-  {
-    name: 'Plain Yogurt 250g',
-    barcode: 'DRY-003',
-    category: 'Dairy',
-    baseUnit: 'g',
-    costPrice: 175,
-    sellingPrice: 230,
-    description: 'Plain yogurt, 250g cup',
-  },
-  {
-    name: 'Salted Butter 250g',
-    barcode: 'DRY-004',
-    category: 'Dairy',
-    baseUnit: 'g',
-    costPrice: 960,
-    sellingPrice: 1200,
-    description: 'Salted butter block, 250g',
-  },
-  {
-    name: 'Cheddar Cheese 200g',
-    barcode: 'DRY-005',
-    category: 'Dairy',
-    baseUnit: 'g',
-    costPrice: 840,
-    sellingPrice: 1050,
-    description: 'Cheddar cheese block, 200g',
-  },
-  {
-    name: 'Eggs (12)',
-    barcode: 'DRY-006',
-    category: 'Dairy',
-    baseUnit: 'pack',
-    costPrice: 540,
-    sellingPrice: 660,
-    description: 'Free-range eggs, dozen',
-  },
-  {
-    name: 'White Bread Loaf',
-    barcode: 'BKY-001',
-    category: 'Bakery',
-    baseUnit: 'each',
-    costPrice: 340,
-    sellingPrice: 450,
-    description: 'Fresh white bread loaf, 700g',
-  },
-  {
-    name: 'Brown Bread Loaf',
-    barcode: 'BKY-002',
-    category: 'Bakery',
-    baseUnit: 'each',
-    costPrice: 390,
-    sellingPrice: 520,
-    description: 'Whole-wheat brown bread, 700g',
-  },
-  {
-    name: 'Burger Buns (6)',
-    barcode: 'BKY-003',
-    category: 'Bakery',
-    baseUnit: 'pack',
-    costPrice: 360,
-    sellingPrice: 480,
-    description: 'Soft burger buns, pack of 6',
-  },
-  {
-    name: 'Dinner Rolls (8)',
-    barcode: 'BKY-004',
-    category: 'Bakery',
-    baseUnit: 'pack',
-    costPrice: 270,
-    sellingPrice: 360,
-    description: 'Dinner rolls, pack of 8',
-  },
-  {
-    name: 'Apples 1kg',
-    barcode: 'PRD-001',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 800,
-    sellingPrice: 1000,
-    description: 'Red apples, 1kg',
-  },
-  {
-    name: 'Bananas 1kg',
-    barcode: 'PRD-002',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 120,
-    sellingPrice: 170,
-    description: 'Cavendish bananas, 1kg',
-  },
-  {
-    name: 'Tomatoes 1kg',
-    barcode: 'PRD-003',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 350,
-    sellingPrice: 490,
-    description: 'Fresh tomatoes, 1kg',
-  },
-  {
-    name: 'Onions 1kg',
-    barcode: 'PRD-004',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 180,
-    sellingPrice: 260,
-    description: 'Yellow onions, 1kg',
-  },
-  {
-    name: 'Potatoes 2kg',
-    barcode: 'PRD-005',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 500,
-    sellingPrice: 640,
-    description: 'Potatoes, 2kg bag',
-  },
-  {
-    name: 'Carrots 1kg',
-    barcode: 'PRD-006',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 270,
-    sellingPrice: 360,
-    description: 'Fresh carrots, 1kg',
-  },
-  {
-    name: 'Basmati Rice 5kg',
-    barcode: 'PNT-001',
-    category: 'Pantry',
-    baseUnit: 'kg',
-    costPrice: 4500,
-    sellingPrice: 5500,
-    description: 'Premium basmati rice, 5kg',
-  },
-  {
-    name: 'Sugar 1kg',
-    barcode: 'PNT-002',
-    category: 'Pantry',
-    baseUnit: 'kg',
-    costPrice: 220,
-    sellingPrice: 295,
-    description: 'White granulated sugar, 1kg',
-  },
-  {
-    name: 'Iodized Salt 1kg',
-    barcode: 'PNT-003',
-    category: 'Pantry',
-    baseUnit: 'kg',
-    costPrice: 240,
-    sellingPrice: 315,
-    description: 'Iodized table salt, 1kg',
-  },
-  {
-    name: 'All-Purpose Flour 2kg',
-    barcode: 'PNT-004',
-    category: 'Pantry',
-    baseUnit: 'kg',
-    costPrice: 360,
-    sellingPrice: 490,
-    description: 'All-purpose wheat flour, 2kg',
-  },
-  {
-    name: 'Spaghetti Pasta 500g',
-    barcode: 'PNT-005',
-    category: 'Pantry',
-    baseUnit: 'g',
-    costPrice: 780,
-    sellingPrice: 1000,
-    description: 'Spaghetti pasta, 500g',
-  },
-  {
-    name: 'Red Lentils 1kg',
-    barcode: 'PNT-006',
-    category: 'Pantry',
-    baseUnit: 'kg',
-    costPrice: 220,
-    sellingPrice: 280,
-    description: 'Red lentils, 1kg',
-  },
-  {
-    name: 'Sunflower Oil 1L',
-    barcode: 'PNT-007',
-    category: 'Pantry',
-    baseUnit: 'l',
-    costPrice: 1550,
-    sellingPrice: 1925,
-    description: 'Sunflower vegetable oil, 1 litre',
-  },
-  {
-    name: 'Potato Chips 150g',
-    barcode: 'SNK-001',
-    category: 'Snacks',
-    baseUnit: 'g',
-    costPrice: 290,
-    sellingPrice: 390,
-    description: 'Salted potato chips, 150g',
-  },
-  {
-    name: 'Chocolate Cookies 200g',
-    barcode: 'SNK-002',
-    category: 'Snacks',
-    baseUnit: 'g',
-    costPrice: 600,
-    sellingPrice: 780,
-    description: 'Chocolate chip cookies, 200g',
-  },
-  {
-    name: 'Milk Chocolate Bar 100g',
-    barcode: 'SNK-003',
-    category: 'Snacks',
-    baseUnit: 'g',
-    costPrice: 375,
-    sellingPrice: 500,
-    description: 'Milk chocolate bar, 100g',
-  },
-  {
-    name: 'Salted Crackers 200g',
-    barcode: 'SNK-004',
-    category: 'Snacks',
-    baseUnit: 'g',
-    costPrice: 160,
-    sellingPrice: 210,
-    description: 'Salted crackers, 200g',
-  },
-  {
-    name: 'Mixed Nuts 250g',
-    barcode: 'SNK-005',
-    category: 'Snacks',
-    baseUnit: 'g',
-    costPrice: 950,
-    sellingPrice: 1250,
-    description: 'Roasted mixed nuts, 250g',
-  },
-  {
-    name: 'Frozen Chicken 1kg',
-    barcode: 'FRZ-001',
-    category: 'Frozen',
-    baseUnit: 'kg',
-    costPrice: 1000,
-    sellingPrice: 1250,
-    description: 'Frozen chicken pieces, 1kg',
-  },
-  {
-    name: 'Frozen Fish Fillet 500g',
-    barcode: 'FRZ-002',
-    category: 'Frozen',
-    baseUnit: 'g',
-    costPrice: 1750,
-    sellingPrice: 2200,
-    description: 'Frozen white fish fillet, 500g',
-  },
-  {
-    name: 'Vanilla Ice Cream 1L',
-    barcode: 'FRZ-003',
-    category: 'Frozen',
-    baseUnit: 'l',
-    costPrice: 700,
-    sellingPrice: 900,
-    description: 'Vanilla ice cream, 1 litre',
-  },
-  {
-    name: 'Dish Soap 500ml',
-    barcode: 'HSH-001',
-    category: 'Household',
-    baseUnit: 'ml',
-    costPrice: 320,
-    sellingPrice: 425,
-    description: 'Lemon dish soap, 500ml',
-  },
-  {
-    name: 'Laundry Detergent 1kg',
-    barcode: 'HSH-002',
-    category: 'Household',
-    baseUnit: 'kg',
-    costPrice: 430,
-    sellingPrice: 565,
-    description: 'Powder laundry detergent, 1kg',
-  },
-  {
-    name: 'Toilet Paper (12 rolls)',
-    barcode: 'HSH-003',
-    category: 'Household',
-    baseUnit: 'pack',
-    costPrice: 2500,
-    sellingPrice: 3180,
-    description: 'Toilet paper, 12-roll pack',
-  },
-  {
-    name: 'Floor Cleaner 1L',
-    barcode: 'HSH-004',
-    category: 'Household',
-    baseUnit: 'l',
-    costPrice: 530,
-    sellingPrice: 700,
-    description: 'Multi-surface floor cleaner, 1 litre',
-  },
-  {
-    name: 'Shampoo 400ml',
-    barcode: 'PCR-001',
-    category: 'Personal Care',
-    baseUnit: 'ml',
-    costPrice: 1150,
-    sellingPrice: 1550,
-    description: 'Anti-dandruff shampoo, 400ml',
-  },
-  {
-    name: 'Bath Soap Bar',
-    barcode: 'PCR-002',
-    category: 'Personal Care',
-    baseUnit: 'each',
-    costPrice: 120,
-    sellingPrice: 170,
-    description: 'Moisturising bath soap, 100g',
-  },
-  {
-    name: 'Toothpaste 100g',
-    barcode: 'PCR-003',
-    category: 'Personal Care',
-    baseUnit: 'g',
-    costPrice: 180,
-    sellingPrice: 250,
-    description: 'Mint fluoride toothpaste, 100g',
-  },
-  {
-    name: 'Toothbrush',
-    barcode: 'PCR-004',
-    category: 'Personal Care',
-    baseUnit: 'each',
-    costPrice: 100,
-    sellingPrice: 150,
-    description: 'Soft-bristle toothbrush',
-  },
-];
-
-const CATEGORY_THRESHOLDS: Record<string, number> = {
-  Beverages: 30,
-  Dairy: 30,
-  Bakery: 25,
-  Produce: 25,
-  Pantry: 20,
-  Snacks: 20,
-  Frozen: 15,
-  Household: 15,
-  'Personal Care': 12,
-};
 
 @Injectable()
 export class AdminSeedService implements OnModuleInit {
@@ -779,19 +341,51 @@ export class AdminSeedService implements OnModuleInit {
           this.productRepository.create({ ...p, isActive: true }),
         );
         createdCount++;
-      } else if (product.baseUnit !== p.baseUnit) {
-        // Existing seed predates Phase A1+ — sync to the new canonical
-        // baseUnit so the units re-seed below matches the seed source.
-        product.baseUnit = p.baseUnit;
-        product = await this.productRepository.save(product);
+      } else {
+        const patch: Partial<Product> = {};
+        if (product.name !== p.name) {
+          patch.name = p.name;
+          product.name = p.name;
+        }
+        if (product.category !== p.category) {
+          patch.category = p.category;
+          product.category = p.category;
+        }
+        if (product.description !== p.description) {
+          patch.description = p.description;
+          product.description = p.description;
+        }
+        if (product.baseUnit !== p.baseUnit) {
+          patch.baseUnit = p.baseUnit;
+          product.baseUnit = p.baseUnit;
+        }
+        if (Number(product.costPrice) !== p.costPrice) {
+          patch.costPrice = p.costPrice;
+          product.costPrice = p.costPrice;
+        }
+        if (Number(product.sellingPrice) !== p.sellingPrice) {
+          patch.sellingPrice = p.sellingPrice;
+          product.sellingPrice = p.sellingPrice;
+        }
+        if (!product.isActive) {
+          patch.isActive = true;
+          product.isActive = true;
+        }
+        if (Object.keys(patch).length > 0) {
+          product = await this.productRepository.save(product);
+        }
       }
 
       // Idempotent sellable-units sync. Always replace so re-running the
       // seed after a baseUnit change converges product_sellable_units to
-      // the defaultSellableUnitsFor(baseUnit) shape (kg → [kg, g], etc.).
+      // the defaultSellableUnitsFor(baseUnit) shape.
       // The Phase A1 migration only backfilled rows missing units; this
       // keeps existing rows in lockstep with the seed source.
-      const unitSeeds = defaultSellableUnitsFor(product.id, product.baseUnit);
+      const unitSeeds = defaultSellableUnitsFor(
+        product.id,
+        product.baseUnit,
+        Number(product.sellingPrice),
+      );
       await this.sellableUnitRepository.delete({ productId: product.id });
       await this.sellableUnitRepository.save(
         unitSeeds.map((s) => this.sellableUnitRepository.create(s)),
@@ -875,7 +469,12 @@ export class AdminSeedService implements OnModuleInit {
       if (existing) continue;
 
       const threshold = CATEGORY_THRESHOLDS[product.category] ?? 15;
-      const quantity = this.generateQuantity(profile, threshold);
+      const quantity = generateSeedQuantity(
+        product.baseUnit,
+        profile,
+        threshold,
+        `${branchId}:${product.barcode}`,
+      );
       await this.inventoryRepository.save(
         this.inventoryRepository.create({
           productId: product.id,
@@ -892,24 +491,6 @@ export class AdminSeedService implements OnModuleInit {
         `Inventory seeded for branch ${branchId} (${profile}, ${createdCount} rows).`,
       );
     }
-  }
-
-  // Healthy branches stock most items above threshold; "short" branches
-  // (Suburban in this seed) intentionally have many low-stock and a few
-  // out-of-stock items so the transfer flow has a natural starting point.
-  private generateQuantity(
-    profile: 'healthy' | 'short',
-    threshold: number,
-  ): number {
-    const r = Math.random();
-    if (profile === 'short') {
-      if (r < 0.2) return 0;
-      if (r < 0.55) return Math.floor(Math.random() * threshold);
-      return Math.floor(Math.random() * 80) + threshold;
-    }
-    if (r < 0.05) return 0;
-    if (r < 0.18) return Math.floor(Math.random() * threshold);
-    return Math.floor(Math.random() * 150) + threshold;
   }
 
   // ── Transactions ───────────────────────────────────────
@@ -951,20 +532,19 @@ export class AdminSeedService implements OnModuleInit {
         let subtotal = 0;
         const items: Partial<SaleItem>[] = [];
         for (const prod of selectedProducts) {
-          const qty = Math.floor(Math.random() * 3) + 1;
-          const lineTotal = Number(prod.sellingPrice) * qty;
-          subtotal += lineTotal;
+          const line = buildSeedSaleLine(
+            prod,
+            `${cashier.id}:${branchId}:${prod.barcode}:${daysAgo}:${t}`,
+          );
+          subtotal += line.lineTotal;
           items.push({
             productId: prod.id,
-            quantity: qty,
-            // PHASE-5: replace with the real conversion factor once the seed
-            // migrates to PosWriteService.createSale. Seed products have no
-            // sellable-units, so qty already equals the base-unit quantity.
-            baseUnitQty: qty,
-            unitPrice: Number(prod.sellingPrice),
+            quantity: line.quantity,
+            baseUnitQty: line.baseUnitQty,
+            unitPrice: line.unitPrice,
             discountAmount: 0,
             discountType: DiscountType.NONE,
-            lineTotal,
+            lineTotal: line.lineTotal,
           });
         }
 

@@ -16,6 +16,7 @@ const sampleRow: ISearchProductRow = {
     taxRate: 0,
     discountAllowed: true,
     imageUrl: null,
+    matchedUnit: null,
 };
 
 describe('PosItemSearchResults', () => {

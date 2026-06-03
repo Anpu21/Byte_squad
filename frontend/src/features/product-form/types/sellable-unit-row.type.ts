@@ -8,7 +8,9 @@
 export interface ISellableUnitRow {
     rowId: string;
     name: string;
+    barcode: string;
     isBase: boolean;
     conversionToBase: string;
+    sellingPrice: string;
     displayOrder: number;
 }

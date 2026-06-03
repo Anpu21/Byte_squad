@@ -6,8 +6,10 @@
  */
 export interface ISellableUnitPayload {
   name: string
+  barcode?: string | null
   isBase: boolean
   conversionToBase: number
+  sellingPrice: number
   displayOrder: number
 }
 
@@ -18,13 +20,8 @@ export interface ISellableUnitPayload {
  */
 export type TProductBaseUnit =
   | 'kg'
-  | 'g'
   | 'l'
-  | 'ml'
-  | 'each'
-  | 'bottle'
-  | 'pack'
-  | 'box'
+  | 'unit'
 
 export interface IProductPayload {
   name: string

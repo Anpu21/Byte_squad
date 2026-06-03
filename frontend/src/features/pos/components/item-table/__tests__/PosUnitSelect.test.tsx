@@ -18,16 +18,20 @@ const listMock = vi.mocked(posService.listProductUnits);
 const baseUnit: IProductUnitRow = {
     unitId: 'u-base',
     unitName: 'kg',
+    barcode: null,
     isBaseUnit: true,
     conversionToBase: 1,
+    sellingPrice: 1200,
     displayOrder: 0,
 };
 
 const secondaryUnit: IProductUnitRow = {
-    unitId: 'u-g',
-    unitName: 'g',
+    unitId: 'u-pack',
+    unitName: '12-PACK',
+    barcode: 'RICE-12',
     isBaseUnit: false,
-    conversionToBase: 0.001,
+    conversionToBase: 12,
+    sellingPrice: 2200,
     displayOrder: 1,
 };
 
@@ -69,7 +73,7 @@ describe('PosUnitSelect', () => {
             screen.getByRole('option', { name: 'kg (base)' }),
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('option', { name: 'g' }),
+            screen.getByRole('option', { name: '12-PACK' }),
         ).toBeInTheDocument();
     });
 
@@ -92,7 +96,7 @@ describe('PosUnitSelect', () => {
         );
         await userEvent.selectOptions(
             screen.getByRole('combobox'),
-            screen.getByRole('option', { name: 'g' }),
+            screen.getByRole('option', { name: '12-PACK' }),
         );
         expect(onChange).toHaveBeenCalledWith(secondaryUnit);
     });

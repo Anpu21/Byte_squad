@@ -81,7 +81,7 @@ export function PosItemSearchResults({
                             <p className="mt-0.5 text-[11px] text-text-3 truncate">
                                 <span className="font-mono">{row.productCode}</span>
                                 <span className="mx-1.5">·</span>
-                                <span>{row.baseUnit}</span>
+                                <span>{row.matchedUnit?.unitName ?? row.baseUnit}</span>
                                 {row.taxRate > 0 && (
                                     <>
                                         <span className="mx-1.5">·</span>
@@ -92,7 +92,10 @@ export function PosItemSearchResults({
                         </div>
                         <div className="text-right">
                             <p className="text-sm font-semibold text-text-1">
-                                {formatCurrency(row.retailPrice)}
+                                {formatCurrency(
+                                    row.matchedUnit?.sellingPrice ??
+                                        row.retailPrice,
+                                )}
                             </p>
                         </div>
                     </button>

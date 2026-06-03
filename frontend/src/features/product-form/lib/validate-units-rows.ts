@@ -9,8 +9,10 @@ import type { ISellableUnitRow } from '../types/sellable-unit-row.type';
  */
 export interface IPackedSellableUnit {
     name: string;
+    barcode?: string | null;
     isBase: boolean;
     conversionToBase: number;
+    sellingPrice: number;
     displayOrder: number;
 }
 
@@ -43,6 +45,7 @@ export type ValidateUnitsRowsResult = ValidUnitsResult | InvalidUnitsResult;
  */
 export function validateUnitsRows(
     rows: readonly ISellableUnitRow[],
+    productBarcode = '',
 ): ValidateUnitsRowsResult {
     const kept = rows.filter((r) => r.name.trim() !== '');
     if (kept.length === 0) {
@@ -50,6 +53,8 @@ export function validateUnitsRows(
     }
 
     const seen = new Set<string>();
+    const seenBarcodes = new Set<string>();
+    const productBarcodeKey = productBarcode.trim().toLowerCase();
     for (const row of kept) {
         const key = row.name.trim().toLowerCase();
         if (seen.has(key)) {
@@ -59,6 +64,22 @@ export function validateUnitsRows(
             };
         }
         seen.add(key);
+        const barcode = row.barcode.trim();
+        if (!barcode) continue;
+        const barcodeKey = barcode.toLowerCase();
+        if (productBarcodeKey && barcodeKey === productBarcodeKey) {
+            return {
+                ok: false,
+                error: 'A sellable-unit barcode cannot match the product barcode.',
+            };
+        }
+        if (seenBarcodes.has(barcodeKey)) {
+            return {
+                ok: false,
+                error: `Duplicate unit barcode: ${barcode}`,
+            };
+        }
+        seenBarcodes.add(barcodeKey);
     }
 
     const baseRows = kept.filter((r) => r.isBase);
@@ -91,10 +112,28 @@ export function validateUnitsRows(
                 error: 'The base unit must have a conversion factor of 1.',
             };
         }
+        let sellingPrice = 0;
+        if (!row.isBase) {
+            if (!isCompleteNumber(row.sellingPrice)) {
+                return {
+                    ok: false,
+                    error: `Selling price for "${row.name.trim()}" must be a number.`,
+                };
+            }
+            sellingPrice = Number(row.sellingPrice);
+            if (!Number.isFinite(sellingPrice) || sellingPrice < 0) {
+                return {
+                    ok: false,
+                    error: `Selling price for "${row.name.trim()}" must be 0 or more.`,
+                };
+            }
+        }
         packed.push({
             name: row.name.trim(),
+            barcode: row.barcode.trim() || null,
             isBase: row.isBase,
             conversionToBase: parsed,
+            sellingPrice,
             displayOrder: i,
         });
     }

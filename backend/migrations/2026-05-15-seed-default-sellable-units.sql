@@ -6,9 +6,8 @@
 -- `backend/src/modules/products/lib/default-sellable-units.ts`.
 --
 -- Behaviour:
---   * Products whose `base_unit` matches a known metric/discrete unit get
---     the canonical companion set (kg <-> g, l <-> ml, or a single
---     self-mirror row for each / bottle / pack / box).
+--   * Products whose `base_unit` matches a known stock unit get one canonical
+--     base sellable unit (kg, l, or unit).
 --   * Products with any other `base_unit` (e.g. `dozen`, `pcs`) get a
 --     single self-mirror row so the dropdown is never empty.
 --   * Both inserts are gated by NOT EXISTS so re-running this script is a
@@ -23,33 +22,26 @@ BEGIN;
 -- 1. Known base units: insert the full lookup table for each matching
 --    product, skipping products that already have any sellable-units rows.
 INSERT INTO product_sellable_units (
-    id, product_id, name, is_base, conversion_to_base, display_order,
-    created_at, updated_at
+    id, product_id, name, barcode, is_base, conversion_to_base, selling_price,
+    display_order, created_at, updated_at
 )
 SELECT
     gen_random_uuid(),
     p.id,
     seed.name,
+    NULL,
     seed.is_base,
     seed.conversion_to_base,
+    p.selling_price,
     seed.display_order,
     now(),
     now()
 FROM products p
 CROSS JOIN LATERAL (
     VALUES
-        ('kg',     'kg',     TRUE,  1::numeric,     0),
-        ('kg',     'g',      FALSE, 0.001::numeric, 1),
-        ('g',      'g',      TRUE,  1::numeric,     0),
-        ('g',      'kg',     FALSE, 1000::numeric,  1),
-        ('l',      'l',      TRUE,  1::numeric,     0),
-        ('l',      'ml',     FALSE, 0.001::numeric, 1),
-        ('ml',     'ml',     TRUE,  1::numeric,     0),
-        ('ml',     'l',      FALSE, 1000::numeric,  1),
-        ('each',   'each',   TRUE,  1::numeric,     0),
-        ('bottle', 'bottle', TRUE,  1::numeric,     0),
-        ('pack',   'pack',   TRUE,  1::numeric,     0),
-        ('box',    'box',    TRUE,  1::numeric,     0)
+        ('kg',   'kg',   TRUE, 1::numeric, 0),
+        ('l',    'l',    TRUE, 1::numeric, 0),
+        ('unit', 'unit', TRUE, 1::numeric, 0)
 ) AS seed(base_unit, name, is_base, conversion_to_base, display_order)
 WHERE LOWER(p.base_unit) = seed.base_unit
   AND NOT EXISTS (
@@ -61,21 +53,23 @@ WHERE LOWER(p.base_unit) = seed.base_unit
 --    whose `base_unit` doesn't appear in the lookup above and still has no
 --    rows after step 1.
 INSERT INTO product_sellable_units (
-    id, product_id, name, is_base, conversion_to_base, display_order,
-    created_at, updated_at
+    id, product_id, name, barcode, is_base, conversion_to_base, selling_price,
+    display_order, created_at, updated_at
 )
 SELECT
     gen_random_uuid(),
     p.id,
     p.base_unit,
+    NULL,
     TRUE,
     1,
+    p.selling_price,
     0,
     now(),
     now()
 FROM products p
 WHERE LOWER(p.base_unit) NOT IN (
-        'kg', 'g', 'l', 'ml', 'each', 'bottle', 'pack', 'box'
+        'kg', 'l', 'unit'
     )
   AND NOT EXISTS (
       SELECT 1 FROM product_sellable_units psu

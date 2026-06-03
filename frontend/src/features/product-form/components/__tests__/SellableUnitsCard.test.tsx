@@ -8,7 +8,7 @@ import type { TBaseUnitFe } from '../../lib/sellable-units';
 
 function makeForm(
     units: ISellableUnitRow[],
-    baseUnit: TBaseUnitFe = 'each',
+    baseUnit: TBaseUnitFe = 'unit',
     overrides: Partial<ProductFormState> = {},
 ): ProductFormState {
     return {
@@ -27,14 +27,14 @@ function makeForm(
 }
 
 describe('SellableUnitsCard', () => {
-    it('renders the baseUnit select with all 8 options', () => {
+    it('renders the baseUnit select with the supported stock units', () => {
         render(<SellableUnitsCard form={makeForm([])} />);
         const select = screen.getByLabelText(/base unit/i) as HTMLSelectElement;
-        expect(select.options).toHaveLength(8);
+        expect(select.options).toHaveLength(3);
     });
 
     it('selecting a baseUnit calls resetUnitsForBase', async () => {
-        const form = makeForm([], 'each');
+        const form = makeForm([], 'unit');
         render(<SellableUnitsCard form={form} />);
         await userEvent.selectOptions(
             screen.getByLabelText(/base unit/i),
@@ -48,15 +48,19 @@ describe('SellableUnitsCard', () => {
             {
                 rowId: 'r1',
                 name: 'kg',
+                barcode: '',
                 isBase: true,
                 conversionToBase: '1',
+                sellingPrice: '',
                 displayOrder: 0,
             },
             {
                 rowId: 'r2',
-                name: 'g',
+                name: '12-PACK',
+                barcode: 'RICE-12',
                 isBase: false,
-                conversionToBase: '0.001',
+                conversionToBase: '12',
+                sellingPrice: '2200',
                 displayOrder: 1,
             },
         ];
@@ -68,12 +72,14 @@ describe('SellableUnitsCard', () => {
         const nameInputs = screen.getAllByLabelText(/unit name/i);
         expect(nameInputs).toHaveLength(2);
         expect((nameInputs[0] as HTMLInputElement).value).toBe('kg');
-        expect((nameInputs[1] as HTMLInputElement).value).toBe('g');
-        expect(screen.getByDisplayValue('0.001')).toBeInTheDocument();
+        expect((nameInputs[1] as HTMLInputElement).value).toBe('12-PACK');
+        expect(screen.getByDisplayValue('12')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('RICE-12')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('2200')).toBeInTheDocument();
     });
 
     it('clicking "Add unit" calls form.addUnit', async () => {
-        const form = makeForm([], 'each');
+        const form = makeForm([], 'unit');
         render(<SellableUnitsCard form={form} />);
         await userEvent.click(
             screen.getByRole('button', { name: /add unit/i }),
@@ -86,15 +92,19 @@ describe('SellableUnitsCard', () => {
             {
                 rowId: 'r1',
                 name: 'kg',
+                barcode: '',
                 isBase: true,
                 conversionToBase: '1',
+                sellingPrice: '',
                 displayOrder: 0,
             },
             {
                 rowId: 'r2',
-                name: 'g',
+                name: '12-PACK',
+                barcode: 'RICE-12',
                 isBase: false,
-                conversionToBase: '0.001',
+                conversionToBase: '12',
+                sellingPrice: '2200',
                 displayOrder: 1,
             },
         ];
@@ -110,15 +120,19 @@ describe('SellableUnitsCard', () => {
             {
                 rowId: 'r1',
                 name: 'kg',
+                barcode: '',
                 isBase: true,
                 conversionToBase: '1',
+                sellingPrice: '',
                 displayOrder: 0,
             },
             {
                 rowId: 'r2',
-                name: 'g',
+                name: '12-PACK',
+                barcode: 'RICE-12',
                 isBase: false,
-                conversionToBase: '0.001',
+                conversionToBase: '12',
+                sellingPrice: '2200',
                 displayOrder: 1,
             },
         ];
@@ -130,7 +144,7 @@ describe('SellableUnitsCard', () => {
     });
 
     it('shows the sellableUnits form-error message when present', () => {
-        const form = makeForm([], 'each', {
+        const form = makeForm([], 'unit', {
             errors: { sellableUnits: 'Duplicate unit name: kg' },
         });
         render(<SellableUnitsCard form={form} />);
@@ -143,8 +157,10 @@ describe('SellableUnitsCard', () => {
             {
                 rowId: 'r1',
                 name: 'kg',
+                barcode: '',
                 isBase: false,
                 conversionToBase: '1',
+                sellingPrice: '100',
                 displayOrder: 0,
             },
         ];

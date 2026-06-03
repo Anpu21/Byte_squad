@@ -9,7 +9,9 @@ import { DataSource, EntityManager, QueryFailedError } from 'typeorm';
 
 import { Sale } from '@pos/entities/sale.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
+import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
+import { ProductsRepository } from '@products/products.repository';
 import { User } from '@users/entities/user.entity';
 
 import { CreateSaleDto } from '@pos/dto/create-sale.dto';
@@ -139,6 +141,7 @@ export class PosWriteService {
     private readonly stockMovements: StockMovementRepository,
     private readonly invoiceNumbers: InvoiceNumberService,
     private readonly multiTender: MultiTenderCalculatorService,
+    private readonly products: ProductsRepository,
     private readonly accounting: AccountingRepository,
     private readonly loyalty: LoyaltyService,
     private readonly loyaltyWallet: LoyaltyWalletService,
@@ -227,6 +230,7 @@ export class PosWriteService {
     // 2. Resolve sellable units
     // ---------------------------------------------------------------
     const unitsById = await this.resolveSellableUnits(dto);
+    const productsById = await this.resolveProducts(dto);
 
     // The cashier UI no longer offers a Retail/Wholesale toggle; every new
     // sale rings at retail. The columns stay on the Sale row for historical
@@ -238,7 +242,13 @@ export class PosWriteService {
     // 3. Per-item math
     // ---------------------------------------------------------------
     const itemRows: ItemCompute[] = dto.items.map((item) =>
-      computeItem(item, unitsById, priceLevel, dto.location ?? 'Shop'),
+      computeItem(
+        item,
+        unitsById,
+        productsById,
+        priceLevel,
+        dto.location ?? 'Shop',
+      ),
     );
 
     // ---------------------------------------------------------------
@@ -549,6 +559,22 @@ export class PosWriteService {
     return byId;
   }
 
+  private async resolveProducts(
+    dto: CreateSaleDto,
+  ): Promise<Map<string, Product>> {
+    const productIds = Array.from(
+      new Set(dto.items.map((item) => item.productId)),
+    );
+    const rows = await this.products.findActiveByIds(productIds);
+    const byId = new Map(rows.map((product) => [product.id, product]));
+    for (const productId of productIds) {
+      if (!byId.has(productId)) {
+        throw new NotFoundException(`Product ${productId} not found`);
+      }
+    }
+    return byId;
+  }
+
   /**
    * Locks every inventory row touched by the sale via `SELECT ... FOR UPDATE`,
    * verifies sufficient quantity, and writes the decrement. Returns a map of
@@ -694,32 +720,41 @@ export class PosWriteService {
  * Mirrors the frontend `lib/line-total.ts` exactly so server and client
  * agree on subtotal/tax/total figures.
  *
- * `unitPrice` is the price per BASE unit (e.g. Rs 200 for a kg of carrots),
- * regardless of which sellable unit the cashier picked. The picked-unit
- * price is `unitPrice * conversionFactor`, so a kg-stocked carrot sold in
- * grams (conversionFactor = 0.001) bills out at Rs 0.2/g. Discrete or
- * base-unit lines have conversionFactor = 1 and the formula collapses to
- * the original `chargedQty * unitPrice` shape.
+ * `unitPrice` is server-derived from the selected sellable unit. For base
+ * lines it comes from `Product.sellingPrice`; for pack rows it comes from
+ * `ProductSellableUnit.sellingPrice`. The client-submitted price is only a
+ * stale/tamper check and is never used as the pricing source.
  */
 function computeItem(
   item: CreateSaleDto['items'][number],
   unitsById: Map<string, ProductSellableUnit>,
+  productsById: Map<string, Product>,
   priceLevel: 'Retail' | 'Wholesale',
   defaultLocation: string,
 ): ItemCompute {
   const qty = Number(item.quantity);
   const free = Number(item.free ?? 0);
   const chargedQty = Math.max(0, qty - free);
-  const unitPrice = Number(item.unitPrice);
   const disc = Number(item.discountPercentage ?? 0);
   const taxRate = Number(item.taxRate ?? 0);
 
   const unit = item.unitId ? unitsById.get(item.unitId) : null;
   const conversion = unit ? Number(unit.conversionToBase) : 1;
-  const grossPerUnit = unitPrice * conversion;
+  const product = productsById.get(item.productId);
+  if (!product) {
+    throw new NotFoundException(`Product ${item.productId} not found`);
+  }
+  const unitPrice = unit
+    ? Number(unit.sellingPrice)
+    : Number(product.sellingPrice);
+  if (round2(Number(item.unitPrice)) !== round2(unitPrice)) {
+    throw new ConflictException(
+      `Unit price changed for product ${item.productId}; refresh the cart and try again`,
+    );
+  }
 
-  const lineSubtotal = round2(chargedQty * grossPerUnit * (1 - disc / 100));
-  const lineDiscountAmount = round2(chargedQty * grossPerUnit * (disc / 100));
+  const lineSubtotal = round2(chargedQty * unitPrice * (1 - disc / 100));
+  const lineDiscountAmount = round2(chargedQty * unitPrice * (disc / 100));
   const lineTaxAmount = round2(lineSubtotal * (taxRate / 100));
   const lineTotal = round2(lineSubtotal + lineTaxAmount);
 

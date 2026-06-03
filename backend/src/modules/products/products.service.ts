@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Product } from '@products/entities/product.entity';
@@ -26,6 +30,27 @@ function stampProductId(
   return rows.map((row) => ({ ...row, productId }));
 }
 
+function normalizeSellableUnits(
+  rows: readonly SellableUnitDto[] | undefined,
+): SellableUnitDto[] | undefined {
+  if (!rows) return undefined;
+  return rows.map((row) => ({
+    ...row,
+    name: row.name.trim(),
+    barcode: row.barcode?.trim() || null,
+    conversionToBase: Number(row.conversionToBase),
+    sellingPrice: Number(row.sellingPrice),
+    displayOrder: Number(row.displayOrder),
+  }));
+}
+
+function unitBarcodes(rows: readonly SellableUnitDto[] | undefined): string[] {
+  if (!rows) return [];
+  return rows
+    .map((row) => row.barcode?.trim())
+    .filter((barcode): barcode is string => Boolean(barcode));
+}
+
 @Injectable()
 export class ProductsService {
   constructor(
@@ -43,23 +68,35 @@ export class ProductsService {
    * - If the manager supplied `sellableUnits` on the DTO we validate the
    *   rows (`validateSellableUnits`: exactly one base, conversion=1 on the
    *   base, no duplicate names) and persist them verbatim.
-   * - Otherwise we fall back to `defaultSellableUnitsFor` — e.g. a
-   *   `kg`-based product gets `[kg, g]`, a discrete `each`-based product
-   *   gets a single self-mirror row.
+   * - Otherwise we fall back to `defaultSellableUnitsFor` — one base sellable
+   *   row for `kg`, `l`, or `unit`.
    *
    * The migration that powered the Phase A1 backfill
    * (`backfillDefaultSellableUnits`) is idempotent and still acts as a
    * safety net for any historical orphans.
    */
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    if (createProductDto.sellableUnits) {
-      validateSellableUnits(createProductDto.sellableUnits);
+    const sellableUnits = normalizeSellableUnits(
+      createProductDto.sellableUnits,
+    );
+    if (sellableUnits) {
+      validateSellableUnits(sellableUnits);
     }
+    await this.assertBarcodeAvailability(
+      createProductDto.barcode,
+      sellableUnits,
+    );
     return this.dataSource.transaction(async (manager) => {
-      const product = await this.products.createAndSave(createProductDto);
-      const seeds = createProductDto.sellableUnits
-        ? stampProductId(product.id, createProductDto.sellableUnits)
-        : defaultSellableUnitsFor(product.id, product.baseUnit);
+      const { sellableUnits: _units, ...productInput } = createProductDto;
+      void _units;
+      const product = await this.products.createAndSave(productInput, manager);
+      const seeds = sellableUnits
+        ? stampProductId(product.id, sellableUnits)
+        : defaultSellableUnitsFor(
+            product.id,
+            product.baseUnit,
+            Number(product.sellingPrice),
+          );
       await this.products.saveUnits(seeds, manager);
       return product;
     });
@@ -97,28 +134,42 @@ export class ProductsService {
     if (!existing) {
       throw new NotFoundException(`Product with ID "${id}" not found`);
     }
-    if (updateProductDto.sellableUnits) {
-      validateSellableUnits(updateProductDto.sellableUnits);
+    const sellableUnits = normalizeSellableUnits(
+      updateProductDto.sellableUnits,
+    );
+    if (sellableUnits) {
+      validateSellableUnits(sellableUnits);
     }
-    const unitsProvided = updateProductDto.sellableUnits !== undefined;
+    const unitsProvided = sellableUnits !== undefined;
     const baseUnitChanged =
       updateProductDto.baseUnit !== undefined &&
       updateProductDto.baseUnit !== existing.baseUnit;
+    const nextBarcode = updateProductDto.barcode ?? existing.barcode ?? '';
+    await this.assertBarcodeAvailability(nextBarcode, sellableUnits, {
+      currentProductId: id,
+      willReplaceUnits: unitsProvided || baseUnitChanged,
+    });
 
-    Object.assign(existing, updateProductDto);
+    const { sellableUnits: _units, ...productPatch } = updateProductDto;
+    void _units;
+    Object.assign(existing, productPatch);
 
     return this.dataSource.transaction(async (manager) => {
-      const saved = await this.products.save(existing);
-      if (unitsProvided && updateProductDto.sellableUnits) {
+      const saved = await this.products.save(existing, manager);
+      if (unitsProvided && sellableUnits) {
         await this.products.replaceUnits(
           saved.id,
-          stampProductId(saved.id, updateProductDto.sellableUnits),
+          stampProductId(saved.id, sellableUnits),
           manager,
         );
       } else if (baseUnitChanged) {
         await this.products.replaceUnits(
           saved.id,
-          defaultSellableUnitsFor(saved.id, saved.baseUnit),
+          defaultSellableUnitsFor(
+            saved.id,
+            saved.baseUnit,
+            Number(saved.sellingPrice),
+          ),
           manager,
         );
       }
@@ -169,5 +220,60 @@ export class ProductsService {
     await this.products.update(id, { imageUrl });
     const refreshed = await this.products.findById(id);
     return refreshed!;
+  }
+
+  private async assertBarcodeAvailability(
+    productBarcode: string | null | undefined,
+    rows: readonly SellableUnitDto[] | undefined,
+    options: {
+      currentProductId?: string;
+      willReplaceUnits?: boolean;
+    } = {},
+  ): Promise<void> {
+    const normalizedProductBarcode = productBarcode?.trim() ?? '';
+    const productKey = normalizedProductBarcode.toLowerCase();
+    const barcodes = unitBarcodes(rows);
+    const unitBarcodeKeys = new Set(
+      barcodes.map((barcode) => barcode.toLowerCase()),
+    );
+    if (productKey && unitBarcodeKeys.has(productKey)) {
+      throw new ConflictException(
+        'A sellable-unit barcode cannot match the product barcode.',
+      );
+    }
+
+    if (normalizedProductBarcode) {
+      const existingUnit = await this.products.findUnitByBarcode(
+        normalizedProductBarcode,
+      );
+      if (
+        existingUnit &&
+        (existingUnit.productId !== options.currentProductId ||
+          !options.willReplaceUnits)
+      ) {
+        throw new ConflictException(
+          `Barcode ${normalizedProductBarcode} is already assigned to a sellable unit.`,
+        );
+      }
+    }
+
+    if (barcodes.length === 0) return;
+
+    const productConflicts = await this.products.findByBarcodes(barcodes);
+    if (productConflicts.length > 0) {
+      throw new ConflictException(
+        `Sellable-unit barcode ${productConflicts[0].barcode} conflicts with a product barcode.`,
+      );
+    }
+
+    const unitConflicts = await this.products.findUnitsByBarcodes(
+      barcodes,
+      options.currentProductId,
+    );
+    if (unitConflicts.length > 0) {
+      throw new ConflictException(
+        `Sellable-unit barcode ${unitConflicts[0].barcode ?? ''} is already in use.`,
+      );
+    }
   }
 }
