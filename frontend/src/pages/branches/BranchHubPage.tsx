@@ -12,18 +12,27 @@ export function BranchHubPage() {
     const isAdmin = user?.role === UserRole.ADMIN;
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div>
             <BranchHubTabs active={tab} onChange={setTab} />
 
-            {tab === 'overview' && (
-                isAdmin ? (
-                    <BranchManagementPage embedded={false} />
-                ) : (
-                    <BranchPerformancePage />
-                )
-            )}
+            {/* Keyed so each tab switch plays exactly one entrance; the single
+                animate-in lives here, not in the child pages (avoids double /
+                replayed animation). */}
+            <div
+                key={tab}
+                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+            >
+                {tab === 'overview' &&
+                    (isAdmin ? (
+                        <BranchManagementPage embedded={false} />
+                    ) : (
+                        <BranchPerformancePage />
+                    ))}
 
-            {tab === 'compare' && <BranchComparisonPage embedded={false} />}
+                {tab === 'compare' && (
+                    <BranchComparisonPage embedded={false} />
+                )}
+            </div>
         </div>
     );
 }

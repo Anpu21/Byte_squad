@@ -36,7 +36,7 @@ export function BranchTable({
                 ) : (
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-border text-[11px] uppercase tracking-widest text-text-3">
+                            <tr className="border-b border-border bg-surface-2 text-[11px] uppercase tracking-widest text-text-3">
                                 {HEADERS.map((h) => (
                                     <th
                                         key={h}
