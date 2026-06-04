@@ -1,49 +1,62 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
+/**
+ * Transactional email via Resend's HTTP API. Chosen over SMTP because
+ * outbound SMTP is unreliable on serverless/edge hosts (Fly.io). The public
+ * surface (the four `send*` methods + `isVerified()`) is unchanged, so callers
+ * in auth/users services are untouched.
+ *
+ * `MAIL_FROM` must be a Resend-verified sender (verify the domain in Resend and
+ * add its SPF/DKIM DNS records); `onboarding@resend.dev` works for a smoke test
+ * but only delivers to the Resend account owner.
+ */
 @Injectable()
-export class EmailService implements OnModuleInit {
+export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter;
-  private verified = false;
+  private readonly resend: Resend | null;
+  private readonly from: string;
 
   constructor(private readonly configService: ConfigService) {
-    const portRaw = this.configService.get<string | number>('MAIL_PORT', 587);
-    const port =
-      typeof portRaw === 'number' ? portRaw : parseInt(String(portRaw), 10);
-
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('MAIL_HOST', 'smtp.gmail.com'),
-      port,
-      secure: port === 465, // 465 → SSL/TLS, 587 → STARTTLS
-      requireTLS: port === 587,
-      connectionTimeout: 10_000, // fail fast at startup verify if SMTP unreachable
-      greetingTimeout: 60_000,
-      socketTimeout: 60_000,
-      auth: {
-        user: this.configService.get<string>('MAIL_USERNAME'),
-        pass: this.configService.get<string>('MAIL_PASSWORD'),
-      },
-    });
-  }
-
-  async onModuleInit(): Promise<void> {
-    try {
-      await this.transporter.verify();
-      this.verified = true;
-      this.logger.log('Email transporter verified — SMTP reachable');
-    } catch (error) {
-      this.verified = false;
-      const message = error instanceof Error ? error.message : String(error);
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    this.resend = apiKey ? new Resend(apiKey) : null;
+    this.from = this.configService.get<string>(
+      'MAIL_FROM',
+      'LedgerPro <onboarding@resend.dev>',
+    );
+    if (!this.resend) {
       this.logger.warn(
-        `Email transporter verification failed: ${message}. OTP/welcome emails will fail until this is fixed.`,
+        'RESEND_API_KEY not set — OTP/welcome emails will not be sent until it is configured.',
       );
     }
   }
 
+  /** True when email is configured (API key present). Callers gate sends on this. */
   isVerified(): boolean {
-    return this.verified;
+    return this.resend !== null;
+  }
+
+  private async dispatch(
+    to: string,
+    subject: string,
+    html: string,
+    label: string,
+  ): Promise<void> {
+    if (!this.resend) {
+      throw new Error('Email is not configured (RESEND_API_KEY missing)');
+    }
+    const { error } = await this.resend.emails.send({
+      from: this.from,
+      to,
+      subject,
+      html,
+    });
+    if (error) {
+      this.logger.error(`Failed to send ${label} to ${to}: ${error.message}`);
+      throw new Error(error.message);
+    }
+    this.logger.log(`${label} sent to ${to}`);
   }
 
   async sendWelcomeEmail(
@@ -102,22 +115,7 @@ export class EmailService implements OnModuleInit {
       </div>
     `;
 
-    try {
-      await this.transporter.sendMail({
-        from: this.configService.get<string>(
-          'MAIL_FROM',
-          '"LedgerPro" <noreply@ledgerpro.com>',
-        ),
-        to,
-        subject,
-        html,
-      });
-      this.logger.log(`Welcome email sent to ${to}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Failed to send welcome email to ${to}: ${message}`);
-      throw error;
-    }
+    await this.dispatch(to, subject, html, 'Welcome email');
   }
 
   async sendOtpEmail(
@@ -159,24 +157,7 @@ export class EmailService implements OnModuleInit {
       </div>
     `;
 
-    try {
-      await this.transporter.sendMail({
-        from: this.configService.get<string>(
-          'MAIL_FROM',
-          '"LedgerPro" <noreply@ledgerpro.com>',
-        ),
-        to,
-        subject,
-        html,
-      });
-      this.logger.log(`Customer OTP email sent to ${to}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Failed to send customer OTP email to ${to}: ${message}`,
-      );
-      throw error;
-    }
+    await this.dispatch(to, subject, html, 'Customer OTP email');
   }
 
   async sendPasswordResetOtpEmail(
@@ -218,24 +199,7 @@ export class EmailService implements OnModuleInit {
       </div>
     `;
 
-    try {
-      await this.transporter.sendMail({
-        from: this.configService.get<string>(
-          'MAIL_FROM',
-          '"LedgerPro" <noreply@ledgerpro.com>',
-        ),
-        to,
-        subject,
-        html,
-      });
-      this.logger.log(`Password reset OTP email sent to ${to}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Failed to send password reset OTP email to ${to}: ${message}`,
-      );
-      throw error;
-    }
+    await this.dispatch(to, subject, html, 'Password reset OTP email');
   }
 
   async sendPasswordResetEmail(
@@ -286,23 +250,6 @@ export class EmailService implements OnModuleInit {
       </div>
     `;
 
-    try {
-      await this.transporter.sendMail({
-        from: this.configService.get<string>(
-          'MAIL_FROM',
-          '"LedgerPro" <noreply@ledgerpro.com>',
-        ),
-        to,
-        subject,
-        html,
-      });
-      this.logger.log(`Password reset email sent to ${to}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Failed to send password reset email to ${to}: ${message}`,
-      );
-      throw error;
-    }
+    await this.dispatch(to, subject, html, 'Password reset email');
   }
 }

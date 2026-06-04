@@ -12,6 +12,11 @@ primary_region = "sin"
   dockerfile = "Dockerfile"
   target = "production"
 
+# Run pending DB migrations once per deploy, before the new version goes live.
+# If this fails, Fly aborts the release — a bad migration can't half-ship.
+[deploy]
+  release_command = "node -r ./tsconfig-paths-bootstrap.js ./node_modules/typeorm/cli.js migration:run -d dist/data-source.js"
+
 [http_service]
   internal_port = 3000
   force_https = true
