@@ -1,0 +1,10 @@
+{
+  "title": "My Profile",
+  "subtitle": "Manage your account settings and preferences.",
+  "language": {
+    "title": "Language",
+    "description": "Choose the language for your dashboard.",
+    "english": "English",
+    "tamil": "தமிழ்"
+  }
+}

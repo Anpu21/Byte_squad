@@ -23,6 +23,7 @@ const hitResult: ILoyaltyLookupResult = {
     ownerType: 'user',
     userId: 'u-1',
     loyaltyCustomerId: null,
+    tier: 'bronze',
     firstName: 'Nimal',
     lastName: 'Perera',
     phone: '+94770000001',
@@ -35,6 +36,7 @@ const enrolledResult: ILoyaltyLookupResult = {
     ownerType: 'walkIn',
     userId: null,
     loyaltyCustomerId: 'lc-1',
+    tier: 'bronze',
     firstName: 'Sunil',
     lastName: null,
     phone: '+94770000002',
@@ -130,7 +132,7 @@ describe('PosLoyaltyCard', () => {
         await userEvent.type(phoneInput, '+94770000001');
         await waitFor(() => expect(lookupMock).toHaveBeenCalled());
         await screen.findByText('Nimal');
-        expect(screen.getByText('Registered member')).toBeInTheDocument();
+        expect(screen.getByText(/Bronze.*Registered/)).toBeInTheDocument();
         expect(screen.getByText('250')).toBeInTheDocument();
         expect(
             screen.getByRole('button', { name: /detach loyalty/i }),
@@ -160,7 +162,7 @@ describe('PosLoyaltyCard', () => {
             });
         });
         await screen.findByText('Sunil');
-        expect(screen.getByText('Walk-in member')).toBeInTheDocument();
+        expect(screen.getByText(/Bronze.*Walk-in/)).toBeInTheDocument();
     });
 
     it('clears the attached owner when Clear is clicked', async () => {
@@ -169,6 +171,7 @@ describe('PosLoyaltyCard', () => {
                 ownerType: 'user',
                 userId: 'u-1',
                 loyaltyCustomerId: null,
+                tier: 'bronze',
                 firstName: 'Nimal',
                 pointsBalance: 250,
             },

@@ -34,7 +34,7 @@ export class SaleItem {
   @JoinColumn({ name: 'product_id' })
   product!: Product;
 
-  @Column({ type: 'integer' })
+  @Column({ type: 'decimal', precision: 12, scale: 3 })
   quantity!: number;
 
   // Quantity in the product's canonical base unit, after the per-product

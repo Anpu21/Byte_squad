@@ -10,8 +10,11 @@ import {
 
 const METRIC_LABEL: Record<MetricKey, string> = {
     revenue: 'Total revenue',
+    grossProfit: 'Gross profit',
     transactions: 'Transactions',
     aov: 'Avg transaction value',
+    activeProducts: 'Active products',
+    loyaltyMembers: 'Loyalty members',
 };
 
 interface BranchLeaderboardProps {
@@ -85,20 +88,24 @@ export function BranchLeaderboard({ rows, metric }: BranchLeaderboardProps) {
                                 <p className="mt-2 text-[11px] text-text-3 leading-relaxed">
                                     Expenses{' '}
                                     <span className="text-text-2 font-medium mono">
-                                        {formatCurrencyWhole(r.entry.expenses)}
+                                        {formatCurrencyWhole(
+                                            r.entry.financial.expenses,
+                                        )}
                                     </span>{' '}
                                     ·{' '}
                                     <span className="text-text-2 font-medium">
-                                        {formatPercent(r.entry.expenseRatio)}
+                                        {formatPercent(
+                                            r.entry.financial.expenseRatio,
+                                        )}
                                     </span>{' '}
                                     expense ratio · Staff{' '}
                                     <span className="text-text-2 font-medium tabular-nums">
-                                        {r.entry.staffCount.toLocaleString()}
+                                        {r.entry.staff.staffCount.toLocaleString()}
                                     </span>{' '}
                                     · Rev / staff{' '}
                                     <span className="text-text-2 font-medium mono">
                                         {formatCurrencyWhole(
-                                            r.entry.revenuePerStaff,
+                                            r.entry.staff.revenuePerStaff,
                                         )}
                                     </span>
                                 </p>

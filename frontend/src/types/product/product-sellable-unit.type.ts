@@ -12,7 +12,9 @@ export interface IProductSellableUnit {
   id: string
   productId: string
   name: string
+  barcode: string | null
   isBase: boolean
   conversionToBase: number
+  sellingPrice: number
   displayOrder: number
 }

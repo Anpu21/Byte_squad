@@ -19,4 +19,11 @@ export interface ISearchProductRow {
   taxRate: number;
   discountAllowed: boolean;
   imageUrl: string | null;
+  matchedUnit: {
+    unitId: string;
+    unitName: string;
+    barcode: string | null;
+    conversionToBase: number;
+    sellingPrice: number;
+  } | null;
 }

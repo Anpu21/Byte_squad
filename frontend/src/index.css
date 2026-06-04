@@ -1,8 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* Geist covers Latin; Noto Sans Tamil supplies Tamil glyphs via font fallback
+     so `lang="ta"` content renders without tofu. Tamil is LTR — no RTL needed. */
+  --font-sans: 'Geist', 'Noto Sans Tamil', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', monospace;
 
   --color-canvas: var(--canvas);

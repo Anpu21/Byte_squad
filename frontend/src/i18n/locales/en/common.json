@@ -1,0 +1,17 @@
+{
+  "appName": "Ledger Pro",
+  "save": "Save",
+  "cancel": "Cancel",
+  "saving": "Saving...",
+  "saveChanges": "Save Changes",
+  "loading": "Loading...",
+  "nav": {
+    "dashboard": "Dashboard",
+    "inventory": "Inventory",
+    "expiry": "Expiry",
+    "adjustments": "Adjustments",
+    "returns": "Returns",
+    "profile": "Profile",
+    "language": "Language"
+  }
+}

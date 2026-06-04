@@ -8,8 +8,10 @@ import {
 
 interface UnitSeed {
   name: string;
+  barcode: string | null;
   isBase: boolean;
   conversionToBase: number;
+  sellingPrice: number;
   displayOrder: number;
 }
 
@@ -17,36 +19,20 @@ interface UnitSeed {
  * Default companion units for each well-known base unit. Kept as a lookup
  * table so adding a new base (e.g. metric tonne) is a single map entry.
  *
- * - Mass:   kg <-> g  (1 kg = 1000 g, 1 g = 0.001 kg)
- * - Volume: l  <-> ml (1 l  = 1000 ml, 1 ml = 0.001 l)
- * - Discrete (each / bottle / pack / box): single self-mirroring row so the
- *   cashier dropdown always has at least one option but nothing to convert.
+ * LedgerPro keeps stock in exactly one base unit: kg, l, or unit. Pack rows
+ * such as 12-PACK are manager-created sellable units with their own barcode,
+ * conversion, and price; they are not base-unit defaults.
  */
-const DEFAULTS_BY_BASE_UNIT: Record<TSupportedBaseUnit, UnitSeed[]> = {
-  kg: [
-    { name: 'kg', isBase: true, conversionToBase: 1, displayOrder: 0 },
-    { name: 'g', isBase: false, conversionToBase: 0.001, displayOrder: 1 },
-  ],
-  g: [
-    { name: 'g', isBase: true, conversionToBase: 1, displayOrder: 0 },
-    { name: 'kg', isBase: false, conversionToBase: 1000, displayOrder: 1 },
-  ],
-  l: [
-    { name: 'l', isBase: true, conversionToBase: 1, displayOrder: 0 },
-    { name: 'ml', isBase: false, conversionToBase: 0.001, displayOrder: 1 },
-  ],
-  ml: [
-    { name: 'ml', isBase: true, conversionToBase: 1, displayOrder: 0 },
-    { name: 'l', isBase: false, conversionToBase: 1000, displayOrder: 1 },
-  ],
-  // Discrete items: only the base unit, no companions.
-  each: [{ name: 'each', isBase: true, conversionToBase: 1, displayOrder: 0 }],
-  bottle: [
-    { name: 'bottle', isBase: true, conversionToBase: 1, displayOrder: 0 },
-  ],
-  pack: [{ name: 'pack', isBase: true, conversionToBase: 1, displayOrder: 0 }],
-  box: [{ name: 'box', isBase: true, conversionToBase: 1, displayOrder: 0 }],
-};
+function baseSeed(name: TSupportedBaseUnit, sellingPrice: number): UnitSeed {
+  return {
+    name,
+    barcode: null,
+    isBase: true,
+    conversionToBase: 1,
+    sellingPrice,
+    displayOrder: 0,
+  };
+}
 
 /**
  * Companion units for a product, derived from its base unit. Each entry is
@@ -63,10 +49,20 @@ const DEFAULTS_BY_BASE_UNIT: Record<TSupportedBaseUnit, UnitSeed[]> = {
 export function defaultSellableUnitsFor(
   productId: string,
   baseUnit: string,
+  sellingPrice = 0,
 ): DeepPartial<ProductSellableUnit>[] {
   const lowered = baseUnit.toLowerCase();
   const seeds: UnitSeed[] = isSupportedBaseUnit(lowered)
-    ? DEFAULTS_BY_BASE_UNIT[lowered]
-    : [{ name: baseUnit, isBase: true, conversionToBase: 1, displayOrder: 0 }];
+    ? [baseSeed(lowered, sellingPrice)]
+    : [
+        {
+          name: baseUnit,
+          barcode: null,
+          isBase: true,
+          conversionToBase: 1,
+          sellingPrice,
+          displayOrder: 0,
+        },
+      ];
   return seeds.map((s) => ({ ...s, productId }));
 }

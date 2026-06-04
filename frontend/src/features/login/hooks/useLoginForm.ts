@@ -11,7 +11,21 @@ interface LoginErrors {
     password?: string;
 }
 
+interface LoginReject {
+    message: string;
+    status?: number;
+}
+
 const PASSWORD_MIN = 8;
+
+function isLoginReject(error: unknown): error is LoginReject {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        typeof (error as { message?: unknown }).message === 'string'
+    );
+}
 
 export function useLoginForm() {
     const navigate = useNavigate();
@@ -44,6 +58,17 @@ export function useLoginForm() {
             navigate('/');
         } catch (error) {
             console.error('Login failed:', error);
+            if (isLoginReject(error)) {
+                if (error.status === 403) {
+                    toast('Verify your email first', { icon: '📧' });
+                    navigate(FRONTEND_ROUTES.OTP_VERIFICATION, {
+                        state: { email },
+                    });
+                    return;
+                }
+                toast.error(error.message);
+                return;
+            }
             if (axios.isAxiosError(error)) {
                 if (error.response?.status === 403) {
                     toast('Verify your email first', { icon: '📧' });

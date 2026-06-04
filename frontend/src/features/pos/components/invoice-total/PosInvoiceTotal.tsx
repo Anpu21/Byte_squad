@@ -42,7 +42,7 @@ export function PosInvoiceTotal({
     return (
         <section
             aria-label="Invoice totals"
-            className="bg-surface border border-border-strong rounded-lg p-4 flex flex-col gap-2"
+            className="bg-surface flex flex-col gap-2 p-4"
         >
             <Row
                 label="Subtotal"

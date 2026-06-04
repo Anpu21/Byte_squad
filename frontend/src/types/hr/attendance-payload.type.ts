@@ -14,6 +14,8 @@ export interface IBulkAttendanceRow {
     checkInTime?: string;
     /** Optional `HH:mm[:ss]` clock-time. */
     checkOutTime?: string;
+    /** Optional decimal duration in hours. */
+    totalHours?: number;
     isOvertime?: boolean;
     overtimeHours?: number;
     cardsProduced?: number;

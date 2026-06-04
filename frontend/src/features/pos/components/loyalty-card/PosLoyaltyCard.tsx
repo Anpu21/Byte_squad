@@ -143,6 +143,7 @@ function toOwner(result: ILoyaltyLookupResult): IPosLoyaltyOwner {
         ownerType: result.ownerType,
         userId: result.userId,
         loyaltyCustomerId: result.loyaltyCustomerId,
+        tier: result.tier,
         firstName: result.firstName,
         pointsBalance: result.pointsBalance,
     };

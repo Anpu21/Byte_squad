@@ -30,9 +30,9 @@ export interface SellableUnitsState {
 }
 
 export function useSellableUnitsState(): SellableUnitsState {
-    const [baseUnit, setBaseUnit] = useState<TBaseUnitFe>('each');
+    const [baseUnit, setBaseUnit] = useState<TBaseUnitFe>('unit');
     const [units, setUnits] = useState<ISellableUnitRow[]>(() =>
-        defaultUnitRowsFor('each'),
+        defaultUnitRowsFor('unit'),
     );
 
     function resetUnitsForBase(next: TBaseUnitFe) {
@@ -46,8 +46,10 @@ export function useSellableUnitsState(): SellableUnitsState {
             {
                 rowId: crypto.randomUUID(),
                 name: '',
+                barcode: '',
                 isBase: false,
                 conversionToBase: '1',
+                sellingPrice: '',
                 displayOrder: current.length,
             },
         ]);

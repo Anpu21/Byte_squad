@@ -2,6 +2,7 @@
 import { Test } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import type { EntityManager } from 'typeorm';
 
 import { PosVoidService } from './pos-void.service';
 import { SaleRepository } from './sale.repository';
@@ -9,6 +10,7 @@ import { PaymentRepository } from './payment.repository';
 import { CreditTransactionRepository } from './credit-transaction.repository';
 import { StockMovementRepository } from './stock-movement.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
+import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { Sale } from './entities/sale.entity';
 import type { ActorPayload } from './pos-write.service';
@@ -53,6 +55,7 @@ function makeSaleForVoid(opts: {
   branchId?: string;
   total?: number;
   customerUserId?: string | null;
+  loyaltyCustomerId?: string | null;
   invoiceNumber?: string;
   items?: VoidItem[];
   location?: string;
@@ -64,6 +67,7 @@ function makeSaleForVoid(opts: {
     branchId: opts.branchId ?? 'branch-A',
     total: opts.total ?? 100,
     customerUserId: opts.customerUserId ?? null,
+    loyaltyCustomerId: opts.loyaltyCustomerId ?? null,
     location: opts.location ?? 'Shop',
     items: (opts.items ?? [{ productId: 'p-1', baseUnitQty: 2 }]).map((it) => ({
       productId: it.productId,
@@ -79,6 +83,7 @@ interface VoidMockBag {
   creditTransactions: jest.Mocked<CreditTransactionRepository>;
   stockMovements: jest.Mocked<StockMovementRepository>;
   accounting: { createLedgerEntryWithManager: jest.Mock };
+  loyaltyWallet: { reverseOrderEffects: jest.Mock };
   managerCalls: {
     invSave: jest.Mock;
     invFindOne: jest.Mock;
@@ -190,6 +195,11 @@ function buildVoidMocks(opts: {
   const accountingMock = {
     createLedgerEntryWithManager: jest.fn().mockResolvedValue({ id: 'le-2' }),
   };
+  const loyaltyWalletMock = {
+    reverseOrderEffects: jest
+      .fn()
+      .mockResolvedValue({ earnedReversed: 0, redeemedRestored: 0 }),
+  };
 
   return Test.createTestingModule({
     providers: [
@@ -199,6 +209,7 @@ function buildVoidMocks(opts: {
       { provide: CreditTransactionRepository, useValue: creditTxnsRepoMock },
       { provide: StockMovementRepository, useValue: stockMovementsRepoMock },
       { provide: AccountingRepository, useValue: accountingMock },
+      { provide: LoyaltyWalletService, useValue: loyaltyWalletMock },
       { provide: DataSource, useValue: dataSourceMock },
     ],
   })
@@ -210,6 +221,7 @@ function buildVoidMocks(opts: {
       creditTransactions: module.get(CreditTransactionRepository),
       stockMovements: module.get(StockMovementRepository),
       accounting: accountingMock,
+      loyaltyWallet: loyaltyWalletMock,
       managerCalls: {
         invSave,
         invFindOne,
@@ -280,6 +292,15 @@ describe('PosVoidService.voidSale', () => {
         saleId: 'sale-1',
       }),
     );
+    const managerMatcher = expect.anything() as unknown as EntityManager;
+
+    expect(bag.loyaltyWallet.reverseOrderEffects).toHaveBeenCalledWith({
+      owner: null,
+      orderId: 'sale-1',
+      orderCode: 'INV-2026-000050',
+      branchId: 'branch-A',
+      manager: managerMatcher,
+    });
     expect(bag.payments.voidBySaleId).toHaveBeenCalledWith(
       'sale-1',
       expect.anything(),
@@ -345,6 +366,33 @@ describe('PosVoidService.voidSale', () => {
       expect.objectContaining({ productId: 'p-2', quantity: 10 }),
     );
     expect(bag.stockMovements.create).toHaveBeenCalledTimes(2);
+  });
+
+  it('reverses loyalty against the stored walk-in owner when voiding a POS loyalty sale', async () => {
+    const original = makeSaleForVoid({
+      id: 'sale-loyalty',
+      branchId: 'branch-A',
+      loyaltyCustomerId: 'walkin-1',
+      items: [{ productId: 'p-1', baseUnitQty: 1 }],
+    });
+    const bag = await buildVoidMocks({
+      inventoryByProduct: new Map([['p-1', { productId: 'p-1', quantity: 5 }]]),
+    });
+    bag.sales.findOneById
+      .mockResolvedValueOnce(original)
+      .mockResolvedValueOnce(original);
+
+    await bag.service.voidSale(makeAdmin(), 'sale-loyalty', 'customer return');
+
+    const managerMatcher = expect.anything() as unknown as EntityManager;
+
+    expect(bag.loyaltyWallet.reverseOrderEffects).toHaveBeenCalledWith({
+      owner: { loyaltyCustomerId: 'walkin-1' },
+      orderId: 'sale-loyalty',
+      orderCode: 'INV-2026-000050',
+      branchId: 'branch-A',
+      manager: managerMatcher,
+    });
   });
 
   it('writes the DEBIT ledger entry equal to the original sale total', async () => {

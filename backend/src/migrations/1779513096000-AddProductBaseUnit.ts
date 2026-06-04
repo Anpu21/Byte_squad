@@ -2,9 +2,9 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Adds the `base_unit` column to `products`:
- *   base_unit  varchar(32) NOT NULL DEFAULT 'each' — the canonical unit of
+ *   base_unit  varchar(32) NOT NULL DEFAULT 'unit' — the canonical unit of
  *              measure used when no per-product sellable unit row exists
- *              (and as the "isBase" anchor when they do). Defaults to 'each'
+ *              (and as the "isBase" anchor when they do). Defaults to 'unit'
  *              so the existing single-unit products keep their current
  *              behaviour without any data migration.
  *
@@ -15,7 +15,7 @@ export class AddProductBaseUnit1779513096000 implements MigrationInterface {
   public async up(qr: QueryRunner): Promise<void> {
     await qr.query(`
       ALTER TABLE products
-        ADD COLUMN IF NOT EXISTS base_unit varchar(32) NOT NULL DEFAULT 'each'
+        ADD COLUMN IF NOT EXISTS base_unit varchar(32) NOT NULL DEFAULT 'unit'
     `);
   }
 

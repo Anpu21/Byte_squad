@@ -5,6 +5,7 @@ import Pill from '@/components/ui/Pill';
 import StatusPill from '@/components/ui/StatusPill';
 import { formatCurrency } from '@/lib/utils';
 import type { IInventoryWithProduct } from '@/types';
+import { formatStockQuantity } from '../lib/format-stock-quantity';
 import { getStockKey } from '../lib/stock-key';
 
 interface InventoryRowProps {
@@ -57,7 +58,7 @@ export function InventoryRow({ item, onDelete }: InventoryRowProps) {
                             stockEmpty ? 'text-text-3' : 'text-text-1'
                         }`}
                     >
-                        {item.quantity}
+                        {formatStockQuantity(item.quantity, item.product.baseUnit)}
                     </p>
                     <p className="mono text-[11px] text-text-3 mt-0.5">
                         {formatCurrency(Number(item.product.sellingPrice))}

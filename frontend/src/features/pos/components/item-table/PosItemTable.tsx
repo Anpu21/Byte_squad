@@ -1,8 +1,10 @@
 import { useMemo, useState, type RefObject } from 'react';
-import { Camera, ShoppingCart } from 'lucide-react';
+import { Camera, ShoppingCart, Trash2 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type { ISearchProductRow } from '@/types';
 import { usePosProductSearch } from '@/features/pos/hooks/usePosProductSearch';
+import { toCartItemSeed } from '@/features/pos/lib/cart-item-seed';
 import EmptyState from '@/components/ui/EmptyState';
 import { PosItemSearchInput } from './PosItemSearchInput';
 import { PosItemSearchResults } from './PosItemSearchResults';
@@ -24,6 +26,7 @@ interface IPosItemTableProps {
     ) => void;
     updateItem: (rowId: string, patch: Partial<ICartItem>) => void;
     removeItem: (rowId: string) => void;
+    onClear: () => void;
     /**
      * Optional external ref to the search input so the parent can fire
      * imperative focus (F2 shortcut, post-checkout refocus).
@@ -37,6 +40,8 @@ interface IPosItemTableProps {
      * one search-and-status-banner pipeline).
      */
     onScanBarcode?: (barcode: string) => void;
+    /** Slot for totals or other footer content pinned to the bottom */
+    footerSlot?: React.ReactNode;
 }
 
 const HEADERS: { label: string; align?: 'left' | 'right' | 'center' }[] = [
@@ -67,12 +72,15 @@ export function PosItemTable({
     addItem,
     updateItem,
     removeItem,
+    onClear,
     searchInputRef,
     onScanBarcode,
+    footerSlot,
 }: IPosItemTableProps) {
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [showCamera, setShowCamera] = useState(false);
+    const confirm = useConfirm();
 
     const searchQuery = usePosProductSearch(debouncedQuery);
     const results = useMemo(
@@ -81,22 +89,7 @@ export function PosItemTable({
     );
 
     function handleSelect(row: ISearchProductRow) {
-        addItem({
-            productId: row.productId,
-            productCode: row.productCode,
-            productName: row.productName,
-            productType: row.productType,
-            baseUnit: row.baseUnit,
-            unitId: null,
-            unitName: row.baseUnit,
-            unitPrice: row.retailPrice,
-            conversionFactor: 1,
-            quantity: 1,
-            free: 0,
-            discountPercentage: 0,
-            taxRate: row.taxRate,
-            discountAllowed: row.discountAllowed,
-        });
+        addItem(toCartItemSeed(row));
         setQuery('');
         setDebouncedQuery('');
     }
@@ -106,13 +99,30 @@ export function PosItemTable({
     return (
         <section
             aria-label="Cart items"
-            className="bg-surface border border-border-strong rounded-md"
+            className="bg-surface border border-border-strong rounded-md flex flex-col h-[calc(100vh-130px)] min-h-[600px]"
         >
-            <header className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border-strong">
+            <header className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-b border-border-strong">
                 <h2 className="text-sm font-semibold text-text-1">Items</h2>
+                {cart.length > 0 && (
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            const ok = await confirm({
+                                title: 'Clear the cart?',
+                                body: 'All rows in the current sale will be removed.',
+                                confirmLabel: 'Clear cart',
+                                tone: 'danger',
+                            });
+                            if (ok) onClear();
+                        }}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium text-danger hover:bg-danger-soft rounded-md transition-colors"
+                    >
+                        <Trash2 size={14} /> Clear All
+                    </button>
+                )}
             </header>
 
-            <div className="px-4 py-3 border-b border-border-strong">
+            <div className="flex-shrink-0 px-4 py-3 border-b border-border-strong">
                 <div className="flex items-stretch gap-2">
                     <div className="relative flex-1">
                         <PosItemSearchInput
@@ -156,16 +166,18 @@ export function PosItemTable({
             )}
 
             {cart.length === 0 ? (
-                <EmptyState
-                    icon={<ShoppingCart size={20} aria-hidden />}
-                    title="No items yet"
-                    description="Search a product to add it to the cart."
-                />
+                <div className="flex-1 flex flex-col justify-center overflow-y-auto">
+                    <EmptyState
+                        icon={<ShoppingCart size={20} aria-hidden />}
+                        title="No items yet"
+                        description="Search a product to add it to the cart."
+                    />
+                </div>
             ) : (
-                <div className="overflow-x-auto">
+                <div className="flex-1 overflow-auto relative">
                     <table className="w-full text-[12px]">
-                        <thead>
-                            <tr className="bg-surface-2 border-b border-border-strong">
+                        <thead className="sticky top-0 z-10">
+                            <tr className="bg-surface-2 border-b border-border-strong shadow-[0_1px_0_var(--color-border-strong)]">
                                 {HEADERS.map((h, i) => (
                                     <th
                                         key={`${h.label}-${i}`}
@@ -194,6 +206,12 @@ export function PosItemTable({
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+            
+            {footerSlot && (
+                <div className="shrink-0 border-t border-border-strong mt-auto">
+                    {footerSlot}
                 </div>
             )}
         </section>

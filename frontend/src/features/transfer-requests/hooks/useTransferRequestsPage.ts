@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { useStockTransfers } from '@/hooks/useStockTransfers';
@@ -7,22 +7,53 @@ import { stockTransfersService } from '@/services/stock-transfers.service';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { IStockTransferRequest } from '@/types';
 
-export type ScopeTab = 'my-requests' | 'incoming';
+export type ScopeTab = 'my-requests' | 'incoming' | 'history';
 
 export const TABS: { key: ScopeTab; label: string }[] = [
     { key: 'my-requests', label: 'My Requests' },
     { key: 'incoming', label: 'Incoming' },
+    { key: 'history', label: 'History' },
 ];
+
+const TAB_PARAM = 'tab';
+const VALID_TABS: ScopeTab[] = ['my-requests', 'incoming', 'history'];
+
+function isScopeTab(value: string | null): value is ScopeTab {
+    return value !== null && (VALID_TABS as string[]).includes(value);
+}
 
 export function useTransferRequestsPage() {
     const navigate = useNavigate();
-    const [tab, setTab] = useState<ScopeTab>('my-requests');
+    const [searchParams, setSearchParams] = useSearchParams();
     const [shippingId, setShippingId] = useState<string | null>(null);
+
+    const tab = useMemo<ScopeTab>(() => {
+        const raw = searchParams.get(TAB_PARAM);
+        return isScopeTab(raw) ? raw : 'my-requests';
+    }, [searchParams]);
+
+    const setTab = useCallback(
+        (next: ScopeTab) => {
+            setSearchParams(
+                (prev) => {
+                    const params = new URLSearchParams(prev);
+                    if (next === 'my-requests') {
+                        params.delete(TAB_PARAM);
+                    } else {
+                        params.set(TAB_PARAM, next);
+                    }
+                    return params;
+                },
+                { replace: true },
+            );
+        },
+        [setSearchParams],
+    );
 
     const myRequests = useStockTransfers({ scope: 'my-requests' });
     const incoming = useStockTransfers({ scope: 'incoming' });
 
-    const active = tab === 'my-requests' ? myRequests : incoming;
+    const active = tab === 'incoming' ? incoming : myRequests;
 
     const handleShip = async (transfer: IStockTransferRequest) => {
         setShippingId(transfer.id);
@@ -55,4 +86,3 @@ export function useTransferRequestsPage() {
             navigate(FRONTEND_ROUTES.TRANSFER_DETAIL.replace(':id', id)),
     };
 }
-

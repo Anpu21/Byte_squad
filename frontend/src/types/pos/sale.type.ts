@@ -61,6 +61,7 @@ export interface ISale {
   status: TSaleStatus;
   location: string;
   customerUserId: string | null;
+  loyaltyCustomerId: string | null;
   voidedReason: string | null;
   voidedAt: string | null;
   voidedByUserId: string | null;

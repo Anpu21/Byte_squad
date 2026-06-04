@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PosService } from '@pos/pos.service';
 import { PosWriteService } from '@pos/pos-write.service';
@@ -37,7 +37,7 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
       IdempotencyKey,
     ]),
     AccountingModule,
-    InventoryModule,
+    forwardRef(() => InventoryModule),
     ProductsModule,
     UsersModule,
     LoyaltyModule,

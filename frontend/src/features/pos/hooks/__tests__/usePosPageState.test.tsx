@@ -39,6 +39,7 @@ describe('usePosPageState', () => {
                 ownerType: 'user',
                 userId: 'u-1',
                 loyaltyCustomerId: null,
+                tier: 'bronze',
                 firstName: 'Nimal',
                 pointsBalance: 100,
             }),

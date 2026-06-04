@@ -7,14 +7,15 @@ interface IPosActionButtonsProps {
     onClearCart: () => void;
     onPrintLastReceipt: () => void;
     onShowRecent: () => void;
-    onOpenPayment: () => void;
+    onCharge: () => void;
     isCartEmpty: boolean;
     hasLastReceipt: boolean;
+    disableCharge: boolean;
 }
 
 type TActionKey =
     | 'focusSearch' | 'clearCart'
-    | 'printLastReceipt' | 'showRecent' | 'openPayment';
+    | 'printLastReceipt' | 'showRecent' | 'charge';
 
 interface IActionDescriptor {
     key: TActionKey;
@@ -28,7 +29,7 @@ const ACTIONS: readonly IActionDescriptor[] = [
     { key: 'clearCart', label: 'Clear cart', shortcut: 'F5', Icon: Trash2 },
     { key: 'printLastReceipt', label: 'Print last', shortcut: 'F9', Icon: Printer },
     { key: 'showRecent', label: 'Recent sales', shortcut: 'F10', Icon: History },
-    { key: 'openPayment', label: 'Charge', shortcut: 'F12', Icon: CreditCard },
+    { key: 'charge', label: 'Charge', shortcut: 'F12', Icon: CreditCard },
 ];
 
 const BASE_BUTTON =
@@ -53,14 +54,16 @@ export function PosActionButtons({
     onClearCart,
     onPrintLastReceipt,
     onShowRecent,
-    onOpenPayment,
+    onCharge,
     isCartEmpty,
     hasLastReceipt,
+    disableCharge,
 }: IPosActionButtonsProps) {
     const confirm = useConfirm();
 
     const isDisabled = (key: TActionKey): boolean => {
-        if (key === 'clearCart' || key === 'openPayment') return isCartEmpty;
+        if (key === 'clearCart') return isCartEmpty;
+        if (key === 'charge') return disableCharge;
         if (key === 'printLastReceipt') return !hasLastReceipt;
         return false;
     };
@@ -70,7 +73,7 @@ export function PosActionButtons({
         if (key === 'focusSearch') return onFocusSearch();
         if (key === 'printLastReceipt') return onPrintLastReceipt();
         if (key === 'showRecent') return onShowRecent();
-        if (key === 'openPayment') return onOpenPayment();
+        if (key === 'charge') return onCharge();
         // clearCart — gate behind useConfirm; do not call onClearCart on cancel.
         void confirm({
             title: 'Clear the cart?',
@@ -109,7 +112,7 @@ export function PosActionButtons({
         >
             {ACTIONS.map(({ key, label, shortcut, Icon }) => {
                 const disabled = isDisabled(key);
-                const primary = key === 'openPayment';
+                const primary = key === 'charge';
                 const cls = disabled ? DISABLED : primary ? ENABLED_PRIMARY : ENABLED_NEUTRAL;
                 return (
                     <button

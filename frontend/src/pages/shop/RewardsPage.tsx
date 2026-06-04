@@ -48,7 +48,10 @@ export function RewardsPage() {
                 </h1>
             </div>
 
-            <LoyaltyBalanceHero pointsBalance={data.pointsBalance} />
+            <LoyaltyBalanceHero
+                pointsBalance={data.pointsBalance}
+                tier={data.tier}
+            />
             <LoyaltyKpis
                 lifetimeEarned={data.lifetimePointsEarned}
                 lifetimeRedeemed={data.lifetimePointsRedeemed}

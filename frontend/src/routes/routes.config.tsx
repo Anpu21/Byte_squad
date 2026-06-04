@@ -12,6 +12,11 @@ import { BranchSelectionPage } from '@/pages/auth/BranchSelectionPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { CashierDashboardPage } from '@/pages/dashboard/CashierDashboardPage';
 import { ProductFormPage } from '@/pages/inventory/ProductFormPage';
+import { ExpiryReportPage } from '@/pages/inventory/ExpiryReportPage';
+import { StockAdjustmentsPage } from '@/pages/inventory/StockAdjustmentsPage';
+import { StockAdjustmentNewPage } from '@/pages/inventory/StockAdjustmentNewPage';
+import { ReturnsPage } from '@/pages/inventory/ReturnsPage';
+import { ReturnNewPage } from '@/pages/inventory/ReturnNewPage';
 import { PosPage } from '@/pages/pos/PosPage';
 import { TransactionsPage } from '@/pages/pos/TransactionsPage';
 import { LedgerPage } from '@/pages/accounting/LedgerPage';
@@ -21,20 +26,15 @@ import { UserManagementPage } from '@/pages/users/UserManagementPage';
 import { ProfilePage } from '@/pages/users/ProfilePage';
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage';
 import { NotificationDetailPage } from '@/pages/notifications/NotificationDetailPage';
-import { BranchManagementPage } from '@/pages/branches/BranchManagementPage';
-import { BranchPerformancePage } from '@/pages/branches/BranchPerformancePage';
-import { BranchComparisonPage } from '@/pages/admin/BranchComparisonPage';
+import { BranchHubPage } from '@/pages/branches/BranchHubPage';
 import { AdminLoyaltyPage } from '@/pages/admin/AdminLoyaltyPage';
-import { AdminEmployeesPage } from '@/pages/admin/AdminEmployeesPage';
+import { ManagerLoyaltyPage } from '@/pages/manager/ManagerLoyaltyPage';
+import { AdminHrPage } from '@/pages/admin/AdminHrPage';
 import { AdminEmployeeFormPage } from '@/pages/admin/AdminEmployeeFormPage';
-import { AdminAttendancePage } from '@/pages/admin/AdminAttendancePage';
-import { AdminLeavesPage } from '@/pages/admin/AdminLeavesPage';
-import { AdminPayrollPage } from '@/pages/admin/AdminPayrollPage';
 import { TransferRequestsPage } from '@/pages/transfers/TransferRequestsPage';
 import { NewTransferRequestPage } from '@/pages/transfers/NewTransferRequestPage';
-import { TransferHistoryPage } from '@/pages/transfers/TransferHistoryPage';
 import { TransferDetailPage } from '@/pages/transfers/TransferDetailPage';
-import { AdminTransfersPage } from '@/pages/admin/AdminTransfersPage';
+import { AdminTransfersPage } from '@/pages/transfers/AdminTransfersPage';
 import { AdminTransferCreatePage } from '@/pages/transfers/AdminTransferCreatePage';
 import { CustomerOrdersPage } from '@/pages/orders/CustomerOrdersPage';
 import { ScanOrderPage } from '@/pages/pos/ScanOrderPage';
@@ -50,6 +50,9 @@ import { RewardsPage } from '@/pages/shop/RewardsPage';
 import { InventoryByRole } from './InventoryByRole';
 import { FirstSetupOnly } from './FirstSetupOnly';
 import { LegacyOrderConfirmationRedirect } from './LegacyOrderConfirmationRedirect';
+import { TransferHistoryRedirect } from './TransferHistoryRedirect';
+import { AdminHrRedirect } from './AdminHrRedirect';
+import { LeavesRouteEntry } from './LeavesRouteEntry';
 
 export type Guard = 'public' | 'protected' | 'none';
 export type Layout =
@@ -135,6 +138,36 @@ export const ROUTES: RouteDef[] = [
         layout: 'dashboard',
     },
     {
+        path: FRONTEND_ROUTES.INVENTORY_EXPIRY,
+        element: <ExpiryReportPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.STOCK_ADJUSTMENT_NEW,
+        element: <StockAdjustmentNewPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.STOCK_ADJUSTMENTS,
+        element: <StockAdjustmentsPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.RETURN_NEW,
+        element: <ReturnNewPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.RETURNS,
+        element: <ReturnsPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
         path: FRONTEND_ROUTES.INVENTORY_ADD,
         element: <ProductFormPage />,
         allowedRoles: [UserRole.MANAGER],
@@ -205,29 +238,29 @@ export const ROUTES: RouteDef[] = [
     },
 
     // ─── Branches ───
+    // ─── Branches Hub (Admin + Manager) ───
     {
         path: FRONTEND_ROUTES.BRANCHES,
-        element: <BranchPerformancePage />,
-        allowedRoles: [UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.BRANCH_MANAGEMENT,
-        element: <BranchManagementPage />,
-        allowedRoles: [UserRole.ADMIN],
+        element: <BranchHubPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.BRANCHES_HUB,
-        element: <BranchManagementPage />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
+        element: <Navigate to={FRONTEND_ROUTES.BRANCHES} replace />,
     },
     {
         path: FRONTEND_ROUTES.BRANCH_COMPARE,
-        element: <BranchComparisonPage />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
+        element: (
+            <Navigate
+                to={`${FRONTEND_ROUTES.BRANCHES}?tab=compare&view=summary`}
+                replace
+            />
+        ),
+    },
+    {
+        path: FRONTEND_ROUTES.BRANCH_MANAGEMENT,
+        element: <Navigate to={FRONTEND_ROUTES.BRANCHES} replace />,
     },
     {
         path: FRONTEND_ROUTES.ADMIN_LOYALTY,
@@ -235,11 +268,23 @@ export const ROUTES: RouteDef[] = [
         allowedRoles: [UserRole.ADMIN],
         layout: 'dashboard',
     },
+    {
+        path: FRONTEND_ROUTES.MANAGER_LOYALTY,
+        element: <ManagerLoyaltyPage />,
+        allowedRoles: [UserRole.MANAGER],
+        layout: 'dashboard',
+    },
 
-    // ─── HR (Admin + Manager) ───
+    // ─── HR (Admin + Manager) — unified workspace ───
+    {
+        path: FRONTEND_ROUTES.ADMIN_HR,
+        element: <AdminHrPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
     {
         path: FRONTEND_ROUTES.ADMIN_EMPLOYEES,
-        element: <AdminEmployeesPage />,
+        element: <AdminHrRedirect tab="employees" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
@@ -257,19 +302,19 @@ export const ROUTES: RouteDef[] = [
     },
     {
         path: FRONTEND_ROUTES.ADMIN_ATTENDANCE,
-        element: <AdminAttendancePage />,
+        element: <AdminHrRedirect tab="attendance" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.ADMIN_LEAVES,
-        element: <AdminLeavesPage />,
+        element: <LeavesRouteEntry />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.ADMIN_PAYROLL,
-        element: <AdminPayrollPage />,
+        element: <AdminHrRedirect tab="payroll" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
@@ -289,7 +334,7 @@ export const ROUTES: RouteDef[] = [
     },
     {
         path: FRONTEND_ROUTES.TRANSFER_HISTORY,
-        element: <TransferHistoryPage />,
+        element: <TransferHistoryRedirect />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },

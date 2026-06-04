@@ -18,13 +18,18 @@ export class ProductsRepository {
     private readonly dataSource: DataSource,
   ) {}
 
-  async createAndSave(partial: DeepPartial<Product>): Promise<Product> {
-    const entity = this.repo.create(partial);
-    return this.repo.save(entity);
+  async createAndSave(
+    partial: DeepPartial<Product>,
+    manager?: EntityManager,
+  ): Promise<Product> {
+    const repo = manager ? manager.getRepository(Product) : this.repo;
+    const entity = repo.create(partial);
+    return repo.save(entity);
   }
 
-  async save(product: Product): Promise<Product> {
-    return this.repo.save(product);
+  async save(product: Product, manager?: EntityManager): Promise<Product> {
+    const repo = manager ? manager.getRepository(Product) : this.repo;
+    return repo.save(product);
   }
 
   async findActive(): Promise<Product[]> {
@@ -57,6 +62,42 @@ export class ProductsRepository {
 
   async findByBarcode(barcode: string): Promise<Product | null> {
     return this.repo.findOne({ where: { barcode } });
+  }
+
+  async findByBarcodes(barcodes: readonly string[]): Promise<Product[]> {
+    if (barcodes.length === 0) return [];
+    return this.repo.find({ where: { barcode: In([...barcodes]) } });
+  }
+
+  async findUnitByBarcode(
+    barcode: string,
+  ): Promise<ProductSellableUnit | null> {
+    const trimmed = barcode.trim();
+    if (!trimmed) return null;
+    return this.dataSource
+      .getRepository(ProductSellableUnit)
+      .createQueryBuilder('unit')
+      .innerJoinAndSelect('unit.product', 'product')
+      .where('unit.barcode = :barcode', { barcode: trimmed })
+      .andWhere('product.is_active = true')
+      .getOne();
+  }
+
+  async findUnitsByBarcodes(
+    barcodes: readonly string[],
+    excludeProductId?: string,
+  ): Promise<ProductSellableUnit[]> {
+    if (barcodes.length === 0) return [];
+    const qb = this.dataSource
+      .getRepository(ProductSellableUnit)
+      .createQueryBuilder('unit')
+      .where('unit.barcode IN (:...barcodes)', { barcodes: [...barcodes] });
+    if (excludeProductId) {
+      qb.andWhere('unit.product_id <> :excludeProductId', {
+        excludeProductId,
+      });
+    }
+    return qb.getMany();
   }
 
   async update(id: string, dto: DeepPartial<Product>): Promise<void> {
@@ -97,11 +138,10 @@ export class ProductsRepository {
   }
 
   /**
-   * List the sellable-unit rows configured for a product (kg/g, L/mL, each,
-   * …) sorted by `displayOrder`. Callers in the POS layer map the raw
-   * entity into the Shanel-shaped `ProductUnitRow` (kept in
-   * `@pos/types`) — this repository stays free of cross-module types and
-   * just returns entities.
+   * List the sellable-unit rows configured for a product, sorted by
+   * `displayOrder`. Callers in the POS layer map the raw entity into the
+   * Shanel-shaped `ProductUnitRow` (kept in `@pos/types`) — this repository
+   * stays free of cross-module types and just returns entities.
    */
   async listUnits(productId: string): Promise<ProductSellableUnit[]> {
     return this.dataSource.getRepository(ProductSellableUnit).find({
@@ -112,11 +152,10 @@ export class ProductsRepository {
 
   /**
    * Persist a batch of sellable-unit seeds for a product. Used by
-   * `ProductsService.create` to wire the base-unit-derived companions onto
-   * a freshly-inserted product row (Phase A2 forward-going path) and by the
-   * migration that backfilled existing products (Phase A1). Returns the
-   * saved rows so the caller can hand them back to the UI without a
-   * follow-up `listUnits`.
+   * `ProductsService.create` to wire the base-unit row onto a
+   * freshly-inserted product row and by the migration that backfilled
+   * existing products. Returns the saved rows so the caller can hand them
+   * back to the UI without a follow-up `listUnits`.
    *
    * Pass an `EntityManager` when invoking from inside a transaction so the
    * inserts join the surrounding unit-of-work; otherwise the call lands on

@@ -10,6 +10,8 @@ import type {
   IBranchUpdatePayload,
   IBranchComparisonRequest,
   IBranchComparisonResponse,
+  IBranchAnalyticsComparisonRequest,
+  IBranchAnalyticsComparisonResponse,
   IInventoryMatrixResponse,
   IInventoryMatrixParams,
 } from '@/types'
@@ -50,6 +52,15 @@ export const adminService = {
       '/admin/comparison',
       payload,
     )
+    return response.data.data
+  },
+
+  compareBranchAnalytics: async (
+    payload: IBranchAnalyticsComparisonRequest,
+  ): Promise<IBranchAnalyticsComparisonResponse> => {
+    const response = await api.post<
+      IApiResponse<IBranchAnalyticsComparisonResponse>
+    >('/branch-analytics/comparison', payload)
     return response.data.data
   },
 

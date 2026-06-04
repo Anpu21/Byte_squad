@@ -65,7 +65,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     sellingPrice: 100,
     taxRate: 10,
     discountAllowed: true,
-    baseUnit: 'each',
+    baseUnit: 'unit',
     imageUrl: null,
     isActive: true,
     inventoryRecords: [],
@@ -83,9 +83,11 @@ function makeUnit(
     id: 'u-1',
     productId: 'p-1',
     product: undefined as unknown as Product,
-    name: 'each',
+    name: 'unit',
+    barcode: null,
     isBase: true,
     conversionToBase: 1,
+    sellingPrice: 100,
     displayOrder: 0,
     createdAt: new Date('2026-05-23T10:00:00Z'),
     updatedAt: new Date('2026-05-23T10:00:00Z'),
@@ -175,6 +177,8 @@ describe('PosService — Phase 4 read endpoints', () => {
     const dataSourceMock = {} as DataSource;
     const productsRepoMock: Partial<jest.Mocked<ProductsRepository>> = {
       searchByText: jest.fn(),
+      findByBarcode: jest.fn(),
+      findUnitByBarcode: jest.fn(),
       listUnits: jest.fn(),
     };
     const inventoryRepoMock: Partial<jest.Mocked<InventoryRepository>> = {
@@ -228,6 +232,8 @@ describe('PosService — Phase 4 read endpoints', () => {
     });
 
     it('maps Product rows into the Shanel SearchProductRow shape, propagating baseUnit', async () => {
+      productsRepo.findByBarcode.mockResolvedValue(null);
+      productsRepo.findUnitByBarcode.mockResolvedValue(null);
       productsRepo.searchByText.mockResolvedValue([
         makeProduct({
           id: 'p-1',
@@ -262,14 +268,60 @@ describe('PosService — Phase 4 read endpoints', () => {
           taxRate: 10,
           discountAllowed: true,
           imageUrl: 'https://cdn/apple.jpg',
+          matchedUnit: null,
         },
       ]);
     });
 
     it('defaults limit to 10 when omitted by the caller', async () => {
+      productsRepo.findByBarcode.mockResolvedValue(null);
+      productsRepo.findUnitByBarcode.mockResolvedValue(null);
       productsRepo.searchByText.mockResolvedValue([]);
       await service.searchProducts(makeCashier(), { q: 'tea' });
       expect(productsRepo.searchByText).toHaveBeenCalledWith('tea', 10);
+    });
+
+    it('returns a matched sellable unit for an exact unit barcode scan', async () => {
+      productsRepo.findByBarcode.mockResolvedValue(null);
+      productsRepo.findUnitByBarcode.mockResolvedValue(
+        makeUnit({
+          id: 'u-pack',
+          productId: 'p-eggs',
+          product: makeProduct({
+            id: 'p-eggs',
+            name: 'Eggs',
+            barcode: 'EGG-UNIT',
+            baseUnit: 'unit',
+            sellingPrice: 60,
+          }),
+          name: '12-PACK',
+          barcode: 'EGG-12',
+          isBase: false,
+          conversionToBase: 12,
+          sellingPrice: 650,
+        }),
+      );
+      productsRepo.searchByText.mockResolvedValue([]);
+
+      const result = await service.searchProducts(makeCashier(), {
+        q: 'EGG-12',
+        limit: 5,
+      });
+
+      expect(result[0]).toMatchObject({
+        productId: 'p-eggs',
+        productCode: 'EGG-UNIT',
+        productName: 'Eggs',
+        baseUnit: 'unit',
+        retailPrice: 60,
+        matchedUnit: {
+          unitId: 'u-pack',
+          unitName: '12-PACK',
+          barcode: 'EGG-12',
+          conversionToBase: 12,
+          sellingPrice: 650,
+        },
+      });
     });
   });
 
@@ -282,15 +334,19 @@ describe('PosService — Phase 4 read endpoints', () => {
         makeUnit({
           id: 'u1',
           name: 'kg',
+          barcode: null,
           isBase: true,
           conversionToBase: 1,
+          sellingPrice: 100,
           displayOrder: 0,
         }),
         makeUnit({
           id: 'u2',
-          name: 'g',
+          name: '12-PACK',
+          barcode: 'RICE-12',
           isBase: false,
-          conversionToBase: 0.001,
+          conversionToBase: 12,
+          sellingPrice: 1100,
           displayOrder: 1,
         }),
       ]);
@@ -302,15 +358,19 @@ describe('PosService — Phase 4 read endpoints', () => {
         {
           unitId: 'u1',
           unitName: 'kg',
+          barcode: null,
           isBaseUnit: true,
           conversionToBase: 1,
+          sellingPrice: 100,
           displayOrder: 0,
         },
         {
           unitId: 'u2',
-          unitName: 'g',
+          unitName: '12-PACK',
+          barcode: 'RICE-12',
           isBaseUnit: false,
-          conversionToBase: 0.001,
+          conversionToBase: 12,
+          sellingPrice: 1100,
           displayOrder: 1,
         },
       ]);
@@ -332,15 +392,15 @@ describe('PosService — Phase 4 read endpoints', () => {
         makeUnit({ name: 'kg', isBase: true, conversionToBase: 1 }),
         makeUnit({
           id: 'u2',
-          name: 'g',
+          name: '12-PACK',
           isBase: false,
-          conversionToBase: 0.001,
+          conversionToBase: 12,
         }),
       ]);
 
-      const result = await service.getBaseUnitQty('p-1', 'g');
+      const result = await service.getBaseUnitQty('p-1', '12-PACK');
 
-      expect(result).toEqual({ conversionToBase: 0.001, isBase: false });
+      expect(result).toEqual({ conversionToBase: 12, isBase: false });
     });
 
     it('throws NotFoundException when the unit name is not configured', async () => {

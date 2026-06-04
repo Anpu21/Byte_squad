@@ -14,11 +14,13 @@ import { PaymentRepository } from '@pos/payment.repository';
 import { CreditTransactionRepository } from '@pos/credit-transaction.repository';
 import { StockMovementRepository } from '@pos/stock-movement.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
+import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { CreditTransaction } from '@pos/entities/credit-transaction.entity';
 import type { ActorPayload } from '@pos/pos-write.service';
+import type { LoyaltyOwner } from '@/modules/loyalty/types';
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -49,6 +51,7 @@ export class PosVoidService {
     private readonly creditTransactions: CreditTransactionRepository,
     private readonly stockMovements: StockMovementRepository,
     private readonly accounting: AccountingRepository,
+    private readonly loyaltyWallet: LoyaltyWalletService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -89,6 +92,7 @@ export class PosVoidService {
       await this.restockInventory(manager, existing);
       await this.recordVoidStockMovements(manager, existing, actor.id, reason);
       await this.reverseCreditTransactions(manager, existing);
+      await this.reverseLoyalty(manager, existing);
       await this.writeVoidLedgerEntry(manager, existing, reason);
       await this.payments.voidBySaleId(existing.id, manager);
       await this.sales.voidById(existing.id, actor.id, reason, manager);
@@ -223,6 +227,28 @@ export class PosVoidService {
       );
     }
     return runningBalance;
+  }
+
+  private async reverseLoyalty(
+    manager: EntityManager,
+    sale: Sale,
+  ): Promise<void> {
+    const owner = this.resolveLoyaltyOwner(sale);
+    await this.loyaltyWallet.reverseOrderEffects({
+      owner,
+      orderId: sale.id,
+      orderCode: sale.invoiceNumber,
+      branchId: sale.branchId,
+      manager,
+    });
+  }
+
+  private resolveLoyaltyOwner(sale: Sale): LoyaltyOwner | null {
+    if (sale.customerUserId) return { userId: sale.customerUserId };
+    if (sale.loyaltyCustomerId) {
+      return { loyaltyCustomerId: sale.loyaltyCustomerId };
+    }
+    return null;
   }
 
   /**

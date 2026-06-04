@@ -45,7 +45,7 @@ export function useProductSubmit({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const newErrors = validateProductForm(form, isEditMode);
-        const unitsResult = validateUnitsRows(form.units);
+        const unitsResult = validateUnitsRows(form.units, form.barcode);
         if (!unitsResult.ok) {
             newErrors.sellableUnits = unitsResult.error;
             form.setErrors(newErrors);
@@ -61,8 +61,8 @@ export function useProductSubmit({
         // Normalize the manager-entered prices to the canonical per-base-unit
         // value before packing the payload. The cost/selling price inputs are
         // denominated in whichever sellable-unit row the manager picked (e.g.
-        // "Rs 50 per 100g" for a kg-based product); the BE always persists per
-        // base unit (Rs 500 per kg). Done after validation so we know the
+        // "Rs 650 per 12-PACK" for a unit-based product); the BE always persists
+        // the compatibility product price per base unit. Done after validation so we know the
         // units array is sound enough to resolve the conversion factor.
         let normalizedCostPrice: number;
         let normalizedSellingPrice: number;
@@ -90,6 +90,12 @@ export function useProductSubmit({
         setIsSubmitting(true);
         form.setErrors({});
 
+        const sellableUnits = unitsResult.rows.map((row) =>
+            row.isBase
+                ? { ...row, sellingPrice: normalizedSellingPrice }
+                : row,
+        );
+
         const payload = {
             name: form.name.trim(),
             barcode: form.barcode.trim(),
@@ -98,7 +104,7 @@ export function useProductSubmit({
             costPrice: normalizedCostPrice,
             sellingPrice: normalizedSellingPrice,
             baseUnit: form.baseUnit,
-            sellableUnits: unitsResult.rows,
+            sellableUnits,
         };
 
         try {
@@ -114,7 +120,7 @@ export function useProductSubmit({
                         productId: product.id,
                         branchId,
                         quantity: form.initialStock
-                            ? parseInt(form.initialStock, 10)
+                            ? parseFloat(form.initialStock)
                             : 0,
                         lowStockThreshold:
                             parseInt(form.lowStockThreshold, 10) ||

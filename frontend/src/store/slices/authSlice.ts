@@ -11,6 +11,12 @@ interface AuthState {
     error: string | null;
 }
 
+interface AuthRejectValue {
+    message: string;
+    status?: number;
+    code?: string;
+}
+
 const initialState: AuthState = {
     user: null,
     token: null,
@@ -22,17 +28,29 @@ const initialState: AuthState = {
 export const loginThunk = createAsyncThunk<
     IAuthResponse,
     ILoginPayload,
-    { rejectValue: string }
+    { rejectValue: AuthRejectValue }
 >('auth/login', async (credentials, { rejectWithValue }) => {
     try {
         return await authService.login(credentials);
     } catch (error: unknown) {
         if (axios.isAxiosError(error)) {
             return rejectWithValue(
-                error.response?.data?.message || 'Login failed. Please try again.',
+                {
+                    message:
+                        error.code === 'ECONNABORTED'
+                            ? 'Login timed out. Check that the backend server is running.'
+                            : error.response?.data?.message ||
+                              (!error.response
+                                  ? 'Cannot reach the backend server. Check that it is running and try again.'
+                                  : 'Login failed. Please try again.'),
+                    status: error.response?.status,
+                    code: error.code,
+                },
             );
         }
-        return rejectWithValue('An unexpected error occurred. Please try again.');
+        return rejectWithValue({
+            message: 'An unexpected error occurred. Please try again.',
+        });
     }
 });
 
@@ -78,7 +96,7 @@ const authSlice = createSlice({
                 state.isAuthenticated = false;
                 state.user = null;
                 state.token = null;
-                state.error = action.payload || 'Login failed';
+                state.error = action.payload?.message || 'Login failed';
             });
     },
 });

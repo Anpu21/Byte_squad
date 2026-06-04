@@ -4,8 +4,10 @@ import { formatTimeAgo } from '@/lib/format-time-ago';
 import type { IStockTransferRequest } from '@/types';
 import type { ScopeTab } from '../hooks/useTransferRequestsPage';
 
+type ListScopeTab = Exclude<ScopeTab, 'history'>;
+
 interface TransferRequestsTableProps {
-    tab: ScopeTab;
+    tab: ListScopeTab;
     items: IStockTransferRequest[];
     isLoading: boolean;
     shippingId: string | null;

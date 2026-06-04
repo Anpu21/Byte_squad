@@ -81,17 +81,21 @@ describe('useProductLoader hydration', () => {
                     {
                         id: 'u-2',
                         productId: 'p-1',
-                        name: 'g',
+                        name: '12-PACK',
+                        barcode: 'RICE-12',
                         isBase: false,
-                        conversionToBase: 0.001,
+                        conversionToBase: 12,
+                        sellingPrice: 2200,
                         displayOrder: 1,
                     },
                     {
                         id: 'u-1',
                         productId: 'p-1',
                         name: 'kg',
+                        barcode: null,
                         isBase: true,
                         conversionToBase: 1,
+                        sellingPrice: 200,
                         displayOrder: 0,
                     },
                 ],
@@ -101,9 +105,14 @@ describe('useProductLoader hydration', () => {
         await waitFor(() => expect(result.current.form.units).toHaveLength(2));
         expect(result.current.form.baseUnit).toBe('kg');
         // Sorted by displayOrder.
-        expect(result.current.form.units.map((r) => r.name)).toEqual(['kg', 'g']);
+        expect(result.current.form.units.map((r) => r.name)).toEqual([
+            'kg',
+            '12-PACK',
+        ]);
         expect(result.current.form.units[0].isBase).toBe(true);
-        expect(result.current.form.units[1].conversionToBase).toBe('0.001');
+        expect(result.current.form.units[1].barcode).toBe('RICE-12');
+        expect(result.current.form.units[1].conversionToBase).toBe('12');
+        expect(result.current.form.units[1].sellingPrice).toBe('2200');
     });
 
     it('falls back to default rows when sellableUnits is missing', async () => {
@@ -112,25 +121,25 @@ describe('useProductLoader hydration', () => {
         );
         const { result } = renderLoader('p-1');
         await waitFor(() => expect(result.current.form.baseUnit).toBe('l'));
-        expect(result.current.form.units.map((r) => r.name)).toEqual(['l', 'ml']);
+        expect(result.current.form.units.map((r) => r.name)).toEqual(['l']);
     });
 
     it('falls back to default rows when sellableUnits is an empty array', async () => {
         getProductByIdMock.mockResolvedValueOnce(
-            baseProduct({ baseUnit: 'each', sellableUnits: [] }),
+            baseProduct({ baseUnit: 'unit', sellableUnits: [] }),
         );
         const { result } = renderLoader('p-1');
-        await waitFor(() => expect(result.current.form.baseUnit).toBe('each'));
+        await waitFor(() => expect(result.current.form.baseUnit).toBe('unit'));
         expect(result.current.form.units).toHaveLength(1);
-        expect(result.current.form.units[0].name).toBe('each');
+        expect(result.current.form.units[0].name).toBe('unit');
     });
 
-    it('defaults to "each" when the API returns an unsupported baseUnit', async () => {
+    it('defaults to "unit" when the API returns an unsupported baseUnit', async () => {
         getProductByIdMock.mockResolvedValueOnce(
             baseProduct({ baseUnit: 'something-weird', sellableUnits: undefined }),
         );
         const { result } = renderLoader('p-1');
-        await waitFor(() => expect(result.current.form.baseUnit).toBe('each'));
+        await waitFor(() => expect(result.current.form.baseUnit).toBe('unit'));
     });
 
     it('does not fetch when productId is undefined', () => {
@@ -148,16 +157,20 @@ describe('useProductLoader hydration', () => {
                         id: 'u-1',
                         productId: 'p-1',
                         name: 'l',
+                        barcode: null,
                         isBase: true,
                         conversionToBase: 1,
+                        sellingPrice: 200,
                         displayOrder: 0,
                     },
                     {
                         id: 'u-2',
                         productId: 'p-1',
-                        name: 'ml',
+                        name: '5-L',
+                        barcode: 'OIL-5L',
                         isBase: false,
-                        conversionToBase: 0.001,
+                        conversionToBase: 5,
+                        sellingPrice: 950,
                         displayOrder: 1,
                     },
                 ],

@@ -88,6 +88,7 @@ function buildSale(overrides: Partial<ISale> = {}): ISale {
         status: 'Active',
         location: 'Shop',
         customerUserId: null,
+        loyaltyCustomerId: null,
         voidedReason: null,
         voidedAt: null,
         voidedByUserId: null,
@@ -143,32 +144,36 @@ describe('PosBillTemplate', () => {
         ).toBeInTheDocument();
     });
 
-    it('prints the picked unit name alongside quantity and per-unit price', () => {
-        // 250 g of a kg-stocked product priced at Rs 200/kg →
-        // "250 g × LKR 0.20/g".
+    it('prints the picked unit name alongside quantity and selected-unit price', () => {
         const sale = buildSale({
             items: [
                 buildSaleItem({
-                    quantity: 250,
-                    baseUnitQty: 0.25,
-                    unitId: 'u-g',
-                    unitPrice: 200,
-                    lineTotal: 50,
-                    lineSubtotal: 50,
-                    unit: { id: 'u-g', name: 'g', conversionToBase: 0.001 },
+                    quantity: 1,
+                    baseUnitQty: 12,
+                    unitId: 'u-pack',
+                    unitPrice: 650,
+                    lineTotal: 650,
+                    lineSubtotal: 650,
+                    unit: {
+                        id: 'u-pack',
+                        name: '12-PACK',
+                        conversionToBase: 12,
+                    },
                     product: {
                         id: 'p1',
-                        name: 'Basmati rice',
-                        baseUnit: 'kg',
+                        name: 'Eggs',
+                        baseUnit: 'unit',
                     },
                 }),
             ],
-            subtotal: 50,
-            total: 50,
+            subtotal: 650,
+            total: 650,
         });
         render(<PosBillTemplate sale={sale} />);
         expect(
-            screen.getByText((text) => /250 g × LKR\s*0\.20\/g/.test(text)),
+            screen.getByText((text) =>
+                /1 12-PACK × LKR\s*650\.00\/12-PACK/.test(text),
+            ),
         ).toBeInTheDocument();
     });
 

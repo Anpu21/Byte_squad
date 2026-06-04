@@ -22,9 +22,9 @@ import { Type } from 'class-transformer';
  * the server resolves the conversion factor and persists a `baseUnitQty` in
  * the same currency the inventory table is measured in.
  *
- * `discountPercentage` is treated as a percentage of `quantity * unitPrice`.
- * `taxRate` is also a percentage; both surface back to the cashier on the
- * line totals row.
+ * `unitPrice` is treated as a client preview only. The write service derives
+ * the final price from the product/sellable-unit row and rejects stale or
+ * tampered values.
  */
 export class CreateSaleItemDto {
   @IsUUID()

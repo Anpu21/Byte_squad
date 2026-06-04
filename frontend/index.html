@@ -10,6 +10,8 @@
       (function () {
         var t = localStorage.getItem('lp-theme') || 'dark';
         document.documentElement.setAttribute('data-theme', t);
+        var l = localStorage.getItem('lp-lang') || 'en';
+        document.documentElement.setAttribute('lang', l);
       })();
     </script>
   </head>

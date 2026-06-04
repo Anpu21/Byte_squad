@@ -309,6 +309,7 @@ export class AdminPortalService {
         productName: p.name,
         barcode: p.barcode,
         category: p.category,
+        baseUnit: p.baseUnit,
         sellingPrice: Number(p.sellingPrice),
         cells,
         totalQuantity,

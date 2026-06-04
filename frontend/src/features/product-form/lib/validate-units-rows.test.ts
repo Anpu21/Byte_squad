@@ -5,9 +5,11 @@ import type { ISellableUnitRow } from '../types/sellable-unit-row.type';
 function row(overrides: Partial<ISellableUnitRow>): ISellableUnitRow {
     return {
         rowId: overrides.rowId ?? `row-${Math.random()}`,
-        name: 'each',
+        name: 'unit',
+        barcode: '',
         isBase: false,
         conversionToBase: '1',
+        sellingPrice: '10',
         displayOrder: 0,
         ...overrides,
     };
@@ -17,16 +19,25 @@ describe('validateUnitsRows', () => {
     it('packs valid rows with parsed numeric conversion and contiguous order', () => {
         const result = validateUnitsRows([
             row({ name: 'kg', isBase: true, conversionToBase: '1' }),
-            row({ name: 'g', isBase: false, conversionToBase: '0.001' }),
+            row({ name: '0.250 KG', isBase: false, conversionToBase: '0.25' }),
         ]);
         expect(result.ok).toBe(true);
         if (!result.ok) return;
         expect(result.rows).toEqual([
-            { name: 'kg', isBase: true, conversionToBase: 1, displayOrder: 0 },
             {
-                name: 'g',
+                name: 'kg',
+                barcode: null,
+                isBase: true,
+                conversionToBase: 1,
+                sellingPrice: 0,
+                displayOrder: 0,
+            },
+            {
+                name: '0.250 KG',
+                barcode: null,
                 isBase: false,
-                conversionToBase: 0.001,
+                conversionToBase: 0.25,
+                sellingPrice: 10,
                 displayOrder: 1,
             },
         ]);
@@ -67,7 +78,7 @@ describe('validateUnitsRows', () => {
     it('rejects when no row is marked as base', () => {
         const result = validateUnitsRows([
             row({ name: 'kg', isBase: false, conversionToBase: '1' }),
-            row({ name: 'g', isBase: false, conversionToBase: '0.001' }),
+            row({ name: '0.250 KG', isBase: false, conversionToBase: '0.25' }),
         ]);
         expect(result).toEqual({
             ok: false,
@@ -78,7 +89,7 @@ describe('validateUnitsRows', () => {
     it('rejects when more than one row is marked as base', () => {
         const result = validateUnitsRows([
             row({ name: 'kg', isBase: true, conversionToBase: '1' }),
-            row({ name: 'g', isBase: true, conversionToBase: '1' }),
+            row({ name: '0.250 KG', isBase: true, conversionToBase: '1' }),
         ]);
         expect(result).toEqual({
             ok: false,
@@ -89,7 +100,7 @@ describe('validateUnitsRows', () => {
     it('rejects non-numeric conversion values', () => {
         const result = validateUnitsRows([
             row({ name: 'kg', isBase: true, conversionToBase: '1' }),
-            row({ name: 'g', isBase: false, conversionToBase: '0.' }),
+            row({ name: '0.250 KG', isBase: false, conversionToBase: '0.' }),
         ]);
         expect(result.ok).toBe(false);
         if (result.ok) return;
@@ -99,7 +110,7 @@ describe('validateUnitsRows', () => {
     it('rejects zero or negative conversion values', () => {
         const result = validateUnitsRows([
             row({ name: 'kg', isBase: true, conversionToBase: '1' }),
-            row({ name: 'g', isBase: false, conversionToBase: '0' }),
+            row({ name: '0.250 KG', isBase: false, conversionToBase: '0' }),
         ]);
         expect(result.ok).toBe(false);
         if (result.ok) return;
@@ -114,5 +125,33 @@ describe('validateUnitsRows', () => {
             ok: false,
             error: 'The base unit must have a conversion factor of 1.',
         });
+    });
+
+    it('rejects duplicate unit barcodes', () => {
+        const result = validateUnitsRows([
+            row({ name: 'unit', isBase: true, barcode: '' }),
+            row({ name: '12-PACK', barcode: 'EGG-12', conversionToBase: '12' }),
+            row({ name: '6-PACK', barcode: 'egg-12', conversionToBase: '6' }),
+        ]);
+        expect(result.ok).toBe(false);
+        if (result.ok) return;
+        expect(result.error).toMatch(/duplicate unit barcode/i);
+    });
+
+    it('rejects a unit barcode that matches the product barcode', () => {
+        const result = validateUnitsRows(
+            [
+                row({ name: 'unit', isBase: true, barcode: '' }),
+                row({
+                    name: '12-PACK',
+                    barcode: 'EGG-12',
+                    conversionToBase: '12',
+                }),
+            ],
+            'EGG-12',
+        );
+        expect(result.ok).toBe(false);
+        if (result.ok) return;
+        expect(result.error).toMatch(/product barcode/i);
     });
 });

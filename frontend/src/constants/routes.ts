@@ -24,6 +24,11 @@ export const FRONTEND_ROUTES = {
     INVENTORY: '/inventory',
     INVENTORY_ADD: '/inventory/add',
     INVENTORY_EDIT: '/inventory/edit/:productId',
+    INVENTORY_EXPIRY: '/inventory/expiry',
+    STOCK_ADJUSTMENTS: '/inventory/adjustments',
+    STOCK_ADJUSTMENT_NEW: '/inventory/adjustments/new',
+    RETURNS: '/inventory/returns',
+    RETURN_NEW: '/inventory/returns/new',
 
     // POS
     POS: '/pos',
@@ -50,6 +55,12 @@ export const FRONTEND_ROUTES = {
 
     // Admin-only loyalty program management
     ADMIN_LOYALTY: '/admin/loyalty',
+    
+    // Manager loyalty program management
+    MANAGER_LOYALTY: '/manager/loyalty',
+
+    // Admin / manager — unified HR workspace (Employees / Attendance / Leaves / Payroll tabs)
+    ADMIN_HR: '/admin/hr',
 
     // Admin / manager — HR employee management
     ADMIN_EMPLOYEES: '/admin/employees',

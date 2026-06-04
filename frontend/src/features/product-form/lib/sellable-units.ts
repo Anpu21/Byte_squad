@@ -7,13 +7,8 @@ import type { ISellableUnitRow } from '../types/sellable-unit-row.type';
  */
 export const SUPPORTED_BASE_UNITS_FE = [
     'kg',
-    'g',
     'l',
-    'ml',
-    'each',
-    'bottle',
-    'pack',
-    'box',
+    'unit',
 ] as const;
 
 export type TBaseUnitFe = (typeof SUPPORTED_BASE_UNITS_FE)[number];
@@ -22,27 +17,35 @@ type Seed = Omit<ISellableUnitRow, 'rowId'>;
 
 const DEFAULTS: Record<TBaseUnitFe, Seed[]> = {
     kg: [
-        { name: 'kg', isBase: true, conversionToBase: '1', displayOrder: 0 },
-        { name: 'g', isBase: false, conversionToBase: '0.001', displayOrder: 1 },
-    ],
-    g: [
-        { name: 'g', isBase: true, conversionToBase: '1', displayOrder: 0 },
-        { name: 'kg', isBase: false, conversionToBase: '1000', displayOrder: 1 },
+        {
+            name: 'kg',
+            barcode: '',
+            isBase: true,
+            conversionToBase: '1',
+            sellingPrice: '',
+            displayOrder: 0,
+        },
     ],
     l: [
-        { name: 'l', isBase: true, conversionToBase: '1', displayOrder: 0 },
-        { name: 'ml', isBase: false, conversionToBase: '0.001', displayOrder: 1 },
+        {
+            name: 'l',
+            barcode: '',
+            isBase: true,
+            conversionToBase: '1',
+            sellingPrice: '',
+            displayOrder: 0,
+        },
     ],
-    ml: [
-        { name: 'ml', isBase: true, conversionToBase: '1', displayOrder: 0 },
-        { name: 'l', isBase: false, conversionToBase: '1000', displayOrder: 1 },
+    unit: [
+        {
+            name: 'unit',
+            barcode: '',
+            isBase: true,
+            conversionToBase: '1',
+            sellingPrice: '',
+            displayOrder: 0,
+        },
     ],
-    each: [{ name: 'each', isBase: true, conversionToBase: '1', displayOrder: 0 }],
-    bottle: [
-        { name: 'bottle', isBase: true, conversionToBase: '1', displayOrder: 0 },
-    ],
-    pack: [{ name: 'pack', isBase: true, conversionToBase: '1', displayOrder: 0 }],
-    box: [{ name: 'box', isBase: true, conversionToBase: '1', displayOrder: 0 }],
 };
 
 function newRowId(): string {

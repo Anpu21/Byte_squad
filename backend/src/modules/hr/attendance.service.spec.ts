@@ -350,6 +350,58 @@ describe('AttendanceService', () => {
       expect(submitted[0].totalHours).toBe(9.5);
     });
 
+    it('prefers explicit totalHours when it is provided', async () => {
+      employeesRepo.findById.mockResolvedValue(makeEmployee());
+      attendanceRepo.upsertManagerEntries.mockResolvedValue([makeAttendance()]);
+
+      await service.bulkUpsert(
+        {
+          rows: [
+            {
+              employeeId: EMP_A_ID,
+              attendanceDate: '2026-05-24',
+              checkInTime: '08:00',
+              checkOutTime: '17:30',
+              status: 'Present',
+              totalHours: 6.25,
+            },
+          ],
+        },
+        ADMIN_ACTOR,
+      );
+
+      const submitted = attendanceRepo.upsertManagerEntries.mock.calls[0][0];
+      expect(submitted[0].totalHours).toBe(6.25);
+    });
+
+    it('saves non-working statuses with null total hours when duration is omitted', async () => {
+      employeesRepo.findById.mockResolvedValue(makeEmployee());
+      attendanceRepo.upsertManagerEntries.mockResolvedValue([makeAttendance()]);
+
+      await service.bulkUpsert(
+        {
+          rows: [
+            {
+              employeeId: EMP_A_ID,
+              attendanceDate: '2026-05-24',
+              status: 'Holiday',
+            },
+          ],
+        },
+        ADMIN_ACTOR,
+      );
+
+      const submitted = attendanceRepo.upsertManagerEntries.mock.calls[0][0];
+      expect(submitted[0]).toEqual(
+        expect.objectContaining({
+          status: 'Holiday',
+          checkInTime: null,
+          checkOutTime: null,
+          totalHours: null,
+        }),
+      );
+    });
+
     it('reuses a cached employee lookup across multiple rows', async () => {
       employeesRepo.findById.mockResolvedValue(makeEmployee());
       attendanceRepo.upsertManagerEntries.mockResolvedValue([

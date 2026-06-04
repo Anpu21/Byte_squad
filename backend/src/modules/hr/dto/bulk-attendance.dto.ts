@@ -12,6 +12,7 @@ import {
   IsString,
   IsUUID,
   Matches,
+  Max,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -56,6 +57,12 @@ export class BulkAttendanceRowDto {
 
   @IsEnum(['Present', 'Absent', 'Half_Day', 'Leave', 'Holiday', 'Weekend'])
   status!: AttendanceStatus;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(24)
+  totalHours?: number;
 
   @IsOptional()
   @IsBoolean()

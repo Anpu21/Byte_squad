@@ -13,9 +13,9 @@ function makeCartItem(overrides: Partial<ICartItem> = {}): ICartItem {
         productCode: 'P001',
         productName: 'Test',
         productType: 'GENERIC',
-        baseUnit: 'pcs',
+        baseUnit: 'unit',
         unitId: null,
-        unitName: 'pcs',
+        unitName: 'unit',
         unitPrice: 100,
         conversionFactor: 1,
         quantity: 1,
@@ -36,6 +36,7 @@ const userOwner: IPosLoyaltyOwner = {
     ownerType: 'user',
     userId: 'user-99',
     loyaltyCustomerId: null,
+    tier: 'bronze',
     firstName: 'Anya',
     pointsBalance: 200,
 };
@@ -44,6 +45,7 @@ const walkInOwner: IPosLoyaltyOwner = {
     ownerType: 'walkIn',
     userId: null,
     loyaltyCustomerId: 'lc-77',
+    tier: 'bronze',
     firstName: 'Sunil',
     pointsBalance: 50,
 };

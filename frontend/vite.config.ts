@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
+const backendTarget =
+  process.env.BACKEND_API_URL ||
+  `http://127.0.0.1:${process.env.BACKEND_PORT || process.env.PORT || 5000}`
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -19,12 +23,12 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: process.env.BACKEND_API_URL || 'http://backend:3000',
+        target: backendTarget,
         changeOrigin: true,
       },
       // socket.io for live notifications + customer-request:created broadcasts
       '/socket.io': {
-        target: process.env.BACKEND_API_URL || 'http://backend:3000',
+        target: backendTarget,
         changeOrigin: true,
         ws: true,
       },

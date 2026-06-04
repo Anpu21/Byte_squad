@@ -156,3 +156,60 @@ export const STATUS_OPTIONS: ReadonlyArray<{
     { value: 'Holiday', label: 'Holiday' },
     { value: 'Weekend', label: 'Weekend' },
 ];
+
+/**
+ * Statuses for which check-in / check-out clock times are meaningful.
+ * Other statuses (Absent / Leave / Holiday / Weekend) hide the time
+ * inputs in the editor and force the times to empty on save.
+ */
+export function statusUsesTimes(status: AttendanceStatus): boolean {
+    return status === 'Present' || status === 'Half_Day';
+}
+
+/** Statuses for which manually entered duration hours are meaningful. */
+export function statusUsesDuration(status: AttendanceStatus): boolean {
+    return status === 'Present' || status === 'Half_Day';
+}
+
+/**
+ * Chunk a month into a Mon-Sun calendar grid. Leading and trailing
+ * cells outside the month are returned as `null` so callers can fade
+ * them. Always returns 6 rows of 7 for a stable, non-jumping layout.
+ */
+export function monthWeeks(year: number, month: number): (string | null)[][] {
+    const firstWeekday = new Date(year, month - 1, 1).getDay(); // 0 = Sun … 6 = Sat
+    // Mon-start offset: Monday → 0, Sunday → 6.
+    const leading = (firstWeekday + 6) % 7;
+    const days = monthDays(year, month);
+    const cells: (string | null)[] = [];
+    for (let i = 0; i < leading; i += 1) cells.push(null);
+    cells.push(...days);
+    while (cells.length < 42) cells.push(null);
+    const rows: (string | null)[][] = [];
+    for (let i = 0; i < 6; i += 1) {
+        rows.push(cells.slice(i * 7, i * 7 + 7));
+    }
+    return rows;
+}
+
+/**
+ * Render decimal hours as a compact duration label.
+ *   7.92 → "7.9h"     8 → "8h"     null → "—"
+ * Anything under 0.05 collapses to "—" to avoid the misleading "0h".
+ */
+export function formatHoursDuration(totalHours: number | null): string {
+    if (totalHours == null || totalHours < 0.05) return '—';
+    if (Math.abs(totalHours - Math.round(totalHours)) < 0.05) {
+        return `${Math.round(totalHours)}h`;
+    }
+    return `${totalHours.toFixed(1)}h`;
+}
+
+/** Shift a YYYY-MM value by `delta` months (positive or negative). */
+export function shiftIsoMonth(value: string, delta: number): string {
+    const { year, month } = parseIsoMonth(value);
+    const total = year * 12 + (month - 1) + delta;
+    const ny = Math.floor(total / 12);
+    const nm = (total % 12) + 1;
+    return formatIsoMonth(ny, nm);
+}

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import type { LoyaltyTier } from '@/types';
 
 /**
  * Trimmed projection of the loyalty owner attached to the in-progress
@@ -11,6 +12,7 @@ export interface IPosLoyaltyOwner {
     ownerType: 'user' | 'walkIn';
     userId: string | null;
     loyaltyCustomerId: string | null;
+    tier: LoyaltyTier;
     firstName: string;
     pointsBalance: number;
 }

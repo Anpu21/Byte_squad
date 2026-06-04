@@ -21,19 +21,23 @@ interface FormOverrides {
     errors?: ProductFormState['errors'];
 }
 
-const KG_UNITS: ISellableUnitRow[] = [
+const UNIT_UNITS: ISellableUnitRow[] = [
     {
-        rowId: 'r-kg',
-        name: 'kg',
+        rowId: 'r-unit',
+        name: 'unit',
+        barcode: '',
         isBase: true,
         conversionToBase: '1',
+        sellingPrice: '',
         displayOrder: 0,
     },
     {
-        rowId: 'r-g',
-        name: 'g',
+        rowId: 'r-pack',
+        name: '12-PACK',
+        barcode: '',
         isBase: false,
-        conversionToBase: '0.001',
+        conversionToBase: '12',
+        sellingPrice: '650',
         displayOrder: 1,
     },
 ];
@@ -42,10 +46,10 @@ function makeForm(overrides: FormOverrides = {}): ProductFormState {
     return {
         sellingPrice: '',
         costPrice: '',
-        sellingPriceUnit: 'kg',
-        costPriceUnit: 'kg',
-        units: KG_UNITS,
-        baseUnit: 'kg',
+        sellingPriceUnit: 'unit',
+        costPriceUnit: 'unit',
+        units: UNIT_UNITS,
+        baseUnit: 'unit',
         setSellingPrice: vi.fn(),
         setCostPrice: vi.fn(),
         setSellingPriceUnit: vi.fn(),
@@ -70,11 +74,11 @@ describe('PricingCard — per-unit price entry', () => {
         const costUnit = screen.getByLabelText(
             /cost price \(LKR\) per/i,
         ) as HTMLSelectElement;
-        expect(sellingUnit.options).toHaveLength(KG_UNITS.length);
-        expect(costUnit.options).toHaveLength(KG_UNITS.length);
+        expect(sellingUnit.options).toHaveLength(UNIT_UNITS.length);
+        expect(costUnit.options).toHaveLength(UNIT_UNITS.length);
         expect(Array.from(sellingUnit.options).map((o) => o.value)).toEqual([
-            'kg',
-            'g',
+            'unit',
+            '12-PACK',
         ]);
     });
 
@@ -88,39 +92,39 @@ describe('PricingCard — per-unit price entry', () => {
         );
         await userEvent.selectOptions(
             screen.getByLabelText(/selling price \(LKR\) per/i),
-            'g',
+            '12-PACK',
         );
-        expect(setSellingPriceUnit).toHaveBeenCalledWith('g');
+        expect(setSellingPriceUnit).toHaveBeenCalledWith('12-PACK');
     });
 
-    it('shows "= Rs 500.00 / kg" preview when entering 0.5 in g for a kg-based product', () => {
+    it('shows a per-base preview when entering a pack price', () => {
         render(
             <PricingCard
                 form={makeForm({
-                    sellingPrice: '0.5',
-                    sellingPriceUnit: 'g',
+                    sellingPrice: '650',
+                    sellingPriceUnit: '12-PACK',
                 })}
                 derived={NO_DERIVED}
             />,
         );
-        expect(screen.getByText('= Rs 500.00 / kg')).toBeInTheDocument();
+        expect(screen.getByText('= Rs 54.17 / unit')).toBeInTheDocument();
     });
 
-    it('shows "per kg" caption (no math) when the chosen unit IS the base', () => {
+    it('shows "per unit" caption (no math) when the chosen unit IS the base', () => {
         render(
             <PricingCard
                 form={makeForm({
-                    sellingPrice: '500',
-                    sellingPriceUnit: 'kg',
+                    sellingPrice: '60',
+                    sellingPriceUnit: 'unit',
                 })}
                 derived={NO_DERIVED}
             />,
         );
         // Scope to <p> captions so the assertion does not match the
-        // "per kg" option text inside the unit <select>. Both price fields
-        // default to kg in the test form so both render the static
+        // "per unit" option text inside the unit <select>. Both price fields
+        // default to unit in the test form so both render the static
         // caption — that's why we expect 2.
-        const captions = screen.getAllByText('per kg', { selector: 'p' });
+        const captions = screen.getAllByText('per unit', { selector: 'p' });
         expect(captions).toHaveLength(2);
     });
 
@@ -129,21 +133,21 @@ describe('PricingCard — per-unit price entry', () => {
             <PricingCard
                 form={makeForm({
                     sellingPrice: '',
-                    sellingPriceUnit: 'g',
+                    sellingPriceUnit: '12-PACK',
                     costPrice: '',
-                    costPriceUnit: 'g',
+                    costPriceUnit: '12-PACK',
                 })}
                 derived={NO_DERIVED}
             />,
         );
-        // No "= Rs … / kg" text should appear when both inputs are empty
+        // No "= Rs … / unit" text should appear when both inputs are empty
         // and the chosen unit is a non-base companion.
         expect(screen.queryByText(/= Rs/i)).not.toBeInTheDocument();
-        // The static "per kg" caption should also be absent because the
-        // current unit is g, not the base kg. Scope the selector to the
-        // preview <p> so we don't match "per kg" inside the <option> list
+        // The static "per unit" caption should also be absent because the
+        // current unit is 12-PACK, not the base unit. Scope the selector to the
+        // preview <p> so we don't match "per unit" inside the <option> list
         // in the unit <select>.
-        const previewCaptions = screen.queryAllByText(/per kg/i, {
+        const previewCaptions = screen.queryAllByText(/per unit/i, {
             selector: 'p',
         });
         expect(previewCaptions).toHaveLength(0);

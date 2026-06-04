@@ -7,7 +7,9 @@
 export interface ProductUnitRow {
   unitId: string;
   unitName: string;
+  barcode: string | null;
   isBaseUnit: boolean;
   conversionToBase: number;
+  sellingPrice: number;
   displayOrder: number;
 }

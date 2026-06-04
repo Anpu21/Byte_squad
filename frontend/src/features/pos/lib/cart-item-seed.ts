@@ -18,16 +18,17 @@ type AddItemSeed = Omit<
  * override unit / qty / discount per row afterwards.
  */
 export function toCartItemSeed(row: ISearchProductRow): AddItemSeed {
+    const matchedUnit = row.matchedUnit;
     return {
         productId: row.productId,
         productCode: row.productCode,
         productName: row.productName,
         productType: row.productType,
         baseUnit: row.baseUnit,
-        unitId: null,
-        unitName: row.baseUnit,
-        unitPrice: row.retailPrice,
-        conversionFactor: 1,
+        unitId: matchedUnit?.unitId ?? null,
+        unitName: matchedUnit?.unitName ?? row.baseUnit,
+        unitPrice: matchedUnit?.sellingPrice ?? row.retailPrice,
+        conversionFactor: matchedUnit?.conversionToBase ?? 1,
         quantity: 1,
         free: 0,
         discountPercentage: 0,

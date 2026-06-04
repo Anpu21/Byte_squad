@@ -22,21 +22,6 @@ function resolveUnitLabel(item: ISaleItem): string | null {
 }
 
 /**
- * Computes the per-printed-unit price. `unitPrice` is per-base by
- * convention, so when the picked unit differs we scale by the picked
- * unit's `conversionToBase` (e.g. Rs 200/kg × 0.001 = Rs 0.20/g). When
- * `unit` is absent, the line is in the base unit so the per-base price
- * IS the per-printed-unit price.
- */
-function resolvePerUnitPrice(item: ISaleItem): number {
-    const factor = item.unit?.conversionToBase;
-    if (typeof factor === 'number' && Number.isFinite(factor) && factor > 0) {
-        return item.unitPrice * factor;
-    }
-    return item.unitPrice;
-}
-
-/**
  * Render a single sale line as a stack of table rows: header (product
  * name), price row (qty × unit = total), then indented sub-rows for
  * discount, tax, and free quantity when present. Pulled out so the
@@ -52,7 +37,7 @@ function resolvePerUnitPrice(item: ISaleItem): number {
 export function PosBillItemRows({ item }: IPosBillItemRowsProps) {
     const name = item.product?.name ?? `Product ${item.productId.slice(0, 6)}`;
     const unitLabel = resolveUnitLabel(item);
-    const perUnitPrice = resolvePerUnitPrice(item);
+    const perUnitPrice = item.unitPrice;
     const qtyLabel = formatQuantity(item.quantity);
     const freeLabel = formatQuantity(item.free);
     return (

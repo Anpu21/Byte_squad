@@ -36,16 +36,11 @@ function makeForm(overrides: MakeFormOverrides = {}): ProductFormState {
         {
             rowId: 'r1',
             name: 'kg',
+            barcode: '',
             isBase: true,
             conversionToBase: '1',
+            sellingPrice: '',
             displayOrder: 0,
-        },
-        {
-            rowId: 'r2',
-            name: 'g',
-            isBase: false,
-            conversionToBase: '0.001',
-            displayOrder: 1,
         },
     ];
     const units = overrides.units ?? defaultUnits;
@@ -209,11 +204,33 @@ describe('useProductSubmit price normalization', () => {
         vi.clearAllMocks();
     });
 
-    it('normalizes selling price entered against a non-base unit (g) to per-base (kg)', async () => {
+    it('normalizes selling price entered against a pack unit to per-base unit', async () => {
         const { Wrapper } = makeWrapper();
+        const customUnits: ISellableUnitRow[] = [
+            {
+                rowId: 'r1',
+                name: 'unit',
+                barcode: '',
+                isBase: true,
+                conversionToBase: '1',
+                sellingPrice: '',
+                displayOrder: 0,
+            },
+            {
+                rowId: 'r2',
+                name: '12-PACK',
+                barcode: 'EGG-12',
+                isBase: false,
+                conversionToBase: '12',
+                sellingPrice: '650',
+                displayOrder: 1,
+            },
+        ];
         const form = makeForm({
-            sellingPrice: '0.5',
-            sellingPriceUnit: 'g',
+            baseUnit: 'unit',
+            units: customUnits,
+            sellingPrice: '650',
+            sellingPriceUnit: '12-PACK',
         });
         const { result } = renderHook(
             () =>
@@ -236,32 +253,36 @@ describe('useProductSubmit price normalization', () => {
 
         expect(inventoryService.updateProduct).toHaveBeenCalledWith(
             'prod-1',
-            expect.objectContaining({ sellingPrice: 500 }),
+            expect.objectContaining({ sellingPrice: 650 / 12 }),
         );
     });
 
-    it('normalizes cost price entered against a custom unit (100g, conversion 0.1)', async () => {
+    it('normalizes cost price entered against a custom fractional KG row', async () => {
         const customUnits: ISellableUnitRow[] = [
             {
                 rowId: 'r1',
                 name: 'kg',
+                barcode: '',
                 isBase: true,
                 conversionToBase: '1',
+                sellingPrice: '',
                 displayOrder: 0,
             },
             {
                 rowId: 'r2',
-                name: '100g',
+                name: '0.250 KG',
+                barcode: '',
                 isBase: false,
-                conversionToBase: '0.1',
+                conversionToBase: '0.25',
+                sellingPrice: '125',
                 displayOrder: 1,
             },
         ];
         const { Wrapper } = makeWrapper();
         const form = makeForm({
             units: customUnits,
-            costPrice: '50',
-            costPriceUnit: '100g',
+            costPrice: '125',
+            costPriceUnit: '0.250 KG',
         });
         const { result } = renderHook(
             () =>

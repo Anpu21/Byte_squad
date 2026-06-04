@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { DataSource, DeepPartial, EntityManager, Repository } from 'typeorm';
 import type { UpdateQueryBuilder } from 'typeorm';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
+import { Sale } from '@pos/entities/sale.entity';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 import {
   applyLedgerActivityExists,
@@ -16,48 +18,74 @@ import type {
   LoyaltyOwner,
 } from '@/modules/loyalty/types';
 
+interface LoyaltyDashboardAccountStatsRaw {
+  totalMembers: string | null;
+  totalPointsInCirculation: string | null;
+}
+
+interface LoyaltyDashboardEarnedStatsRaw {
+  pointsEarned: string | null;
+}
+
+interface LoyaltyDashboardRedeemedStatsRaw {
+  pointsRedeemed: string | null;
+}
+
 @Injectable()
 export class LoyaltyRepository {
   constructor(
     @InjectRepository(LoyaltyAccount)
     private readonly accountRepo: Repository<LoyaltyAccount>,
+    @InjectRepository(LoyaltyCustomer)
+    private readonly customerRepo: Repository<LoyaltyCustomer>,
     @InjectRepository(LoyaltyLedgerEntry)
     private readonly ledgerRepo: Repository<LoyaltyLedgerEntry>,
+    private readonly dataSource: DataSource,
   ) {}
 
-  async findAccountByUser(userId: string): Promise<LoyaltyAccount | null> {
-    return this.accountRepo.findOne({ where: { userId } });
+  async findAccountByUser(
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<LoyaltyAccount | null> {
+    return this.accounts(manager).findOne({ where: { userId } });
   }
 
   async findAccountByLoyaltyCustomer(
     loyaltyCustomerId: string,
+    manager?: EntityManager,
   ): Promise<LoyaltyAccount | null> {
-    return this.accountRepo.findOne({ where: { loyaltyCustomerId } });
+    return this.accounts(manager).findOne({ where: { loyaltyCustomerId } });
   }
 
-  async createAccountForUser(userId: string): Promise<LoyaltyAccount> {
-    return this.accountRepo.save(this.accountRepo.create({ userId }));
+  async createAccountForUser(
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<LoyaltyAccount> {
+    const repo = this.accounts(manager);
+    return repo.save(repo.create({ userId }));
   }
 
   async createAccountForLoyaltyCustomer(
     loyaltyCustomerId: string,
+    manager?: EntityManager,
   ): Promise<LoyaltyAccount> {
-    return this.accountRepo.save(
-      this.accountRepo.create({ loyaltyCustomerId }),
-    );
+    const repo = this.accounts(manager);
+    return repo.save(repo.create({ loyaltyCustomerId }));
   }
 
   async findLedgerEntry(
     owner: LoyaltyOwner,
     orderId: string,
     type: LoyaltyLedgerEntryType,
+    manager?: EntityManager,
   ): Promise<LoyaltyLedgerEntry | null> {
+    const repo = this.ledger(manager);
     if (owner.userId) {
-      return this.ledgerRepo.findOne({
+      return repo.findOne({
         where: { userId: owner.userId, orderId, type },
       });
     }
-    return this.ledgerRepo.findOne({
+    return repo.findOne({
       where: {
         loyaltyCustomerId: owner.loyaltyCustomerId,
         orderId,
@@ -68,8 +96,23 @@ export class LoyaltyRepository {
 
   async createLedgerEntry(
     partial: DeepPartial<LoyaltyLedgerEntry>,
+    manager?: EntityManager,
   ): Promise<LoyaltyLedgerEntry> {
-    return this.ledgerRepo.save(this.ledgerRepo.create(partial));
+    const repo = this.ledger(manager);
+    return repo.save(repo.create(partial));
+  }
+
+  async findLedgerEntriesByOrder(
+    orderId: string,
+    types: LoyaltyLedgerEntryType[],
+    manager?: EntityManager,
+  ): Promise<LoyaltyLedgerEntry[]> {
+    if (types.length === 0) return [];
+    return this.ledger(manager)
+      .createQueryBuilder('entry')
+      .where('entry.order_id = :orderId', { orderId })
+      .andWhere('entry.type IN (:...types)', { types })
+      .getMany();
   }
 
   /**
@@ -82,8 +125,12 @@ export class LoyaltyRepository {
    * the expression map, which would silently wipe the guard if the
    * order were reversed.
    */
-  async applyRedeem(owner: LoyaltyOwner, points: number): Promise<boolean> {
-    const qb = this.accountRepo
+  async applyRedeem(
+    owner: LoyaltyOwner,
+    points: number,
+    manager?: EntityManager,
+  ): Promise<boolean> {
+    const qb = this.accounts(manager)
       .createQueryBuilder()
       .update(LoyaltyAccount)
       .set({
@@ -101,8 +148,9 @@ export class LoyaltyRepository {
   async applyRedeemReversal(
     owner: LoyaltyOwner,
     points: number,
+    manager?: EntityManager,
   ): Promise<void> {
-    const qb = this.accountRepo
+    const qb = this.accounts(manager)
       .createQueryBuilder()
       .update(LoyaltyAccount)
       .set({
@@ -115,8 +163,12 @@ export class LoyaltyRepository {
     await qb.execute();
   }
 
-  async applyEarn(owner: LoyaltyOwner, points: number): Promise<void> {
-    const qb = this.accountRepo
+  async applyEarn(
+    owner: LoyaltyOwner,
+    points: number,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const qb = this.accounts(manager)
       .createQueryBuilder()
       .update(LoyaltyAccount)
       .set({
@@ -127,6 +179,147 @@ export class LoyaltyRepository {
     this.applyOwnerWhere(qb, owner);
 
     await qb.execute();
+  }
+
+  async applyEarnReversal(
+    owner: LoyaltyOwner,
+    points: number,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const qb = this.accounts(manager)
+      .createQueryBuilder()
+      .update(LoyaltyAccount)
+      .set({
+        pointsBalance: () => `GREATEST(0, "points_balance" - ${points})`,
+        lifetimePointsEarned: () =>
+          `GREATEST(0, "lifetime_points_earned" - ${points})`,
+      });
+
+    this.applyOwnerWhere(qb, owner);
+
+    await qb.execute();
+  }
+
+  async applyManualAdjustment(
+    owner: LoyaltyOwner,
+    points: number,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const qb = this.accounts(manager)
+      .createQueryBuilder()
+      .update(LoyaltyAccount)
+      .set({
+        pointsBalance: () => `GREATEST(0, "points_balance" + ${points})`,
+      });
+
+    this.applyOwnerWhere(qb, owner);
+
+    await qb.execute();
+  }
+
+  async mergeWalkInIntoUser(params: {
+    userId: string;
+    loyaltyCustomerId: string;
+  }): Promise<LoyaltyAccount> {
+    return this.dataSource.transaction(async (manager) => {
+      const accounts = this.accounts(manager);
+      const customers = this.customers(manager);
+      const ledger = this.ledger(manager);
+
+      const walkIn = await customers.findOne({
+        where: { id: params.loyaltyCustomerId },
+      });
+      if (!walkIn) {
+        const existing = await this.findAccountByUser(params.userId, manager);
+        return existing ?? this.createAccountForUser(params.userId, manager);
+      }
+
+      const walkInAccount = await accounts
+        .createQueryBuilder('acc')
+        .setLock('pessimistic_write')
+        .where('acc.loyalty_customer_id = :loyaltyCustomerId', {
+          loyaltyCustomerId: params.loyaltyCustomerId,
+        })
+        .getOne();
+
+      let userAccount = await accounts
+        .createQueryBuilder('acc')
+        .setLock('pessimistic_write')
+        .where('acc.user_id = :userId', { userId: params.userId })
+        .getOne();
+
+      const movedBalance = Number(walkInAccount?.pointsBalance ?? 0);
+      const movedEarned = Number(walkInAccount?.lifetimePointsEarned ?? 0);
+      const movedRedeemed = Number(walkInAccount?.lifetimePointsRedeemed ?? 0);
+
+      if (!userAccount && walkInAccount) {
+        await accounts.update(walkInAccount.id, {
+          userId: params.userId,
+          loyaltyCustomerId: null,
+        });
+      } else if (userAccount && walkInAccount) {
+        await accounts
+          .createQueryBuilder()
+          .update(LoyaltyAccount)
+          .set({
+            pointsBalance: () => `"points_balance" + ${movedBalance}`,
+            lifetimePointsEarned: () =>
+              `"lifetime_points_earned" + ${movedEarned}`,
+            lifetimePointsRedeemed: () =>
+              `"lifetime_points_redeemed" + ${movedRedeemed}`,
+          })
+          .where('id = :id', { id: userAccount.id })
+          .execute();
+        await accounts.delete(walkInAccount.id);
+      } else if (!userAccount) {
+        userAccount = await this.createAccountForUser(params.userId, manager);
+      }
+
+      await ledger.update(
+        { loyaltyCustomerId: params.loyaltyCustomerId },
+        { userId: params.userId, loyaltyCustomerId: null },
+      );
+
+      await manager
+        .getRepository(Sale)
+        .createQueryBuilder()
+        .update(Sale)
+        .set({
+          customerUserId: params.userId,
+          loyaltyCustomerId: null,
+        })
+        .where('loyalty_customer_id = :loyaltyCustomerId', {
+          loyaltyCustomerId: params.loyaltyCustomerId,
+        })
+        .andWhere('customer_user_id IS NULL')
+        .execute();
+
+      await this.createLedgerEntry(
+        {
+          userId: params.userId,
+          loyaltyCustomerId: null,
+          branchId: null,
+          orderId: null,
+          type: LoyaltyLedgerEntryType.MERGE_TRANSFER,
+          points: 0,
+          description: `Merged physical loyalty wallet ${walkIn.phone} into online account`,
+          metadata: {
+            loyaltyCustomerId: params.loyaltyCustomerId,
+            phone: walkIn.phone,
+            transferredPointsBalance: movedBalance,
+            transferredLifetimePointsEarned: movedEarned,
+            transferredLifetimePointsRedeemed: movedRedeemed,
+          },
+        },
+        manager,
+      );
+
+      await customers.delete(params.loyaltyCustomerId);
+
+      const merged = await this.findAccountByUser(params.userId, manager);
+      if (merged) return merged;
+      return this.createAccountForUser(params.userId, manager);
+    });
   }
 
   /**
@@ -145,6 +338,18 @@ export class LoyaltyRepository {
         loyaltyCustomerId: owner.loyaltyCustomerId,
       });
     }
+  }
+
+  private accounts(manager?: EntityManager): Repository<LoyaltyAccount> {
+    return manager?.getRepository(LoyaltyAccount) ?? this.accountRepo;
+  }
+
+  private customers(manager?: EntityManager): Repository<LoyaltyCustomer> {
+    return manager?.getRepository(LoyaltyCustomer) ?? this.customerRepo;
+  }
+
+  private ledger(manager?: EntityManager): Repository<LoyaltyLedgerEntry> {
+    return manager?.getRepository(LoyaltyLedgerEntry) ?? this.ledgerRepo;
   }
 
   async listEntries(
@@ -272,5 +477,53 @@ export class LoyaltyRepository {
       .getRawMany<LoyaltyCustomerRawRow>();
 
     return { rows: rawRows.map(normalizeCustomerRow), total };
+  }
+
+  async getDashboardStats(branchId?: string): Promise<{
+    totalMembers: number;
+    totalPointsInCirculation: number;
+    pointsEarnedThisMonth: number;
+    pointsRedeemedThisMonth: number;
+  }> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const branchFilter = branchId
+      ? `EXISTS (SELECT 1 FROM loyalty_ledger_entries le WHERE (le.user_id = acc.user_id OR le.loyalty_customer_id = acc.loyalty_customer_id) AND le.branch_id = :branchId)`
+      : '1=1';
+
+    const accountStats = await this.accountRepo
+      .createQueryBuilder('acc')
+      .select('COUNT(acc.id)', 'totalMembers')
+      .addSelect('SUM(acc.points_balance)', 'totalPointsInCirculation')
+      .where(branchFilter, { branchId })
+      .getRawOne<LoyaltyDashboardAccountStatsRaw>();
+
+    const ledgerFilter = branchId ? `le.branch_id = :branchId` : '1=1';
+
+    const earnedStats = await this.ledgerRepo
+      .createQueryBuilder('le')
+      .select('SUM(le.points)', 'pointsEarned')
+      .where('le.type = :type', { type: LoyaltyLedgerEntryType.EARNED })
+      .andWhere('le.created_at >= :startOfMonth', { startOfMonth })
+      .andWhere(ledgerFilter, { branchId })
+      .getRawOne<LoyaltyDashboardEarnedStatsRaw>();
+
+    const redeemedStats = await this.ledgerRepo
+      .createQueryBuilder('le')
+      .select('SUM(le.points)', 'pointsRedeemed')
+      .where('le.type = :type', { type: LoyaltyLedgerEntryType.REDEEMED })
+      .andWhere('le.created_at >= :startOfMonth', { startOfMonth })
+      .andWhere(ledgerFilter, { branchId })
+      .getRawOne<LoyaltyDashboardRedeemedStatsRaw>();
+
+    return {
+      totalMembers: Number(accountStats?.totalMembers ?? 0),
+      totalPointsInCirculation: Number(
+        accountStats?.totalPointsInCirculation ?? 0,
+      ),
+      pointsEarnedThisMonth: Number(earnedStats?.pointsEarned ?? 0),
+      pointsRedeemedThisMonth: Number(redeemedStats?.pointsRedeemed ?? 0),
+    };
   }
 }

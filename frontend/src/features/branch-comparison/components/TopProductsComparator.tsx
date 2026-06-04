@@ -3,13 +3,13 @@ import { Triangle } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 import type {
-    IBranchComparisonEntry,
-    IComparisonTopProduct,
+    IBranchAnalyticsComparisonEntry,
+    IBranchAnalyticsTopProduct,
 } from '@/types';
 import { formatCurrencyWhole } from '../lib/format';
 
 interface TopProductsComparatorProps {
-    branches: IBranchComparisonEntry[];
+    branches: IBranchAnalyticsComparisonEntry[];
     limit?: number;
 }
 
@@ -17,18 +17,18 @@ interface MatrixRow {
     productId: string;
     productName: string;
     totalRevenue: number;
-    perBranch: Record<string, IComparisonTopProduct | undefined>;
+    perBranch: Record<string, IBranchAnalyticsTopProduct | undefined>;
     leaderBranchId: string | null;
 }
 
 function buildMatrix(
-    branches: IBranchComparisonEntry[],
+    branches: IBranchAnalyticsComparisonEntry[],
     limit: number,
 ): MatrixRow[] {
     const productMap = new Map<string, MatrixRow>();
 
     for (const branch of branches) {
-        for (const product of branch.topProducts) {
+        for (const product of branch.sales.topProducts) {
             let row = productMap.get(product.productId);
             if (!row) {
                 row = {

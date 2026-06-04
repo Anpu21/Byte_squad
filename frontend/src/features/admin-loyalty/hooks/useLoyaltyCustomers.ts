@@ -3,6 +3,7 @@ import { loyaltyAdminService } from '@/services/loyalty-admin.service';
 import { queryKeys } from '@/lib/queryKeys';
 
 interface UseLoyaltyCustomersArgs {
+    role: 'admin' | 'manager';
     search?: string;
     branchId?: string;
     activeSince?: string;
@@ -28,8 +29,8 @@ export function useLoyaltyCustomers(args: UseLoyaltyCustomersArgs) {
         offset: args.offset,
     };
     return useQuery({
-        queryKey: queryKeys.adminLoyalty.customers(params),
-        queryFn: () => loyaltyAdminService.listCustomers(params),
+        queryKey: [...queryKeys.adminLoyalty.customers(params), args.role],
+        queryFn: () => loyaltyAdminService.listCustomers(args.role, params),
         staleTime: 15_000,
     });
 }

@@ -59,14 +59,14 @@ export function SellableUnitsCard({ form }: SellableUnitsCardProps) {
                     >
                         {SUPPORTED_BASE_UNITS_FE.map((u) => (
                             <option key={u} value={u}>
-                                {u}
+                                {u.toUpperCase()}
                             </option>
                         ))}
                     </select>
                 </div>
 
-                <div className="rounded-md border border-border-strong overflow-hidden">
-                    <table className="w-full text-[12px]">
+                <div className="rounded-md border border-border-strong overflow-x-auto">
+                    <table className="min-w-[760px] w-full text-[12px]">
                         <thead>
                             <tr className="bg-surface-2 border-b border-border-strong">
                                 <th
@@ -74,6 +74,12 @@ export function SellableUnitsCard({ form }: SellableUnitsCardProps) {
                                     className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-text-2"
                                 >
                                     Name
+                                </th>
+                                <th
+                                    scope="col"
+                                    className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-text-2"
+                                >
+                                    Barcode
                                 </th>
                                 <th
                                     scope="col"
@@ -86,6 +92,12 @@ export function SellableUnitsCard({ form }: SellableUnitsCardProps) {
                                     className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-text-2"
                                 >
                                     Conversion to base
+                                </th>
+                                <th
+                                    scope="col"
+                                    className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-text-2"
+                                >
+                                    Selling price
                                 </th>
                                 <th
                                     scope="col"

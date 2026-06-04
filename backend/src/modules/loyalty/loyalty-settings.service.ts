@@ -11,6 +11,9 @@ const DEFAULT_SETTINGS = {
   earnPerAmount: 100,
   pointValue: 1,
   redeemCapPercent: 20,
+  minRedeemablePoints: 100,
+  silverTierPoints: 1000,
+  goldTierPoints: 5000,
 };
 
 @Injectable()
@@ -38,6 +41,10 @@ export class LoyaltySettingsService {
       earnPerAmount: dto.earnPerAmount ?? current.earnPerAmount,
       pointValue: dto.pointValue ?? current.pointValue,
       redeemCapPercent: dto.redeemCapPercent ?? current.redeemCapPercent,
+      minRedeemablePoints:
+        dto.minRedeemablePoints ?? current.minRedeemablePoints,
+      silverTierPoints: dto.silverTierPoints ?? current.silverTierPoints,
+      goldTierPoints: dto.goldTierPoints ?? current.goldTierPoints,
       updatedByUserId: actorId,
     });
   }

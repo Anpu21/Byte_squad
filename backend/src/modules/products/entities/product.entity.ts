@@ -54,7 +54,7 @@ export class Product {
   @Column({ type: 'boolean', name: 'discount_allowed', default: true })
   discountAllowed!: boolean;
 
-  @Column({ type: 'varchar', length: 32, name: 'base_unit', default: 'each' })
+  @Column({ type: 'varchar', length: 32, name: 'base_unit', default: 'unit' })
   baseUnit!: string;
 
   @Column({ type: 'varchar', name: 'image_url', nullable: true })

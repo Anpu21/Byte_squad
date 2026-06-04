@@ -40,7 +40,7 @@ export function hydrateUnitsFromProduct(
 ): void {
     const baseUnit = isSupportedBaseUnitFe(product.baseUnit)
         ? product.baseUnit
-        : 'each';
+        : 'unit';
 
     if (product.sellableUnits && product.sellableUnits.length > 0) {
         const sorted = [...product.sellableUnits].sort(
@@ -49,8 +49,10 @@ export function hydrateUnitsFromProduct(
         const rows: ISellableUnitRow[] = sorted.map((unit) => ({
             rowId: crypto.randomUUID(),
             name: unit.name,
+            barcode: unit.barcode ?? '',
             isBase: unit.isBase,
             conversionToBase: String(unit.conversionToBase),
+            sellingPrice: String(unit.sellingPrice),
             displayOrder: unit.displayOrder,
         }));
         target.setBaseUnit(baseUnit);

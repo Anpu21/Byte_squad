@@ -94,6 +94,9 @@ function makeSettings(): LoyaltySettings {
     earnPerAmount: 100,
     pointValue: 1,
     redeemCapPercent: 20,
+    minRedeemablePoints: 100,
+    silverTierPoints: 1000,
+    goldTierPoints: 5000,
     updatedByUserId: null,
     updatedAt: new Date(),
   } as LoyaltySettings;
@@ -113,6 +116,7 @@ describe('LoyaltyService', () => {
       createAccountForUser: jest.fn(),
       createAccountForLoyaltyCustomer: jest.fn(),
       listCustomerAccounts: jest.fn(),
+      mergeWalkInIntoUser: jest.fn(),
     };
     const customersRepoMock: Partial<jest.Mocked<LoyaltyCustomersRepository>> =
       {
@@ -122,6 +126,7 @@ describe('LoyaltyService', () => {
       };
     const usersRepoMock: Partial<jest.Mocked<UsersRepository>> = {
       findByPhone: jest.fn(),
+      findById: jest.fn(),
     };
     const settingsMock: Partial<jest.Mocked<LoyaltySettingsService>> = {
       get: jest.fn().mockResolvedValue(makeSettings()),
@@ -152,7 +157,10 @@ describe('LoyaltyService', () => {
       const result = await service.getOrCreateAccount({ userId: USER_ID });
 
       expect(result).toBe(existing);
-      expect(loyaltyRepo.findAccountByUser).toHaveBeenCalledWith(USER_ID);
+      expect(loyaltyRepo.findAccountByUser).toHaveBeenCalledWith(
+        USER_ID,
+        undefined,
+      );
       expect(loyaltyRepo.createAccountForUser).not.toHaveBeenCalled();
     });
 
@@ -164,7 +172,10 @@ describe('LoyaltyService', () => {
       const result = await service.getOrCreateAccount({ userId: USER_ID });
 
       expect(result).toBe(created);
-      expect(loyaltyRepo.createAccountForUser).toHaveBeenCalledWith(USER_ID);
+      expect(loyaltyRepo.createAccountForUser).toHaveBeenCalledWith(
+        USER_ID,
+        undefined,
+      );
     });
 
     it('returns the existing walk-in account when present', async () => {
@@ -178,6 +189,7 @@ describe('LoyaltyService', () => {
       expect(result).toBe(existing);
       expect(loyaltyRepo.findAccountByLoyaltyCustomer).toHaveBeenCalledWith(
         WALK_IN_ID,
+        undefined,
       );
       expect(
         loyaltyRepo.createAccountForLoyaltyCustomer,
@@ -196,6 +208,7 @@ describe('LoyaltyService', () => {
       expect(result).toBe(created);
       expect(loyaltyRepo.createAccountForLoyaltyCustomer).toHaveBeenCalledWith(
         WALK_IN_ID,
+        undefined,
       );
     });
 
@@ -218,6 +231,7 @@ describe('LoyaltyService', () => {
       expect(result.userId).toBe(USER_ID);
       expect(result.loyaltyCustomerId).toBeNull();
       expect(result.pointsBalance).toBe(250);
+      expect(result.tier).toBe('bronze');
       expect(customersRepo.findByPhone).not.toHaveBeenCalled();
     });
 
@@ -234,6 +248,7 @@ describe('LoyaltyService', () => {
       expect(result.userId).toBeNull();
       expect(result.loyaltyCustomerId).toBe(WALK_IN_ID);
       expect(result.pointsBalance).toBe(42);
+      expect(result.tier).toBe('bronze');
     });
 
     it('throws NotFound when neither side has the phone', async () => {
@@ -285,10 +300,12 @@ describe('LoyaltyService', () => {
       });
       expect(loyaltyRepo.createAccountForLoyaltyCustomer).toHaveBeenCalledWith(
         WALK_IN_ID,
+        undefined,
       );
       expect(result.ownerType).toBe('walkIn');
       expect(result.loyaltyCustomerId).toBe(WALK_IN_ID);
       expect(result.pointsBalance).toBe(0);
+      expect(result.tier).toBe('bronze');
     });
 
     it('coerces an empty lastName to null and stores it that way', async () => {
@@ -355,7 +372,7 @@ describe('LoyaltyService', () => {
       loyaltyRepo.findAccountByUser.mockResolvedValue(
         makeUserAccount({
           pointsBalance: 100,
-          lifetimePointsEarned: 200,
+          lifetimePointsEarned: 1200,
           lifetimePointsRedeemed: 100,
         }),
       );
@@ -364,10 +381,40 @@ describe('LoyaltyService', () => {
 
       expect(result).toEqual({
         pointsBalance: 100,
-        lifetimePointsEarned: 200,
+        lifetimePointsEarned: 1200,
         lifetimePointsRedeemed: 100,
+        tier: 'silver',
       });
-      expect(settings.get).not.toHaveBeenCalled();
+      expect(settings.get).toHaveBeenCalled();
+    });
+  });
+
+  describe('syncVerifiedUserByPhone', () => {
+    it('merges an existing walk-in wallet into the verified user wallet', async () => {
+      usersRepo.findById.mockResolvedValue(makeUser());
+      customersRepo.findByPhone.mockResolvedValue(makeWalkInCustomer());
+      const merged = makeUserAccount({ pointsBalance: 330 });
+      loyaltyRepo.mergeWalkInIntoUser.mockResolvedValue(merged);
+
+      const result = await service.syncVerifiedUserByPhone(USER_ID);
+
+      expect(result).toBe(merged);
+      expect(customersRepo.findByPhone).toHaveBeenCalledWith('+94771234567');
+      expect(loyaltyRepo.mergeWalkInIntoUser).toHaveBeenCalledWith({
+        userId: USER_ID,
+        loyaltyCustomerId: WALK_IN_ID,
+      });
+    });
+
+    it('creates or returns the user wallet when no walk-in phone exists', async () => {
+      usersRepo.findById.mockResolvedValue(makeUser());
+      customersRepo.findByPhone.mockResolvedValue(null);
+      loyaltyRepo.findAccountByUser.mockResolvedValue(makeUserAccount());
+
+      const result = await service.syncVerifiedUserByPhone(USER_ID);
+
+      expect(result.userId).toBe(USER_ID);
+      expect(loyaltyRepo.mergeWalkInIntoUser).not.toHaveBeenCalled();
     });
   });
 
@@ -388,12 +435,13 @@ describe('LoyaltyService', () => {
         email: 'jane@example.com',
         phone: '+94771234567',
         pointsBalance: 250,
-        lifetimePointsEarned: 500,
+        lifetimePointsEarned: 1500,
         lifetimePointsRedeemed: 250,
         lastActivityAt: new Date('2026-05-15T10:00:00Z'),
         lastActivityBranchId: BRANCH_ID,
         lastActivityBranchName: 'Colombo',
         ...overrides,
+        tier: overrides.tier ?? 'silver',
       };
     }
 
@@ -416,6 +464,7 @@ describe('LoyaltyService', () => {
         lastActivityBranchId: BRANCH_ID,
         lastActivityBranchName: 'Colombo',
         ...overrides,
+        tier: overrides.tier ?? 'bronze',
       };
     }
 
@@ -495,6 +544,7 @@ describe('LoyaltyService', () => {
       expect(result.rows[0]).toEqual(
         expect.objectContaining({
           ownerType: 'user',
+          tier: 'silver',
           loyaltyCustomerId: null,
           lastActivityBranchId: BRANCH_ID,
           lastActivityBranchName: 'Colombo',

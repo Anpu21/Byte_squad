@@ -52,6 +52,26 @@ export const APP_ROUTES = {
     BY_BRANCH: 'branch/:branchId',
     LOW_STOCK: 'low-stock',
     UPDATE_STOCK: ':id/stock',
+    // Phase C1 — batch/expiry tracking (goods receipt with expiry date,
+    // expiry report, on-demand expiry alert scan).
+    BATCHES: 'batches',
+    EXPIRY_REPORT: 'expiry/report',
+    EXPIRY_ALERTS_SCAN: 'expiry/scan',
+  },
+
+  // Stock Adjustments (Phase C2 — reason-coded corrections w/ reverse)
+  STOCK_ADJUSTMENTS: {
+    BASE: `${API_PREFIX}/stock-adjustments`,
+    BY_ID: ':id',
+    APPROVE: ':id/approve',
+    REVERSE: ':id/reverse',
+  },
+
+  // Sales Returns (Phase C3 — invoice lookup, good/bad split, restock)
+  RETURNS: {
+    BASE: `${API_PREFIX}/returns`,
+    LOOKUP: 'lookup',
+    BY_ID: ':id',
   },
 
   // POS / Transactions
@@ -117,6 +137,12 @@ export const APP_ROUTES = {
     INVENTORY_MATRIX: 'inventory/matrix',
   },
 
+  // Branch analytics (admin + manager aggregate comparison)
+  BRANCH_ANALYTICS: {
+    BASE: `${API_PREFIX}/branch-analytics`,
+    COMPARISON: 'comparison',
+  },
+
   // Storefront catalog (CUSTOMER role only)
   SHOP: {
     BASE: `${API_PREFIX}/shop`,
@@ -152,6 +178,12 @@ export const APP_ROUTES = {
     ADMIN_SETTINGS: 'settings',
     ADMIN_CUSTOMERS: 'customers',
     ADMIN_CUSTOMER_HISTORY: 'customers/:userId/history',
+    ADMIN_DASHBOARD: 'dashboard',
+    ADMIN_ADJUST: 'customers/:userId/adjust',
+    MANAGER_BASE: `${API_PREFIX}/manager/loyalty`,
+    MANAGER_CUSTOMERS: 'customers',
+    MANAGER_CUSTOMER_HISTORY: 'customers/:userId/history',
+    MANAGER_DASHBOARD: 'dashboard',
   },
 
   // HR — employees, attendance, payroll

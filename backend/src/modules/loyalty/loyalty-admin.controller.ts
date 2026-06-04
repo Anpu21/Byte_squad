@@ -5,6 +5,7 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.servi
 import { UpdateLoyaltySettingsDto } from '@/modules/loyalty/dto/update-loyalty-settings.dto';
 import { ListLoyaltyCustomersQueryDto } from '@/modules/loyalty/dto/list-loyalty-customers-query.dto';
 import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
+import { AdjustLoyaltyPointsDto } from '@/modules/loyalty/dto/adjust-loyalty-points.dto';
 
 @Controller(APP_ROUTES.LOYALTY.ADMIN_BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -53,5 +55,18 @@ export class LoyaltyAdminController {
     @Query() query: ListLoyaltyHistoryQueryDto,
   ) {
     return this.loyalty.listHistory(userId, query);
+  }
+
+  @Get(APP_ROUTES.LOYALTY.ADMIN_DASHBOARD)
+  dashboard() {
+    return this.loyalty.getDashboardStats();
+  }
+
+  @Post(APP_ROUTES.LOYALTY.ADMIN_ADJUST)
+  adjustPoints(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() dto: AdjustLoyaltyPointsDto,
+  ) {
+    return this.loyalty.adjustPoints(userId, dto);
   }
 }

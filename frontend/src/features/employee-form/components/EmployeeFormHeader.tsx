@@ -18,7 +18,7 @@ export function EmployeeFormHeader({
             <div className="min-w-0">
                 <button
                     type="button"
-                    onClick={() => navigate(FRONTEND_ROUTES.ADMIN_EMPLOYEES)}
+                    onClick={() => navigate(FRONTEND_ROUTES.ADMIN_HR)}
                     className="inline-flex items-center gap-1.5 text-xs text-text-2 hover:text-text-1 transition-colors mb-2"
                 >
                     <ArrowLeft size={12} /> Back to employees
@@ -37,7 +37,7 @@ export function EmployeeFormHeader({
                     type="button"
                     variant="ghost"
                     size="md"
-                    onClick={() => navigate(FRONTEND_ROUTES.ADMIN_EMPLOYEES)}
+                    onClick={() => navigate(FRONTEND_ROUTES.ADMIN_HR)}
                 >
                     Cancel
                 </Button>

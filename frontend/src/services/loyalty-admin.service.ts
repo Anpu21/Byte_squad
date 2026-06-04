@@ -4,6 +4,7 @@ import type {
     ILoyaltyCustomersResponse,
     ILoyaltyHistoryResponse,
     ILoyaltySettings,
+    ILoyaltyDashboardStats,
 } from '@/types';
 
 export interface UpdateLoyaltySettingsPayload {
@@ -11,6 +12,9 @@ export interface UpdateLoyaltySettingsPayload {
     earnPerAmount?: number;
     pointValue?: number;
     redeemCapPercent?: number;
+    minRedeemablePoints?: number;
+    silverTierPoints?: number;
+    goldTierPoints?: number;
 }
 
 export interface ListCustomersQuery {
@@ -40,20 +44,36 @@ export const loyaltyAdminService = {
         return response.data.data;
     },
     listCustomers: async (
+        role: 'admin' | 'manager',
         query: ListCustomersQuery = {},
     ): Promise<ILoyaltyCustomersResponse> => {
+        const url = role === 'admin' ? '/admin/loyalty/customers' : '/manager/loyalty/customers';
         const response = await api.get<
             IApiResponse<ILoyaltyCustomersResponse>
-        >('/admin/loyalty/customers', { params: query });
+        >(url, { params: query });
         return response.data.data;
     },
     listCustomerHistory: async (
+        role: 'admin' | 'manager',
         userId: string,
         query: { limit?: number; offset?: number } = {},
     ): Promise<ILoyaltyHistoryResponse> => {
+        const url = role === 'admin' ? `/admin/loyalty/customers/${userId}/history` : `/manager/loyalty/customers/${userId}/history`;
         const response = await api.get<IApiResponse<ILoyaltyHistoryResponse>>(
-            `/admin/loyalty/customers/${userId}/history`,
+            url,
             { params: query },
+        );
+        return response.data.data;
+    },
+    adjustPoints: async (
+        userId: string,
+        payload: { points: number; reason: string }
+    ): Promise<void> => {
+        await api.post(`/admin/loyalty/customers/${userId}/adjust`, payload);
+    },
+    getDashboardStats: async (): Promise<ILoyaltyDashboardStats> => {
+        const response = await api.get<IApiResponse<ILoyaltyDashboardStats>>(
+            '/admin/loyalty/dashboard',
         );
         return response.data.data;
     },

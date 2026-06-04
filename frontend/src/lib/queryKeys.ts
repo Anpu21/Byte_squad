@@ -7,6 +7,9 @@
 
 import type {
     IInventoryParams,
+    IExpiryReportParams,
+    IStockAdjustmentsParams,
+    IReturnsParams,
     IListTransfersParams,
     IListTransferHistoryParams,
 } from '@/types';
@@ -62,6 +65,8 @@ export const queryKeys = {
         branches: () => ['admin', 'branches'] as const,
         comparison: (submitted: unknown) =>
             ['admin', 'comparison', submitted] as const,
+        branchAnalyticsComparison: (submitted: unknown) =>
+            ['admin', 'branch-analytics-comparison', submitted] as const,
         dashboard: () => ['admin', 'dashboard'] as const,
     },
     inventory: {
@@ -69,6 +74,23 @@ export const queryKeys = {
         categories: () => ['inventory', 'categories'] as const,
         byBranch: (branchId: string, params?: IInventoryParams) =>
             ['inventory', 'by-branch', branchId, params ?? {}] as const,
+    },
+    expiry: {
+        report: (params?: IExpiryReportParams) =>
+            ['expiry', 'report', params ?? {}] as const,
+        batches: (productId: string) =>
+            ['expiry', 'batches', productId] as const,
+    },
+    stockAdjustments: {
+        list: (params?: IStockAdjustmentsParams) =>
+            ['stock-adjustments', 'list', params ?? {}] as const,
+        byId: (id: string) => ['stock-adjustments', 'by-id', id] as const,
+    },
+    returns: {
+        lookup: (invoiceNumber: string) =>
+            ['returns', 'lookup', invoiceNumber] as const,
+        list: (params?: IReturnsParams) =>
+            ['returns', 'list', params ?? {}] as const,
     },
     notifications: {
         list: () => ['notifications', 'list'] as const,
@@ -210,4 +232,3 @@ export const queryKeys = {
         allTransactions: () => ['pos', 'allTransactions'] as const,
     },
 } as const;
-

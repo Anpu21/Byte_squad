@@ -17,9 +17,9 @@ function buildCartItem(overrides: Partial<ICartItem> = {}): ICartItem {
         productCode: overrides.productCode ?? 'SKU-1',
         productName: overrides.productName ?? 'Whole-wheat bread',
         productType: overrides.productType ?? 'Goods',
-        baseUnit: overrides.baseUnit ?? 'each',
+        baseUnit: overrides.baseUnit ?? 'unit',
         unitId: overrides.unitId ?? null,
-        unitName: overrides.unitName ?? 'each',
+        unitName: overrides.unitName ?? 'unit',
         unitPrice: overrides.unitPrice ?? 50,
         conversionFactor: overrides.conversionFactor ?? 1,
         quantity: overrides.quantity ?? 2,
@@ -122,20 +122,20 @@ describe('synthesizePreviewSale', () => {
         expect(sale.total).toBe(900);
     });
 
-    it('snapshots the picked sellable unit so the preview can render "250 g × LKR 0.20/g"', () => {
+    it('snapshots the picked sellable unit so the preview can render a pack line', () => {
         const cart = [
             buildCartItem({
-                productId: 'p-rice',
-                productName: 'Basmati rice',
-                baseUnit: 'kg',
-                unitId: 'u-g',
-                unitName: 'g',
-                conversionFactor: 0.001,
-                quantity: 250,
-                unitPrice: 200,
-                lineSubtotal: 50,
-                lineTotal: 50,
-                baseUnitQty: 0.25,
+                productId: 'p-eggs',
+                productName: 'Eggs',
+                baseUnit: 'unit',
+                unitId: 'u-pack',
+                unitName: '12-PACK',
+                conversionFactor: 12,
+                quantity: 1,
+                unitPrice: 650,
+                lineSubtotal: 650,
+                lineTotal: 650,
+                baseUnitQty: 12,
             }),
         ];
         const sale = synthesizePreviewSale({
@@ -144,14 +144,14 @@ describe('synthesizePreviewSale', () => {
             cartDiscountPercentage: 0,
         });
         const item = sale.items?.[0];
-        expect(item?.unitId).toBe('u-g');
+        expect(item?.unitId).toBe('u-pack');
         expect(item?.unit).toEqual({
-            id: 'u-g',
-            name: 'g',
-            conversionToBase: 0.001,
+            id: 'u-pack',
+            name: '12-PACK',
+            conversionToBase: 12,
         });
-        expect(item?.product?.baseUnit).toBe('kg');
-        expect(item?.baseUnitQty).toBe(0.25);
+        expect(item?.product?.baseUnit).toBe('unit');
+        expect(item?.baseUnitQty).toBe(12);
     });
 
     it('passes the supplied invoice number through to the synthesized sale', () => {

@@ -8,6 +8,7 @@ export interface LoyaltyLookupResult {
   ownerType: 'user' | 'walkIn';
   userId: string | null;
   loyaltyCustomerId: string | null;
+  tier: 'bronze' | 'silver' | 'gold';
   firstName: string;
   lastName: string | null;
   phone: string;

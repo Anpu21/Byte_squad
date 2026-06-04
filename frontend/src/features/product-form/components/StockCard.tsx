@@ -8,6 +8,9 @@ interface StockCardProps {
 }
 
 export function StockCard({ form }: StockCardProps) {
+    const isUnitStock = form.baseUnit === 'unit';
+    const quantityStep = isUnitStock ? '1' : '0.001';
+
     return (
         <Card>
             <CardHeader>
@@ -25,7 +28,7 @@ export function StockCard({ form }: StockCardProps) {
                         name="initialStock"
                         type="number"
                         min="0"
-                        step="1"
+                        step={quantityStep}
                         value={form.initialStock}
                         onChange={(e) => form.setInitialStock(e.target.value)}
                         aria-invalid={Boolean(form.errors.initialStock)}

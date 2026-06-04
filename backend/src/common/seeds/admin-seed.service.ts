@@ -8,10 +8,10 @@ import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { defaultSellableUnitsFor } from '@products/lib/default-sellable-units';
-import type { TSupportedBaseUnit } from '@products/lib/supported-base-units';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
+import { Payment } from '@pos/entities/payment.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -23,9 +23,27 @@ import { Notification } from '@notifications/entities/notification.entity';
 import { NotificationType } from '@common/enums/notification.enum';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
+import { ExpenseStatus } from '@common/enums/expense-status.enum';
+import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
+import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
+import { CustomerOrderPaymentMode } from '@common/enums/customer-order-payment-mode.enum';
+import { CustomerOrderPaymentStatus } from '@common/enums/customer-order-payment-status.enum';
+import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
+import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
+import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { pickSeedImageUrl } from '@common/seeds/seed-product-images';
 import { HrSeedService } from '@common/seeds/hr-seed.service';
+import {
+  CATEGORY_THRESHOLDS,
+  SUPERMARKET_PRODUCTS,
+} from '@common/seeds/supermarket-products.seed';
+import {
+  buildSeedSaleLine,
+  generateSeedQuantity,
+} from '@common/seeds/seed-quantity';
+import type { PosPaymentMethod } from '@pos/types';
 
 interface SeedDefaults {
   adminEmail: string;
@@ -37,450 +55,23 @@ interface SeedDefaults {
   branchPhone: string;
 }
 
-interface SupermarketProductSeed {
-  name: string;
-  barcode: string;
-  category: string;
-  /**
-   * Canonical base unit for the product. Drives the auto-seeded
-   * sellable-units list (kg → [kg, g], l → [l, ml], pack/each/etc. →
-   * single self row) so the cashier POS dropdown surfaces the right
-   * options without manager intervention.
-   */
-  baseUnit: TSupportedBaseUnit;
-  costPrice: number;
-  sellingPrice: number;
-  description: string;
+interface BranchComparisonSeedProfile {
+  branch: Branch;
+  cashier: User;
+  code: string;
+  dailyBaseCount: number;
+  basketScale: number;
+  paymentMethods: PosPaymentMethod[];
+  expenseBase: number;
+  orderCounts: {
+    completed: number;
+    cancelled: number;
+    rejected: number;
+  };
+  loyaltyScale: number;
 }
 
-const SUPERMARKET_PRODUCTS: SupermarketProductSeed[] = [
-  {
-    name: 'Coca-Cola 1.5L',
-    barcode: 'BVG-001',
-    category: 'Beverages',
-    baseUnit: 'l',
-    costPrice: 315,
-    sellingPrice: 420,
-    description: 'Classic Coca-Cola, 1.5 litre bottle',
-  },
-  {
-    name: 'Pepsi 1.5L',
-    barcode: 'BVG-002',
-    category: 'Beverages',
-    baseUnit: 'l',
-    costPrice: 315,
-    sellingPrice: 420,
-    description: 'Pepsi cola, 1.5 litre bottle',
-  },
-  {
-    name: 'Sprite 1.5L',
-    barcode: 'BVG-003',
-    category: 'Beverages',
-    baseUnit: 'l',
-    costPrice: 315,
-    sellingPrice: 420,
-    description: 'Sprite lemon-lime, 1.5 litre bottle',
-  },
-  {
-    name: 'Orange Juice 1L',
-    barcode: 'BVG-004',
-    category: 'Beverages',
-    baseUnit: 'l',
-    costPrice: 840,
-    sellingPrice: 1050,
-    description: '100% pure orange juice, 1 litre',
-  },
-  {
-    name: 'Bottled Water 1.5L',
-    barcode: 'BVG-005',
-    category: 'Beverages',
-    baseUnit: 'l',
-    costPrice: 100,
-    sellingPrice: 130,
-    description: 'Spring water, 1.5 litre',
-  },
-  {
-    name: 'Tea Bags (100)',
-    barcode: 'BVG-006',
-    category: 'Beverages',
-    baseUnit: 'pack',
-    costPrice: 600,
-    sellingPrice: 790,
-    description: 'Black tea, 100 bags',
-  },
-  {
-    name: 'Instant Coffee 100g',
-    barcode: 'BVG-007',
-    category: 'Beverages',
-    baseUnit: 'g',
-    costPrice: 1320,
-    sellingPrice: 1660,
-    description: 'Instant coffee jar, 100g',
-  },
-  {
-    name: 'Whole Milk 1L',
-    barcode: 'DRY-001',
-    category: 'Dairy',
-    baseUnit: 'l',
-    costPrice: 440,
-    sellingPrice: 550,
-    description: 'Fresh whole milk, 1 litre',
-  },
-  {
-    name: 'Low-Fat Milk 1L',
-    barcode: 'DRY-002',
-    category: 'Dairy',
-    baseUnit: 'l',
-    costPrice: 416,
-    sellingPrice: 520,
-    description: 'Low-fat milk, 1 litre',
-  },
-  {
-    name: 'Plain Yogurt 250g',
-    barcode: 'DRY-003',
-    category: 'Dairy',
-    baseUnit: 'g',
-    costPrice: 175,
-    sellingPrice: 230,
-    description: 'Plain yogurt, 250g cup',
-  },
-  {
-    name: 'Salted Butter 250g',
-    barcode: 'DRY-004',
-    category: 'Dairy',
-    baseUnit: 'g',
-    costPrice: 960,
-    sellingPrice: 1200,
-    description: 'Salted butter block, 250g',
-  },
-  {
-    name: 'Cheddar Cheese 200g',
-    barcode: 'DRY-005',
-    category: 'Dairy',
-    baseUnit: 'g',
-    costPrice: 840,
-    sellingPrice: 1050,
-    description: 'Cheddar cheese block, 200g',
-  },
-  {
-    name: 'Eggs (12)',
-    barcode: 'DRY-006',
-    category: 'Dairy',
-    baseUnit: 'pack',
-    costPrice: 540,
-    sellingPrice: 660,
-    description: 'Free-range eggs, dozen',
-  },
-  {
-    name: 'White Bread Loaf',
-    barcode: 'BKY-001',
-    category: 'Bakery',
-    baseUnit: 'each',
-    costPrice: 340,
-    sellingPrice: 450,
-    description: 'Fresh white bread loaf, 700g',
-  },
-  {
-    name: 'Brown Bread Loaf',
-    barcode: 'BKY-002',
-    category: 'Bakery',
-    baseUnit: 'each',
-    costPrice: 390,
-    sellingPrice: 520,
-    description: 'Whole-wheat brown bread, 700g',
-  },
-  {
-    name: 'Burger Buns (6)',
-    barcode: 'BKY-003',
-    category: 'Bakery',
-    baseUnit: 'pack',
-    costPrice: 360,
-    sellingPrice: 480,
-    description: 'Soft burger buns, pack of 6',
-  },
-  {
-    name: 'Dinner Rolls (8)',
-    barcode: 'BKY-004',
-    category: 'Bakery',
-    baseUnit: 'pack',
-    costPrice: 270,
-    sellingPrice: 360,
-    description: 'Dinner rolls, pack of 8',
-  },
-  {
-    name: 'Apples 1kg',
-    barcode: 'PRD-001',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 800,
-    sellingPrice: 1000,
-    description: 'Red apples, 1kg',
-  },
-  {
-    name: 'Bananas 1kg',
-    barcode: 'PRD-002',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 120,
-    sellingPrice: 170,
-    description: 'Cavendish bananas, 1kg',
-  },
-  {
-    name: 'Tomatoes 1kg',
-    barcode: 'PRD-003',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 350,
-    sellingPrice: 490,
-    description: 'Fresh tomatoes, 1kg',
-  },
-  {
-    name: 'Onions 1kg',
-    barcode: 'PRD-004',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 180,
-    sellingPrice: 260,
-    description: 'Yellow onions, 1kg',
-  },
-  {
-    name: 'Potatoes 2kg',
-    barcode: 'PRD-005',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 500,
-    sellingPrice: 640,
-    description: 'Potatoes, 2kg bag',
-  },
-  {
-    name: 'Carrots 1kg',
-    barcode: 'PRD-006',
-    category: 'Produce',
-    baseUnit: 'kg',
-    costPrice: 270,
-    sellingPrice: 360,
-    description: 'Fresh carrots, 1kg',
-  },
-  {
-    name: 'Basmati Rice 5kg',
-    barcode: 'PNT-001',
-    category: 'Pantry',
-    baseUnit: 'kg',
-    costPrice: 4500,
-    sellingPrice: 5500,
-    description: 'Premium basmati rice, 5kg',
-  },
-  {
-    name: 'Sugar 1kg',
-    barcode: 'PNT-002',
-    category: 'Pantry',
-    baseUnit: 'kg',
-    costPrice: 220,
-    sellingPrice: 295,
-    description: 'White granulated sugar, 1kg',
-  },
-  {
-    name: 'Iodized Salt 1kg',
-    barcode: 'PNT-003',
-    category: 'Pantry',
-    baseUnit: 'kg',
-    costPrice: 240,
-    sellingPrice: 315,
-    description: 'Iodized table salt, 1kg',
-  },
-  {
-    name: 'All-Purpose Flour 2kg',
-    barcode: 'PNT-004',
-    category: 'Pantry',
-    baseUnit: 'kg',
-    costPrice: 360,
-    sellingPrice: 490,
-    description: 'All-purpose wheat flour, 2kg',
-  },
-  {
-    name: 'Spaghetti Pasta 500g',
-    barcode: 'PNT-005',
-    category: 'Pantry',
-    baseUnit: 'g',
-    costPrice: 780,
-    sellingPrice: 1000,
-    description: 'Spaghetti pasta, 500g',
-  },
-  {
-    name: 'Red Lentils 1kg',
-    barcode: 'PNT-006',
-    category: 'Pantry',
-    baseUnit: 'kg',
-    costPrice: 220,
-    sellingPrice: 280,
-    description: 'Red lentils, 1kg',
-  },
-  {
-    name: 'Sunflower Oil 1L',
-    barcode: 'PNT-007',
-    category: 'Pantry',
-    baseUnit: 'l',
-    costPrice: 1550,
-    sellingPrice: 1925,
-    description: 'Sunflower vegetable oil, 1 litre',
-  },
-  {
-    name: 'Potato Chips 150g',
-    barcode: 'SNK-001',
-    category: 'Snacks',
-    baseUnit: 'g',
-    costPrice: 290,
-    sellingPrice: 390,
-    description: 'Salted potato chips, 150g',
-  },
-  {
-    name: 'Chocolate Cookies 200g',
-    barcode: 'SNK-002',
-    category: 'Snacks',
-    baseUnit: 'g',
-    costPrice: 600,
-    sellingPrice: 780,
-    description: 'Chocolate chip cookies, 200g',
-  },
-  {
-    name: 'Milk Chocolate Bar 100g',
-    barcode: 'SNK-003',
-    category: 'Snacks',
-    baseUnit: 'g',
-    costPrice: 375,
-    sellingPrice: 500,
-    description: 'Milk chocolate bar, 100g',
-  },
-  {
-    name: 'Salted Crackers 200g',
-    barcode: 'SNK-004',
-    category: 'Snacks',
-    baseUnit: 'g',
-    costPrice: 160,
-    sellingPrice: 210,
-    description: 'Salted crackers, 200g',
-  },
-  {
-    name: 'Mixed Nuts 250g',
-    barcode: 'SNK-005',
-    category: 'Snacks',
-    baseUnit: 'g',
-    costPrice: 950,
-    sellingPrice: 1250,
-    description: 'Roasted mixed nuts, 250g',
-  },
-  {
-    name: 'Frozen Chicken 1kg',
-    barcode: 'FRZ-001',
-    category: 'Frozen',
-    baseUnit: 'kg',
-    costPrice: 1000,
-    sellingPrice: 1250,
-    description: 'Frozen chicken pieces, 1kg',
-  },
-  {
-    name: 'Frozen Fish Fillet 500g',
-    barcode: 'FRZ-002',
-    category: 'Frozen',
-    baseUnit: 'g',
-    costPrice: 1750,
-    sellingPrice: 2200,
-    description: 'Frozen white fish fillet, 500g',
-  },
-  {
-    name: 'Vanilla Ice Cream 1L',
-    barcode: 'FRZ-003',
-    category: 'Frozen',
-    baseUnit: 'l',
-    costPrice: 700,
-    sellingPrice: 900,
-    description: 'Vanilla ice cream, 1 litre',
-  },
-  {
-    name: 'Dish Soap 500ml',
-    barcode: 'HSH-001',
-    category: 'Household',
-    baseUnit: 'ml',
-    costPrice: 320,
-    sellingPrice: 425,
-    description: 'Lemon dish soap, 500ml',
-  },
-  {
-    name: 'Laundry Detergent 1kg',
-    barcode: 'HSH-002',
-    category: 'Household',
-    baseUnit: 'kg',
-    costPrice: 430,
-    sellingPrice: 565,
-    description: 'Powder laundry detergent, 1kg',
-  },
-  {
-    name: 'Toilet Paper (12 rolls)',
-    barcode: 'HSH-003',
-    category: 'Household',
-    baseUnit: 'pack',
-    costPrice: 2500,
-    sellingPrice: 3180,
-    description: 'Toilet paper, 12-roll pack',
-  },
-  {
-    name: 'Floor Cleaner 1L',
-    barcode: 'HSH-004',
-    category: 'Household',
-    baseUnit: 'l',
-    costPrice: 530,
-    sellingPrice: 700,
-    description: 'Multi-surface floor cleaner, 1 litre',
-  },
-  {
-    name: 'Shampoo 400ml',
-    barcode: 'PCR-001',
-    category: 'Personal Care',
-    baseUnit: 'ml',
-    costPrice: 1150,
-    sellingPrice: 1550,
-    description: 'Anti-dandruff shampoo, 400ml',
-  },
-  {
-    name: 'Bath Soap Bar',
-    barcode: 'PCR-002',
-    category: 'Personal Care',
-    baseUnit: 'each',
-    costPrice: 120,
-    sellingPrice: 170,
-    description: 'Moisturising bath soap, 100g',
-  },
-  {
-    name: 'Toothpaste 100g',
-    barcode: 'PCR-003',
-    category: 'Personal Care',
-    baseUnit: 'g',
-    costPrice: 180,
-    sellingPrice: 250,
-    description: 'Mint fluoride toothpaste, 100g',
-  },
-  {
-    name: 'Toothbrush',
-    barcode: 'PCR-004',
-    category: 'Personal Care',
-    baseUnit: 'each',
-    costPrice: 100,
-    sellingPrice: 150,
-    description: 'Soft-bristle toothbrush',
-  },
-];
-
-const CATEGORY_THRESHOLDS: Record<string, number> = {
-  Beverages: 30,
-  Dairy: 30,
-  Bakery: 25,
-  Produce: 25,
-  Pantry: 20,
-  Snacks: 20,
-  Frozen: 15,
-  Household: 15,
-  'Personal Care': 12,
-};
+export const STANDALONE_SEED_ENV = 'LEDGERPRO_STANDALONE_SEED';
 
 @Injectable()
 export class AdminSeedService implements OnModuleInit {
@@ -501,10 +92,20 @@ export class AdminSeedService implements OnModuleInit {
     private readonly transactionRepository: Repository<Sale>,
     @InjectRepository(SaleItem)
     private readonly transactionItemRepository: Repository<SaleItem>,
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepository: Repository<LedgerEntry>,
     @InjectRepository(Expense)
     private readonly expenseRepository: Repository<Expense>,
+    @InjectRepository(CustomerOrder)
+    private readonly customerOrderRepository: Repository<CustomerOrder>,
+    @InjectRepository(LoyaltyAccount)
+    private readonly loyaltyAccountRepository: Repository<LoyaltyAccount>,
+    @InjectRepository(LoyaltyCustomer)
+    private readonly loyaltyCustomerRepository: Repository<LoyaltyCustomer>,
+    @InjectRepository(LoyaltyLedgerEntry)
+    private readonly loyaltyLedgerRepository: Repository<LoyaltyLedgerEntry>,
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
     @InjectRepository(StockTransferRequest)
@@ -515,6 +116,8 @@ export class AdminSeedService implements OnModuleInit {
   ) {}
 
   onModuleInit(): void {
+    if (process.env[STANDALONE_SEED_ENV] === 'true') return;
+
     // Run the seed in the background so Cloudinary or any slow step never
     // blocks Nest from calling app.listen(). The critical rows (branches +
     // users) finish in seconds, well before a real login attempt arrives;
@@ -622,6 +225,41 @@ export class AdminSeedService implements OnModuleInit {
       branchId: suburbanBranch.id,
     });
 
+    const customerUsers = await Promise.all([
+      this.ensureUser({
+        email: 'customer.ayesha@ledgerpro.com',
+        password: 'Customer@123',
+        firstName: 'Ayesha',
+        lastName: 'Perera',
+        role: UserRole.CUSTOMER,
+        branchId: mainBranch.id,
+      }),
+      this.ensureUser({
+        email: 'customer.nuwan@ledgerpro.com',
+        password: 'Customer@123',
+        firstName: 'Nuwan',
+        lastName: 'Fernando',
+        role: UserRole.CUSTOMER,
+        branchId: downtownBranch.id,
+      }),
+      this.ensureUser({
+        email: 'customer.malini@ledgerpro.com',
+        password: 'Customer@123',
+        firstName: 'Malini',
+        lastName: 'Silva',
+        role: UserRole.CUSTOMER,
+        branchId: suburbanBranch.id,
+      }),
+      this.ensureUser({
+        email: 'customer.dinesh@ledgerpro.com',
+        password: 'Customer@123',
+        firstName: 'Dinesh',
+        lastName: 'Jayasinghe',
+        role: UserRole.CUSTOMER,
+        branchId: mainBranch.id,
+      }),
+    ]);
+
     // 3. Products — supermarket catalogue (idempotent by barcode)
     const products = await this.ensureProducts();
 
@@ -634,6 +272,22 @@ export class AdminSeedService implements OnModuleInit {
     // 5. Transactions — last 7 days of POS sales
     await this.ensureTransactions(cashier1, mainBranch.id, products);
     await this.ensureTransactions(cashier2, downtownBranch.id, products);
+    await this.ensureTransactions(cashier3, suburbanBranch.id, products);
+
+    // 5b. Deterministic analytics data for the branch comparison dashboard.
+    await this.ensureBranchComparisonDemoData({
+      mainBranch,
+      downtownBranch,
+      suburbanBranch,
+      admin,
+      cashiers: {
+        [mainBranch.id]: cashier1,
+        [downtownBranch.id]: cashier2,
+        [suburbanBranch.id]: cashier3,
+      },
+      customerUsers,
+      products,
+    });
 
     // 6. Ledger entries & expenses — supermarket-themed
     await this.ensureLedgerAndExpenses(
@@ -779,19 +433,51 @@ export class AdminSeedService implements OnModuleInit {
           this.productRepository.create({ ...p, isActive: true }),
         );
         createdCount++;
-      } else if (product.baseUnit !== p.baseUnit) {
-        // Existing seed predates Phase A1+ — sync to the new canonical
-        // baseUnit so the units re-seed below matches the seed source.
-        product.baseUnit = p.baseUnit;
-        product = await this.productRepository.save(product);
+      } else {
+        const patch: Partial<Product> = {};
+        if (product.name !== p.name) {
+          patch.name = p.name;
+          product.name = p.name;
+        }
+        if (product.category !== p.category) {
+          patch.category = p.category;
+          product.category = p.category;
+        }
+        if (product.description !== p.description) {
+          patch.description = p.description;
+          product.description = p.description;
+        }
+        if (product.baseUnit !== p.baseUnit) {
+          patch.baseUnit = p.baseUnit;
+          product.baseUnit = p.baseUnit;
+        }
+        if (Number(product.costPrice) !== p.costPrice) {
+          patch.costPrice = p.costPrice;
+          product.costPrice = p.costPrice;
+        }
+        if (Number(product.sellingPrice) !== p.sellingPrice) {
+          patch.sellingPrice = p.sellingPrice;
+          product.sellingPrice = p.sellingPrice;
+        }
+        if (!product.isActive) {
+          patch.isActive = true;
+          product.isActive = true;
+        }
+        if (Object.keys(patch).length > 0) {
+          product = await this.productRepository.save(product);
+        }
       }
 
       // Idempotent sellable-units sync. Always replace so re-running the
       // seed after a baseUnit change converges product_sellable_units to
-      // the defaultSellableUnitsFor(baseUnit) shape (kg → [kg, g], etc.).
+      // the defaultSellableUnitsFor(baseUnit) shape.
       // The Phase A1 migration only backfilled rows missing units; this
       // keeps existing rows in lockstep with the seed source.
-      const unitSeeds = defaultSellableUnitsFor(product.id, product.baseUnit);
+      const unitSeeds = defaultSellableUnitsFor(
+        product.id,
+        product.baseUnit,
+        Number(product.sellingPrice),
+      );
       await this.sellableUnitRepository.delete({ productId: product.id });
       await this.sellableUnitRepository.save(
         unitSeeds.map((s) => this.sellableUnitRepository.create(s)),
@@ -875,7 +561,12 @@ export class AdminSeedService implements OnModuleInit {
       if (existing) continue;
 
       const threshold = CATEGORY_THRESHOLDS[product.category] ?? 15;
-      const quantity = this.generateQuantity(profile, threshold);
+      const quantity = generateSeedQuantity(
+        product.baseUnit,
+        profile,
+        threshold,
+        `${branchId}:${product.barcode}`,
+      );
       await this.inventoryRepository.save(
         this.inventoryRepository.create({
           productId: product.id,
@@ -892,24 +583,6 @@ export class AdminSeedService implements OnModuleInit {
         `Inventory seeded for branch ${branchId} (${profile}, ${createdCount} rows).`,
       );
     }
-  }
-
-  // Healthy branches stock most items above threshold; "short" branches
-  // (Suburban in this seed) intentionally have many low-stock and a few
-  // out-of-stock items so the transfer flow has a natural starting point.
-  private generateQuantity(
-    profile: 'healthy' | 'short',
-    threshold: number,
-  ): number {
-    const r = Math.random();
-    if (profile === 'short') {
-      if (r < 0.2) return 0;
-      if (r < 0.55) return Math.floor(Math.random() * threshold);
-      return Math.floor(Math.random() * 80) + threshold;
-    }
-    if (r < 0.05) return 0;
-    if (r < 0.18) return Math.floor(Math.random() * threshold);
-    return Math.floor(Math.random() * 150) + threshold;
   }
 
   // ── Transactions ───────────────────────────────────────
@@ -951,20 +624,19 @@ export class AdminSeedService implements OnModuleInit {
         let subtotal = 0;
         const items: Partial<SaleItem>[] = [];
         for (const prod of selectedProducts) {
-          const qty = Math.floor(Math.random() * 3) + 1;
-          const lineTotal = Number(prod.sellingPrice) * qty;
-          subtotal += lineTotal;
+          const line = buildSeedSaleLine(
+            prod,
+            `${cashier.id}:${branchId}:${prod.barcode}:${daysAgo}:${t}`,
+          );
+          subtotal += line.lineTotal;
           items.push({
             productId: prod.id,
-            quantity: qty,
-            // PHASE-5: replace with the real conversion factor once the seed
-            // migrates to PosWriteService.createSale. Seed products have no
-            // sellable-units, so qty already equals the base-unit quantity.
-            baseUnitQty: qty,
-            unitPrice: Number(prod.sellingPrice),
+            quantity: line.quantity,
+            baseUnitQty: line.baseUnitQty,
+            unitPrice: line.unitPrice,
             discountAmount: 0,
             discountType: DiscountType.NONE,
-            lineTotal,
+            lineTotal: line.lineTotal,
           });
         }
 
@@ -1000,6 +672,606 @@ export class AdminSeedService implements OnModuleInit {
       }
     }
     this.logger.log(`Transactions seeded for cashier ${cashier.email}.`);
+  }
+
+  private async ensureBranchComparisonDemoData(ctx: {
+    mainBranch: Branch;
+    downtownBranch: Branch;
+    suburbanBranch: Branch;
+    admin: User;
+    cashiers: Record<string, User>;
+    customerUsers: User[];
+    products: Product[];
+  }): Promise<void> {
+    const productByBarcode = new Map(ctx.products.map((p) => [p.barcode, p]));
+    const demoProducts = [
+      'BVG-001',
+      'DRY-001',
+      'DRY-006',
+      'BKY-001',
+      'PRD-001',
+      'PRD-002',
+      'PRD-003',
+      'PNT-001',
+      'PNT-007',
+    ]
+      .map((barcode) => productByBarcode.get(barcode))
+      .filter((product): product is Product => !!product);
+
+    if (demoProducts.length < 5) {
+      this.logger.warn(
+        'Branch comparison demo seed skipped — required products not found.',
+      );
+      return;
+    }
+
+    const profiles: BranchComparisonSeedProfile[] = [
+      {
+        branch: ctx.mainBranch,
+        cashier: ctx.cashiers[ctx.mainBranch.id],
+        code: 'MAIN',
+        dailyBaseCount: 10,
+        basketScale: 1.22,
+        paymentMethods: ['Cash', 'Card', 'Card', 'Mobile', 'Bank'],
+        expenseBase: 13200,
+        orderCounts: { completed: 14, cancelled: 2, rejected: 1 },
+        loyaltyScale: 1.3,
+      },
+      {
+        branch: ctx.downtownBranch,
+        cashier: ctx.cashiers[ctx.downtownBranch.id],
+        code: 'DOWN',
+        dailyBaseCount: 7,
+        basketScale: 0.96,
+        paymentMethods: ['Cash', 'Cash', 'Card', 'Mobile', 'Cheque'],
+        expenseBase: 9800,
+        orderCounts: { completed: 10, cancelled: 3, rejected: 2 },
+        loyaltyScale: 0.95,
+      },
+      {
+        branch: ctx.suburbanBranch,
+        cashier: ctx.cashiers[ctx.suburbanBranch.id],
+        code: 'SUB',
+        dailyBaseCount: 5,
+        basketScale: 0.74,
+        paymentMethods: ['Cash', 'Mobile', 'Credit', 'Card'],
+        expenseBase: 7600,
+        orderCounts: { completed: 7, cancelled: 4, rejected: 3 },
+        loyaltyScale: 0.72,
+      },
+    ];
+
+    await this.ensureBranchComparisonSales(profiles, demoProducts);
+    await this.ensureBranchComparisonExpenses(profiles, ctx.admin.id);
+    const orderIdsByBranch = await this.ensureBranchComparisonOrders(
+      profiles,
+      demoProducts,
+      ctx.customerUsers,
+    );
+    await this.ensureBranchComparisonLoyalty(profiles, orderIdsByBranch);
+  }
+
+  private async ensureBranchComparisonSales(
+    profiles: BranchComparisonSeedProfile[],
+    products: Product[],
+  ): Promise<void> {
+    let createdSales = 0;
+    let createdPayments = 0;
+
+    for (const profile of profiles) {
+      for (let daysAgo = 6; daysAgo >= 0; daysAgo--) {
+        const saleCount = profile.dailyBaseCount + ((6 - daysAgo) % 3);
+        for (let index = 0; index < saleCount; index++) {
+          const saleDate = this.branchComparisonDate(daysAgo, 9 + index);
+          const saleNo = `BCMP-${profile.code}-${daysAgo}-${index}`;
+          const itemCount = 2 + ((daysAgo + index) % 3);
+          const items: Partial<SaleItem>[] = [];
+          let subtotal = 0;
+
+          for (let itemIndex = 0; itemIndex < itemCount; itemIndex++) {
+            const product =
+              products[(index + itemIndex + daysAgo) % products.length];
+            const quantity = this.demoQuantity(product, index + itemIndex);
+            const unitPrice = Number(product.sellingPrice);
+            const lineSubtotal =
+              Math.round(quantity * unitPrice * profile.basketScale * 100) /
+              100;
+            subtotal += lineSubtotal;
+            items.push({
+              productId: product.id,
+              quantity,
+              baseUnitQty: quantity,
+              unitId: null,
+              unitPrice,
+              discountAmount: 0,
+              discountType: DiscountType.NONE,
+              lineSubtotal,
+              lineDiscountPercentage: 0,
+              lineTaxRate: 0,
+              lineTaxAmount: 0,
+              lineTotal: lineSubtotal,
+              priceLevelUsed: 'Retail',
+              free: 0,
+              status: 'Active',
+            });
+          }
+
+          const discountAmount =
+            index % 5 === 0 ? Math.round(subtotal * 0.04 * 100) / 100 : 0;
+          const taxAmount =
+            index % 4 === 0 ? Math.round(subtotal * 0.025 * 100) / 100 : 0;
+          const total = Math.max(
+            0,
+            Math.round((subtotal - discountAmount + taxAmount) * 100) / 100,
+          );
+          const paymentMethod =
+            profile.paymentMethods[index % profile.paymentMethods.length];
+          const existingSale = await this.transactionRepository.findOne({
+            where: { transactionNumber: saleNo },
+          });
+
+          if (existingSale) {
+            const paymentCreated = await this.ensureBranchComparisonPayment({
+              saleId: existingSale.id,
+              saleNo,
+              paymentMethod,
+              total: Number(existingSale.total),
+            });
+            if (paymentCreated) createdPayments++;
+            continue;
+          }
+
+          const sale = await this.transactionRepository.save(
+            this.transactionRepository.create({
+              transactionNumber: saleNo,
+              invoiceNumber: saleNo,
+              branchId: profile.branch.id,
+              cashierId: profile.cashier.id,
+              type: TransactionType.SALE,
+              subtotal,
+              discountAmount,
+              discountType:
+                discountAmount > 0 ? DiscountType.FIXED : DiscountType.NONE,
+              taxAmount,
+              total,
+              paymentMethod: this.legacyPaymentMethod(paymentMethod),
+              paidAmount: total,
+              balanceDue: 0,
+              paymentStatus: 'Paid',
+              status: 'Active',
+              location: 'Shop',
+              items: items as SaleItem[],
+            }),
+          );
+          await this.transactionRepository
+            .createQueryBuilder()
+            .update(Sale)
+            .set({ createdAt: saleDate })
+            .where('id = :id', { id: sale.id })
+            .execute();
+
+          createdSales++;
+          const paymentCreated = await this.ensureBranchComparisonPayment({
+            saleId: sale.id,
+            saleNo,
+            paymentMethod,
+            total,
+          });
+          if (paymentCreated) createdPayments++;
+        }
+      }
+    }
+
+    this.logger.log(
+      `Branch comparison POS seed ready (${createdSales} sales, ${createdPayments} payments created).`,
+    );
+  }
+
+  private async ensureBranchComparisonPayment(data: {
+    saleId: string;
+    saleNo: string;
+    paymentMethod: PosPaymentMethod;
+    total: number;
+  }): Promise<boolean> {
+    const receiptNo = `RCPT-${data.saleNo}`;
+    const existing = await this.paymentRepository.findOne({
+      where: { receiptNo },
+    });
+    if (existing) return false;
+
+    await this.paymentRepository.save(
+      this.paymentRepository.create({
+        saleId: data.saleId,
+        receiptNo,
+        paymentMethod: data.paymentMethod,
+        paymentAmount: data.total,
+        invoiceTotal: data.total,
+        ...this.demoPaymentAmounts(data.paymentMethod, data.total),
+        status: 'Active',
+      }),
+    );
+    return true;
+  }
+
+  private async ensureBranchComparisonExpenses(
+    profiles: BranchComparisonSeedProfile[],
+    adminId: string,
+  ): Promise<void> {
+    const categories = ['Rent', 'Utilities', 'Spoilage', 'Local Marketing'];
+    let createdCount = 0;
+    for (const profile of profiles) {
+      for (let index = 0; index < categories.length; index++) {
+        const amount = Math.round(profile.expenseBase * (0.16 + index * 0.08));
+        const expenseDate = this.branchComparisonDate(6 - index, 10 + index);
+        const description = `Branch compare demo: ${profile.code} ${categories[index]}`;
+        const existing = await this.expenseRepository.findOne({
+          where: { description },
+        });
+        if (existing) continue;
+
+        await this.expenseRepository.save(
+          this.expenseRepository.create({
+            branchId: profile.branch.id,
+            createdBy: adminId,
+            category: categories[index],
+            amount,
+            description,
+            expenseDate,
+            status: ExpenseStatus.APPROVED,
+            reviewedBy: adminId,
+            reviewedAt: expenseDate,
+            reviewNote: 'Approved by demo seed for branch comparison charts.',
+          }),
+        );
+        createdCount++;
+      }
+    }
+    this.logger.log(
+      `Branch comparison approved expenses ready (${createdCount} created).`,
+    );
+  }
+
+  private async ensureBranchComparisonOrders(
+    profiles: BranchComparisonSeedProfile[],
+    products: Product[],
+    customerUsers: User[],
+  ): Promise<Map<string, string[]>> {
+    const existingOrders = await this.customerOrderRepository
+      .createQueryBuilder('orders')
+      .where('orders.order_code LIKE :prefix', { prefix: 'BCMP-ORD-%' })
+      .getMany();
+    const ordersByCode = new Map(
+      existingOrders.map((order) => [order.orderCode, order]),
+    );
+
+    const statusesFor = (profile: BranchComparisonSeedProfile) => [
+      ...Array.from(
+        { length: profile.orderCounts.completed },
+        () => CustomerOrderStatus.COMPLETED,
+      ),
+      ...Array.from(
+        { length: profile.orderCounts.cancelled },
+        () => CustomerOrderStatus.CANCELLED,
+      ),
+      ...Array.from(
+        { length: profile.orderCounts.rejected },
+        () => CustomerOrderStatus.REJECTED,
+      ),
+    ];
+
+    const savedOrders: CustomerOrder[] = [];
+    let createdCount = 0;
+    for (const profile of profiles) {
+      const statuses = statusesFor(profile);
+      for (let index = 0; index < statuses.length; index++) {
+        const product =
+          products[(index + profile.code.length) % products.length];
+        const quantity = 1 + (index % 4);
+        const estimatedTotal = quantity * Number(product.sellingPrice);
+        const status = statuses[index];
+        const orderDate = this.branchComparisonDate(index % 7, 11 + index);
+        const user = customerUsers[index % customerUsers.length];
+        const paid = status !== CustomerOrderStatus.REJECTED;
+        const orderCode = `BCMP-ORD-${profile.code}-${String(index + 1).padStart(2, '0')}`;
+        const existing = ordersByCode.get(orderCode);
+        if (existing) {
+          savedOrders.push(existing);
+          continue;
+        }
+
+        const order = await this.customerOrderRepository.save(
+          this.customerOrderRepository.create({
+            orderCode,
+            userId: user.id,
+            branchId: profile.branch.id,
+            status,
+            estimatedTotal,
+            loyaltyDiscountAmount: index % 5 === 0 ? 120 : 0,
+            finalTotal: Math.max(
+              0,
+              estimatedTotal - (index % 5 === 0 ? 120 : 0),
+            ),
+            paymentMode:
+              index % 3 === 0
+                ? CustomerOrderPaymentMode.ONLINE
+                : CustomerOrderPaymentMode.MANUAL,
+            paymentStatus: paid
+              ? CustomerOrderPaymentStatus.PAID
+              : CustomerOrderPaymentStatus.CANCELLED,
+            loyaltyPointsRedeemed: index % 5 === 0 ? 120 : 0,
+            loyaltyPointsEarned: paid ? Math.round(estimatedTotal / 100) : 0,
+            note: 'Branch compare demo pickup order',
+            items: [
+              {
+                productId: product.id,
+                quantity,
+                unitPriceSnapshot: Number(product.sellingPrice),
+              },
+            ],
+          }),
+        );
+        await this.customerOrderRepository
+          .createQueryBuilder()
+          .update(CustomerOrder)
+          .set({ createdAt: orderDate })
+          .where('id = :id', { id: order.id })
+          .execute();
+        savedOrders.push({ ...order, branchId: profile.branch.id });
+        createdCount++;
+      }
+    }
+    this.logger.log(
+      `Branch comparison customer pickup orders ready (${createdCount} created).`,
+    );
+    return this.groupOrderIdsByBranch(savedOrders);
+  }
+
+  private async ensureBranchComparisonLoyalty(
+    profiles: BranchComparisonSeedProfile[],
+    orderIdsByBranch: Map<string, string[]>,
+  ): Promise<void> {
+    let createdCount = 0;
+    for (const profile of profiles) {
+      const members = await Promise.all(
+        [1, 2, 3].map((index) => this.ensureDemoLoyaltyMember(profile, index)),
+      );
+      const orderIds = orderIdsByBranch.get(profile.branch.id) ?? [];
+
+      for (let index = 0; index < members.length; index++) {
+        const member = members[index];
+        const earnedPoints = Math.round(
+          (180 + index * 70) * profile.loyaltyScale,
+        );
+        const redeemedPoints = Math.round(
+          (40 + index * 20) * profile.loyaltyScale,
+        );
+        if (
+          await this.createDemoLoyaltyEntry({
+            member,
+            branchId: profile.branch.id,
+            orderId: null,
+            type: LoyaltyLedgerEntryType.EARNED,
+            points: earnedPoints,
+            description: `Branch compare demo: ${profile.code} POS earn ${index + 1}`,
+            createdAt: this.branchComparisonDate(6 - index, 13 + index),
+          })
+        ) {
+          createdCount++;
+        }
+        if (
+          await this.createDemoLoyaltyEntry({
+            member,
+            branchId: profile.branch.id,
+            orderId: orderIds[index % Math.max(orderIds.length, 1)] ?? null,
+            type: LoyaltyLedgerEntryType.EARNED,
+            points: Math.round(earnedPoints * 0.7),
+            description: `Branch compare demo: ${profile.code} online earn ${index + 1}`,
+            createdAt: this.branchComparisonDate(5 - index, 14 + index),
+          })
+        ) {
+          createdCount++;
+        }
+        if (index < 2) {
+          if (
+            await this.createDemoLoyaltyEntry({
+              member,
+              branchId: profile.branch.id,
+              orderId:
+                orderIds[(index + 2) % Math.max(orderIds.length, 1)] ?? null,
+              type: LoyaltyLedgerEntryType.REDEEMED,
+              points: redeemedPoints,
+              description: `Branch compare demo: ${profile.code} redeem ${index + 1}`,
+              createdAt: this.branchComparisonDate(3 - index, 15 + index),
+            })
+          ) {
+            createdCount++;
+          }
+        }
+      }
+
+      if (
+        await this.createDemoLoyaltyEntry({
+          member: members[0],
+          branchId: profile.branch.id,
+          orderId: null,
+          type: LoyaltyLedgerEntryType.EARN_REVERSED,
+          points: Math.round(25 * profile.loyaltyScale),
+          description: `Branch compare demo: ${profile.code} reversal`,
+          createdAt: this.branchComparisonDate(1, 16),
+        })
+      ) {
+        createdCount++;
+      }
+    }
+
+    this.logger.log(
+      `Branch comparison loyalty movements ready (${createdCount} created).`,
+    );
+  }
+
+  private async ensureDemoLoyaltyMember(
+    profile: BranchComparisonSeedProfile,
+    index: number,
+  ): Promise<LoyaltyCustomer> {
+    const phone = `+9477${profile.code === 'MAIN' ? '10' : profile.code === 'DOWN' ? '20' : '30'}00${index}`;
+    let customer = await this.loyaltyCustomerRepository.findOne({
+      where: { phone },
+    });
+    if (!customer) {
+      customer = await this.loyaltyCustomerRepository.save(
+        this.loyaltyCustomerRepository.create({
+          phone,
+          firstName: `${profile.code} Member ${index}`,
+          lastName: 'Demo',
+        }),
+      );
+    }
+
+    let account = await this.loyaltyAccountRepository.findOne({
+      where: { loyaltyCustomerId: customer.id },
+    });
+    const pointsBalance = Math.round(
+      (900 + index * 850) * profile.loyaltyScale,
+    );
+    const lifetimePointsEarned = Math.round(
+      (1200 + index * 1700) * profile.loyaltyScale,
+    );
+    if (!account) {
+      account = this.loyaltyAccountRepository.create({
+        loyaltyCustomerId: customer.id,
+        userId: null,
+      });
+    }
+    account.pointsBalance = pointsBalance;
+    account.lifetimePointsEarned = lifetimePointsEarned;
+    account.lifetimePointsRedeemed = Math.round(pointsBalance * 0.28);
+    await this.loyaltyAccountRepository.save(account);
+    return customer;
+  }
+
+  private async createDemoLoyaltyEntry(data: {
+    member: LoyaltyCustomer;
+    branchId: string;
+    orderId: string | null;
+    type: LoyaltyLedgerEntryType;
+    points: number;
+    description: string;
+    createdAt: Date;
+  }): Promise<boolean> {
+    const existing = await this.loyaltyLedgerRepository.findOne({
+      where: { description: data.description },
+    });
+    if (existing) return false;
+
+    const entry = await this.loyaltyLedgerRepository.save(
+      this.loyaltyLedgerRepository.create({
+        loyaltyCustomerId: data.member.id,
+        userId: null,
+        branchId: data.branchId,
+        orderId: data.orderId,
+        type: data.type,
+        points: data.points,
+        description: data.description,
+        metadata: { seed: 'branch-comparison' },
+      }),
+    );
+    await this.loyaltyLedgerRepository
+      .createQueryBuilder()
+      .update(LoyaltyLedgerEntry)
+      .set({ createdAt: data.createdAt })
+      .where('id = :id', { id: entry.id })
+      .execute();
+    return true;
+  }
+
+  private groupOrderIdsByBranch(
+    orders: CustomerOrder[],
+  ): Map<string, string[]> {
+    const grouped = new Map<string, string[]>();
+    for (const order of orders) {
+      const rows = grouped.get(order.branchId) ?? [];
+      rows.push(order.id);
+      grouped.set(order.branchId, rows);
+    }
+    return grouped;
+  }
+
+  private branchComparisonDate(daysAgo: number, hour: number): Date {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    date.setHours(hour, (daysAgo * 9 + hour) % 60, 0, 0);
+    return date;
+  }
+
+  private demoQuantity(product: Product, seed: number): number {
+    const baseUnit = product.baseUnit.toLowerCase();
+    if (baseUnit === 'kg') {
+      const quantities = [0.25, 0.5, 0.75, 1, 1.25, 1.5];
+      return quantities[seed % quantities.length];
+    }
+    if (baseUnit === 'l') {
+      const quantities = [0.25, 0.5, 0.75, 1, 1.5, 2];
+      return quantities[seed % quantities.length];
+    }
+    return 1 + (seed % 4);
+  }
+
+  private legacyPaymentMethod(method: PosPaymentMethod): PaymentMethod {
+    switch (method) {
+      case 'Cash':
+        return PaymentMethod.CASH;
+      case 'Card':
+        return PaymentMethod.CARD;
+      case 'Mobile':
+        return PaymentMethod.MOBILE;
+      case 'Cheque':
+      case 'Bank':
+      case 'Credit':
+        return PaymentMethod.ONLINE;
+      default: {
+        const exhaustive: never = method;
+        return exhaustive;
+      }
+    }
+  }
+
+  private demoPaymentAmounts(
+    method: PosPaymentMethod,
+    total: number,
+  ): Partial<Payment> {
+    const roundedTotal = Math.round(total * 100) / 100;
+    switch (method) {
+      case 'Cash': {
+        const cashTendered = Math.ceil(roundedTotal / 100) * 100;
+        return {
+          cashAmount: roundedTotal,
+          cashTendered,
+          cashChange: Math.round((cashTendered - roundedTotal) * 100) / 100,
+        };
+      }
+      case 'Cheque':
+        return {
+          chequeAmount: roundedTotal,
+          chequeNo: `CHQ-${Math.round(roundedTotal * 10)}`,
+          chequeDate: this.branchComparisonDate(0, 12),
+          chequeBank: 'Demo Bank',
+          chequeBranch: 'Colombo',
+        };
+      case 'Bank':
+        return {
+          bankTransferAmount: roundedTotal,
+          bankRef: `BANK-${Math.round(roundedTotal * 10)}`,
+        };
+      case 'Credit':
+        return { creditAmount: roundedTotal };
+      case 'Card':
+      case 'Mobile':
+        return {};
+      default: {
+        const exhaustive: never = method;
+        return exhaustive;
+      }
+    }
   }
 
   // ── Ledger & Expenses ──────────────────────────────────

@@ -1,28 +1,48 @@
 import Card from '@/components/ui/Card';
-import type { IBranchComparisonEntry } from '@/types';
-import { formatCurrencyWhole, formatPercent, type MetricKey } from '../lib/format';
+import type { IBranchAnalyticsComparisonEntry } from '@/types';
+import {
+    formatCurrencyWhole,
+    formatNumber,
+    formatPercent,
+    type MetricKey,
+} from '../lib/format';
 
 interface BranchMetricCardProps {
-    entry: IBranchComparisonEntry;
+    entry: IBranchAnalyticsComparisonEntry;
     metric: MetricKey;
 }
 
-function mainStat(entry: IBranchComparisonEntry, metric: MetricKey) {
+function mainStat(entry: IBranchAnalyticsComparisonEntry, metric: MetricKey) {
     switch (metric) {
         case 'revenue':
             return {
                 label: 'Total revenue',
-                value: formatCurrencyWhole(entry.revenue),
+                value: formatCurrencyWhole(entry.financial.revenue),
+            };
+        case 'grossProfit':
+            return {
+                label: 'Gross profit',
+                value: formatCurrencyWhole(entry.financial.grossProfit),
             };
         case 'transactions':
             return {
                 label: 'Transactions',
-                value: entry.transactionCount.toLocaleString(),
+                value: entry.sales.transactionCount.toLocaleString(),
             };
         case 'aov':
             return {
                 label: 'Avg transaction value',
-                value: formatCurrencyWhole(entry.avgTransactionValue),
+                value: formatCurrencyWhole(entry.sales.avgTransactionValue),
+            };
+        case 'activeProducts':
+            return {
+                label: 'Active products',
+                value: formatNumber(entry.inventory.activeProducts),
+            };
+        case 'loyaltyMembers':
+            return {
+                label: 'Loyalty members',
+                value: formatNumber(entry.loyalty.activeMembers),
             };
     }
 }
@@ -57,16 +77,19 @@ export function BranchMetricCard({ entry, metric }: BranchMetricCardProps) {
             <div className="mt-4 pt-3 border-t border-border space-y-2 text-[12px]">
                 <Row
                     label="Expenses"
-                    value={formatCurrencyWhole(entry.expenses)}
+                    value={formatCurrencyWhole(entry.financial.expenses)}
                 />
                 <Row
                     label="Expense ratio"
-                    value={formatPercent(entry.expenseRatio)}
+                    value={formatPercent(entry.financial.expenseRatio)}
                 />
-                <Row label="Staff" value={entry.staffCount.toLocaleString()} />
+                <Row
+                    label="Staff"
+                    value={entry.staff.staffCount.toLocaleString()}
+                />
                 <Row
                     label="Revenue / staff"
-                    value={formatCurrencyWhole(entry.revenuePerStaff)}
+                    value={formatCurrencyWhole(entry.staff.revenuePerStaff)}
                 />
             </div>
         </Card>
