@@ -179,12 +179,34 @@ export class AuthService {
       );
     }
 
-    await this.emailService.sendOtpEmail(
-      user.email,
-      user.firstName,
-      otpCode,
-      OTP_EXPIRES_IN_MINUTES,
-    );
+    const isProd = this.isProduction();
+    if (this.emailService.isVerified()) {
+      try {
+        await this.emailService.sendOtpEmail(
+          user.email,
+          user.firstName,
+          otpCode,
+          OTP_EXPIRES_IN_MINUTES,
+        );
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(
+          `Failed to resend OTP email to ${user.email}: ${message}`,
+        );
+        if (isProd) {
+          throw new ServiceUnavailableException(
+            'Email service unavailable. Please try again in a moment.',
+          );
+        }
+      }
+    } else if (isProd) {
+      this.logger.error(
+        `Cannot resend OTP to ${user.email}: email service not configured.`,
+      );
+      throw new ServiceUnavailableException(
+        'Email service unavailable. Please try again in a moment.',
+      );
+    }
 
     return { message: 'Verification code sent' };
   }

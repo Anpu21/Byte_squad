@@ -28,6 +28,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:admin": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/run-admin-seed.ts",
+    "seed:admin:prod": "node -r ./tsconfig-paths-bootstrap.js dist/common/seeds/run-admin-seed.js",
     "migrate:roles": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-roles.ts",
     "migrate:images": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-images.ts",
     "script:recategorize-products": "ts-node -r ./tsconfig-paths-bootstrap.js src/scripts/recategorize-products.ts"
@@ -53,6 +54,7 @@
     "pg": "8.18.0",
     "qrcode": "1.5.4",
     "reflect-metadata": "0.2.2",
+    "resend": "6.12.4",
     "rxjs": "7.8.2",
     "socket.io": "4.8.3",
     "tsconfig-paths": "4.2.0",
