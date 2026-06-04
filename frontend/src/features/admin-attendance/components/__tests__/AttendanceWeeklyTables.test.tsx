@@ -106,8 +106,11 @@ describe('AttendanceWeeklyTables', () => {
             'Saturday',
             'Sunday',
         ]) {
+            // Headers render "Monday 3" (day label + date number), so match by
+            // the day name as a substring rather than an exact accessible name.
             expect(
-                screen.getAllByRole('columnheader', { name: day }).length,
+                screen.getAllByRole('columnheader', { name: new RegExp(day) })
+                    .length,
             ).toBeGreaterThan(0);
         }
     });

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { usePosCart } from './usePosCart';
 
@@ -20,6 +20,12 @@ const seed = {
 };
 
 describe('usePosCart', () => {
+    // usePosCart persists the cart to localStorage; clear it between cases so
+    // state doesn't leak across tests (jsdom localStorage is shared per file).
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
     it('adds an item and computes totals', () => {
         const { result } = renderHook(() => usePosCart());
         act(() => result.current.addItem(seed));
