@@ -43,8 +43,8 @@ describe('useAdminTransfersTab', () => {
         expect(result.current.tab).toBe('board');
     });
 
-    it('reads "history" from the ?tab=history search param', () => {
-        const Wrapper = makeRouteWrapper(['/admin/transfers?tab=history']);
+    it('reads "history" from the ?transferTab=history search param', () => {
+        const Wrapper = makeRouteWrapper(['/admin/transfers?transferTab=history']);
         const { result } = renderHook(() => useAdminTransfersTab(), {
             wrapper: Wrapper,
         });
@@ -52,14 +52,14 @@ describe('useAdminTransfersTab', () => {
     });
 
     it('falls back to "board" for unknown tab values', () => {
-        const Wrapper = makeRouteWrapper(['/admin/transfers?tab=bogus']);
+        const Wrapper = makeRouteWrapper(['/admin/transfers?transferTab=bogus']);
         const { result } = renderHook(() => useAdminTransfersTab(), {
             wrapper: Wrapper,
         });
         expect(result.current.tab).toBe('board');
     });
 
-    it('switching to history adds ?tab=history to the URL', () => {
+    it('switching to history adds ?transferTab=history to the URL', () => {
         const holder: LocationHolder = { search: '' };
         const Wrapper = makeRouteWrapper(['/admin/transfers'], holder);
         const { result } = renderHook(() => useAdminTransfersTab(), {
@@ -67,13 +67,13 @@ describe('useAdminTransfersTab', () => {
         });
         act(() => result.current.setTab('history'));
         expect(result.current.tab).toBe('history');
-        expect(holder.search).toBe('?tab=history');
+        expect(holder.search).toBe('?transferTab=history');
     });
 
     it('switching back to board drops the tab param', () => {
         const holder: LocationHolder = { search: '' };
         const Wrapper = makeRouteWrapper(
-            ['/admin/transfers?tab=history'],
+            ['/admin/transfers?transferTab=history'],
             holder,
         );
         const { result } = renderHook(() => useAdminTransfersTab(), {

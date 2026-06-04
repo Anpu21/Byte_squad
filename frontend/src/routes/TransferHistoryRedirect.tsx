@@ -9,5 +9,5 @@ export function TransferHistoryRedirect() {
         user?.role === UserRole.ADMIN
             ? FRONTEND_ROUTES.ADMIN_TRANSFERS
             : FRONTEND_ROUTES.TRANSFERS;
-    return <Navigate to={`${base}?tab=history`} replace />;
+    return <Navigate to={`${base}?transferTab=history`} replace />;
 }

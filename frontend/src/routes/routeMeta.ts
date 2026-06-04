@@ -18,7 +18,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.DASHBOARD]: { title: 'Dashboard', crumbs: ['Dashboard'] },
     [FRONTEND_ROUTES.CASHIER_DASHBOARD]: { title: 'Cashier dashboard', crumbs: ['Cashier'] },
 
-    [FRONTEND_ROUTES.INVENTORY]: { title: 'Products', crumbs: ['Inventory', 'Products'] },
+    [FRONTEND_ROUTES.INVENTORY]: { title: 'Inventory', crumbs: ['Inventory'] },
     [FRONTEND_ROUTES.INVENTORY_EXPIRY]: { title: 'Expiry tracking', crumbs: ['Inventory', 'Expiry'] },
     [FRONTEND_ROUTES.STOCK_ADJUSTMENTS]: { title: 'Stock adjustments', crumbs: ['Inventory', 'Adjustments'] },
     [FRONTEND_ROUTES.STOCK_ADJUSTMENT_NEW]: { title: 'New stock adjustment', crumbs: ['Inventory', 'Adjustments', 'New'] },
