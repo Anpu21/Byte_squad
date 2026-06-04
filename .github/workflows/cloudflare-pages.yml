@@ -3,9 +3,13 @@
 # ║  Vite build → wrangler pages deploy                        ║
 # ╚═══════════════════════════════════════════════════════════╝
 #
-# Requires two repo secrets (Settings → Secrets and variables → Actions):
+# Requires these repo secrets (Settings → Secrets and variables → Actions):
 #   • CLOUDFLARE_API_TOKEN  — token with "Account · Cloudflare Pages · Edit"
 #   • CLOUDFLARE_ACCOUNT_ID — your Cloudflare account id
+#   • VITE_API_URL          — e.g. https://api.ledgerpro.shop/api/v1
+#   • VITE_SOCKET_URL       — e.g. https://api.ledgerpro.shop
+# (VITE_* are not sensitive — they're baked into the public JS bundle — so repo
+#  Variables via ${{ vars.* }} would also work; using secrets per request.)
 # The Pages project ("ledgerpro") is auto-created on the first run.
 
 name: Deploy Frontend (Cloudflare Pages)
@@ -55,8 +59,8 @@ jobs:
       - name: Build
         run: pnpm run build
         env:
-          VITE_API_URL: https://api.ledgerpro.shop/api/v1
-          VITE_SOCKET_URL: https://api.ledgerpro.shop
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL }}
 
       # Idempotent: succeeds on first run (creates it), no-op afterwards.
       - name: Ensure Pages project exists
