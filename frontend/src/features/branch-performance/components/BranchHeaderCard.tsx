@@ -9,7 +9,7 @@ interface BranchHeaderCardProps {
 
 export function BranchHeaderCard({ branch, admin }: BranchHeaderCardProps) {
     return (
-        <Card className="p-6 mb-6">
+        <Card className="p-5 mb-6">
             <div className="flex items-start justify-between flex-wrap gap-4">
                 <div className="min-w-0">
                     <div className="flex items-center gap-3 flex-wrap mb-2">

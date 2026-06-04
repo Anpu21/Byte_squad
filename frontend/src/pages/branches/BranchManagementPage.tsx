@@ -1,6 +1,8 @@
 import { useBranchManagementPage } from '@/features/branch-management/hooks/useBranchManagementPage';
 import { BranchTable } from '@/features/branch-management/components/BranchTable';
 import { BranchFormModal } from '@/features/branch-management/components/BranchFormModal';
+import PageHeader from '@/components/ui/PageHeader';
+import Button from '@/components/ui/Button';
 
 interface BranchManagementPageProps {
     embedded?: boolean;
@@ -11,32 +13,19 @@ export function BranchManagementPage({
 }: BranchManagementPageProps = {}) {
     const p = useBranchManagementPage();
 
+    const createButton = <Button onClick={p.openCreate}>+ Create branch</Button>;
+
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div
-                className={
-                    embedded
-                        ? 'flex justify-end mb-4'
-                        : 'flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8'
-                }
-            >
-                {!embedded && (
-                    <div>
-                        <h1 className="text-2xl font-bold text-text-1 tracking-tight">
-                            Branch Management
-                        </h1>
-                        <p className="text-sm text-text-2 mt-1">
-                            Create, edit, and manage all branches
-                        </p>
-                    </div>
-                )}
-                <button
-                    onClick={p.openCreate}
-                    className="h-9 px-4 rounded-lg bg-primary text-text-inv text-sm font-bold hover:bg-primary-hover transition-all self-start sm:self-auto"
-                >
-                    + Create Branch
-                </button>
-            </div>
+        <div>
+            {embedded ? (
+                <div className="flex justify-end mb-4">{createButton}</div>
+            ) : (
+                <PageHeader
+                    title="Branch Management"
+                    subtitle="Create, edit, and manage all branches"
+                    actions={createButton}
+                />
+            )}
 
             <BranchTable
                 branches={p.branches}

@@ -65,7 +65,7 @@ export function BranchComparisonFilters({
             : "Auto-updated";
 
   return (
-    <Card className="p-4 mb-6">
+    <Card className="p-5 mb-6">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0 flex-1">

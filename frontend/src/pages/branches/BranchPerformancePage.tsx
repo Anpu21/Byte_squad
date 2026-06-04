@@ -59,7 +59,7 @@ export function BranchPerformancePage() {
     const dailySalesSpark = chartData.map((c) => c.sales);
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div>
             <BranchHeaderCard branch={data.branch} admin={data.admin} />
             <BranchKpiStrip
                 today={data.today}
@@ -79,7 +79,7 @@ export function BranchPerformancePage() {
                 chartData={chartData}
             />
             <MonthKpisRow month={data.month} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <TopProductsTable topProducts={data.topProducts} />
                 <RecentTransactionsTable
                     recentTransactions={data.recentTransactions}
