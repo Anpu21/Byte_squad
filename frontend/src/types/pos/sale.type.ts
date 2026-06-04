@@ -21,6 +21,19 @@ export interface ISaleCustomerSnapshot {
   lastName: string;
 }
 
+/**
+ * Loyalty side-effect summary the backend appends to `POST /pos/sales`
+ * when the cashier attached a loyalty owner. Mirrors
+ * `CreateSaleLoyaltyResult` on the BE so the receipt footer can render
+ * the earned/redeemed/balance trio without a follow-up wallet read.
+ */
+export interface ISaleLoyaltyResult {
+  ownerType: 'user' | 'walkIn';
+  earned: number;
+  redeemed: number;
+  newBalance: number;
+}
+
 export interface ISale {
   id: string;
   transactionNumber: string;
@@ -48,11 +61,18 @@ export interface ISale {
   status: TSaleStatus;
   location: string;
   customerUserId: string | null;
+  loyaltyCustomerId: string | null;
   voidedReason: string | null;
   voidedAt: string | null;
   voidedByUserId: string | null;
   items?: ISaleItem[];
   payment?: ISalePayment;
   customer?: ISaleCustomerSnapshot | null;
+  /**
+   * Populated by `POST /pos/sales` when the cashier attached a loyalty
+   * owner; absent on legacy/unattached sales. Optional so existing
+   * snapshot consumers (recent-sales list, reprint flow) keep typing.
+   */
+  loyalty?: ISaleLoyaltyResult;
   createdAt: string;
 }

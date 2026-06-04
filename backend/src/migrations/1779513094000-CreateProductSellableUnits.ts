@@ -19,8 +19,10 @@ export class CreateProductSellableUnits1779513094000 implements MigrationInterfa
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         product_id uuid NOT NULL REFERENCES products(id) ON DELETE CASCADE,
         name varchar(32) NOT NULL,
+        barcode varchar(128),
         is_base boolean NOT NULL DEFAULT false,
         conversion_to_base decimal(14, 6) NOT NULL DEFAULT 1,
+        selling_price decimal(12, 2) NOT NULL DEFAULT 0,
         display_order integer NOT NULL DEFAULT 0,
         created_at timestamp NOT NULL DEFAULT now(),
         updated_at timestamp NOT NULL DEFAULT now(),
@@ -31,9 +33,15 @@ export class CreateProductSellableUnits1779513094000 implements MigrationInterfa
       CREATE INDEX IF NOT EXISTS idx_product_sellable_units_product
         ON product_sellable_units (product_id)
     `);
+    await qr.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_product_sellable_units_barcode
+        ON product_sellable_units (barcode)
+        WHERE barcode IS NOT NULL
+    `);
   }
 
   public async down(qr: QueryRunner): Promise<void> {
+    await qr.query(`DROP INDEX IF EXISTS uq_product_sellable_units_barcode`);
     await qr.query(`DROP INDEX IF EXISTS idx_product_sellable_units_product`);
     await qr.query(`DROP TABLE IF EXISTS product_sellable_units`);
   }

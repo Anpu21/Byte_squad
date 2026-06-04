@@ -6,6 +6,9 @@ const FALLBACK: ILoyaltySettings = {
     earnPerAmount: 100,
     pointValue: 1,
     redeemCapPercent: 20,
+    minRedeemablePoints: 100,
+    silverTierPoints: 1000,
+    goldTierPoints: 5000,
     updatedByUserId: null,
     updatedAt: new Date(0).toISOString(),
 };
@@ -34,5 +37,10 @@ export function formatRedeemCapRule(
     settings: ILoyaltySettings | undefined,
 ): string {
     const s = settings ?? FALLBACK;
-    return `Use up to ${s.redeemCapPercent}% of any order subtotal in points`;
+    return `Use points above ${s.minRedeemablePoints} pts, capped at ${s.redeemCapPercent}% of the order subtotal`;
+}
+
+export function formatTierRule(settings: ILoyaltySettings | undefined): string {
+    const s = settings ?? FALLBACK;
+    return `Silver starts at ${s.silverTierPoints} lifetime pts · Gold starts at ${s.goldTierPoints} lifetime pts`;
 }

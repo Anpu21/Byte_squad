@@ -47,13 +47,36 @@ export function useCheckout() {
         queryKey: queryKeys.loyalty.mine(),
         queryFn: loyaltyService.getMine,
     });
+    const { data: loyaltySettings } = useQuery({
+        queryKey: queryKeys.loyalty.settings(),
+        queryFn: loyaltyService.getSettings,
+    });
 
     const availablePoints = loyalty?.pointsBalance ?? 0;
-    const maxRedeemable = Math.min(availablePoints, Math.floor(total * 0.2));
+    const pointValue =
+        loyaltySettings && loyaltySettings.pointValue > 0
+            ? loyaltySettings.pointValue
+            : 1;
+    const redeemableBalance = Math.max(
+        0,
+        availablePoints - (loyaltySettings?.minRedeemablePoints ?? 0),
+    );
+    const maxBySubtotal = Math.floor(
+        ((total * (loyaltySettings?.redeemCapPercent ?? 20)) / 100) /
+            pointValue,
+    );
+    const maxRedeemable = Math.min(redeemableBalance, maxBySubtotal);
     const redeemingPoints = Math.min(loyaltyPointsToRedeem, maxRedeemable);
-    const loyaltyDiscount = redeemingPoints;
+    const loyaltyDiscount = redeemingPoints * pointValue;
     const finalTotal = Math.max(0, total - loyaltyDiscount);
-    const expectedPoints = Math.floor(finalTotal / 100);
+    const expectedPoints = loyaltySettings
+        ? loyaltySettings.earnPerAmount > 0 && loyaltySettings.earnPoints > 0
+            ? Math.floor(
+                  (finalTotal / loyaltySettings.earnPerAmount) *
+                      loyaltySettings.earnPoints,
+              )
+            : 0
+        : Math.floor(finalTotal / 100);
 
     useEffect(() => {
         if (items.length > 0 && !branchId) {

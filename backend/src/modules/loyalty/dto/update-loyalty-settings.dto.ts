@@ -29,4 +29,25 @@ export class UpdateLoyaltySettingsDto {
   @Min(0)
   @Max(100)
   redeemCapPercent?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(1_000_000)
+  minRedeemablePoints?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(10_000_000)
+  silverTierPoints?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(10_000_000)
+  goldTierPoints?: number;
 }

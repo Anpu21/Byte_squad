@@ -13,10 +13,9 @@ import {
 import { Product } from '@products/entities/product.entity';
 
 /**
- * One sellable unit of a product (e.g. an apple sold by kg OR by g, a juice
- * bottle sold by L OR by mL). Each row carries a `conversionToBase` factor
- * that converts the typed quantity into the product's canonical base unit
- * before inventory is touched.
+ * One sellable unit of a product (e.g. eggs sold loose OR as a 12-PACK).
+ * Each row carries a `conversionToBase` factor that converts the typed
+ * quantity into the product's canonical base unit before inventory is touched.
  *
  * The cashier picks one of these rows when entering a line; the column
  * `is_base` marks the canonical unit (conversion factor = 1).
@@ -27,6 +26,10 @@ import { Product } from '@products/entities/product.entity';
 @Entity('product_sellable_units')
 @Unique(['productId', 'name'])
 @Index('idx_product_sellable_units_product', ['productId'])
+@Index('uq_product_sellable_units_barcode', ['barcode'], {
+  unique: true,
+  where: 'barcode IS NOT NULL',
+})
 export class ProductSellableUnit {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -34,12 +37,17 @@ export class ProductSellableUnit {
   @Column({ type: 'uuid', name: 'product_id' })
   productId!: string;
 
-  @ManyToOne(() => Product, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Product, (product) => product.sellableUnits, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'product_id' })
   product!: Product;
 
   @Column({ type: 'varchar', length: 32 })
   name!: string;
+
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  barcode!: string | null;
 
   @Column({ type: 'boolean', name: 'is_base', default: false })
   isBase!: boolean;
@@ -52,6 +60,15 @@ export class ProductSellableUnit {
     default: 1,
   })
   conversionToBase!: number;
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'selling_price',
+    default: 0,
+  })
+  sellingPrice!: number;
 
   @Column({ type: 'integer', name: 'display_order', default: 0 })
   displayOrder!: number;

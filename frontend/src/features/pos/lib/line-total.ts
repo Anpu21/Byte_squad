@@ -31,6 +31,10 @@ export interface IComputeLineInput {
 /**
  * Computes the six derived numbers for a cart line.
  *
+ * `unitPrice` is the selected sellable unit's price. A base KG row stores
+ * price per KG; a 12-PACK row stores the pack price. `conversionFactor`
+ * only controls inventory deduction.
+ *
  * Order of operations:
  *   1. `chargedQty = max(0, quantity - free)` — free units do not contribute
  *      to subtotal but still count toward inventory deduction.

@@ -1,15 +1,24 @@
 import { Sparkles } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import type { LoyaltyTier } from '@/types';
 
 interface LoyaltyBalanceHeroProps {
     pointsBalance: number;
+    tier: LoyaltyTier;
 }
 
-export function LoyaltyBalanceHero({ pointsBalance }: LoyaltyBalanceHeroProps) {
+function formatTier(tier: LoyaltyTier): string {
+    return tier === 'gold' ? 'Gold' : tier === 'silver' ? 'Silver' : 'Bronze';
+}
+
+export function LoyaltyBalanceHero({
+    pointsBalance,
+    tier,
+}: LoyaltyBalanceHeroProps) {
     return (
         <section className="bg-warning-soft text-warning rounded-lg p-6 md:p-8 mb-6">
             <p className="text-xs uppercase tracking-widest opacity-80">
-                Available balance
+                {formatTier(tier)} member
             </p>
             <div className="mt-2 flex items-center gap-3">
                 <Sparkles size={28} aria-hidden="true" />

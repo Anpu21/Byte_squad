@@ -3,10 +3,13 @@ import { Test } from '@nestjs/testing';
 import { InventoryService } from './inventory.service';
 import { InventoryRepository } from './inventory.repository';
 import { Inventory } from './entities/inventory.entity';
+import { ProductsRepository } from '@products/products.repository';
+import { Product } from '@products/entities/product.entity';
 
 describe('InventoryService', () => {
   let service: InventoryService;
   let repo: jest.Mocked<InventoryRepository>;
+  let products: jest.Mocked<ProductsRepository>;
 
   beforeEach(async () => {
     const repoMock: Partial<jest.Mocked<InventoryRepository>> = {
@@ -17,16 +20,24 @@ describe('InventoryService', () => {
       findLowStock: jest.fn(),
       findByBranchPaged: jest.fn(),
     };
+    const productsMock: Partial<jest.Mocked<ProductsRepository>> = {
+      findById: jest.fn().mockResolvedValue({
+        id: 'p',
+        baseUnit: 'unit',
+      } as Product),
+    };
 
     const module = await Test.createTestingModule({
       providers: [
         InventoryService,
         { provide: InventoryRepository, useValue: repoMock },
+        { provide: ProductsRepository, useValue: productsMock },
       ],
     }).compile();
 
     service = module.get(InventoryService);
     repo = module.get(InventoryRepository);
+    products = module.get(ProductsRepository);
   });
 
   describe('checkLowStockByProductAndBranch', () => {
@@ -72,6 +83,38 @@ describe('InventoryService', () => {
         expect.objectContaining({ quantity: 7 }),
       );
       expect(result).toBe(updated);
+    });
+
+    it('allows decimal quantities up to 3 places for KG and L products', async () => {
+      products.findById.mockResolvedValue({
+        id: 'p',
+        baseUnit: 'kg',
+      } as Product);
+      const updated = { id: 'i1', quantity: 1.001 } as Inventory;
+      repo.findById.mockResolvedValue(updated);
+
+      const result = await service.updateStock('i1', {
+        productId: 'p',
+        branchId: 'b',
+        quantity: 1.001,
+      });
+
+      expect(repo.update).toHaveBeenCalledWith(
+        'i1',
+        expect.objectContaining({ quantity: 1.001 }),
+      );
+      expect(result).toBe(updated);
+    });
+
+    it('rejects fractional quantities for UNIT products', async () => {
+      await expect(
+        service.updateStock('i1', {
+          productId: 'p',
+          branchId: 'b',
+          quantity: 7.125,
+        }),
+      ).rejects.toThrow('UNIT stock quantity must be a whole number');
+      expect(repo.update).not.toHaveBeenCalled();
     });
   });
 

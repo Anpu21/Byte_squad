@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
+import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 
 @Entity('products')
 export class Product {
@@ -53,7 +54,7 @@ export class Product {
   @Column({ type: 'boolean', name: 'discount_allowed', default: true })
   discountAllowed!: boolean;
 
-  @Column({ type: 'varchar', length: 32, name: 'base_unit', default: 'each' })
+  @Column({ type: 'varchar', length: 32, name: 'base_unit', default: 'unit' })
   baseUnit!: string;
 
   @Column({ type: 'varchar', name: 'image_url', nullable: true })
@@ -67,6 +68,9 @@ export class Product {
 
   @OneToMany(() => SaleItem, (item) => item.product)
   transactionItems!: SaleItem[];
+
+  @OneToMany(() => ProductSellableUnit, (unit) => unit.product)
+  sellableUnits?: ProductSellableUnit[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

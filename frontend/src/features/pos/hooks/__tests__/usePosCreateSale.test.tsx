@@ -16,8 +16,6 @@ vi.mock('@/services/pos.service', () => ({
 const createMock = vi.mocked(posService.createSale);
 
 const payload: ICreateSalePayload = {
-    saleType: 'Retail',
-    priceLevel: 'Retail',
     items: [
         {
             productId: 'p1',
@@ -59,6 +57,21 @@ describe('usePosCreateSale', () => {
         });
         expect(spy).toHaveBeenCalledWith({
             queryKey: queryKeys.pos.recentSalesAll(),
+        });
+        // Dashboard + transactions surfaces must refresh after a sale so
+        // KPIs and the transactions table reflect the new revenue without
+        // requiring a manual reload.
+        expect(spy).toHaveBeenCalledWith({
+            queryKey: queryKeys.pos.cashierDashboard(),
+        });
+        expect(spy).toHaveBeenCalledWith({
+            queryKey: queryKeys.pos.adminDashboard(),
+        });
+        expect(spy).toHaveBeenCalledWith({
+            queryKey: queryKeys.pos.myTransactions(),
+        });
+        expect(spy).toHaveBeenCalledWith({
+            queryKey: queryKeys.pos.allTransactions(),
         });
     });
 

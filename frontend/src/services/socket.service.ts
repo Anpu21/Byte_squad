@@ -7,9 +7,13 @@ import { io, type Socket } from 'socket.io-client';
  */
 let notificationSocket: Socket | null = null;
 
+// Absolute API origin in prod (e.g. https://api.<domain>); empty in dev so the
+// connection stays same-origin and the Vite `/socket.io` proxy handles it.
+const SOCKET_BASE = import.meta.env.VITE_SOCKET_URL ?? '';
+
 export function getNotificationSocket(): Socket {
     if (!notificationSocket) {
-        notificationSocket = io('/notifications', {
+        notificationSocket = io(`${SOCKET_BASE}/notifications`, {
             // Reconnect aggressively but don't spam the server.
             reconnection: true,
             reconnectionAttempts: Infinity,

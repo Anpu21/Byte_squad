@@ -1,17 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
-import type { ISale, TPriceLevel } from '@/types';
+import type { ISale } from '@/types';
+import { useLoyaltyAttach, type IPosLoyaltyOwner } from './useLoyaltyAttach';
 
 interface IUsePosPageStateReturn {
-    priceLevel: TPriceLevel;
-    setPriceLevel: (next: TPriceLevel) => void;
-    togglePriceLevel: () => void;
-    customerUserId: string | null;
-    setCustomerUserId: (next: string | null) => void;
     cartDiscountPercentage: number;
     setCartDiscountPercentage: (next: number) => void;
     showPayment: boolean;
     showRecent: boolean;
-    customerPickerSignal: number;
     previewSaleId: string | null;
     setPreviewSaleId: (saleId: string | null) => void;
     lastSale: ISale | null;
@@ -21,52 +16,47 @@ interface IUsePosPageStateReturn {
     closePayment: () => void;
     openRecent: () => void;
     closeRecent: () => void;
-    openCustomerPicker: () => void;
     focusSearch: () => void;
     resetAfterCheckout: () => void;
+    loyaltyOwner: IPosLoyaltyOwner | null;
+    setLoyaltyOwner: (owner: IPosLoyaltyOwner | null) => void;
+    loyaltyRedeemPoints: number;
+    setLoyaltyRedeemPoints: (next: number) => void;
 }
 
 /**
  * Owns all transient UI state for the cashier `PosPage` orchestrator so the
  * page itself stays under the 120-line budget and reads as pure composition.
- * The `customerPickerSignal` token is bumped on F4 / Customer-button click;
- * `PosCustomerInfo` reads the change as a render-time anchor and opens its
- * internal picker without us having to lift the modal state out.
+ * Loyalty attach state lives in a child hook (`useLoyaltyAttach`) so each
+ * file stays small and the loyalty card can read the same shape as the
+ * page uses to build the create-sale payload.
  */
 export function usePosPageState(): IUsePosPageStateReturn {
-    const [priceLevel, setPriceLevel] = useState<TPriceLevel>('Retail');
-    const [customerUserId, setCustomerUserId] = useState<string | null>(null);
     const [cartDiscountPercentage, setCartDiscountPercentage] = useState(0);
     const [showPayment, setShowPayment] = useState(false);
     const [showRecent, setShowRecent] = useState(false);
-    const [customerPickerSignal, setCustomerPickerSignal] = useState(0);
     const [previewSaleId, setPreviewSaleId] = useState<string | null>(null);
     const [lastSale, setLastSale] = useState<ISale | null>(null);
     const searchInputRef = useRef<HTMLInputElement | null>(null);
+    const loyalty = useLoyaltyAttach();
 
-    const togglePriceLevel = useCallback(
-        () => setPriceLevel((p) => (p === 'Retail' ? 'Wholesale' : 'Retail')),
-        [],
-    );
     const focusSearch = useCallback(() => searchInputRef.current?.focus(), []);
     const resetAfterCheckout = useCallback(() => {
         setCartDiscountPercentage(0);
-        setCustomerUserId(null);
-    }, []);
+        loyalty.resetLoyalty();
+    }, [loyalty]);
     return {
-        priceLevel, setPriceLevel, togglePriceLevel,
-        customerUserId, setCustomerUserId,
         cartDiscountPercentage, setCartDiscountPercentage,
-        showPayment, showRecent, customerPickerSignal,
+        showPayment, showRecent,
         previewSaleId, setPreviewSaleId, lastSale, setLastSale,
         searchInputRef, focusSearch, resetAfterCheckout,
         openPayment: useCallback(() => setShowPayment(true), []),
         closePayment: useCallback(() => setShowPayment(false), []),
         openRecent: useCallback(() => setShowRecent(true), []),
         closeRecent: useCallback(() => setShowRecent(false), []),
-        openCustomerPicker: useCallback(
-            () => setCustomerPickerSignal((n) => n + 1),
-            [],
-        ),
+        loyaltyOwner: loyalty.loyaltyOwner,
+        setLoyaltyOwner: loyalty.setLoyaltyOwner,
+        loyaltyRedeemPoints: loyalty.loyaltyRedeemPoints,
+        setLoyaltyRedeemPoints: loyalty.setLoyaltyRedeemPoints,
     };
 }

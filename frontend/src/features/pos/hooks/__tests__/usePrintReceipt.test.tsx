@@ -104,4 +104,34 @@ describe('usePrintReceipt', () => {
             expect(markPrintedMock).toHaveBeenCalledWith(saleFixture.id),
         );
     });
+
+    it('swaps document.title to the invoice number for the print job and restores it on afterprint', async () => {
+        markPrintedMock.mockResolvedValueOnce(saleFixture);
+        const previousTitle = document.title;
+        document.title = 'Ledger Pro';
+        let titleDuringPrint: string | null = null;
+        (window.print as ReturnType<typeof vi.spyOn>).mockImplementation(() => {
+            titleDuringPrint = document.title;
+        });
+        const { Wrapper } = makeWrapper();
+        const { result } = renderHook(() => usePrintReceipt(), {
+            wrapper: Wrapper,
+        });
+
+        let printPromise: Promise<void>;
+        act(() => {
+            printPromise = result.current.printReceipt(saleFixture);
+        });
+        act(() => {
+            window.dispatchEvent(new Event('afterprint'));
+        });
+        await act(async () => {
+            await printPromise;
+        });
+
+        expect(titleDuringPrint).toBe('INV-1');
+        expect(document.title).toBe('Ledger Pro');
+
+        document.title = previousTitle;
+    });
 });

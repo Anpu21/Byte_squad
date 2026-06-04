@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -8,7 +9,9 @@ import { DataSource, EntityManager, QueryFailedError } from 'typeorm';
 
 import { Sale } from '@pos/entities/sale.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
+import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
+import { ProductsRepository } from '@products/products.repository';
 import { User } from '@users/entities/user.entity';
 
 import { CreateSaleDto } from '@pos/dto/create-sale.dto';
@@ -21,13 +24,20 @@ import { StockMovementRepository } from '@pos/stock-movement.repository';
 import { InvoiceNumberService } from '@pos/services/invoice-number.service';
 import { MultiTenderCalculatorService } from '@pos/services/multi-tender-calculator.service';
 import { AccountingRepository } from '@accounting/accounting.repository';
+import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
+import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
+import type { LoyaltyOwner } from '@/modules/loyalty/types';
 
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { DiscountType } from '@common/enums/discount.enum';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { PaymentMethod } from '@common/enums/payment-method';
 import { UserRole } from '@common/enums/user-roles.enums';
-import type { PosPaymentMethod } from '@pos/types';
+import type {
+  CreateSaleResponse,
+  CreateSaleLoyaltyResult,
+  PosPaymentMethod,
+} from '@pos/types';
 
 /**
  * Shape of `@CurrentUser()` payloads injected into POS endpoints. Mirrors the
@@ -131,7 +141,10 @@ export class PosWriteService {
     private readonly stockMovements: StockMovementRepository,
     private readonly invoiceNumbers: InvoiceNumberService,
     private readonly multiTender: MultiTenderCalculatorService,
+    private readonly products: ProductsRepository,
     private readonly accounting: AccountingRepository,
+    private readonly loyalty: LoyaltyService,
+    private readonly loyaltyWallet: LoyaltyWalletService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -168,7 +181,20 @@ export class PosWriteService {
     actor: ActorPayload,
     dto: CreateSaleDto,
     idempotencyKey?: string,
-  ): Promise<Sale> {
+  ): Promise<CreateSaleResponse> {
+    // ---------------------------------------------------------------
+    // 0. Loyalty owner validation — at most one of the two ownership
+    //    fields may be set. We check BEFORE opening the transaction so a
+    //    bad payload never partially writes anything (and so the
+    //    idempotency replay path still gets short-circuited for valid
+    //    repeats of an invalid sale).
+    // ---------------------------------------------------------------
+    if (dto.customerUserId && dto.loyaltyCustomerId) {
+      throw new BadRequestException(
+        'Provide either customerUserId or loyaltyCustomerId, not both',
+      );
+    }
+
     // ---------------------------------------------------------------
     // 1. Idempotency replay
     //
@@ -204,12 +230,25 @@ export class PosWriteService {
     // 2. Resolve sellable units
     // ---------------------------------------------------------------
     const unitsById = await this.resolveSellableUnits(dto);
+    const productsById = await this.resolveProducts(dto);
+
+    // The cashier UI no longer offers a Retail/Wholesale toggle; every new
+    // sale rings at retail. The columns stay on the Sale row for historical
+    // reporting (and to keep older 'Wholesale' rows intact).
+    const saleType = dto.saleType ?? 'Retail';
+    const priceLevel = dto.priceLevel ?? 'Retail';
 
     // ---------------------------------------------------------------
     // 3. Per-item math
     // ---------------------------------------------------------------
     const itemRows: ItemCompute[] = dto.items.map((item) =>
-      computeItem(item, unitsById, dto.priceLevel, dto.location ?? 'Shop'),
+      computeItem(
+        item,
+        unitsById,
+        productsById,
+        priceLevel,
+        dto.location ?? 'Shop',
+      ),
     );
 
     // ---------------------------------------------------------------
@@ -232,127 +271,158 @@ export class PosWriteService {
     // ---------------------------------------------------------------
     const tender = this.multiTender.calculate(total, dto.payment);
 
+    // Resolve the loyalty owner (validated above as at-most-one).
+    const loyaltyOwner: LoyaltyOwner | null = dto.customerUserId
+      ? { userId: dto.customerUserId }
+      : dto.loyaltyCustomerId
+        ? { loyaltyCustomerId: dto.loyaltyCustomerId }
+        : null;
+    const loyaltyOwnerType: 'user' | 'walkIn' | null = dto.customerUserId
+      ? 'user'
+      : dto.loyaltyCustomerId
+        ? 'walkIn'
+        : null;
+
     // ---------------------------------------------------------------
     // 6. Transactional write
     // ---------------------------------------------------------------
-    const saved = await this.dataSource.transaction(async (manager) => {
-      // 6a. Stock check + decrement (pessimistic lock per row). Returns the
-      // post-deduct quantity for each product so recordStockMovements can
-      // log balanceAfter without an extra round-trip per item.
-      const postDeductQty = await this.decrementInventoryWithLock(
-        manager,
-        branchId,
-        itemRows,
-      );
-
-      // 6b. Invoice number (atomic year-sequential via SELECT FOR UPDATE)
-      const invoiceNumber = await this.invoiceNumbers.next(
-        new Date().getFullYear(),
-        manager,
-      );
-
-      // 6c. Sale row
-      const sale = await this.sales.create(
-        {
+    const { sale: saved, loyaltyResult } = await this.dataSource.transaction(
+      async (manager) => {
+        // 6a. Stock check + decrement (pessimistic lock per row). Returns the
+        // post-deduct quantity for each product so recordStockMovements can
+        // log balanceAfter without an extra round-trip per item.
+        const postDeductQty = await this.decrementInventoryWithLock(
+          manager,
           branchId,
-          cashierId: actor.id,
-          customerUserId: dto.customerUserId ?? null,
-          invoiceNumber,
-          transactionNumber: `TXN-${Date.now()}-${randomSuffix()}`,
-          type: TransactionType.SALE,
-          saleType: dto.saleType,
-          priceLevel: dto.priceLevel,
-          location: dto.location ?? 'Shop',
-          subtotal: itemsSubtotal,
-          discountAmount: cartDiscount,
-          discountType:
-            cartDiscountPct > 0 ? DiscountType.PERCENTAGE : DiscountType.FIXED,
-          taxAmount: taxTotal,
-          total,
-          paidAmount: tender.paidAmount,
-          balanceDue: tender.balanceDue,
-          paymentStatus: tender.paymentStatus,
-          status: 'Active',
-          // Legacy single-tender column — kept populated for back-compat
-          // until Phase 6+ drops it. Multi-tender detail lives on Payment.
-          paymentMethod: mapToLegacyPaymentMethod(dto.payment.paymentMethod),
-        },
-        manager,
-      );
+          itemRows,
+        );
 
-      // 6d. SaleItems
-      await this.saleItems.createMany(
-        itemRows.map((r) => ({ ...r, saleId: sale.id })),
-        manager,
-      );
+        // 6b. Invoice number (atomic year-sequential via SELECT FOR UPDATE)
+        const invoiceNumber = await this.invoiceNumbers.next(
+          new Date().getFullYear(),
+          manager,
+        );
 
-      // 6e. Payment row (one row, multi-tender breakdown)
-      await this.payments.create(
-        {
-          saleId: sale.id,
-          receiptNo: `RCPT-${sale.id.slice(0, 8)}`,
-          paymentMethod: dto.payment.paymentMethod,
-          paymentAmount: tender.paymentAmount,
-          invoiceTotal: total,
-          cashTendered: Number(dto.payment.cashTendered ?? 0),
-          cashAmount: Number(dto.payment.cashAmount ?? 0),
-          cashChange: tender.cashChange,
-          chequeAmount: Number(dto.payment.chequeAmount ?? 0),
-          bankTransferAmount: Number(dto.payment.bankTransferAmount ?? 0),
-          creditAmount: tender.creditTaken,
-          keepBalance: dto.payment.keepBalance ?? false,
-          chequeNo: dto.payment.chequeNo ?? null,
-          chequeDate: dto.payment.chequeDate
-            ? new Date(dto.payment.chequeDate)
-            : null,
-          chequeBank: dto.payment.chequeBank ?? null,
-          chequeBranch: dto.payment.chequeBranch ?? null,
-          chequeDeliveredBy: dto.payment.chequeDeliveredBy ?? null,
-          chequeRef: dto.payment.chequeRef ?? null,
-          bankRef: dto.payment.bankRef ?? null,
-          status: 'Active',
-        },
-        manager,
-      );
+        // 6c. Sale row
+        const sale = await this.sales.create(
+          {
+            branchId,
+            cashierId: actor.id,
+            customerUserId: dto.customerUserId ?? null,
+            loyaltyCustomerId: dto.loyaltyCustomerId ?? null,
+            invoiceNumber,
+            transactionNumber: `TXN-${Date.now()}-${randomSuffix()}`,
+            type: TransactionType.SALE,
+            saleType,
+            priceLevel,
+            location: dto.location ?? 'Shop',
+            subtotal: itemsSubtotal,
+            discountAmount: cartDiscount,
+            discountType:
+              cartDiscountPct > 0
+                ? DiscountType.PERCENTAGE
+                : DiscountType.FIXED,
+            taxAmount: taxTotal,
+            total,
+            paidAmount: tender.paidAmount,
+            balanceDue: tender.balanceDue,
+            paymentStatus: tender.paymentStatus,
+            status: 'Active',
+            // Legacy single-tender column — kept populated for back-compat
+            // until Phase 6+ drops it. Multi-tender detail lives on Payment.
+            paymentMethod: mapToLegacyPaymentMethod(dto.payment.paymentMethod),
+          },
+          manager,
+        );
 
-      // 6f. Credit transactions + customer balance
-      if (
-        dto.customerUserId &&
-        (tender.creditTaken > 0 || tender.overpayKeptBalance > 0)
-      ) {
-        await this.applyCreditChanges(
+        // 6d. SaleItems
+        await this.saleItems.createMany(
+          itemRows.map((r) => ({ ...r, saleId: sale.id })),
+          manager,
+        );
+
+        // 6e. Payment row (one row, multi-tender breakdown)
+        await this.payments.create(
+          {
+            saleId: sale.id,
+            receiptNo: `RCPT-${sale.id.slice(0, 8)}`,
+            paymentMethod: dto.payment.paymentMethod,
+            paymentAmount: tender.paymentAmount,
+            invoiceTotal: total,
+            cashTendered: Number(dto.payment.cashTendered ?? 0),
+            cashAmount: Number(dto.payment.cashAmount ?? 0),
+            cashChange: tender.cashChange,
+            chequeAmount: Number(dto.payment.chequeAmount ?? 0),
+            bankTransferAmount: Number(dto.payment.bankTransferAmount ?? 0),
+            creditAmount: tender.creditTaken,
+            keepBalance: dto.payment.keepBalance ?? false,
+            chequeNo: dto.payment.chequeNo ?? null,
+            chequeDate: dto.payment.chequeDate
+              ? new Date(dto.payment.chequeDate)
+              : null,
+            chequeBank: dto.payment.chequeBank ?? null,
+            chequeBranch: dto.payment.chequeBranch ?? null,
+            chequeDeliveredBy: dto.payment.chequeDeliveredBy ?? null,
+            chequeRef: dto.payment.chequeRef ?? null,
+            bankRef: dto.payment.bankRef ?? null,
+            status: 'Active',
+          },
+          manager,
+        );
+
+        // 6f. Credit transactions + customer balance
+        if (
+          dto.customerUserId &&
+          (tender.creditTaken > 0 || tender.overpayKeptBalance > 0)
+        ) {
+          await this.applyCreditChanges(
+            manager,
+            sale,
+            dto.customerUserId,
+            tender,
+          );
+        }
+
+        // 6g. Stock movements (one row per item) — reads balanceAfter from
+        // the post-deduct map produced in step 6a, so no per-item re-query.
+        await this.recordStockMovements(
           manager,
           sale,
-          dto.customerUserId,
-          tender,
-        );
-      }
-
-      // 6g. Stock movements (one row per item) — reads balanceAfter from
-      // the post-deduct map produced in step 6a, so no per-item re-query.
-      await this.recordStockMovements(
-        manager,
-        sale,
-        actor.id,
-        branchId,
-        itemRows,
-        postDeductQty,
-      );
-
-      // 6h. Ledger entry
-      if (total > 0) {
-        await this.accounting.createLedgerEntryWithManager(manager, {
+          actor.id,
           branchId,
-          entryType: LedgerEntryType.CREDIT,
-          amount: total,
-          description: `POS Sale — ${sale.invoiceNumber}`,
-          referenceNumber: sale.invoiceNumber,
-          saleId: sale.id,
-        });
-      }
+          itemRows,
+          postDeductQty,
+        );
 
-      return sale;
-    });
+        // 6h. Ledger entry
+        if (total > 0) {
+          await this.accounting.createLedgerEntryWithManager(manager, {
+            branchId,
+            entryType: LedgerEntryType.CREDIT,
+            amount: total,
+            description: `POS Sale — ${sale.invoiceNumber}`,
+            referenceNumber: sale.invoiceNumber,
+            saleId: sale.id,
+          });
+        }
+
+        // 6i. Loyalty wallet writes. Stay inside the transaction so an
+        // insufficient-balance redeem, award failure, or ledger failure
+        // rolls the whole sale back with stock, payment, and accounting.
+        const loyaltyResult = await this.applyLoyalty({
+          owner: loyaltyOwner,
+          ownerType: loyaltyOwnerType,
+          sale,
+          grossPaidAmount: tender.paidAmount,
+          redeemPoints: dto.loyaltyRedeemPoints ?? 0,
+          subtotal: itemsSubtotal,
+          branchId,
+          manager,
+        });
+
+        return { sale, loyaltyResult };
+      },
+    );
 
     // ---------------------------------------------------------------
     // 7. Idempotency key insert (race-safe via QueryFailedError catch)
@@ -382,7 +452,72 @@ export class PosWriteService {
       }
     }
 
-    return saved;
+    return loyaltyResult
+      ? Object.assign(saved, { loyalty: loyaltyResult })
+      : saved;
+  }
+
+  /**
+   * Wallet-side bookkeeping for the just-persisted sale. Returns the
+   * loyalty summary that the controller appends to the response, or
+   * null when the cashier did not attach any loyalty owner.
+   *
+   * Redeem-first / award-second ordering is deliberate: the customer
+   * does NOT earn points on the value of points they just spent. The
+   * award amount is therefore the GROSS paid amount minus the redeem
+   * value (`redeemedPoints * pointValue`).
+   */
+  private async applyLoyalty(params: {
+    owner: LoyaltyOwner | null;
+    ownerType: 'user' | 'walkIn' | null;
+    sale: Sale;
+    grossPaidAmount: number;
+    redeemPoints: number;
+    subtotal: number;
+    branchId: string;
+    manager: EntityManager;
+  }): Promise<CreateSaleLoyaltyResult | null> {
+    if (!params.owner || !params.ownerType) return null;
+
+    const redeemed =
+      params.redeemPoints > 0
+        ? await this.loyaltyWallet.redeemForOrder({
+            owner: params.owner,
+            orderId: params.sale.id,
+            orderCode: params.sale.invoiceNumber,
+            subtotal: params.subtotal,
+            requestedPoints: params.redeemPoints,
+            branchId: params.branchId,
+            manager: params.manager,
+          })
+        : 0;
+
+    const pointValue = redeemed > 0 ? await this.loyalty.getPointValue() : 0;
+    const redeemValueLkr = round2(redeemed * pointValue);
+    const netPaidAmount = round2(
+      Math.max(0, params.grossPaidAmount - redeemValueLkr),
+    );
+
+    const earned = await this.loyaltyWallet.awardForOrder({
+      owner: params.owner,
+      orderId: params.sale.id,
+      orderCode: params.sale.invoiceNumber,
+      paidAmount: netPaidAmount,
+      branchId: params.branchId,
+      manager: params.manager,
+    });
+
+    const account = await this.loyalty.getOrCreateAccount(
+      params.owner,
+      params.manager,
+    );
+
+    return {
+      ownerType: params.ownerType,
+      earned,
+      redeemed,
+      newBalance: account.pointsBalance,
+    };
   }
 
   // -------------------------------------------------------------------
@@ -422,6 +557,22 @@ export class PosWriteService {
         throw new ConflictException(
           `Sellable unit ${item.unitId} does not belong to product ${item.productId}`,
         );
+      }
+    }
+    return byId;
+  }
+
+  private async resolveProducts(
+    dto: CreateSaleDto,
+  ): Promise<Map<string, Product>> {
+    const productIds = Array.from(
+      new Set(dto.items.map((item) => item.productId)),
+    );
+    const rows = await this.products.findActiveByIds(productIds);
+    const byId = new Map(rows.map((product) => [product.id, product]));
+    for (const productId of productIds) {
+      if (!byId.has(productId)) {
+        throw new NotFoundException(`Product ${productId} not found`);
       }
     }
     return byId;
@@ -571,27 +722,45 @@ export class PosWriteService {
  * Per-item math, extracted so the orchestrator's `.map` step stays short.
  * Mirrors the frontend `lib/line-total.ts` exactly so server and client
  * agree on subtotal/tax/total figures.
+ *
+ * `unitPrice` is server-derived from the selected sellable unit. For base
+ * lines it comes from `Product.sellingPrice`; for pack rows it comes from
+ * `ProductSellableUnit.sellingPrice`. The client-submitted price is only a
+ * stale/tamper check and is never used as the pricing source.
  */
 function computeItem(
   item: CreateSaleDto['items'][number],
   unitsById: Map<string, ProductSellableUnit>,
+  productsById: Map<string, Product>,
   priceLevel: 'Retail' | 'Wholesale',
   defaultLocation: string,
 ): ItemCompute {
   const qty = Number(item.quantity);
   const free = Number(item.free ?? 0);
   const chargedQty = Math.max(0, qty - free);
-  const unitPrice = Number(item.unitPrice);
   const disc = Number(item.discountPercentage ?? 0);
   const taxRate = Number(item.taxRate ?? 0);
+
+  const unit = item.unitId ? unitsById.get(item.unitId) : null;
+  const conversion = unit ? Number(unit.conversionToBase) : 1;
+  const product = productsById.get(item.productId);
+  if (!product) {
+    throw new NotFoundException(`Product ${item.productId} not found`);
+  }
+  const unitPrice = unit
+    ? Number(unit.sellingPrice)
+    : Number(product.sellingPrice);
+  if (round2(Number(item.unitPrice)) !== round2(unitPrice)) {
+    throw new ConflictException(
+      `Unit price changed for product ${item.productId}; refresh the cart and try again`,
+    );
+  }
 
   const lineSubtotal = round2(chargedQty * unitPrice * (1 - disc / 100));
   const lineDiscountAmount = round2(chargedQty * unitPrice * (disc / 100));
   const lineTaxAmount = round2(lineSubtotal * (taxRate / 100));
   const lineTotal = round2(lineSubtotal + lineTaxAmount);
 
-  const unit = item.unitId ? unitsById.get(item.unitId) : null;
-  const conversion = unit ? Number(unit.conversionToBase) : 1;
   const baseUnitQty = round3(qty * conversion);
 
   return {

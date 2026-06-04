@@ -31,17 +31,31 @@ describe('computeLine', () => {
         expect(r.lineTotal).toBe(103.5);
     });
 
-    it('converts to base units via conversionFactor (1000 g -> 1 kg)', () => {
+    it('supports weighted base-unit decimals (0.250 KG at Rs 400/KG)', () => {
         const r = computeLine({
-            quantity: 1000,
+            quantity: 0.25,
             free: 0,
-            unitPrice: 0.1,
+            unitPrice: 400,
             discountPercentage: 0,
             taxRate: 0,
-            conversionFactor: 0.001,
+            conversionFactor: 1,
         });
-        expect(r.baseUnitQty).toBe(1);
+        expect(r.baseUnitQty).toBe(0.25);
         expect(r.lineSubtotal).toBe(100);
+    });
+
+    it('uses selected pack price while deducting converted UNIT stock', () => {
+        const r = computeLine({
+            quantity: 1,
+            free: 0,
+            unitPrice: 650,
+            discountPercentage: 0,
+            taxRate: 0,
+            conversionFactor: 12,
+        });
+        expect(r.baseUnitQty).toBe(12);
+        expect(r.lineSubtotal).toBe(650);
+        expect(r.lineTotal).toBe(650);
     });
 
     it('clamps chargedQty to zero when free >= quantity', () => {

@@ -1,10 +1,41 @@
-export type MetricKey = 'revenue' | 'transactions' | 'aov';
+export type MetricKey =
+    | 'revenue'
+    | 'grossProfit'
+    | 'transactions'
+    | 'aov'
+    | 'activeProducts'
+    | 'loyaltyMembers';
+
+export type ComparisonView =
+    | 'summary'
+    | 'sales'
+    | 'inventory'
+    | 'loyalty'
+    | 'customers'
+    | 'payments'
+    | 'staff';
+
+export const COMPARISON_VIEWS: ComparisonView[] = [
+    'summary',
+    'sales',
+    'inventory',
+    'loyalty',
+    'customers',
+    'payments',
+    'staff',
+];
 
 export function formatCurrencyWhole(n: number): string {
     return new Intl.NumberFormat('en-LK', {
         style: 'currency',
         currency: 'LKR',
         maximumFractionDigits: 0,
+    }).format(n);
+}
+
+export function formatNumber(n: number, maximumFractionDigits = 0): string {
+    return new Intl.NumberFormat('en-LK', {
+        maximumFractionDigits,
     }).format(n);
 }
 

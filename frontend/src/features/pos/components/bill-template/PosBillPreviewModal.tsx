@@ -12,7 +12,6 @@ interface IPosBillPreviewModalProps {
     sale: ISale | null;
     businessName?: string;
     businessAddress?: string;
-    cashierName?: string;
 }
 
 /**
@@ -36,7 +35,6 @@ export function PosBillPreviewModal({
     sale,
     businessName,
     businessAddress,
-    cashierName,
 }: IPosBillPreviewModalProps) {
     const { printingSale, printReceipt } = usePrintReceipt();
     const [isQueuing, setIsQueuing] = useState(false);
@@ -66,7 +64,6 @@ export function PosBillPreviewModal({
                                 sale={sale}
                                 businessName={businessName}
                                 businessAddress={businessAddress}
-                                cashierName={cashierName}
                             />
                         </div>
                         <div className="flex items-center justify-end gap-2">
@@ -109,7 +106,6 @@ export function PosBillPreviewModal({
                               sale={printingSale}
                               businessName={businessName}
                               businessAddress={businessAddress}
-                              cashierName={cashierName}
                           />
                       </div>,
                       document.body,

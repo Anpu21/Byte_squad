@@ -9,6 +9,9 @@ import type {
   IInvoiceNumberResponse,
   ICreateSalePayload,
   ICustomerSearchRow,
+  ICashierDashboard,
+  IAdminDashboard,
+  ICashierTransactionsSummary,
 } from '@/types';
 
 /**
@@ -119,6 +122,54 @@ export const posService = {
     const response = await api.get<IApiResponse<ICustomerSearchRow[]>>(
       '/pos/customers/search',
       { params: { q, limit } },
+    );
+    return response.data.data;
+  },
+
+  /**
+   * `GET /pos/my-dashboard` — cashier-scoped dashboard envelope (today/week
+   * totals, 7-day breakdown, recent transactions). Scope is derived from the
+   * JWT on the server side.
+   */
+  getCashierDashboard: async (): Promise<ICashierDashboard> => {
+    const response = await api.get<IApiResponse<ICashierDashboard>>(
+      '/pos/my-dashboard',
+    );
+    return response.data.data;
+  },
+
+  /**
+   * `GET /pos/admin-dashboard` — admin/manager-scoped dashboard envelope
+   * (today/week/month totals, system stats, top products, recent
+   * transactions, 7-day breakdown).
+   */
+  getAdminDashboard: async (): Promise<IAdminDashboard> => {
+    const response = await api.get<IApiResponse<IAdminDashboard>>(
+      '/pos/admin-dashboard',
+    );
+    return response.data.data;
+  },
+
+  /**
+   * `GET /pos/my-transactions` — current-user transactions summary. The
+   * backend infers the scope from the JWT role: cashier sees only their own
+   * sales, admin/manager see the branch-level rollup.
+   */
+  getMyTransactions: async (): Promise<ICashierTransactionsSummary> => {
+    const response = await api.get<IApiResponse<ICashierTransactionsSummary>>(
+      '/pos/my-transactions',
+    );
+    return response.data.data;
+  },
+
+  /**
+   * `GET /pos/all-transactions` — system-wide transactions summary. Admin
+   * role only on the server; the FE should still gate access by role before
+   * issuing the call.
+   */
+  getAllTransactions: async (): Promise<ICashierTransactionsSummary> => {
+    const response = await api.get<IApiResponse<ICashierTransactionsSummary>>(
+      '/pos/all-transactions',
     );
     return response.data.data;
   },

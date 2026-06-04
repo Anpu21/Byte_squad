@@ -32,6 +32,7 @@ export const saleFixture: ISale = {
     status: 'Active',
     location: 'Shop',
     customerUserId: null,
+    loyaltyCustomerId: null,
     voidedReason: null,
     voidedAt: null,
     voidedByUserId: null,

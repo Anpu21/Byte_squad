@@ -1,4 +1,4 @@
-import { IsInt, IsUUID, IsOptional, Min } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, IsUUID, Min } from 'class-validator';
 
 export class CreateInventoryDto {
   @IsUUID()
@@ -7,7 +7,7 @@ export class CreateInventoryDto {
   @IsUUID()
   branchId!: string;
 
-  @IsInt()
+  @IsNumber()
   @Min(0)
   quantity!: number;
 

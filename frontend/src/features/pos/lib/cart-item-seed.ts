@@ -1,5 +1,5 @@
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
-import type { ISearchProductRow, TPriceLevel } from '@/types';
+import type { ISearchProductRow } from '@/types';
 
 type AddItemSeed = Omit<
     ICartItem,
@@ -13,26 +13,22 @@ type AddItemSeed = Omit<
 
 /**
  * Map a Shanel `ISearchProductRow` onto the cart-row seed shape
- * `usePosCart.addItem` expects. Picks the price level at the moment of
- * staging so the cart row carries the resolved unit price; the cashier
- * can override the unit / qty / discount per row afterwards.
+ * `usePosCart.addItem` expects. The Retail/Wholesale toggle was removed —
+ * every staged line uses the product's retail price; the cashier can still
+ * override unit / qty / discount per row afterwards.
  */
-export function toCartItemSeed(
-    row: ISearchProductRow,
-    priceLevel: TPriceLevel,
-): AddItemSeed {
-    const unitPrice =
-        priceLevel === 'Retail' ? row.retailPrice : row.wholesalePrice;
+export function toCartItemSeed(row: ISearchProductRow): AddItemSeed {
+    const matchedUnit = row.matchedUnit;
     return {
         productId: row.productId,
         productCode: row.productCode,
         productName: row.productName,
         productType: row.productType,
         baseUnit: row.baseUnit,
-        unitId: null,
-        unitName: row.baseUnit,
-        unitPrice,
-        conversionFactor: 1,
+        unitId: matchedUnit?.unitId ?? null,
+        unitName: matchedUnit?.unitName ?? row.baseUnit,
+        unitPrice: matchedUnit?.sellingPrice ?? row.retailPrice,
+        conversionFactor: matchedUnit?.conversionToBase ?? 1,
         quantity: 1,
         free: 0,
         discountPercentage: 0,

@@ -175,6 +175,9 @@ export class Sale {
   @JoinColumn({ name: 'customer_user_id' })
   customer!: User | null;
 
+  @Column({ type: 'uuid', name: 'loyalty_customer_id', nullable: true })
+  loyaltyCustomerId!: string | null;
+
   @Column({
     type: 'varchar',
     length: 255,

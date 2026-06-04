@@ -17,7 +17,8 @@ interface NotificationPayload {
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    // Lock to the frontend origin in prod (CORS_ORIGIN); '*' in local dev.
+    origin: process.env.CORS_ORIGIN ?? '*',
   },
   namespace: '/notifications',
 })

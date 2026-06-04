@@ -2,3 +2,8 @@ export * from './find-by-branch-options.type';
 export * from './paged-inventory.type';
 export * from './stock-status.type';
 export * from './inventory-summary-for-product.type';
+export * from './expiry-severity.type';
+export * from './expiry-report-row.type';
+export * from './paginated-stock-adjustments.type';
+export * from './sale-return-lookup.type';
+export * from './paginated-sales-returns.type';

@@ -14,6 +14,12 @@ export function LoyaltyProfileCard() {
     const { data: settings } = useLoyaltySettings();
 
     if (isLoading || isError || !data) return null;
+    const tierLabel =
+        data.tier === 'gold'
+            ? 'Gold'
+            : data.tier === 'silver'
+              ? 'Silver'
+              : 'Bronze';
 
     return (
         <section className="bg-surface border border-border rounded-md p-5">
@@ -36,7 +42,7 @@ export function LoyaltyProfileCard() {
                         {data.pointsBalance}
                     </p>
                     <p className="text-xs uppercase tracking-widest mt-1">
-                        points
+                        {tierLabel}
                     </p>
                 </div>
 

@@ -4,6 +4,7 @@ import { FRONTEND_ROUTES } from '@/constants/routes';
 import Pill from '@/components/ui/Pill';
 import StatusPill from '@/components/ui/StatusPill';
 import { formatCurrency } from '@/lib/utils';
+import { formatStockQuantity } from '@/features/inventory-list/lib/format-stock-quantity';
 import type { FlatRecord } from '../types/flat-record.type';
 
 interface InventoryRecordRowProps {
@@ -55,7 +56,7 @@ export function InventoryRecordRow({ record }: InventoryRecordRowProps) {
                         stockEmpty ? 'text-text-3' : 'text-text-1'
                     }`}
                 >
-                    {cell.quantity}
+                    {formatStockQuantity(cell.quantity, row.baseUnit)}
                 </span>
             </td>
 

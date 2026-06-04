@@ -3,24 +3,26 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Bell,
     Boxes,
+    Briefcase,
     Building2,
+    CalendarClock,
+    CalendarRange,
     ChevronRight,
-    GitCompareArrows,
+    ClipboardList,
     Home,
     LogOut,
     Menu as MenuIcon,
     PiggyBank,
     Receipt,
+    Wallet,
     ScanLine,
     ScrollText,
     ShoppingCart,
     Sparkles,
     Truck,
+    Undo2,
     UserCog,
     Users,
-    Wallet,
-    History,
-    Store,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -110,6 +112,27 @@ const NAV_ITEMS: NavItem[] = [
         group: 'Inventory',
     },
     {
+        label: 'Expiry',
+        path: FRONTEND_ROUTES.INVENTORY_EXPIRY,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <CalendarClock size={15} />,
+        group: 'Inventory',
+    },
+    {
+        label: 'Adjustments',
+        path: FRONTEND_ROUTES.STOCK_ADJUSTMENTS,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <ClipboardList size={15} />,
+        group: 'Inventory',
+    },
+    {
+        label: 'Returns',
+        path: FRONTEND_ROUTES.RETURNS,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <Undo2 size={15} />,
+        group: 'Inventory',
+    },
+    {
         label: 'Ledger',
         path: FRONTEND_ROUTES.LEDGER,
         roles: [UserRole.ADMIN],
@@ -138,10 +161,31 @@ const NAV_ITEMS: NavItem[] = [
         group: 'People',
     },
     {
+        label: 'Customer loyalty',
+        path: FRONTEND_ROUTES.MANAGER_LOYALTY,
+        roles: [UserRole.MANAGER],
+        icon: <Sparkles size={15} />,
+        group: 'People',
+    },
+    {
         label: 'Users',
         path: FRONTEND_ROUTES.USER_MANAGEMENT,
         roles: [UserRole.ADMIN],
         icon: <Users size={15} />,
+        group: 'People',
+    },
+    {
+        label: 'HR',
+        path: FRONTEND_ROUTES.ADMIN_HR,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <Briefcase size={15} />,
+        group: 'People',
+    },
+    {
+        label: 'Leaves',
+        path: FRONTEND_ROUTES.ADMIN_LEAVES,
+        roles: [UserRole.CASHIER],
+        icon: <CalendarRange size={15} />,
         group: 'People',
     },
     {
@@ -153,31 +197,10 @@ const NAV_ITEMS: NavItem[] = [
         group: 'Inventory',
     },
     {
-        label: 'Transfer History',
-        path: FRONTEND_ROUTES.TRANSFER_HISTORY,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <History size={15} />,
-        group: 'Inventory',
-    },
-    {
-        label: 'My Branch',
-        path: FRONTEND_ROUTES.BRANCHES,
-        roles: [UserRole.MANAGER],
-        icon: <Store size={15} />,
-        group: 'Branches',
-    },
-    {
         label: 'Branches',
-        path: FRONTEND_ROUTES.BRANCHES_HUB,
-        roles: [UserRole.ADMIN],
+        path: FRONTEND_ROUTES.BRANCHES,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Building2 size={15} />,
-        group: 'Branches',
-    },
-    {
-        label: 'Compare',
-        path: FRONTEND_ROUTES.BRANCH_COMPARE,
-        roles: [UserRole.ADMIN],
-        icon: <GitCompareArrows size={15} />,
         group: 'Branches',
     },
     {
@@ -492,7 +515,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </div>
                 </header>
 
-                <main id="main-content" className="flex-1 overflow-y-auto p-6 lg:p-8">
+                <main id="main-content" className="flex-1 overflow-y-auto p-2 lg:p-4">
                     <div className="max-w-7xl mx-auto">{children}</div>
                 </main>
             </div>

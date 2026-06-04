@@ -43,6 +43,7 @@ function makeSale(): ISale {
         status: 'Active',
         location: 'Shop',
         customerUserId: null,
+        loyaltyCustomerId: null,
         voidedReason: null,
         voidedAt: null,
         voidedByUserId: null,
@@ -89,7 +90,6 @@ function renderModal(overrides: { sale?: ISale | null; isOpen?: boolean } = {}) 
                 onClose={onClose}
                 sale={overrides.sale === undefined ? makeSale() : overrides.sale}
                 businessName="LedgerPro Mart"
-                cashierName="Asha Cashier"
             />
         </QueryClientProvider>,
     );

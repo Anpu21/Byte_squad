@@ -88,6 +88,7 @@ function buildSale(overrides: Partial<ISale> = {}): ISale {
         status: 'Active',
         location: 'Shop',
         customerUserId: null,
+        loyaltyCustomerId: null,
         voidedReason: null,
         voidedAt: null,
         voidedByUserId: null,
@@ -119,7 +120,6 @@ describe('PosBillTemplate', () => {
                 sale={sale}
                 businessName="LedgerPro Mart"
                 businessAddress="12 Marine Drive, Colombo"
-                cashierName="Asha Cashier"
             />,
         );
 
@@ -128,7 +128,6 @@ describe('PosBillTemplate', () => {
             screen.getByText('12 Marine Drive, Colombo'),
         ).toBeInTheDocument();
         expect(screen.getByText('INV-2026-000001')).toBeInTheDocument();
-        expect(screen.getByText(/Cashier: Asha Cashier/)).toBeInTheDocument();
         expect(screen.getByText(/Walk-in customer/)).toBeInTheDocument();
         expect(screen.getByText('Whole-wheat bread')).toBeInTheDocument();
         expect(screen.getByText(/−10% disc/)).toBeInTheDocument();
@@ -142,6 +141,92 @@ describe('PosBillTemplate', () => {
         expect(screen.getByText('Change')).toBeInTheDocument();
         expect(
             screen.getByText('Thank you for shopping!'),
+        ).toBeInTheDocument();
+    });
+
+    it('prints the picked unit name alongside quantity and selected-unit price', () => {
+        const sale = buildSale({
+            items: [
+                buildSaleItem({
+                    quantity: 1,
+                    baseUnitQty: 12,
+                    unitId: 'u-pack',
+                    unitPrice: 650,
+                    lineTotal: 650,
+                    lineSubtotal: 650,
+                    unit: {
+                        id: 'u-pack',
+                        name: '12-PACK',
+                        conversionToBase: 12,
+                    },
+                    product: {
+                        id: 'p1',
+                        name: 'Eggs',
+                        baseUnit: 'unit',
+                    },
+                }),
+            ],
+            subtotal: 650,
+            total: 650,
+        });
+        render(<PosBillTemplate sale={sale} />);
+        expect(
+            screen.getByText((text) =>
+                /1 12-PACK × LKR\s*650\.00\/12-PACK/.test(text),
+            ),
+        ).toBeInTheDocument();
+    });
+
+    it('falls back to the product base unit when the picked unit is missing', () => {
+        // Backward-compatible: older sales rows without `unit` eager-loaded
+        // still read "1 kg × LKR 200.00/kg" using `product.baseUnit`.
+        const sale = buildSale({
+            items: [
+                buildSaleItem({
+                    quantity: 1,
+                    baseUnitQty: 1,
+                    unitId: null,
+                    unitPrice: 200,
+                    lineTotal: 200,
+                    lineSubtotal: 200,
+                    unit: null,
+                    product: {
+                        id: 'p1',
+                        name: 'Basmati rice',
+                        baseUnit: 'kg',
+                    },
+                }),
+            ],
+            subtotal: 200,
+            total: 200,
+        });
+        render(<PosBillTemplate sale={sale} />);
+        expect(
+            screen.getByText((text) => /1 kg × LKR\s*200\.00\/kg/.test(text)),
+        ).toBeInTheDocument();
+    });
+
+    it('omits the unit suffix entirely when neither picked nor base unit is known', () => {
+        // Pre-existing sale (Phase 1 or earlier seed) with no unit data —
+        // renderer must not synthesize a label and must not crash.
+        const sale = buildSale({
+            items: [
+                buildSaleItem({
+                    quantity: 2,
+                    baseUnitQty: 2,
+                    unitId: null,
+                    unitPrice: 50,
+                    lineTotal: 100,
+                    lineSubtotal: 100,
+                    unit: null,
+                    product: { id: 'p1', name: 'Loaf of bread' },
+                }),
+            ],
+        });
+        render(<PosBillTemplate sale={sale} />);
+        // No slash means no "/unit" suffix was appended.
+        expect(
+            screen.getByText((text) => /^2 × LKR\s*50\.00$/.test(text)),
         ).toBeInTheDocument();
     });
 

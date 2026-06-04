@@ -126,4 +126,27 @@ describe('PosCartRow', () => {
         const lastCall = onUpdate.mock.calls.at(-1);
         expect(lastCall).toEqual(['row-1', { discountPercentage: 100 }]);
     });
+
+    it('silently rejects non-numeric keystrokes via isPartialDecimal', async () => {
+        const { onUpdate } = renderRow({ quantity: 1 });
+        const input = screen.getByLabelText('Quantity') as HTMLInputElement;
+        await userEvent.clear(input);
+        // Letters typed alongside digits are dropped character-by-character
+        // by the onChange filter, so the buffer never holds `12abc`.
+        await userEvent.type(input, '12abc');
+        expect(input.value).toBe('12');
+        // commit fires for `12` (the complete number), but never with NaN.
+        const lastCall = onUpdate.mock.calls.at(-1);
+        expect(lastCall).toEqual(['row-1', { quantity: 12 }]);
+    });
+
+    it('renders as a plain text input with decimal inputMode', () => {
+        renderRow({ quantity: 1 });
+        const input = screen.getByLabelText('Quantity') as HTMLInputElement;
+        // No native number spinner arrows or scroll-wheel value mutation —
+        // the cell is type="text" with inputMode="decimal" so mobile
+        // keyboards still surface the numeric keypad.
+        expect(input.type).toBe('text');
+        expect(input.inputMode).toBe('decimal');
+    });
 });

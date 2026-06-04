@@ -68,4 +68,4 @@ USER appuser
 EXPOSE 3000
 
 # Start the production server
-CMD ["node", "-r", "./tsconfig-paths-bootstrap.js", "dist/src/main.js"]
+CMD ["node", "-r", "./tsconfig-paths-bootstrap.js", "dist/main.js"]

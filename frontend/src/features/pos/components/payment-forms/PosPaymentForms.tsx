@@ -4,9 +4,7 @@ import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
 import { usePaymentSubmit } from '@/features/pos/hooks/usePaymentSubmit';
 import { tryCalculateMultiTender } from '@/features/pos/lib/multi-tender';
-import { PosPaymentMethod } from '@/features/pos/components/payment-method/PosPaymentMethod';
 import { PosPaymentFormSwitch } from './PosPaymentFormSwitch';
-import { PosKeepBalanceToggle } from './PosKeepBalanceToggle';
 import { PosTenderSummary } from './PosTenderSummary';
 import { PosPaymentBanners } from './PosPaymentBanners';
 import {
@@ -15,11 +13,10 @@ import {
     type ITenderBag,
 } from './pos-payment-forms.helpers';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
+import type { IPosLoyaltyOwner } from '@/features/pos/hooks/useLoyaltyAttach';
 import type {
     ISale,
     TPaymentMethod,
-    TPriceLevel,
-    TSaleType,
 } from '@/types';
 
 export interface IPosPaymentFormsProps {
@@ -28,11 +25,12 @@ export interface IPosPaymentFormsProps {
     invoiceTotal: number;
     /** Cart items in the active sale; flattened into payload at submit time. */
     cart: ICartItem[];
-    customerUserId: string | null;
-    saleType: TSaleType;
-    priceLevel: TPriceLevel;
     /** 0-100 cart-level discount percentage; forwarded to the backend. */
     cartDiscountPercentage: number;
+    /** Loyalty owner attached via the cashier card; threaded into the BE payload. */
+    loyaltyOwner?: IPosLoyaltyOwner | null;
+    /** Whole points the cashier requested to redeem; 0 when not redeeming. */
+    loyaltyRedeemPoints?: number;
     /** Fires with the persisted Sale after a successful checkout. */
     onSaleCreated: (sale: ISale) => void;
 }
@@ -44,19 +42,19 @@ export interface IPosPaymentFormsProps {
  * the multi-tender calc that drives the summary + Charge enablement. On
  * open we reset the bag + mint a fresh idempotency key via an adjust-
  * during-render anchor. Charge stays disabled when the calc is null
- * (overpay without keep-balance), the tender is empty, or the cart is
- * empty. On failure the modal stays open and reuses the same key so the
- * backend duplicate guard returns the same Sale id on retry.
+ * (overpay — no customer credit fallback in single-shop retail), the
+ * tender is empty, or the cart is empty. On failure the modal stays open
+ * and reuses the same key so the backend duplicate guard returns the
+ * same Sale id on retry.
  */
 export function PosPaymentForms({
     isOpen,
     onClose,
     invoiceTotal,
     cart,
-    customerUserId,
-    saleType,
-    priceLevel,
     cartDiscountPercentage,
+    loyaltyOwner,
+    loyaltyRedeemPoints,
     onSaleCreated,
 }: IPosPaymentFormsProps) {
     const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>('Cash');
@@ -77,22 +75,16 @@ export function PosPaymentForms({
         [paymentMethod, bag, invoiceTotal],
     );
     const calc = useMemo(() => tryCalculateMultiTender(tenderInputs), [tenderInputs]);
-    // Probe whether the typed tender amounts *would* overpay. Forcing
-    // `keepBalance: true` bypasses the overpay guard so the checkbox can
-    // unlock cheque/bank overpay (where credit === 0 leaves `calc` null).
-    const overpayProbe = useMemo(
-        () => tryCalculateMultiTender({ ...tenderInputs, keepBalance: true }),
-        [tenderInputs],
-    );
 
     const submit = usePaymentSubmit({
-        cart, customerUserId, saleType, priceLevel, cartDiscountPercentage,
-        paymentMethod, bag, tenderInputs, idempotencyKey, onSaleCreated, onClose,
+        cart, cartDiscountPercentage,
+        paymentMethod, bag, tenderInputs, idempotencyKey,
+        loyaltyOwner: loyaltyOwner ?? null,
+        loyaltyRedeemPoints: loyaltyRedeemPoints ?? 0,
+        onSaleCreated, onClose,
     });
 
     const hasError = calc === null;
-    const canKeepBalance =
-        overpayProbe !== null && overpayProbe.paymentAmount > invoiceTotal;
     const isEmptyTender = calc !== null && calc.paymentAmount === 0;
     const disableCharge =
         submit.isPending || hasError || isEmptyTender || cart.length === 0;
@@ -106,26 +98,12 @@ export function PosPaymentForms({
             closeOnBackdrop={false}
         >
             <div className="flex flex-col gap-4">
-                <PosPaymentMethod
-                    value={paymentMethod}
-                    onChange={setPaymentMethod}
-                />
-
                 <PosPaymentFormSwitch
                     paymentMethod={paymentMethod}
                     invoiceTotal={invoiceTotal}
-                    customerUserId={customerUserId}
                     bag={bag}
                     onPatchBag={(patch) =>
                         setBag((prev) => ({ ...prev, ...patch }))
-                    }
-                />
-
-                <PosKeepBalanceToggle
-                    enabled={canKeepBalance}
-                    value={bag.keepBalance}
-                    onChange={(next) =>
-                        setBag((prev) => ({ ...prev, keepBalance: next }))
                     }
                 />
 

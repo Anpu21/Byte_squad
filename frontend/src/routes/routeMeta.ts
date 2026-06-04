@@ -19,6 +19,11 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.CASHIER_DASHBOARD]: { title: 'Cashier dashboard', crumbs: ['Cashier'] },
 
     [FRONTEND_ROUTES.INVENTORY]: { title: 'Products', crumbs: ['Inventory', 'Products'] },
+    [FRONTEND_ROUTES.INVENTORY_EXPIRY]: { title: 'Expiry tracking', crumbs: ['Inventory', 'Expiry'] },
+    [FRONTEND_ROUTES.STOCK_ADJUSTMENTS]: { title: 'Stock adjustments', crumbs: ['Inventory', 'Adjustments'] },
+    [FRONTEND_ROUTES.STOCK_ADJUSTMENT_NEW]: { title: 'New stock adjustment', crumbs: ['Inventory', 'Adjustments', 'New'] },
+    [FRONTEND_ROUTES.RETURNS]: { title: 'Returns', crumbs: ['Inventory', 'Returns'] },
+    [FRONTEND_ROUTES.RETURN_NEW]: { title: 'New return', crumbs: ['Inventory', 'Returns', 'New'] },
     [FRONTEND_ROUTES.INVENTORY_ADD]: { title: 'New product', crumbs: ['Inventory', 'Products', 'Add new'] },
     [FRONTEND_ROUTES.INVENTORY_EDIT]: { title: 'Edit product', crumbs: ['Inventory', 'Products', 'Edit'] },
 
@@ -38,6 +43,14 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.BRANCHES_HUB]: { title: 'Branches', crumbs: ['Admin', 'Branches'] },
     [FRONTEND_ROUTES.BRANCH_COMPARE]: { title: 'Compare branches', crumbs: ['Admin', 'Compare'] },
     [FRONTEND_ROUTES.ADMIN_LOYALTY]: { title: 'Customer loyalty', crumbs: ['Admin', 'Customer loyalty'] },
+    [FRONTEND_ROUTES.MANAGER_LOYALTY]: { title: 'Customer loyalty', crumbs: ['Manager', 'Customer loyalty'] },
+    [FRONTEND_ROUTES.ADMIN_HR]: { title: 'HR', crumbs: ['People', 'HR'] },
+    [FRONTEND_ROUTES.ADMIN_EMPLOYEES]: { title: 'Employees', crumbs: ['People', 'Employees'] },
+    [FRONTEND_ROUTES.ADMIN_EMPLOYEE_NEW]: { title: 'New employee', crumbs: ['People', 'Employees', 'Add new'] },
+    [FRONTEND_ROUTES.ADMIN_EMPLOYEE_EDIT]: { title: 'Edit employee', crumbs: ['People', 'Employees', 'Edit'] },
+    [FRONTEND_ROUTES.ADMIN_ATTENDANCE]: { title: 'Attendance', crumbs: ['People', 'Attendance'] },
+    [FRONTEND_ROUTES.ADMIN_LEAVES]: { title: 'Leaves', crumbs: ['People', 'Leaves'] },
+    [FRONTEND_ROUTES.ADMIN_PAYROLL]: { title: 'Payroll', crumbs: ['People', 'Payroll'] },
 
     [FRONTEND_ROUTES.NOTIFICATIONS]: { title: 'Notifications', crumbs: ['Notifications'] },
     [FRONTEND_ROUTES.NOTIFICATION_DETAIL]: { title: 'Notification', crumbs: ['Notifications', 'Detail'] },

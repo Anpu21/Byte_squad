@@ -50,6 +50,9 @@ importers:
       cloudinary:
         specifier: 2.10.0
         version: 2.10.0
+      csv-parse:
+        specifier: 5.6.0
+        version: 5.6.0
       nodemailer:
         specifier: 8.0.2
         version: 8.0.2
@@ -71,6 +74,9 @@ importers:
       socket.io:
         specifier: 4.8.3
         version: 4.8.3
+      tsconfig-paths:
+        specifier: 4.2.0
+        version: 4.2.0
       typeorm:
         specifier: 0.3.28
         version: 0.3.28(pg@8.18.0)(ts-node@10.9.2(@types/node@22.19.11)(typescript@5.9.3))
@@ -150,9 +156,6 @@ importers:
       ts-node:
         specifier: 10.9.2
         version: 10.9.2(@types/node@22.19.11)(typescript@5.9.3)
-      tsconfig-paths:
-        specifier: 4.2.0
-        version: 4.2.0
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -1620,6 +1623,9 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
+
+  csv-parse@5.6.0:
+    resolution: {integrity: sha512-l3nz3euub2QMg5ouu5U09Ew9Wf6/wQ8I++ch1loQ0ljmzhmfZYrH9fflS22i/PQEvsPvxCwxgz5q7UB8K1JO4Q==}
 
   dayjs@1.11.19:
     resolution: {integrity: sha512-t5EcLVS6QPBNqM2z8fakk/NKel+Xzshgt8FFKAn+qwlD1pzZWxh0nVCrvFK7ZDb6XucZeF9z8C7CBWTRIVApAw==}
@@ -5189,6 +5195,8 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  csv-parse@5.6.0: {}
 
   dayjs@1.11.19: {}
 

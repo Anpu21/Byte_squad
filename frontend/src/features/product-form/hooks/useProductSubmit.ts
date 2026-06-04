@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '@/services/inventory.service';
+import { queryKeys } from '@/lib/queryKeys';
 import type { ProductFormState } from './useProductFormState';
 import {
     focusFirstInvalidField,
     validateProductForm,
 } from '../lib/form-validation';
+import { validateUnitsRows } from '../lib/validate-units-rows';
+import { normalizePriceToBaseUnit } from '../lib/normalize-price';
 
 const DEFAULT_THRESHOLD = 10;
 
@@ -36,39 +40,87 @@ export function useProductSubmit({
     onSuccess,
 }: UseProductSubmitArgs) {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const queryClient = useQueryClient();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const newErrors = validateProductForm(form, isEditMode);
-        form.setErrors(newErrors);
-        if (Object.keys(newErrors).length > 0) {
+        const unitsResult = validateUnitsRows(form.units, form.barcode);
+        if (!unitsResult.ok) {
+            newErrors.sellableUnits = unitsResult.error;
+            form.setErrors(newErrors);
             focusFirstInvalidField(newErrors);
+            return;
+        }
+        if (Object.keys(newErrors).length > 0) {
+            form.setErrors(newErrors);
+            focusFirstInvalidField(newErrors);
+            return;
+        }
+
+        // Normalize the manager-entered prices to the canonical per-base-unit
+        // value before packing the payload. The cost/selling price inputs are
+        // denominated in whichever sellable-unit row the manager picked (e.g.
+        // "Rs 650 per 12-PACK" for a unit-based product); the BE always persists
+        // the compatibility product price per base unit. Done after validation so we know the
+        // units array is sound enough to resolve the conversion factor.
+        let normalizedCostPrice: number;
+        let normalizedSellingPrice: number;
+        try {
+            normalizedCostPrice = normalizePriceToBaseUnit(
+                parseFloat(form.costPrice),
+                form.costPriceUnit,
+                form.units,
+            );
+            normalizedSellingPrice = normalizePriceToBaseUnit(
+                parseFloat(form.sellingPrice),
+                form.sellingPriceUnit,
+                form.units,
+            );
+        } catch (err) {
+            form.setErrors({
+                general:
+                    err instanceof Error
+                        ? `Price normalization failed: ${err.message}`
+                        : 'Price normalization failed',
+            });
             return;
         }
 
         setIsSubmitting(true);
         form.setErrors({});
 
+        const sellableUnits = unitsResult.rows.map((row) =>
+            row.isBase
+                ? { ...row, sellingPrice: normalizedSellingPrice }
+                : row,
+        );
+
         const payload = {
             name: form.name.trim(),
             barcode: form.barcode.trim(),
             description: form.description.trim() || undefined,
             category: form.category.trim(),
-            costPrice: parseFloat(form.costPrice),
-            sellingPrice: parseFloat(form.sellingPrice),
+            costPrice: normalizedCostPrice,
+            sellingPrice: normalizedSellingPrice,
+            baseUnit: form.baseUnit,
+            sellableUnits,
         };
 
         try {
+            let savedProductId: string | undefined;
             if (isEditMode && productId) {
                 await inventoryService.updateProduct(productId, payload);
+                savedProductId = productId;
             } else {
                 const product = await inventoryService.createProduct(payload);
+                savedProductId = product.id;
                 if (branchId) {
                     await inventoryService.createInventory({
                         productId: product.id,
                         branchId,
                         quantity: form.initialStock
-                            ? parseInt(form.initialStock, 10)
+                            ? parseFloat(form.initialStock)
                             : 0,
                         lowStockThreshold:
                             parseInt(form.lowStockThreshold, 10) ||
@@ -88,6 +140,14 @@ export function useProductSubmit({
                     }
                 }
             }
+            if (savedProductId) {
+                void queryClient.invalidateQueries({
+                    queryKey: queryKeys.pos.productUnits(savedProductId),
+                });
+            }
+            void queryClient.invalidateQueries({
+                queryKey: ['pos', 'searchProducts'],
+            });
             onSuccess();
         } catch (err: unknown) {
             form.setErrors(

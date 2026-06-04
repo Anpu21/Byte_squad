@@ -34,6 +34,7 @@ export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
         onUpdate(item.rowId, {
             unitId: unit.unitId,
             unitName: unit.unitName,
+            unitPrice: unit.sellingPrice,
             conversionFactor: unit.conversionToBase,
         });
     }
@@ -65,7 +66,6 @@ export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
                     }
                     min={0}
                     max={100}
-                    step={0.1}
                     disabled={!item.discountAllowed}
                     ariaLabel="Discount percentage"
                     className={NUMERIC_INPUT_CLASS}
@@ -79,7 +79,6 @@ export function PosCartRow({ item, onUpdate, onRemove }: IPosCartRowProps) {
                     }
                     min={0}
                     max={100}
-                    step={0.1}
                     ariaLabel="Tax rate"
                     className={NUMERIC_INPUT_CLASS}
                 />

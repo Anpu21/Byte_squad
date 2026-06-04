@@ -30,6 +30,7 @@ import type {
   CashierDashboardData,
   AdminDashboardData,
   CashierTransactionsSummary,
+  CreateSaleResponse,
   SearchProductRow,
   ProductUnitRow,
   InventoryQuantity,
@@ -203,7 +204,7 @@ export class PosController {
     @CurrentUser() actor: ActorPayload,
     @Body() dto: CreateSaleDto,
     @Headers('x-idempotency-key') idempotencyKey?: string,
-  ): Promise<Sale> {
+  ): Promise<CreateSaleResponse> {
     return this.posWriteService.createSale(actor, dto, idempotencyKey);
   }
 

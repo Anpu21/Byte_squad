@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '@/store/hooks';
 import { selectIsAdmin } from '@/store/selectors/auth';
 import { useAdminProfilePage } from '@/features/admin-user-profile/hooks/useAdminProfilePage';
 import { AdminAvatarCard } from '@/features/admin-user-profile/components/AdminAvatarCard';
 import { AdminStatusCard } from '@/features/admin-user-profile/components/AdminStatusCard';
+import { AdminLanguageCard } from '@/features/admin-user-profile/components/AdminLanguageCard';
 import { AdminBranchCard } from '@/features/admin-user-profile/components/AdminBranchCard';
 import { AdminGlobalScopeCard } from '@/features/admin-user-profile/components/AdminGlobalScopeCard';
 import { AdminPersonalInfoForm } from '@/features/admin-user-profile/components/AdminPersonalInfoForm';
@@ -11,6 +13,7 @@ import { AdminPasswordCard } from '@/features/admin-user-profile/components/Admi
 export function ProfilePage() {
     const p = useAdminProfilePage();
     const isAdmin = useAppSelector(selectIsAdmin);
+    const { t } = useTranslation('profile');
 
     if (p.isLoading) {
         return (
@@ -24,10 +27,10 @@ export function ProfilePage() {
         <div className="max-w-5xl animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-text-1 tracking-tight">
-                    My Profile
+                    {t('title')}
                 </h1>
                 <p className="text-sm text-text-2 mt-1">
-                    Manage your account settings and preferences.
+                    {t('subtitle')}
                 </p>
             </div>
 
@@ -39,6 +42,7 @@ export function ProfilePage() {
                         onUploadAvatar={p.onUploadAvatar}
                     />
                     <AdminStatusCard profile={p.profile} />
+                    <AdminLanguageCard />
                     {isAdmin ? (
                         <AdminGlobalScopeCard />
                     ) : (

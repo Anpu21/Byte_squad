@@ -52,6 +52,26 @@ export const APP_ROUTES = {
     BY_BRANCH: 'branch/:branchId',
     LOW_STOCK: 'low-stock',
     UPDATE_STOCK: ':id/stock',
+    // Phase C1 — batch/expiry tracking (goods receipt with expiry date,
+    // expiry report, on-demand expiry alert scan).
+    BATCHES: 'batches',
+    EXPIRY_REPORT: 'expiry/report',
+    EXPIRY_ALERTS_SCAN: 'expiry/scan',
+  },
+
+  // Stock Adjustments (Phase C2 — reason-coded corrections w/ reverse)
+  STOCK_ADJUSTMENTS: {
+    BASE: `${API_PREFIX}/stock-adjustments`,
+    BY_ID: ':id',
+    APPROVE: ':id/approve',
+    REVERSE: ':id/reverse',
+  },
+
+  // Sales Returns (Phase C3 — invoice lookup, good/bad split, restock)
+  RETURNS: {
+    BASE: `${API_PREFIX}/returns`,
+    LOOKUP: 'lookup',
+    BY_ID: ':id',
   },
 
   // POS / Transactions
@@ -117,6 +137,12 @@ export const APP_ROUTES = {
     INVENTORY_MATRIX: 'inventory/matrix',
   },
 
+  // Branch analytics (admin + manager aggregate comparison)
+  BRANCH_ANALYTICS: {
+    BASE: `${API_PREFIX}/branch-analytics`,
+    COMPARISON: 'comparison',
+  },
+
   // Storefront catalog (CUSTOMER role only)
   SHOP: {
     BASE: `${API_PREFIX}/shop`,
@@ -146,10 +172,62 @@ export const APP_ROUTES = {
     MINE: 'me',
     HISTORY: 'me/history',
     SETTINGS: 'settings',
+    LOOKUP: 'lookup',
+    ENROLL: 'enroll',
     ADMIN_BASE: `${API_PREFIX}/admin/loyalty`,
     ADMIN_SETTINGS: 'settings',
     ADMIN_CUSTOMERS: 'customers',
     ADMIN_CUSTOMER_HISTORY: 'customers/:userId/history',
+    ADMIN_DASHBOARD: 'dashboard',
+    ADMIN_ADJUST: 'customers/:userId/adjust',
+    MANAGER_BASE: `${API_PREFIX}/manager/loyalty`,
+    MANAGER_CUSTOMERS: 'customers',
+    MANAGER_CUSTOMER_HISTORY: 'customers/:userId/history',
+    MANAGER_DASHBOARD: 'dashboard',
+  },
+
+  // HR — employees, attendance, payroll
+  HR: {
+    BASE: `${API_PREFIX}/hr`,
+    EMPLOYEES: {
+      BASE: `${API_PREFIX}/hr/employees`,
+      BY_ID: ':id',
+      TERMINATE: ':id/terminate',
+      PHOTO: ':id/photo',
+    },
+    ATTENDANCE: {
+      BASE: `${API_PREFIX}/hr/attendance`,
+      BULK: 'bulk',
+      CHECK_IN: 'check-in',
+      CHECK_OUT: 'check-out',
+    },
+    LEAVES: {
+      BASE: `${API_PREFIX}/hr/leaves`,
+      BY_ID: ':id',
+      APPROVE: ':id/approve',
+      REJECT: ':id/reject',
+      CANCEL: ':id/cancel',
+    },
+    SALARY_STRUCTURES: {
+      BASE: `${API_PREFIX}/hr/salary-structures`,
+      BY_ID: ':id',
+      DEACTIVATE: ':id/deactivate',
+    },
+    PAYROLL_SETTINGS: {
+      BASE: `${API_PREFIX}/hr/payroll-settings`,
+      GLOBAL: 'global',
+      EFFECTIVE: 'effective',
+      BRANCH: 'branch',
+    },
+    PAYROLL: {
+      BASE: `${API_PREFIX}/hr/payroll`,
+      BY_ID: ':id',
+      GENERATE: 'generate',
+      APPROVE: ':id/approve',
+      MARK_PAID: ':id/mark-paid',
+      CANCEL: ':id/cancel',
+      CSV: 'csv',
+    },
   },
 
   // Stock Transfers (inter-branch stock movement)

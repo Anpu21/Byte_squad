@@ -32,7 +32,34 @@ export class SaleRepository {
   async findOneById(id: string): Promise<Sale | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ['items', 'items.product', 'cashier', 'customer'],
+      // `items.unit` is eager-loaded so receipt previews / re-prints can
+      // render the unit suffix (e.g. "250 g x LKR 0.20/g") that the FE
+      // shipped in Phase P4. Without it the FE silently falls back to the
+      // base-unit display.
+      relations: [
+        'items',
+        'items.product',
+        'items.unit',
+        'cashier',
+        'customer',
+      ],
+    });
+  }
+
+  /**
+   * Look up a sale by its human-facing invoice number, eager-loading the same
+   * relations as `findOneById` so the returns flow can render line items.
+   */
+  async findByInvoiceNumber(invoiceNumber: string): Promise<Sale | null> {
+    return this.repository.findOne({
+      where: { invoiceNumber },
+      relations: [
+        'items',
+        'items.product',
+        'items.unit',
+        'cashier',
+        'customer',
+      ],
     });
   }
 
@@ -42,7 +69,13 @@ export class SaleRepository {
   ): Promise<Sale | null> {
     return this.repository.findOne({
       where: { id, branchId },
-      relations: ['items', 'items.product', 'cashier', 'customer'],
+      relations: [
+        'items',
+        'items.product',
+        'items.unit',
+        'cashier',
+        'customer',
+      ],
     });
   }
 

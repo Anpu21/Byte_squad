@@ -13,10 +13,10 @@ const sampleRow: ISearchProductRow = {
     status: true,
     costPrice: 800,
     retailPrice: 1200,
-    wholesalePrice: 1000,
     taxRate: 0,
     discountAllowed: true,
     imageUrl: null,
+    matchedUnit: null,
 };
 
 describe('PosItemSearchResults', () => {
@@ -24,7 +24,6 @@ describe('PosItemSearchResults', () => {
         const { container } = render(
             <PosItemSearchResults
                 results={[sampleRow]}
-                priceLevel="Retail"
                 onSelect={vi.fn()}
                 query=""
             />,
@@ -32,24 +31,20 @@ describe('PosItemSearchResults', () => {
         expect(container.firstChild).toBeNull();
     });
 
-    it('renders the result row with retail-prominent pricing', () => {
+    it('renders the result row with the product retail price', () => {
         render(
             <PosItemSearchResults
                 results={[sampleRow]}
-                priceLevel="Retail"
                 onSelect={vi.fn()}
                 query="rice"
             />,
         );
         expect(screen.getByText('Basmati Rice 5kg')).toBeInTheDocument();
         expect(screen.getByText('PC-001')).toBeInTheDocument();
-        // Retail (LKR 1,200.00) sits as the primary price.
+        // Retail (LKR 1,200.00) is the only price now that the
+        // wholesale tier was removed from the cashier UI.
         expect(
             screen.getByText((text) => /LKR\s*1,200\.00/.test(text)),
-        ).toBeInTheDocument();
-        // Wholesale sits as the secondary line label.
-        expect(
-            screen.getByText((text) => /Wholesale/i.test(text)),
         ).toBeInTheDocument();
     });
 
@@ -58,7 +53,6 @@ describe('PosItemSearchResults', () => {
         render(
             <PosItemSearchResults
                 results={[sampleRow]}
-                priceLevel="Retail"
                 onSelect={onSelect}
                 query="rice"
             />,
@@ -72,7 +66,6 @@ describe('PosItemSearchResults', () => {
         render(
             <PosItemSearchResults
                 results={[]}
-                priceLevel="Retail"
                 onSelect={vi.fn()}
                 query="zzz"
             />,
@@ -84,7 +77,6 @@ describe('PosItemSearchResults', () => {
         render(
             <PosItemSearchResults
                 results={[]}
-                priceLevel="Retail"
                 onSelect={vi.fn()}
                 isLoading
                 query="rice"

@@ -7,6 +7,8 @@ import {
 import { DataSource, QueryFailedError } from 'typeorm';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
+import type { Product } from '@products/entities/product.entity';
+import type { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
 import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
 import { SearchCustomersQueryDto } from '@pos/dto/search-customers-query.dto';
@@ -62,6 +64,39 @@ function computeLineTotal(
       ? base * (discountAmount / 100)
       : discountAmount;
   return round2(Math.max(0, base - off));
+}
+
+function mapMatchedUnit(
+  unit: ProductSellableUnit | null,
+): SearchProductRow['matchedUnit'] {
+  if (!unit) return null;
+  return {
+    unitId: unit.id,
+    unitName: unit.name,
+    barcode: unit.barcode,
+    conversionToBase: Number(unit.conversionToBase),
+    sellingPrice: Number(unit.sellingPrice),
+  };
+}
+
+function mapProductSearchRow(
+  product: Product,
+  matchedUnit: ProductSellableUnit | null,
+): SearchProductRow {
+  return {
+    productId: product.id,
+    productCode: product.barcode,
+    productName: product.name,
+    productType: product.category,
+    baseUnit: product.baseUnit,
+    status: product.isActive,
+    costPrice: Number(product.costPrice),
+    retailPrice: Number(product.sellingPrice),
+    taxRate: Number(product.taxRate),
+    discountAllowed: product.discountAllowed,
+    imageUrl: product.imageUrl,
+    matchedUnit: mapMatchedUnit(matchedUnit),
+  };
 }
 import {
   DailyBreakdown,
@@ -537,21 +572,29 @@ export class PosService {
     const term = (dto.q ?? '').trim();
     if (!term) return [];
     const limit = dto.limit ?? 10;
-    const rows = await this.products.searchByText(term, limit);
-    return rows.map((p) => ({
-      productId: p.id,
-      productCode: p.barcode,
-      productName: p.name,
-      productType: p.category,
-      baseUnit: p.baseUnit,
-      status: p.isActive,
-      costPrice: Number(p.costPrice),
-      retailPrice: Number(p.sellingPrice),
-      wholesalePrice: Number(p.wholesalePrice),
-      taxRate: Number(p.taxRate),
-      discountAllowed: p.discountAllowed,
-      imageUrl: p.imageUrl,
-    }));
+    const [exactUnit, exactProduct, prefixRows] = await Promise.all([
+      this.products.findUnitByBarcode(term),
+      this.products.findByBarcode(term),
+      this.products.searchByText(term, limit),
+    ]);
+
+    const rows: SearchProductRow[] = [];
+    const seenProductIds = new Set<string>();
+    if (exactUnit) {
+      rows.push(mapProductSearchRow(exactUnit.product, exactUnit));
+      seenProductIds.add(exactUnit.productId);
+    } else if (exactProduct?.isActive) {
+      rows.push(mapProductSearchRow(exactProduct, null));
+      seenProductIds.add(exactProduct.id);
+    }
+
+    for (const product of prefixRows) {
+      if (rows.length >= limit) break;
+      if (seenProductIds.has(product.id)) continue;
+      rows.push(mapProductSearchRow(product, null));
+      seenProductIds.add(product.id);
+    }
+    return rows;
   }
 
   /**
@@ -600,8 +643,10 @@ export class PosService {
     return rows.map((u) => ({
       unitId: u.id,
       unitName: u.name,
+      barcode: u.barcode,
       isBaseUnit: u.isBase,
       conversionToBase: Number(u.conversionToBase),
+      sellingPrice: Number(u.sellingPrice),
       displayOrder: u.displayOrder ?? 0,
     }));
   }

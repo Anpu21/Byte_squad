@@ -1,10 +1,10 @@
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
-import type { IBranchComparisonEntry } from '@/types';
+import type { IBranchAnalyticsComparisonEntry } from '@/types';
 import { formatCurrencyWhole } from '../lib/format';
 
 interface TopProductsByBranchProps {
-    entry: IBranchComparisonEntry;
+    entry: IBranchAnalyticsComparisonEntry;
 }
 
 export function TopProductsByBranch({ entry }: TopProductsByBranchProps) {
@@ -15,7 +15,7 @@ export function TopProductsByBranch({ entry }: TopProductsByBranchProps) {
                     Top products — {entry.branchName}
                 </p>
             </div>
-            {entry.topProducts.length === 0 ? (
+            {entry.sales.topProducts.length === 0 ? (
                 <EmptyState title="No sales in this range" />
             ) : (
                 <table className="w-full text-left">
@@ -33,7 +33,7 @@ export function TopProductsByBranch({ entry }: TopProductsByBranchProps) {
                         </tr>
                     </thead>
                     <tbody>
-                        {entry.topProducts.map((p) => (
+                        {entry.sales.topProducts.map((p) => (
                             <tr
                                 key={p.productId}
                                 className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors"

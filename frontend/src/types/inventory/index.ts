@@ -1,3 +1,6 @@
 export * from './inventory.type'
 export * from './inventory-with-product.type'
 export * from './inventory-params.type'
+export * from './expiry.type'
+export * from './stock-adjustment.type'
+export * from './sales-return.type'
