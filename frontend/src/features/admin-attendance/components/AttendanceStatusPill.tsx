@@ -27,6 +27,7 @@ export function AttendanceStatusPill({
     return <Pill tone={meta.tone}>{compact ? meta.short : meta.label}</Pill>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- small label helper co-located with the pill
 export function attendanceStatusLabel(status: AttendanceStatus): string {
     return STATUS_META[status].label;
 }

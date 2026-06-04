@@ -74,17 +74,22 @@ export function AttendanceEditModal({
         durationInputFor(existing?.totalHours),
     );
 
+    // Re-seed the form to the row being edited each time the modal opens.
+    // Intentional state sync on open — not a render-time derivation.
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (!isOpen) return;
         setStatus(initialStatus);
         setDuration(durationInputFor(existing?.totalHours));
     }, [isOpen, initialStatus, existing]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const bulkMutation = useBulkUpsertAttendance();
     const canUseDuration = statusUsesDuration(status);
 
     useEffect(() => {
         if (!canUseDuration) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale duration when the status stops using it
             setDuration('');
         }
     }, [canUseDuration]);

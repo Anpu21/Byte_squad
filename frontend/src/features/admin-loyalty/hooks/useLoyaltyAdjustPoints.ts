@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { loyaltyAdminService } from '@/services/loyalty-admin.service';
+import { getApiErrorMessage } from '@/lib/api-error';
 
 interface AdjustPointsPayload {
     userId: string;
@@ -21,8 +22,8 @@ export function useLoyaltyAdjustPoints() {
             queryClient.invalidateQueries({ queryKey: ['loyalty', 'dashboard'] });
             toast.success('Points adjusted successfully');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to adjust points');
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, 'Failed to adjust points'));
         },
     });
 }

@@ -4,6 +4,7 @@ import type {
     ILoyaltyCustomersResponse,
     ILoyaltyHistoryResponse,
     ILoyaltySettings,
+    ILoyaltyDashboardStats,
 } from '@/types';
 
 export interface UpdateLoyaltySettingsPayload {
@@ -70,8 +71,10 @@ export const loyaltyAdminService = {
     ): Promise<void> => {
         await api.post(`/admin/loyalty/customers/${userId}/adjust`, payload);
     },
-    getDashboardStats: async (): Promise<any> => {
-        const response = await api.get('/admin/loyalty/dashboard');
+    getDashboardStats: async (): Promise<ILoyaltyDashboardStats> => {
+        const response = await api.get<IApiResponse<ILoyaltyDashboardStats>>(
+            '/admin/loyalty/dashboard',
+        );
         return response.data.data;
     },
 };
