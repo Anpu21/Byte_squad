@@ -6,8 +6,10 @@
 name: Backend CI
 
 on:
+  # Main is covered by the Deploy Production pipeline; CI here is for
+  # feature branches + PRs (fast pre-merge feedback).
   push:
-    branches: ["**"]
+    branches-ignore: ["main"]
     paths:
       - "backend/**"
       - ".github/workflows/backend-ci.yml"
