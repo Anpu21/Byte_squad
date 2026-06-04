@@ -29,6 +29,12 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:admin": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/run-admin-seed.ts",
     "seed:admin:prod": "node -r ./tsconfig-paths-bootstrap.js dist/common/seeds/run-admin-seed.js",
+    "typeorm": "node -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
+    "migration:generate": "pnpm typeorm migration:generate -d src/data-source.ts",
+    "migration:run": "pnpm typeorm migration:run -d src/data-source.ts",
+    "migration:revert": "pnpm typeorm migration:revert -d src/data-source.ts",
+    "migration:show": "pnpm typeorm migration:show -d src/data-source.ts",
+    "migration:run:prod": "node -r ./tsconfig-paths-bootstrap.js ./node_modules/typeorm/cli.js migration:run -d dist/data-source.js",
     "migrate:roles": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-roles.ts",
     "migrate:images": "ts-node -r ./tsconfig-paths-bootstrap.js src/common/seeds/migrate-images.ts",
     "script:recategorize-products": "ts-node -r ./tsconfig-paths-bootstrap.js src/scripts/recategorize-products.ts"

@@ -5,9 +5,10 @@
 
 name: Docker Build
 
+# Dormant: superseded by the Fly + Cloudflare Pages deploy (deploy-production.yml).
+# Kept for a future VPS — build GHCR images on demand only.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch: {}
 
 # Prevent duplicate builds for the same commit
 concurrency:
