@@ -54,7 +54,7 @@ export class SalesReturnRepository {
       qb.andWhere('r.branch_id = :branchId', { branchId: opts.branchId });
     }
     const [items, total] = await qb
-      .orderBy('r.created_at', 'DESC')
+      .orderBy('r.createdAt', 'DESC')
       .skip((opts.page - 1) * opts.limit)
       .take(opts.limit)
       .getManyAndCount();
