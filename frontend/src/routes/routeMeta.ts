@@ -19,6 +19,11 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.CASHIER_DASHBOARD]: { title: 'Cashier dashboard', crumbs: ['Cashier'] },
 
     [FRONTEND_ROUTES.INVENTORY]: { title: 'Products', crumbs: ['Inventory', 'Products'] },
+    [FRONTEND_ROUTES.INVENTORY_EXPIRY]: { title: 'Expiry tracking', crumbs: ['Inventory', 'Expiry'] },
+    [FRONTEND_ROUTES.STOCK_ADJUSTMENTS]: { title: 'Stock adjustments', crumbs: ['Inventory', 'Adjustments'] },
+    [FRONTEND_ROUTES.STOCK_ADJUSTMENT_NEW]: { title: 'New stock adjustment', crumbs: ['Inventory', 'Adjustments', 'New'] },
+    [FRONTEND_ROUTES.RETURNS]: { title: 'Returns', crumbs: ['Inventory', 'Returns'] },
+    [FRONTEND_ROUTES.RETURN_NEW]: { title: 'New return', crumbs: ['Inventory', 'Returns', 'New'] },
     [FRONTEND_ROUTES.INVENTORY_ADD]: { title: 'New product', crumbs: ['Inventory', 'Products', 'Add new'] },
     [FRONTEND_ROUTES.INVENTORY_EDIT]: { title: 'Edit product', crumbs: ['Inventory', 'Products', 'Edit'] },
 

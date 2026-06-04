@@ -31,6 +31,10 @@ import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
+import { ProductBatch } from '@inventory/entities/product-batch.entity';
+import { StockAdjustment } from '@inventory/entities/stock-adjustment.entity';
+import { SalesReturn } from '@inventory/entities/sales-return.entity';
+import { SalesReturnItem } from '@inventory/entities/sales-return-item.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Payment } from '@pos/entities/payment.entity';
@@ -68,6 +72,10 @@ import appConfig from '@common/config/app.config';
       Product,
       ProductSellableUnit,
       Inventory,
+      ProductBatch,
+      StockAdjustment,
+      SalesReturn,
+      SalesReturnItem,
       Sale,
       SaleItem,
       Payment,

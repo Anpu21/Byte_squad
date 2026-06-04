@@ -46,6 +46,23 @@ export class SaleRepository {
     });
   }
 
+  /**
+   * Look up a sale by its human-facing invoice number, eager-loading the same
+   * relations as `findOneById` so the returns flow can render line items.
+   */
+  async findByInvoiceNumber(invoiceNumber: string): Promise<Sale | null> {
+    return this.repository.findOne({
+      where: { invoiceNumber },
+      relations: [
+        'items',
+        'items.product',
+        'items.unit',
+        'cashier',
+        'customer',
+      ],
+    });
+  }
+
   async findOneByIdScopedToBranch(
     id: string,
     branchId: string,

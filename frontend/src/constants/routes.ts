@@ -24,6 +24,11 @@ export const FRONTEND_ROUTES = {
     INVENTORY: '/inventory',
     INVENTORY_ADD: '/inventory/add',
     INVENTORY_EDIT: '/inventory/edit/:productId',
+    INVENTORY_EXPIRY: '/inventory/expiry',
+    STOCK_ADJUSTMENTS: '/inventory/adjustments',
+    STOCK_ADJUSTMENT_NEW: '/inventory/adjustments/new',
+    RETURNS: '/inventory/returns',
+    RETURN_NEW: '/inventory/returns/new',
 
     // POS
     POS: '/pos',

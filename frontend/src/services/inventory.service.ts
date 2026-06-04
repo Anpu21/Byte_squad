@@ -6,6 +6,11 @@ import type {
   IInventoryWithProduct,
   IProductPayload,
   IInventoryParams,
+  IExpiryReport,
+  IExpiryReportParams,
+  IProductBatch,
+  ICreateProductBatchPayload,
+  IExpiryScanSummary,
 } from '@/types'
 
 // Re-export for backward compatibility — older callers used IInventoryItem.
@@ -87,6 +92,46 @@ export const inventoryService = {
 
   getCategories: async (): Promise<string[]> => {
     const response = await api.get<IApiResponse<string[]>>('/products/categories')
+    return response.data.data
+  },
+
+  // ── Phase C1 — batch/expiry tracking ──
+
+  // Receive a goods batch with an expiry date (bumps inventory + appends a
+  // Purchase stock-movement on the backend).
+  createProductBatch: async (
+    payload: ICreateProductBatchPayload,
+  ): Promise<IProductBatch> => {
+    const response = await api.post<IApiResponse<IProductBatch>>(
+      '/inventory/batches',
+      payload,
+    )
+    return response.data.data
+  },
+
+  getExpiryReport: async (
+    params?: IExpiryReportParams,
+  ): Promise<IExpiryReport> => {
+    const response = await api.get<IApiResponse<IExpiryReport>>(
+      '/inventory/expiry/report',
+      { params },
+    )
+    return response.data.data
+  },
+
+  listBatchesForProduct: async (productId: string): Promise<IProductBatch[]> => {
+    const response = await api.get<IApiResponse<IProductBatch[]>>(
+      '/inventory/batches',
+      { params: { productId } },
+    )
+    return response.data.data
+  },
+
+  // Admin-only: fan out expiry notifications to branch managers + admins.
+  scanExpiry: async (): Promise<IExpiryScanSummary> => {
+    const response = await api.post<IApiResponse<IExpiryScanSummary>>(
+      '/inventory/expiry/scan',
+    )
     return response.data.data
   },
 }

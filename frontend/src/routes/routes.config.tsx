@@ -12,6 +12,11 @@ import { BranchSelectionPage } from '@/pages/auth/BranchSelectionPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { CashierDashboardPage } from '@/pages/dashboard/CashierDashboardPage';
 import { ProductFormPage } from '@/pages/inventory/ProductFormPage';
+import { ExpiryReportPage } from '@/pages/inventory/ExpiryReportPage';
+import { StockAdjustmentsPage } from '@/pages/inventory/StockAdjustmentsPage';
+import { StockAdjustmentNewPage } from '@/pages/inventory/StockAdjustmentNewPage';
+import { ReturnsPage } from '@/pages/inventory/ReturnsPage';
+import { ReturnNewPage } from '@/pages/inventory/ReturnNewPage';
 import { PosPage } from '@/pages/pos/PosPage';
 import { TransactionsPage } from '@/pages/pos/TransactionsPage';
 import { LedgerPage } from '@/pages/accounting/LedgerPage';
@@ -129,6 +134,36 @@ export const ROUTES: RouteDef[] = [
     {
         path: FRONTEND_ROUTES.INVENTORY,
         element: <InventoryByRole />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.INVENTORY_EXPIRY,
+        element: <ExpiryReportPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.STOCK_ADJUSTMENT_NEW,
+        element: <StockAdjustmentNewPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.STOCK_ADJUSTMENTS,
+        element: <StockAdjustmentsPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.RETURN_NEW,
+        element: <ReturnNewPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.RETURNS,
+        element: <ReturnsPage />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
