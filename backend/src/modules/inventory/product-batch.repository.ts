@@ -53,7 +53,7 @@ export class ProductBatchRepository {
       .where('b.product_id = :productId', { productId })
       .andWhere('b.quantity > 0');
     if (branchId) qb.andWhere('b.branch_id = :branchId', { branchId });
-    return qb.orderBy('b.expiry_date', 'ASC').getMany();
+    return qb.orderBy('b.expiryDate', 'ASC').getMany();
   }
 
   /**
@@ -77,7 +77,7 @@ export class ProductBatchRepository {
     }
 
     const [items, total] = await qb
-      .orderBy('b.expiry_date', 'ASC')
+      .orderBy('b.expiryDate', 'ASC')
       .skip((opts.page - 1) * opts.limit)
       .take(opts.limit)
       .getManyAndCount();
