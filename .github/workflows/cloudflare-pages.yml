@@ -1,0 +1,77 @@
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  LedgerPro — Deploy Frontend to Cloudflare Pages           ║
+# ║  Vite build → wrangler pages deploy                        ║
+# ╚═══════════════════════════════════════════════════════════╝
+#
+# Requires two repo secrets (Settings → Secrets and variables → Actions):
+#   • CLOUDFLARE_API_TOKEN  — token with "Account · Cloudflare Pages · Edit"
+#   • CLOUDFLARE_ACCOUNT_ID — your Cloudflare account id
+# The Pages project ("ledgerpro") is auto-created on the first run.
+
+name: Deploy Frontend (Cloudflare Pages)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/cloudflare-pages.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: cf-pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build · Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+        env:
+          VITE_API_URL: https://api.ledgerpro.shop/api/v1
+          VITE_SOCKET_URL: https://api.ledgerpro.shop
+
+      # Idempotent: succeeds on first run (creates it), no-op afterwards.
+      - name: Ensure Pages project exists
+        uses: cloudflare/wrangler-action@v3
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frontend
+          command: pages project create ledgerpro --production-branch=main
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frontend
+          command: pages deploy dist --project-name=ledgerpro --branch=main
