@@ -12,10 +12,8 @@ import { BranchSelectionPage } from '@/pages/auth/BranchSelectionPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { CashierDashboardPage } from '@/pages/dashboard/CashierDashboardPage';
 import { ProductFormPage } from '@/pages/inventory/ProductFormPage';
-import { ExpiryReportPage } from '@/pages/inventory/ExpiryReportPage';
-import { StockAdjustmentsPage } from '@/pages/inventory/StockAdjustmentsPage';
+import { InventoryWorkspacePage } from '@/pages/inventory/InventoryWorkspacePage';
 import { StockAdjustmentNewPage } from '@/pages/inventory/StockAdjustmentNewPage';
-import { ReturnsPage } from '@/pages/inventory/ReturnsPage';
 import { ReturnNewPage } from '@/pages/inventory/ReturnNewPage';
 import { PosPage } from '@/pages/pos/PosPage';
 import { TransactionsPage } from '@/pages/pos/TransactionsPage';
@@ -47,7 +45,7 @@ import { PayhereGatewayPage } from '@/pages/shop/PayhereGatewayPage';
 import { MyOrdersPage } from '@/pages/shop/MyOrdersPage';
 import { CustomerProfilePage } from '@/pages/shop/ProfilePage';
 import { RewardsPage } from '@/pages/shop/RewardsPage';
-import { InventoryByRole } from './InventoryByRole';
+import { InventoryRedirect } from './InventoryRedirect';
 import { FirstSetupOnly } from './FirstSetupOnly';
 import { LegacyOrderConfirmationRedirect } from './LegacyOrderConfirmationRedirect';
 import { TransferHistoryRedirect } from './TransferHistoryRedirect';
@@ -133,13 +131,13 @@ export const ROUTES: RouteDef[] = [
     // ─── Inventory ───
     {
         path: FRONTEND_ROUTES.INVENTORY,
-        element: <InventoryByRole />,
+        element: <InventoryWorkspacePage />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.INVENTORY_EXPIRY,
-        element: <ExpiryReportPage />,
+        element: <InventoryRedirect tab="expiry" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
@@ -151,7 +149,7 @@ export const ROUTES: RouteDef[] = [
     },
     {
         path: FRONTEND_ROUTES.STOCK_ADJUSTMENTS,
-        element: <StockAdjustmentsPage />,
+        element: <InventoryRedirect tab="adjustments" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
@@ -163,7 +161,7 @@ export const ROUTES: RouteDef[] = [
     },
     {
         path: FRONTEND_ROUTES.RETURNS,
-        element: <ReturnsPage />,
+        element: <InventoryRedirect tab="returns" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },

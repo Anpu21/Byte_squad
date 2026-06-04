@@ -14,7 +14,7 @@ export function BranchRow({
     onDelete,
 }: BranchRowProps) {
     return (
-        <tr className="border-b border-border hover:bg-surface-2">
+        <tr className="border-b border-border transition-colors hover:bg-surface-2">
             <td className="px-6 py-4">
                 <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-mono font-semibold bg-surface-2 text-text-2 border border-border">
                     {branch.code}
@@ -48,7 +48,9 @@ export function BranchRow({
                     </span>
                 )}
             </td>
-            <td className="px-6 py-4 text-text-1">{branch.staffCount}</td>
+            <td className="px-6 py-4 text-text-1 tabular-nums">
+                {branch.staffCount}
+            </td>
             <td className="px-6 py-4">
                 {branch.isActive ? (
                     <span className="inline-flex items-center gap-1.5 text-text-1 text-[13px]">

@@ -63,7 +63,7 @@ export class StockAdjustmentRepository {
     }
 
     const [items, total] = await qb
-      .orderBy('a.created_at', 'DESC')
+      .orderBy('a.createdAt', 'DESC')
       .skip((opts.page - 1) * opts.limit)
       .take(opts.limit)
       .getManyAndCount();

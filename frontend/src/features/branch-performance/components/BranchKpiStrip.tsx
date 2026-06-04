@@ -9,6 +9,12 @@ interface BranchKpiStripProps {
     dailySalesSpark: number[];
 }
 
+// Staggered entrance + subtle hover lift. `backwards` fill keeps each card
+// hidden through its delay; the global prefers-reduced-motion block neutralises
+// the animation + transform for users who opt out.
+const CARD_MOTION =
+    'animate-in fade-in slide-in-from-bottom-3 [animation-fill-mode:backwards] transition-transform duration-200 hover:-translate-y-0.5';
+
 export function BranchKpiStrip({
     today,
     week,
@@ -18,6 +24,7 @@ export function BranchKpiStrip({
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <KpiCard
+                className={`${CARD_MOTION} [animation-delay:0ms]`}
                 label="Today's revenue"
                 value={formatCurrencyWhole(today.sales)}
                 delta={`${today.transactions} transactions`}
@@ -25,6 +32,7 @@ export function BranchKpiStrip({
                 sparkData={dailySalesSpark.slice(-7) || [1, 2]}
             />
             <KpiCard
+                className={`${CARD_MOTION} [animation-delay:70ms]`}
                 label="Avg transaction"
                 value={formatCurrencyWhole(today.avgTransaction)}
                 delta="Today"
@@ -32,6 +40,7 @@ export function BranchKpiStrip({
                 sparkData={[3, 4, 5, 4, 6, 5, 7]}
             />
             <KpiCard
+                className={`${CARD_MOTION} [animation-delay:140ms]`}
                 label="This week"
                 value={formatCurrencyWhole(week.sales)}
                 delta={`${week.transactions} transactions`}
@@ -39,6 +48,7 @@ export function BranchKpiStrip({
                 sparkData={dailySalesSpark || [1, 2]}
             />
             <KpiCard
+                className={`${CARD_MOTION} [animation-delay:210ms]`}
                 label="Low stock items"
                 value={String(inventory.lowStockItems)}
                 delta={`${inventory.outOfStock} out of stock`}
