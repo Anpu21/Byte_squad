@@ -194,7 +194,7 @@ describe('PosPaymentForms', () => {
         expect(onClose).toHaveBeenCalled();
     });
 
-    it('disables the Charge button when the cheque tender exceeds the invoice total', async () => {
+    it('treats a cash tender above the invoice total as change and keeps Charge enabled', async () => {
         const mutateAsync = vi
             .fn<(args: IMutateArgs) => Promise<ISale>>()
             .mockResolvedValue(makePersistedSale());
@@ -207,28 +207,23 @@ describe('PosPaymentForms', () => {
 
         renderModal({ invoiceTotal: 100 });
 
-        // Switch to Cheque method and tender Rs 150 against a Rs 100 invoice.
-        const chequeRadio = screen.getByRole('radio', { name: /cheque/i });
-        await userEvent.click(chequeRadio);
+        // Tender Rs 150 against a Rs 100 invoice via the cash form (the only
+        // tender in the cash-only modal). Cash overpay is change, not an error:
+        // no overpay banner, Charge stays enabled and bills the invoice total
+        // (Rs 100), not the tendered Rs 150. (Charging is covered by tests
+        // above; here we just assert the overpay UI state.)
+        const cashInput = screen.getByLabelText('Cash tendered');
+        await userEvent.clear(cashInput);
+        await userEvent.type(cashInput, '150');
 
-        const chequeAmountInput = screen.getByLabelText('Cheque amount');
-        await userEvent.clear(chequeAmountInput);
-        await userEvent.type(chequeAmountInput, '150');
-
-        // The overpay warning surfaces inline and the Charge button stays
-        // disabled — single-shop retail has no walk-in customer accounts
-        // to park the surplus against, so the cashier must adjust the
-        // tender to match the invoice.
-        await waitFor(() => {
-            expect(
-                screen.getByText(/Tender exceeds the invoice total/i),
-            ).toBeInTheDocument();
-        });
         const chargeButton = screen.getByRole('button', {
             name: /^Charge\s+LKR/i,
         });
-        expect(chargeButton).toBeDisabled();
-        expect(mutateAsync).not.toHaveBeenCalled();
+        expect(chargeButton).toBeEnabled();
+        expect(chargeButton).toHaveTextContent('100.00');
+        expect(
+            screen.queryByText(/Tender exceeds the invoice total/i),
+        ).not.toBeInTheDocument();
     });
 
     it('shows the balance-due summary line and submits a partial-cash sale', async () => {
