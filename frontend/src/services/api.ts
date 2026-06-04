@@ -9,7 +9,9 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 const configuredTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS);
 
 const api = axios.create({
-    baseURL: '/api/v1',
+    // Absolute API origin in prod (Cloudflare Pages → api.<domain>); the
+    // relative fallback keeps the Vite dev proxy working locally.
+    baseURL: import.meta.env.VITE_API_URL ?? '/api/v1',
     timeout: Number.isFinite(configuredTimeout)
         ? configuredTimeout
         : DEFAULT_TIMEOUT_MS,

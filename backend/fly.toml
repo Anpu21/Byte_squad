@@ -1,0 +1,26 @@
+# Fly.io config for the LedgerPro NestJS API.
+# NOTE: Fly app names are globally unique — if "ledgerpro-api" is taken,
+# change `app` here (and rerun `fly apps create <name>`), then deploy.
+# Secrets (DB_*, JWT_SECRET, MAIL_*, CLOUDINARY_*, PAYHERE_*, CORS_ORIGIN,
+# BACKEND_PUBLIC_URL, DB_SSL, DB_SYNC, LEDGERPRO_STANDALONE_SEED) are set via
+# `fly secrets set ...`, NOT committed here.
+
+app = "ledgerpro-api"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+  target = "production"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_start_machines = true
+  # Keep one machine always running so the socket.io notifications gateway
+  # holds its WebSocket connections (don't scale to zero).
+  auto_stop_machines = false
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
