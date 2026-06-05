@@ -41,6 +41,7 @@ import { ProductDetailPage } from '@/pages/shop/ProductDetailPage';
 import { CartPage } from '@/pages/shop/CartPage';
 import { CheckoutPage } from '@/pages/shop/CheckoutPage';
 import { OrderConfirmationPage } from '@/pages/shop/OrderConfirmationPage';
+import { OrderGroupConfirmationPage } from '@/pages/shop/OrderGroupConfirmationPage';
 import { PayhereGatewayPage } from '@/pages/shop/PayhereGatewayPage';
 import { MyOrdersPage } from '@/pages/shop/MyOrdersPage';
 import { CustomerProfilePage } from '@/pages/shop/ProfilePage';
@@ -409,6 +410,12 @@ export const ROUTES: RouteDef[] = [
         layout: 'customer-public',
     },
     // Public confirmation — anyone with the code can view (the QR is the credential)
+    {
+        path: FRONTEND_ROUTES.SHOP_ORDER_GROUP,
+        element: <OrderGroupConfirmationPage />,
+        guard: 'none',
+        layout: 'customer-public',
+    },
     {
         path: FRONTEND_ROUTES.SHOP_ORDER_CONFIRMATION,
         element: <OrderConfirmationPage />,

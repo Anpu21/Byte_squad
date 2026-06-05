@@ -29,6 +29,7 @@ function order(
     return {
         id,
         orderCode: `ORD-${id}`,
+        groupCode: null,
         userId: 'u1',
         branchId: 'b1',
         status,

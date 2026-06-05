@@ -94,6 +94,7 @@ export const FRONTEND_ROUTES = {
     SHOP_CART: '/shop/cart',
     SHOP_CHECKOUT: '/shop/checkout',
     SHOP_CHECKOUT_PAY: '/shop/checkout/pay',
+    SHOP_ORDER_GROUP: '/shop/orders/group/:code',
     SHOP_ORDER_CONFIRMATION: '/shop/orders/:code',
     SHOP_ORDER_CONFIRMATION_LEGACY: '/shop/requests/:code',
     SHOP_MY_ORDERS: '/shop/my-orders',
