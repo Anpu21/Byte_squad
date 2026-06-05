@@ -14,6 +14,8 @@ function product(
         category: 'beverages',
         sellingPrice: 100,
         imageUrl: null,
+        baseUnit: 'unit',
+        sellableUnits: [],
         stockStatus,
         availableBranches: [],
     };

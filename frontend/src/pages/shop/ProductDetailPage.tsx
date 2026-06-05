@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Store, Flame } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { Select } from '@/components/ui/Select';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useProductDetail } from '@/features/product-detail/hooks/useProductDetail';
 import { ProductDetailImage } from '@/features/product-detail/components/ProductImage';
@@ -27,6 +28,8 @@ export function ProductDetailPage() {
         );
     }
 
+    const hasUnitChoice = p.units.length > 1;
+
     return (
         <div className="max-w-4xl mx-auto">
             <Link
@@ -50,7 +53,11 @@ export function ProductDetailPage() {
                         {p.product.name}
                     </h1>
                     <p className="text-3xl font-bold text-text-1 mt-4">
-                        {formatCurrency(p.product.sellingPrice)}
+                        {formatCurrency(p.unitPrice)}
+                        <span className="text-sm font-medium text-text-3">
+                            {' '}
+                            / {p.product.baseUnit}
+                        </span>
                     </p>
 
                     {p.product.stockStatus === 'low' && (
@@ -66,13 +73,38 @@ export function ProductDetailPage() {
                         </p>
                     )}
 
+                    {hasUnitChoice && (
+                        <div className="mt-5">
+                            <label className="block text-xs font-medium text-text-2 mb-1.5">
+                                Choose unit
+                            </label>
+                            <Select
+                                aria-label="Choose a unit to buy"
+                                value={p.selectedUnitId ?? ''}
+                                onChange={p.setSelectedUnitId}
+                                options={p.units.map((u) => ({
+                                    label: `${u.name} — ${formatCurrency(u.sellingPrice)}`,
+                                    value: u.id,
+                                }))}
+                                className="min-w-[14rem]"
+                            />
+                        </div>
+                    )}
+
                     {p.branchSwitchNeeded && p.targetBranch && (
-                        <div className="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-md bg-warning-soft border border-warning/40 text-xs text-warning">
-                            <Store size={13} className="mt-0.5 flex-shrink-0" />
-                            <span>
-                                Available at <b>{p.targetBranch.name}</b>.
-                                Adding will switch your cart to that branch.
+                        <div className="mt-4 flex flex-col gap-2 px-3 py-2.5 rounded-md bg-warning-soft border border-warning/40 text-xs text-warning">
+                            <span className="flex items-start gap-2">
+                                <Store size={13} className="mt-0.5 flex-shrink-0" />
+                                Out of stock here — available at{' '}
+                                <b>{p.targetBranch.name}</b>.
                             </span>
+                            <button
+                                type="button"
+                                onClick={p.handleSwitchBranch}
+                                className="self-start font-semibold underline hover:no-underline"
+                            >
+                                Shop at {p.targetBranch.name}
+                            </button>
                         </div>
                     )}
 
@@ -82,7 +114,7 @@ export function ProductDetailPage() {
                         onDecrement={p.decrement}
                         onAdd={p.handleAdd}
                         onBuyNow={p.handleBuyNow}
-                        disabled={p.isOutEverywhere}
+                        disabled={p.isOutEverywhere || p.product.stockStatus === 'out'}
                     />
                 </div>
             </div>
@@ -98,9 +130,9 @@ export function ProductDetailPage() {
 
             <StickyAddToCartBar
                 name={p.product.name}
-                sellingPrice={p.product.sellingPrice}
+                sellingPrice={p.unitPrice}
                 onAdd={p.handleAdd}
-                disabled={p.isOutEverywhere}
+                disabled={p.isOutEverywhere || p.product.stockStatus === 'out'}
             />
         </div>
     );

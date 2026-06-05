@@ -1,30 +1,43 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import toast from 'react-hot-toast';
-import axios from 'axios';
 import { shopProductsService } from '@/services/shop-products.service';
-import { userService } from '@/services/user.service';
-import { addToCart, clearShopCart } from '@/store/slices/shopCartSlice';
-import { setUserBranch } from '@/store/slices/authSlice';
-import { selectShopCartItemCount } from '@/store/selectors/shopCart';
+import { addToCart } from '@/store/slices/shopCartSlice';
+import { setActiveBranch } from '@/store/slices/shopBranchSlice';
+import { selectActiveBranchId } from '@/store/selectors/shopBranch';
 import { useAuth } from '@/hooks/useAuth';
-import { useConfirm } from '@/hooks/useConfirm';
 import { queryKeys } from '@/lib/queryKeys';
 import { useBuyAgain } from './useBuyAgain';
 import type { IShopProduct } from '@/types';
 
+export type CatalogSort = 'name' | 'price_asc' | 'price_desc';
+
+function sortProducts(
+    products: IShopProduct[],
+    sort: CatalogSort,
+): IShopProduct[] {
+    const copy = products.slice();
+    switch (sort) {
+        case 'price_asc':
+            return copy.sort((a, b) => a.sellingPrice - b.sellingPrice);
+        case 'price_desc':
+            return copy.sort((a, b) => b.sellingPrice - a.sellingPrice);
+        default:
+            return copy.sort((a, b) => a.name.localeCompare(b.name));
+    }
+}
+
 export function useCatalogPage() {
     const dispatch = useAppDispatch();
-    const confirm = useConfirm();
     const { user } = useAuth();
-    const branchId = user?.branchId ?? null;
-    const cartItemCount = useAppSelector(selectShopCartItemCount);
+    const activeBranchId = useAppSelector(selectActiveBranchId);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const search = searchParams.get('q') ?? '';
     const [category, setCategory] = useState('');
+    const [sort, setSort] = useState<CatalogSort>('name');
 
     const clearSearch = () => {
         setSearchParams(
@@ -40,6 +53,21 @@ export function useCatalogPage() {
         queryKey: queryKeys.shop.branches(),
         queryFn: shopProductsService.listBranches,
     });
+
+    const branches = useMemo(
+        () => branchesQuery.data ?? [],
+        [branchesQuery.data],
+    );
+
+    // Default the browsing branch: prefer the customer's saved branch, else the
+    // first active branch. Customers are no longer locked to a single branch.
+    useEffect(() => {
+        if (activeBranchId) return;
+        const fallback = user?.branchId ?? branches[0]?.id ?? null;
+        if (fallback) dispatch(setActiveBranch(fallback));
+    }, [activeBranchId, user?.branchId, branches, dispatch]);
+
+    const branchId = activeBranchId;
 
     const categoriesQuery = useQuery({
         queryKey: queryKeys.shop.categories(),
@@ -67,12 +95,11 @@ export function useCatalogPage() {
         enabled: Boolean(branchId),
     });
 
-    const branches = useMemo(
-        () => branchesQuery.data ?? [],
-        [branchesQuery.data],
-    );
     const categories = categoriesQuery.data ?? [];
-    const products = productsQuery.data ?? [];
+    const products = useMemo(
+        () => sortProducts(productsQuery.data ?? [], sort),
+        [productsQuery.data, sort],
+    );
     const recommendedProducts = useMemo(
         () => recommendedQuery.data ?? [],
         [recommendedQuery.data],
@@ -94,42 +121,29 @@ export function useCatalogPage() {
         [branches, branchId],
     );
 
-    const handleBranchChange = async (newId: string) => {
+    // Free branch switching — keeps the cart so items can span branches.
+    const handleBranchChange = (newId: string) => {
         if (!newId || newId === branchId) return;
-        if (cartItemCount > 0) {
-            const ok = await confirm({
-                title: 'Switch pickup branch?',
-                body: 'Switching to a different branch will clear your cart and update your profile pickup branch. Continue?',
-                confirmLabel: 'Switch & clear cart',
-                tone: 'danger',
-            });
-            if (!ok) return;
-            dispatch(clearShopCart());
-        }
-        try {
-            await userService.updateMyBranch(newId);
-            dispatch(setUserBranch(newId));
-            setCategory('');
-        } catch (err: unknown) {
-            if (axios.isAxiosError(err)) {
-                const data = err.response?.data as
-                    | { message?: string }
-                    | undefined;
-                toast.error(data?.message ?? 'Could not switch branch');
-            } else {
-                toast.error('Could not switch branch');
-            }
-        }
+        dispatch(setActiveBranch(newId));
+        setCategory('');
     };
 
-    const handleAdd = (product: IShopProduct) => {
-        if (product.stockStatus === 'out') return;
+    const handleAdd = (product: IShopProduct, unitId: string | null = null) => {
+        if (product.stockStatus === 'out' || !branchId) return;
+        const unit =
+            (unitId
+                ? product.sellableUnits.find((u) => u.id === unitId)
+                : product.sellableUnits.find((u) => u.isBase)) ?? null;
         dispatch(
             addToCart({
                 productId: product.id,
+                branchId,
+                branchName: currentBranch?.name ?? '',
                 name: product.name,
-                sellingPrice: product.sellingPrice,
+                sellingPrice: unit ? unit.sellingPrice : product.sellingPrice,
                 imageUrl: product.imageUrl,
+                unitId: unit ? unit.id : null,
+                unitLabel: unit ? unit.name : product.baseUnit,
             }),
         );
         toast.success(`${product.name} added`);
@@ -137,6 +151,7 @@ export function useCatalogPage() {
 
     return {
         branchId,
+        activeBranchId,
         branches,
         branchesLoading: branchesQuery.isLoading,
         categories,
@@ -150,6 +165,8 @@ export function useCatalogPage() {
         clearSearch,
         category,
         setCategory,
+        sort,
+        setSort,
         handleBranchChange,
         handleAdd,
     };

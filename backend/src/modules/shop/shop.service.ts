@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Product } from '@products/entities/product.entity';
+import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { User } from '@users/entities/user.entity';
@@ -14,10 +15,17 @@ import {
   ShopProductBranchRef,
   ShopProduct,
   ShopBranch,
+  ShopSellableUnit,
 } from '@/modules/shop/types';
 
 // Re-export so existing callers that imported these from this file keep working.
-export type { StockStatus, ShopProductBranchRef, ShopProduct, ShopBranch };
+export type {
+  StockStatus,
+  ShopProductBranchRef,
+  ShopProduct,
+  ShopBranch,
+  ShopSellableUnit,
+};
 
 interface ListProductsQuery {
   branchId: string;
@@ -39,6 +47,7 @@ interface ProductWithStockRow {
   p_category: string;
   p_selling_price: string;
   p_image_url: string | null;
+  p_base_unit: string;
   inv_quantity: number | null;
   inv_low_stock_threshold: number | null;
 }
@@ -67,6 +76,8 @@ export class ShopService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(SaleItem)
     private readonly transactionItemRepo: Repository<SaleItem>,
+    @InjectRepository(ProductSellableUnit)
+    private readonly sellableUnitRepo: Repository<ProductSellableUnit>,
   ) {}
 
   async listProducts(query: ListProductsQuery): Promise<ShopProduct[]> {
@@ -85,6 +96,7 @@ export class ShopService {
         'p.category AS p_category',
         'p.selling_price AS p_selling_price',
         'p.image_url AS p_image_url',
+        'p.base_unit AS p_base_unit',
         'inv.quantity AS inv_quantity',
         'inv.low_stock_threshold AS inv_low_stock_threshold',
       ])
@@ -112,6 +124,9 @@ export class ShopService {
       outProductIds,
       query.branchId,
     );
+    const unitsByProduct = await this.loadSellableUnits(
+      rows.map((r) => r.p_id),
+    );
 
     return rows.map((row) => {
       const stockStatus = this.computeStatusFromRow(row);
@@ -122,6 +137,8 @@ export class ShopService {
         category: row.p_category,
         sellingPrice: Number(row.p_selling_price),
         imageUrl: row.p_image_url,
+        baseUnit: row.p_base_unit,
+        sellableUnits: unitsByProduct.get(row.p_id) ?? [],
         stockStatus,
         availableBranches:
           stockStatus === 'out'
@@ -189,6 +206,7 @@ export class ShopService {
   async getProduct(id: string, branchId?: string): Promise<ShopProduct> {
     const product = await this.productRepo.findOne({
       where: { id, isActive: true },
+      relations: ['sellableUnits'],
     });
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -217,6 +235,11 @@ export class ShopService {
       category: product.category,
       sellingPrice: Number(product.sellingPrice),
       imageUrl: product.imageUrl,
+      baseUnit: product.baseUnit,
+      sellableUnits: (product.sellableUnits ?? [])
+        .slice()
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+        .map((u) => this.toShopSellableUnit(u)),
       stockStatus,
       availableBranches,
     };
@@ -251,6 +274,34 @@ export class ShopService {
       phone: b.phone,
       staffCount: countByBranch.get(b.id) ?? 0,
     }));
+  }
+
+  private async loadSellableUnits(
+    productIds: string[],
+  ): Promise<Map<string, ShopSellableUnit[]>> {
+    const map = new Map<string, ShopSellableUnit[]>();
+    if (productIds.length === 0) return map;
+    const units = await this.sellableUnitRepo.find({
+      where: { productId: In(productIds) },
+      order: { displayOrder: 'ASC' },
+    });
+    for (const u of units) {
+      const list = map.get(u.productId) ?? [];
+      list.push(this.toShopSellableUnit(u));
+      map.set(u.productId, list);
+    }
+    return map;
+  }
+
+  private toShopSellableUnit(u: ProductSellableUnit): ShopSellableUnit {
+    return {
+      id: u.id,
+      name: u.name,
+      isBase: u.isBase,
+      conversionToBase: Number(u.conversionToBase),
+      sellingPrice: Number(u.sellingPrice),
+      displayOrder: u.displayOrder,
+    };
   }
 
   private async lookupOtherBranches(
