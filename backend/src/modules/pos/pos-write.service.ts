@@ -762,6 +762,11 @@ function computeItem(
   const lineTotal = round2(lineSubtotal + lineTaxAmount);
 
   const baseUnitQty = round3(qty * conversion);
+  if (product.baseUnit === 'unit' && !Number.isInteger(baseUnitQty)) {
+    throw new BadRequestException(
+      `Product ${item.productId} is sold in whole units; fractional quantity ${baseUnitQty} is not allowed`,
+    );
+  }
 
   return {
     productId: item.productId,

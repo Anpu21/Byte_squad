@@ -56,8 +56,8 @@ export class InventoryService {
     });
   }
 
-  async findLowStock(): Promise<Inventory[]> {
-    return this.inventory.findLowStock();
+  async findLowStock(branchId?: string): Promise<Inventory[]> {
+    return this.inventory.findLowStock(branchId);
   }
 
   async updateStock(

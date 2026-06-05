@@ -125,13 +125,16 @@ export class InventoryRepository {
       .getCount();
   }
 
-  async findLowStock(): Promise<Inventory[]> {
-    return this.repo
+  async findLowStock(branchId?: string): Promise<Inventory[]> {
+    const qb = this.repo
       .createQueryBuilder('inventory')
       .leftJoinAndSelect('inventory.product', 'product')
       .leftJoinAndSelect('inventory.branch', 'branch')
-      .where('inventory.quantity <= inventory.low_stock_threshold')
-      .getMany();
+      .where('inventory.quantity <= inventory.low_stock_threshold');
+    if (branchId) {
+      qb.andWhere('inventory.branch_id = :branchId', { branchId });
+    }
+    return qb.getMany();
   }
 
   /**
