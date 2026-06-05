@@ -25,6 +25,7 @@ export class AuthController {
 
   @Public()
   @Post(APP_ROUTES.AUTH.LOGIN)
+  @HttpCode(HttpStatus.OK)
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
@@ -50,6 +51,7 @@ export class AuthController {
   }
 
   @Post(APP_ROUTES.AUTH.CHANGE_PASSWORD)
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   changePassword(
     @CurrentUser('id') userId: string,

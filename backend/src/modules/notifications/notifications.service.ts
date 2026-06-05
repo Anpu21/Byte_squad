@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Notification } from '@notifications/entities/notification.entity';
 import { NotificationsRepository } from '@notifications/notifications.repository';
 import { NotificationType } from '@common/enums/notification.enum';
@@ -30,8 +30,11 @@ export class NotificationsService {
     return this.notifications.findOneForUser(id, userId);
   }
 
-  async markAsRead(id: string): Promise<void> {
-    await this.notifications.markRead(id);
+  async markAsRead(id: string, userId: string): Promise<void> {
+    const affected = await this.notifications.markRead(id, userId);
+    if (affected === 0) {
+      throw new NotFoundException('Notification not found');
+    }
   }
 
   async markAllAsRead(userId: string): Promise<void> {

@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InventoryService } from '@inventory/inventory.service';
 import { CreateInventoryDto } from '@inventory/dto/create-inventory.dto';
@@ -14,6 +15,7 @@ import { UpdateStockDto } from '@inventory/dto/update-stock.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { APP_ROUTES } from '@common/routes/app.routes';
 import { Inventory } from '@inventory/entities/inventory.entity';
@@ -30,14 +32,19 @@ export class InventoryController {
   }
 
   @Get(APP_ROUTES.INVENTORY.BY_BRANCH)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   findByBranch(
     @Param('branchId') branchId: string,
+    @CurrentUser() actor: { role: UserRole; branchId: string | null },
     @Query('search') search?: string,
     @Query('category') category?: string,
     @Query('stockStatus') stockStatus?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
+    if (actor.role !== UserRole.ADMIN && actor.branchId !== branchId) {
+      throw new ForbiddenException('Cannot access another branch');
+    }
     return this.inventoryService.findByBranch(branchId, {
       search,
       category,
@@ -49,8 +56,16 @@ export class InventoryController {
 
   @Get(APP_ROUTES.INVENTORY.LOW_STOCK)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
-  findLowStock(): Promise<Inventory[]> {
-    return this.inventoryService.findLowStock();
+  findLowStock(
+    @CurrentUser() actor: { role: UserRole; branchId: string | null },
+  ): Promise<Inventory[]> {
+    if (actor.role === UserRole.ADMIN) {
+      return this.inventoryService.findLowStock();
+    }
+    if (!actor.branchId) {
+      throw new ForbiddenException('No branch assigned');
+    }
+    return this.inventoryService.findLowStock(actor.branchId);
   }
 
   @Patch(APP_ROUTES.INVENTORY.UPDATE_STOCK)
