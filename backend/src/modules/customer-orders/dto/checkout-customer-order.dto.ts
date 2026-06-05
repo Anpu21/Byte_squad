@@ -13,9 +13,18 @@ import {
 } from 'class-validator';
 import { CustomerOrderPaymentMode } from '@common/enums/customer-order-payment-mode.enum';
 
-export class CreateCustomerOrderItemDto {
+/**
+ * One cart line for the multi-branch checkout. Unlike the legacy
+ * CreateCustomerOrderDto (one branch for the whole order), each line carries
+ * its own branchId so the cart can span branches; the server groups lines by
+ * branch into one order per branch under a shared group code.
+ */
+export class CheckoutItemDto {
   @IsUUID()
   productId!: string;
+
+  @IsUUID()
+  branchId!: string;
 
   @IsOptional()
   @IsUUID()
@@ -26,15 +35,12 @@ export class CreateCustomerOrderItemDto {
   quantity!: number;
 }
 
-export class CreateCustomerOrderDto {
-  @IsUUID()
-  branchId!: string;
-
+export class CheckoutCustomerOrderDto {
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  @Type(() => CreateCustomerOrderItemDto)
-  items!: CreateCustomerOrderItemDto[];
+  @Type(() => CheckoutItemDto)
+  items!: CheckoutItemDto[];
 
   @IsOptional()
   @IsString()

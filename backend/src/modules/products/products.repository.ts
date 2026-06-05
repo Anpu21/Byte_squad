@@ -60,6 +60,15 @@ export class ProductsRepository {
     return this.repo.find({ where: { id: In([...ids]), isActive: true } });
   }
 
+  /** Active products with their sellable-unit rows (for unit-aware ordering). */
+  async findActiveByIdsWithUnits(ids: readonly string[]): Promise<Product[]> {
+    if (ids.length === 0) return [];
+    return this.repo.find({
+      where: { id: In([...ids]), isActive: true },
+      relations: { sellableUnits: true },
+    });
+  }
+
   async findByBarcode(barcode: string): Promise<Product | null> {
     return this.repo.findOne({ where: { barcode } });
   }

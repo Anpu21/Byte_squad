@@ -21,12 +21,21 @@ import { PayherePaymentAttempt } from '@/modules/customer-orders/entities/payher
 @Index(['branchId'])
 @Index(['userId'])
 @Index(['status'])
+@Index(['groupCode'])
 export class CustomerOrder {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'varchar', name: 'order_code', unique: true })
   orderCode!: string;
+
+  /**
+   * Links the per-branch orders created from one multi-branch checkout so a
+   * single PayHere payment can settle them together. Null for legacy/single
+   * orders created via the plain create() path.
+   */
+  @Column({ type: 'varchar', name: 'group_code', nullable: true })
+  groupCode!: string | null;
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
   userId!: string | null;

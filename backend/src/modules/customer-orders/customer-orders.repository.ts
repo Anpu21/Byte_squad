@@ -66,6 +66,20 @@ export class CustomerOrdersRepository {
     });
   }
 
+  async findByGroupCode(groupCode: string): Promise<CustomerOrder[]> {
+    return this.orderRepo.find({
+      where: { groupCode },
+      relations: [
+        'items',
+        'items.product',
+        'branch',
+        'user',
+        'paymentAttempts',
+      ],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
   async existsByCode(code: string): Promise<boolean> {
     const found = await this.orderRepo.findOne({
       where: { orderCode: code },

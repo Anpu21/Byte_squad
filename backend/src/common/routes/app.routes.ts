@@ -156,7 +156,9 @@ export const APP_ROUTES = {
   // Customer pickup orders (cart -> order -> QR -> fulfill at counter)
   CUSTOMER_ORDERS: {
     BASE: `${API_PREFIX}/customer-orders`,
+    CHECKOUT: 'checkout',
     MINE: 'mine',
+    GROUP_BY_CODE: 'group/:code',
     BY_CODE: 'code/:code',
     BY_ID: ':id',
     CANCEL: ':id/cancel',

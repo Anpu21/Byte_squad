@@ -13,6 +13,7 @@ import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
 import { CustomerOrdersRepository } from '@/modules/customer-orders/customer-orders.repository';
 import { CreateCustomerOrderDto } from '@/modules/customer-orders/dto/create-customer-order.dto';
+import { CheckoutCustomerOrderDto } from '@/modules/customer-orders/dto/checkout-customer-order.dto';
 import { FulfillCustomerOrderDto } from '@/modules/customer-orders/dto/fulfill-customer-order.dto';
 import { ListCustomerOrdersQueryDto } from '@/modules/customer-orders/dto/list-customer-orders-query.dto';
 import {
@@ -57,9 +58,17 @@ export interface CreateCustomerOrderResult {
   payment: PayhereCheckoutPayload | null;
 }
 
+export interface CreateCheckoutResult {
+  groupCode: string;
+  orders: CustomerOrder[];
+  payment: PayhereCheckoutPayload | null;
+}
+
 interface EffectiveOrderItem {
   productId: string;
   quantity: number;
+  baseUnitQty?: number;
+  unitPriceSnapshot?: number;
 }
 
 @Injectable()
@@ -231,6 +240,186 @@ export class CustomerOrdersService {
       order: await this.findById(saved.id),
       payment,
     };
+  }
+
+  /**
+   * Multi-branch checkout: split a cart spanning branches into one order per
+   * branch under a shared group code. Loyalty is redeemed once for the group
+   * and the discount is distributed across orders proportionally. For ONLINE
+   * payment a single PayHere attempt covers the group total; its notify
+   * settles every order in the group (see handlePayhereNotify).
+   */
+  async createCheckout(
+    dto: CheckoutCustomerOrderDto,
+    userId: string,
+  ): Promise<CreateCheckoutResult> {
+    const user = await this.users.findById(userId);
+    if (!user) {
+      throw new BadRequestException('Customer not found');
+    }
+
+    const byBranch = new Map<string, CheckoutCustomerOrderDto['items']>();
+    for (const item of dto.items) {
+      const list = byBranch.get(item.branchId) ?? [];
+      list.push(item);
+      byBranch.set(item.branchId, list);
+    }
+
+    const paymentMode = dto.paymentMode ?? CustomerOrderPaymentMode.MANUAL;
+    const paymentStatus =
+      paymentMode === CustomerOrderPaymentMode.ONLINE
+        ? CustomerOrderPaymentStatus.PENDING
+        : CustomerOrderPaymentStatus.UNPAID;
+    const groupCode = this.generateGroupCode();
+
+    const created: {
+      order: CustomerOrder;
+      branchName: string;
+      estimatedTotal: number;
+    }[] = [];
+
+    for (const [branchId, items] of byBranch) {
+      const branch = await this.branches.findById(branchId);
+      if (!branch || !branch.isActive) {
+        throw new BadRequestException(
+          `Branch ${branchId} not found or inactive`,
+        );
+      }
+      const itemEntities = await this.buildOrderItems(items);
+      const estimatedTotal = this.roundMoney(
+        itemEntities.reduce(
+          (sum, it) => sum + Number(it.unitPriceSnapshot) * Number(it.quantity),
+          0,
+        ),
+      );
+      const orderCode = await this.generateUniqueCode();
+      const saved = await this.orders.createAndSave({
+        orderCode,
+        groupCode,
+        userId,
+        branchId,
+        status: CustomerOrderStatus.PENDING,
+        estimatedTotal,
+        loyaltyDiscountAmount: 0,
+        finalTotal: estimatedTotal,
+        paymentMode,
+        paymentStatus,
+        loyaltyPointsRedeemed: 0,
+        loyaltyPointsEarned: 0,
+        guestName: null,
+        note: dto.note ?? null,
+        items: itemEntities,
+      });
+      created.push({ order: saved, branchName: branch.name, estimatedTotal });
+    }
+
+    const groupSubtotal = this.roundMoney(
+      created.reduce((sum, c) => sum + c.estimatedTotal, 0),
+    );
+
+    // Redeem loyalty once for the group, recorded against the first order.
+    const primary = created[0].order;
+    const redeemed = await this.loyaltyWallet.redeemForOrder({
+      owner: { userId },
+      orderId: primary.id,
+      orderCode: primary.orderCode,
+      subtotal: groupSubtotal,
+      requestedPoints: dto.loyaltyPointsToRedeem ?? 0,
+      branchId: primary.branchId,
+    });
+    const pointValue = await this.loyalty.getPointValue();
+    const totalDiscount = this.roundMoney(redeemed * pointValue);
+
+    // Distribute the discount across orders proportional to their subtotal.
+    let remainingDiscount = totalDiscount;
+    for (let i = 0; i < created.length; i++) {
+      const c = created[i];
+      const isLast = i === created.length - 1;
+      const share = isLast
+        ? remainingDiscount
+        : this.roundMoney(
+            groupSubtotal > 0
+              ? (totalDiscount * c.estimatedTotal) / groupSubtotal
+              : 0,
+          );
+      remainingDiscount = this.roundMoney(remainingDiscount - share);
+      const finalTotal = this.roundMoney(Math.max(0, c.estimatedTotal - share));
+      await this.orders.updateFinancials(c.order.id, {
+        loyaltyDiscountAmount: share,
+        finalTotal,
+        loyaltyPointsRedeemed: i === 0 ? redeemed : 0,
+      });
+    }
+
+    const groupFinalTotal = this.roundMoney(
+      Math.max(0, groupSubtotal - totalDiscount),
+    );
+
+    // QR per order + branch-staff notifications (best-effort).
+    for (const c of created) {
+      const url = await this.generateAndStoreQrCode(c.order);
+      if (url) {
+        await this.orders.setQrCodeUrl(c.order.id, url);
+      }
+      this.notifyBranchStaff(c.order, c.branchName).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(`Notification fan-out failed: ${message}`);
+      });
+      this.notificationsGateway.broadcast('customer-order:created', {
+        branchId: c.order.branchId,
+        orderId: c.order.id,
+        orderCode: c.order.orderCode,
+      });
+    }
+
+    // One PayHere payment for the whole group; its notify settles every order.
+    let payment: PayhereCheckoutPayload | null = null;
+    if (
+      paymentMode === CustomerOrderPaymentMode.ONLINE &&
+      groupFinalTotal > 0
+    ) {
+      const providerOrderId = `${groupCode}-${Date.now()}`;
+      await this.orders.createPaymentAttempt({
+        orderId: primary.id,
+        providerOrderId,
+        amount: groupFinalTotal,
+        currency: CURRENCY,
+        status: PayherePaymentAttemptStatus.PENDING,
+      });
+      payment = this.payhere.createCheckoutPayload(
+        {
+          orderId: providerOrderId,
+          orderCode: primary.orderCode,
+          amount: groupFinalTotal,
+          currency: CURRENCY,
+          itemsLabel: `LedgerPro pickup ${groupCode}`,
+        },
+        {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone,
+        },
+      );
+    }
+
+    this.logger.log(
+      `Customer checkout ${groupCode} created ${created.length} branch order(s)`,
+    );
+
+    return {
+      groupCode,
+      orders: await this.findGroup(groupCode),
+      payment,
+    };
+  }
+
+  async findGroup(groupCode: string): Promise<CustomerOrder[]> {
+    const orders = await this.orders.findByGroupCode(groupCode);
+    if (orders.length === 0) {
+      throw new NotFoundException('Order group not found');
+    }
+    return orders;
   }
 
   async handlePayhereNotify(payload: PayhereNotifyPayload) {
@@ -506,24 +695,27 @@ export class CustomerOrdersService {
     attemptId: string,
     payload: PayhereNotifyPayload,
   ): Promise<void> {
-    if (order.paymentStatus === CustomerOrderPaymentStatus.PAID) {
-      await this.orders.updatePaymentAttempt(attemptId, {
-        status: PayherePaymentAttemptStatus.PAID,
-        signatureValid: true,
-        payherePaymentId: payload.payment_id ?? null,
-        notifyPayload: this.stringifyPayload(payload),
-        paidAt: new Date(),
-      });
-      return;
-    }
+    // A single PayHere payment can cover a multi-branch group — settle every
+    // order under the shared group code. Already-paid orders are skipped, so
+    // a duplicate notify is a no-op (idempotent).
+    const groupOrders = order.groupCode
+      ? await this.orders.findByGroupCode(order.groupCode)
+      : [order];
 
-    const settlementActorId = await this.resolveSettlementActorId(order);
-    const transaction = await this.createPaidTransactionForOrder({
-      order,
-      actorId: settlementActorId,
-      paymentMethod: PaymentMethod.ONLINE,
-      effective: this.orderItems(order),
-    });
+    for (const o of groupOrders) {
+      if (o.paymentStatus === CustomerOrderPaymentStatus.PAID) continue;
+      const settlementActorId = await this.resolveSettlementActorId(o);
+      const transaction = await this.createPaidTransactionForOrder({
+        order: o,
+        actorId: settlementActorId,
+        paymentMethod: PaymentMethod.ONLINE,
+        effective: this.orderItems(o),
+      });
+      await this.orders.updateStatus(o.id, o.status, {
+        fulfilledTransactionId: transaction.id,
+        paymentStatus: CustomerOrderPaymentStatus.PAID,
+      });
+    }
 
     await this.orders.updatePaymentAttempt(attemptId, {
       status: PayherePaymentAttemptStatus.PAID,
@@ -532,26 +724,31 @@ export class CustomerOrdersService {
       notifyPayload: this.stringifyPayload(payload),
       paidAt: new Date(),
     });
-    await this.orders.updateStatus(order.id, order.status, {
-      fulfilledTransactionId: transaction.id,
-      paymentStatus: CustomerOrderPaymentStatus.PAID,
-    });
   }
 
   private async cancelUnpaidOnlineOrder(
     order: CustomerOrder,
     paymentStatus: CustomerOrderPaymentStatus,
   ): Promise<void> {
-    if (order.paymentStatus === CustomerOrderPaymentStatus.PAID) return;
-    await this.orders.updateStatus(order.id, CustomerOrderStatus.CANCELLED, {
-      paymentStatus,
-    });
-    await this.reverseLoyaltyRedemption(order);
+    // Cancel every still-unpaid order in the group when one PayHere payment
+    // is cancelled/failed.
+    const groupOrders = order.groupCode
+      ? await this.orders.findByGroupCode(order.groupCode)
+      : [order];
+    for (const o of groupOrders) {
+      if (o.paymentStatus === CustomerOrderPaymentStatus.PAID) continue;
+      await this.orders.updateStatus(o.id, CustomerOrderStatus.CANCELLED, {
+        paymentStatus,
+      });
+      await this.reverseLoyaltyRedemption(o);
+    }
   }
 
-  private async buildOrderItems(items: EffectiveOrderItem[]) {
+  private async buildOrderItems(
+    items: { productId: string; quantity: number; unitId?: string | null }[],
+  ) {
     const productIds = items.map((i) => i.productId);
-    const products = await this.products.findActiveByIds(productIds);
+    const products = await this.products.findActiveByIdsWithUnits(productIds);
     if (products.length !== new Set(productIds).size) {
       throw new BadRequestException('Some products are unavailable');
     }
@@ -562,10 +759,32 @@ export class CustomerOrdersService {
       if (!product) {
         throw new BadRequestException(`Product ${it.productId} not found`);
       }
+      const units = product.sellableUnits ?? [];
+      const unit = it.unitId
+        ? units.find((u) => u.id === it.unitId)
+        : (units.find((u) => u.isBase) ?? null);
+      if (it.unitId && !unit) {
+        throw new BadRequestException(
+          `Unit ${it.unitId} is not valid for product ${it.productId}`,
+        );
+      }
+      const conversion = unit ? Number(unit.conversionToBase) : 1;
+      const unitPrice = unit
+        ? Number(unit.sellingPrice)
+        : Number(product.sellingPrice);
+      const baseUnitQty = this.round3(it.quantity * conversion);
+      if (product.baseUnit === 'unit' && !Number.isInteger(baseUnitQty)) {
+        throw new BadRequestException(
+          `${product.name} is sold in whole units; quantity ${baseUnitQty} is not allowed`,
+        );
+      }
       return this.orders.buildItem({
         productId: product.id,
         quantity: it.quantity,
-        unitPriceSnapshot: Number(product.sellingPrice),
+        unitId: unit ? unit.id : null,
+        unitLabel: unit ? unit.name : product.baseUnit,
+        baseUnitQty,
+        unitPriceSnapshot: unitPrice,
       });
     });
   }
@@ -591,7 +810,9 @@ export class CustomerOrdersService {
   private orderItems(order: CustomerOrder): EffectiveOrderItem[] {
     return order.items.map((item) => ({
       productId: item.productId,
-      quantity: item.quantity,
+      quantity: Number(item.quantity),
+      baseUnitQty: Number(item.baseUnitQty) || Number(item.quantity),
+      unitPriceSnapshot: Number(item.unitPriceSnapshot),
     }));
   }
 
@@ -618,16 +839,17 @@ export class CustomerOrdersService {
       if (!product) {
         throw new BadRequestException(`Product ${it.productId} not found`);
       }
-      const unitPrice = Number(product.sellingPrice);
+      // Prefer the order item's snapshot (the chosen unit's price + resolved
+      // base-unit qty); fall back to the product base price for pickup-time
+      // item overrides which carry no unit context.
+      const unitPrice = it.unitPriceSnapshot ?? Number(product.sellingPrice);
+      const baseUnitQty = it.baseUnitQty ?? it.quantity;
       const lineTotal = this.roundMoney(unitPrice * it.quantity);
       subtotal += lineTotal;
       return {
         productId: product.id,
         quantity: it.quantity,
-        // PHASE-5: replace once the customer pickup path folds into the
-        // createSale flow. Customer orders have no sellable-units, so
-        // quantity already equals the base-unit quantity.
-        baseUnitQty: it.quantity,
+        baseUnitQty,
         unitPrice,
         discountAmount: 0,
         discountType: DiscountType.NONE,
@@ -644,7 +866,10 @@ export class CustomerOrdersService {
 
     const stockResult = await this.inventory.decrementStockBatch(
       params.order.branchId,
-      params.effective,
+      params.effective.map((it) => ({
+        productId: it.productId,
+        quantity: it.baseUnitQty ?? it.quantity,
+      })),
     );
     if (!stockResult.ok) {
       throw new ConflictException('Insufficient stock to fulfill this order');
@@ -806,6 +1031,19 @@ export class CustomerOrdersService {
 
   private roundMoney(value: number): number {
     return Math.round(value * 100) / 100;
+  }
+
+  private round3(value: number): number {
+    return Math.round(value * 1000) / 1000;
+  }
+
+  private generateGroupCode(): string {
+    const bytes = crypto.randomBytes(8);
+    let code = 'GRP-';
+    for (let i = 0; i < 8; i++) {
+      code += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+    }
+    return code;
   }
 
   private async generateUniqueCode(): Promise<string> {
