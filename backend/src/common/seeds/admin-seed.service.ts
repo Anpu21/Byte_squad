@@ -9,6 +9,7 @@ import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { defaultSellableUnitsFor } from '@products/lib/default-sellable-units';
 import { Inventory } from '@inventory/entities/inventory.entity';
+import { ProductBatch } from '@inventory/entities/product-batch.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Payment } from '@pos/entities/payment.entity';
@@ -42,6 +43,7 @@ import {
 import {
   buildSeedSaleLine,
   generateSeedQuantity,
+  stableInt,
 } from '@common/seeds/seed-quantity';
 import type { PosPaymentMethod } from '@pos/types';
 
@@ -88,6 +90,8 @@ export class AdminSeedService implements OnModuleInit {
     private readonly sellableUnitRepository: Repository<ProductSellableUnit>,
     @InjectRepository(Inventory)
     private readonly inventoryRepository: Repository<Inventory>,
+    @InjectRepository(ProductBatch)
+    private readonly productBatchRepository: Repository<ProductBatch>,
     @InjectRepository(Sale)
     private readonly transactionRepository: Repository<Sale>,
     @InjectRepository(SaleItem)
@@ -268,6 +272,15 @@ export class AdminSeedService implements OnModuleInit {
     await this.ensureInventory(products, mainBranch.id, 'healthy');
     await this.ensureInventory(products, downtownBranch.id, 'healthy');
     await this.ensureInventory(products, suburbanBranch.id, 'short');
+
+    // 4b. Product expiry batches — perishable stock across every severity
+    //     bucket so the expiry report + alerts have data on a fresh DB.
+    //     Additive only: the inventory quantities above are left untouched.
+    await this.ensureProductBatches(
+      products,
+      [mainBranch, downtownBranch, suburbanBranch],
+      admin,
+    );
 
     // 5. Transactions — last 7 days of POS sales
     await this.ensureTransactions(cashier1, mainBranch.id, products);
@@ -583,6 +596,92 @@ export class AdminSeedService implements OnModuleInit {
         `Inventory seeded for branch ${branchId} (${profile}, ${createdCount} rows).`,
       );
     }
+  }
+
+  // ── Product expiry batches ─────────────────────────────
+
+  /**
+   * Seed ProductBatch rows for perishable products so the expiry report and
+   * its severity buckets (expired / critical / warning / ok) are populated on
+   * a fresh DB. Purely additive — `inventory.quantity` is the authoritative
+   * sell-from total and is left untouched; batches are a reporting layer.
+   * Deterministic (no randomness) and idempotent via a count-check, matching
+   * the other bulk-demo seeds in this file.
+   */
+  private async ensureProductBatches(
+    products: Product[],
+    branches: Branch[],
+    admin: User,
+  ): Promise<void> {
+    if ((await this.productBatchRepository.count()) > 0) return;
+
+    const perishableCategories = new Set(['Dairy', 'Bakery', 'Produce']);
+    const perishables = products.filter((p) =>
+      perishableCategories.has(p.category),
+    );
+
+    // Day offsets relative to today, one per severity bucket. Each value sits
+    // clear of the bucket boundaries (0 / 7 / 8 / 30) so timezone rounding
+    // can never tip a batch into a neighbouring bucket.
+    const offsets = [-5, 3, 20, 120]; // expired, critical, warning, ok
+    const now = new Date();
+    let createdCount = 0;
+
+    for (const branch of branches) {
+      for (const [index, product] of perishables.entries()) {
+        const key = `batch:${branch.id}:${product.barcode}`;
+        const count = 2 + stableInt(`${key}:count`, 0, 1); // 2..3 batches
+        // Rotate the starting bucket by product index so every branch covers
+        // all four buckets by construction (not left to UUID-hash chance).
+        const start = index % offsets.length;
+        const threshold = CATEGORY_THRESHOLDS[product.category] ?? 15;
+        const floor = product.baseUnit === 'unit' ? 1 : 0.5;
+
+        for (let i = 0; i < count; i += 1) {
+          const offsetDays = offsets[(start + i) % offsets.length];
+          // Clamp to a positive floor: generateSeedQuantity returns 0 ~5% of
+          // the time, and findExpiring requires quantity > 0 to surface a row.
+          const quantity = Math.max(
+            floor,
+            generateSeedQuantity(
+              product.baseUnit,
+              'healthy',
+              threshold,
+              `${key}:${i}:qty`,
+            ),
+          );
+          await this.productBatchRepository.save(
+            this.productBatchRepository.create({
+              productId: product.id,
+              branchId: branch.id,
+              batchNo: `LOT-${product.barcode}-${branch.code}-${i + 1}`,
+              expiryDate: this.addDaysUtcDateString(now, offsetDays),
+              quantity,
+              receivedAt: new Date(now.getTime() - (30 + i) * 86_400_000),
+              notes: null,
+              createdByUserId: admin.id,
+            }),
+          );
+          createdCount += 1;
+        }
+      }
+    }
+
+    if (createdCount > 0) {
+      this.logger.log(`Product expiry batches seeded (${createdCount} rows).`);
+    }
+  }
+
+  /** Format `base + days` as a UTC `YYYY-MM-DD` string for a `date` column. */
+  private addDaysUtcDateString(base: Date, days: number): string {
+    const d = new Date(
+      Date.UTC(
+        base.getUTCFullYear(),
+        base.getUTCMonth(),
+        base.getUTCDate() + days,
+      ),
+    );
+    return d.toISOString().slice(0, 10);
   }
 
   // ── Transactions ───────────────────────────────────────
