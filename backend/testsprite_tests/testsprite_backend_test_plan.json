@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "test_auth_login_with_valid_and_invalid_credentials",
+    "description": "Verify POST /api/v1/auth/login authenticates users with valid email and password, returns 200 with accessToken and refreshToken; invalid credentials return 401 error."
+  },
+  {
+    "id": "TC002",
+    "title": "test_auth_signup_and_otp_verification_flow",
+    "description": "Verify POST /api/v1/auth/signup registers a new customer, sends OTP with expiry; POST /api/v1/auth/verify-otp validates correct OTP and returns 200; invalid or expired OTP returns 400."
+  },
+  {
+    "id": "TC003",
+    "title": "test_users_profile_retrieval_and_update",
+    "description": "Verify GET /api/v1/users/profile returns current user profile for authenticated users; PATCH /api/v1/users/profile updates profile fields and returns updated user."
+  },
+  {
+    "id": "TC004",
+    "title": "test_users_customer_branch_selection_and_role_restriction",
+    "description": "Verify PATCH /api/v1/users/me/branch allows customers to select preferred branch and returns updated user; non-customer roles receive 403 error."
+  },
+  {
+    "id": "TC005",
+    "title": "test_branches_crud_and_manager_performance_view",
+    "description": "Verify POST /api/v1/branches creates branch with admin role; GET /api/v1/branches lists branches; GET /api/v1/branches/:id returns branch details; GET /api/v1/branches/my-performance returns manager's branch KPIs; PATCH /api/v1/branches/:id/toggle-active toggles branch active state."
+  },
+  {
+    "id": "TC006",
+    "title": "test_products_catalog_crud_and_image_upload",
+    "description": "Verify POST /api/v1/products creates product with admin/manager roles; GET /api/v1/products lists products; GET /api/v1/products/:id returns product details; PATCH /api/v1/products/:id updates product; POST /api/v1/products/:id/image uploads product image with size limit; DELETE /api/v1/products/:id/image deletes product image."
+  },
+  {
+    "id": "TC007",
+    "title": "test_pos_checkout_idempotency_and_validation",
+    "description": "Verify POST /api/v1/pos/transactions creates legacy sale with idempotency key; duplicate requests with same key return 409; POST /api/v1/pos/sales creates multi-tender sale with validation for exclusive customerUserId or loyaltyCustomerId; invalid payload returns 400."
+  },
+  {
+    "id": "TC008",
+    "title": "test_stock_transfers_state_machine_and_branch_enforcement",
+    "description": "Verify POST /api/v1/stock-transfers creates pending transfer request; PATCH /api/v1/stock-transfers/:id/approve approves with source branch and quantity; PATCH /api/v1/stock-transfers/:id/ship enforces source branch and updates status; PATCH /api/v1/stock-transfers/:id/receive enforces destination branch and completes transfer; invalid branch access returns 403."
+  },
+  {
+    "id": "TC009",
+    "title": "test_customer_orders_creation_and_status_transitions",
+    "description": "Verify POST /api/v1/customer-orders creates pickup order with optional online payment; GET /api/v1/customer-orders/mine lists own orders; PATCH /api/v1/customer-orders/:id/cancel allows customer to cancel order; PATCH /api/v1/customer-orders/:id/accept allows staff to accept order; POST /api/v1/customer-orders/code/:code/fulfill processes fulfillment with cash payment; invalid actions return appropriate errors."
+  },
+  {
+    "id": "TC010",
+    "title": "test_notifications_list_view_and_mark_read",
+    "description": "Verify GET /api/v1/notifications lists own notifications; GET /api/v1/notifications/:id returns notification details with ownership check; PATCH /api/v1/notifications/:id/read marks notification as read without ownership check; PATCH /api/v1/notifications/read-all marks all own notifications as read."
+  }
+]
