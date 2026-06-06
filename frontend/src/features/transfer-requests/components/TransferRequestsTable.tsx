@@ -14,6 +14,8 @@ interface TransferRequestsTableProps {
     isLoading: boolean;
     shippingId: string | null;
     onShip: (item: IStockTransferRequest) => void;
+    receivingId: string | null;
+    onReceive: (item: IStockTransferRequest) => void;
     onRowClick: (id: string) => void;
 }
 
@@ -25,6 +27,8 @@ export function TransferRequestsTable({
     isLoading,
     shippingId,
     onShip,
+    receivingId,
+    onReceive,
     onRowClick,
 }: TransferRequestsTableProps) {
     if (!isLoading && items.length === 0) {
@@ -81,6 +85,9 @@ export function TransferRequestsTable({
                                 const canShip =
                                     tab === 'incoming' &&
                                     item.status === TransferStatus.APPROVED;
+                                const canReceive =
+                                    tab === 'my-requests' &&
+                                    item.status === TransferStatus.IN_TRANSIT;
                                 return (
                                     <tr
                                         key={item.id}
@@ -133,6 +140,22 @@ export function TransferRequestsTable({
                                                     {shippingId === item.id
                                                         ? 'Shipping…'
                                                         : 'Mark shipped'}
+                                                </Button>
+                                            )}
+                                            {canReceive && (
+                                                <Button
+                                                    size="sm"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onReceive(item);
+                                                    }}
+                                                    disabled={
+                                                        receivingId === item.id
+                                                    }
+                                                >
+                                                    {receivingId === item.id
+                                                        ? 'Receiving…'
+                                                        : 'Mark received'}
                                                 </Button>
                                             )}
                                         </td>
