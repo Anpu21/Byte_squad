@@ -21,30 +21,30 @@ export function TransferHistoryTable({
     onPageChange,
 }: TransferHistoryTableProps) {
     return (
-        <div className="bg-surface border border-border rounded-md shadow-2xl overflow-hidden">
+        <div className="bg-surface border border-border rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="border-b border-border text-[11px] uppercase tracking-widest text-text-3 bg-canvas/50">
-                            <th className="px-6 py-4 font-semibold whitespace-nowrap">
+                        <tr className="border-b border-border text-[11px] uppercase tracking-wider text-text-3 bg-surface-2">
+                            <th className="px-5 py-3 font-semibold whitespace-nowrap">
                                 Status
                             </th>
-                            <th className="px-6 py-4 font-semibold whitespace-nowrap">
+                            <th className="px-5 py-3 font-semibold whitespace-nowrap">
                                 Product
                             </th>
-                            <th className="px-6 py-4 font-semibold whitespace-nowrap">
-                                Source → Destination
+                            <th className="px-5 py-3 font-semibold whitespace-nowrap">
+                                Route
                             </th>
-                            <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">
+                            <th className="px-5 py-3 font-semibold text-right whitespace-nowrap">
                                 Qty
                             </th>
-                            <th className="px-6 py-4 font-semibold whitespace-nowrap">
+                            <th className="px-5 py-3 font-semibold whitespace-nowrap">
                                 Requester
                             </th>
-                            <th className="px-6 py-4 font-semibold whitespace-nowrap">
+                            <th className="px-5 py-3 font-semibold whitespace-nowrap">
                                 Closed at
                             </th>
-                            <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">
+                            <th className="px-5 py-3 font-semibold text-right whitespace-nowrap">
                                 Duration
                             </th>
                         </tr>
@@ -54,7 +54,7 @@ export function TransferHistoryTable({
                             [...Array(4)].map((_, i) => (
                                 <tr key={i} className="border-b border-border">
                                     {[...Array(7)].map((__, j) => (
-                                        <td key={j} className="px-6 py-4">
+                                        <td key={j} className="px-5 py-3.5">
                                             <div className="h-5 w-24 bg-surface-2 rounded animate-pulse" />
                                         </td>
                                     ))}
@@ -62,7 +62,10 @@ export function TransferHistoryTable({
                             ))
                         ) : items.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="px-6 py-16 text-center">
+                                <td
+                                    colSpan={7}
+                                    className="px-5 py-16 text-center"
+                                >
                                     <p className="text-sm font-medium text-text-2">
                                         No transfers in this range
                                     </p>
@@ -87,7 +90,7 @@ export function TransferHistoryTable({
             </div>
 
             {!isLoading && items.length > 0 && totalPages > 1 && (
-                <div className="p-4 border-t border-border flex items-center justify-between text-xs text-text-3 bg-canvas/50">
+                <div className="p-4 border-t border-border flex items-center justify-between text-xs text-text-3 bg-surface-2">
                     <span>
                         Page {page} of {totalPages}
                     </span>
@@ -96,7 +99,7 @@ export function TransferHistoryTable({
                             type="button"
                             onClick={() => onPageChange(page - 1)}
                             disabled={page === 1}
-                            className="px-3 py-1.5 rounded border border-border hover:bg-surface-2 hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1.5 rounded-lg border border-border hover:bg-surface hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Previous
                         </button>
@@ -104,7 +107,7 @@ export function TransferHistoryTable({
                             type="button"
                             onClick={() => onPageChange(page + 1)}
                             disabled={page === totalPages}
-                            className="px-3 py-1.5 rounded border border-border hover:bg-surface-2 hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1.5 rounded-lg border border-border hover:bg-surface hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Next
                         </button>

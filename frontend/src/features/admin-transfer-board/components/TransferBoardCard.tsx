@@ -46,7 +46,7 @@ export function TransferBoardCard({ group }: TransferBoardCardProps) {
     return (
         <div
             aria-label={`Batch of ${transfers.length} products`}
-            className="bg-surface border border-border rounded-md p-3 hover:border-border-strong hover:shadow-md-token transition-all"
+            className="bg-surface border border-border rounded-xl p-3 hover:border-border-strong hover:shadow-md-token transition-all"
         >
             <div className="flex items-center justify-between gap-2">
                 <p className="text-[13px] font-semibold text-text-1 leading-tight flex items-center gap-1.5 min-w-0">

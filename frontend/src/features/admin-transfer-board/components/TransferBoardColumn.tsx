@@ -37,7 +37,7 @@ export function TransferBoardColumn({
         <section
             ref={setNodeRef}
             aria-label={column.label}
-            className={`flex-shrink-0 w-[300px] bg-surface-2 border rounded-md flex flex-col max-h-[calc(100vh-13rem)] transition-colors ${
+            className={`flex-shrink-0 w-[300px] bg-surface-2 border rounded-xl flex flex-col max-h-[calc(100vh-13rem)] transition-colors ${
                 showHighlight
                     ? 'border-primary bg-primary-soft/30 ring-[3px] ring-primary/25'
                     : showForbidden

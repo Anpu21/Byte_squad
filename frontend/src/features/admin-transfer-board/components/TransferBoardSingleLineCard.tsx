@@ -63,7 +63,7 @@ export function TransferBoardSingleLineCard({
                 to={detailPath}
                 title={transfer.product?.name}
                 draggable={false}
-                className="block bg-surface border border-border rounded-md p-3 hover:border-border-strong hover:shadow-md-token hover:-translate-y-[1px] transition-all focus:outline-none focus:ring-[3px] focus:ring-primary/30"
+                className="block bg-surface border border-border rounded-xl p-3 hover:border-border-strong hover:shadow-md-token hover:-translate-y-[1px] transition-all focus:outline-none focus:ring-[3px] focus:ring-primary/30"
             >
                 <p className="text-[13px] font-semibold text-text-1 leading-tight truncate pr-4">
                     {transfer.product?.name ?? 'Untitled product'}
