@@ -9,6 +9,7 @@ import { UsersModule } from '@users/users.module';
 import { BranchesModule } from '@branches/branches.module';
 import { ProductsModule } from '@products/products.module';
 import { InventoryModule } from '@inventory/inventory.module';
+import { CategoriesModule } from '@/modules/categories/categories.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
@@ -29,6 +30,7 @@ import { SalaryStructure } from '@/modules/hr/entities/salary-structure.entity';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
+import { Category } from '@/modules/categories/entities/category.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { ProductBatch } from '@inventory/entities/product-batch.entity';
@@ -37,6 +39,7 @@ import { SalesReturn } from '@inventory/entities/sales-return.entity';
 import { SalesReturnItem } from '@inventory/entities/sales-return-item.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
+import { StockMovement } from '@pos/entities/stock-movement.entity';
 import { Payment } from '@pos/entities/payment.entity';
 import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
@@ -70,6 +73,7 @@ import appConfig from '@common/config/app.config';
       User,
       Branch,
       Product,
+      Category,
       ProductSellableUnit,
       Inventory,
       ProductBatch,
@@ -78,6 +82,7 @@ import appConfig from '@common/config/app.config';
       SalesReturnItem,
       Sale,
       SaleItem,
+      StockMovement,
       Payment,
       IdempotencyKey,
       LedgerEntry,
@@ -103,6 +108,7 @@ import appConfig from '@common/config/app.config';
     UsersModule,
     BranchesModule,
     ProductsModule,
+    CategoriesModule,
     InventoryModule,
     PosModule,
     AccountingModule,

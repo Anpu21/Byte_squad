@@ -12,11 +12,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * Mirrors `backend/migrations/2026-06-04-create-stock-adjustments.sql`.
  */
-export class CreateStockAdjustments1779730100000
-  implements MigrationInterface
-{
+export class CreateStockAdjustments1779730100000 implements MigrationInterface {
   name = 'CreateStockAdjustments1779730100000';
-  private readonly logger = new Logger(CreateStockAdjustments1779730100000.name);
+  private readonly logger = new Logger(
+    CreateStockAdjustments1779730100000.name,
+  );
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

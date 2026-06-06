@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -6,6 +7,7 @@ import {
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Product } from '@products/entities/product.entity';
+import { Category } from '@/modules/categories/entities/category.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { ProductsRepository } from '@products/products.repository';
 import { CreateProductDto } from '@products/dto/create-product.dto';
@@ -86,10 +88,17 @@ export class ProductsService {
       createProductDto.barcode,
       sellableUnits,
     );
+    const category = await this.resolveCategory(
+      createProductDto.categoryId,
+      createProductDto.category,
+    );
     return this.dataSource.transaction(async (manager) => {
       const { sellableUnits: _units, ...productInput } = createProductDto;
       void _units;
-      const product = await this.products.createAndSave(productInput, manager);
+      const product = await this.products.createAndSave(
+        { ...productInput, categoryId: category.id, category: category.name },
+        manager,
+      );
       const seeds = sellableUnits
         ? stampProductId(product.id, sellableUnits)
         : defaultSellableUnitsFor(
@@ -153,6 +162,17 @@ export class ProductsService {
     const { sellableUnits: _units, ...productPatch } = updateProductDto;
     void _units;
     Object.assign(existing, productPatch);
+    if (
+      updateProductDto.categoryId !== undefined ||
+      updateProductDto.category !== undefined
+    ) {
+      const category = await this.resolveCategory(
+        updateProductDto.categoryId,
+        updateProductDto.category,
+      );
+      existing.categoryId = category.id;
+      existing.category = category.name;
+    }
 
     return this.dataSource.transaction(async (manager) => {
       const saved = await this.products.save(existing, manager);
@@ -179,6 +199,29 @@ export class ProductsService {
 
   async getCategories(): Promise<string[]> {
     return this.products.listDistinctActiveCategories();
+  }
+
+  /**
+   * Resolve the product's category from either the managed-category id
+   * (preferred) or its name (the datalist product form sends the name).
+   * Returns the canonical row so the FK and the denormalized `product.category`
+   * name mirror stay in lockstep. Throws when neither input resolves.
+   */
+  private async resolveCategory(
+    categoryId?: string,
+    categoryName?: string,
+  ): Promise<Category> {
+    const repo = this.dataSource.getRepository(Category);
+    let category: Category | null = null;
+    if (categoryId) {
+      category = await repo.findOne({ where: { id: categoryId } });
+    } else if (categoryName?.trim()) {
+      category = await repo.findOne({ where: { name: categoryName.trim() } });
+    }
+    if (!category) {
+      throw new BadRequestException('A valid category is required');
+    }
+    return category;
   }
 
   async remove(id: string): Promise<void> {

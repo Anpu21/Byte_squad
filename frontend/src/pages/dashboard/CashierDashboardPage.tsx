@@ -4,6 +4,7 @@ import { useCashierDashboard } from '@/features/cashier-dashboard/hooks/useCashi
 import { CashierKpis } from '@/features/cashier-dashboard/components/CashierKpis';
 import { CashierSalesChart } from '@/features/cashier-dashboard/components/CashierSalesChart';
 import { CashierRecentTransactions } from '@/features/cashier-dashboard/components/CashierRecentTransactions';
+import { MyCategorySalesCard } from '@/features/cashier-dashboard/components/MyCategorySalesCard';
 
 export function CashierDashboardPage() {
     const p = useCashierDashboard();
@@ -37,6 +38,10 @@ export function CashierDashboardPage() {
                 <CashierRecentTransactions
                     transactions={p.data?.recentTransactions ?? []}
                 />
+            </div>
+
+            <div className="mt-4">
+                <MyCategorySalesCard />
             </div>
         </div>
     );

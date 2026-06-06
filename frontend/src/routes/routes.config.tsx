@@ -179,6 +179,20 @@ export const ROUTES: RouteDef[] = [
         layout: 'dashboard',
     },
 
+    // ─── Categories → now an Inventory workspace tab (redirect legacy paths) ───
+    {
+        path: FRONTEND_ROUTES.ADMIN_CATEGORIES,
+        element: <InventoryRedirect tab="categories" />,
+        allowedRoles: [UserRole.ADMIN],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.MANAGER_CATEGORIES,
+        element: <InventoryRedirect tab="categories" />,
+        allowedRoles: [UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+
     // ─── POS ───
     {
         path: FRONTEND_ROUTES.POS,

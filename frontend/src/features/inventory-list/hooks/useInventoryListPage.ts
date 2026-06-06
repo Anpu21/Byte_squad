@@ -47,7 +47,8 @@ export function useInventoryListPage() {
                     : null,
                 format,
             });
-        } catch {
+        } catch (err) {
+            console.error('Inventory list export failed', err);
             toast.error('Could not generate export — please try again');
         } finally {
             setIsExporting(false);

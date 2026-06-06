@@ -2,6 +2,7 @@ import {
     Boxes,
     CalendarClock,
     ClipboardList,
+    Tags,
     Truck,
     Undo2,
     type LucideIcon,
@@ -20,6 +21,7 @@ const TABS: TabDef[] = [
     { key: 'adjustments', label: 'Adjustments', Icon: ClipboardList },
     { key: 'returns', label: 'Returns', Icon: Undo2 },
     { key: 'transfers', label: 'Transfers', Icon: Truck },
+    { key: 'categories', label: 'Categories', Icon: Tags },
 ];
 
 interface InventoryTabsProps {

@@ -46,6 +46,14 @@ export const APP_ROUTES = {
     IMAGE: ':id/image',
   },
 
+  // Managed product categories (CRUD + per-category sales analytics)
+  CATEGORIES: {
+    BASE: `${API_PREFIX}/categories`,
+    ANALYTICS: 'analytics',
+    BY_ID: ':id',
+    ARCHIVE: ':id/archive',
+  },
+
   // Inventory
   INVENTORY: {
     BASE: `${API_PREFIX}/inventory`,

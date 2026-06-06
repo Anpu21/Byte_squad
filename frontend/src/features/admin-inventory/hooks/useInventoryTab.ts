@@ -6,7 +6,8 @@ export type InventoryTab =
     | 'expiry'
     | 'adjustments'
     | 'returns'
-    | 'transfers';
+    | 'transfers'
+    | 'categories';
 
 const TAB_PARAM = 'tab';
 const VALID_TABS: InventoryTab[] = [
@@ -15,6 +16,7 @@ const VALID_TABS: InventoryTab[] = [
     'adjustments',
     'returns',
     'transfers',
+    'categories',
 ];
 
 function isInventoryTab(value: string | null): value is InventoryTab {

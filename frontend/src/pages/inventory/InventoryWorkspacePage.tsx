@@ -8,6 +8,7 @@ import { StockAdjustmentsPage } from '@/pages/inventory/StockAdjustmentsPage';
 import { ReturnsPage } from '@/pages/inventory/ReturnsPage';
 import { AdminTransfersPage } from '@/pages/transfers/AdminTransfersPage';
 import { TransferRequestsPage } from '@/pages/transfers/TransferRequestsPage';
+import { CategoriesPanel } from '@/features/categories/components/CategoriesPanel';
 
 /**
  * Unified Inventory workspace (mirrors the HR admin page): one route with a tab
@@ -30,6 +31,7 @@ export function InventoryWorkspacePage() {
             {tab === 'returns' && <ReturnsPage />}
             {tab === 'transfers' &&
                 (isAdmin ? <AdminTransfersPage /> : <TransferRequestsPage />)}
+            {tab === 'categories' && <CategoriesPanel />}
         </div>
     );
 }

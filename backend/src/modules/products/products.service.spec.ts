@@ -30,7 +30,7 @@ function unit(partial: Partial<SellableUnitDto>): SellableUnitDto {
 describe('ProductsService', () => {
   let service: ProductsService;
   let repo: jest.Mocked<ProductsRepository>;
-  let dataSource: { transaction: jest.Mock };
+  let dataSource: { transaction: jest.Mock; getRepository: jest.Mock };
   let cloudinary: {
     isEnabled: jest.Mock;
     uploadImage: jest.Mock;
@@ -63,6 +63,12 @@ describe('ProductsService', () => {
     // value is enough to satisfy `saveUnits`/`replaceUnits` signatures.
     const fakeManager = { getRepository: jest.fn() };
     dataSource = {
+      // resolveCategoryName() looks up the managed category to mirror its name.
+      getRepository: jest.fn().mockReturnValue({
+        findOne: jest
+          .fn()
+          .mockResolvedValue({ id: 'cat-1', name: 'Test Category' }),
+      }),
       transaction: jest
         .fn()
         .mockImplementation(

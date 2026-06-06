@@ -42,7 +42,8 @@ export function InventoryPageHeader({
                     : null,
                 format,
             });
-        } catch {
+        } catch (err) {
+            console.error('Inventory export failed', err);
             toast.error('Could not generate export — please try again');
         } finally {
             setIsExporting(false);

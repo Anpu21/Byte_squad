@@ -75,6 +75,13 @@ export const queryKeys = {
         byBranch: (branchId: string, params?: IInventoryParams) =>
             ['inventory', 'by-branch', branchId, params ?? {}] as const,
     },
+    categories: {
+        all: () => ['categories'] as const,
+        list: (includeInactive: boolean) =>
+            ['categories', 'list', includeInactive] as const,
+        analytics: (params: unknown) =>
+            ['categories', 'analytics', params] as const,
+    },
     expiry: {
         report: (params?: IExpiryReportParams) =>
             ['expiry', 'report', params ?? {}] as const,
