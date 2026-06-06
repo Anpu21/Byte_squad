@@ -2,11 +2,14 @@ import { Link } from 'react-router-dom';
 import { useDraggable } from '@dnd-kit/core';
 import { ArrowRight, GripVertical } from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
+import Button from '@/components/ui/Button';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { IStockTransferRequest } from '@/types';
 import { formatTimeAgo } from '../lib/format-time-ago';
 import { columnIdForStatus } from '../lib/allowed-transitions';
+import { boardActionsForStatus } from '../lib/board-card-actions';
+import { useBoardAction } from '../context/board-action-context';
 
 interface TransferBoardSingleLineCardProps {
     transfer: IStockTransferRequest;
@@ -19,6 +22,8 @@ function transferQty(transfer: IStockTransferRequest): number {
 export function TransferBoardSingleLineCard({
     transfer,
 }: TransferBoardSingleLineCardProps) {
+    const openAction = useBoardAction();
+    const actions = boardActionsForStatus(transfer.status);
     const fromColumnId = columnIdForStatus(transfer.status);
     const qty = transferQty(transfer);
     const fromName = transfer.sourceBranch?.name ?? '—';
@@ -96,6 +101,26 @@ export function TransferBoardSingleLineCard({
                     <TransferStatusPill status={transfer.status} />
                 </div>
             </Link>
+
+            {openAction && actions.length > 0 && (
+                <div
+                    className="flex items-center gap-1.5 mt-1.5"
+                    onPointerDown={(e) => e.stopPropagation()}
+                >
+                    {actions.map((a) => (
+                        <Button
+                            key={a.action}
+                            size="sm"
+                            variant={a.variant}
+                            className="flex-1"
+                            onClick={() => openAction(transfer, a.action)}
+                        >
+                            {a.label}
+                        </Button>
+                    ))}
+                </div>
+            )}
+
             <span
                 aria-hidden
                 className="absolute top-1.5 right-1.5 text-text-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
