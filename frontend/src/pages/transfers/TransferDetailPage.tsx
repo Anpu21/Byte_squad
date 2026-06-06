@@ -29,7 +29,7 @@ export function TransferDetailPage() {
 
     return (
         <div className="animate-in fade-in duration-300 max-w-5xl">
-            <TransferDetailHeader transfer={p.transfer} displayQty={displayQty} />
+            <TransferDetailHeader transfer={p.transfer} />
             <AuditTimeline transfer={p.transfer} />
             <TransferReasonsCard transfer={p.transfer} />
             {p.permissions.canApproveOrReject && p.id && (

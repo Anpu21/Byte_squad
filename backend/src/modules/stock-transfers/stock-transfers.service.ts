@@ -25,6 +25,7 @@ import {
   HISTORY_TERMINAL_STATUSES,
   ListTransferHistoryQueryDto,
 } from '@stock-transfers/dto/list-transfer-history-query.dto';
+import { TransferAnalyticsQueryDto } from '@stock-transfers/dto/transfer-analytics-query.dto';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { NotificationType } from '@common/enums/notification.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -37,7 +38,11 @@ interface ActorContext {
   role: UserRole;
 }
 
-import { SourceOption, PaginatedTransfers } from '@stock-transfers/types';
+import {
+  SourceOption,
+  PaginatedTransfers,
+  TransferAnalyticsResponse,
+} from '@stock-transfers/types';
 
 // Re-export so existing callers that imported these from this file keep working.
 export type { SourceOption, PaginatedTransfers };
@@ -205,6 +210,63 @@ export class StockTransfersService {
       limit,
     });
     return paginate(raw, page, limit);
+  }
+
+  async getAnalytics(
+    actor: ActorContext,
+    query: TransferAnalyticsQueryDto,
+  ): Promise<TransferAnalyticsResponse> {
+    const from = query.from ? new Date(query.from) : null;
+    const to = query.to ? this.endOfDay(new Date(query.to)) : null;
+    if (from && Number.isNaN(from.getTime())) {
+      throw new BadRequestException('Invalid "from" date');
+    }
+    if (to && Number.isNaN(to.getTime())) {
+      throw new BadRequestException('Invalid "to" date');
+    }
+
+    const raw = await this.transfers.analytics({
+      actorRole: actor.role,
+      actorBranchId: actor.branchId,
+      branchId: query.branchId,
+      from,
+      to,
+    });
+
+    const countOf = (status: TransferStatus): number =>
+      raw.byStatus.find((s) => s.status === status)?.count ?? 0;
+    const total = raw.byStatus.reduce((sum, s) => sum + s.count, 0);
+    const round1 = (n: number | null): number | null =>
+      n != null ? Math.round(n * 10) / 10 : null;
+
+    return {
+      from: from ? from.toISOString() : null,
+      to: to ? to.toISOString() : null,
+      branchId:
+        actor.role === UserRole.ADMIN
+          ? (query.branchId ?? null)
+          : actor.branchId,
+      kpis: {
+        total,
+        pending: countOf(TransferStatus.PENDING),
+        approved: countOf(TransferStatus.APPROVED),
+        inTransit: countOf(TransferStatus.IN_TRANSIT),
+        completed: countOf(TransferStatus.COMPLETED),
+        rejectedCancelled:
+          countOf(TransferStatus.REJECTED) + countOf(TransferStatus.CANCELLED),
+        totalUnits: raw.totalUnits,
+        avgApprovalHours: round1(raw.avgApprovalHours),
+        avgFulfilmentHours: round1(raw.avgFulfilmentHours),
+      },
+      byStatus: raw.byStatus,
+      series: raw.series,
+      topProducts: raw.topProducts,
+    };
+  }
+
+  private endOfDay(d: Date): Date {
+    d.setUTCHours(23, 59, 59, 999);
+    return d;
   }
 
   async findById(

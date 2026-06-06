@@ -116,6 +116,8 @@ export const queryKeys = {
         sourceOptions: (id: string) =>
             ['stock-transfers', 'source-options', id] as const,
         counts: () => ['stock-transfers', 'counts'] as const,
+        analytics: (params: unknown) =>
+            ['stock-transfers', 'analytics', params] as const,
     },
     branches: {
         all: () => ['branches'] as const,

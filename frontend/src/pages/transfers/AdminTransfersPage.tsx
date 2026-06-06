@@ -5,6 +5,7 @@ import { useTransferBoardData } from '@/features/admin-transfer-board/hooks/useT
 import { AdminTransfersTabs } from '@/features/admin-transfers/components/AdminTransfersTabs';
 import { useAdminTransfersTab } from '@/features/admin-transfers/hooks/useAdminTransfersTab';
 import { TransferHistoryView } from '@/features/transfer-history/components/TransferHistoryView';
+import { TransferReport } from '@/features/transfer-report/components/TransferReport';
 
 export function AdminTransfersPage() {
     useStockTransferRealtime();
@@ -23,7 +24,9 @@ export function AdminTransfersPage() {
                 boardCount={board.total}
             />
 
-            {tab === 'board' ? <TransferBoard /> : <TransferHistoryView />}
+            {tab === 'board' && <TransferBoard />}
+            {tab === 'history' && <TransferHistoryView />}
+            {tab === 'report' && <TransferReport isAdmin />}
         </div>
     );
 }

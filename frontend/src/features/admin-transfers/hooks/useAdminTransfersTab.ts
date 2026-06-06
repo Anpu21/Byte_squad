@@ -1,12 +1,12 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-export type AdminTransfersTab = 'board' | 'history';
+export type AdminTransfersTab = 'board' | 'history' | 'report';
 
 // Namespaced param so the admin board/history sub-tabs don't collide with the
 // Inventory workspace's own `?tab=` when this page is embedded as a tab.
 const TAB_PARAM = 'transferTab';
-const VALID_TABS: AdminTransfersTab[] = ['board', 'history'];
+const VALID_TABS: AdminTransfersTab[] = ['board', 'history', 'report'];
 
 function isAdminTransfersTab(value: string | null): value is AdminTransfersTab {
     return value !== null && (VALID_TABS as string[]).includes(value);

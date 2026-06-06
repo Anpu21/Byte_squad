@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -21,6 +21,8 @@ import {
   ListMineFilter,
   ListIncomingFilter,
   ListHistoryFilter,
+  TransferAnalyticsFilter,
+  TransferAnalyticsRaw,
 } from '@stock-transfers/types';
 
 @Injectable()
@@ -156,5 +158,108 @@ export class StockTransfersRepository {
       .take(filter.limit)
       .getManyAndCount();
     return { items, total };
+  }
+
+  /**
+   * Aggregated transfer metrics for the report. Applies the same branch scope
+   * as `listHistory` (non-admins see transfers their branch is source OR
+   * destination of) plus the optional date range, then runs focused group-by
+   * queries for status counts, totals/timings, a per-day series, and the top
+   * products.
+   */
+  async analytics(
+    filter: TransferAnalyticsFilter,
+  ): Promise<TransferAnalyticsRaw> {
+    const scoped = (): SelectQueryBuilder<StockTransferRequest> => {
+      const qb = this.repo.createQueryBuilder('transfer');
+      if (filter.actorRole !== UserRole.ADMIN) {
+        qb.andWhere(
+          '(transfer.source_branch_id = :ab OR transfer.destination_branch_id = :ab)',
+          { ab: filter.actorBranchId },
+        );
+      } else if (filter.branchId) {
+        qb.andWhere(
+          '(transfer.source_branch_id = :b OR transfer.destination_branch_id = :b)',
+          { b: filter.branchId },
+        );
+      }
+      if (filter.from) {
+        qb.andWhere('transfer.created_at >= :from', { from: filter.from });
+      }
+      if (filter.to) {
+        qb.andWhere('transfer.created_at <= :to', { to: filter.to });
+      }
+      return qb;
+    };
+
+    const statusRows = await scoped()
+      .select('transfer.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('transfer.status')
+      .getRawMany<{ status: TransferStatus; count: string }>();
+
+    const totals = await scoped()
+      .setParameter('completed', TransferStatus.COMPLETED)
+      .select(
+        'COALESCE(SUM(transfer.approved_quantity) FILTER (WHERE transfer.status = :completed), 0)',
+        'totalUnits',
+      )
+      .addSelect(
+        'AVG(EXTRACT(EPOCH FROM (transfer.reviewed_at - transfer.created_at)) / 3600.0) FILTER (WHERE transfer.reviewed_at IS NOT NULL)',
+        'approvalHours',
+      )
+      .addSelect(
+        'AVG(EXTRACT(EPOCH FROM (transfer.received_at - transfer.shipped_at)) / 3600.0) FILTER (WHERE transfer.received_at IS NOT NULL AND transfer.shipped_at IS NOT NULL)',
+        'fulfilmentHours',
+      )
+      .getRawOne<{
+        totalUnits: string;
+        approvalHours: string | null;
+        fulfilmentHours: string | null;
+      }>();
+
+    const dayExpr = "TO_CHAR(transfer.created_at, 'YYYY-MM-DD')";
+    const seriesRows = await scoped()
+      .select(dayExpr, 'day')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy(dayExpr)
+      .orderBy(dayExpr, 'ASC')
+      .getRawMany<{ day: string; count: string }>();
+
+    const productRows = await scoped()
+      .innerJoin('transfer.product', 'product')
+      .select('product.id', 'productId')
+      .addSelect('product.name', 'productName')
+      .addSelect('COUNT(*)', 'transfers')
+      .addSelect('COALESCE(SUM(transfer.requested_quantity), 0)', 'units')
+      .groupBy('product.id')
+      .addGroupBy('product.name')
+      .orderBy('COUNT(*)', 'DESC')
+      .limit(8)
+      .getRawMany<{
+        productId: string;
+        productName: string;
+        transfers: string;
+        units: string;
+      }>();
+
+    return {
+      byStatus: statusRows.map((r) => ({
+        status: r.status,
+        count: Number(r.count),
+      })),
+      totalUnits: Number(totals?.totalUnits ?? 0),
+      avgApprovalHours:
+        totals?.approvalHours != null ? Number(totals.approvalHours) : null,
+      avgFulfilmentHours:
+        totals?.fulfilmentHours != null ? Number(totals.fulfilmentHours) : null,
+      series: seriesRows.map((r) => ({ day: r.day, count: Number(r.count) })),
+      topProducts: productRows.map((r) => ({
+        productId: r.productId,
+        productName: r.productName,
+        transfers: Number(r.transfers),
+        units: Number(r.units),
+      })),
+    };
   }
 }

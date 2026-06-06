@@ -9,6 +9,8 @@ import type {
   IApproveTransferPayload,
   IListTransfersParams,
   IListTransferHistoryParams,
+  ITransferAnalyticsParams,
+  ITransferAnalyticsResponse,
 } from '@/types'
 
 export const stockTransfersService = {
@@ -73,6 +75,16 @@ export const stockTransfersService = {
   ): Promise<IPaginatedTransfers> => {
     const response = await api.get<IApiResponse<IPaginatedTransfers>>(
       '/stock-transfers/history',
+      { params },
+    )
+    return response.data.data
+  },
+
+  getAnalytics: async (
+    params: ITransferAnalyticsParams,
+  ): Promise<ITransferAnalyticsResponse> => {
+    const response = await api.get<IApiResponse<ITransferAnalyticsResponse>>(
+      '/stock-transfers/analytics',
       { params },
     )
     return response.data.data

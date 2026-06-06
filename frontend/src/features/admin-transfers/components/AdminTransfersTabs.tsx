@@ -8,6 +8,7 @@ interface TabDef {
 const TABS: TabDef[] = [
     { key: 'board', label: 'Active board' },
     { key: 'history', label: 'History' },
+    { key: 'report', label: 'Report' },
 ];
 
 interface AdminTransfersTabsProps {
