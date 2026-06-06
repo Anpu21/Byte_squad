@@ -34,6 +34,7 @@ const ASSIGNABLE_ROLES_ON_CREATE: UserRole[] = [
   UserRole.ADMIN,
   UserRole.MANAGER,
   UserRole.CASHIER,
+  UserRole.WORKER,
 ];
 
 @Injectable()
@@ -210,7 +211,7 @@ export class UsersService {
   async create(adminUserId: string, dto: CreateUserDto): Promise<User> {
     if (!ASSIGNABLE_ROLES_ON_CREATE.includes(dto.role)) {
       throw new ForbiddenException(
-        'Admins can only create admin, manager, or cashier accounts',
+        'Admins can only create admin, manager, cashier, or worker accounts',
       );
     }
     await this.assertEmailAvailable(dto.email, null);

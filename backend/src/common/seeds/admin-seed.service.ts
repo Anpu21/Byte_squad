@@ -244,6 +244,36 @@ export class AdminSeedService implements OnModuleInit {
       branchId: suburbanBranch.id,
     });
 
+    // Workers — branch-floor staff (no POS / management access) who act as
+    // couriers for the stock-transfer delivery flow. Each is linked to an
+    // Employee row in the HR seed so attendance + working hours work.
+    const worker1 = await this.ensureUser({
+      email: 'worker@ledgerpro.com',
+      password: 'Worker@123',
+      firstName: 'Ravi',
+      lastName: 'Bandara',
+      role: UserRole.WORKER,
+      branchId: mainBranch.id,
+    });
+
+    const worker2 = await this.ensureUser({
+      email: 'worker2@ledgerpro.com',
+      password: 'Worker@123',
+      firstName: 'Sunil',
+      lastName: 'Rathnayake',
+      role: UserRole.WORKER,
+      branchId: downtownBranch.id,
+    });
+
+    const worker3 = await this.ensureUser({
+      email: 'worker3@ledgerpro.com',
+      password: 'Worker@123',
+      firstName: 'Pradeep',
+      lastName: 'Gunawardena',
+      role: UserRole.WORKER,
+      branchId: suburbanBranch.id,
+    });
+
     const customerUsers = await Promise.all([
       this.ensureUser({
         email: 'customer.ayesha@ledgerpro.com',
@@ -379,6 +409,9 @@ export class AdminSeedService implements OnModuleInit {
       cashier1,
       cashier2,
       cashier3,
+      worker1,
+      worker2,
+      worker3,
     });
 
     this.logger.log('Supermarket seed completed.');

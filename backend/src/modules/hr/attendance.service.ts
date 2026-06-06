@@ -77,6 +77,31 @@ export class AttendanceService {
   }
 
   /**
+   * Self-scoped attendance for the authenticated actor — the "my
+   * attendance" view used by the worker / cashier dashboards. Resolves
+   * the actor's linked employee and returns only their rows for the
+   * window; any `branchId` / `employeeId` on the query is ignored so
+   * this path can never widen beyond the caller's own record.
+   */
+  async listSelf(
+    query: ListAttendanceQueryDto,
+    actor: AttendanceActor,
+  ): Promise<AttendanceListResponse> {
+    const employee = await this.employees.findByUserId(actor.id);
+    if (!employee) {
+      throw new NotFoundException(
+        'No employee profile is linked to this account',
+      );
+    }
+    const rows = await this.attendance.listForBranch({
+      employeeId: employee.id,
+      startDate: new Date(query.startDate),
+      endDate: new Date(query.endDate),
+    });
+    return { rows, total: rows.length };
+  }
+
+  /**
    * Manager bulk grid submission. For each row:
    *   - Verifies the employee is visible to the actor (admin = all,
    *     manager = own branch).

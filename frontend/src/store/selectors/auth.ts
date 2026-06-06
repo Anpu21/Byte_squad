@@ -28,6 +28,10 @@ export const selectIsCashier = createSelector(
     [selectUserRole],
     (role) => role === UserRole.CASHIER,
 );
+export const selectIsWorker = createSelector(
+    [selectUserRole],
+    (role) => role === UserRole.WORKER,
+);
 export const selectIsCustomer = createSelector(
     [selectUserRole],
     (role) => role === UserRole.CUSTOMER,

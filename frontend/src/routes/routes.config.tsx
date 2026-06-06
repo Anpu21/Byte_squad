@@ -11,6 +11,7 @@ import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 import { BranchSelectionPage } from '@/pages/auth/BranchSelectionPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { CashierDashboardPage } from '@/pages/dashboard/CashierDashboardPage';
+import { WorkerDashboardPage } from '@/pages/dashboard/WorkerDashboardPage';
 import { ProductFormPage } from '@/pages/inventory/ProductFormPage';
 import { InventoryWorkspacePage } from '@/pages/inventory/InventoryWorkspacePage';
 import { StockAdjustmentNewPage } from '@/pages/inventory/StockAdjustmentNewPage';
@@ -126,6 +127,12 @@ export const ROUTES: RouteDef[] = [
     {
         path: FRONTEND_ROUTES.CASHIER_DASHBOARD,
         element: <CashierDashboardPage />,
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.WORKER_DASHBOARD,
+        element: <WorkerDashboardPage />,
+        allowedRoles: [UserRole.WORKER],
         layout: 'dashboard',
     },
 

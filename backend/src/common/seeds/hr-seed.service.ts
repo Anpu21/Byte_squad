@@ -31,6 +31,9 @@ export interface HrSeedContext {
   cashier1: User;
   cashier2: User;
   cashier3: User;
+  worker1: User;
+  worker2: User;
+  worker3: User;
 }
 
 interface EmployeeSeed {
@@ -238,6 +241,50 @@ export class HrSeedService {
         epfNumber: 'EPF-203',
         bankName: 'Sampath Bank',
         bankAccountNo: '5001234503',
+        bankBranch: 'Suburban',
+        annualLeaveBalance: 14,
+      },
+      // Couriers — branch-floor workers linked to WORKER login accounts.
+      // They drive the stock-transfer delivery flow and clock attendance.
+      {
+        employeeCode: 'EMP-MAIN-004',
+        fullName: `${ctx.worker1.firstName} ${ctx.worker1.lastName}`,
+        contactPhone: '+94770010004',
+        branch: ctx.mainBranch,
+        user: ctx.worker1,
+        role: 'Courier',
+        monthlyBase: 40_000,
+        epfNumber: 'EPF-004',
+        bankName: 'Commercial Bank',
+        bankAccountNo: '8001234504',
+        bankBranch: 'Colombo Main',
+        annualLeaveBalance: 14,
+      },
+      {
+        employeeCode: 'EMP-DT-004',
+        fullName: `${ctx.worker2.firstName} ${ctx.worker2.lastName}`,
+        contactPhone: '+94770010104',
+        branch: ctx.downtownBranch,
+        user: ctx.worker2,
+        role: 'Courier',
+        monthlyBase: 40_000,
+        epfNumber: 'EPF-104',
+        bankName: 'HNB',
+        bankAccountNo: '6001234504',
+        bankBranch: 'Downtown',
+        annualLeaveBalance: 14,
+      },
+      {
+        employeeCode: 'EMP-SB-004',
+        fullName: `${ctx.worker3.firstName} ${ctx.worker3.lastName}`,
+        contactPhone: '+94770010204',
+        branch: ctx.suburbanBranch,
+        user: ctx.worker3,
+        role: 'Courier',
+        monthlyBase: 40_000,
+        epfNumber: 'EPF-204',
+        bankName: 'Sampath Bank',
+        bankAccountNo: '5001234504',
         bankBranch: 'Suburban',
         annualLeaveBalance: 14,
       },

@@ -210,6 +210,7 @@ export const APP_ROUTES = {
       BULK: 'bulk',
       CHECK_IN: 'check-in',
       CHECK_OUT: 'check-out',
+      ME: 'me',
     },
     LEAVES: {
       BASE: `${API_PREFIX}/hr/leaves`,

@@ -73,6 +73,13 @@ const NAV_ITEMS: NavItem[] = [
         group: 'Operations',
     },
     {
+        label: 'Dashboard',
+        path: FRONTEND_ROUTES.WORKER_DASHBOARD,
+        roles: [UserRole.WORKER],
+        icon: <Home size={15} />,
+        group: 'Operations',
+    },
+    {
         label: 'POS',
         path: FRONTEND_ROUTES.POS,
         roles: [UserRole.CASHIER],

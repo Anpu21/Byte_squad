@@ -19,6 +19,7 @@ export const FRONTEND_ROUTES = {
     // Dashboard
     DASHBOARD: '/dashboard',
     CASHIER_DASHBOARD: '/cashier-dashboard',
+    WORKER_DASHBOARD: '/worker',
 
     // Inventory
     INVENTORY: '/inventory',

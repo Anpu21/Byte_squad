@@ -175,6 +175,8 @@ export const queryKeys = {
         employee: (id: string) => ['hr', 'employee', id] as const,
         attendance: (params: ListAttendanceQueryKey) =>
             ['hr', 'attendance', params] as const,
+        myAttendance: (params: { startDate: string; endDate: string }) =>
+            ['hr', 'attendance', 'me', params] as const,
         todayAttendance: () => ['hr', 'attendance', 'today'] as const,
         leaves: (params: ListLeavesQueryKey) => ['hr', 'leaves', params] as const,
         leave: (id: string) => ['hr', 'leave', id] as const,
