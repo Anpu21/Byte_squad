@@ -6,7 +6,7 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
-    { key: 'board', label: 'Active board' },
+    { key: 'board', label: 'Pipeline' },
     { key: 'history', label: 'History' },
     { key: 'report', label: 'Report' },
 ];

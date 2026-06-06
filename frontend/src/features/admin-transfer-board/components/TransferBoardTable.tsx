@@ -1,47 +1,34 @@
-import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
 import Button from '@/components/ui/Button';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { IStockTransferRequest } from '@/types';
-import type { BoardData } from '../hooks/useTransferBoardData';
 import { boardActionsForStatus } from '../lib/board-card-actions';
 import { useBoardAction } from '../context/board-action-context';
 
 interface TransferBoardTableProps {
-    data: BoardData;
+    rows: IStockTransferRequest[];
+    isLoading: boolean;
 }
 
 /**
- * Flat, scalable list of the active transfers with inline action buttons —
- * the alternative to the Kanban board for dense management. Actions reuse the
- * same modal flow as the board cards (via the board action context).
+ * The transfer action list: each row shows product, route, qty + status and
+ * the explicit actions allowed in that status (Approve/Reject/Ship/Receive/
+ * Cancel). Actions reuse the shared modal flow via the board action context.
  */
-export function TransferBoardTable({ data }: TransferBoardTableProps) {
+export function TransferBoardTable({ rows, isLoading }: TransferBoardTableProps) {
     const navigate = useNavigate();
     const openAction = useBoardAction();
 
-    const rows = useMemo<IStockTransferRequest[]>(() => {
-        const all = Object.values(data.columns).flatMap((groups) =>
-            groups.flatMap((g) => g.transfers),
-        );
-        return all.sort(
-            (a, b) =>
-                new Date(b.updatedAt).getTime() -
-                new Date(a.updatedAt).getTime(),
-        );
-    }, [data.columns]);
-
-    if (!data.isLoading && rows.length === 0) {
+    if (!isLoading && rows.length === 0) {
         return (
             <div className="bg-surface border border-border rounded-xl py-16 text-center">
                 <p className="text-sm font-medium text-text-2">
-                    No active transfers
+                    Nothing here right now
                 </p>
                 <p className="text-xs text-text-3 mt-1">
-                    Pending, approved, in-transit and recently closed transfers
-                    appear here.
+                    Transfers in this stage will appear here.
                 </p>
             </div>
         );
@@ -65,7 +52,7 @@ export function TransferBoardTable({ data }: TransferBoardTableProps) {
                         </tr>
                     </thead>
                     <tbody className="text-sm">
-                        {data.isLoading ? (
+                        {isLoading ? (
                             [...Array(5)].map((_, i) => (
                                 <tr key={i} className="border-b border-border">
                                     {[...Array(5)].map((__, j) => (
