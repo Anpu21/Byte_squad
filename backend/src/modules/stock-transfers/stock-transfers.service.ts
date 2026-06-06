@@ -821,6 +821,21 @@ export class StockTransfersService {
     const sourceBranchId = transfer.sourceBranchId;
 
     await this.dataSource.transaction(async (manager) => {
+      // F1: re-load + re-check the transfer status inside the transaction
+      // under a row lock, so a concurrent or retried ship cannot pass a stale
+      // "APPROVED" guard and decrement the source twice.
+      const fresh = await manager
+        .getRepository(StockTransferRequest)
+        .createQueryBuilder('t')
+        .setLock('pessimistic_write')
+        .where('t.id = :id', { id })
+        .getOne();
+      if (!fresh || fresh.status !== TransferStatus.APPROVED) {
+        throw new BadRequestException(
+          `Cannot ship a transfer in status "${fresh?.status ?? 'missing'}"`,
+        );
+      }
+
       // Pessimistic lock on the source inventory row to prevent races
       // with concurrent POS sales or restocks. Repo-class methods can't
       // accept the outer EntityManager yet, so this uses raw access.
@@ -848,10 +863,10 @@ export class StockTransfersService {
       sourceInventory.quantity -= approvedQuantity;
       await manager.getRepository(Inventory).save(sourceInventory);
 
-      transfer.status = TransferStatus.IN_TRANSIT;
-      transfer.shippedByUserId = actor.id;
-      transfer.shippedAt = new Date();
-      await manager.getRepository(StockTransferRequest).save(transfer);
+      fresh.status = TransferStatus.IN_TRANSIT;
+      fresh.shippedByUserId = actor.id;
+      fresh.shippedAt = new Date();
+      await manager.getRepository(StockTransferRequest).save(fresh);
     });
 
     const updated = await this.findByIdOrThrow(id);
@@ -904,6 +919,21 @@ export class StockTransfersService {
     const approvedQuantity = transfer.approvedQuantity;
 
     await this.dataSource.transaction(async (manager) => {
+      // F1: re-load + re-check the transfer status inside the transaction
+      // under a row lock, so a concurrent or retried receive cannot pass a
+      // stale "IN_TRANSIT" guard and credit the destination twice.
+      const fresh = await manager
+        .getRepository(StockTransferRequest)
+        .createQueryBuilder('t')
+        .setLock('pessimistic_write')
+        .where('t.id = :id', { id })
+        .getOne();
+      if (!fresh || fresh.status !== TransferStatus.IN_TRANSIT) {
+        throw new BadRequestException(
+          `Cannot receive a transfer in status "${fresh?.status ?? 'missing'}"`,
+        );
+      }
+
       const inventoryRepo = manager.getRepository(Inventory);
 
       let destInventory = await inventoryRepo
@@ -931,10 +961,10 @@ export class StockTransfersService {
       }
       await inventoryRepo.save(destInventory);
 
-      transfer.status = TransferStatus.COMPLETED;
-      transfer.receivedByUserId = actor.id;
-      transfer.receivedAt = new Date();
-      await manager.getRepository(StockTransferRequest).save(transfer);
+      fresh.status = TransferStatus.COMPLETED;
+      fresh.receivedByUserId = actor.id;
+      fresh.receivedAt = new Date();
+      await manager.getRepository(StockTransferRequest).save(fresh);
     });
 
     const updated = await this.findByIdOrThrow(id);
@@ -985,18 +1015,24 @@ export class StockTransfersService {
       metadata: Record<string, unknown>;
     },
   ): Promise<void> {
-    await this.notificationsService.create({
-      userId,
-      title: payload.title,
-      message: payload.message,
-      type: NotificationType.STOCK_TRANSFER,
-      metadata: payload.metadata,
-    });
-    this.notificationsGateway.sendToUser(userId, {
-      userId,
-      title: payload.title,
-      message: payload.message,
-      type: NotificationType.STOCK_TRANSFER,
-    });
+    // Best-effort (audit finding F3): a notification failure must never roll
+    // back or surface as a 5xx on an already-committed transfer transition.
+    try {
+      await this.notificationsService.create({
+        userId,
+        title: payload.title,
+        message: payload.message,
+        type: NotificationType.STOCK_TRANSFER,
+        metadata: payload.metadata,
+      });
+      this.notificationsGateway.sendToUser(userId, {
+        userId,
+        title: payload.title,
+        message: payload.message,
+        type: NotificationType.STOCK_TRANSFER,
+      });
+    } catch {
+      // swallowed by design
+    }
   }
 }

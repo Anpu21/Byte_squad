@@ -12,6 +12,7 @@ import { Product } from '@products/entities/product.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { User } from '@users/entities/user.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
+import { Shipment } from '@stock-transfers/entities/shipment.entity';
 
 @Entity('stock_transfer_requests')
 @Index(['status', 'createdAt'])
@@ -67,6 +68,19 @@ export class StockTransferRequest {
   @Column({ type: 'uuid', name: 'batch_id', nullable: true })
   @Index()
   batchId!: string | null;
+
+  // Set when this line is bundled into a courier Shipment (Phase 1 delivery
+  // tracking). Nullable: legacy lines and not-yet-shipped lines have none.
+  @Column({ type: 'uuid', name: 'shipment_id', nullable: true })
+  @Index()
+  shipmentId!: string | null;
+
+  @ManyToOne(() => Shipment, (shipment) => shipment.lines, {
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'shipment_id' })
+  shipment!: Shipment | null;
 
   @Column({ type: 'uuid', name: 'requested_by_user_id' })
   requestedByUserId!: string;

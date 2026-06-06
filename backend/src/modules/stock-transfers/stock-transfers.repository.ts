@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { In, Repository, SelectQueryBuilder } from 'typeorm';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -45,6 +45,14 @@ export class StockTransfersRepository {
   async findById(id: string): Promise<StockTransferRequest | null> {
     return this.repo.findOne({
       where: { id },
+      relations: TRANSFER_RELATIONS,
+    });
+  }
+
+  async findByIds(ids: string[]): Promise<StockTransferRequest[]> {
+    if (ids.length === 0) return [];
+    return this.repo.find({
+      where: { id: In(ids) },
       relations: TRANSFER_RELATIONS,
     });
   }

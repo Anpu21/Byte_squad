@@ -258,6 +258,19 @@ export const APP_ROUTES = {
     SHIP: ':id/ship',
     RECEIVE: ':id/receive',
   },
+
+  // Shipments (courier-driven delivery tracking over transfer lines)
+  SHIPMENTS: {
+    BASE: `${API_PREFIX}/shipments`,
+    BY_ID: ':id',
+    ASSIGN_COURIER: ':id/assign-courier',
+    DISPATCH: ':id/dispatch',
+    CHECKPOINT: ':id/checkpoint',
+    OUT_FOR_DELIVERY: ':id/out-for-delivery',
+    DELIVER: ':id/deliver',
+    RETURN: ':id/return',
+    CANCEL: ':id/cancel',
+  },
 } as const;
 
 export type APP_ROUTES_TYPE = keyof typeof APP_ROUTES;
