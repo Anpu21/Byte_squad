@@ -35,6 +35,9 @@ import { NewTransferRequestPage } from '@/pages/transfers/NewTransferRequestPage
 import { TransferDetailPage } from '@/pages/transfers/TransferDetailPage';
 import { AdminTransfersPage } from '@/pages/transfers/AdminTransfersPage';
 import { AdminTransferCreatePage } from '@/pages/transfers/AdminTransferCreatePage';
+import { ShipmentsListPage } from '@/pages/transfers/ShipmentsListPage';
+import { ShipmentCreatePage } from '@/pages/transfers/ShipmentCreatePage';
+import { ShipmentDetailPage } from '@/pages/transfers/ShipmentDetailPage';
 import { CustomerOrdersPage } from '@/pages/orders/CustomerOrdersPage';
 import { ScanOrderPage } from '@/pages/pos/ScanOrderPage';
 import { CatalogPage } from '@/pages/shop/CatalogPage';
@@ -374,6 +377,26 @@ export const ROUTES: RouteDef[] = [
         path: FRONTEND_ROUTES.ADMIN_TRANSFERS,
         element: <AdminTransfersPage />,
         allowedRoles: [UserRole.ADMIN],
+        layout: 'dashboard',
+    },
+
+    // ─── Shipments (courier delivery tracking) ───
+    {
+        path: FRONTEND_ROUTES.SHIPMENTS,
+        element: <ShipmentsListPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.WORKER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.SHIPMENT_NEW,
+        element: <ShipmentCreatePage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.SHIPMENT_DETAIL,
+        element: <ShipmentDetailPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.WORKER],
         layout: 'dashboard',
     },
 

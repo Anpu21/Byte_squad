@@ -17,6 +17,7 @@ import {
     ScrollText,
     ShoppingCart,
     Sparkles,
+    Truck,
     UserCog,
     Users,
 } from 'lucide-react';
@@ -77,6 +78,20 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.WORKER_DASHBOARD,
         roles: [UserRole.WORKER],
         icon: <Home size={15} />,
+        group: 'Operations',
+    },
+    {
+        label: 'My Deliveries',
+        path: FRONTEND_ROUTES.SHIPMENTS,
+        roles: [UserRole.WORKER],
+        icon: <Truck size={15} />,
+        group: 'Operations',
+    },
+    {
+        label: 'Shipments',
+        path: FRONTEND_ROUTES.SHIPMENTS,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <Truck size={15} />,
         group: 'Operations',
     },
     {

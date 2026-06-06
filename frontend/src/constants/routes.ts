@@ -93,6 +93,11 @@ export const FRONTEND_ROUTES = {
     ADMIN_TRANSFERS: '/admin/transfers',
     ADMIN_TRANSFER_NEW: '/admin/transfers/new',
 
+    // Shipments (courier delivery tracking)
+    SHIPMENTS: '/shipments',
+    SHIPMENT_NEW: '/shipments/new',
+    SHIPMENT_DETAIL: '/shipments/:id',
+
     // Customer storefront (login required)
     SHOP: '/shop',
     SHOP_PRODUCT_DETAIL: '/shop/products/:id',

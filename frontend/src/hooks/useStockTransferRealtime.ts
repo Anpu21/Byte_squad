@@ -25,6 +25,11 @@ export function useStockTransferRealtime(): void {
                 queryClient.invalidateQueries({
                     queryKey: ['stock-transfers'],
                 });
+                // Shipment events reuse the STOCK_TRANSFER notification type,
+                // so refresh the shipments family on the same signal.
+                queryClient.invalidateQueries({
+                    queryKey: ['shipments'],
+                });
             }
         };
         socket.on('notification', handler);
