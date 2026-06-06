@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useShipmentsQuery } from '@/features/shipment-tracking/hooks/useShipmentsQuery';
 import { useStockTransferRealtime } from '@/hooks/useStockTransferRealtime';
 import { ShipmentListCard } from '@/features/shipment-tracking/components/ShipmentListCard';
+import { ShipmentsSummary } from '@/features/shipment-tracking/components/ShipmentsSummary';
 import { SHIPMENT_STATUS_LABELS } from '@/features/shipment-tracking/lib/shipment-format';
 
 const FILTERS: Array<ShipmentStatus | 'all'> = [
@@ -32,14 +33,18 @@ export function ShipmentsListPage() {
     const navigate = useNavigate();
     useStockTransferRealtime();
     const [status, setStatus] = useState<ShipmentStatus | 'all'>('all');
-    const { data, isLoading } = useShipmentsQuery(
-        status === 'all' ? {} : { status },
-    );
+    // Fetch a wide page once, then filter the chips client-side so the
+    // summary KPIs stay accurate regardless of the active chip.
+    const { data, isLoading } = useShipmentsQuery({ limit: 100 });
 
     const isWorker = user?.role === UserRole.WORKER;
     const canCreate =
         user?.role === UserRole.ADMIN || user?.role === UserRole.MANAGER;
-    const items = data?.items ?? [];
+    const allItems = data?.items ?? [];
+    const items =
+        status === 'all'
+            ? allItems
+            : allItems.filter((s) => s.status === status);
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -60,6 +65,8 @@ export function ShipmentsListPage() {
                     </Button>
                 )}
             </div>
+
+            <ShipmentsSummary shipments={allItems} />
 
             <div className="flex flex-wrap gap-1.5 mb-4">
                 {FILTERS.map((f) => (

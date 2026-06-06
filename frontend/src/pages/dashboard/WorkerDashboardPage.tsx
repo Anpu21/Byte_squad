@@ -2,10 +2,15 @@ import { useWorkerDashboard } from '@/features/worker-dashboard/hooks/useWorkerD
 import { WorkerShiftCard } from '@/features/worker-dashboard/components/WorkerShiftCard';
 import { WorkerKpis } from '@/features/worker-dashboard/components/WorkerKpis';
 import { WorkerRecentAttendance } from '@/features/worker-dashboard/components/WorkerRecentAttendance';
+import { WorkerDeliveriesCard } from '@/features/worker-dashboard/components/WorkerDeliveriesCard';
+import { useShipmentsQuery } from '@/features/shipment-tracking/hooks/useShipmentsQuery';
+import { useStockTransferRealtime } from '@/hooks/useStockTransferRealtime';
 import { getTodayLabel } from '@/features/admin-dashboard/lib/format';
 
 export function WorkerDashboardPage() {
     const p = useWorkerDashboard();
+    const deliveries = useShipmentsQuery();
+    useStockTransferRealtime();
 
     if (p.isLoading) {
         return (
@@ -46,6 +51,8 @@ export function WorkerDashboardPage() {
                     <WorkerRecentAttendance rows={p.rows} />
                 </>
             )}
+
+            <WorkerDeliveriesCard shipments={deliveries.data?.items ?? []} />
         </div>
     );
 }
