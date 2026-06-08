@@ -12,6 +12,7 @@ import type { UsePosCartReturn } from '@/features/pos/hooks/usePosCart';
 import { PosCameraScannerModal } from '@/features/pos/components/item-table/PosCameraScannerModal';
 import { PosBillingGridRow } from './PosBillingGridRow';
 import { PosBillingEntryRow } from './PosBillingEntryRow';
+import { BILLING_COLUMNS, alignClass } from './columns';
 
 interface IPosBillingGridProps {
     cart: ICartItem[];
@@ -25,28 +26,16 @@ interface IPosBillingGridProps {
     footerSlot?: ReactNode;
 }
 
-const HEADERS: { label: string; align?: 'left' | 'right' | 'center' }[] = [
-    { label: '#', align: 'right' },
-    { label: 'Code' },
-    { label: 'Description' },
-    { label: 'MRP', align: 'right' },
-    { label: 'Unit' },
-    { label: 'Price', align: 'right' },
-    { label: 'Disc %' },
-    { label: 'Tax %' },
-    { label: 'Qty' },
-    { label: 'Free' },
-    { label: 'Amount', align: 'right' },
-    { label: '', align: 'center' },
-];
+const HEADER_CELL =
+    'sticky top-0 z-10 border-r border-b border-border bg-surface-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-text-2';
 
 /**
- * BUSY/Tally-style cashier billing grid. Replaces the click-and-blur cart
- * table: committed lines sit in a navigable grid (↑/↓ move the same column
- * across rows, Enter commits a cell and drops down, Ctrl+Delete removes a
- * row, Esc returns to the entry field) and a pinned entry row at the bottom
- * builds the next line keyboard-first. Reuses `usePosCart`, the product
- * search, units, and line math unchanged — only the interaction model is new.
+ * BUSY/Tally-style cashier billing grid. One `table-fixed` table whose columns
+ * (see `columns.tsx`) are shared by the sticky header, the committed rows, and
+ * the inline entry row pinned in the sticky `<tfoot>` — so the product search
+ * lives right in the Product Name column and every cell stays aligned and
+ * gridlined. Keyboard nav across committed cells (↑/↓ same column, Enter down,
+ * Ctrl+Delete removes, Esc → entry) is unchanged.
  */
 export function PosBillingGrid({
     cart,
@@ -158,64 +147,74 @@ export function PosBillingGrid({
             <div
                 ref={bodyRef}
                 onKeyDown={handleGridKey}
-                className="flex-1 flex flex-col min-h-0"
+                className="flex-1 overflow-auto min-h-0"
             >
-                <div className="flex-1 overflow-auto">
-                    {cart.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center px-6 py-10">
-                            <ShoppingCart
-                                size={20}
-                                className="text-text-3 mb-2"
-                                aria-hidden
+                <table className="w-full table-fixed border-separate border-spacing-0 text-[12px]">
+                    <colgroup>
+                        {BILLING_COLUMNS.map((col) => (
+                            <col
+                                key={col.key}
+                                style={
+                                    col.width
+                                        ? { width: `${col.width}px` }
+                                        : undefined
+                                }
                             />
-                            <p className="text-sm font-medium text-text-1">
-                                No items yet
-                            </p>
-                            <p className="text-xs text-text-3 mt-1">
-                                Type a product in the line below, press Enter, then a
-                                quantity.
-                            </p>
-                        </div>
-                    ) : (
-                        <table className="w-full text-[12px]">
-                            <thead className="sticky top-0 z-10">
-                                <tr className="bg-surface-2 border-b border-border-strong">
-                                    {HEADERS.map((h, i) => (
-                                        <th
-                                            key={`${h.label}-${i}`}
-                                            scope="col"
-                                            className={`px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-text-2 ${
-                                                h.align === 'right'
-                                                    ? 'text-right'
-                                                    : h.align === 'center'
-                                                      ? 'text-center'
-                                                      : 'text-left'
-                                            }`}
-                                        >
-                                            {h.label}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {cart.map((item, index) => (
-                                    <PosBillingGridRow
-                                        key={item.rowId}
-                                        index={index}
-                                        item={item}
-                                        onUpdate={updateItem}
-                                        onRemove={removeItem}
+                        ))}
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            {BILLING_COLUMNS.map((col) => (
+                                <th
+                                    key={col.key}
+                                    scope="col"
+                                    className={`${HEADER_CELL} ${alignClass(col.align)}`}
+                                >
+                                    {col.header}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {cart.length === 0 ? (
+                            <tr>
+                                <td
+                                    colSpan={BILLING_COLUMNS.length}
+                                    className="border-b border-border px-6 py-12 text-center"
+                                >
+                                    <ShoppingCart
+                                        size={20}
+                                        className="text-text-3 mb-2 inline-block"
+                                        aria-hidden
                                     />
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-
-                <PosBillingEntryRow
-                    addItem={addItem}
-                    itemInputRef={searchInputRef}
-                />
+                                    <p className="text-sm font-medium text-text-1">
+                                        No items yet
+                                    </p>
+                                    <p className="text-xs text-text-3 mt-1">
+                                        Type a product in the Product Name field
+                                        below, press Enter, then a quantity.
+                                    </p>
+                                </td>
+                            </tr>
+                        ) : (
+                            cart.map((item, index) => (
+                                <PosBillingGridRow
+                                    key={item.rowId}
+                                    index={index}
+                                    item={item}
+                                    onUpdate={updateItem}
+                                    onRemove={removeItem}
+                                />
+                            ))
+                        )}
+                    </tbody>
+                    <tfoot>
+                        <PosBillingEntryRow
+                            addItem={addItem}
+                            itemInputRef={searchInputRef}
+                        />
+                    </tfoot>
+                </table>
             </div>
 
             {footerSlot && (

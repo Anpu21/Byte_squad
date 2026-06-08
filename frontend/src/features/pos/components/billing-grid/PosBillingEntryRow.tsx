@@ -1,15 +1,18 @@
 import {
     useEffect,
+    useLayoutEffect,
     useRef,
     useState,
     type KeyboardEvent,
     type RefObject,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, X } from 'lucide-react';
 import type { ISearchProductRow } from '@/types';
 import type { UsePosCartReturn } from '@/features/pos/hooks/usePosCart';
 import { usePosProductSearch } from '@/features/pos/hooks/usePosProductSearch';
 import { toCartItemSeed } from '@/features/pos/lib/cart-item-seed';
+import { formatCurrency } from '@/lib/utils';
 import { PosItemSearchResults } from '@/features/pos/components/item-table/PosItemSearchResults';
 import { PosCartNumericCell } from '@/features/pos/components/item-table/PosCartNumericCell';
 
@@ -19,22 +22,26 @@ interface IPosBillingEntryRowProps {
     itemInputRef?: RefObject<HTMLInputElement | null>;
 }
 
-const QTY_CELL =
-    'w-20 h-9 px-2 text-right text-[13px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30 disabled:opacity-50';
-const DISC_CELL = QTY_CELL.replace('w-20', 'w-16');
+const CELL =
+    'sticky bottom-0 z-10 border-r border-b border-border bg-surface-2 px-2 py-1.5 align-middle';
+const NUM_INPUT =
+    'w-full h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30 disabled:opacity-50';
+const MUTED = 'text-right text-[12px] text-text-3 tabular-nums';
 
 /**
- * BUSY-style line-entry strip pinned at the bottom of the billing grid. Flow:
- * type an item → ↑/↓ to highlight → Enter selects → focus jumps to Qty → type
- * qty → Enter commits the line via `addItem` and returns focus to the item
- * field for the next line. The suggestion dropdown opens **upward** so it is
- * never clipped by the scrolling rows above.
+ * BUSY/Tally-style inline entry — the pinned bottom row of the billing grid.
+ * The product search lives in the **Product Name** column; the rest of the row
+ * mirrors a committed line (the picked product's code/MRP/unit/price fill in,
+ * with editable Qty/Disc and an Add button). Flow: type → ↑/↓ → Enter selects →
+ * focus jumps to Qty → Enter commits via `addItem` and returns to the item
+ * field. The suggestion dropdown is **portalled** to `document.body` and
+ * anchored to the input so the grid's scroll/overflow never clips it.
  */
 export function PosBillingEntryRow({
     addItem,
     itemInputRef,
 }: IPosBillingEntryRowProps) {
-    const containerRef = useRef<HTMLDivElement>(null);
+    const rowRef = useRef<HTMLTableRowElement>(null);
     const mounted = useRef(false);
     const [query, setQuery] = useState('');
     const [debounced, setDebounced] = useState('');
@@ -42,6 +49,7 @@ export function PosBillingEntryRow({
     const [qty, setQty] = useState(1);
     const [disc, setDisc] = useState(0);
     const [highlight, setHighlight] = useState(0);
+    const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
 
     useEffect(() => {
         const t = setTimeout(() => setDebounced(query.trim()), 250);
@@ -52,8 +60,26 @@ export function PosBillingEntryRow({
     const results = search.data ?? [];
     const showDropdown = !pending && query.trim().length > 0;
 
+    // Anchor the portalled dropdown to the live input rect so it escapes the
+    // grid's overflow without being clipped, and tracks scroll/resize.
+    useLayoutEffect(() => {
+        if (!showDropdown) return;
+        const update = () => {
+            if (itemInputRef?.current) {
+                setAnchorRect(itemInputRef.current.getBoundingClientRect());
+            }
+        };
+        update();
+        window.addEventListener('scroll', update, true);
+        window.addEventListener('resize', update);
+        return () => {
+            window.removeEventListener('scroll', update, true);
+            window.removeEventListener('resize', update);
+        };
+    }, [showDropdown, itemInputRef]);
+
     function focusCell(col: 'item' | 'qty') {
-        containerRef.current
+        rowRef.current
             ?.querySelector<HTMLInputElement>(`[data-col="${col}"]`)
             ?.focus();
     }
@@ -105,7 +131,8 @@ export function PosBillingEntryRow({
             setHighlight((h) => Math.max(h - 1, 0));
         } else if (e.key === 'Enter') {
             e.preventDefault();
-            const row = results[Math.min(Math.max(highlight, 0), results.length - 1)];
+            const row =
+                results[Math.min(Math.max(highlight, 0), results.length - 1)];
             if (row) selectProduct(row);
         } else if (e.key === 'Escape') {
             e.preventDefault();
@@ -124,17 +151,23 @@ export function PosBillingEntryRow({
         }
     }
 
+    const previewAmount = pending
+        ? (qty > 0 ? qty : 1) *
+          pending.retailPrice *
+          (1 - (pending.discountAllowed ? disc : 0) / 100)
+        : null;
+
     return (
-        <div
-            ref={containerRef}
-            className="shrink-0 border-t border-border-strong bg-surface-2/40 px-4 py-2.5"
-        >
-            <div className="flex items-end gap-2">
-                <div className="relative flex-1">
-                    <span className="block text-[10px] font-semibold uppercase tracking-wide text-text-3 mb-1">
-                        New line — item · Enter · qty · Enter
-                    </span>
-                    <div className="flex items-center gap-2">
+        <>
+            <tr ref={rowRef} className="bg-surface-2">
+                <td className={`${CELL} text-center text-[12px] font-semibold text-primary`}>
+                    ›
+                </td>
+                <td className={`${CELL} font-mono text-[12px] text-text-3 truncate`}>
+                    {pending?.productCode ?? ''}
+                </td>
+                <td className={`${CELL} text-left`}>
+                    <div className="flex items-center gap-1">
                         <input
                             ref={itemInputRef}
                             data-row-id="entry"
@@ -143,61 +176,37 @@ export function PosBillingEntryRow({
                             autoComplete="off"
                             value={pending ? pending.productName : query}
                             readOnly={pending !== null}
-                            placeholder="Search product by name or code…"
+                            placeholder="Type product name or code…"
                             onChange={(e) => {
                                 setQuery(e.target.value);
                                 setHighlight(0);
                             }}
                             onKeyDown={handleItemKey}
                             aria-label="Add item"
-                            className="flex-1 h-9 px-3 text-[13px] text-text-1 bg-surface border border-border-strong rounded-md outline-none focus:border-primary focus:ring-[2px] focus:ring-primary/30 read-only:font-medium"
+                            className="w-full h-8 px-2 text-[13px] text-text-1 bg-surface border border-primary/60 rounded-md outline-none focus:border-primary focus:ring-[2px] focus:ring-primary/30 read-only:font-medium read-only:border-border-strong"
                         />
                         {pending && (
                             <button
                                 type="button"
                                 onClick={reset}
                                 aria-label="Clear selected product"
-                                className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-md text-text-3 hover:text-danger hover:bg-danger-soft transition-colors"
+                                className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-md text-text-3 hover:text-danger hover:bg-danger-soft transition-colors"
                             >
-                                <X size={16} aria-hidden />
+                                <X size={14} aria-hidden />
                             </button>
                         )}
                     </div>
-                    {showDropdown && (
-                        <div className="absolute left-0 right-0 bottom-full mb-1 z-dropdown">
-                            <PosItemSearchResults
-                                results={results}
-                                onSelect={selectProduct}
-                                isLoading={search.isFetching}
-                                query={debounced || query.trim()}
-                                highlightIndex={highlight}
-                            />
-                        </div>
-                    )}
-                </div>
-
-                <div>
-                    <span className="block text-[10px] font-semibold uppercase tracking-wide text-text-3 mb-1">
-                        Qty
-                    </span>
-                    <PosCartNumericCell
-                        value={qty}
-                        onCommit={setQty}
-                        min={0}
-                        ariaLabel="New line quantity"
-                        disabled={!pending}
-                        selectOnFocus
-                        dataRowId="entry"
-                        dataCol="qty"
-                        onKeyDown={handleNumericKey}
-                        className={QTY_CELL}
-                    />
-                </div>
-
-                <div>
-                    <span className="block text-[10px] font-semibold uppercase tracking-wide text-text-3 mb-1">
-                        Disc %
-                    </span>
+                </td>
+                <td className={`${CELL} ${MUTED}`}>
+                    {pending?.mrp != null ? formatCurrency(pending.mrp) : '—'}
+                </td>
+                <td className={`${CELL} text-left text-[12px] uppercase text-text-2`}>
+                    {pending ? pending.baseUnit : '—'}
+                </td>
+                <td className={`${CELL} ${MUTED}`}>
+                    {pending ? formatCurrency(pending.retailPrice) : '—'}
+                </td>
+                <td className={CELL}>
                     <PosCartNumericCell
                         value={disc}
                         onCommit={setDisc}
@@ -209,19 +218,64 @@ export function PosBillingEntryRow({
                         dataRowId="entry"
                         dataCol="disc"
                         onKeyDown={handleNumericKey}
-                        className={DISC_CELL}
+                        className={NUM_INPUT}
                     />
-                </div>
-
-                <button
-                    type="button"
-                    onClick={commit}
-                    disabled={!pending}
-                    className="shrink-0 inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-primary text-text-inv text-[13px] font-medium hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                    <Plus size={16} aria-hidden /> Add
-                </button>
-            </div>
-        </div>
+                </td>
+                <td className={`${CELL} ${MUTED}`}>
+                    {pending ? String(pending.taxRate) : '—'}
+                </td>
+                <td className={CELL}>
+                    <PosCartNumericCell
+                        value={qty}
+                        onCommit={setQty}
+                        min={0}
+                        ariaLabel="New line quantity"
+                        disabled={!pending}
+                        selectOnFocus
+                        dataRowId="entry"
+                        dataCol="qty"
+                        onKeyDown={handleNumericKey}
+                        className={NUM_INPUT}
+                    />
+                </td>
+                <td className={`${CELL} ${MUTED}`}>—</td>
+                <td className={`${CELL} text-right text-[13px] font-semibold text-text-1 tabular-nums`}>
+                    {previewAmount != null ? formatCurrency(previewAmount) : '—'}
+                </td>
+                <td className={`${CELL} text-center`}>
+                    <button
+                        type="button"
+                        onClick={commit}
+                        disabled={!pending}
+                        aria-label="Add line"
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-primary text-text-inv hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <Plus size={15} aria-hidden />
+                    </button>
+                </td>
+            </tr>
+            {showDropdown &&
+                anchorRect &&
+                createPortal(
+                    <div
+                        style={{
+                            position: 'fixed',
+                            left: anchorRect.left,
+                            bottom: window.innerHeight - anchorRect.top + 4,
+                            width: Math.max(anchorRect.width, 260),
+                        }}
+                        className="z-modal"
+                    >
+                        <PosItemSearchResults
+                            results={results}
+                            onSelect={selectProduct}
+                            isLoading={search.isFetching}
+                            query={debounced || query.trim()}
+                            highlightIndex={highlight}
+                        />
+                    </div>,
+                    document.body,
+                )}
+        </>
     );
 }
