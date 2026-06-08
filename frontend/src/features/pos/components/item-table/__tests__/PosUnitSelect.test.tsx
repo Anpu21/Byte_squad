@@ -70,7 +70,7 @@ describe('PosUnitSelect', () => {
         );
         // Both options present (base annotated with "(base)")
         expect(
-            screen.getByRole('option', { name: 'kg (base)' }),
+            screen.getByRole('option', { name: 'KG (base)' }),
         ).toBeInTheDocument();
         expect(
             screen.getByRole('option', { name: '12-PACK' }),
