@@ -6,7 +6,7 @@ import { usePrintReceipt } from '@/features/pos/hooks/usePrintReceipt';
 import { usePosSaleById } from '@/features/pos/hooks/usePosSaleById';
 import { usePosInvoiceNumber } from '@/features/pos/hooks/usePosInvoiceNumber';
 import { usePosLoyaltySettings } from '@/features/pos/hooks/usePosLoyaltySettings';
-import { PosItemTable } from '@/features/pos/components/item-table/PosItemTable';
+import { PosBillingGrid } from '@/features/pos/components/billing-grid';
 import { PosInvoiceTotal } from '@/features/pos/components/invoice-total/PosInvoiceTotal';
 import { PosBillLivePreview } from '@/features/pos/components/bill-live-preview/PosBillLivePreview';
 import { PosActionButtons } from '@/features/pos/components/action-buttons/PosActionButtons';
@@ -101,7 +101,7 @@ export function PosPage(): React.ReactElement {
         <div className="flex flex-col gap-3 min-h-[calc(100dvh-6.5rem)] pb-4">
             <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4 flex-1">
                 <div className="flex flex-col gap-3">
-                    <PosItemTable
+                    <PosBillingGrid
                         cart={cart.cart}
                         addItem={cart.addItem}
                         updateItem={cart.updateItem}
