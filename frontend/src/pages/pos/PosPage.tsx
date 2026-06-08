@@ -99,7 +99,7 @@ export function PosPage(): React.ReactElement {
 
     return (
         <div className="flex flex-col gap-3 min-h-[calc(100dvh-6.5rem)] pb-4">
-            <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4 flex-1">
+            <div className="grid grid-cols-1 lg:grid-cols-[4fr_1fr] gap-4 flex-1">
                 <div className="flex flex-col gap-3">
                     <PosBillingGrid
                         cart={cart.cart}

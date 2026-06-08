@@ -16,18 +16,15 @@ export interface BillingColumn {
 }
 
 export const BILLING_COLUMNS: BillingColumn[] = [
-    { key: 'sno', header: '#', width: 40, align: 'right' },
-    { key: 'code', header: 'Code', width: 80, align: 'left' },
+    { key: 'sno', header: '#', width: 44, align: 'right' },
+    { key: 'code', header: 'Code', width: 96, align: 'left' },
     { key: 'name', header: 'Product Name', align: 'left' },
-    { key: 'mrp', header: 'MRP', width: 78, align: 'right' },
-    { key: 'unit', header: 'Unit', width: 104, align: 'left' },
-    { key: 'price', header: 'Price', width: 84, align: 'right' },
-    { key: 'disc', header: 'Disc %', width: 64, align: 'right' },
-    { key: 'tax', header: 'Tax %', width: 64, align: 'right' },
-    { key: 'qty', header: 'Qty', width: 78, align: 'right' },
-    { key: 'free', header: 'Free', width: 64, align: 'right' },
-    { key: 'amount', header: 'Amount', width: 96, align: 'right' },
-    { key: 'actions', header: '', width: 48, align: 'center' },
+    { key: 'unit', header: 'Unit', width: 120, align: 'left' },
+    { key: 'price', header: 'Price', width: 112, align: 'right' },
+    { key: 'disc', header: 'Disc %', width: 80, align: 'right' },
+    { key: 'qty', header: 'Qty', width: 96, align: 'right' },
+    { key: 'amount', header: 'Amount', width: 120, align: 'right' },
+    { key: 'actions', header: '', width: 52, align: 'center' },
 ];
 
 export function alignClass(align?: BillingAlign): string {

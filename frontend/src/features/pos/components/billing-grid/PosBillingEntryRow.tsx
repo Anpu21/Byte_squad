@@ -197,9 +197,6 @@ export function PosBillingEntryRow({
                         )}
                     </div>
                 </td>
-                <td className={`${CELL} ${MUTED}`}>
-                    {pending?.mrp != null ? formatCurrency(pending.mrp) : '—'}
-                </td>
                 <td className={`${CELL} text-left text-[12px] uppercase text-text-2`}>
                     {pending ? pending.baseUnit : '—'}
                 </td>
@@ -221,9 +218,6 @@ export function PosBillingEntryRow({
                         className={NUM_INPUT}
                     />
                 </td>
-                <td className={`${CELL} ${MUTED}`}>
-                    {pending ? String(pending.taxRate) : '—'}
-                </td>
                 <td className={CELL}>
                     <PosCartNumericCell
                         value={qty}
@@ -238,7 +232,6 @@ export function PosBillingEntryRow({
                         className={NUM_INPUT}
                     />
                 </td>
-                <td className={`${CELL} ${MUTED}`}>—</td>
                 <td className={`${CELL} text-right text-[13px] font-semibold text-text-1 tabular-nums`}>
                     {previewAmount != null ? formatCurrency(previewAmount) : '—'}
                 </td>

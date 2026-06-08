@@ -50,9 +50,6 @@ export function PosBillingGridRow({
                     {item.productType}
                 </div>
             </td>
-            <td className={`${CELL} text-right text-[12px] text-text-3 tabular-nums`}>
-                {item.mrp != null ? formatCurrency(item.mrp) : '—'}
-            </td>
             <td className={CELL}>
                 <PosUnitSelect
                     productId={item.productId}
@@ -81,37 +78,12 @@ export function PosBillingGridRow({
             </td>
             <td className={CELL}>
                 <PosCartNumericCell
-                    value={item.taxRate}
-                    onCommit={(next) => onUpdate(item.rowId, { taxRate: next })}
-                    min={0}
-                    max={100}
-                    ariaLabel="Tax rate"
-                    dataRowId={item.rowId}
-                    dataCol="tax"
-                    selectOnFocus
-                    className={NUM_INPUT}
-                />
-            </td>
-            <td className={CELL}>
-                <PosCartNumericCell
                     value={item.quantity}
                     onCommit={(next) => onUpdate(item.rowId, { quantity: next })}
                     min={0}
                     ariaLabel="Quantity"
                     dataRowId={item.rowId}
                     dataCol="qty"
-                    selectOnFocus
-                    className={NUM_INPUT}
-                />
-            </td>
-            <td className={CELL}>
-                <PosCartNumericCell
-                    value={item.free}
-                    onCommit={(next) => onUpdate(item.rowId, { free: next })}
-                    min={0}
-                    ariaLabel="Free units"
-                    dataRowId={item.rowId}
-                    dataCol="free"
                     selectOnFocus
                     className={NUM_INPUT}
                 />

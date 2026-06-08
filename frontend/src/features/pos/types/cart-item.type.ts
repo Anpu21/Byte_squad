@@ -20,8 +20,6 @@ export interface ICartItem {
     unitId: string | null;
     unitName: string;
     unitPrice: number;
-    /** Maximum Retail Price for the product, or null/absent when none is set. */
-    mrp?: number | null;
     conversionFactor: number;
     quantity: number;
     free: number;

@@ -58,22 +58,6 @@ export class Product {
   })
   wholesalePrice!: number;
 
-  // Maximum Retail Price printed on the pack. Nullable — not every product has
-  // one. Surfaced in the POS bill grid + receipt ("you save" vs selling price).
-  @Column({
-    type: 'decimal',
-    precision: 12,
-    scale: 2,
-    name: 'mrp',
-    nullable: true,
-    transformer: {
-      to: (v: number | null) => v,
-      from: (v: string | number | null) =>
-        v === null || v === undefined ? null : Number(v),
-    },
-  })
-  mrp!: number | null;
-
   @Column({
     type: 'decimal',
     precision: 5,

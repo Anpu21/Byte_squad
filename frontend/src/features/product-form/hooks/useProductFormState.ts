@@ -28,8 +28,6 @@ export interface ProductFormState
     setCostPrice: (value: string) => void;
     sellingPrice: string;
     setSellingPrice: (value: string) => void;
-    mrp: string;
-    setMrp: (value: string) => void;
     initialStock: string;
     setInitialStock: (value: string) => void;
     lowStockThreshold: string;
@@ -49,7 +47,6 @@ export function useProductFormState(): ProductFormState {
     const [category, setCategory] = useState('');
     const [costPrice, setCostPrice] = useState('');
     const [sellingPrice, setSellingPrice] = useState('');
-    const [mrp, setMrp] = useState('');
     const [initialStock, setInitialStock] = useState('');
     const [lowStockThreshold, setLowStockThreshold] = useState('10');
     const [errors, setErrors] = useState<ProductFormErrors>({});
@@ -84,8 +81,6 @@ export function useProductFormState(): ProductFormState {
         setCostPrice,
         sellingPrice,
         setSellingPrice,
-        mrp,
-        setMrp,
         initialStock,
         setInitialStock,
         lowStockThreshold,

@@ -103,7 +103,6 @@ export function useProductSubmit({
             category: form.category.trim(),
             costPrice: normalizedCostPrice,
             sellingPrice: normalizedSellingPrice,
-            mrp: form.mrp.trim() ? parseFloat(form.mrp) : undefined,
             baseUnit: form.baseUnit,
             sellableUnits,
         };

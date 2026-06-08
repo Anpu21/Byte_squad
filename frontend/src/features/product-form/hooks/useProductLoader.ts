@@ -32,7 +32,6 @@ export function useProductLoader({
         form.setCategory(product.category);
         form.setCostPrice(String(product.costPrice));
         form.setSellingPrice(String(product.sellingPrice));
-        form.setMrp(product.mrp != null ? String(product.mrp) : '');
         setImageUrl(product.imageUrl);
         hydrateUnitsFromProduct(product, form);
         // eslint-disable-next-line react-hooks/exhaustive-deps

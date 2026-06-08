@@ -16,7 +16,6 @@ export interface ISearchProductRow {
   status: boolean;
   costPrice: number;
   retailPrice: number;
-  mrp?: number | null;
   taxRate: number;
   discountAllowed: boolean;
   imageUrl: string | null;
