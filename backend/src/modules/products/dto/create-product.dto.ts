@@ -50,6 +50,12 @@ export class CreateProductDto {
   @Min(0)
   sellingPrice!: number;
 
+  /** Maximum Retail Price (optional; shown on the POS bill + receipt). */
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  mrp?: number;
+
   @IsNumber()
   @Min(0)
   @Max(100)

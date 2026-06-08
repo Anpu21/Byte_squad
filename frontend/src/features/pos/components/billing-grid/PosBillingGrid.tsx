@@ -26,15 +26,17 @@ interface IPosBillingGridProps {
 }
 
 const HEADERS: { label: string; align?: 'left' | 'right' | 'center' }[] = [
+    { label: '#', align: 'right' },
     { label: 'Code' },
     { label: 'Description' },
+    { label: 'MRP', align: 'right' },
     { label: 'Unit' },
     { label: 'Price', align: 'right' },
     { label: 'Disc %' },
     { label: 'Tax %' },
     { label: 'Qty' },
     { label: 'Free' },
-    { label: 'Total', align: 'right' },
+    { label: 'Amount', align: 'right' },
     { label: '', align: 'center' },
 ];
 
@@ -196,9 +198,10 @@ export function PosBillingGrid({
                                 </tr>
                             </thead>
                             <tbody>
-                                {cart.map((item) => (
+                                {cart.map((item, index) => (
                                     <PosBillingGridRow
                                         key={item.rowId}
+                                        index={index}
                                         item={item}
                                         onUpdate={updateItem}
                                         onRemove={removeItem}

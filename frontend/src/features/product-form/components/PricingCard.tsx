@@ -1,5 +1,6 @@
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { PriceFieldWithUnit } from './PriceFieldWithUnit';
+import { inputClasses } from '../lib/input-classes';
 import type { ProductFormState } from '../hooks/useProductFormState';
 import type { PriceDerived } from '../lib/price-math';
 
@@ -47,6 +48,32 @@ export function PricingCard({ form, derived }: PricingCardProps) {
                     baseUnit={form.baseUnit}
                     error={form.errors.costPrice}
                 />
+                <div className="flex flex-col gap-1.5">
+                    <label
+                        htmlFor="product-mrp"
+                        className="text-[13px] font-medium text-text-1"
+                    >
+                        MRP (LKR)
+                        <span className="ml-1 text-text-3 font-normal">
+                            optional
+                        </span>
+                    </label>
+                    <input
+                        id="product-mrp"
+                        name="mrp"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        value={form.mrp}
+                        onChange={(e) => form.setMrp(e.target.value)}
+                        placeholder="e.g. 600"
+                        className={inputClasses(false)}
+                    />
+                    <p className="text-[11px] text-text-3">
+                        Printed pack price; shown on the bill. Leave blank if
+                        none.
+                    </p>
+                </div>
                 {derived.marginPct !== null && derived.markupPct !== null && (
                     <div className="sm:col-span-2 flex items-center gap-4 px-3 py-2.5 rounded-md bg-surface-2 text-xs text-text-2">
                         <span>

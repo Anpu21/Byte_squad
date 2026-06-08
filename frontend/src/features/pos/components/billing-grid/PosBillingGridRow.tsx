@@ -6,6 +6,7 @@ import { PosUnitSelect } from '@/features/pos/components/item-table/PosUnitSelec
 import { PosCartNumericCell } from '@/features/pos/components/item-table/PosCartNumericCell';
 
 interface IPosBillingGridRowProps {
+    index: number;
     item: ICartItem;
     onUpdate: (rowId: string, patch: Partial<ICartItem>) => void;
     onRemove: (rowId: string) => void;
@@ -25,6 +26,7 @@ const QUANTITY_INPUT_CLASS =
  * underlying buffer + clamp semantics are unchanged (`PosCartNumericCell`).
  */
 export function PosBillingGridRow({
+    index,
     item,
     onUpdate,
     onRemove,
@@ -40,12 +42,18 @@ export function PosBillingGridRow({
 
     return (
         <tr className="border-b border-border-strong last:border-b-0 hover:bg-surface-2/40">
+            <td className="px-3 py-1.5 text-right text-[12px] text-text-3 tabular-nums align-middle">
+                {index + 1}
+            </td>
             <td className="px-3 py-1.5 text-[12px] font-mono text-text-2 align-middle">
                 {item.productCode}
             </td>
             <td className="px-3 py-1.5 text-[13px] text-text-1 align-middle">
                 <div className="truncate max-w-[220px]">{item.productName}</div>
                 <div className="text-[11px] text-text-3">{item.productType}</div>
+            </td>
+            <td className="px-3 py-1.5 text-right text-[12px] text-text-3 tabular-nums align-middle">
+                {item.mrp != null ? formatCurrency(item.mrp) : '—'}
             </td>
             <td className="px-2 py-1.5 align-middle">
                 <PosUnitSelect

@@ -30,6 +30,7 @@ export interface IProductPayload {
   category: string
   costPrice: number
   sellingPrice: number
+  mrp?: number
   imageUrl?: string
   baseUnit?: TProductBaseUnit
   sellableUnits?: ISellableUnitPayload[]

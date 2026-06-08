@@ -543,6 +543,9 @@ export class AdminSeedService implements OnModuleInit {
     for (const p of SUPERMARKET_PRODUCTS) {
       const idx = indexInCategory.get(p.category) ?? 0;
       indexInCategory.set(p.category, idx + 1);
+      // Printed MRP for the demo catalogue: ~10% above the selling price so the
+      // POS bill shows a realistic "you save" against the marked price.
+      const desiredMrp = Math.round(p.sellingPrice * 1.1);
 
       let product = await this.productRepository.findOne({
         where: { barcode: p.barcode },
@@ -551,6 +554,7 @@ export class AdminSeedService implements OnModuleInit {
         product = await this.productRepository.save(
           this.productRepository.create({
             ...p,
+            mrp: desiredMrp,
             isActive: true,
             categoryId: categoryMap.get(p.category) ?? null,
           }),
@@ -586,6 +590,10 @@ export class AdminSeedService implements OnModuleInit {
         if (Number(product.sellingPrice) !== p.sellingPrice) {
           patch.sellingPrice = p.sellingPrice;
           product.sellingPrice = p.sellingPrice;
+        }
+        if (Number(product.mrp ?? 0) !== desiredMrp) {
+          patch.mrp = desiredMrp;
+          product.mrp = desiredMrp;
         }
         if (!product.isActive) {
           patch.isActive = true;

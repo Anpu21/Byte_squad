@@ -92,6 +92,7 @@ function mapProductSearchRow(
     status: product.isActive,
     costPrice: Number(product.costPrice),
     retailPrice: Number(product.sellingPrice),
+    mrp: product.mrp,
     taxRate: Number(product.taxRate),
     discountAllowed: product.discountAllowed,
     imageUrl: product.imageUrl,

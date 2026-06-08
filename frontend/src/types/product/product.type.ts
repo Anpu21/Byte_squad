@@ -8,6 +8,7 @@ export interface IProduct {
   category: string
   costPrice: number
   sellingPrice: number
+  mrp?: number | null
   imageUrl: string | null
   baseUnit: string
   sellableUnits?: IProductSellableUnit[]

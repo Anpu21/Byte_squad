@@ -28,6 +28,7 @@ export function toCartItemSeed(row: ISearchProductRow): AddItemSeed {
         unitId: matchedUnit?.unitId ?? null,
         unitName: matchedUnit?.unitName ?? row.baseUnit,
         unitPrice: matchedUnit?.sellingPrice ?? row.retailPrice,
+        mrp: row.mrp,
         conversionFactor: matchedUnit?.conversionToBase ?? 1,
         quantity: 1,
         free: 0,
