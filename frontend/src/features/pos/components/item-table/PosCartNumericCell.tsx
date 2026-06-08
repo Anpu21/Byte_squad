@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { isCompleteNumber, isPartialDecimal } from '@/lib/numeric-input';
 
 interface IPosCartNumericCellProps {
@@ -15,6 +15,16 @@ interface IPosCartNumericCellProps {
     disabled?: boolean;
     ariaLabel: string;
     className: string;
+    /**
+     * Grid wiring (optional). When set, the cell tags its `<input>` with
+     * `data-row-id` / `data-col` so a parent billing grid can locate it for
+     * keyboard navigation, selects its buffer on focus so typing overwrites,
+     * and forwards keydown so the grid can intercept Enter/Arrow/Esc.
+     */
+    dataRowId?: string;
+    dataCol?: string;
+    selectOnFocus?: boolean;
+    onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
 }
 
 /**
@@ -45,6 +55,10 @@ export function PosCartNumericCell({
     disabled = false,
     ariaLabel,
     className,
+    dataRowId,
+    dataCol,
+    selectOnFocus = false,
+    onKeyDown,
 }: IPosCartNumericCellProps) {
     const [buffer, setBuffer] = useState<string>(String(value));
     const [anchor, setAnchor] = useState<number>(value);
@@ -72,6 +86,8 @@ export function PosCartNumericCell({
             pattern="[0-9]*\.?[0-9]*"
             autoComplete="off"
             value={buffer}
+            data-row-id={dataRowId}
+            data-col={dataCol}
             onChange={(e) => {
                 const next = e.target.value;
                 // Silently drop keystrokes that would produce an invalid buffer
@@ -81,6 +97,10 @@ export function PosCartNumericCell({
                 if (isCompleteNumber(next)) commit(next);
             }}
             onBlur={() => commit(buffer)}
+            onFocus={
+                selectOnFocus ? (e) => e.currentTarget.select() : undefined
+            }
+            onKeyDown={onKeyDown}
             disabled={disabled}
             aria-label={ariaLabel}
             className={className}
