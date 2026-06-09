@@ -1,15 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { customerOrdersService } from '@/services/customer-orders.service';
-import { FRONTEND_ROUTES } from '@/constants/routes';
 import { formatCurrency } from '@/lib/utils';
 import type { ICustomerOrder } from '@/types';
 import type { Payment } from '../types/payment.type';
 
-export function useScanOrderPage() {
-    const navigate = useNavigate();
+interface UseScanOrderOptions {
+    /** Called after a successful fulfillment — e.g. flip the POS back to billing. */
+    onDone?: () => void;
+}
+
+/**
+ * Scan-and-pick state: order lookup by code, payment method choice, and
+ * fulfillment. Host-agnostic — the POS "Scan Pickup" mode passes `onDone`
+ * to return to billing once the pickup is confirmed.
+ */
+export function useScanOrder({ onDone }: UseScanOrderOptions = {}) {
     const manualInputRef = useRef<HTMLInputElement>(null);
     const [order, setOrder] = useState<ICustomerOrder | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<Payment>('cash');
@@ -58,7 +65,8 @@ export function useScanOrderPage() {
                     ? `Charged ${formatCurrency(Number(order.finalTotal))} via ${paymentMethod}`
                     : 'Pickup confirmed',
             );
-            navigate(FRONTEND_ROUTES.POS);
+            reset();
+            onDone?.();
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 const data = err.response?.data as
@@ -107,6 +115,5 @@ export function useScanOrderPage() {
         isFulfillable,
         requiresPayment,
         isOnlineBlocked,
-        goToPos: () => navigate(FRONTEND_ROUTES.POS),
     };
 }

@@ -14,6 +14,8 @@ import { PosLoyaltyCard } from '@/features/pos/components/loyalty-card/PosLoyalt
 import { PosRecentSaleSidebar } from '@/features/pos/components/recent-sale/PosRecentSaleSidebar';
 import { PosBillPreviewModal } from '@/features/pos/components/bill-template/PosBillPreviewModal';
 import { PosPrintHost } from '@/features/pos/components/bill-template/PosPrintHost';
+import { PosModeSwitch, type PosMode } from '@/features/pos/components/mode-switch/PosModeSwitch';
+import { ScanOrderView } from '@/features/scan-order/components/ScanOrderView';
 import { usePaymentSubmit } from '@/features/pos/hooks/usePaymentSubmit';
 import { tryCalculateMultiTender } from '@/features/pos/lib/multi-tender';
 import { createInitialTenderBag, resolveTenderInputs } from '@/features/pos/components/payment-forms/pos-payment-forms.helpers';
@@ -26,9 +28,12 @@ import type { ISale, ISearchProductRow } from '@/types';
 /**
  * Cashier POS workspace. Pure composition: state lives in
  * `usePosPageState`, print pipeline in `usePrintReceipt`, barcode bridge
- * pauses while any modal owns focus.
+ * pauses while any modal owns focus. A mode switch swaps the content
+ * between the billing grid and the scan-and-pick view — page hooks stay
+ * mounted, so an in-progress cart survives the toggle.
  */
 export function PosPage(): React.ReactElement {
+    const [mode, setMode] = useState<PosMode>('billing');
     const cart = usePosCart();
     const state = usePosPageState();
     const print = usePrintReceipt();
@@ -42,7 +47,9 @@ export function PosPage(): React.ReactElement {
     );
     const barcode = usePosBarcodeScan({
         onProductFound: handleScanHit,
-        enabled: !state.showPayment && !state.showRecent && state.previewSaleId === null,
+        enabled:
+            mode === 'billing' &&
+            !state.showPayment && !state.showRecent && state.previewSaleId === null,
     });
     const handleCameraScan = useCallback(
         (code: string) => { void barcode.triggerScan(code); },
@@ -99,6 +106,10 @@ export function PosPage(): React.ReactElement {
 
     return (
         <div className="flex flex-col gap-3 min-h-[calc(100dvh-6.5rem)] pb-4">
+            <PosModeSwitch mode={mode} onChange={setMode} />
+            {mode === 'scan' ? (
+                <ScanOrderView onDone={() => setMode('billing')} />
+            ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[4fr_1fr] gap-4 flex-1">
                 <div className="flex flex-col gap-3">
                     <PosBillingGrid
@@ -157,6 +168,7 @@ export function PosPage(): React.ReactElement {
                     />
                 </div>
             </div>
+            )}
             <PosRecentSaleSidebar
                 isOpen={state.showRecent} onClose={state.closeRecent}
                 onSelectSale={state.setPreviewSaleId}
