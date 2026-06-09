@@ -22,15 +22,16 @@ export const LEAVE_TYPES = [
 export type TLeaveType = (typeof LEAVE_TYPES)[number];
 
 /**
- * Body for `POST /hr/leaves`. When a cashier applies, the service
- * forces `employeeId` to the actor's own employee record — the field
- * stays required on the DTO so manager-on-behalf flows can use the
- * same controller path. The 0.5-day floor lets half-day leaves be
- * captured without rounding (matches the `decimal(4,1)` column).
+ * Body for `POST /hr/leaves`. `employeeId` omitted means "the actor's
+ * own employee record" (cashier self-apply, manager applying for
+ * themselves); managers/admins may set it to apply on-behalf, subject
+ * to branch scope. The 0.5-day floor lets half-day leaves be captured
+ * without rounding (matches the `decimal(4,1)` column).
  */
 export class ApplyLeaveDto {
+  @IsOptional()
   @IsUUID()
-  employeeId!: string;
+  employeeId?: string;
 
   @IsEnum(LEAVE_TYPES)
   leaveType!: TLeaveType;

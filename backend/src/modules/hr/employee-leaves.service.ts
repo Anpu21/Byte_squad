@@ -82,13 +82,14 @@ export class EmployeeLeavesService {
   }
 
   /**
-   * Apply for a new leave. Cashiers can only apply for themselves
-   * (the `employeeId` field on the DTO is overwritten with their
-   * own employee id, and a 403 is raised if the value was different
-   * to avoid silently swallowing a mistake). Managers/admins may
-   * apply on-behalf, subject to branch scope. Rejects overlapping
-   * Pending/Approved leaves (409) and Annual leaves that would
-   * drive the running balance negative (422 BadRequest).
+   * Apply for a new leave. An omitted `employeeId` targets the
+   * actor's own employee record (cashier self-apply, manager
+   * applying for themselves). Cashiers can only apply for themselves
+   * — a different explicit `employeeId` raises 403 instead of being
+   * silently swallowed. Managers/admins may apply on-behalf, subject
+   * to branch scope. Rejects overlapping Pending/Approved leaves
+   * (409) and Annual leaves that would drive the running balance
+   * negative (422 BadRequest).
    */
   async apply(dto: ApplyLeaveDto, actor: LeavesActor): Promise<EmployeeLeave> {
     const start = new Date(dto.startDate);
@@ -237,12 +238,16 @@ export class EmployeeLeavesService {
   ): Promise<Employee> {
     if (actor.role === UserRole.CASHIER) {
       const own = await this.findEmployeeForActor(actor);
-      if (own.id !== dto.employeeId) {
+      if (dto.employeeId && own.id !== dto.employeeId) {
         throw new ForbiddenException(
           'Cashiers can only apply for their own leave',
         );
       }
       return own;
+    }
+    if (!dto.employeeId) {
+      // Manager/admin self-apply — same resolution as the cashier path.
+      return this.findEmployeeForActor(actor);
     }
     const target = await this.employees.findById(dto.employeeId);
     if (!target) throw new NotFoundException('Employee not found');

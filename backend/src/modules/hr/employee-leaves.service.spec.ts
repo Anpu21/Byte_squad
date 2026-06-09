@@ -218,6 +218,49 @@ describe('EmployeeLeavesService', () => {
       expect(leavesRepo.save).not.toHaveBeenCalled();
     });
 
+    const selfDto = {
+      leaveType: 'Annual' as const,
+      startDate: '2026-06-01',
+      endDate: '2026-06-02',
+      totalDays: 2,
+    };
+
+    it('cashier self-applies when employeeId is omitted', async () => {
+      employeesRepo.findByUserId.mockResolvedValue(makeEmployee());
+      leavesRepo.findOverlapping.mockResolvedValue([]);
+      leavesRepo.save.mockImplementation((input) =>
+        Promise.resolve(makeLeave(input as Partial<EmployeeLeave>)),
+      );
+      await service.apply(selfDto, {
+        id: CASHIER_USER_ID,
+        role: UserRole.CASHIER,
+        branchId: BRANCH_A,
+      });
+      expect(employeesRepo.findByUserId).toHaveBeenCalledWith(CASHIER_USER_ID);
+      expect(leavesRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ employeeId: EMP_A_ID }),
+      );
+    });
+
+    it('manager self-applies when employeeId is omitted', async () => {
+      employeesRepo.findByUserId.mockResolvedValue(
+        makeEmployee({ id: EMP_B_ID, userId: MANAGER_ID, role: 'Manager' }),
+      );
+      leavesRepo.findOverlapping.mockResolvedValue([]);
+      leavesRepo.save.mockImplementation((input) =>
+        Promise.resolve(makeLeave(input as Partial<EmployeeLeave>)),
+      );
+      await service.apply(selfDto, {
+        id: MANAGER_ID,
+        role: UserRole.MANAGER,
+        branchId: BRANCH_A,
+      });
+      expect(employeesRepo.findByUserId).toHaveBeenCalledWith(MANAGER_ID);
+      expect(leavesRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ employeeId: EMP_B_ID }),
+      );
+    });
+
     it('manager cannot apply on-behalf across branches', async () => {
       employeesRepo.findById.mockResolvedValue(
         makeEmployee({ branchId: BRANCH_B }),

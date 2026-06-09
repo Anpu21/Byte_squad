@@ -33,12 +33,17 @@ export function LeavesView({ showHeader = true }: LeavesViewProps) {
     const [status, setStatus] = useState<'' | LeaveStatus>('');
     const [applyOpen, setApplyOpen] = useState(false);
 
-    const employeesQuery = useEmployees({
-        branchId: canPickBranch ? branchId || undefined : undefined,
-        status: 'Active',
-        limit: EMPLOYEE_PAGE_SIZE,
-        offset: 0,
-    });
+    // GET /hr/employees is admin/manager-only — cashiers self-apply
+    // without a picker, so skip the fetch entirely for them.
+    const employeesQuery = useEmployees(
+        {
+            branchId: canPickBranch ? branchId || undefined : undefined,
+            status: 'Active',
+            limit: EMPLOYEE_PAGE_SIZE,
+            offset: 0,
+        },
+        { enabled: canModerate },
+    );
     const employees = useMemo(
         () => employeesQuery.data?.rows ?? [],
         [employeesQuery.data],
@@ -97,6 +102,7 @@ export function LeavesView({ showHeader = true }: LeavesViewProps) {
                 isOpen={applyOpen}
                 onClose={() => setApplyOpen(false)}
                 employees={employees}
+                hideEmployee={!canModerate}
             />
         </>
     );
