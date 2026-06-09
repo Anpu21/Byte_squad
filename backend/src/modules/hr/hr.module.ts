@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
+import { UsersModule } from '@/modules/users/users.module';
 import { Attendance } from '@/modules/hr/entities/attendance.entity';
 import { AttendanceSummary } from '@/modules/hr/entities/attendance-summary.entity';
 import { Employee } from '@/modules/hr/entities/employee.entity';
@@ -62,6 +63,9 @@ import { PayrollController } from '@/modules/hr/payroll.controller';
       PayrollSettings,
     ]),
     CloudinaryModule,
+    // EmployeeLeavesService resolves a leave applicant's auth role —
+    // manager leaves can only be approved/rejected by an admin.
+    UsersModule,
   ],
   providers: [
     EmployeesRepository,

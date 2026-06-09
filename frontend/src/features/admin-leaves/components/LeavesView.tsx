@@ -49,6 +49,17 @@ export function LeavesView({ showHeader = true }: LeavesViewProps) {
         [employeesQuery.data],
     );
 
+    // A manager's own leave can only be moderated by an admin — find
+    // the manager's employee record so the table mutes approve/reject
+    // on it (the BE enforces the same rule with a 403).
+    const adminApprovalEmployeeId = useMemo(
+        () =>
+            role === UserRole.MANAGER
+                ? employees.find((e) => e.userId === user?.id)?.id
+                : undefined,
+        [employees, role, user?.id],
+    );
+
     const leavesQuery = useLeaves({
         branchId: canPickBranch ? branchId || undefined : undefined,
         employeeId: employeeId || undefined,
@@ -96,6 +107,7 @@ export function LeavesView({ showHeader = true }: LeavesViewProps) {
                     canModerate={canModerate}
                     canCancel
                     isLoading={leavesQuery.isLoading}
+                    adminApprovalEmployeeId={adminApprovalEmployeeId}
                 />
             </Card>
             <ApplyLeaveModal
