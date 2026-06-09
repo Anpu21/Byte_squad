@@ -39,7 +39,6 @@ import { ShipmentsListPage } from '@/pages/transfers/ShipmentsListPage';
 import { ShipmentCreatePage } from '@/pages/transfers/ShipmentCreatePage';
 import { ShipmentDetailPage } from '@/pages/transfers/ShipmentDetailPage';
 import { CustomerOrdersPage } from '@/pages/orders/CustomerOrdersPage';
-import { ScanOrderPage } from '@/pages/pos/ScanOrderPage';
 import { CatalogPage } from '@/pages/shop/CatalogPage';
 import { ProductDetailPage } from '@/pages/shop/ProductDetailPage';
 import { CartPage } from '@/pages/shop/CartPage';
@@ -400,16 +399,16 @@ export const ROUTES: RouteDef[] = [
         layout: 'dashboard',
     },
 
-    // ─── Cashier — scan pickup order ───
+    // ─── Cashier — scan pickup now lives inside the POS (mode switch) ───
     {
         path: FRONTEND_ROUTES.SCAN_ORDER,
-        element: <ScanOrderPage />,
+        element: <Navigate to={FRONTEND_ROUTES.POS} replace />,
         allowedRoles: [UserRole.CASHIER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.SCAN_ORDER_LEGACY,
-        element: <Navigate to={FRONTEND_ROUTES.SCAN_ORDER} replace />,
+        element: <Navigate to={FRONTEND_ROUTES.POS} replace />,
         allowedRoles: [UserRole.CASHIER],
         layout: 'dashboard',
     },

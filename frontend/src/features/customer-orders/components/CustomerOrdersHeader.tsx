@@ -44,10 +44,10 @@ export function CustomerOrdersHeader({
                 )}
             </div>
             {isCashier && (
-                <Link to={FRONTEND_ROUTES.SCAN_ORDER}>
+                <Link to={FRONTEND_ROUTES.POS}>
                     <Button>
                         <ScanLine size={14} />
-                        Scan Pickup
+                        Scan at POS
                     </Button>
                 </Link>
             )}

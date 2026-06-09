@@ -13,7 +13,6 @@ import {
     PiggyBank,
     Receipt,
     Wallet,
-    ScanLine,
     ScrollText,
     ShoppingCart,
     Sparkles,
@@ -106,13 +105,6 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.TRANSACTIONS,
         roles: [UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER],
         icon: <ScrollText size={15} />,
-        group: 'Operations',
-    },
-    {
-        label: 'Scan Pickup',
-        path: FRONTEND_ROUTES.SCAN_ORDER,
-        roles: [UserRole.CASHIER],
-        icon: <ScanLine size={15} />,
         group: 'Operations',
     },
     {
