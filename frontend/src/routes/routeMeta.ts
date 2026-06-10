@@ -26,6 +26,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.RETURN_NEW]: { title: 'New return', crumbs: ['Inventory', 'Returns', 'New'] },
     [FRONTEND_ROUTES.INVENTORY_ADD]: { title: 'New product', crumbs: ['Inventory', 'Products', 'Add new'] },
     [FRONTEND_ROUTES.INVENTORY_EDIT]: { title: 'Edit product', crumbs: ['Inventory', 'Products', 'Edit'] },
+    [FRONTEND_ROUTES.PURCHASES]: { title: 'Purchases', crumbs: ['Inventory', 'Purchases'] },
 
     [FRONTEND_ROUTES.POS]: { title: 'Point of Sale', crumbs: ['Operations', 'POS'] },
     [FRONTEND_ROUTES.TRANSACTIONS]: { title: 'Transactions', crumbs: ['Operations', 'Transactions'] },

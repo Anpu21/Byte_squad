@@ -271,6 +271,41 @@ export const APP_ROUTES = {
     RETURN: ':id/return',
     CANCEL: ':id/cancel',
   },
+
+  // Supplier master (the "party" registry behind purchases)
+  SUPPLIERS: {
+    BASE: `${API_PREFIX}/suppliers`,
+    BY_ID: ':id',
+  },
+
+  // Purchases — BUSY-style procurement cycle (PO → GRN → bills → payments)
+  PURCHASES: {
+    BASE: `${API_PREFIX}/purchases`,
+    ORDERS: {
+      BASE: `${API_PREFIX}/purchases/orders`,
+      BY_ID: ':id',
+      SEND: ':id/send',
+      CANCEL: ':id/cancel',
+    },
+    GRNS: {
+      BASE: `${API_PREFIX}/purchases/grns`,
+      BY_ID: ':id',
+      VOID: ':id/void',
+    },
+    PAYMENTS: {
+      BASE: `${API_PREFIX}/purchases/payments`,
+      BY_ID: ':id',
+    },
+    RETURNS: {
+      BASE: `${API_PREFIX}/purchases/returns`,
+      BY_ID: ':id',
+    },
+    REPORTS: {
+      BASE: `${API_PREFIX}/purchases/reports`,
+      OUTSTANDING: 'outstanding',
+      AGEING: 'ageing',
+    },
+  },
 } as const;
 
 export type APP_ROUTES_TYPE = keyof typeof APP_ROUTES;

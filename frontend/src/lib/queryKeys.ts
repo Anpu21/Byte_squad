@@ -183,6 +183,16 @@ export const queryKeys = {
         payroll: (params: ListPayrollQueryKey) => ['hr', 'payroll', params] as const,
         payrollOne: (id: string) => ['hr', 'payroll', id] as const,
     },
+    purchases: {
+        all: () => ['purchases'] as const,
+        suppliers: (params: {
+            search?: string;
+            status?: string;
+            limit?: number;
+            offset?: number;
+        }) => ['purchases', 'suppliers', params] as const,
+        supplier: (id: string) => ['purchases', 'supplier', id] as const,
+    },
     shipments: {
         all: () => ['shipments'] as const,
         list: (params: {

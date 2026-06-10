@@ -16,6 +16,7 @@ import {
     ScrollText,
     ShoppingCart,
     Sparkles,
+    PackagePlus,
     Truck,
     UserCog,
     Users,
@@ -119,6 +120,13 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.INVENTORY,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Boxes size={15} />,
+        group: 'Inventory',
+    },
+    {
+        label: 'Purchases',
+        path: FRONTEND_ROUTES.PURCHASES,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <PackagePlus size={15} />,
         group: 'Inventory',
     },
     {

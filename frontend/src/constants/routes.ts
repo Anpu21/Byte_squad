@@ -31,6 +31,9 @@ export const FRONTEND_ROUTES = {
     RETURNS: '/inventory/returns',
     RETURN_NEW: '/inventory/returns/new',
 
+    // Purchases (suppliers + goods receipts)
+    PURCHASES: '/purchases',
+
     // Categories (managed product categories + per-category sales analytics)
     ADMIN_CATEGORIES: '/admin/categories',
     MANAGER_CATEGORIES: '/manager/categories',
