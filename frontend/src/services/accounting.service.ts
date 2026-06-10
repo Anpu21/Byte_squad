@@ -2,6 +2,9 @@ import api from './api'
 import type {
   IAccount,
   IApiResponse,
+  IBalanceSheetReport,
+  IDayBookReport,
+  ITrialBalanceReport,
   IExpense,
   IJournalVoucher,
   IJournalVoucherPayload,
@@ -28,6 +31,43 @@ export const accountingService = {
     const response = await api.post<IApiResponse<IJournalVoucher>>(
       '/accounting/journals',
       payload,
+    )
+    return response.data.data
+  },
+
+  /** `GET /accounting/reports/trial-balance` */
+  getTrialBalance: async (params?: {
+    branchId?: string
+    startDate?: string
+    endDate?: string
+  }): Promise<ITrialBalanceReport> => {
+    const response = await api.get<IApiResponse<ITrialBalanceReport>>(
+      '/accounting/reports/trial-balance',
+      { params },
+    )
+    return response.data.data
+  },
+
+  /** `GET /accounting/reports/balance-sheet` */
+  getBalanceSheet: async (params?: {
+    branchId?: string
+    asOf?: string
+  }): Promise<IBalanceSheetReport> => {
+    const response = await api.get<IApiResponse<IBalanceSheetReport>>(
+      '/accounting/reports/balance-sheet',
+      { params },
+    )
+    return response.data.data
+  },
+
+  /** `GET /accounting/reports/day-book` */
+  getDayBook: async (params?: {
+    branchId?: string
+    date?: string
+  }): Promise<IDayBookReport> => {
+    const response = await api.get<IApiResponse<IDayBookReport>>(
+      '/accounting/reports/day-book',
+      { params },
     )
     return response.data.data
   },

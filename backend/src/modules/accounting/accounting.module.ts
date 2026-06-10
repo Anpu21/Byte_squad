@@ -6,6 +6,9 @@ import { AccountingRepository } from '@accounting/accounting.repository';
 import { AccountsRepository } from '@accounting/accounts.repository';
 import { JournalVouchersService } from '@accounting/journal-vouchers.service';
 import { JournalVouchersController } from '@accounting/journal-vouchers.controller';
+import { FinancialReportsService } from '@accounting/financial-reports.service';
+import { FinancialReportsRepository } from '@accounting/financial-reports.repository';
+import { FinancialReportsController } from '@accounting/financial-reports.controller';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Account } from '@accounting/entities/account.entity';
 import { JournalVoucher } from '@accounting/entities/journal-voucher.entity';
@@ -27,12 +30,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       SaleItem,
     ]),
   ],
-  controllers: [AccountingController, JournalVouchersController],
+  controllers: [
+    AccountingController,
+    JournalVouchersController,
+    FinancialReportsController,
+  ],
   providers: [
     AccountingService,
     AccountingRepository,
     AccountsRepository,
     JournalVouchersService,
+    FinancialReportsService,
+    FinancialReportsRepository,
   ],
   exports: [AccountingService, AccountingRepository, AccountsRepository],
 })

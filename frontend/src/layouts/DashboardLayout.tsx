@@ -14,6 +14,7 @@ import {
     Receipt,
     Wallet,
     HandCoins,
+    Scale,
     ScrollText,
     ShoppingCart,
     Sparkles,
@@ -142,6 +143,13 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.RECEIVABLES,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <HandCoins size={15} />,
+        group: 'Accounting',
+    },
+    {
+        label: 'Reports',
+        path: FRONTEND_ROUTES.FINANCIAL_REPORTS,
+        roles: [UserRole.ADMIN],
+        icon: <Scale size={15} />,
         group: 'Accounting',
     },
     {

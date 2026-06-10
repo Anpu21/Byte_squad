@@ -273,6 +273,12 @@ export const queryKeys = {
         }) => ['ledger', 'entries', filters] as const,
         summary: () => ['ledger', 'summary'] as const,
         accounts: () => ['ledger', 'accounts'] as const,
+        trialBalance: (params: Record<string, string | undefined>) =>
+            ['ledger', 'trial-balance', params] as const,
+        balanceSheet: (params: Record<string, string | undefined>) =>
+            ['ledger', 'balance-sheet', params] as const,
+        dayBook: (params: Record<string, string | undefined>) =>
+            ['ledger', 'day-book', params] as const,
     },
     accounting: {
         profitLoss: (startDate: string, endDate: string) =>

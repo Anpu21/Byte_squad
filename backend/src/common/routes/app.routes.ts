@@ -137,6 +137,9 @@ export const APP_ROUTES = {
     // Phase 3 — chart of accounts.
     ACCOUNTS: 'accounts',
     JOURNALS: 'journals',
+    TRIAL_BALANCE: 'reports/trial-balance',
+    BALANCE_SHEET: 'reports/balance-sheet',
+    DAY_BOOK: 'reports/day-book',
   },
 
   // Notifications
