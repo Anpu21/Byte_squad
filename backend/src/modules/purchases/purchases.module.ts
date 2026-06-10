@@ -78,6 +78,8 @@ import { PurchasesReportsController } from '@/modules/purchases/purchases-report
     SupplierPaymentsService,
     PurchaseOrdersRepository,
     PurchaseOrdersService,
+    PurchaseReturnsRepository,
+    PurchaseReturnsService,
   ],
 })
 export class PurchasesModule {}

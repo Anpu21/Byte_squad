@@ -43,6 +43,7 @@ import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { pickSeedImageUrl } from '@common/seeds/seed-product-images';
 import { HrSeedService } from '@common/seeds/hr-seed.service';
+import { PurchasesSeedService } from '@common/seeds/purchases-seed.service';
 import {
   CATEGORY_THRESHOLDS,
   SUPERMARKET_PRODUCTS,
@@ -132,6 +133,7 @@ export class AdminSeedService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly cloudinary: CloudinaryService,
     private readonly hrSeed: HrSeedService,
+    private readonly purchasesSeed: PurchasesSeedService,
   ) {}
 
   onModuleInit(): void {
@@ -412,6 +414,15 @@ export class AdminSeedService implements OnModuleInit {
       worker1,
       worker2,
       worker3,
+    });
+
+    // 10. Purchases demo seed — suppliers, a sent PO, two GRNs (one aged),
+    //     a partial bill-by-bill payment, and a debit note. Drives the real
+    //     purchases services so stock/cost/ledger land consistently.
+    await this.purchasesSeed.seed({
+      admin,
+      mainBranch,
+      products,
     });
 
     this.logger.log('Supermarket seed completed.');
