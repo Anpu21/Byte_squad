@@ -52,3 +52,11 @@ export interface IDayBookReport {
     totalDebits: number;
     totalCredits: number;
 }
+
+/** A locked accounting month (`GET /accounting/periods`). */
+export interface IFiscalPeriodLock {
+    year: number;
+    month: number;
+    lockedByUserId: string;
+    lockedAt: string;
+}

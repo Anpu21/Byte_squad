@@ -4,6 +4,7 @@ import type {
   IApiResponse,
   IBalanceSheetReport,
   IDayBookReport,
+  IFiscalPeriodLock,
   ITrialBalanceReport,
   IExpense,
   IJournalVoucher,
@@ -70,6 +71,29 @@ export const accountingService = {
       { params },
     )
     return response.data.data
+  },
+
+  /** `GET /accounting/periods` — locked months. */
+  listPeriodLocks: async (year?: number): Promise<IFiscalPeriodLock[]> => {
+    const response = await api.get<IApiResponse<IFiscalPeriodLock[]>>(
+      '/accounting/periods',
+      { params: year ? { year } : undefined },
+    )
+    return response.data.data
+  },
+
+  /** `POST /accounting/periods/lock` */
+  lockPeriod: async (year: number, month: number): Promise<IFiscalPeriodLock> => {
+    const response = await api.post<IApiResponse<IFiscalPeriodLock>>(
+      '/accounting/periods/lock',
+      { year, month },
+    )
+    return response.data.data
+  },
+
+  /** `POST /accounting/periods/unlock` */
+  unlockPeriod: async (year: number, month: number): Promise<void> => {
+    await api.post('/accounting/periods/unlock', { year, month })
   },
 
   // Ledger

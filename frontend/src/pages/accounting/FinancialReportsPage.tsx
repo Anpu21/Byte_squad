@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import {
     BookOpenCheck,
     CalendarDays,
+    Lock,
+    LockOpen,
     Scale,
     type LucideIcon,
 } from 'lucide-react';
+import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import PageHeader from '@/components/ui/PageHeader';
 import Pill from '@/components/ui/Pill';
@@ -14,15 +18,31 @@ import { accountingService } from '@/services/accounting.service';
 import { queryKeys } from '@/lib/queryKeys';
 import type { IBalanceSheetLine } from '@/types';
 
+const MONTH_NAMES = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+];
+
 const INPUT_CLASS =
     'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
 
-type ReportTab = 'trial-balance' | 'balance-sheet' | 'day-book';
+type ReportTab = 'trial-balance' | 'balance-sheet' | 'day-book' | 'periods';
 
 const TABS: { key: ReportTab; label: string; Icon: LucideIcon }[] = [
     { key: 'trial-balance', label: 'Trial balance', Icon: Scale },
     { key: 'balance-sheet', label: 'Balance sheet', Icon: BookOpenCheck },
     { key: 'day-book', label: 'Day book', Icon: CalendarDays },
+    { key: 'periods', label: 'Period locks', Icon: Lock },
 ];
 
 function BalancedPill({ balanced }: { balanced: boolean }) {
@@ -74,11 +94,14 @@ function SheetSection({
  * virtual retained earnings), and the day book. Admin only.
  */
 export function FinancialReportsPage() {
+    const queryClient = useQueryClient();
     const [tab, setTab] = useState<ReportTab>('trial-balance');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [asOf, setAsOf] = useState('');
     const [day, setDay] = useState('');
+    const [lockYear, setLockYear] = useState(new Date().getFullYear());
+    const [periodBusy, setPeriodBusy] = useState(false);
 
     const trialQuery = useQuery({
         queryKey: queryKeys.ledger.trialBalance({
@@ -103,10 +126,43 @@ export function FinancialReportsPage() {
         queryFn: () => accountingService.getDayBook({ date: day || undefined }),
         enabled: tab === 'day-book',
     });
+    const periodsQuery = useQuery({
+        queryKey: queryKeys.ledger.periods(lockYear),
+        queryFn: () => accountingService.listPeriodLocks(lockYear),
+        enabled: tab === 'periods',
+    });
 
     const trial = trialQuery.data;
     const sheet = sheetQuery.data;
     const book = dayQuery.data;
+    const lockedMonths = new Set(
+        (periodsQuery.data ?? []).map((p) => p.month),
+    );
+
+    async function togglePeriod(month: number, locked: boolean) {
+        if (periodBusy) return;
+        setPeriodBusy(true);
+        try {
+            if (locked) {
+                await accountingService.unlockPeriod(lockYear, month);
+                toast.success(
+                    `${MONTH_NAMES[month - 1]} ${lockYear} unlocked`,
+                );
+            } else {
+                await accountingService.lockPeriod(lockYear, month);
+                toast.success(
+                    `${MONTH_NAMES[month - 1]} ${lockYear} locked — postings into it are now rejected`,
+                );
+            }
+            void queryClient.invalidateQueries({
+                queryKey: queryKeys.ledger.periods(lockYear),
+            });
+        } catch {
+            toast.error('Could not update the period lock');
+        } finally {
+            setPeriodBusy(false);
+        }
+    }
 
     return (
         <div>
@@ -416,6 +472,77 @@ export function FinancialReportsPage() {
                                 )}
                             </tbody>
                         </table>
+                    </div>
+                </Card>
+            )}
+
+            {tab === 'periods' && (
+                <Card className="p-5 max-w-2xl space-y-4">
+                    <div className="flex items-center gap-2">
+                        <label className="text-[11px] uppercase tracking-wide text-text-3">
+                            Year
+                        </label>
+                        <input
+                            className={`${INPUT_CLASS} w-28 text-right`}
+                            type="number"
+                            min="2000"
+                            max="2100"
+                            value={lockYear}
+                            onChange={(e) =>
+                                setLockYear(Number(e.target.value))
+                            }
+                            aria-label="Year"
+                        />
+                        <span className="text-xs text-text-3">
+                            Locking a month rejects every posting whose
+                            business date falls inside it — sales, purchases,
+                            expenses, and journals alike.
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {MONTH_NAMES.map((name, idx) => {
+                            const month = idx + 1;
+                            const locked = lockedMonths.has(month);
+                            return (
+                                <div
+                                    key={month}
+                                    className={`flex items-center justify-between p-3 rounded-md border ${
+                                        locked
+                                            ? 'border-danger/40 bg-danger-soft/40'
+                                            : 'border-border bg-surface'
+                                    }`}
+                                >
+                                    <span className="text-[13px] text-text-1">
+                                        {name}
+                                    </span>
+                                    <Button
+                                        size="sm"
+                                        variant={
+                                            locked ? 'secondary' : 'ghost'
+                                        }
+                                        disabled={periodBusy}
+                                        onClick={() =>
+                                            void togglePeriod(month, locked)
+                                        }
+                                    >
+                                        {locked ? (
+                                            <>
+                                                <LockOpen
+                                                    size={13}
+                                                    aria-hidden
+                                                />
+                                                Unlock
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Lock size={13} aria-hidden />
+                                                Lock
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            );
+                        })}
                     </div>
                 </Card>
             )}

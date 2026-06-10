@@ -140,6 +140,9 @@ export const APP_ROUTES = {
     TRIAL_BALANCE: 'reports/trial-balance',
     BALANCE_SHEET: 'reports/balance-sheet',
     DAY_BOOK: 'reports/day-book',
+    PERIODS: 'periods',
+    PERIODS_LOCK: 'periods/lock',
+    PERIODS_UNLOCK: 'periods/unlock',
   },
 
   // Notifications

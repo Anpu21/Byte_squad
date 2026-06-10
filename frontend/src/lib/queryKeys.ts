@@ -279,6 +279,7 @@ export const queryKeys = {
             ['ledger', 'balance-sheet', params] as const,
         dayBook: (params: Record<string, string | undefined>) =>
             ['ledger', 'day-book', params] as const,
+        periods: (year: number) => ['ledger', 'periods', year] as const,
     },
     accounting: {
         profitLoss: (startDate: string, endDate: string) =>

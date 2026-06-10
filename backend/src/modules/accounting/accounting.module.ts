@@ -9,6 +9,9 @@ import { JournalVouchersController } from '@accounting/journal-vouchers.controll
 import { FinancialReportsService } from '@accounting/financial-reports.service';
 import { FinancialReportsRepository } from '@accounting/financial-reports.repository';
 import { FinancialReportsController } from '@accounting/financial-reports.controller';
+import { FiscalPeriodsService } from '@accounting/fiscal-periods.service';
+import { FiscalPeriodsController } from '@accounting/fiscal-periods.controller';
+import { FiscalPeriodLock } from '@accounting/entities/fiscal-period-lock.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Account } from '@accounting/entities/account.entity';
 import { JournalVoucher } from '@accounting/entities/journal-voucher.entity';
@@ -25,6 +28,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       Account,
       JournalVoucher,
       JournalCounter,
+      FiscalPeriodLock,
       Expense,
       Sale,
       SaleItem,
@@ -34,6 +38,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     AccountingController,
     JournalVouchersController,
     FinancialReportsController,
+    FiscalPeriodsController,
   ],
   providers: [
     AccountingService,
@@ -42,7 +47,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     JournalVouchersService,
     FinancialReportsService,
     FinancialReportsRepository,
+    FiscalPeriodsService,
   ],
-  exports: [AccountingService, AccountingRepository, AccountsRepository],
+  exports: [
+    AccountingService,
+    AccountingRepository,
+    AccountsRepository,
+    FiscalPeriodsService,
+  ],
 })
 export class AccountingModule {}

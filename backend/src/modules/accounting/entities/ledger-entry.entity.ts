@@ -53,6 +53,14 @@ export class LedgerEntry {
   @Column({ type: 'uuid', name: 'journal_voucher_id', nullable: true })
   journalVoucherId!: string | null;
 
+  /**
+   * Business date of the posting (`YYYY-MM-DD`) — what the financial
+   * reports and fiscal-period locks key on. Defaults to the posting day;
+   * journal vouchers may backdate it into any still-open month.
+   */
+  @Column({ type: 'date', name: 'entry_date' })
+  entryDate!: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 }

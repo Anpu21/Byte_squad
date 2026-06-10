@@ -28,11 +28,9 @@ export class FinancialReportsService {
     startDate?: string,
     endDate?: string,
   ): Promise<TrialBalanceReport> {
-    const start = startDate ? new Date(startDate) : undefined;
-    const end = endDate ? this.endOfDay(new Date(endDate)) : undefined;
     const [sums, unmapped] = await Promise.all([
-      this.reports.accountSums({ branchId, start, end }),
-      this.reports.unmappedSums({ branchId, start, end }),
+      this.reports.accountSums({ branchId, start: startDate, end: endDate }),
+      this.reports.unmappedSums({ branchId, start: startDate, end: endDate }),
     ]);
 
     const rows = sums.map((s) => ({
@@ -62,10 +60,10 @@ export class FinancialReportsService {
     branchId: string | null,
     asOf?: string,
   ): Promise<BalanceSheetReport> {
-    const asOfDate = asOf ? new Date(asOf) : new Date();
+    const asOfDay = asOf ?? new Date().toISOString().slice(0, 10);
     const sums = await this.reports.accountSums({
       branchId,
-      end: this.endOfDay(asOfDate),
+      end: asOfDay,
     });
 
     const lines = sums.map((s) => ({
@@ -94,7 +92,7 @@ export class FinancialReportsService {
     const totalEquity = round2(sum(equity) + retainedEarnings);
 
     return {
-      asOf: asOfDate.toISOString().slice(0, 10),
+      asOf: asOfDay,
       assets,
       liabilities,
       equity,
@@ -110,12 +108,8 @@ export class FinancialReportsService {
     branchId: string | null,
     date?: string,
   ): Promise<DayBookReport> {
-    const day = date ? new Date(date) : new Date();
-    const start = new Date(day);
-    start.setHours(0, 0, 0, 0);
-    const end = this.endOfDay(day);
-
-    const raw = await this.reports.dayEntries(branchId, start, end);
+    const day = date ?? new Date().toISOString().slice(0, 10);
+    const raw = await this.reports.dayEntries(branchId, day);
     const rows = raw.map((r) => ({
       id: r.id,
       createdAt: new Date(r.created_at).toISOString(),
@@ -127,7 +121,7 @@ export class FinancialReportsService {
       accountName: r.account_name,
     }));
     return {
-      date: day.toISOString().slice(0, 10),
+      date: day,
       rows,
       totalDebits: round2(
         rows
@@ -140,11 +134,5 @@ export class FinancialReportsService {
           .reduce((s, r) => s + r.amount, 0),
       ),
     };
-  }
-
-  private endOfDay(d: Date): Date {
-    const end = new Date(d);
-    end.setHours(23, 59, 59, 999);
-    return end;
   }
 }

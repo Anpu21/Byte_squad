@@ -28,8 +28,10 @@ export interface DayBookRowRaw {
 
 interface WindowFilter {
   branchId: string | null;
-  start?: Date;
-  end?: Date;
+  /** ISO date `YYYY-MM-DD`, inclusive. */
+  start?: string;
+  /** ISO date `YYYY-MM-DD`, inclusive. */
+  end?: string;
 }
 
 /**
@@ -51,11 +53,11 @@ export class FinancialReportsRepository {
     }
     if (filter.start) {
       params.push(filter.start);
-      conditions.push(`le.created_at >= $${params.length}`);
+      conditions.push(`le.entry_date >= $${params.length}`);
     }
     if (filter.end) {
       params.push(filter.end);
-      conditions.push(`le.created_at <= $${params.length}`);
+      conditions.push(`le.entry_date <= $${params.length}`);
     }
     const joinFilter = conditions.length
       ? `AND ${conditions.join(' AND ')}`
@@ -101,11 +103,11 @@ export class FinancialReportsRepository {
     }
     if (filter.start) {
       params.push(filter.start);
-      conditions.push(`le.created_at >= $${params.length}`);
+      conditions.push(`le.entry_date >= $${params.length}`);
     }
     if (filter.end) {
       params.push(filter.end);
-      conditions.push(`le.created_at <= $${params.length}`);
+      conditions.push(`le.entry_date <= $${params.length}`);
     }
     const raw: Array<{ debits: string; credits: string }> =
       await this.dataSource.query(
@@ -126,13 +128,12 @@ export class FinancialReportsRepository {
     };
   }
 
-  /** Every entry of one calendar day, oldest first, with its account. */
+  /** Every entry of one business day, oldest first, with its account. */
   async dayEntries(
     branchId: string | null,
-    start: Date,
-    end: Date,
+    date: string,
   ): Promise<DayBookRowRaw[]> {
-    const params: unknown[] = [start, end];
+    const params: unknown[] = [date];
     let branchFilter = '';
     if (branchId) {
       params.push(branchId);
@@ -145,7 +146,7 @@ export class FinancialReportsRepository {
              a.code AS account_code, a.name AS account_name
       FROM ledger_entries le
       LEFT JOIN accounts a ON a.id = le.account_id
-      WHERE le.created_at >= $1 AND le.created_at <= $2 ${branchFilter}
+      WHERE le.entry_date = $1 ${branchFilter}
       ORDER BY le.created_at ASC
       `,
       params,

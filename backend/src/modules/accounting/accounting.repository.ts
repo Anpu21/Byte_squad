@@ -5,6 +5,7 @@ import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { AccountsRepository } from '@accounting/accounts.repository';
+import { FiscalPeriodsService } from '@accounting/fiscal-periods.service';
 import { classifyLedgerAccount } from '@accounting/lib/classify-ledger-account';
 import type { AccountCode } from '@accounting/types/account-code.type';
 
@@ -28,20 +29,27 @@ export class AccountingRepository {
     @InjectRepository(Expense)
     private readonly expenseRepo: Repository<Expense>,
     private readonly accounts: AccountsRepository,
+    private readonly fiscalPeriods: FiscalPeriodsService,
   ) {}
 
   /**
    * Every ledger write flows through here (direct or in-transaction), so
-   * this is THE chokepoint for the chart-of-accounts dimension: explicit
-   * `accountCode` from the caller wins, otherwise the entry is classified
-   * from its reference/shape — identical rules to the migration backfill.
+   * this is THE chokepoint for both bookkeeping dimensions:
+   * - chart of accounts: explicit `accountCode` from the caller wins,
+   *   otherwise the entry is classified from its reference/shape —
+   *   identical rules to the migration backfill;
+   * - fiscal periods: the entry's business date must fall in an open
+   *   month (today by default; journals may pass a backdated date).
    */
   private async stampAccount(
     partial: LedgerPostInput,
     manager?: EntityManager,
   ): Promise<DeepPartial<LedgerEntry>> {
     const { accountCode, ...entry } = partial;
-    if (entry.accountId) return entry;
+    const entryDate = entry.entryDate ?? new Date().toISOString().slice(0, 10);
+    await this.fiscalPeriods.assertOpen(entryDate);
+
+    if (entry.accountId) return { ...entry, entryDate };
     const code =
       accountCode ??
       classifyLedgerAccount({
@@ -50,7 +58,7 @@ export class AccountingRepository {
         saleId: entry.saleId as string | null | undefined,
       });
     const accountId = await this.accounts.idByCode(code, manager);
-    return { ...entry, accountId };
+    return { ...entry, entryDate, accountId };
   }
 
   async createLedgerEntry(partial: LedgerPostInput): Promise<LedgerEntry> {

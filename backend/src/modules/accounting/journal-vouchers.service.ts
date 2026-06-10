@@ -95,6 +95,9 @@ export class JournalVouchersService {
           referenceNumber: voucherNumber,
           accountId: line.accountId,
           journalVoucherId: voucher.id,
+          // Backdating lands the lines in the voucher's business month —
+          // the chokepoint rejects it if that period is locked.
+          entryDate: voucher.entryDate,
         });
       }
 
