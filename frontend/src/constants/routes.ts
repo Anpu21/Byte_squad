@@ -71,6 +71,7 @@ export const FRONTEND_ROUTES = {
 
     // Admin / manager — unified HR workspace (Employees / Attendance / Leaves / Payroll tabs)
     ADMIN_HR: '/admin/hr',
+    ADMIN_AUDIT: '/admin/audit',
 
     // Admin / manager — HR employee management
     ADMIN_EMPLOYEES: '/admin/employees',

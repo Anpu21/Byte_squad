@@ -13,6 +13,7 @@ import {
     PiggyBank,
     Receipt,
     Wallet,
+    FileClock,
     HandCoins,
     Scale,
     ScrollText,
@@ -207,6 +208,13 @@ const NAV_ITEMS: NavItem[] = [
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Building2 size={15} />,
         group: 'Branches',
+    },
+    {
+        label: 'Audit log',
+        path: FRONTEND_ROUTES.ADMIN_AUDIT,
+        roles: [UserRole.ADMIN],
+        icon: <FileClock size={15} />,
+        group: 'System',
     },
     {
         label: 'Notifications',

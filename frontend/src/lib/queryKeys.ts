@@ -229,6 +229,10 @@ export const queryKeys = {
         all: () => ['shifts'] as const,
         current: () => ['shifts', 'current'] as const,
     },
+    audit: {
+        logs: (params: Record<string, string | number | undefined>) =>
+            ['audit', 'logs', params] as const,
+    },
     shipments: {
         all: () => ['shipments'] as const,
         list: (params: {

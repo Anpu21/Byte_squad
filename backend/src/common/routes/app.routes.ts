@@ -291,6 +291,11 @@ export const APP_ROUTES = {
     CANCEL: ':id/cancel',
   },
 
+  // Append-only activity log (global mutation interceptor)
+  AUDIT: {
+    BASE: `${API_PREFIX}/audit/logs`,
+  },
+
   // Supplier master (the "party" registry behind purchases)
   SUPPLIERS: {
     BASE: `${API_PREFIX}/suppliers`,

@@ -22,6 +22,7 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
 import { HrModule } from '@/modules/hr/hr.module';
 import { SuppliersModule } from '@/modules/suppliers/suppliers.module';
 import { PurchasesModule } from '@/modules/purchases/purchases.module';
+import { AuditModule } from '@/modules/audit/audit.module';
 import { Attendance } from '@/modules/hr/entities/attendance.entity';
 import { AttendanceSummary } from '@/modules/hr/entities/attendance-summary.entity';
 import { Employee } from '@/modules/hr/entities/employee.entity';
@@ -125,6 +126,7 @@ import appConfig from '@common/config/app.config';
     HrModule,
     SuppliersModule,
     PurchasesModule,
+    AuditModule,
   ],
   providers: [
     AdminSeedService,
