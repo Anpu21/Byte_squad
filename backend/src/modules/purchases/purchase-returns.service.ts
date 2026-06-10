@@ -8,6 +8,8 @@ import {
 import { DataSource } from 'typeorm';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
+import { AccountingRepository } from '@accounting/accounting.repository';
+import { ACCOUNT_CODES } from '@accounting/types/account-code.type';
 import { PurchaseReturn } from '@/modules/purchases/entities/purchase-return.entity';
 import { PurchaseReturnsRepository } from '@/modules/purchases/purchase-returns.repository';
 import { GrnsRepository } from '@/modules/purchases/grns.repository';
@@ -35,6 +37,7 @@ export class PurchaseReturnsService {
     private readonly grns: GrnsRepository,
     private readonly payments: SupplierPaymentsRepository,
     private readonly docNumbers: PurchaseDocNumberService,
+    private readonly accounting: AccountingRepository,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -172,12 +175,13 @@ export class PurchaseReturnsService {
         newPaid >= Number(lockedGrn.grandTotal) ? 'Paid' : 'Partially_Paid';
       await this.payments.updateGrnPayment(manager, grn.id, newPaid, status);
 
-      await this.grns.insertLedgerEntry(manager, {
+      await this.accounting.createLedgerEntryWithManager(manager, {
         branchId: grn.branchId,
         entryType: LedgerEntryType.CREDIT,
         amount: total,
         description: `Debit note ${returnNumber} — ${grn.supplier?.name ?? 'supplier'} (${dto.reason})`,
         referenceNumber: returnNumber,
+        accountCode: ACCOUNT_CODES.INVENTORY,
       });
 
       return ret.id;

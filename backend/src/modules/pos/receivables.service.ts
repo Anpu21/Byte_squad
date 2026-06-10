@@ -9,7 +9,8 @@ import { UserRole } from '@common/enums/user-roles.enums';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { User } from '@users/entities/user.entity';
 import { Sale } from '@pos/entities/sale.entity';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+import { AccountingRepository } from '@accounting/accounting.repository';
+import { ACCOUNT_CODES } from '@accounting/types/account-code.type';
 import { CreditTransaction } from '@pos/entities/credit-transaction.entity';
 import { CreditTransactionRepository } from '@pos/credit-transaction.repository';
 import { ReceiveCreditPaymentDto } from '@pos/dto/receive-credit-payment.dto';
@@ -58,6 +59,7 @@ const round2 = (n: number): number => Math.round(n * 100) / 100;
 export class ReceivablesService {
   constructor(
     private readonly creditTransactions: CreditTransactionRepository,
+    private readonly accounting: AccountingRepository,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -197,16 +199,15 @@ export class ReceivablesService {
         });
       }
 
-      const ledgerRepo = manager.getRepository(LedgerEntry);
-      await ledgerRepo.save(
-        ledgerRepo.create({
-          branchId,
-          entryType: LedgerEntryType.CREDIT,
-          amount,
-          description: `Credit payment from ${user.firstName} ${user.lastName} (${dto.method})`,
-          referenceNumber: referenceNo,
-        }),
-      );
+      await this.accounting.createLedgerEntryWithManager(manager, {
+        branchId,
+        entryType: LedgerEntryType.CREDIT,
+        amount,
+        description: `Credit payment from ${user.firstName} ${user.lastName} (${dto.method})`,
+        referenceNumber: referenceNo,
+        accountCode:
+          dto.method === 'Cash' ? ACCOUNT_CODES.CASH : ACCOUNT_CODES.BANK,
+      });
     });
 
     return this.getStatement(userId);

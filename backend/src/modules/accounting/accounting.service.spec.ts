@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { AccountingService } from './accounting.service';
 import { AccountingRepository } from './accounting.repository';
+import { AccountsRepository } from './accounts.repository';
 import { Expense } from './entities/expense.entity';
 import { ExpenseStatus } from '@common/enums/expense-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -36,6 +37,7 @@ describe('AccountingService', () => {
       providers: [
         AccountingService,
         { provide: AccountingRepository, useValue: repoMock },
+        { provide: AccountsRepository, useValue: { list: jest.fn() } },
         { provide: getRepositoryToken(Sale), useValue: {} },
         { provide: getRepositoryToken(SaleItem), useValue: {} },
       ],

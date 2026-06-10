@@ -12,7 +12,6 @@ import { Inventory } from '@inventory/entities/inventory.entity';
 import { Product } from '@products/entities/product.entity';
 import { ProductBatch } from '@inventory/entities/product-batch.entity';
 import { StockMovement } from '@pos/entities/stock-movement.entity';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import type { GrnPaymentStatus } from '@/modules/purchases/types/grn-payment-status.type';
 import type { GrnStatus } from '@/modules/purchases/types/grn-status.type';
 
@@ -230,14 +229,6 @@ export class GrnsRepository {
     partial: DeepPartial<StockMovement>,
   ): Promise<StockMovement> {
     const repo = manager.getRepository(StockMovement);
-    return repo.save(repo.create(partial));
-  }
-
-  async insertLedgerEntry(
-    manager: EntityManager,
-    partial: DeepPartial<LedgerEntry>,
-  ): Promise<LedgerEntry> {
-    const repo = manager.getRepository(LedgerEntry);
     return repo.save(repo.create(partial));
   }
 }

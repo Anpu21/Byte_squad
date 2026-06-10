@@ -13,6 +13,8 @@ import { GrnsService } from './grns.service';
 import { GrnsRepository } from './grns.repository';
 import { PurchaseDocNumberService } from './purchase-doc-number.service';
 import { PurchaseOrdersRepository } from './purchase-orders.repository';
+import { AccountingRepository } from '@accounting/accounting.repository';
+import { ACCOUNT_CODES } from '@accounting/types/account-code.type';
 import { PurchaseOrder } from './entities/purchase-order.entity';
 import { SuppliersRepository } from '@/modules/suppliers/suppliers.repository';
 import { Supplier } from '@/modules/suppliers/entities/supplier.entity';
@@ -80,6 +82,7 @@ describe('GrnsService', () => {
   let repo: jest.Mocked<GrnsRepository>;
   let suppliers: jest.Mocked<SuppliersRepository>;
   let orders: jest.Mocked<PurchaseOrdersRepository>;
+  let accounting: jest.Mocked<AccountingRepository>;
   let docNumbers: jest.Mocked<PurchaseDocNumberService>;
   let dataSource: { transaction: jest.Mock };
 
@@ -107,7 +110,6 @@ describe('GrnsService', () => {
             insertBatch: jest.fn(),
             zeroBatchesByNote: jest.fn(),
             insertMovement: jest.fn(),
-            insertLedgerEntry: jest.fn(),
           },
         },
         {
@@ -117,6 +119,10 @@ describe('GrnsService', () => {
         {
           provide: PurchaseOrdersRepository,
           useValue: { findById: jest.fn(), updateStatus: jest.fn() },
+        },
+        {
+          provide: AccountingRepository,
+          useValue: { createLedgerEntryWithManager: jest.fn() },
         },
         {
           provide: PurchaseDocNumberService,
@@ -129,6 +135,7 @@ describe('GrnsService', () => {
     repo = moduleRef.get(GrnsRepository);
     suppliers = moduleRef.get(SuppliersRepository);
     orders = moduleRef.get(PurchaseOrdersRepository);
+    accounting = moduleRef.get(AccountingRepository);
     docNumbers = moduleRef.get(PurchaseDocNumberService);
   });
 
@@ -189,12 +196,13 @@ describe('GrnsService', () => {
           refType: 'GRN',
         }),
       );
-      expect(repo.insertLedgerEntry).toHaveBeenCalledWith(
+      expect(accounting.createLedgerEntryWithManager).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
           entryType: LedgerEntryType.DEBIT,
           amount: 1200,
           referenceNumber: 'GRN-2026-000001',
+          accountCode: ACCOUNT_CODES.INVENTORY,
         }),
       );
       // No batch/expiry on the line → no batch row.
@@ -345,9 +353,12 @@ describe('GrnsService', () => {
         expect.anything(),
         'GRN-2026-000001',
       );
-      expect(repo.insertLedgerEntry).toHaveBeenCalledWith(
+      expect(accounting.createLedgerEntryWithManager).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ entryType: LedgerEntryType.CREDIT }),
+        expect.objectContaining({
+          entryType: LedgerEntryType.CREDIT,
+          accountCode: ACCOUNT_CODES.INVENTORY,
+        }),
       );
       expect(result.status).toBe('Voided');
     });

@@ -44,6 +44,7 @@ import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { pickSeedImageUrl } from '@common/seeds/seed-product-images';
 import { HrSeedService } from '@common/seeds/hr-seed.service';
 import { PurchasesSeedService } from '@common/seeds/purchases-seed.service';
+import { AccountsRepository } from '@accounting/accounts.repository';
 import {
   CATEGORY_THRESHOLDS,
   SUPERMARKET_PRODUCTS,
@@ -134,6 +135,7 @@ export class AdminSeedService implements OnModuleInit {
     private readonly cloudinary: CloudinaryService,
     private readonly hrSeed: HrSeedService,
     private readonly purchasesSeed: PurchasesSeedService,
+    private readonly accountsRepository: AccountsRepository,
   ) {}
 
   onModuleInit(): void {
@@ -152,6 +154,10 @@ export class AdminSeedService implements OnModuleInit {
   async seed(): Promise<void> {
     this.logger.log('Running supermarket seed...');
     const defaults = this.getSeedDefaults();
+
+    // 0. Chart of accounts — system codes must exist before any posting
+    //    path runs (idempotent; prod gets them via migration instead).
+    await this.accountsRepository.ensureSeeded();
 
     // 1. Branches — three so the inter-branch transfer flow can be demoed end-to-end.
     const mainBranch = await this.ensureBranch(

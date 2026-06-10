@@ -13,6 +13,7 @@ import { PurchaseReturnsRepository } from './purchase-returns.repository';
 import { GrnsRepository } from './grns.repository';
 import { SupplierPaymentsRepository } from './supplier-payments.repository';
 import { PurchaseDocNumberService } from './purchase-doc-number.service';
+import { AccountingRepository } from '@accounting/accounting.repository';
 import { Grn } from './entities/grn.entity';
 import { PurchaseReturn } from './entities/purchase-return.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
@@ -61,6 +62,7 @@ describe('PurchaseReturnsService', () => {
   let returnsRepo: jest.Mocked<PurchaseReturnsRepository>;
   let grnsRepo: jest.Mocked<GrnsRepository>;
   let paymentsRepo: jest.Mocked<SupplierPaymentsRepository>;
+  let accounting: jest.Mocked<AccountingRepository>;
 
   beforeEach(async () => {
     const dataSource = {
@@ -86,12 +88,15 @@ describe('PurchaseReturnsService', () => {
             lockInventoryRow: jest.fn(),
             setInventoryQuantity: jest.fn(),
             insertMovement: jest.fn(),
-            insertLedgerEntry: jest.fn(),
           },
         },
         {
           provide: SupplierPaymentsRepository,
           useValue: { lockGrn: jest.fn(), updateGrnPayment: jest.fn() },
+        },
+        {
+          provide: AccountingRepository,
+          useValue: { createLedgerEntryWithManager: jest.fn() },
         },
         {
           provide: PurchaseDocNumberService,
@@ -104,6 +109,7 @@ describe('PurchaseReturnsService', () => {
     returnsRepo = moduleRef.get(PurchaseReturnsRepository);
     grnsRepo = moduleRef.get(GrnsRepository);
     paymentsRepo = moduleRef.get(SupplierPaymentsRepository);
+    accounting = moduleRef.get(AccountingRepository);
   });
 
   function primeHappyPath() {
@@ -154,7 +160,7 @@ describe('PurchaseReturnsService', () => {
       480,
       'Partially_Paid',
     );
-    expect(grnsRepo.insertLedgerEntry).toHaveBeenCalledWith(
+    expect(accounting.createLedgerEntryWithManager).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         entryType: LedgerEntryType.CREDIT,

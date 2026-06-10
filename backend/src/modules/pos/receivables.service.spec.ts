@@ -9,6 +9,7 @@ import { DataSource } from 'typeorm';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { ReceivablesService } from './receivables.service';
 import { CreditTransactionRepository } from './credit-transaction.repository';
+import { AccountingRepository } from '@accounting/accounting.repository';
 
 const BRANCH_A = '11111111-1111-1111-1111-111111111111';
 const USER_ID = '22222222-2222-2222-2222-222222222222';
@@ -82,6 +83,7 @@ function makeManagerMock(opts: {
 describe('ReceivablesService', () => {
   let service: ReceivablesService;
   let creditTransactions: jest.Mocked<CreditTransactionRepository>;
+  let accounting: jest.Mocked<AccountingRepository>;
   let dataSource: {
     transaction: jest.Mock;
     getRepository: jest.Mock;
@@ -101,11 +103,16 @@ describe('ReceivablesService', () => {
           provide: CreditTransactionRepository,
           useValue: { create: jest.fn(), findByUserId: jest.fn() },
         },
+        {
+          provide: AccountingRepository,
+          useValue: { createLedgerEntryWithManager: jest.fn() },
+        },
         { provide: DataSource, useValue: dataSource },
       ],
     }).compile();
     service = moduleRef.get(ReceivablesService);
     creditTransactions = moduleRef.get(CreditTransactionRepository);
+    accounting = moduleRef.get(AccountingRepository);
   });
 
   function primeStatement(currentBalance = 0) {
@@ -124,7 +131,7 @@ describe('ReceivablesService', () => {
   }
 
   it('settles unpaid credit sales FIFO and posts the ledger credit', async () => {
-    const { manager, updates, ledgerSaves } = makeManagerMock({
+    const { manager, updates } = makeManagerMock({
       user: {
         id: USER_ID,
         currentBalance: 5000,
@@ -172,8 +179,13 @@ describe('ReceivablesService', () => {
     );
     const userUpdate = updates.find((u) => u.entity === 'User');
     expect(userUpdate?.patch).toEqual({ currentBalance: 1000 });
-    expect(ledgerSaves[0]).toEqual(
-      expect.objectContaining({ amount: 4000, branchId: BRANCH_A }),
+    expect(accounting.createLedgerEntryWithManager).toHaveBeenCalledWith(
+      manager,
+      expect.objectContaining({
+        amount: 4000,
+        branchId: BRANCH_A,
+        accountCode: '1000',
+      }),
     );
   });
 

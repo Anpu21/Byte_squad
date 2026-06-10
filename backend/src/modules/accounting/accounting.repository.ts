@@ -1,8 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DeepPartial, EntityManager, Repository } from 'typeorm';
+import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
+import { AccountsRepository } from '@accounting/accounts.repository';
+import { classifyLedgerAccount } from '@accounting/lib/classify-ledger-account';
+import type { AccountCode } from '@accounting/types/account-code.type';
 
 import {
   ListLedgerOptions,
@@ -11,6 +15,11 @@ import {
   ListExpenseOptions,
 } from '@accounting/types';
 
+/** Ledger posting input — explicit account wins over classification. */
+export type LedgerPostInput = DeepPartial<LedgerEntry> & {
+  accountCode?: AccountCode;
+};
+
 @Injectable()
 export class AccountingRepository {
   constructor(
@@ -18,20 +27,44 @@ export class AccountingRepository {
     private readonly ledgerRepo: Repository<LedgerEntry>,
     @InjectRepository(Expense)
     private readonly expenseRepo: Repository<Expense>,
+    private readonly accounts: AccountsRepository,
   ) {}
 
-  async createLedgerEntry(
-    partial: DeepPartial<LedgerEntry>,
-  ): Promise<LedgerEntry> {
-    return this.ledgerRepo.save(this.ledgerRepo.create(partial));
+  /**
+   * Every ledger write flows through here (direct or in-transaction), so
+   * this is THE chokepoint for the chart-of-accounts dimension: explicit
+   * `accountCode` from the caller wins, otherwise the entry is classified
+   * from its reference/shape — identical rules to the migration backfill.
+   */
+  private async stampAccount(
+    partial: LedgerPostInput,
+    manager?: EntityManager,
+  ): Promise<DeepPartial<LedgerEntry>> {
+    const { accountCode, ...entry } = partial;
+    if (entry.accountId) return entry;
+    const code =
+      accountCode ??
+      classifyLedgerAccount({
+        referenceNumber: entry.referenceNumber,
+        entryType: entry.entryType as LedgerEntryType,
+        saleId: entry.saleId as string | null | undefined,
+      });
+    const accountId = await this.accounts.idByCode(code, manager);
+    return { ...entry, accountId };
+  }
+
+  async createLedgerEntry(partial: LedgerPostInput): Promise<LedgerEntry> {
+    const stamped = await this.stampAccount(partial);
+    return this.ledgerRepo.save(this.ledgerRepo.create(stamped));
   }
 
   async createLedgerEntryWithManager(
     manager: EntityManager,
-    partial: DeepPartial<LedgerEntry>,
+    partial: LedgerPostInput,
   ): Promise<LedgerEntry> {
+    const stamped = await this.stampAccount(partial, manager);
     const repo = manager.getRepository(LedgerEntry);
-    return repo.save(repo.create(partial));
+    return repo.save(repo.create(stamped));
   }
 
   async deleteLedgerByReference(referenceNumber: string): Promise<void> {

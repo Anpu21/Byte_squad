@@ -134,6 +134,8 @@ export const APP_ROUTES = {
     EXPENSE_BY_ID: 'expenses/:id',
     EXPENSE_REVIEW: 'expenses/:id/review',
     PROFIT_LOSS: 'profit-loss',
+    // Phase 3 — chart of accounts.
+    ACCOUNTS: 'accounts',
   },
 
   // Notifications

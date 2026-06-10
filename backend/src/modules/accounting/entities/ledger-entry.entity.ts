@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { Branch } from '@branches/entities/branch.entity';
+import { Account } from '@accounting/entities/account.entity';
 
 @Entity('ledger_entries')
 export class LedgerEntry {
@@ -35,6 +36,18 @@ export class LedgerEntry {
 
   @Column({ type: 'uuid', name: 'sale_id', nullable: true })
   saleId!: string | null;
+
+  /**
+   * Chart-of-accounts dimension. Stamped on every new posting (explicit
+   * `accountCode` from the caller, else classified from the reference);
+   * pre-chart rows were backfilled by the CreateAccounts migration.
+   */
+  @Column({ type: 'uuid', name: 'account_id', nullable: true })
+  accountId!: string | null;
+
+  @ManyToOne(() => Account, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'account_id' })
+  account!: Account | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

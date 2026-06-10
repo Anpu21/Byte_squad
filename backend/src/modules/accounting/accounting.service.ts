@@ -9,6 +9,8 @@ import { Between, Repository } from 'typeorm';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { Expense } from '@accounting/entities/expense.entity';
 import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountsRepository } from '@accounting/accounts.repository';
+import { Account } from '@accounting/entities/account.entity';
 // TODO Phase C8 — replace these cross-module borrowings with PosRepository /
 // TransactionItemsRepository once POS migrates.
 import { Sale } from '@pos/entities/sale.entity';
@@ -43,11 +45,17 @@ export type {
 export class AccountingService {
   constructor(
     private readonly accounting: AccountingRepository,
+    private readonly accounts: AccountsRepository,
     @InjectRepository(Sale)
     private readonly transactionRepository: Repository<Sale>,
     @InjectRepository(SaleItem)
     private readonly transactionItemRepository: Repository<SaleItem>,
   ) {}
+
+  /** Chart of accounts, ordered by code. */
+  async listAccounts(): Promise<Account[]> {
+    return this.accounts.list();
+  }
 
   async getLedgerEntries(
     branchId: string | null,

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AccountingModule } from '@accounting/accounting.module';
 import { SuppliersModule } from '@/modules/suppliers/suppliers.module';
 import { Grn } from '@/modules/purchases/entities/grn.entity';
 import { GrnItem } from '@/modules/purchases/entities/grn-item.entity';
@@ -49,6 +50,7 @@ import { PurchasesReportsController } from '@/modules/purchases/purchases-report
       PurchaseReturnItem,
     ]),
     SuppliersModule,
+    AccountingModule,
   ],
   providers: [
     PurchaseDocNumberService,

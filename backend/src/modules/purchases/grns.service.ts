@@ -8,6 +8,8 @@ import {
 import { DataSource } from 'typeorm';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
+import { AccountingRepository } from '@accounting/accounting.repository';
+import { ACCOUNT_CODES } from '@accounting/types/account-code.type';
 import { Grn } from '@/modules/purchases/entities/grn.entity';
 import { GrnsRepository } from '@/modules/purchases/grns.repository';
 import { PurchaseDocNumberService } from '@/modules/purchases/purchase-doc-number.service';
@@ -52,6 +54,7 @@ export class GrnsService {
     private readonly suppliers: SuppliersRepository,
     private readonly orders: PurchaseOrdersRepository,
     private readonly docNumbers: PurchaseDocNumberService,
+    private readonly accounting: AccountingRepository,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -251,12 +254,13 @@ export class GrnsService {
         });
       }
 
-      await this.grns.insertLedgerEntry(manager, {
+      await this.accounting.createLedgerEntryWithManager(manager, {
         branchId,
         entryType: LedgerEntryType.DEBIT,
         amount: grandTotal,
         description: `Purchase ${grnNumber} — ${supplier.name}`,
         referenceNumber: grnNumber,
+        accountCode: ACCOUNT_CODES.INVENTORY,
       });
 
       if (dto.purchaseOrderId) {
@@ -323,12 +327,13 @@ export class GrnsService {
 
       await this.grns.zeroBatchesByNote(manager, grn.grnNumber);
 
-      await this.grns.insertLedgerEntry(manager, {
+      await this.accounting.createLedgerEntryWithManager(manager, {
         branchId: grn.branchId,
         entryType: LedgerEntryType.CREDIT,
         amount: Number(grn.grandTotal),
         description: `Purchase ${grn.grnNumber} voided — ${dto.reason}`,
         referenceNumber: grn.grnNumber,
+        accountCode: ACCOUNT_CODES.INVENTORY,
       });
 
       await this.grns.updateGrn(manager, grn.id, {
