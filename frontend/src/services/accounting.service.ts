@@ -1,7 +1,10 @@
 import api from './api'
 import type {
+  IAccount,
   IApiResponse,
   IExpense,
+  IJournalVoucher,
+  IJournalVoucherPayload,
   IPaginatedLedger,
   ILedgerSummary,
   ILedgerParams,
@@ -12,6 +15,23 @@ import type {
 } from '@/types'
 
 export const accountingService = {
+  /** `GET /accounting/accounts` — chart of accounts. */
+  listAccounts: async (): Promise<IAccount[]> => {
+    const response = await api.get<IApiResponse<IAccount[]>>('/accounting/accounts')
+    return response.data.data
+  },
+
+  /** `POST /accounting/journals` — balanced manual journal (admin). */
+  createJournal: async (
+    payload: IJournalVoucherPayload,
+  ): Promise<IJournalVoucher> => {
+    const response = await api.post<IApiResponse<IJournalVoucher>>(
+      '/accounting/journals',
+      payload,
+    )
+    return response.data.data
+  },
+
   // Ledger
   getLedgerEntries: async (params?: ILedgerParams): Promise<IPaginatedLedger> => {
     const response = await api.get<IApiResponse<IPaginatedLedger>>('/accounting/ledger', {

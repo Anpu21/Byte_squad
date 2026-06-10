@@ -49,6 +49,10 @@ export class LedgerEntry {
   @JoinColumn({ name: 'account_id' })
   account!: Account | null;
 
+  /** Set when this row is a line of a manual journal voucher. */
+  @Column({ type: 'uuid', name: 'journal_voucher_id', nullable: true })
+  journalVoucherId!: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 }

@@ -272,6 +272,7 @@ export const queryKeys = {
             limit: number;
         }) => ['ledger', 'entries', filters] as const,
         summary: () => ['ledger', 'summary'] as const,
+        accounts: () => ['ledger', 'accounts'] as const,
     },
     accounting: {
         profitLoss: (startDate: string, endDate: string) =>

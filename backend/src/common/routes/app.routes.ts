@@ -136,6 +136,7 @@ export const APP_ROUTES = {
     PROFIT_LOSS: 'profit-loss',
     // Phase 3 — chart of accounts.
     ACCOUNTS: 'accounts',
+    JOURNALS: 'journals',
   },
 
   // Notifications
