@@ -216,6 +216,8 @@ export const queryKeys = {
         }) => ['purchases', 'orders', params] as const,
         outstanding: () => ['purchases', 'outstanding'] as const,
         ageing: () => ['purchases', 'ageing'] as const,
+        returnsForGrn: (grnId: string) =>
+            ['purchases', 'returns', grnId] as const,
     },
     shipments: {
         all: () => ['shipments'] as const,

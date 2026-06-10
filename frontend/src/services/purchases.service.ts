@@ -11,6 +11,8 @@ import type {
     IPurchaseOrder,
     IPurchaseOrderPayload,
     IPurchaseOrdersListResponse,
+    IPurchaseReturn,
+    IPurchaseReturnPayload,
     ISupplierPayment,
     ISupplierPaymentPayload,
     ISupplierPaymentsListResponse,
@@ -144,6 +146,26 @@ export const purchasesService = {
     cancelOrder: async (id: string): Promise<IPurchaseOrder> => {
         const response = await api.patch<IApiResponse<IPurchaseOrder>>(
             `/purchases/orders/${id}/cancel`,
+        );
+        return response.data.data;
+    },
+
+    /** `GET /purchases/returns?grnId=` — debit notes for one GRN. */
+    listReturnsForGrn: async (grnId: string): Promise<IPurchaseReturn[]> => {
+        const response = await api.get<IApiResponse<IPurchaseReturn[]>>(
+            '/purchases/returns',
+            { params: { grnId } },
+        );
+        return response.data.data;
+    },
+
+    /** `POST /purchases/returns` — stock out + bill adjustment. */
+    createReturn: async (
+        payload: IPurchaseReturnPayload,
+    ): Promise<IPurchaseReturn> => {
+        const response = await api.post<IApiResponse<IPurchaseReturn>>(
+            '/purchases/returns',
+            payload,
         );
         return response.data.data;
     },

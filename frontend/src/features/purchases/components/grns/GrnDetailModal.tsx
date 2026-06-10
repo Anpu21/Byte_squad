@@ -11,6 +11,7 @@ import type { IGrn } from '@/types';
 import { useGrn } from '../../hooks/useGrn';
 import { useVoidGrn } from '../../hooks/useVoidGrn';
 import { GrnPaymentPill } from './GrnPaymentPill';
+import { GrnReturnSection } from './GrnReturnSection';
 
 interface IGrnDetailModalProps {
     grnId: string | null;
@@ -176,6 +177,8 @@ export function GrnDetailModal({ grnId, onClose }: IGrnDetailModalProps) {
                             Voided — {grn.voidReason}
                         </div>
                     )}
+
+                    <GrnReturnSection grn={grn} onReturned={onClose} />
 
                     {canVoid && !voiding && (
                         <div className="flex justify-end">

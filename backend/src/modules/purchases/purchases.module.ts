@@ -11,6 +11,11 @@ import { PurchaseOrderItem } from '@/modules/purchases/entities/purchase-order-i
 import { PurchaseOrdersRepository } from '@/modules/purchases/purchase-orders.repository';
 import { PurchaseOrdersService } from '@/modules/purchases/purchase-orders.service';
 import { PurchaseOrdersController } from '@/modules/purchases/purchase-orders.controller';
+import { PurchaseReturn } from '@/modules/purchases/entities/purchase-return.entity';
+import { PurchaseReturnItem } from '@/modules/purchases/entities/purchase-return-item.entity';
+import { PurchaseReturnsRepository } from '@/modules/purchases/purchase-returns.repository';
+import { PurchaseReturnsService } from '@/modules/purchases/purchase-returns.service';
+import { PurchaseReturnsController } from '@/modules/purchases/purchase-returns.controller';
 import { PurchaseDocNumberService } from '@/modules/purchases/purchase-doc-number.service';
 import { GrnsRepository } from '@/modules/purchases/grns.repository';
 import { GrnsService } from '@/modules/purchases/grns.service';
@@ -40,6 +45,8 @@ import { PurchasesReportsController } from '@/modules/purchases/purchases-report
       SupplierPaymentAllocation,
       PurchaseOrder,
       PurchaseOrderItem,
+      PurchaseReturn,
+      PurchaseReturnItem,
     ]),
     SuppliersModule,
   ],
@@ -53,12 +60,15 @@ import { PurchasesReportsController } from '@/modules/purchases/purchases-report
     PayablesReportsService,
     PurchaseOrdersRepository,
     PurchaseOrdersService,
+    PurchaseReturnsRepository,
+    PurchaseReturnsService,
   ],
   controllers: [
     GrnsController,
     SupplierPaymentsController,
     PurchasesReportsController,
     PurchaseOrdersController,
+    PurchaseReturnsController,
   ],
   exports: [
     PurchaseDocNumberService,

@@ -11,3 +11,5 @@ export * from './supplier-payment.type';
 export * from './supplier-payment-payload.type';
 export * from './supplier-payments-list-response.type';
 export * from './payables-reports.type';
+export * from './purchase-return.type';
+export * from './purchase-return-payload.type';
