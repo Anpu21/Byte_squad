@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
+import toast from 'react-hot-toast';
+import { Layers, PauseCircle } from 'lucide-react';
+import Button from '@/components/ui/Button';
 import { usePosCart } from '@/features/pos/hooks/usePosCart';
 import { usePosPageState } from '@/features/pos/hooks/usePosPageState';
+import { usePosHeldBills } from '@/features/pos/hooks/usePosHeldBills';
+import { PosHeldBillsModal } from '@/features/pos/components/held-bills/PosHeldBillsModal';
 import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
 import { usePrintReceipt } from '@/features/pos/hooks/usePrintReceipt';
 import { usePosSaleById } from '@/features/pos/hooks/usePosSaleById';
@@ -36,6 +41,8 @@ export function PosPage(): React.ReactElement {
     const [mode, setMode] = useState<PosMode>('billing');
     const cart = usePosCart();
     const state = usePosPageState();
+    const heldBills = usePosHeldBills();
+    const [showHeldBills, setShowHeldBills] = useState(false);
     const print = usePrintReceipt();
     const previewQuery = usePosSaleById(state.previewSaleId);
     const invoiceNumberQuery = usePosInvoiceNumber();
@@ -104,9 +111,79 @@ export function PosPage(): React.ReactElement {
         if (state.lastSale) void print.printReceipt(state.lastSale);
     }, [print, state.lastSale]);
 
+    const billLabel = useCallback(
+        () =>
+            state.loyaltyOwner?.firstName ??
+            cart.cart[0]?.productName ??
+            'Held bill',
+        [cart.cart, state.loyaltyOwner],
+    );
+
+    const holdCurrentBill = useCallback(() => {
+        if (cart.cart.length === 0) return;
+        heldBills.holdBill({
+            label: billLabel(),
+            items: cart.cart,
+            cartDiscountPercentage: state.cartDiscountPercentage,
+            loyaltyOwner: state.loyaltyOwner,
+            loyaltyRedeemPoints: state.loyaltyRedeemPoints,
+        });
+        cart.clear();
+        state.resetAfterCheckout();
+        toast.success('Bill held — resume it from the shelf anytime');
+        state.focusSearch();
+    }, [billLabel, cart, heldBills, state]);
+
+    const resumeHeldBill = useCallback(
+        (id: string) => {
+            const bill = heldBills.takeBill(id);
+            if (!bill) return;
+            // Swap: a non-empty cart is parked first so nothing is lost.
+            if (cart.cart.length > 0) {
+                heldBills.holdBill({
+                    label: billLabel(),
+                    items: cart.cart,
+                    cartDiscountPercentage: state.cartDiscountPercentage,
+                    loyaltyOwner: state.loyaltyOwner,
+                    loyaltyRedeemPoints: state.loyaltyRedeemPoints,
+                });
+            }
+            cart.restore(bill.items);
+            state.setCartDiscountPercentage(bill.cartDiscountPercentage);
+            state.setLoyaltyOwner(bill.loyaltyOwner);
+            state.setLoyaltyRedeemPoints(bill.loyaltyRedeemPoints);
+            setShowHeldBills(false);
+            toast.success(`Resumed: ${bill.label}`);
+        },
+        [billLabel, cart, heldBills, state],
+    );
+
     return (
         <div className="flex flex-col gap-3 min-h-[calc(100dvh-6.5rem)] pb-4">
-            <PosModeSwitch mode={mode} onChange={setMode} />
+            <div className="flex items-center justify-between gap-2">
+                <PosModeSwitch mode={mode} onChange={setMode} />
+                {mode === 'billing' && (
+                    <div className="flex items-center gap-1.5">
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={holdCurrentBill}
+                            disabled={cart.cart.length === 0}
+                        >
+                            <PauseCircle size={14} aria-hidden />
+                            Hold bill
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setShowHeldBills(true)}
+                        >
+                            <Layers size={14} aria-hidden />
+                            Held ({heldBills.heldBills.length})
+                        </Button>
+                    </div>
+                )}
+            </div>
             {mode === 'scan' ? (
                 <ScanOrderView onDone={() => setMode('billing')} />
             ) : (
@@ -176,6 +253,13 @@ export function PosPage(): React.ReactElement {
             <PosBillPreviewModal
                 isOpen={state.previewSaleId !== null} sale={previewQuery.data ?? null}
                 onClose={() => state.setPreviewSaleId(null)}
+            />
+            <PosHeldBillsModal
+                isOpen={showHeldBills}
+                onClose={() => setShowHeldBills(false)}
+                heldBills={heldBills.heldBills}
+                onResume={resumeHeldBill}
+                onDiscard={heldBills.discardBill}
             />
             <PosPrintHost sale={print.printingSale} />
         </div>

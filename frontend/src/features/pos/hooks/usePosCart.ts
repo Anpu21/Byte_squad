@@ -29,6 +29,8 @@ export interface UsePosCartReturn {
     updateItem: (rowId: string, patch: Partial<ICartItem>) => void;
     removeItem: (rowId: string) => void;
     clear: () => void;
+    /** Replace the whole cart (hold/resume) — lines are recomputed. */
+    restore: (items: ICartItem[]) => void;
     itemsSubtotal: number;
     totalDiscount: number;
     totalTax: number;
@@ -102,6 +104,10 @@ export function usePosCart(): UsePosCartReturn {
 
     const clear = useCallback(() => setCart([]), []);
 
+    const restore = useCallback((items: ICartItem[]) => {
+        setCart(items.map((item) => recompute({ ...item })));
+    }, []);
+
     const totals = useMemo(() => {
         const itemsSubtotal = cart.reduce((s, c) => s + c.lineSubtotal, 0);
         const totalDiscount = cart.reduce((s, c) => s + c.lineDiscountAmount, 0);
@@ -110,5 +116,5 @@ export function usePosCart(): UsePosCartReturn {
         return { itemsSubtotal, totalDiscount, totalTax, cartTotal };
     }, [cart]);
 
-    return { cart, addItem, updateItem, removeItem, clear, ...totals };
+    return { cart, addItem, updateItem, removeItem, clear, restore, ...totals };
 }
