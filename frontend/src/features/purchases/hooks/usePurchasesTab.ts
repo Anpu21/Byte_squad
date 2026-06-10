@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 export const PURCHASES_TABS = [
     'grns',
     'new-grn',
+    'orders',
     'bills',
     'ageing',
     'suppliers',

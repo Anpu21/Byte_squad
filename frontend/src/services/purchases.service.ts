@@ -8,9 +8,13 @@ import type {
     IGrnsListResponse,
     IPayablesAgeingRow,
     IPayablesOutstandingRow,
+    IPurchaseOrder,
+    IPurchaseOrderPayload,
+    IPurchaseOrdersListResponse,
     ISupplierPayment,
     ISupplierPaymentPayload,
     ISupplierPaymentsListResponse,
+    PurchaseOrderStatus,
 } from '@/types';
 
 export interface IListGrnsQuery {
@@ -98,6 +102,48 @@ export const purchasesService = {
     getAgeing: async (): Promise<IPayablesAgeingRow[]> => {
         const response = await api.get<IApiResponse<IPayablesAgeingRow[]>>(
             '/purchases/reports/ageing',
+        );
+        return response.data.data;
+    },
+
+    /** `GET /purchases/orders` */
+    listOrders: async (
+        query: {
+            supplierId?: string;
+            status?: PurchaseOrderStatus;
+            limit?: number;
+            offset?: number;
+        } = {},
+    ): Promise<IPurchaseOrdersListResponse> => {
+        const response = await api.get<
+            IApiResponse<IPurchaseOrdersListResponse>
+        >('/purchases/orders', { params: query });
+        return response.data.data;
+    },
+
+    /** `POST /purchases/orders` */
+    createOrder: async (
+        payload: IPurchaseOrderPayload,
+    ): Promise<IPurchaseOrder> => {
+        const response = await api.post<IApiResponse<IPurchaseOrder>>(
+            '/purchases/orders',
+            payload,
+        );
+        return response.data.data;
+    },
+
+    /** `PATCH /purchases/orders/:id/send` */
+    sendOrder: async (id: string): Promise<IPurchaseOrder> => {
+        const response = await api.patch<IApiResponse<IPurchaseOrder>>(
+            `/purchases/orders/${id}/send`,
+        );
+        return response.data.data;
+    },
+
+    /** `PATCH /purchases/orders/:id/cancel` */
+    cancelOrder: async (id: string): Promise<IPurchaseOrder> => {
+        const response = await api.patch<IApiResponse<IPurchaseOrder>>(
+            `/purchases/orders/${id}/cancel`,
         );
         return response.data.data;
     },

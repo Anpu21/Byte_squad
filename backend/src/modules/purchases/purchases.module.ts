@@ -6,6 +6,11 @@ import { GrnItem } from '@/modules/purchases/entities/grn-item.entity';
 import { PurchaseDocCounter } from '@/modules/purchases/entities/purchase-doc-counter.entity';
 import { SupplierPayment } from '@/modules/purchases/entities/supplier-payment.entity';
 import { SupplierPaymentAllocation } from '@/modules/purchases/entities/supplier-payment-allocation.entity';
+import { PurchaseOrder } from '@/modules/purchases/entities/purchase-order.entity';
+import { PurchaseOrderItem } from '@/modules/purchases/entities/purchase-order-item.entity';
+import { PurchaseOrdersRepository } from '@/modules/purchases/purchase-orders.repository';
+import { PurchaseOrdersService } from '@/modules/purchases/purchase-orders.service';
+import { PurchaseOrdersController } from '@/modules/purchases/purchase-orders.controller';
 import { PurchaseDocNumberService } from '@/modules/purchases/purchase-doc-number.service';
 import { GrnsRepository } from '@/modules/purchases/grns.repository';
 import { GrnsService } from '@/modules/purchases/grns.service';
@@ -33,6 +38,8 @@ import { PurchasesReportsController } from '@/modules/purchases/purchases-report
       PurchaseDocCounter,
       SupplierPayment,
       SupplierPaymentAllocation,
+      PurchaseOrder,
+      PurchaseOrderItem,
     ]),
     SuppliersModule,
   ],
@@ -44,11 +51,14 @@ import { PurchasesReportsController } from '@/modules/purchases/purchases-report
     SupplierPaymentsService,
     PayablesReportsRepository,
     PayablesReportsService,
+    PurchaseOrdersRepository,
+    PurchaseOrdersService,
   ],
   controllers: [
     GrnsController,
     SupplierPaymentsController,
     PurchasesReportsController,
+    PurchaseOrdersController,
   ],
   exports: [
     PurchaseDocNumberService,
@@ -56,6 +66,8 @@ import { PurchasesReportsController } from '@/modules/purchases/purchases-report
     GrnsService,
     SupplierPaymentsRepository,
     SupplierPaymentsService,
+    PurchaseOrdersRepository,
+    PurchaseOrdersService,
   ],
 })
 export class PurchasesModule {}

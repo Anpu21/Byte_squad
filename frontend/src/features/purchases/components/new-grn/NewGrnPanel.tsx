@@ -11,7 +11,7 @@ import { userService } from '@/services/user.service';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import type { IGrnItemPayload } from '@/types';
+import type { IGrnItemPayload, IPurchaseOrder } from '@/types';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { useCreateGrn } from '../../hooks/useCreateGrn';
 
@@ -40,6 +40,12 @@ const emptyLine = (): ILineDraft => ({
 interface INewGrnPanelProps {
     /** Called after a successful receive (e.g. jump to the GRN register). */
     onCreated: () => void;
+    /**
+     * Receiving a purchase order: supplier/branch lock to the PO and the
+     * lines pre-fill from it. Mount with a `key` of the PO id so the
+     * lazy initial state applies.
+     */
+    prefillOrder?: IPurchaseOrder | null;
 }
 
 /**
@@ -48,18 +54,34 @@ interface INewGrnPanelProps {
  * stock IN, weighted-average cost, batches, movements, the ledger debit,
  * and the supplier bill.
  */
-export function NewGrnPanel({ onCreated }: INewGrnPanelProps) {
+export function NewGrnPanel({
+    onCreated,
+    prefillOrder = null,
+}: INewGrnPanelProps) {
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
     const createGrn = useCreateGrn();
 
-    const [supplierId, setSupplierId] = useState('');
-    const [branchId, setBranchId] = useState('');
+    const [supplierId, setSupplierId] = useState(
+        prefillOrder?.supplierId ?? '',
+    );
+    const [branchId, setBranchId] = useState(prefillOrder?.branchId ?? '');
     const [grnDate, setGrnDate] = useState('');
     const [supplierInvoiceNo, setSupplierInvoiceNo] = useState('');
     const [discount, setDiscount] = useState('');
     const [notes, setNotes] = useState('');
-    const [lines, setLines] = useState<ILineDraft[]>([emptyLine()]);
+    const [lines, setLines] = useState<ILineDraft[]>(() =>
+        prefillOrder?.items?.length
+            ? prefillOrder.items.map((it) => ({
+                  key: ++lineKey,
+                  productId: it.productId,
+                  quantity: String(Number(it.quantity)),
+                  unitCost: String(Number(it.unitCost)),
+                  batchNo: '',
+                  expiryDate: '',
+              }))
+            : [emptyLine()],
+    );
 
     const suppliersQuery = useSuppliers({ status: 'Active', limit: 100 });
     const productsQuery = useQuery({
@@ -156,6 +178,7 @@ export function NewGrnPanel({ onCreated }: INewGrnPanelProps) {
             const grn = await createGrn.mutateAsync({
                 supplierId,
                 branchId: isAdmin ? branchId : undefined,
+                purchaseOrderId: prefillOrder?.id,
                 grnDate: grnDate || undefined,
                 supplierInvoiceNo: supplierInvoiceNo.trim() || undefined,
                 discountAmount: discountNum > 0 ? discountNum : undefined,
@@ -180,6 +203,13 @@ export function NewGrnPanel({ onCreated }: INewGrnPanelProps) {
     return (
         <Card className="p-5">
             <form onSubmit={handleSubmit} className="space-y-5">
+                {prefillOrder && (
+                    <div className="p-3 rounded-md bg-info-soft border border-info/40 text-sm text-info">
+                        Receiving {prefillOrder.poNumber} — supplier and lines
+                        pre-filled; adjust quantities/costs to what actually
+                        arrived.
+                    </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <label className="block space-y-1.5">
                         <span className="text-[11px] uppercase tracking-wide text-text-3">
@@ -189,6 +219,7 @@ export function NewGrnPanel({ onCreated }: INewGrnPanelProps) {
                             className={`${INPUT_CLASS} w-full`}
                             value={supplierId}
                             onChange={(e) => setSupplierId(e.target.value)}
+                            disabled={prefillOrder !== null}
                             required
                         >
                             <option value="" disabled>
@@ -212,6 +243,7 @@ export function NewGrnPanel({ onCreated }: INewGrnPanelProps) {
                                 className={`${INPUT_CLASS} w-full`}
                                 value={branchId}
                                 onChange={(e) => setBranchId(e.target.value)}
+                                disabled={prefillOrder !== null}
                                 required
                             >
                                 <option value="" disabled>

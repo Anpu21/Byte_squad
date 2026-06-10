@@ -47,6 +47,11 @@ export class CreateGrnDto {
   @IsUUID()
   branchId?: string;
 
+  /** Converting a purchase order — marked Received inside the same txn. */
+  @IsOptional()
+  @IsUUID()
+  purchaseOrderId?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(64)

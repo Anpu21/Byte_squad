@@ -11,6 +11,7 @@ import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { Grn } from '@/modules/purchases/entities/grn.entity';
 import { GrnsRepository } from '@/modules/purchases/grns.repository';
 import { PurchaseDocNumberService } from '@/modules/purchases/purchase-doc-number.service';
+import { PurchaseOrdersRepository } from '@/modules/purchases/purchase-orders.repository';
 import { SuppliersRepository } from '@/modules/suppliers/suppliers.repository';
 import { CreateGrnDto } from '@/modules/purchases/dto/create-grn.dto';
 import { ListGrnsQueryDto } from '@/modules/purchases/dto/list-grns-query.dto';
@@ -49,6 +50,7 @@ export class GrnsService {
   constructor(
     private readonly grns: GrnsRepository,
     private readonly suppliers: SuppliersRepository,
+    private readonly orders: PurchaseOrdersRepository,
     private readonly docNumbers: PurchaseDocNumberService,
     private readonly dataSource: DataSource,
   ) {}
@@ -125,6 +127,27 @@ export class GrnsService {
     }
     const grandTotal = round2(subTotal - discountAmount);
 
+    // Converting a PO? It must match the supplier+branch and still be open.
+    if (dto.purchaseOrderId) {
+      const order = await this.orders.findById(dto.purchaseOrderId);
+      if (!order) throw new NotFoundException('Purchase order not found');
+      if (order.supplierId !== supplier.id) {
+        throw new BadRequestException(
+          `${order.poNumber} belongs to a different supplier`,
+        );
+      }
+      if (order.branchId !== branchId) {
+        throw new BadRequestException(
+          `${order.poNumber} was raised for a different branch`,
+        );
+      }
+      if (order.status !== 'Draft' && order.status !== 'Sent') {
+        throw new ConflictException(
+          `${order.poNumber} is ${order.status} and cannot be received`,
+        );
+      }
+    }
+
     const grnDate = dto.grnDate ?? toIsoDate(new Date());
     const due = new Date(grnDate);
     due.setDate(due.getDate() + supplier.creditTermDays);
@@ -138,6 +161,7 @@ export class GrnsService {
         grnNumber,
         supplierId: supplier.id,
         branchId,
+        purchaseOrderId: dto.purchaseOrderId ?? null,
         supplierInvoiceNo: dto.supplierInvoiceNo ?? null,
         grnDate,
         dueDate,
@@ -234,6 +258,14 @@ export class GrnsService {
         description: `Purchase ${grnNumber} — ${supplier.name}`,
         referenceNumber: grnNumber,
       });
+
+      if (dto.purchaseOrderId) {
+        await this.orders.updateStatus(
+          dto.purchaseOrderId,
+          'Received',
+          manager,
+        );
+      }
 
       return grn.id;
     });

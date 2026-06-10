@@ -12,6 +12,8 @@ import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { GrnsService } from './grns.service';
 import { GrnsRepository } from './grns.repository';
 import { PurchaseDocNumberService } from './purchase-doc-number.service';
+import { PurchaseOrdersRepository } from './purchase-orders.repository';
+import { PurchaseOrder } from './entities/purchase-order.entity';
 import { SuppliersRepository } from '@/modules/suppliers/suppliers.repository';
 import { Supplier } from '@/modules/suppliers/entities/supplier.entity';
 import { Grn } from './entities/grn.entity';
@@ -77,6 +79,7 @@ describe('GrnsService', () => {
   let service: GrnsService;
   let repo: jest.Mocked<GrnsRepository>;
   let suppliers: jest.Mocked<SuppliersRepository>;
+  let orders: jest.Mocked<PurchaseOrdersRepository>;
   let docNumbers: jest.Mocked<PurchaseDocNumberService>;
   let dataSource: { transaction: jest.Mock };
 
@@ -112,6 +115,10 @@ describe('GrnsService', () => {
           useValue: { findById: jest.fn() },
         },
         {
+          provide: PurchaseOrdersRepository,
+          useValue: { findById: jest.fn(), updateStatus: jest.fn() },
+        },
+        {
           provide: PurchaseDocNumberService,
           useValue: { next: jest.fn() },
         },
@@ -121,6 +128,7 @@ describe('GrnsService', () => {
     service = moduleRef.get(GrnsService);
     repo = moduleRef.get(GrnsRepository);
     suppliers = moduleRef.get(SuppliersRepository);
+    orders = moduleRef.get(PurchaseOrdersRepository);
     docNumbers = moduleRef.get(PurchaseDocNumberService);
   });
 
@@ -256,6 +264,37 @@ describe('GrnsService', () => {
       await expect(
         service.create({ ...baseDto, discountAmount: 5000 }, MANAGER),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('converting a PO marks it Received inside the txn', async () => {
+      primeHappyPath();
+      orders.findById.mockResolvedValue({
+        id: 'po-1',
+        poNumber: 'PO-2026-000001',
+        supplierId: SUPPLIER_ID,
+        branchId: BRANCH_A,
+        status: 'Sent',
+      } as PurchaseOrder);
+      await service.create({ ...baseDto, purchaseOrderId: 'po-1' }, MANAGER);
+      expect(orders.updateStatus).toHaveBeenCalledWith(
+        'po-1',
+        'Received',
+        expect.anything(),
+      );
+    });
+
+    it('refuses to receive a cancelled PO', async () => {
+      primeHappyPath();
+      orders.findById.mockResolvedValue({
+        id: 'po-1',
+        poNumber: 'PO-2026-000001',
+        supplierId: SUPPLIER_ID,
+        branchId: BRANCH_A,
+        status: 'Cancelled',
+      } as PurchaseOrder);
+      await expect(
+        service.create({ ...baseDto, purchaseOrderId: 'po-1' }, MANAGER),
+      ).rejects.toBeInstanceOf(ConflictException);
     });
 
     it('keeps costPrice when the basis is empty and costs match', async () => {

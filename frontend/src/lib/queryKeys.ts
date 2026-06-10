@@ -208,6 +208,12 @@ export const queryKeys = {
             limit?: number;
             offset?: number;
         }) => ['purchases', 'payments', params] as const,
+        orders: (params: {
+            supplierId?: string;
+            status?: string;
+            limit?: number;
+            offset?: number;
+        }) => ['purchases', 'orders', params] as const,
         outstanding: () => ['purchases', 'outstanding'] as const,
         ageing: () => ['purchases', 'ageing'] as const,
     },

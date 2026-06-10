@@ -13,6 +13,8 @@ export interface IGrnPayload {
     supplierId: string;
     /** Required for admins; managers are pinned to their own branch. */
     branchId?: string;
+    /** Converting a purchase order — marked Received in the same txn. */
+    purchaseOrderId?: string;
     supplierInvoiceNo?: string;
     /** ISO date `YYYY-MM-DD`; defaults to today on the BE. */
     grnDate?: string;
