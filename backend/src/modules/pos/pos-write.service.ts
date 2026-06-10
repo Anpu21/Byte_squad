@@ -29,6 +29,7 @@ import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import type { LoyaltyOwner } from '@/modules/loyalty/types';
 
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
+import { assertWithinCreditLimit } from '@pos/lib/credit-limit';
 import { DiscountType } from '@common/enums/discount.enum';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { PaymentMethod } from '@common/enums/payment-method';
@@ -646,6 +647,12 @@ export class PosWriteService {
       throw new NotFoundException('Customer not found');
     }
     let runningBalance = Number(user.currentBalance);
+
+    assertWithinCreditLimit(
+      user.creditLimit === null ? null : Number(user.creditLimit),
+      runningBalance,
+      tender.creditTaken,
+    );
 
     if (tender.creditTaken > 0) {
       runningBalance = round2(runningBalance + tender.creditTaken);

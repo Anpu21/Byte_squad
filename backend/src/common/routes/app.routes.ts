@@ -113,6 +113,11 @@ export const APP_ROUTES = {
     SALE_BY_ID: 'sales/:id',
     SALE_PRINT: 'sales/:id/print',
     SALE_VOID: 'sales/:id/void',
+    // Phase 2 — customer receivables (AR mirror of supplier payables).
+    RECEIVABLES: 'receivables',
+    RECEIVABLES_STATEMENT: 'receivables/:userId/statement',
+    RECEIVABLES_PAYMENTS: 'receivables/:userId/payments',
+    RECEIVABLES_CREDIT_LIMIT: 'receivables/:userId/credit-limit',
   },
 
   // Accounting

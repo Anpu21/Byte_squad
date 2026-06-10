@@ -219,6 +219,12 @@ export const queryKeys = {
         returnsForGrn: (grnId: string) =>
             ['purchases', 'returns', grnId] as const,
     },
+    receivables: {
+        all: () => ['receivables'] as const,
+        list: () => ['receivables', 'list'] as const,
+        statement: (userId: string) =>
+            ['receivables', 'statement', userId] as const,
+    },
     shipments: {
         all: () => ['shipments'] as const,
         list: (params: {

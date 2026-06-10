@@ -4,6 +4,8 @@ import { PosService } from '@pos/pos.service';
 import { PosWriteService } from '@pos/pos-write.service';
 import { PosVoidService } from '@pos/pos-void.service';
 import { PosController } from '@pos/pos.controller';
+import { ReceivablesController } from '@pos/receivables.controller';
+import { ReceivablesService } from '@pos/receivables.service';
 import { PosRepository } from '@pos/pos.repository';
 import { SaleRepository } from '@pos/sale.repository';
 import { SaleItemRepository } from '@pos/sale-item.repository';
@@ -42,11 +44,12 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
     UsersModule,
     LoyaltyModule,
   ],
-  controllers: [PosController],
+  controllers: [PosController, ReceivablesController],
   providers: [
     PosService,
     PosWriteService,
     PosVoidService,
+    ReceivablesService,
     PosRepository,
     SaleRepository,
     SaleItemRepository,

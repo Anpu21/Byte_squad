@@ -20,6 +20,7 @@ import { ReturnNewPage } from '@/pages/inventory/ReturnNewPage';
 import { PosPage } from '@/pages/pos/PosPage';
 import { TransactionsPage } from '@/pages/pos/TransactionsPage';
 import { LedgerPage } from '@/pages/accounting/LedgerPage';
+import { ReceivablesPage } from '@/pages/receivables/ReceivablesPage';
 import { ExpensesPage } from '@/pages/accounting/ExpensesPage';
 import { ProfitLossPage } from '@/pages/accounting/ProfitLossPage';
 import { UserManagementPage } from '@/pages/users/UserManagementPage';
@@ -228,6 +229,12 @@ export const ROUTES: RouteDef[] = [
         path: FRONTEND_ROUTES.LEDGER,
         element: <LedgerPage />,
         allowedRoles: [UserRole.ADMIN],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.RECEIVABLES,
+        element: <ReceivablesPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
     {

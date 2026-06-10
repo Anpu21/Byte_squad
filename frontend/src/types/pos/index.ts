@@ -33,3 +33,10 @@ export type { ICashierTransactionRow } from './cashier-transaction-row.type';
 export type { ICashierTransactionsSummary } from './cashier-transactions-summary.type';
 export type { ICashierDashboard } from './cashier-dashboard.type';
 export type { IAdminDashboard } from './admin-dashboard.type';
+export type {
+    CreditPaymentMethod,
+    ICreditStatement,
+    ICreditTransactionRow,
+    IReceivableRow,
+    IReceiveCreditPaymentPayload,
+} from './receivable.type';

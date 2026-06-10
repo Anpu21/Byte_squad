@@ -13,6 +13,7 @@ import {
     PiggyBank,
     Receipt,
     Wallet,
+    HandCoins,
     ScrollText,
     ShoppingCart,
     Sparkles,
@@ -134,6 +135,13 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.LEDGER,
         roles: [UserRole.ADMIN],
         icon: <ScrollText size={15} />,
+        group: 'Accounting',
+    },
+    {
+        label: 'Receivables',
+        path: FRONTEND_ROUTES.RECEIVABLES,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <HandCoins size={15} />,
         group: 'Accounting',
     },
     {
