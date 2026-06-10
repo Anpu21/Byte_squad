@@ -6,6 +6,11 @@ import type {
     IGrn,
     IGrnPayload,
     IGrnsListResponse,
+    IPayablesAgeingRow,
+    IPayablesOutstandingRow,
+    ISupplierPayment,
+    ISupplierPaymentPayload,
+    ISupplierPaymentsListResponse,
 } from '@/types';
 
 export interface IListGrnsQuery {
@@ -56,6 +61,43 @@ export const purchasesService = {
         const response = await api.post<IApiResponse<IGrn>>(
             `/purchases/grns/${id}/void`,
             { reason },
+        );
+        return response.data.data;
+    },
+
+    /** `GET /purchases/payments` */
+    listPayments: async (
+        query: { supplierId?: string; limit?: number; offset?: number } = {},
+    ): Promise<ISupplierPaymentsListResponse> => {
+        const response = await api.get<
+            IApiResponse<ISupplierPaymentsListResponse>
+        >('/purchases/payments', { params: query });
+        return response.data.data;
+    },
+
+    /** `POST /purchases/payments` — bill-by-bill settlement. */
+    createPayment: async (
+        payload: ISupplierPaymentPayload,
+    ): Promise<ISupplierPayment> => {
+        const response = await api.post<IApiResponse<ISupplierPayment>>(
+            '/purchases/payments',
+            payload,
+        );
+        return response.data.data;
+    },
+
+    /** `GET /purchases/reports/outstanding` */
+    getOutstanding: async (): Promise<IPayablesOutstandingRow[]> => {
+        const response = await api.get<
+            IApiResponse<IPayablesOutstandingRow[]>
+        >('/purchases/reports/outstanding');
+        return response.data.data;
+    },
+
+    /** `GET /purchases/reports/ageing` */
+    getAgeing: async (): Promise<IPayablesAgeingRow[]> => {
+        const response = await api.get<IApiResponse<IPayablesAgeingRow[]>>(
+            '/purchases/reports/ageing',
         );
         return response.data.data;
     },

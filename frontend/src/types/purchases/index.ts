@@ -4,3 +4,7 @@ export * from './suppliers-list-response.type';
 export * from './grn.type';
 export * from './grn-payload.type';
 export * from './grns-list-response.type';
+export * from './supplier-payment.type';
+export * from './supplier-payment-payload.type';
+export * from './supplier-payments-list-response.type';
+export * from './payables-reports.type';

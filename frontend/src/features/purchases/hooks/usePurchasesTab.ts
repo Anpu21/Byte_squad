@@ -1,7 +1,13 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-export const PURCHASES_TABS = ['grns', 'new-grn', 'suppliers'] as const;
+export const PURCHASES_TABS = [
+    'grns',
+    'new-grn',
+    'bills',
+    'ageing',
+    'suppliers',
+] as const;
 
 export type PurchasesTab = (typeof PURCHASES_TABS)[number];
 

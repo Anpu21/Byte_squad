@@ -4,6 +4,8 @@ import { PurchasesTabs } from '@/features/purchases/components/PurchasesTabs';
 import { SuppliersPanel } from '@/features/purchases/components/suppliers/SuppliersPanel';
 import { GrnsPanel } from '@/features/purchases/components/grns/GrnsPanel';
 import { NewGrnPanel } from '@/features/purchases/components/new-grn/NewGrnPanel';
+import { BillsPanel } from '@/features/purchases/components/bills/BillsPanel';
+import { AgeingPanel } from '@/features/purchases/components/ageing/AgeingPanel';
 
 /**
  * Purchases workspace (admin/manager) — the procurement side of stock:
@@ -25,6 +27,8 @@ export function PurchasesWorkspacePage() {
             {tab === 'new-grn' && (
                 <NewGrnPanel onCreated={() => setTab('grns')} />
             )}
+            {tab === 'bills' && <BillsPanel />}
+            {tab === 'ageing' && <AgeingPanel />}
             {tab === 'suppliers' && <SuppliersPanel />}
         </div>
     );

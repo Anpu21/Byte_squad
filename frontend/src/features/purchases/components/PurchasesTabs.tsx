@@ -1,7 +1,9 @@
 import {
     Building2,
+    CalendarClock,
     ClipboardList,
     PackagePlus,
+    Wallet,
     type LucideIcon,
 } from 'lucide-react';
 import type { PurchasesTab } from '../hooks/usePurchasesTab';
@@ -15,6 +17,8 @@ interface TabDef {
 const TABS: TabDef[] = [
     { key: 'grns', label: 'Goods receipts', Icon: ClipboardList },
     { key: 'new-grn', label: 'New GRN', Icon: PackagePlus },
+    { key: 'bills', label: 'Bills & Payments', Icon: Wallet },
+    { key: 'ageing', label: 'Ageing', Icon: CalendarClock },
     { key: 'suppliers', label: 'Suppliers', Icon: Building2 },
 ];
 
