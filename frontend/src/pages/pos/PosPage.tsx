@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { Layers, PauseCircle } from 'lucide-react';
+import { Layers, PauseCircle, Undo2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { usePosCart } from '@/features/pos/hooks/usePosCart';
 import { usePosPageState } from '@/features/pos/hooks/usePosPageState';
 import { usePosHeldBills } from '@/features/pos/hooks/usePosHeldBills';
 import { PosHeldBillsModal } from '@/features/pos/components/held-bills/PosHeldBillsModal';
+import { PosReturnModal } from '@/features/pos/components/returns/PosReturnModal';
 import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
 import { usePrintReceipt } from '@/features/pos/hooks/usePrintReceipt';
 import { usePosSaleById } from '@/features/pos/hooks/usePosSaleById';
@@ -43,6 +44,7 @@ export function PosPage(): React.ReactElement {
     const state = usePosPageState();
     const heldBills = usePosHeldBills();
     const [showHeldBills, setShowHeldBills] = useState(false);
+    const [showReturn, setShowReturn] = useState(false);
     const print = usePrintReceipt();
     const previewQuery = usePosSaleById(state.previewSaleId);
     const invoiceNumberQuery = usePosInvoiceNumber();
@@ -55,7 +57,7 @@ export function PosPage(): React.ReactElement {
     const barcode = usePosBarcodeScan({
         onProductFound: handleScanHit,
         enabled:
-            mode === 'billing' &&
+            mode === 'billing' && !showReturn &&
             !state.showPayment && !state.showRecent && state.previewSaleId === null,
     });
     const handleCameraScan = useCallback(
@@ -181,6 +183,14 @@ export function PosPage(): React.ReactElement {
                             <Layers size={14} aria-hidden />
                             Held ({heldBills.heldBills.length})
                         </Button>
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setShowReturn(true)}
+                        >
+                            <Undo2 size={14} aria-hidden />
+                            Return
+                        </Button>
                     </div>
                 )}
             </div>
@@ -260,6 +270,10 @@ export function PosPage(): React.ReactElement {
                 heldBills={heldBills.heldBills}
                 onResume={resumeHeldBill}
                 onDiscard={heldBills.discardBill}
+            />
+            <PosReturnModal
+                isOpen={showReturn}
+                onClose={() => setShowReturn(false)}
             />
             <PosPrintHost sale={print.printingSale} />
         </div>

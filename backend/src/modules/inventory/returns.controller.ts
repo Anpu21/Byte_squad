@@ -18,8 +18,10 @@ import { APP_ROUTES } from '@common/routes/app.routes';
 export class ReturnsController {
   constructor(private readonly service: ReturnsService) {}
 
+  // Cashiers process till refunds too — branch scoping is enforced in the
+  // service (assertBranchAccess), so the till can only touch its own sales.
   @Get(APP_ROUTES.RETURNS.LOOKUP)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   lookup(
     @Query() query: LookupSaleQueryDto,
     @CurrentUser() actor: AuthUser,
@@ -28,7 +30,7 @@ export class ReturnsController {
   }
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   create(
     @Body() dto: CreateSalesReturnDto,
     @CurrentUser() actor: AuthUser,
