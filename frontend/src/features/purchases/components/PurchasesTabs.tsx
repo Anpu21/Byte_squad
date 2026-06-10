@@ -1,4 +1,9 @@
-import { Building2, type LucideIcon } from 'lucide-react';
+import {
+    Building2,
+    ClipboardList,
+    PackagePlus,
+    type LucideIcon,
+} from 'lucide-react';
 import type { PurchasesTab } from '../hooks/usePurchasesTab';
 
 interface TabDef {
@@ -8,6 +13,8 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
+    { key: 'grns', label: 'Goods receipts', Icon: ClipboardList },
+    { key: 'new-grn', label: 'New GRN', Icon: PackagePlus },
     { key: 'suppliers', label: 'Suppliers', Icon: Building2 },
 ];
 

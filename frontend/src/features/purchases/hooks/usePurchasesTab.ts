@@ -1,11 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-export const PURCHASES_TABS = ['suppliers'] as const;
+export const PURCHASES_TABS = ['grns', 'new-grn', 'suppliers'] as const;
 
 export type PurchasesTab = (typeof PURCHASES_TABS)[number];
 
-const DEFAULT_TAB: PurchasesTab = 'suppliers';
+const DEFAULT_TAB: PurchasesTab = 'grns';
 
 function isPurchasesTab(raw: string | null): raw is PurchasesTab {
     return (

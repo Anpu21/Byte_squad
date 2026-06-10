@@ -192,6 +192,17 @@ export const queryKeys = {
             offset?: number;
         }) => ['purchases', 'suppliers', params] as const,
         supplier: (id: string) => ['purchases', 'supplier', id] as const,
+        grns: (params: {
+            supplierId?: string;
+            branchId?: string;
+            status?: string;
+            paymentStatus?: string;
+            startDate?: string;
+            endDate?: string;
+            limit?: number;
+            offset?: number;
+        }) => ['purchases', 'grns', params] as const,
+        grn: (id: string) => ['purchases', 'grn', id] as const,
     },
     shipments: {
         all: () => ['shipments'] as const,
