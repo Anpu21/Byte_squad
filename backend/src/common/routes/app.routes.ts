@@ -118,6 +118,11 @@ export const APP_ROUTES = {
     RECEIVABLES_STATEMENT: 'receivables/:userId/statement',
     RECEIVABLES_PAYMENTS: 'receivables/:userId/payments',
     RECEIVABLES_CREDIT_LIMIT: 'receivables/:userId/credit-limit',
+    // Phase 2 — drawer sessions + day-end Z-report.
+    SHIFTS: 'shifts',
+    SHIFTS_CURRENT: 'shifts/current',
+    SHIFTS_OPEN: 'shifts/open',
+    SHIFTS_CLOSE: 'shifts/close',
   },
 
   // Accounting

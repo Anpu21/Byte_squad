@@ -6,6 +6,10 @@ import { PosVoidService } from '@pos/pos-void.service';
 import { PosController } from '@pos/pos.controller';
 import { ReceivablesController } from '@pos/receivables.controller';
 import { ReceivablesService } from '@pos/receivables.service';
+import { ShiftsController } from '@pos/shifts.controller';
+import { ShiftsService } from '@pos/shifts.service';
+import { ShiftsRepository } from '@pos/shifts.repository';
+import { PosShift } from '@pos/entities/pos-shift.entity';
 import { PosRepository } from '@pos/pos.repository';
 import { SaleRepository } from '@pos/sale.repository';
 import { SaleItemRepository } from '@pos/sale-item.repository';
@@ -37,6 +41,7 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
       StockMovement,
       InvoiceCounter,
       IdempotencyKey,
+      PosShift,
     ]),
     AccountingModule,
     forwardRef(() => InventoryModule),
@@ -44,12 +49,14 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
     UsersModule,
     LoyaltyModule,
   ],
-  controllers: [PosController, ReceivablesController],
+  controllers: [PosController, ReceivablesController, ShiftsController],
   providers: [
     PosService,
     PosWriteService,
     PosVoidService,
     ReceivablesService,
+    ShiftsService,
+    ShiftsRepository,
     PosRepository,
     SaleRepository,
     SaleItemRepository,

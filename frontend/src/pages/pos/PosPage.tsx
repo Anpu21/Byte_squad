@@ -7,6 +7,7 @@ import { usePosPageState } from '@/features/pos/hooks/usePosPageState';
 import { usePosHeldBills } from '@/features/pos/hooks/usePosHeldBills';
 import { PosHeldBillsModal } from '@/features/pos/components/held-bills/PosHeldBillsModal';
 import { PosReturnModal } from '@/features/pos/components/returns/PosReturnModal';
+import { PosShiftControls } from '@/features/pos/components/shift/PosShiftControls';
 import { usePosBarcodeScan } from '@/features/pos/hooks/usePosBarcodeScan';
 import { usePrintReceipt } from '@/features/pos/hooks/usePrintReceipt';
 import { usePosSaleById } from '@/features/pos/hooks/usePosSaleById';
@@ -191,6 +192,7 @@ export function PosPage(): React.ReactElement {
                             <Undo2 size={14} aria-hidden />
                             Return
                         </Button>
+                        <PosShiftControls />
                     </div>
                 )}
             </div>

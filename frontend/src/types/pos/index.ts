@@ -40,3 +40,9 @@ export type {
     IReceivableRow,
     IReceiveCreditPaymentPayload,
 } from './receivable.type';
+export type {
+    ICurrentShiftResponse,
+    IPosShift,
+    IShiftLiveSummary,
+    ShiftStatus,
+} from './shift.type';

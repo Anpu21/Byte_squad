@@ -225,6 +225,10 @@ export const queryKeys = {
         statement: (userId: string) =>
             ['receivables', 'statement', userId] as const,
     },
+    shifts: {
+        all: () => ['shifts'] as const,
+        current: () => ['shifts', 'current'] as const,
+    },
     shipments: {
         all: () => ['shipments'] as const,
         list: (params: {
