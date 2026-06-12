@@ -44,6 +44,7 @@ import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { pickSeedImageUrl } from '@common/seeds/seed-product-images';
 import { HrSeedService } from '@common/seeds/hr-seed.service';
 import { PurchasesSeedService } from '@common/seeds/purchases-seed.service';
+import { PosAccountingSeedService } from '@common/seeds/pos-accounting-seed.service';
 import { AccountsRepository } from '@accounting/accounts.repository';
 import {
   CATEGORY_THRESHOLDS,
@@ -135,6 +136,7 @@ export class AdminSeedService implements OnModuleInit {
     private readonly cloudinary: CloudinaryService,
     private readonly hrSeed: HrSeedService,
     private readonly purchasesSeed: PurchasesSeedService,
+    private readonly posAccountingSeed: PosAccountingSeedService,
     private readonly accountsRepository: AccountsRepository,
   ) {}
 
@@ -428,6 +430,19 @@ export class AdminSeedService implements OnModuleInit {
     await this.purchasesSeed.seed({
       admin,
       mainBranch,
+      products,
+    });
+
+    // 11. Phase 2–4 roadmap demo seed — discount schemes, a closed drawer
+    //     shift, customer credit + a real FIFO repayment, journal vouchers,
+    //     and one locked fiscal period. Runs last so the period lock can
+    //     never reject an earlier seed's ledger posting.
+    await this.posAccountingSeed.seed({
+      admin,
+      mainBranch,
+      mainManager,
+      cashier1,
+      customers: customerUsers,
       products,
     });
 

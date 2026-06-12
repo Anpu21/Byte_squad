@@ -58,6 +58,7 @@ import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-en
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
 import { HrSeedService } from '@common/seeds/hr-seed.service';
 import { PurchasesSeedService } from '@common/seeds/purchases-seed.service';
+import { PosAccountingSeedService } from '@common/seeds/pos-accounting-seed.service';
 import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
 
 import appConfig from '@common/config/app.config';
@@ -132,6 +133,7 @@ import appConfig from '@common/config/app.config';
     AdminSeedService,
     HrSeedService,
     PurchasesSeedService,
+    PosAccountingSeedService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })

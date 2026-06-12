@@ -91,6 +91,8 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
   // dropped from exports then. New per-entity repositories
   // (SaleItem, Payment, CreditTransaction, StockMovement) stay private
   // to the module.
-  exports: [PosService, SaleRepository, PosRepository],
+  // ReceivablesService is exported for the demo seed, which records a
+  // real FIFO repayment so the statement/ledger land like production.
+  exports: [PosService, SaleRepository, PosRepository, ReceivablesService],
 })
 export class PosModule {}
