@@ -76,6 +76,9 @@ export const FRONTEND_ROUTES = {
     // Admin / manager — automatic POS discount schemes
     ADMIN_SCHEMES: '/admin/schemes',
 
+    // Admin / manager — unified reports hub (salesman report + launcher)
+    REPORTS: '/reports',
+
     // Admin / manager — HR employee management
     ADMIN_EMPLOYEES: '/admin/employees',
     ADMIN_EMPLOYEE_NEW: '/admin/employees/new',

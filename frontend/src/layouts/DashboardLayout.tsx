@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     BadgePercent,
+    BarChart3,
     Bell,
     Boxes,
     Briefcase,
@@ -120,6 +121,13 @@ const NAV_ITEMS: NavItem[] = [
         group: 'Operations',
     },
     {
+        label: 'Reports',
+        path: FRONTEND_ROUTES.REPORTS,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <BarChart3 size={15} />,
+        group: 'Operations',
+    },
+    {
         label: 'Customer Orders',
         path: FRONTEND_ROUTES.CUSTOMER_ORDERS,
         roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
@@ -155,7 +163,7 @@ const NAV_ITEMS: NavItem[] = [
         group: 'Accounting',
     },
     {
-        label: 'Reports',
+        label: 'Financial reports',
         path: FRONTEND_ROUTES.FINANCIAL_REPORTS,
         roles: [UserRole.ADMIN],
         icon: <Scale size={15} />,

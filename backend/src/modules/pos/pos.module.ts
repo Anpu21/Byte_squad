@@ -12,6 +12,9 @@ import { ShiftsRepository } from '@pos/shifts.repository';
 import { DiscountSchemesController } from '@pos/discount-schemes.controller';
 import { DiscountSchemesService } from '@pos/discount-schemes.service';
 import { DiscountSchemesRepository } from '@pos/discount-schemes.repository';
+import { SalesReportsController } from '@pos/sales-reports.controller';
+import { SalesReportsService } from '@pos/sales-reports.service';
+import { SalesReportsRepository } from '@pos/sales-reports.repository';
 import { PosShift } from '@pos/entities/pos-shift.entity';
 import { DiscountScheme } from '@pos/entities/discount-scheme.entity';
 import { PosRepository } from '@pos/pos.repository';
@@ -59,6 +62,7 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
     ReceivablesController,
     ShiftsController,
     DiscountSchemesController,
+    SalesReportsController,
   ],
   providers: [
     PosService,
@@ -69,6 +73,8 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
     ShiftsRepository,
     DiscountSchemesService,
     DiscountSchemesRepository,
+    SalesReportsService,
+    SalesReportsRepository,
     PosRepository,
     SaleRepository,
     SaleItemRepository,

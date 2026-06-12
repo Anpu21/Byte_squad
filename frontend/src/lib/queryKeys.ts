@@ -313,5 +313,10 @@ export const queryKeys = {
             ['pos', 'schemes', { isActive }] as const,
         schemesAll: () => ['pos', 'schemes'] as const,
         activeSchemes: () => ['pos', 'activeSchemes'] as const,
+        salesmanReport: (params: {
+            startDate?: string;
+            endDate?: string;
+            branchId?: string;
+        }) => ['pos', 'salesmanReport', params] as const,
     },
 } as const;

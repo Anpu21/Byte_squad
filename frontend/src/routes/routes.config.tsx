@@ -24,6 +24,7 @@ import { ReceivablesPage } from '@/pages/receivables/ReceivablesPage';
 import { FinancialReportsPage } from '@/pages/accounting/FinancialReportsPage';
 import { AuditLogPage } from '@/pages/admin/AuditLogPage';
 import { DiscountSchemesPage } from '@/pages/admin/DiscountSchemesPage';
+import { ReportsHubPage } from '@/pages/reports/ReportsHubPage';
 import { ExpensesPage } from '@/pages/accounting/ExpensesPage';
 import { ProfitLossPage } from '@/pages/accounting/ProfitLossPage';
 import { UserManagementPage } from '@/pages/users/UserManagementPage';
@@ -255,6 +256,12 @@ export const ROUTES: RouteDef[] = [
     {
         path: FRONTEND_ROUTES.ADMIN_SCHEMES,
         element: <DiscountSchemesPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.REPORTS,
+        element: <ReportsHubPage />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },

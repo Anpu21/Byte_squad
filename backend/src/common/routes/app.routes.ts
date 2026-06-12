@@ -127,6 +127,8 @@ export const APP_ROUTES = {
     SCHEMES: 'schemes',
     SCHEMES_ACTIVE: 'schemes/active',
     SCHEME_BY_ID: 'schemes/:id',
+    // Phase 4 — cashier-wise sales report.
+    REPORTS_SALESMAN: 'reports/salesman',
   },
 
   // Accounting

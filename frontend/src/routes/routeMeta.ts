@@ -36,6 +36,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.FINANCIAL_REPORTS]: { title: 'Financial reports', crumbs: ['Accounting', 'Reports'] },
     [FRONTEND_ROUTES.ADMIN_AUDIT]: { title: 'Audit log', crumbs: ['System', 'Audit'] },
     [FRONTEND_ROUTES.ADMIN_SCHEMES]: { title: 'Discount schemes', crumbs: ['Operations', 'Schemes'] },
+    [FRONTEND_ROUTES.REPORTS]: { title: 'Reports', crumbs: ['Operations', 'Reports'] },
     [FRONTEND_ROUTES.EXPENSES]: { title: 'Expenses', crumbs: ['Accounting', 'Expenses'] },
     [FRONTEND_ROUTES.PROFIT_LOSS]: { title: 'Profit & Loss', crumbs: ['Accounting', 'Profit & Loss'] },
 

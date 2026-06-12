@@ -52,3 +52,8 @@ export type {
     IDiscountSchemePayload,
     IDiscountSchemesListResponse,
 } from './discount-scheme.type';
+export type {
+    ISalesmanReportParams,
+    ISalesmanReportResponse,
+    ISalesmanReportRow,
+} from './salesman-report.type';
