@@ -74,9 +74,7 @@ export class ShipmentsRepository {
     input: DeepPartial<ShipmentEvent>,
     manager?: EntityManager,
   ): Promise<ShipmentEvent> {
-    const r = manager
-      ? manager.getRepository(ShipmentEvent)
-      : this.eventsRepo;
+    const r = manager ? manager.getRepository(ShipmentEvent) : this.eventsRepo;
     return r.save(r.create(input));
   }
 
@@ -106,10 +104,9 @@ export class ShipmentsRepository {
         );
       }
     } else if (filter.branchId) {
-      qb.andWhere(
-        '(s.source_branch_id = :b OR s.destination_branch_id = :b)',
-        { b: filter.branchId },
-      );
+      qb.andWhere('(s.source_branch_id = :b OR s.destination_branch_id = :b)', {
+        b: filter.branchId,
+      });
     }
 
     const [items, total] = await qb

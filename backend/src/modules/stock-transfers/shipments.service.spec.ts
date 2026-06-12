@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import {
   BadRequestException,
   ConflictException,
@@ -48,9 +47,13 @@ function courier(over: Partial<Employee> = {}): Employee {
 
 describe('ShipmentsService', () => {
   let service: ShipmentsService;
-  let shipments: jest.Mocked<Pick<ShipmentsRepository, 'findById' | 'save' | 'appendEvent' | 'list'>>;
+  let shipments: jest.Mocked<
+    Pick<ShipmentsRepository, 'findById' | 'save' | 'appendEvent' | 'list'>
+  >;
   let transfers: jest.Mocked<Pick<StockTransfersRepository, 'findByIds'>>;
-  let employees: jest.Mocked<Pick<EmployeesRepository, 'findById' | 'findByUserId'>>;
+  let employees: jest.Mocked<
+    Pick<EmployeesRepository, 'findById' | 'findByUserId'>
+  >;
 
   const admin = { id: 'u-admin', role: UserRole.ADMIN, branchId: null };
   const sourceManager = {

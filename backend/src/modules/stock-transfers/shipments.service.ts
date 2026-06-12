@@ -8,7 +8,6 @@ import {
 import { randomUUID } from 'crypto';
 import { DataSource, type EntityManager } from 'typeorm';
 import { Shipment } from '@stock-transfers/entities/shipment.entity';
-import { ShipmentEvent } from '@stock-transfers/entities/shipment-event.entity';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Employee } from '@/modules/hr/entities/employee.entity';
@@ -346,10 +345,7 @@ export class ShipmentsService {
     return this.findByIdOrThrow(id);
   }
 
-  async markOutForDelivery(
-    id: string,
-    actor: ActorContext,
-  ): Promise<Shipment> {
+  async markOutForDelivery(id: string, actor: ActorContext): Promise<Shipment> {
     const shipment = await this.findByIdOrThrow(id);
     await this.assertCourierOrBranchManager(actor, shipment, 'either');
     if (shipment.status !== ShipmentStatus.DISPATCHED) {
