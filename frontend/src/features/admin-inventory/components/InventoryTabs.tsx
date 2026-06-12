@@ -1,4 +1,5 @@
 import {
+    Barcode,
     Boxes,
     CalendarClock,
     ClipboardList,
@@ -22,6 +23,7 @@ const TABS: TabDef[] = [
     { key: 'returns', label: 'Returns', Icon: Undo2 },
     { key: 'transfers', label: 'Transfers', Icon: Truck },
     { key: 'categories', label: 'Categories', Icon: Tags },
+    { key: 'labels', label: 'Labels', Icon: Barcode },
 ];
 
 interface InventoryTabsProps {
