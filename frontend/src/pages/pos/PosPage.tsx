@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { Layers, PauseCircle, Undo2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { usePosCart } from '@/features/pos/hooks/usePosCart';
+import {
+    usePosCart,
+    type SchemeDiscountResolver,
+} from '@/features/pos/hooks/usePosCart';
+import { useActiveSchemes } from '@/features/pos/hooks/useActiveSchemes';
+import { resolveSchemeDiscount } from '@/features/pos/lib/scheme-discount';
 import { usePosPageState } from '@/features/pos/hooks/usePosPageState';
 import { usePosHeldBills } from '@/features/pos/hooks/usePosHeldBills';
 import { PosHeldBillsModal } from '@/features/pos/components/held-bills/PosHeldBillsModal';
@@ -41,7 +46,13 @@ import type { ISale, ISearchProductRow } from '@/types';
  */
 export function PosPage(): React.ReactElement {
     const [mode, setMode] = useState<PosMode>('billing');
-    const cart = usePosCart();
+    const schemesQuery = useActiveSchemes(mode === 'billing');
+    const schemeResolver = useMemo<SchemeDiscountResolver | undefined>(() => {
+        const schemes = schemesQuery.data;
+        if (!schemes || schemes.length === 0) return undefined;
+        return (input) => resolveSchemeDiscount(schemes, input);
+    }, [schemesQuery.data]);
+    const cart = usePosCart(schemeResolver);
     const state = usePosPageState();
     const heldBills = usePosHeldBills();
     const [showHeldBills, setShowHeldBills] = useState(false);

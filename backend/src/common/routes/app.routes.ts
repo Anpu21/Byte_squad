@@ -123,6 +123,10 @@ export const APP_ROUTES = {
     SHIFTS_CURRENT: 'shifts/current',
     SHIFTS_OPEN: 'shifts/open',
     SHIFTS_CLOSE: 'shifts/close',
+    // Phase 4 — automatic discount schemes (date-window / qty-slab rules).
+    SCHEMES: 'schemes',
+    SCHEMES_ACTIVE: 'schemes/active',
+    SCHEME_BY_ID: 'schemes/:id',
   },
 
   // Accounting

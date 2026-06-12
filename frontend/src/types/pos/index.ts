@@ -46,3 +46,9 @@ export type {
     IShiftLiveSummary,
     ShiftStatus,
 } from './shift.type';
+export type {
+    DiscountSchemeScope,
+    IDiscountScheme,
+    IDiscountSchemePayload,
+    IDiscountSchemesListResponse,
+} from './discount-scheme.type';

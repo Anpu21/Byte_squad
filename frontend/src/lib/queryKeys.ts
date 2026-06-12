@@ -309,5 +309,9 @@ export const queryKeys = {
         adminDashboard: () => ['pos', 'adminDashboard'] as const,
         myTransactions: () => ['pos', 'myTransactions'] as const,
         allTransactions: () => ['pos', 'allTransactions'] as const,
+        schemes: (isActive?: boolean) =>
+            ['pos', 'schemes', { isActive }] as const,
+        schemesAll: () => ['pos', 'schemes'] as const,
+        activeSchemes: () => ['pos', 'activeSchemes'] as const,
     },
 } as const;

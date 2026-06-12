@@ -9,7 +9,11 @@ import { ReceivablesService } from '@pos/receivables.service';
 import { ShiftsController } from '@pos/shifts.controller';
 import { ShiftsService } from '@pos/shifts.service';
 import { ShiftsRepository } from '@pos/shifts.repository';
+import { DiscountSchemesController } from '@pos/discount-schemes.controller';
+import { DiscountSchemesService } from '@pos/discount-schemes.service';
+import { DiscountSchemesRepository } from '@pos/discount-schemes.repository';
 import { PosShift } from '@pos/entities/pos-shift.entity';
+import { DiscountScheme } from '@pos/entities/discount-scheme.entity';
 import { PosRepository } from '@pos/pos.repository';
 import { SaleRepository } from '@pos/sale.repository';
 import { SaleItemRepository } from '@pos/sale-item.repository';
@@ -42,6 +46,7 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
       InvoiceCounter,
       IdempotencyKey,
       PosShift,
+      DiscountScheme,
     ]),
     AccountingModule,
     forwardRef(() => InventoryModule),
@@ -49,7 +54,12 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
     UsersModule,
     LoyaltyModule,
   ],
-  controllers: [PosController, ReceivablesController, ShiftsController],
+  controllers: [
+    PosController,
+    ReceivablesController,
+    ShiftsController,
+    DiscountSchemesController,
+  ],
   providers: [
     PosService,
     PosWriteService,
@@ -57,6 +67,8 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
     ReceivablesService,
     ShiftsService,
     ShiftsRepository,
+    DiscountSchemesService,
+    DiscountSchemesRepository,
     PosRepository,
     SaleRepository,
     SaleItemRepository,

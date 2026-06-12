@@ -73,6 +73,9 @@ export const FRONTEND_ROUTES = {
     ADMIN_HR: '/admin/hr',
     ADMIN_AUDIT: '/admin/audit',
 
+    // Admin / manager — automatic POS discount schemes
+    ADMIN_SCHEMES: '/admin/schemes',
+
     // Admin / manager — HR employee management
     ADMIN_EMPLOYEES: '/admin/employees',
     ADMIN_EMPLOYEE_NEW: '/admin/employees/new',

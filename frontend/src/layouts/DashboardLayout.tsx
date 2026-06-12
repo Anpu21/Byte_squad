@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
+    BadgePercent,
     Bell,
     Boxes,
     Briefcase,
@@ -109,6 +110,13 @@ const NAV_ITEMS: NavItem[] = [
         path: FRONTEND_ROUTES.TRANSACTIONS,
         roles: [UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER],
         icon: <ScrollText size={15} />,
+        group: 'Operations',
+    },
+    {
+        label: 'Discount schemes',
+        path: FRONTEND_ROUTES.ADMIN_SCHEMES,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <BadgePercent size={15} />,
         group: 'Operations',
     },
     {
