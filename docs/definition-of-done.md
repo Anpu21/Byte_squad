@@ -42,7 +42,11 @@ non-trivial work.
 
 ## Backend checklist
 - [ ] New entity has a **repository**; services contain **no** `@InjectRepository` / `typeorm` imports.
-- [ ] Cross-module data goes through the owning module's exported **service**, never a borrowed entity.
+- [ ] Cross-module data goes through the owning module's exported **service** — never its repository or a
+      borrowed entity. Feature modules export **only services**; an ESLint `no-restricted-imports` guard blocks
+      sibling `*.repository` imports for the service-only modules (users, branches, inventory, accounting,
+      products, pos). Multi-entity **reporting** repos are allowed but stay **module-private** — they read
+      foreign tables for their own service and are never exported. *(nestjs-07 / 03)*
 - [ ] **Branch scope enforced in the service** for non-admin actors (multi-tenant safety is P0). *(nestjs-08)*
 - [ ] Every endpoint: `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles(...)` + `@CurrentUser()`; paths via
       `APP_ROUTES`.
