@@ -94,7 +94,11 @@ export function validateEnv(
 
   if (parsed.NODE_ENV === NodeEnv.Production) {
     const secret = parsed.JWT_SECRET;
-    if (!secret || secret === DEV_JWT_SECRET || secret.length < MIN_PROD_SECRET_LEN) {
+    if (
+      !secret ||
+      secret === DEV_JWT_SECRET ||
+      secret.length < MIN_PROD_SECRET_LEN
+    ) {
       throw new Error(
         `JWT_SECRET must be a strong (>= ${MIN_PROD_SECRET_LEN} char) value in production; the dev default is not allowed.`,
       );

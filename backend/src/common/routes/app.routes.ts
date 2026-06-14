@@ -5,6 +5,14 @@
 const API_PREFIX = 'api/v1';
 
 export const APP_ROUTES = {
+  // Health — infra endpoints, intentionally NOT under API_PREFIX so
+  // orchestrators / load balancers hit a stable path.
+  HEALTH: {
+    BASE: 'health',
+    LIVE: '',
+    READY: 'ready',
+  },
+
   // Auth
   AUTH: {
     BASE: `${API_PREFIX}/auth`,

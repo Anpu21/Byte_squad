@@ -64,6 +64,7 @@ import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
 
 import appConfig from '@common/config/app.config';
 import { validateEnv } from '@common/config/env.validation';
+import { HealthModule } from '@common/health/health.module';
 
 @Module({
   imports: [
@@ -111,6 +112,7 @@ import { validateEnv } from '@common/config/env.validation';
       Payroll,
       PayrollSettings,
     ]),
+    HealthModule,
     CloudinaryModule,
     AuthModule,
     UsersModule,
