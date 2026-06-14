@@ -28,8 +28,9 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.INVENTORY_EDIT]: { title: 'Edit product', crumbs: ['Inventory', 'Products', 'Edit'] },
     [FRONTEND_ROUTES.PURCHASES]: { title: 'Purchases', crumbs: ['Inventory', 'Purchases'] },
 
-    [FRONTEND_ROUTES.POS]: { title: 'Point of Sale', crumbs: ['Operations', 'POS'] },
-    [FRONTEND_ROUTES.TRANSACTIONS]: { title: 'Transactions', crumbs: ['Operations', 'Transactions'] },
+    [FRONTEND_ROUTES.POS]: { title: 'Point of Sale', crumbs: ['Sales', 'POS'] },
+    [FRONTEND_ROUTES.SALES]: { title: 'Sales', crumbs: ['Sales'] },
+    [FRONTEND_ROUTES.TRANSACTIONS]: { title: 'Transactions', crumbs: ['Sales', 'Transactions'] },
 
     [FRONTEND_ROUTES.ACCOUNTING]: { title: 'Accounting', crumbs: ['Accounting'] },
     [FRONTEND_ROUTES.LEDGER]: { title: 'General ledger', crumbs: ['Accounting', 'Ledger'] },

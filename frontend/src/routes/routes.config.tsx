@@ -18,10 +18,9 @@ import { PurchasesWorkspacePage } from '@/pages/purchases/PurchasesWorkspacePage
 import { StockAdjustmentNewPage } from '@/pages/inventory/StockAdjustmentNewPage';
 import { ReturnNewPage } from '@/pages/inventory/ReturnNewPage';
 import { PosPage } from '@/pages/pos/PosPage';
-import { TransactionsPage } from '@/pages/pos/TransactionsPage';
+import { SalesPage } from '@/pages/sales/SalesPage';
 import { AccountingPage } from '@/pages/accounting/AccountingPage';
 import { AuditLogPage } from '@/pages/admin/AuditLogPage';
-import { DiscountSchemesPage } from '@/pages/admin/DiscountSchemesPage';
 import { ReportsHubPage } from '@/pages/reports/ReportsHubPage';
 import { UserManagementPage } from '@/pages/users/UserManagementPage';
 import { ProfilePage } from '@/pages/users/ProfilePage';
@@ -40,7 +39,6 @@ import { AdminTransferCreatePage } from '@/pages/transfers/AdminTransferCreatePa
 import { ShipmentsListPage } from '@/pages/transfers/ShipmentsListPage';
 import { ShipmentCreatePage } from '@/pages/transfers/ShipmentCreatePage';
 import { ShipmentDetailPage } from '@/pages/transfers/ShipmentDetailPage';
-import { CustomerOrdersPage } from '@/pages/orders/CustomerOrdersPage';
 import { CatalogPage } from '@/pages/shop/CatalogPage';
 import { ProductDetailPage } from '@/pages/shop/ProductDetailPage';
 import { CartPage } from '@/pages/shop/CartPage';
@@ -57,6 +55,7 @@ import { LegacyOrderConfirmationRedirect } from './LegacyOrderConfirmationRedire
 import { TransferHistoryRedirect } from './TransferHistoryRedirect';
 import { AdminHrRedirect } from './AdminHrRedirect';
 import { AccountingRedirect } from './AccountingRedirect';
+import { SalesRedirect } from './SalesRedirect';
 import { LeavesRouteEntry } from './LeavesRouteEntry';
 
 export type Guard = 'public' | 'protected' | 'none';
@@ -211,7 +210,7 @@ export const ROUTES: RouteDef[] = [
         layout: 'dashboard',
     },
 
-    // ─── POS ───
+    // ─── POS & Sales hub + legacy redirects ───
     {
         path: FRONTEND_ROUTES.POS,
         element: <PosPage />,
@@ -219,8 +218,14 @@ export const ROUTES: RouteDef[] = [
         layout: 'dashboard',
     },
     {
+        path: FRONTEND_ROUTES.SALES,
+        element: <SalesPage />,
+        allowedRoles: [UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
         path: FRONTEND_ROUTES.TRANSACTIONS,
-        element: <TransactionsPage />,
+        element: <SalesRedirect tab="transactions" />,
         allowedRoles: [UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
@@ -258,7 +263,7 @@ export const ROUTES: RouteDef[] = [
     },
     {
         path: FRONTEND_ROUTES.ADMIN_SCHEMES,
-        element: <DiscountSchemesPage />,
+        element: <SalesRedirect tab="schemes" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
@@ -461,7 +466,7 @@ export const ROUTES: RouteDef[] = [
     // ─── Customer orders — staff (admin / manager / cashier) ───
     {
         path: FRONTEND_ROUTES.CUSTOMER_ORDERS,
-        element: <CustomerOrdersPage />,
+        element: <SalesRedirect tab="orders" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
         layout: 'dashboard',
     },

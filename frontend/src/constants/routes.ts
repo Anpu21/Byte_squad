@@ -38,8 +38,9 @@ export const FRONTEND_ROUTES = {
     ADMIN_CATEGORIES: '/admin/categories',
     MANAGER_CATEGORIES: '/manager/categories',
 
-    // POS
+    // POS & Sales
     POS: '/pos',
+    SALES: '/sales',
     TRANSACTIONS: '/transactions',
 
     // Accounting — unified hub (Ledger / Receivables / Reports / Expenses / P&L tabs)

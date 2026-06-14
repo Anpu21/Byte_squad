@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
+    BarChart3,
     CalendarClock,
     FileClock,
     HandCoins,
@@ -24,6 +25,13 @@ interface IReportLink {
 }
 
 const LINKS: IReportLink[] = [
+    {
+        title: 'Salesman report',
+        description: 'Cashier-wise sales performance and totals.',
+        to: `${FRONTEND_ROUTES.SALES}?tab=salesman`,
+        icon: <BarChart3 size={16} />,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+    },
     {
         title: 'Financial reports',
         description: 'Trial balance, balance sheet, day book, period locks.',
