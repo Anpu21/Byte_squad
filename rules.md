@@ -1,5 +1,7 @@
 # rules.md — LedgerPro Engineering Rules
 
+> **Governing standard:** the **blaxx-memory** senior guides (nestjs, react, theprimeagen, jsmastery, …) govern this repo. This file is the local convention doc — where the two differ, blaxx-memory wins. The per-PR checklist lives in `docs/definition-of-done.md`.
+
 Canonical coding standards for LedgerPro. Linked from `CLAUDE.md`. Read this before writing or modifying any code. When a rule here conflicts with code you find in the repo, **the rule wins** — the existing code is on its way to being fixed.
 
 ---
