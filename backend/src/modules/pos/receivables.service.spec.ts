@@ -9,7 +9,7 @@ import { DataSource } from 'typeorm';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { ReceivablesService } from './receivables.service';
 import { CreditTransactionRepository } from './credit-transaction.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 
 const BRANCH_A = '11111111-1111-1111-1111-111111111111';
 const USER_ID = '22222222-2222-2222-2222-222222222222';
@@ -83,7 +83,7 @@ function makeManagerMock(opts: {
 describe('ReceivablesService', () => {
   let service: ReceivablesService;
   let creditTransactions: jest.Mocked<CreditTransactionRepository>;
-  let accounting: jest.Mocked<AccountingRepository>;
+  let accounting: jest.Mocked<AccountingService>;
   let dataSource: {
     transaction: jest.Mock;
     getRepository: jest.Mock;
@@ -104,7 +104,7 @@ describe('ReceivablesService', () => {
           useValue: { create: jest.fn(), findByUserId: jest.fn() },
         },
         {
-          provide: AccountingRepository,
+          provide: AccountingService,
           useValue: { createLedgerEntryWithManager: jest.fn() },
         },
         { provide: DataSource, useValue: dataSource },
@@ -112,7 +112,7 @@ describe('ReceivablesService', () => {
     }).compile();
     service = moduleRef.get(ReceivablesService);
     creditTransactions = moduleRef.get(CreditTransactionRepository);
-    accounting = moduleRef.get(AccountingRepository);
+    accounting = moduleRef.get(AccountingService);
   });
 
   function primeStatement(currentBalance = 0) {

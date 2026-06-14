@@ -49,8 +49,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   ],
   exports: [
     AccountingService,
-    AccountingRepository,
-    AccountsRepository,
     FiscalPeriodsService,
     // Consumed by the demo seed (journal vouchers through the real flow).
     JournalVouchersService,

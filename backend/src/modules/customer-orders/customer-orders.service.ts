@@ -27,7 +27,7 @@ import { ProductsRepository } from '@products/products.repository';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
 import { PosRepository } from '@pos/pos.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { InventoryService } from '@inventory/inventory.service';
 import { Sale } from '@pos/entities/sale.entity';
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
@@ -81,7 +81,7 @@ export class CustomerOrdersService {
     private readonly branches: BranchesService,
     private readonly users: UsersService,
     private readonly pos: PosRepository,
-    private readonly accounting: AccountingRepository,
+    private readonly accounting: AccountingService,
     private readonly inventory: InventoryService,
     private readonly loyalty: LoyaltyService,
     private readonly loyaltyWallet: LoyaltyWalletService,

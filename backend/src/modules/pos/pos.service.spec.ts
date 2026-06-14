@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 import { PosService } from './pos.service';
 import { PosRepository } from './pos.repository';
 import { SaleRepository } from './sale.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { InventoryService } from '@inventory/inventory.service';
 import { ProductsRepository } from '@products/products.repository';
 import { InvoiceNumberService } from './services/invoice-number.service';
@@ -173,7 +173,7 @@ describe('PosService — Phase 4 read endpoints', () => {
     const posRepoMock: Partial<jest.Mocked<PosRepository>> = {
       findRecentSales: jest.fn(),
     };
-    const accountingRepoMock = {} as AccountingRepository;
+    const accountingRepoMock = {} as AccountingService;
     const dataSourceMock = {} as DataSource;
     const productsRepoMock: Partial<jest.Mocked<ProductsRepository>> = {
       searchByText: jest.fn(),
@@ -199,7 +199,7 @@ describe('PosService — Phase 4 read endpoints', () => {
       providers: [
         PosService,
         { provide: PosRepository, useValue: posRepoMock },
-        { provide: AccountingRepository, useValue: accountingRepoMock },
+        { provide: AccountingService, useValue: accountingRepoMock },
         { provide: DataSource, useValue: dataSourceMock },
         { provide: ProductsRepository, useValue: productsRepoMock },
         { provide: InventoryService, useValue: inventoryRepoMock },

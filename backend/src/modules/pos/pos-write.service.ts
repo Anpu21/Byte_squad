@@ -23,7 +23,7 @@ import { CreditTransactionRepository } from '@pos/credit-transaction.repository'
 import { StockMovementRepository } from '@pos/stock-movement.repository';
 import { InvoiceNumberService } from '@pos/services/invoice-number.service';
 import { MultiTenderCalculatorService } from '@pos/services/multi-tender-calculator.service';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import type { LoyaltyOwner } from '@/modules/loyalty/types';
@@ -143,7 +143,7 @@ export class PosWriteService {
     private readonly invoiceNumbers: InvoiceNumberService,
     private readonly multiTender: MultiTenderCalculatorService,
     private readonly products: ProductsRepository,
-    private readonly accounting: AccountingRepository,
+    private readonly accounting: AccountingService,
     private readonly loyalty: LoyaltyService,
     private readonly loyaltyWallet: LoyaltyWalletService,
     private readonly dataSource: DataSource,

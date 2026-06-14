@@ -13,7 +13,7 @@ import { GrnsService } from './grns.service';
 import { GrnsRepository } from './grns.repository';
 import { PurchaseDocNumberService } from './purchase-doc-number.service';
 import { PurchaseOrdersRepository } from './purchase-orders.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { ACCOUNT_CODES } from '@accounting/types/account-code.type';
 import { PurchaseOrder } from './entities/purchase-order.entity';
 import { SuppliersRepository } from '@/modules/suppliers/suppliers.repository';
@@ -82,7 +82,7 @@ describe('GrnsService', () => {
   let repo: jest.Mocked<GrnsRepository>;
   let suppliers: jest.Mocked<SuppliersRepository>;
   let orders: jest.Mocked<PurchaseOrdersRepository>;
-  let accounting: jest.Mocked<AccountingRepository>;
+  let accounting: jest.Mocked<AccountingService>;
   let docNumbers: jest.Mocked<PurchaseDocNumberService>;
   let dataSource: { transaction: jest.Mock };
 
@@ -121,7 +121,7 @@ describe('GrnsService', () => {
           useValue: { findById: jest.fn(), updateStatus: jest.fn() },
         },
         {
-          provide: AccountingRepository,
+          provide: AccountingService,
           useValue: { createLedgerEntryWithManager: jest.fn() },
         },
         {
@@ -135,7 +135,7 @@ describe('GrnsService', () => {
     repo = moduleRef.get(GrnsRepository);
     suppliers = moduleRef.get(SuppliersRepository);
     orders = moduleRef.get(PurchaseOrdersRepository);
-    accounting = moduleRef.get(AccountingRepository);
+    accounting = moduleRef.get(AccountingService);
     docNumbers = moduleRef.get(PurchaseDocNumberService);
   });
 

@@ -17,7 +17,7 @@ import { StockMovementRepository } from './stock-movement.repository';
 import { InvoiceNumberService } from './services/invoice-number.service';
 import { MultiTenderCalculatorService } from './services/multi-tender-calculator.service';
 import { ProductsRepository } from '@products/products.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -313,7 +313,7 @@ function buildMocks(
         useValue: new MultiTenderCalculatorService(),
       },
       { provide: ProductsRepository, useValue: productsRepoMock },
-      { provide: AccountingRepository, useValue: accountingMock },
+      { provide: AccountingService, useValue: accountingMock },
       { provide: LoyaltyService, useValue: loyaltyServiceMock },
       { provide: LoyaltyWalletService, useValue: loyaltyWalletServiceMock },
       { provide: DataSource, useValue: dataSourceMock },

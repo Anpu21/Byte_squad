@@ -6,9 +6,14 @@ import {
 } from '@nestjs/common';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { Expense } from '@accounting/entities/expense.entity';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import {
+  AccountingRepository,
+  LedgerPostInput,
+} from '@accounting/accounting.repository';
 import { AccountsRepository } from '@accounting/accounts.repository';
 import { Account } from '@accounting/entities/account.entity';
+import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+import { EntityManager } from 'typeorm';
 import { ProfitLossSalesRepository } from '@accounting/profit-loss-sales.repository';
 import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
 import { ReviewExpenseDto } from '@accounting/dto/review-expense.dto';
@@ -43,6 +48,20 @@ export class AccountingService {
     private readonly accounts: AccountsRepository,
     private readonly profitLossSales: ProfitLossSalesRepository,
   ) {}
+
+  // ── Cross-module pass-throughs (owner-service surface; blaxx nestjs-07) ──
+  // POS, purchases, returns and customer-orders post ledger entries through
+  // these instead of injecting AccountingRepository.
+  createLedgerEntry(partial: LedgerPostInput): Promise<LedgerEntry> {
+    return this.accounting.createLedgerEntry(partial);
+  }
+
+  createLedgerEntryWithManager(
+    manager: EntityManager,
+    partial: LedgerPostInput,
+  ): Promise<LedgerEntry> {
+    return this.accounting.createLedgerEntryWithManager(manager, partial);
+  }
 
   /** Chart of accounts, ordered by code. */
   async listAccounts(): Promise<Account[]> {

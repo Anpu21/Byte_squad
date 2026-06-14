@@ -12,6 +12,7 @@ import { InventoryModule } from '@inventory/inventory.module';
 import { CategoriesModule } from '@/modules/categories/categories.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
+import { AccountsRepository } from '@accounting/accounts.repository';
 import { NotificationsModule } from '@notifications/notifications.module';
 import { AdminPortalModule } from '@admin-portal/admin-portal.module';
 import { BranchAnalyticsModule } from '@/modules/branch-analytics/branch-analytics.module';
@@ -130,6 +131,10 @@ import appConfig from '@common/config/app.config';
     AuditModule,
   ],
   providers: [
+    // AccountsRepository (DataSource-only) is provided at the composition root
+    // so the bootstrap seeders can use it without AccountingModule exporting
+    // its repository (blaxx nestjs-07 — modules export only services).
+    AccountsRepository,
     AdminSeedService,
     HrSeedService,
     PurchasesSeedService,

@@ -13,7 +13,7 @@ import { SaleRepository } from '@pos/sale.repository';
 import { PaymentRepository } from '@pos/payment.repository';
 import { CreditTransactionRepository } from '@pos/credit-transaction.repository';
 import { StockMovementRepository } from '@pos/stock-movement.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
@@ -50,7 +50,7 @@ export class PosVoidService {
     private readonly payments: PaymentRepository,
     private readonly creditTransactions: CreditTransactionRepository,
     private readonly stockMovements: StockMovementRepository,
-    private readonly accounting: AccountingRepository,
+    private readonly accounting: AccountingService,
     private readonly loyaltyWallet: LoyaltyWalletService,
     private readonly dataSource: DataSource,
   ) {}

@@ -8,7 +8,7 @@ import {
 import { DataSource } from 'typeorm';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { ACCOUNT_CODES } from '@accounting/types/account-code.type';
 import { Grn } from '@/modules/purchases/entities/grn.entity';
 import { GrnsRepository } from '@/modules/purchases/grns.repository';
@@ -54,7 +54,7 @@ export class GrnsService {
     private readonly suppliers: SuppliersRepository,
     private readonly orders: PurchaseOrdersRepository,
     private readonly docNumbers: PurchaseDocNumberService,
-    private readonly accounting: AccountingRepository,
+    private readonly accounting: AccountingService,
     private readonly dataSource: DataSource,
   ) {}
 

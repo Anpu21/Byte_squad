@@ -14,7 +14,7 @@ import { ProductsRepository } from '@products/products.repository';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
 import { PosRepository } from '@pos/pos.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { InventoryService } from '@inventory/inventory.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
@@ -67,7 +67,7 @@ describe('CustomerOrdersService', () => {
           useValue: { createAndSaveTransaction: jest.fn() },
         },
         {
-          provide: AccountingRepository,
+          provide: AccountingService,
           useValue: { createLedgerEntry: jest.fn() },
         },
         {

@@ -9,7 +9,7 @@ import { UserRole } from '@common/enums/user-roles.enums';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { User } from '@users/entities/user.entity';
 import { Sale } from '@pos/entities/sale.entity';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { ACCOUNT_CODES } from '@accounting/types/account-code.type';
 import { CreditTransaction } from '@pos/entities/credit-transaction.entity';
 import { CreditTransactionRepository } from '@pos/credit-transaction.repository';
@@ -59,7 +59,7 @@ const round2 = (n: number): number => Math.round(n * 100) / 100;
 export class ReceivablesService {
   constructor(
     private readonly creditTransactions: CreditTransactionRepository,
-    private readonly accounting: AccountingRepository,
+    private readonly accounting: AccountingService,
     private readonly dataSource: DataSource,
   ) {}
 

@@ -13,7 +13,7 @@ import { PurchaseReturnsRepository } from './purchase-returns.repository';
 import { GrnsRepository } from './grns.repository';
 import { SupplierPaymentsRepository } from './supplier-payments.repository';
 import { PurchaseDocNumberService } from './purchase-doc-number.service';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { Grn } from './entities/grn.entity';
 import { PurchaseReturn } from './entities/purchase-return.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
@@ -62,7 +62,7 @@ describe('PurchaseReturnsService', () => {
   let returnsRepo: jest.Mocked<PurchaseReturnsRepository>;
   let grnsRepo: jest.Mocked<GrnsRepository>;
   let paymentsRepo: jest.Mocked<SupplierPaymentsRepository>;
-  let accounting: jest.Mocked<AccountingRepository>;
+  let accounting: jest.Mocked<AccountingService>;
 
   beforeEach(async () => {
     const dataSource = {
@@ -95,7 +95,7 @@ describe('PurchaseReturnsService', () => {
           useValue: { lockGrn: jest.fn(), updateGrnPayment: jest.fn() },
         },
         {
-          provide: AccountingRepository,
+          provide: AccountingService,
           useValue: { createLedgerEntryWithManager: jest.fn() },
         },
         {
@@ -109,7 +109,7 @@ describe('PurchaseReturnsService', () => {
     returnsRepo = moduleRef.get(PurchaseReturnsRepository);
     grnsRepo = moduleRef.get(GrnsRepository);
     paymentsRepo = moduleRef.get(SupplierPaymentsRepository);
-    accounting = moduleRef.get(AccountingRepository);
+    accounting = moduleRef.get(AccountingService);
   });
 
   function primeHappyPath() {
