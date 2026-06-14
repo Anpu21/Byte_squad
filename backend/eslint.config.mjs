@@ -65,4 +65,10 @@ export default tseslint.config(
     files: ['**/scripts/**', '**/migrations/**', '**/*.spec.ts'],
     rules: { 'no-console': 'off', 'max-lines': 'off' },
   },
+  {
+    // Seed services bulk-populate every entity by design — they are seeders,
+    // not domain code, so the repository-pattern gate and size budget don't apply.
+    files: ['**/seeds/**'],
+    rules: { 'no-restricted-syntax': 'off', 'max-lines': 'off', 'no-console': 'off' },
+  },
 );
