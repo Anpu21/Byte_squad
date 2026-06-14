@@ -1,5 +1,6 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Public } from '@common/decorators/public.decorator';
 import { APP_ROUTES } from '@common/routes/app.routes';
 
@@ -8,6 +9,7 @@ import { APP_ROUTES } from '@common/routes/app.routes';
  * identity) and intentionally outside the API version prefix.
  */
 @Public()
+@SkipThrottle()
 @Controller(APP_ROUTES.HEALTH.BASE)
 export class HealthController {
   constructor(private readonly dataSource: DataSource) {}

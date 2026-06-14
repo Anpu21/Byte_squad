@@ -6,13 +6,15 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { RequestWithId } from '@common/middleware/request-id.middleware';
 
 interface ErrorResponseBody {
   success: boolean;
   message: string;
   statusCode: number;
   timestamp: string;
+  requestId?: string;
 }
 
 /**
@@ -28,7 +30,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const request = ctx.getRequest<RequestWithId>();
+    const requestId = request.id;
 
     const isHttp = exception instanceof HttpException;
     const status = isHttp
@@ -49,7 +52,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // Never swallow server faults or unexpected throws — log them with context.
     if (!isHttp || status >= Number(HttpStatus.INTERNAL_SERVER_ERROR)) {
       this.logger.error(
-        `${request.method} ${request.originalUrl} -> ${status}`,
+        `[${requestId ?? '-'}] ${request.method} ${request.originalUrl} -> ${status}`,
         exception instanceof Error ? exception.stack : String(exception),
       );
     }
@@ -59,6 +62,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message,
       statusCode: status,
       timestamp: new Date().toISOString(),
+      requestId,
     };
 
     response.status(status).json(errorBody);

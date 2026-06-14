@@ -65,6 +65,7 @@ import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
 import appConfig from '@common/config/app.config';
 import { validateEnv } from '@common/config/env.validation';
 import { HealthModule } from '@common/health/health.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -73,6 +74,9 @@ import { HealthModule } from '@common/health/health.module';
       load: [appConfig],
       validate: validateEnv,
     }),
+    // Global rate limit: 300 requests / minute / IP (DoS protection). Auth
+    // routes set a stricter per-route limit; /health skips throttling.
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 300 }]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -143,6 +147,7 @@ import { HealthModule } from '@common/health/health.module';
     HrSeedService,
     PurchasesSeedService,
     PosAccountingSeedService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
