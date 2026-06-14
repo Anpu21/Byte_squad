@@ -84,7 +84,7 @@ export class GrnsRepository {
     }
 
     const [rows, total] = await qb
-      .orderBy('g.created_at', 'DESC')
+      .orderBy('g.createdAt', 'DESC')
       .skip(opts.offset)
       .take(opts.limit)
       .getManyAndCount();

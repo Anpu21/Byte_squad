@@ -424,12 +424,15 @@ export class AdminSeedService implements OnModuleInit {
       worker3,
     });
 
-    // 10. Purchases demo seed — suppliers, a sent PO, two GRNs (one aged),
-    //     a partial bill-by-bill payment, and a debit note. Drives the real
-    //     purchases services so stock/cost/ledger land consistently.
+    // 10. Purchases demo seed — six suppliers and a spread of GRNs, POs,
+    //     payments and debit notes across all three branches, backdated for
+    //     ageing. Drives the real purchases services so stock/cost/ledger
+    //     land consistently.
     await this.purchasesSeed.seed({
       admin,
       mainBranch,
+      downtownBranch,
+      suburbanBranch,
       products,
     });
 
@@ -1765,8 +1768,15 @@ export class AdminSeedService implements OnModuleInit {
         referenceNumber: 'LED-010',
       },
     ];
+    // Business date the financial reports + fiscal-period locks key on.
+    // Stamped explicitly here because these demo rows are saved straight
+    // through the repository, bypassing AccountingRepository.stampAccount
+    // (which is what fills entry_date on the normal posting path).
+    const entryDate = now.toISOString().slice(0, 10);
     for (const entry of ledgerData) {
-      await this.ledgerRepository.save(this.ledgerRepository.create(entry));
+      await this.ledgerRepository.save(
+        this.ledgerRepository.create({ ...entry, entryDate }),
+      );
     }
 
     const expenseData = [
@@ -2270,6 +2280,9 @@ export class AdminSeedService implements OnModuleInit {
               description: `Sales Return — ${sale.invoiceNumber}`,
               referenceNumber: `RET-${savedReturn.id.slice(0, 8).toUpperCase()}`,
               saleId: sale.id,
+              // Business date = the (backdated) return date; this insert
+              // bypasses stampAccount, so entry_date must be set explicitly.
+              entryDate: createdAt.toISOString().slice(0, 10),
             }),
           );
           await this.ledgerRepository

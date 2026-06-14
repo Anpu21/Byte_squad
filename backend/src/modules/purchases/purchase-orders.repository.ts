@@ -51,7 +51,7 @@ export class PurchaseOrdersRepository {
       qb.andWhere('po.status = :status', { status: opts.status });
     }
     const [rows, total] = await qb
-      .orderBy('po.created_at', 'DESC')
+      .orderBy('po.createdAt', 'DESC')
       .skip(opts.offset)
       .take(opts.limit)
       .getManyAndCount();

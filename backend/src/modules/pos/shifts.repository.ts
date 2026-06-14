@@ -74,7 +74,7 @@ export class ShiftsRepository {
       qb.andWhere('sh.status = :status', { status: opts.status });
     }
     const [rows, total] = await qb
-      .orderBy('sh.opened_at', 'DESC')
+      .orderBy('sh.openedAt', 'DESC')
       .skip(opts.offset)
       .take(opts.limit)
       .getManyAndCount();

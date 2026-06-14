@@ -53,7 +53,7 @@ export class SupplierPaymentsRepository {
       qb.andWhere('p.branch_id = :branchId', { branchId: opts.branchId });
     }
     const [rows, total] = await qb
-      .orderBy('p.created_at', 'DESC')
+      .orderBy('p.createdAt', 'DESC')
       .skip(opts.offset)
       .take(opts.limit)
       .getManyAndCount();
