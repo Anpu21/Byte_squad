@@ -20,6 +20,11 @@ import { Inventory } from '@inventory/entities/inventory.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { TransactionType } from '@common/enums/transaction.enum';
+import {
+  allowedBranchIds,
+  assertBranchScope,
+  type BranchActor,
+} from '@common/scope/branch-scope';
 
 import {
   MyBranchInfo,
@@ -73,11 +78,15 @@ export class BranchesService {
   ) {}
 
   // ── Read paths ─────────────────────────────────────────────────────────
-  async findAll(): Promise<Branch[]> {
-    return this.branches.findAll();
+  async findAll(actor: BranchActor): Promise<Branch[]> {
+    const all = await this.branches.findAll();
+    // Non-admins see only their own branch (multi-tenant safety).
+    const allowed = allowedBranchIds(actor);
+    return allowed ? all.filter((b) => allowed.includes(b.id)) : all;
   }
 
-  async findById(id: string): Promise<Branch | null> {
+  async findById(actor: BranchActor, id: string): Promise<Branch | null> {
+    assertBranchScope(actor, id);
     return this.branches.findById(id);
   }
 
