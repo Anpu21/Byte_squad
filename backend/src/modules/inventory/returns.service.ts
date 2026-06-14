@@ -10,7 +10,7 @@ import { StockMovement } from '@pos/entities/stock-movement.entity';
 import { SalesReturn } from '@inventory/entities/sales-return.entity';
 import { SalesReturnItem } from '@inventory/entities/sales-return-item.entity';
 import { SalesReturnRepository } from '@inventory/sales-return.repository';
-import { SaleRepository } from '@pos/sale.repository';
+import { PosService } from '@pos/pos.service';
 import { AccountingService } from '@accounting/accounting.service';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -35,7 +35,7 @@ export class ReturnsService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly returns: SalesReturnRepository,
-    private readonly sales: SaleRepository,
+    private readonly sales: PosService,
     private readonly accounting: AccountingService,
   ) {}
 

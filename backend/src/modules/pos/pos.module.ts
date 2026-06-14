@@ -84,15 +84,12 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
     MultiTenderCalculatorService,
     InvoiceNumberService,
   ],
-  // Public surface: the service for write/read operations and the
-  // SaleRepository for accounting joins. PosRepository is still exported
-  // for now because customer-orders.service consumes it directly; it
-  // will be replaced with the per-entity repositories in Phase 5 and
-  // dropped from exports then. New per-entity repositories
-  // (SaleItem, Payment, CreditTransaction, StockMovement) stay private
-  // to the module.
+  // Public surface: services only (blaxx nestjs-07). Sibling modules read and
+  // write sales through PosService pass-throughs (createAndSaveTransaction,
+  // findByInvoiceNumber, findOneById); SaleRepository / PosRepository and the
+  // per-entity repositories stay private to the module.
   // ReceivablesService is exported for the demo seed, which records a
   // real FIFO repayment so the statement/ledger land like production.
-  exports: [PosService, SaleRepository, PosRepository, ReceivablesService],
+  exports: [PosService, ReceivablesService],
 })
 export class PosModule {}

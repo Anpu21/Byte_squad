@@ -26,7 +26,7 @@ import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
-import { PosRepository } from '@pos/pos.repository';
+import { PosService } from '@pos/pos.service';
 import { AccountingService } from '@accounting/accounting.service';
 import { InventoryService } from '@inventory/inventory.service';
 import { Sale } from '@pos/entities/sale.entity';
@@ -80,7 +80,7 @@ export class CustomerOrdersService {
     private readonly products: ProductsService,
     private readonly branches: BranchesService,
     private readonly users: UsersService,
-    private readonly pos: PosRepository,
+    private readonly pos: PosService,
     private readonly accounting: AccountingService,
     private readonly inventory: InventoryService,
     private readonly loyalty: LoyaltyService,

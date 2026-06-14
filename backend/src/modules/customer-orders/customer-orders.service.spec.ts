@@ -13,7 +13,7 @@ import { UserRole } from '@common/enums/user-roles.enums';
 import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
-import { PosRepository } from '@pos/pos.repository';
+import { PosService } from '@pos/pos.service';
 import { AccountingService } from '@accounting/accounting.service';
 import { InventoryService } from '@inventory/inventory.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
@@ -63,7 +63,7 @@ describe('CustomerOrdersService', () => {
           },
         },
         {
-          provide: PosRepository,
+          provide: PosService,
           useValue: { createAndSaveTransaction: jest.fn() },
         },
         {

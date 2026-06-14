@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, QueryFailedError } from 'typeorm';
+import { DataSource, DeepPartial, QueryFailedError } from 'typeorm';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import type { Product } from '@products/entities/product.entity';
@@ -134,6 +134,21 @@ export class PosService {
     private readonly sales: SaleRepository,
     private readonly users: UsersService,
   ) {}
+
+  // ── Cross-module pass-throughs (owner-service surface; blaxx nestjs-07) ──
+  // customer-orders records pickup sales and returns looks up sales through
+  // these instead of injecting PosRepository / SaleRepository.
+  createAndSaveTransaction(partial: DeepPartial<Sale>): Promise<Sale> {
+    return this.pos.createAndSaveTransaction(partial);
+  }
+
+  findByInvoiceNumber(invoiceNumber: string): Promise<Sale | null> {
+    return this.sales.findByInvoiceNumber(invoiceNumber);
+  }
+
+  findOneById(id: string): Promise<Sale | null> {
+    return this.sales.findOneById(id);
+  }
 
   async createTransaction(
     dto: CreateTransactionDto,
