@@ -19,14 +19,10 @@ import { StockAdjustmentNewPage } from '@/pages/inventory/StockAdjustmentNewPage
 import { ReturnNewPage } from '@/pages/inventory/ReturnNewPage';
 import { PosPage } from '@/pages/pos/PosPage';
 import { TransactionsPage } from '@/pages/pos/TransactionsPage';
-import { LedgerPage } from '@/pages/accounting/LedgerPage';
-import { ReceivablesPage } from '@/pages/receivables/ReceivablesPage';
-import { FinancialReportsPage } from '@/pages/accounting/FinancialReportsPage';
+import { AccountingPage } from '@/pages/accounting/AccountingPage';
 import { AuditLogPage } from '@/pages/admin/AuditLogPage';
 import { DiscountSchemesPage } from '@/pages/admin/DiscountSchemesPage';
 import { ReportsHubPage } from '@/pages/reports/ReportsHubPage';
-import { ExpensesPage } from '@/pages/accounting/ExpensesPage';
-import { ProfitLossPage } from '@/pages/accounting/ProfitLossPage';
 import { UserManagementPage } from '@/pages/users/UserManagementPage';
 import { ProfilePage } from '@/pages/users/ProfilePage';
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage';
@@ -60,6 +56,7 @@ import { FirstSetupOnly } from './FirstSetupOnly';
 import { LegacyOrderConfirmationRedirect } from './LegacyOrderConfirmationRedirect';
 import { TransferHistoryRedirect } from './TransferHistoryRedirect';
 import { AdminHrRedirect } from './AdminHrRedirect';
+import { AccountingRedirect } from './AccountingRedirect';
 import { LeavesRouteEntry } from './LeavesRouteEntry';
 
 export type Guard = 'public' | 'protected' | 'none';
@@ -228,22 +225,28 @@ export const ROUTES: RouteDef[] = [
         layout: 'dashboard',
     },
 
-    // ─── Accounting ───
+    // ─── Accounting — unified hub + legacy redirects ───
+    {
+        path: FRONTEND_ROUTES.ACCOUNTING,
+        element: <AccountingPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
     {
         path: FRONTEND_ROUTES.LEDGER,
-        element: <LedgerPage />,
+        element: <AccountingRedirect tab="ledger" />,
         allowedRoles: [UserRole.ADMIN],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.RECEIVABLES,
-        element: <ReceivablesPage />,
+        element: <AccountingRedirect tab="receivables" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.FINANCIAL_REPORTS,
-        element: <FinancialReportsPage />,
+        element: <AccountingRedirect tab="reports" />,
         allowedRoles: [UserRole.ADMIN],
         layout: 'dashboard',
     },
@@ -267,13 +270,13 @@ export const ROUTES: RouteDef[] = [
     },
     {
         path: FRONTEND_ROUTES.EXPENSES,
-        element: <ExpensesPage />,
+        element: <AccountingRedirect tab="expenses" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.PROFIT_LOSS,
-        element: <ProfitLossPage />,
+        element: <AccountingRedirect tab="profit-loss" />,
         allowedRoles: [UserRole.ADMIN],
         layout: 'dashboard',
     },

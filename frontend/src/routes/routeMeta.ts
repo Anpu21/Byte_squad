@@ -31,6 +31,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.POS]: { title: 'Point of Sale', crumbs: ['Operations', 'POS'] },
     [FRONTEND_ROUTES.TRANSACTIONS]: { title: 'Transactions', crumbs: ['Operations', 'Transactions'] },
 
+    [FRONTEND_ROUTES.ACCOUNTING]: { title: 'Accounting', crumbs: ['Accounting'] },
     [FRONTEND_ROUTES.LEDGER]: { title: 'General ledger', crumbs: ['Accounting', 'Ledger'] },
     [FRONTEND_ROUTES.RECEIVABLES]: { title: 'Receivables', crumbs: ['Accounting', 'Receivables'] },
     [FRONTEND_ROUTES.FINANCIAL_REPORTS]: { title: 'Financial reports', crumbs: ['Accounting', 'Reports'] },

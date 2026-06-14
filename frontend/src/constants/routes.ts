@@ -42,7 +42,8 @@ export const FRONTEND_ROUTES = {
     POS: '/pos',
     TRANSACTIONS: '/transactions',
 
-    // Accounting
+    // Accounting — unified hub (Ledger / Receivables / Reports / Expenses / P&L tabs)
+    ACCOUNTING: '/accounting',
     LEDGER: '/accounting/ledger',
     RECEIVABLES: '/accounting/receivables',
     FINANCIAL_REPORTS: '/accounting/reports',
