@@ -2,10 +2,7 @@ import { useMemo } from 'react';
 import { ScrollText, HandCoins, Scale, Wallet, PiggyBank } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import {
-    AccountingTabs,
-    type AccountingTabDef,
-} from '@/features/accounting/components/AccountingTabs';
+import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import {
     useAccountingTab,
     type AccountingTab,
@@ -16,7 +13,7 @@ import { FinancialReportsPage } from './FinancialReportsPage';
 import { ExpensesPage } from './ExpensesPage';
 import { ProfitLossPage } from './ProfitLossPage';
 
-interface AccountingTabConfig extends AccountingTabDef {
+interface AccountingTabConfig extends TabItem<AccountingTab> {
     roles: UserRole[];
 }
 
@@ -75,7 +72,12 @@ export function AccountingPage() {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <AccountingTabs tabs={allowedTabs} active={tab} onChange={setTab} />
+            <Tabs
+                tabs={allowedTabs}
+                active={tab}
+                onChange={setTab}
+                ariaLabel="Accounting workspace views"
+            />
             {tab === 'ledger' && <LedgerPage />}
             {tab === 'receivables' && <ReceivablesPage />}
             {tab === 'reports' && <FinancialReportsPage />}

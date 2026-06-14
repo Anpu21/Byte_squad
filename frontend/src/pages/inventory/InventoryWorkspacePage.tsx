@@ -1,5 +1,17 @@
-import { InventoryTabs } from '@/features/admin-inventory/components/InventoryTabs';
-import { useInventoryTab } from '@/features/admin-inventory/hooks/useInventoryTab';
+import {
+    Barcode,
+    Boxes,
+    CalendarClock,
+    ClipboardList,
+    Tags,
+    Truck,
+    Undo2,
+} from 'lucide-react';
+import { Tabs, type TabItem } from '@/components/ui/Tabs';
+import {
+    useInventoryTab,
+    type InventoryTab,
+} from '@/features/admin-inventory/hooks/useInventoryTab';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { InventoryByRole } from '@/routes/InventoryByRole';
@@ -10,6 +22,16 @@ import { AdminTransfersPage } from '@/pages/transfers/AdminTransfersPage';
 import { TransferRequestsPage } from '@/pages/transfers/TransferRequestsPage';
 import { CategoriesPanel } from '@/features/categories/components/CategoriesPanel';
 import { LabelPrintPanel } from '@/features/labels/components/LabelPrintPanel';
+
+const TABS: TabItem<InventoryTab>[] = [
+    { key: 'list', label: 'Inventory', Icon: Boxes },
+    { key: 'expiry', label: 'Expiry', Icon: CalendarClock },
+    { key: 'adjustments', label: 'Adjustments', Icon: ClipboardList },
+    { key: 'returns', label: 'Returns', Icon: Undo2 },
+    { key: 'transfers', label: 'Transfers', Icon: Truck },
+    { key: 'categories', label: 'Categories', Icon: Tags },
+    { key: 'labels', label: 'Labels', Icon: Barcode },
+];
 
 /**
  * Unified Inventory workspace (mirrors the HR admin page): one route with a tab
@@ -25,7 +47,12 @@ export function InventoryWorkspacePage() {
 
     return (
         <div>
-            <InventoryTabs active={tab} onChange={setTab} />
+            <Tabs
+                tabs={TABS}
+                active={tab}
+                onChange={setTab}
+                ariaLabel="Inventory workspace views"
+            />
             {tab === 'list' && <InventoryByRole />}
             {tab === 'expiry' && <ExpiryReportPage />}
             {tab === 'adjustments' && <StockAdjustmentsPage />}
