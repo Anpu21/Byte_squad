@@ -9,7 +9,7 @@ export function ReportsHubPage() {
     return (
         <div className="space-y-4">
             <PageHeader
-                eyebrow="Insights"
+                eyebrow="Finance"
                 title="Reports"
                 subtitle="One place to reach every report across the app."
             />

@@ -1,7 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-    BadgePercent,
     BarChart3,
     Bell,
     Boxes,
@@ -15,8 +14,7 @@ import {
     Menu as MenuIcon,
     Receipt,
     FileClock,
-    ScrollText,
-    ShoppingCart,
+    ShoppingBag,
     Sparkles,
     PackagePlus,
     Truck,
@@ -39,11 +37,12 @@ interface DashboardLayoutProps {
 }
 
 type NavGroup =
-    | 'Operations'
+    | 'Overview'
+    | 'Sales'
+    | 'Fulfillment'
     | 'Inventory'
-    | 'Accounting'
+    | 'Finance'
     | 'People'
-    | 'Branches'
     | 'System';
 
 interface NavItem {
@@ -61,76 +60,59 @@ function resolveNavPath(item: NavItem, role?: UserRole): string {
 }
 
 const NAV_ITEMS: NavItem[] = [
+    // ── Overview ──
     {
         label: 'Dashboard',
         path: FRONTEND_ROUTES.DASHBOARD,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Home size={15} />,
-        group: 'Operations',
+        group: 'Overview',
     },
     {
         label: 'Dashboard',
         path: FRONTEND_ROUTES.CASHIER_DASHBOARD,
         roles: [UserRole.CASHIER],
         icon: <Home size={15} />,
-        group: 'Operations',
+        group: 'Overview',
     },
     {
         label: 'Dashboard',
         path: FRONTEND_ROUTES.WORKER_DASHBOARD,
         roles: [UserRole.WORKER],
         icon: <Home size={15} />,
-        group: 'Operations',
+        group: 'Overview',
     },
+    // ── Sales ──
+    {
+        label: 'POS',
+        path: FRONTEND_ROUTES.POS,
+        roles: [UserRole.CASHIER],
+        icon: <Receipt size={15} />,
+        group: 'Sales',
+    },
+    {
+        label: 'Sales',
+        path: FRONTEND_ROUTES.SALES,
+        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
+        icon: <ShoppingBag size={15} />,
+        group: 'Sales',
+    },
+    // ── Fulfillment ──
     {
         label: 'My Deliveries',
         path: FRONTEND_ROUTES.SHIPMENTS,
         roles: [UserRole.WORKER],
         icon: <Truck size={15} />,
-        group: 'Operations',
+        group: 'Fulfillment',
     },
     {
         label: 'Shipments',
         path: FRONTEND_ROUTES.SHIPMENTS,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Truck size={15} />,
-        group: 'Operations',
+        group: 'Fulfillment',
     },
-    {
-        label: 'POS',
-        path: FRONTEND_ROUTES.POS,
-        roles: [UserRole.CASHIER],
-        icon: <Receipt size={15} />,
-        group: 'Operations',
-    },
-    {
-        label: 'Transactions',
-        path: FRONTEND_ROUTES.TRANSACTIONS,
-        roles: [UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER],
-        icon: <ScrollText size={15} />,
-        group: 'Operations',
-    },
-    {
-        label: 'Discount schemes',
-        path: FRONTEND_ROUTES.ADMIN_SCHEMES,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <BadgePercent size={15} />,
-        group: 'Operations',
-    },
-    {
-        label: 'Reports',
-        path: FRONTEND_ROUTES.REPORTS,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <BarChart3 size={15} />,
-        group: 'Operations',
-    },
-    {
-        label: 'Customer Orders',
-        path: FRONTEND_ROUTES.CUSTOMER_ORDERS,
-        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
-        icon: <ShoppingCart size={15} />,
-        group: 'People',
-    },
+    // ── Inventory ──
     {
         label: 'Inventory',
         path: FRONTEND_ROUTES.INVENTORY,
@@ -145,13 +127,22 @@ const NAV_ITEMS: NavItem[] = [
         icon: <PackagePlus size={15} />,
         group: 'Inventory',
     },
+    // ── Finance ──
     {
         label: 'Accounting',
         path: FRONTEND_ROUTES.ACCOUNTING,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Calculator size={15} />,
-        group: 'Accounting',
+        group: 'Finance',
     },
+    {
+        label: 'Reports',
+        path: FRONTEND_ROUTES.REPORTS,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+        icon: <BarChart3 size={15} />,
+        group: 'Finance',
+    },
+    // ── People ──
     {
         label: 'Customer loyalty',
         path: FRONTEND_ROUTES.ADMIN_LOYALTY,
@@ -187,12 +178,13 @@ const NAV_ITEMS: NavItem[] = [
         icon: <CalendarRange size={15} />,
         group: 'People',
     },
+    // ── System ──
     {
         label: 'Branches',
         path: FRONTEND_ROUTES.BRANCHES,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Building2 size={15} />,
-        group: 'Branches',
+        group: 'System',
     },
     {
         label: 'Audit log',
@@ -211,11 +203,12 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const GROUP_ORDER: NavGroup[] = [
-    'Operations',
+    'Overview',
+    'Sales',
+    'Fulfillment',
     'Inventory',
-    'Accounting',
+    'Finance',
     'People',
-    'Branches',
     'System',
 ];
 
