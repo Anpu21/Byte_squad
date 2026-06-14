@@ -18,6 +18,13 @@ export type {
   InventorySummaryForProduct,
 };
 
+/**
+ * Transaction-abort signal: thrown to roll back the stock-deduct transaction
+ * when a row lacks stock. Caught locally and turned into a result object — it
+ * never escapes the repository.
+ */
+class InsufficientStockSignal extends Error {}
+
 @Injectable()
 export class InventoryRepository {
   constructor(
@@ -104,13 +111,13 @@ export class InventoryRepository {
             .execute();
           if (Number(result.affected ?? 0) === 0) {
             failedProductId = item.productId;
-            throw new Error('INSUFFICIENT_STOCK');
+            throw new InsufficientStockSignal();
           }
         }
       });
       return { ok: true, failedProductId: null };
     } catch (err: unknown) {
-      if (err instanceof Error && err.message === 'INSUFFICIENT_STOCK') {
+      if (err instanceof InsufficientStockSignal) {
         return { ok: false, failedProductId };
       }
       throw err;

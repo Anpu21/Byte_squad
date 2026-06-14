@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
@@ -46,6 +47,8 @@ const DEFAULT_ETA_HOURS = 24;
 
 @Injectable()
 export class ShipmentsService {
+  private readonly logger = new Logger(ShipmentsService.name);
+
   constructor(
     private readonly shipments: ShipmentsRepository,
     private readonly transfers: StockTransfersRepository,
@@ -747,8 +750,11 @@ export class ShipmentsService {
           });
         }),
       );
-    } catch {
-      // Swallowed by design — see method doc (F3).
+    } catch (err) {
+      // Best-effort notification — must not fail the transfer, but never silent.
+      this.logger.warn(
+        `Failed to send stock-transfer notification: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 }

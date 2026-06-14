@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import {
   DataSource,
   DeepPartial,
@@ -151,7 +151,7 @@ export class GrnsRepository {
       })
       .getOne();
     if (!created) {
-      throw new Error(
+      throw new InternalServerErrorException(
         `Inventory row vanished for product ${productId} @ ${branchId}`,
       );
     }

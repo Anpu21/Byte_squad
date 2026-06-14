@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
@@ -63,6 +64,8 @@ function paginate<T>(
 
 @Injectable()
 export class StockTransfersService {
+  private readonly logger = new Logger(StockTransfersService.name);
+
   constructor(
     private readonly transfers: StockTransfersRepository,
     private readonly products: ProductsRepository,
@@ -1031,8 +1034,11 @@ export class StockTransfersService {
         message: payload.message,
         type: NotificationType.STOCK_TRANSFER,
       });
-    } catch {
-      // swallowed by design
+    } catch (err) {
+      // Best-effort notification — must not fail the transfer, but never silent.
+      this.logger.warn(
+        `Failed to send stock-transfer notification: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 }

@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
 import { Readable } from 'stream';
@@ -58,7 +62,7 @@ export class CloudinaryService {
     opts: CloudinaryUploadOptions,
   ): Promise<CloudinaryUploadResult> {
     if (!this.enabled) {
-      throw new Error('Cloudinary is not configured');
+      throw new ServiceUnavailableException('Image uploads are not configured');
     }
 
     return new Promise((resolve, reject) => {
@@ -90,7 +94,7 @@ export class CloudinaryService {
     opts: CloudinaryUploadOptions,
   ): Promise<CloudinaryUploadResult> {
     if (!this.enabled) {
-      throw new Error('Cloudinary is not configured');
+      throw new ServiceUnavailableException('Image uploads are not configured');
     }
 
     return new Promise((resolve, reject) => {
@@ -117,7 +121,7 @@ export class CloudinaryService {
     opts: CloudinaryUploadOptions,
   ): Promise<CloudinaryUploadResult> {
     if (!this.enabled) {
-      throw new Error('Cloudinary is not configured');
+      throw new ServiceUnavailableException('Image uploads are not configured');
     }
     const result = await cloudinary.uploader.upload(sourceUrl, {
       folder: opts.folder,
