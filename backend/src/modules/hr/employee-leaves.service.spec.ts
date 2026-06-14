@@ -13,7 +13,7 @@ import { EmployeeLeavesRepository } from './employee-leaves.repository';
 import { EmployeesRepository } from './employees.repository';
 import { Employee } from './entities/employee.entity';
 import { EmployeeLeave } from './entities/employee-leave.entity';
-import { UsersRepository } from '../users/users.repository';
+import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
 
 const BRANCH_A = '11111111-1111-1111-1111-111111111111';
@@ -100,7 +100,7 @@ describe('EmployeeLeavesService', () => {
   let service: EmployeeLeavesService;
   let leavesRepo: jest.Mocked<EmployeeLeavesRepository>;
   let employeesRepo: jest.Mocked<EmployeesRepository>;
-  let usersRepo: jest.Mocked<UsersRepository>;
+  let usersRepo: jest.Mocked<UsersService>;
   let dataSource: { transaction: jest.Mock };
 
   beforeEach(async () => {
@@ -129,9 +129,9 @@ describe('EmployeeLeavesService', () => {
           },
         },
         {
-          provide: UsersRepository,
+          provide: UsersService,
           useValue: {
-            findById: jest.fn(),
+            findEntityById: jest.fn(),
           },
         },
         { provide: DataSource, useValue: dataSource },
@@ -140,7 +140,7 @@ describe('EmployeeLeavesService', () => {
     service = moduleRef.get(EmployeeLeavesService);
     leavesRepo = moduleRef.get(EmployeeLeavesRepository);
     employeesRepo = moduleRef.get(EmployeesRepository);
-    usersRepo = moduleRef.get(UsersRepository);
+    usersRepo = moduleRef.get(UsersService);
   });
 
   describe('list', () => {
@@ -392,7 +392,7 @@ describe('EmployeeLeavesService', () => {
       employeesRepo.findById.mockResolvedValue(
         makeEmployee({ userId: 'manager-2', role: 'Manager' }),
       );
-      usersRepo.findById.mockResolvedValue({
+      usersRepo.findEntityById.mockResolvedValue({
         id: 'manager-2',
         role: UserRole.MANAGER,
       } as User);
@@ -414,7 +414,7 @@ describe('EmployeeLeavesService', () => {
       employeesRepo.findById.mockResolvedValue(
         makeEmployee({ userId: CASHIER_USER_ID }),
       );
-      usersRepo.findById.mockResolvedValue({
+      usersRepo.findEntityById.mockResolvedValue({
         id: CASHIER_USER_ID,
         role: UserRole.CASHIER,
       } as User);
@@ -449,7 +449,7 @@ describe('EmployeeLeavesService', () => {
         role: UserRole.ADMIN,
         branchId: null,
       });
-      expect(usersRepo.findById).not.toHaveBeenCalled();
+      expect(usersRepo.findEntityById).not.toHaveBeenCalled();
       expect(result.status).toBe('Approved');
     });
 
@@ -502,7 +502,7 @@ describe('EmployeeLeavesService', () => {
       employeesRepo.findById.mockResolvedValue(
         makeEmployee({ userId: 'manager-2', role: 'Manager' }),
       );
-      usersRepo.findById.mockResolvedValue({
+      usersRepo.findEntityById.mockResolvedValue({
         id: 'manager-2',
         role: UserRole.MANAGER,
       } as User);

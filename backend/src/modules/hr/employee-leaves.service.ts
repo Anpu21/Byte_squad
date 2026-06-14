@@ -14,7 +14,7 @@ import { EmployeeLeave } from '@/modules/hr/entities/employee-leave.entity';
 import { ApplyLeaveDto } from '@/modules/hr/dto/apply-leave.dto';
 import { ListLeavesQueryDto } from '@/modules/hr/dto/list-leaves-query.dto';
 import { RejectLeaveDto } from '@/modules/hr/dto/reject-leave.dto';
-import { UsersRepository } from '@/modules/users/users.repository';
+import { UsersService } from '@/modules/users/users.service';
 
 export interface LeavesActor {
   id: string;
@@ -34,7 +34,7 @@ export class EmployeeLeavesService {
   constructor(
     private readonly leaves: EmployeeLeavesRepository,
     private readonly employees: EmployeesRepository,
-    private readonly users: UsersRepository,
+    private readonly users: UsersService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -290,7 +290,7 @@ export class EmployeeLeavesService {
       throw new ForbiddenException('Your own leave requires admin approval');
     }
     if (!employee.userId) return;
-    const applicant = await this.users.findById(employee.userId);
+    const applicant = await this.users.findEntityById(employee.userId);
     if (
       applicant &&
       (applicant.role === UserRole.MANAGER || applicant.role === UserRole.ADMIN)
