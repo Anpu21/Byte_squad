@@ -5,21 +5,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Branch } from '@branches/entities/branch.entity';
 import { BranchesRepository } from '@branches/branches.repository';
+import { BranchPerformanceRepository } from '@branches/branch-performance.repository';
 import { CreateBranchDto } from '@branches/dto/create-branch.dto';
 import { UpdateBranchDto } from '@branches/dto/update-branch.dto';
-// TODO Phase C6 / C8 / C4 / C5 — replace these cross-module borrowings with
-// the corresponding *Repository classes once those modules migrate.
-import { User } from '@users/entities/user.entity';
-import { Sale } from '@pos/entities/sale.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
-import { Expense } from '@accounting/entities/expense.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
-import { TransactionType } from '@common/enums/transaction.enum';
 import {
   allowedBranchIds,
   assertBranchScope,
@@ -65,16 +56,7 @@ export class BranchesService {
 
   constructor(
     private readonly branches: BranchesRepository,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(Sale)
-    private readonly transactionRepository: Repository<Sale>,
-    @InjectRepository(SaleItem)
-    private readonly transactionItemRepository: Repository<SaleItem>,
-    @InjectRepository(Inventory)
-    private readonly inventoryRepository: Repository<Inventory>,
-    @InjectRepository(Expense)
-    private readonly expenseRepository: Repository<Expense>,
+    private readonly branchPerformance: BranchPerformanceRepository,
   ) {}
 
   // ── Read paths ─────────────────────────────────────────────────────────
@@ -181,7 +163,7 @@ export class BranchesService {
     const monthStartDate = monthStart.toISOString().split('T')[0];
     const monthEndDate = monthEnd.toISOString().split('T')[0];
 
-    const [
+    const {
       adminUser,
       allStaff,
       todayAgg,
@@ -192,121 +174,15 @@ export class BranchesService {
       topProductsRaw,
       lowStockRaw,
       recentTxnsRaw,
-    ] = await Promise.all([
-      this.userRepository.findOne({
-        where: { branchId, role: UserRole.ADMIN },
-        order: { createdAt: 'ASC' },
-      }),
-      this.userRepository.find({
-        where: { branchId },
-        select: ['id', 'role'],
-      }),
-      this.transactionRepository
-        .createQueryBuilder('txn')
-        .select('COALESCE(SUM(txn.total), 0)', 'total')
-        .addSelect('COUNT(txn.id)', 'count')
-        .where('txn.branch_id = :branchId', { branchId })
-        .andWhere('txn.type = :type', { type: TransactionType.SALE })
-        .andWhere('txn.created_at BETWEEN :start AND :end', {
-          start: todayStart,
-          end: todayEnd,
-        })
-        .getRawOne<{ total: string; count: string }>(),
-      this.transactionRepository
-        .createQueryBuilder('txn')
-        .select('txn.created_at', 'createdAt')
-        .addSelect('txn.total', 'total')
-        .where('txn.branch_id = :branchId', { branchId })
-        .andWhere('txn.type = :type', { type: TransactionType.SALE })
-        .andWhere('txn.created_at >= :start', { start: weekStart })
-        .getRawMany<{ createdAt: Date; total: string }>(),
-      this.transactionRepository
-        .createQueryBuilder('txn')
-        .select('COALESCE(SUM(txn.total), 0)', 'total')
-        .addSelect('COUNT(txn.id)', 'count')
-        .where('txn.branch_id = :branchId', { branchId })
-        .andWhere('txn.type = :type', { type: TransactionType.SALE })
-        .andWhere('txn.created_at BETWEEN :start AND :end', {
-          start: monthStart,
-          end: monthEnd,
-        })
-        .getRawOne<{ total: string; count: string }>(),
-      this.expenseRepository
-        .createQueryBuilder('exp')
-        .select('COALESCE(SUM(exp.amount), 0)', 'total')
-        .where('exp.branch_id = :branchId', { branchId })
-        .andWhere('exp.expense_date BETWEEN :start AND :end', {
-          start: monthStartDate,
-          end: monthEndDate,
-        })
-        .getRawOne<{ total: string }>(),
-      this.inventoryRepository
-        .createQueryBuilder('inv')
-        .select('COUNT(inv.id)', 'total')
-        .addSelect(
-          'SUM(CASE WHEN inv.quantity > 0 THEN 1 ELSE 0 END)',
-          'active',
-        )
-        .addSelect(
-          'SUM(CASE WHEN inv.quantity <= inv.low_stock_threshold THEN 1 ELSE 0 END)',
-          'low',
-        )
-        .addSelect(
-          'SUM(CASE WHEN inv.quantity = 0 THEN 1 ELSE 0 END)',
-          'outOfStock',
-        )
-        .where('inv.branch_id = :branchId', { branchId })
-        .getRawOne<{
-          total: string;
-          active: string;
-          low: string;
-          outOfStock: string;
-        }>(),
-      this.transactionItemRepository
-        .createQueryBuilder('item')
-        .innerJoin('item.sale', 'txn')
-        .innerJoin('item.product', 'product')
-        .select('product.id', 'productId')
-        .addSelect('product.name', 'name')
-        .addSelect('SUM(item.quantity)', 'quantity')
-        .addSelect('SUM(item.line_total)', 'revenue')
-        .where('txn.branch_id = :branchId', { branchId })
-        .andWhere('txn.type = :type', { type: TransactionType.SALE })
-        .andWhere('txn.created_at >= :start', { start: monthStart })
-        .groupBy('product.id')
-        .addGroupBy('product.name')
-        .orderBy('SUM(item.line_total)', 'DESC')
-        .limit(5)
-        .getRawMany<{
-          productId: string;
-          name: string;
-          quantity: string;
-          revenue: string;
-        }>(),
-      this.inventoryRepository
-        .createQueryBuilder('inv')
-        .innerJoin('inv.product', 'product')
-        .select('product.id', 'productId')
-        .addSelect('product.name', 'name')
-        .addSelect('inv.quantity', 'quantity')
-        .addSelect('inv.low_stock_threshold', 'threshold')
-        .where('inv.branch_id = :branchId', { branchId })
-        .andWhere('inv.quantity <= inv.low_stock_threshold')
-        .orderBy('inv.quantity', 'ASC')
-        .limit(10)
-        .getRawMany<{
-          productId: string;
-          name: string;
-          quantity: string;
-          threshold: string;
-        }>(),
-      this.transactionRepository.find({
-        where: { branchId },
-        relations: ['cashier'],
-        order: { createdAt: 'DESC' },
-        take: 10,
-      }),
-    ]);
+    } = await this.branchPerformance.getPerformanceData(branchId, {
+      todayStart,
+      todayEnd,
+      weekStart,
+      monthStart,
+      monthEnd,
+      monthStartDate,
+      monthEndDate,
+    });
 
     // Staff breakdown by role
     const staff: MyBranchStaff = {
