@@ -7,6 +7,7 @@ export enum UserRole {
     ADMIN = 'admin',
     MANAGER = 'manager',
     CASHIER = 'cashier',
+    WORKER = 'worker',
     CUSTOMER = 'customer',
 }
 
@@ -66,4 +67,26 @@ export enum ExpenseStatus {
     PENDING = 'pending',
     APPROVED = 'approved',
     REJECTED = 'rejected',
+}
+
+export enum ShipmentStatus {
+    PENDING = 'pending',
+    READY_TO_SHIP = 'ready_to_ship',
+    DISPATCHED = 'dispatched',
+    OUT_FOR_DELIVERY = 'out_for_delivery',
+    DELIVERED = 'delivered',
+    CANCELLED = 'cancelled',
+    RETURNED = 'returned',
+}
+
+export enum ShipmentEventType {
+    CREATED = 'created',
+    COURIER_ASSIGNED = 'courier_assigned',
+    READY_TO_SHIP = 'ready_to_ship',
+    DISPATCHED = 'dispatched',
+    CHECKPOINT = 'checkpoint',
+    OUT_FOR_DELIVERY = 'out_for_delivery',
+    DELIVERED = 'delivered',
+    RETURNED = 'returned',
+    CANCELLED = 'cancelled',
 }

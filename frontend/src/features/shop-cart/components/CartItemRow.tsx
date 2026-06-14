@@ -1,22 +1,24 @@
 import { Trash2, Minus, Plus } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import ProductImage from '@/components/shop/ProductImage';
-
-interface CartItem {
-    productId: string;
-    name: string;
-    sellingPrice: number;
-    quantity: number;
-    imageUrl?: string | null;
-}
+import type {
+    ShopCartItem,
+    ShopCartLineRef,
+} from '@/store/slices/shopCartSlice';
 
 interface CartItemRowProps {
-    item: CartItem;
-    onChangeQty: (productId: string, quantity: number) => void;
-    onRemove: (productId: string) => void;
+    item: ShopCartItem;
+    onChangeQty: (ref: ShopCartLineRef, quantity: number) => void;
+    onRemove: (ref: ShopCartLineRef) => void;
 }
 
 export function CartItemRow({ item, onChangeQty, onRemove }: CartItemRowProps) {
+    const lineRef: ShopCartLineRef = {
+        productId: item.productId,
+        branchId: item.branchId,
+        unitId: item.unitId,
+    };
+
     return (
         <div className="flex items-center gap-4 p-4 border-b border-border last:border-0">
             <ProductImage src={item.imageUrl} alt={item.name} />
@@ -25,15 +27,13 @@ export function CartItemRow({ item, onChangeQty, onRemove }: CartItemRowProps) {
                     {item.name}
                 </p>
                 <p className="text-xs text-text-3 mt-1">
-                    {formatCurrency(item.sellingPrice)} each
+                    {formatCurrency(item.sellingPrice)} / {item.unitLabel}
                 </p>
             </div>
             <div className="flex items-center gap-2">
                 <button
                     type="button"
-                    onClick={() =>
-                        onChangeQty(item.productId, item.quantity - 1)
-                    }
+                    onClick={() => onChangeQty(lineRef, item.quantity - 1)}
                     disabled={item.quantity <= 1}
                     aria-label={`Decrease quantity of ${item.name}`}
                     className="w-9 h-9 flex items-center justify-center rounded-lg bg-surface-2 hover:bg-primary-soft disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -48,9 +48,7 @@ export function CartItemRow({ item, onChangeQty, onRemove }: CartItemRowProps) {
                 </span>
                 <button
                     type="button"
-                    onClick={() =>
-                        onChangeQty(item.productId, item.quantity + 1)
-                    }
+                    onClick={() => onChangeQty(lineRef, item.quantity + 1)}
                     aria-label={`Increase quantity of ${item.name}`}
                     className="w-9 h-9 flex items-center justify-center rounded-lg bg-surface-2 hover:bg-primary-soft transition-colors"
                 >
@@ -62,7 +60,7 @@ export function CartItemRow({ item, onChangeQty, onRemove }: CartItemRowProps) {
             </p>
             <button
                 type="button"
-                onClick={() => onRemove(item.productId)}
+                onClick={() => onRemove(lineRef)}
                 className="p-1.5 rounded-lg hover:bg-danger-soft text-text-3 hover:text-danger transition-colors"
                 aria-label="Remove"
             >

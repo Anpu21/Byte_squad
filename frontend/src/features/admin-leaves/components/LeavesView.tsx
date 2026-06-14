@@ -33,15 +33,31 @@ export function LeavesView({ showHeader = true }: LeavesViewProps) {
     const [status, setStatus] = useState<'' | LeaveStatus>('');
     const [applyOpen, setApplyOpen] = useState(false);
 
-    const employeesQuery = useEmployees({
-        branchId: canPickBranch ? branchId || undefined : undefined,
-        status: 'Active',
-        limit: EMPLOYEE_PAGE_SIZE,
-        offset: 0,
-    });
+    // GET /hr/employees is admin/manager-only — cashiers self-apply
+    // without a picker, so skip the fetch entirely for them.
+    const employeesQuery = useEmployees(
+        {
+            branchId: canPickBranch ? branchId || undefined : undefined,
+            status: 'Active',
+            limit: EMPLOYEE_PAGE_SIZE,
+            offset: 0,
+        },
+        { enabled: canModerate },
+    );
     const employees = useMemo(
         () => employeesQuery.data?.rows ?? [],
         [employeesQuery.data],
+    );
+
+    // A manager's own leave can only be moderated by an admin — find
+    // the manager's employee record so the table mutes approve/reject
+    // on it (the BE enforces the same rule with a 403).
+    const adminApprovalEmployeeId = useMemo(
+        () =>
+            role === UserRole.MANAGER
+                ? employees.find((e) => e.userId === user?.id)?.id
+                : undefined,
+        [employees, role, user?.id],
     );
 
     const leavesQuery = useLeaves({
@@ -91,12 +107,14 @@ export function LeavesView({ showHeader = true }: LeavesViewProps) {
                     canModerate={canModerate}
                     canCancel
                     isLoading={leavesQuery.isLoading}
+                    adminApprovalEmployeeId={adminApprovalEmployeeId}
                 />
             </Card>
             <ApplyLeaveModal
                 isOpen={applyOpen}
                 onClose={() => setApplyOpen(false)}
                 employees={employees}
+                hideEmployee={!canModerate}
             />
         </>
     );

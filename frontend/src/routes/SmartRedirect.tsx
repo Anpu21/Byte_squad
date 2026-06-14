@@ -16,6 +16,8 @@ export function SmartRedirect() {
                 return <Navigate to={FRONTEND_ROUTES.SELECT_BRANCH} replace />;
             }
             return <Navigate to={FRONTEND_ROUTES.SHOP} replace />;
+        case UserRole.WORKER:
+            return <Navigate to={FRONTEND_ROUTES.WORKER_DASHBOARD} replace />;
         default:
             return <Navigate to={FRONTEND_ROUTES.DASHBOARD} replace />;
     }

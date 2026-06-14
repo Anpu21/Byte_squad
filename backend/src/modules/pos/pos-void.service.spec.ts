@@ -9,7 +9,7 @@ import { SaleRepository } from './sale.repository';
 import { PaymentRepository } from './payment.repository';
 import { CreditTransactionRepository } from './credit-transaction.repository';
 import { StockMovementRepository } from './stock-movement.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { Sale } from './entities/sale.entity';
@@ -208,7 +208,7 @@ function buildVoidMocks(opts: {
       { provide: PaymentRepository, useValue: paymentsRepoMock },
       { provide: CreditTransactionRepository, useValue: creditTxnsRepoMock },
       { provide: StockMovementRepository, useValue: stockMovementsRepoMock },
-      { provide: AccountingRepository, useValue: accountingMock },
+      { provide: AccountingService, useValue: accountingMock },
       { provide: LoyaltyWalletService, useValue: loyaltyWalletMock },
       { provide: DataSource, useValue: dataSourceMock },
     ],

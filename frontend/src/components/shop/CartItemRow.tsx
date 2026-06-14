@@ -14,6 +14,11 @@ interface CartItemRowProps {
 
 export function CartItemRow({ item }: CartItemRowProps) {
     const dispatch = useAppDispatch();
+    const lineRef = {
+        productId: item.productId,
+        branchId: item.branchId,
+        unitId: item.unitId,
+    };
     const lineTotal = item.sellingPrice * item.quantity;
 
     return (
@@ -28,7 +33,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
                     {item.name}
                 </p>
                 <p className="text-xs text-text-3 mt-1">
-                    {formatCurrency(item.sellingPrice)} each
+                    {formatCurrency(item.sellingPrice)} / {item.unitLabel}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                     <button
@@ -36,7 +41,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
                         onClick={() =>
                             dispatch(
                                 setQuantity({
-                                    productId: item.productId,
+                                    ...lineRef,
                                     quantity: item.quantity - 1,
                                 }),
                             )
@@ -58,7 +63,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
                         onClick={() =>
                             dispatch(
                                 setQuantity({
-                                    productId: item.productId,
+                                    ...lineRef,
                                     quantity: item.quantity + 1,
                                 }),
                             )
@@ -75,7 +80,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
             </div>
             <button
                 type="button"
-                onClick={() => dispatch(removeFromCart(item.productId))}
+                onClick={() => dispatch(removeFromCart(lineRef))}
                 className="p-2 rounded-md hover:bg-danger-soft text-text-3 hover:text-danger transition-colors self-start focus:outline-none focus:ring-[3px] focus:ring-primary/20"
                 aria-label={`Remove ${item.name} from cart`}
             >

@@ -9,10 +9,10 @@ import {
 import { DataSource } from 'typeorm';
 import { StockTransfersService } from './stock-transfers.service';
 import { StockTransfersRepository } from './stock-transfers.repository';
-import { ProductsRepository } from '@products/products.repository';
-import { BranchesRepository } from '@branches/branches.repository';
-import { InventoryRepository } from '@inventory/inventory.repository';
-import { UsersRepository } from '@users/users.repository';
+import { ProductsService } from '@products/products.service';
+import { BranchesService } from '@branches/branches.service';
+import { InventoryService } from '@inventory/inventory.service';
+import { UsersService } from '@users/users.service';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationsGateway } from '@notifications/notifications.gateway';
 import { StockTransferRequest } from './entities/stock-transfer-request.entity';
@@ -31,10 +31,10 @@ interface InventoryQB {
 describe('StockTransfersService', () => {
   let service: StockTransfersService;
   let transfers: jest.Mocked<StockTransfersRepository>;
-  let products: jest.Mocked<ProductsRepository>;
-  let branches: jest.Mocked<BranchesRepository>;
-  let inventory: jest.Mocked<InventoryRepository>;
-  let users: jest.Mocked<UsersRepository>;
+  let products: jest.Mocked<ProductsService>;
+  let branches: jest.Mocked<BranchesService>;
+  let inventory: jest.Mocked<InventoryService>;
+  let users: jest.Mocked<UsersService>;
   let dataSource: { transaction: jest.Mock };
   let notifications: { create: jest.Mock };
   let gateway: { sendToUser: jest.Mock };
@@ -49,18 +49,18 @@ describe('StockTransfersService', () => {
       listIncoming: jest.fn(),
       listHistory: jest.fn(),
     };
-    const productsMock: Partial<jest.Mocked<ProductsRepository>> = {
+    const productsMock: Partial<jest.Mocked<ProductsService>> = {
       findById: jest.fn(),
     };
-    const branchesMock: Partial<jest.Mocked<BranchesRepository>> = {
-      findById: jest.fn(),
+    const branchesMock: Partial<jest.Mocked<BranchesService>> = {
+      findEntityById: jest.fn(),
       findAllSortedByName: jest.fn(),
     };
-    const inventoryMock: Partial<jest.Mocked<InventoryRepository>> = {
+    const inventoryMock: Partial<jest.Mocked<InventoryService>> = {
       findByProductAndBranch: jest.fn(),
       findByProductInBranches: jest.fn(),
     };
-    const usersMock: Partial<jest.Mocked<UsersRepository>> = {
+    const usersMock: Partial<jest.Mocked<UsersService>> = {
       findAllByRole: jest.fn().mockResolvedValue([]),
       findManagersAndAdminsForBranches: jest.fn().mockResolvedValue([]),
     };
@@ -74,10 +74,10 @@ describe('StockTransfersService', () => {
       providers: [
         StockTransfersService,
         { provide: StockTransfersRepository, useValue: transfersMock },
-        { provide: ProductsRepository, useValue: productsMock },
-        { provide: BranchesRepository, useValue: branchesMock },
-        { provide: InventoryRepository, useValue: inventoryMock },
-        { provide: UsersRepository, useValue: usersMock },
+        { provide: ProductsService, useValue: productsMock },
+        { provide: BranchesService, useValue: branchesMock },
+        { provide: InventoryService, useValue: inventoryMock },
+        { provide: UsersService, useValue: usersMock },
         { provide: NotificationsService, useValue: notificationsMock },
         { provide: NotificationsGateway, useValue: gatewayMock },
         { provide: DataSource, useValue: dataSourceMock },
@@ -86,10 +86,10 @@ describe('StockTransfersService', () => {
 
     service = module.get(StockTransfersService);
     transfers = module.get(StockTransfersRepository);
-    products = module.get(ProductsRepository);
-    branches = module.get(BranchesRepository);
-    inventory = module.get(InventoryRepository);
-    users = module.get(UsersRepository);
+    products = module.get(ProductsService);
+    branches = module.get(BranchesService);
+    inventory = module.get(InventoryService);
+    users = module.get(UsersService);
     dataSource = module.get(DataSource);
     notifications = module.get(NotificationsService);
     gateway = module.get(NotificationsGateway);
@@ -156,7 +156,7 @@ describe('StockTransfersService', () => {
         requestedQuantity: 5,
         productId: 'p1',
       } as StockTransferRequest);
-      branches.findById.mockResolvedValue({
+      branches.findEntityById.mockResolvedValue({
         id: 'src',
         isActive: false,
       } as Branch);
@@ -177,7 +177,7 @@ describe('StockTransfersService', () => {
         requestedQuantity: 5,
         productId: 'p1',
       } as StockTransferRequest);
-      branches.findById.mockResolvedValue({
+      branches.findEntityById.mockResolvedValue({
         id: 'src',
         isActive: true,
       } as Branch);
@@ -214,7 +214,7 @@ describe('StockTransfersService', () => {
           sourceBranch: { name: 'Source' },
           destinationBranch: { name: 'Dest' },
         } as StockTransferRequest);
-      branches.findById.mockResolvedValue({
+      branches.findEntityById.mockResolvedValue({
         id: 'src',
         name: 'Source',
         isActive: true,
@@ -309,7 +309,7 @@ describe('StockTransfersService', () => {
         id: 'p',
         name: 'Apples',
       } as never);
-      branches.findById.mockResolvedValue({
+      branches.findEntityById.mockResolvedValue({
         id: 'b',
         name: 'Main',
       } as Branch);
@@ -337,7 +337,7 @@ describe('StockTransfersService', () => {
 
   it('uses repos to fan out admin notifications on create', async () => {
     products.findById.mockResolvedValue({ id: 'p', name: 'Apples' } as never);
-    branches.findById.mockResolvedValue({
+    branches.findEntityById.mockResolvedValue({
       id: 'b',
       name: 'Main',
     } as Branch);
@@ -371,7 +371,7 @@ describe('StockTransfersService', () => {
     } as Branch;
 
     function mockActiveBranches() {
-      branches.findById.mockImplementation((id: string) => {
+      branches.findEntityById.mockImplementation((id: string) => {
         if (id === srcId) return Promise.resolve(activeSource);
         if (id === dstId) return Promise.resolve(activeDestination);
         return Promise.resolve(null);
@@ -473,7 +473,7 @@ describe('StockTransfersService', () => {
 
     it('rejects when the source branch is inactive', async () => {
       // Arrange
-      branches.findById.mockImplementation((id: string) => {
+      branches.findEntityById.mockImplementation((id: string) => {
         if (id === srcId) {
           return Promise.resolve({
             id,
@@ -712,7 +712,7 @@ describe('StockTransfersService', () => {
 
     it('rejects when the destination branch is inactive', async () => {
       // Arrange
-      branches.findById.mockResolvedValue({
+      branches.findEntityById.mockResolvedValue({
         id: branchId,
         name: 'Downtown',
         isActive: false,
@@ -730,7 +730,7 @@ describe('StockTransfersService', () => {
 
     it('throws NotFoundException when a product cannot be found', async () => {
       // Arrange
-      branches.findById.mockResolvedValue(activeBranch);
+      branches.findEntityById.mockResolvedValue(activeBranch);
       products.findById.mockResolvedValue(null);
       const dto = {
         lines: [{ productId: 'missing', quantity: 1 }],
@@ -745,7 +745,7 @@ describe('StockTransfersService', () => {
 
     it('saves all lines as PENDING with the manager as requester and shares one batchId', async () => {
       // Arrange
-      branches.findById.mockResolvedValue(activeBranch);
+      branches.findEntityById.mockResolvedValue(activeBranch);
       mockProducts({ p1: 'Apples', p2: 'Bananas', p3: 'Carrots' });
       const { savedTransfers, transferSave } = mockTransaction();
       transfers.findById.mockImplementation((id: string) =>
@@ -783,7 +783,7 @@ describe('StockTransfersService', () => {
 
     it('dedupes lines with the same productId by summing quantities', async () => {
       // Arrange
-      branches.findById.mockResolvedValue(activeBranch);
+      branches.findEntityById.mockResolvedValue(activeBranch);
       mockProducts({ p1: 'Apples' });
       const { transferSave } = mockTransaction();
       transfers.findById.mockImplementation((id: string) =>
@@ -811,7 +811,7 @@ describe('StockTransfersService', () => {
 
     it('fans out one notification per admin per batch', async () => {
       // Arrange
-      branches.findById.mockResolvedValue(activeBranch);
+      branches.findEntityById.mockResolvedValue(activeBranch);
       mockProducts({ p1: 'Apples', p2: 'Bananas' });
       const admins = [{ id: 'admin-1' } as never, { id: 'admin-2' } as never];
       users.findAllByRole.mockResolvedValue(admins);
@@ -837,7 +837,7 @@ describe('StockTransfersService', () => {
 
     it('rejects when requestReason is empty after trim', async () => {
       // Arrange
-      branches.findById.mockResolvedValue(activeBranch);
+      branches.findEntityById.mockResolvedValue(activeBranch);
       mockProducts({ p1: 'Apples' });
       const dto = {
         requestReason: '   ',

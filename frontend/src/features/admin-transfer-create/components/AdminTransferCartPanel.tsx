@@ -44,7 +44,7 @@ export function AdminTransferCartPanel({
             : 'Pick a source and destination branch';
 
     return (
-        <div className="flex-1 min-h-0 min-w-0 bg-surface border border-border rounded-md shadow-md-token flex flex-col">
+        <div className="flex-1 min-h-0 min-w-0 bg-surface border border-border rounded-xl shadow-md-token flex flex-col">
             <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
                 <div>
                     <p className="text-[10px] uppercase tracking-[0.12em] text-text-3 font-semibold">

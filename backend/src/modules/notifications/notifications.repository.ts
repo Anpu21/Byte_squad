@@ -30,8 +30,9 @@ export class NotificationsRepository {
     return this.repo.findOne({ where: { id, userId } });
   }
 
-  async markRead(id: string): Promise<void> {
-    await this.repo.update(id, { isRead: true });
+  async markRead(id: string, userId: string): Promise<number> {
+    const result = await this.repo.update({ id, userId }, { isRead: true });
+    return result.affected ?? 0;
   }
 
   async markAllReadForUser(userId: string): Promise<void> {

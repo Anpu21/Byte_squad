@@ -169,6 +169,23 @@ export const hrService = {
     },
 
     /**
+     * `GET /hr/attendance/me` — self-scoped attendance for the
+     * authenticated worker / cashier. Same date-range envelope as
+     * `listAttendance`, but the BE forces the actor's own employee, so
+     * `branchId` / `employeeId` are never accepted here.
+     */
+    getMyAttendance: async (query: {
+        startDate: string;
+        endDate: string;
+    }): Promise<IAttendanceListResponse> => {
+        const response = await api.get<IApiResponse<IAttendanceListResponse>>(
+            '/hr/attendance/me',
+            { params: query },
+        );
+        return response.data.data;
+    },
+
+    /**
      * `POST /hr/attendance/bulk` — manager grid submit. Capped at
      * 500 rows server-side; persisted inside a single transaction.
      */

@@ -7,6 +7,7 @@ import {
     selectShopCartItems,
     selectShopCartIsOpen,
     selectShopCartTotal,
+    selectShopCartGroups,
 } from '@/store/selectors/shopCart';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { CartItemRow } from '@/components/shop/CartItemRow';
@@ -21,6 +22,7 @@ export function CartDrawer() {
     const items = useAppSelector(selectShopCartItems);
     const isOpen = useAppSelector(selectShopCartIsOpen);
     const total = useAppSelector(selectShopCartTotal);
+    const groups = useAppSelector(selectShopCartGroups);
 
     const panelRef = useRef<HTMLDivElement>(null);
     const previousActiveRef = useRef<HTMLElement | null>(null);
@@ -144,11 +146,23 @@ export function CartDrawer() {
                             </p>
                         </div>
                     ) : (
-                        <ul className="divide-y divide-border">
-                            {items.map((item) => (
-                                <CartItemRow key={item.productId} item={item} />
+                        <div className="divide-y divide-border">
+                            {groups.map((group) => (
+                                <div key={group.branchId}>
+                                    <p className="px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-text-3 bg-surface-2">
+                                        Pickup at {group.branchName || 'branch'}
+                                    </p>
+                                    <ul className="divide-y divide-border">
+                                        {group.items.map((item) => (
+                                            <CartItemRow
+                                                key={`${item.productId}:${item.branchId}:${item.unitId ?? 'base'}`}
+                                                item={item}
+                                            />
+                                        ))}
+                                    </ul>
+                                </div>
                             ))}
-                        </ul>
+                        </div>
                     )}
                 </div>
 

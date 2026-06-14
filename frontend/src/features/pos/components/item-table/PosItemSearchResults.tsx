@@ -8,6 +8,11 @@ interface IPosItemSearchResultsProps {
     /** The query the cashier last typed; surfaces in the empty/no-result hint. */
     query?: string;
     className?: string;
+    /**
+     * Keyboard-highlighted row index (billing-grid entry row). The matching
+     * option gets the active style + `aria-selected`; -1 / undefined = none.
+     */
+    highlightIndex?: number;
 }
 
 /**
@@ -24,6 +29,7 @@ export function PosItemSearchResults({
     isLoading = false,
     query,
     className,
+    highlightIndex = -1,
 }: IPosItemSearchResultsProps) {
     const hasQuery = (query ?? '').trim().length > 0;
 
@@ -67,12 +73,20 @@ export function PosItemSearchResults({
                 className,
             )}
         >
-            {results.map((row) => (
-                <li key={row.productId} role="option" aria-selected={false}>
+            {results.map((row, i) => (
+                <li
+                    key={row.productId}
+                    role="option"
+                    aria-selected={i === highlightIndex}
+                >
                     <button
                         type="button"
                         onClick={() => onSelect(row)}
-                        className="w-full grid grid-cols-[1fr_auto] gap-3 px-3 py-2.5 text-left hover:bg-surface-2 focus:bg-surface-2 focus:outline-none transition-colors"
+                        data-result-index={i}
+                        className={cn(
+                            'w-full grid grid-cols-[1fr_auto] gap-3 px-3 py-2.5 text-left hover:bg-surface-2 focus:bg-surface-2 focus:outline-none transition-colors',
+                            i === highlightIndex && 'bg-surface-2',
+                        )}
                     >
                         <div className="min-w-0">
                             <p className="text-sm font-medium text-text-1 truncate">

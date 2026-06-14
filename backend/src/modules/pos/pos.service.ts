@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, QueryFailedError } from 'typeorm';
+import { DataSource, DeepPartial, QueryFailedError } from 'typeorm';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import type { Product } from '@products/entities/product.entity';
@@ -13,9 +13,9 @@ import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
 import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
 import { SearchCustomersQueryDto } from '@pos/dto/search-customers-query.dto';
 import { PosRepository } from '@pos/pos.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
-import { ProductsRepository } from '@products/products.repository';
-import { InventoryRepository } from '@inventory/inventory.repository';
+import { AccountingService } from '@accounting/accounting.service';
+import { ProductsService } from '@products/products.service';
+import { InventoryService } from '@inventory/inventory.service';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { DiscountType } from '@common/enums/discount.enum';
@@ -23,7 +23,7 @@ import { TransactionType } from '@common/enums/transaction.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { InvoiceNumberService } from '@pos/services/invoice-number.service';
 import { SaleRepository } from '@pos/sale.repository';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import type {
   SearchProductRow,
   ProductUnitRow,
@@ -126,14 +126,29 @@ export class PosService {
 
   constructor(
     private readonly pos: PosRepository,
-    private readonly accounting: AccountingRepository,
+    private readonly accounting: AccountingService,
     private readonly dataSource: DataSource,
-    private readonly products: ProductsRepository,
-    private readonly inventory: InventoryRepository,
+    private readonly products: ProductsService,
+    private readonly inventory: InventoryService,
     private readonly invoiceNumbers: InvoiceNumberService,
     private readonly sales: SaleRepository,
-    private readonly users: UsersRepository,
+    private readonly users: UsersService,
   ) {}
+
+  // ── Cross-module pass-throughs (owner-service surface; blaxx nestjs-07) ──
+  // customer-orders records pickup sales and returns looks up sales through
+  // these instead of injecting PosRepository / SaleRepository.
+  createAndSaveTransaction(partial: DeepPartial<Sale>): Promise<Sale> {
+    return this.pos.createAndSaveTransaction(partial);
+  }
+
+  findByInvoiceNumber(invoiceNumber: string): Promise<Sale | null> {
+    return this.sales.findByInvoiceNumber(invoiceNumber);
+  }
+
+  findOneById(id: string): Promise<Sale | null> {
+    return this.sales.findOneById(id);
+  }
 
   async createTransaction(
     dto: CreateTransactionDto,

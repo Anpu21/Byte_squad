@@ -18,13 +18,17 @@ import { APP_ROUTES } from '@common/routes/app.routes';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Public } from '@common/decorators/public.decorator';
+import { Throttle } from '@nestjs/throttler';
 
+// Brute-force resistance: cap auth attempts at 10 / minute / IP (blaxx auth-09).
+@Throttle({ default: { limit: 10, ttl: 60000 } })
 @Controller(APP_ROUTES.AUTH.BASE)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
   @Post(APP_ROUTES.AUTH.LOGIN)
+  @HttpCode(HttpStatus.OK)
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
@@ -50,6 +54,7 @@ export class AuthController {
   }
 
   @Post(APP_ROUTES.AUTH.CHANGE_PASSWORD)
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   changePassword(
     @CurrentUser('id') userId: string,

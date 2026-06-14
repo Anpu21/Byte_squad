@@ -11,15 +11,17 @@ import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 import { BranchSelectionPage } from '@/pages/auth/BranchSelectionPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { CashierDashboardPage } from '@/pages/dashboard/CashierDashboardPage';
+import { WorkerDashboardPage } from '@/pages/dashboard/WorkerDashboardPage';
 import { ProductFormPage } from '@/pages/inventory/ProductFormPage';
 import { InventoryWorkspacePage } from '@/pages/inventory/InventoryWorkspacePage';
+import { PurchasesWorkspacePage } from '@/pages/purchases/PurchasesWorkspacePage';
 import { StockAdjustmentNewPage } from '@/pages/inventory/StockAdjustmentNewPage';
 import { ReturnNewPage } from '@/pages/inventory/ReturnNewPage';
 import { PosPage } from '@/pages/pos/PosPage';
-import { TransactionsPage } from '@/pages/pos/TransactionsPage';
-import { LedgerPage } from '@/pages/accounting/LedgerPage';
-import { ExpensesPage } from '@/pages/accounting/ExpensesPage';
-import { ProfitLossPage } from '@/pages/accounting/ProfitLossPage';
+import { SalesPage } from '@/pages/sales/SalesPage';
+import { AccountingPage } from '@/pages/accounting/AccountingPage';
+import { AuditLogPage } from '@/pages/admin/AuditLogPage';
+import { ReportsHubPage } from '@/pages/reports/ReportsHubPage';
 import { UserManagementPage } from '@/pages/users/UserManagementPage';
 import { ProfilePage } from '@/pages/users/ProfilePage';
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage';
@@ -34,13 +36,15 @@ import { NewTransferRequestPage } from '@/pages/transfers/NewTransferRequestPage
 import { TransferDetailPage } from '@/pages/transfers/TransferDetailPage';
 import { AdminTransfersPage } from '@/pages/transfers/AdminTransfersPage';
 import { AdminTransferCreatePage } from '@/pages/transfers/AdminTransferCreatePage';
-import { CustomerOrdersPage } from '@/pages/orders/CustomerOrdersPage';
-import { ScanOrderPage } from '@/pages/pos/ScanOrderPage';
+import { ShipmentsListPage } from '@/pages/transfers/ShipmentsListPage';
+import { ShipmentCreatePage } from '@/pages/transfers/ShipmentCreatePage';
+import { ShipmentDetailPage } from '@/pages/transfers/ShipmentDetailPage';
 import { CatalogPage } from '@/pages/shop/CatalogPage';
 import { ProductDetailPage } from '@/pages/shop/ProductDetailPage';
 import { CartPage } from '@/pages/shop/CartPage';
 import { CheckoutPage } from '@/pages/shop/CheckoutPage';
 import { OrderConfirmationPage } from '@/pages/shop/OrderConfirmationPage';
+import { OrderGroupConfirmationPage } from '@/pages/shop/OrderGroupConfirmationPage';
 import { PayhereGatewayPage } from '@/pages/shop/PayhereGatewayPage';
 import { MyOrdersPage } from '@/pages/shop/MyOrdersPage';
 import { CustomerProfilePage } from '@/pages/shop/ProfilePage';
@@ -50,6 +54,8 @@ import { FirstSetupOnly } from './FirstSetupOnly';
 import { LegacyOrderConfirmationRedirect } from './LegacyOrderConfirmationRedirect';
 import { TransferHistoryRedirect } from './TransferHistoryRedirect';
 import { AdminHrRedirect } from './AdminHrRedirect';
+import { AccountingRedirect } from './AccountingRedirect';
+import { SalesRedirect } from './SalesRedirect';
 import { LeavesRouteEntry } from './LeavesRouteEntry';
 
 export type Guard = 'public' | 'protected' | 'none';
@@ -127,11 +133,23 @@ export const ROUTES: RouteDef[] = [
         element: <CashierDashboardPage />,
         layout: 'dashboard',
     },
+    {
+        path: FRONTEND_ROUTES.WORKER_DASHBOARD,
+        element: <WorkerDashboardPage />,
+        allowedRoles: [UserRole.WORKER],
+        layout: 'dashboard',
+    },
 
     // ─── Inventory ───
     {
         path: FRONTEND_ROUTES.INVENTORY,
         element: <InventoryWorkspacePage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.PURCHASES,
+        element: <PurchasesWorkspacePage />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
@@ -178,7 +196,21 @@ export const ROUTES: RouteDef[] = [
         layout: 'dashboard',
     },
 
-    // ─── POS ───
+    // ─── Categories → now an Inventory workspace tab (redirect legacy paths) ───
+    {
+        path: FRONTEND_ROUTES.ADMIN_CATEGORIES,
+        element: <InventoryRedirect tab="categories" />,
+        allowedRoles: [UserRole.ADMIN],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.MANAGER_CATEGORIES,
+        element: <InventoryRedirect tab="categories" />,
+        allowedRoles: [UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+
+    // ─── POS & Sales hub + legacy redirects ───
     {
         path: FRONTEND_ROUTES.POS,
         element: <PosPage />,
@@ -186,28 +218,70 @@ export const ROUTES: RouteDef[] = [
         layout: 'dashboard',
     },
     {
+        path: FRONTEND_ROUTES.SALES,
+        element: <SalesPage />,
+        allowedRoles: [UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
         path: FRONTEND_ROUTES.TRANSACTIONS,
-        element: <TransactionsPage />,
+        element: <SalesRedirect tab="transactions" />,
         allowedRoles: [UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
 
-    // ─── Accounting ───
+    // ─── Accounting — unified hub + legacy redirects ───
+    {
+        path: FRONTEND_ROUTES.ACCOUNTING,
+        element: <AccountingPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
     {
         path: FRONTEND_ROUTES.LEDGER,
-        element: <LedgerPage />,
+        element: <AccountingRedirect tab="ledger" />,
         allowedRoles: [UserRole.ADMIN],
         layout: 'dashboard',
     },
     {
+        path: FRONTEND_ROUTES.RECEIVABLES,
+        element: <AccountingRedirect tab="receivables" />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.FINANCIAL_REPORTS,
+        element: <AccountingRedirect tab="reports" />,
+        allowedRoles: [UserRole.ADMIN],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.ADMIN_AUDIT,
+        element: <AuditLogPage />,
+        allowedRoles: [UserRole.ADMIN],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.ADMIN_SCHEMES,
+        element: <SalesRedirect tab="schemes" />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.REPORTS,
+        element: <ReportsHubPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
         path: FRONTEND_ROUTES.EXPENSES,
-        element: <ExpensesPage />,
+        element: <AccountingRedirect tab="expenses" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.PROFIT_LOSS,
-        element: <ProfitLossPage />,
+        element: <AccountingRedirect tab="profit-loss" />,
         allowedRoles: [UserRole.ADMIN],
         layout: 'dashboard',
     },
@@ -355,16 +429,36 @@ export const ROUTES: RouteDef[] = [
         layout: 'dashboard',
     },
 
-    // ─── Cashier — scan pickup order ───
+    // ─── Shipments (courier delivery tracking) ───
+    {
+        path: FRONTEND_ROUTES.SHIPMENTS,
+        element: <ShipmentsListPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.WORKER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.SHIPMENT_NEW,
+        element: <ShipmentCreatePage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        layout: 'dashboard',
+    },
+    {
+        path: FRONTEND_ROUTES.SHIPMENT_DETAIL,
+        element: <ShipmentDetailPage />,
+        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.WORKER],
+        layout: 'dashboard',
+    },
+
+    // ─── Cashier — scan pickup now lives inside the POS (mode switch) ───
     {
         path: FRONTEND_ROUTES.SCAN_ORDER,
-        element: <ScanOrderPage />,
+        element: <Navigate to={FRONTEND_ROUTES.POS} replace />,
         allowedRoles: [UserRole.CASHIER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.SCAN_ORDER_LEGACY,
-        element: <Navigate to={FRONTEND_ROUTES.SCAN_ORDER} replace />,
+        element: <Navigate to={FRONTEND_ROUTES.POS} replace />,
         allowedRoles: [UserRole.CASHIER],
         layout: 'dashboard',
     },
@@ -372,7 +466,7 @@ export const ROUTES: RouteDef[] = [
     // ─── Customer orders — staff (admin / manager / cashier) ───
     {
         path: FRONTEND_ROUTES.CUSTOMER_ORDERS,
-        element: <CustomerOrdersPage />,
+        element: <SalesRedirect tab="orders" />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
         layout: 'dashboard',
     },
@@ -409,6 +503,12 @@ export const ROUTES: RouteDef[] = [
         layout: 'customer-public',
     },
     // Public confirmation — anyone with the code can view (the QR is the credential)
+    {
+        path: FRONTEND_ROUTES.SHOP_ORDER_GROUP,
+        element: <OrderGroupConfirmationPage />,
+        guard: 'none',
+        layout: 'customer-public',
+    },
     {
         path: FRONTEND_ROUTES.SHOP_ORDER_CONFIRMATION,
         element: <OrderConfirmationPage />,

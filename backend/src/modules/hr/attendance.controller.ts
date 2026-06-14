@@ -37,6 +37,18 @@ export class AttendanceController {
     return this.attendanceService.list(query, actor);
   }
 
+  // Self-scoped "my attendance": any logged-in staff member with a
+  // linked employee profile (worker / cashier / manager / admin) reads
+  // only their own rows for the requested window.
+  @Get(APP_ROUTES.HR.ATTENDANCE.ME)
+  @Roles(UserRole.WORKER, UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  listMine(
+    @Query() query: ListAttendanceQueryDto,
+    @CurrentUser() actor: AttendanceActor,
+  ): Promise<AttendanceListResponse> {
+    return this.attendanceService.listSelf(query, actor);
+  }
+
   @Post(APP_ROUTES.HR.ATTENDANCE.BULK)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   bulk(
@@ -50,14 +62,14 @@ export class AttendanceController {
   // authenticated actor + server clock.
   @Post(APP_ROUTES.HR.ATTENDANCE.CHECK_IN)
   @HttpCode(HttpStatus.OK)
-  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN, UserRole.WORKER)
   checkIn(@CurrentUser() actor: AttendanceActor): Promise<Attendance> {
     return this.attendanceService.checkInSelf(actor, new Date());
   }
 
   @Post(APP_ROUTES.HR.ATTENDANCE.CHECK_OUT)
   @HttpCode(HttpStatus.OK)
-  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN, UserRole.WORKER)
   checkOut(@CurrentUser() actor: AttendanceActor): Promise<Attendance> {
     return this.attendanceService.checkOutSelf(actor, new Date());
   }

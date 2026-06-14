@@ -50,6 +50,20 @@ export function OrderConfirmationPage() {
                 <OrderSummaryPanel order={p.order} />
             </div>
 
+            {p.order.groupCode && (
+                <div className="mt-6 text-center">
+                    <Link
+                        to={FRONTEND_ROUTES.SHOP_ORDER_GROUP.replace(
+                            ':code',
+                            p.order.groupCode,
+                        )}
+                        className="text-sm font-medium text-primary hover:underline"
+                    >
+                        This pickup spans multiple branches — view all orders
+                    </Link>
+                </div>
+            )}
+
             <div className="mt-8 text-center">
                 <Link
                     to={FRONTEND_ROUTES.SHOP}

@@ -5,6 +5,7 @@ import { DashboardKpis } from '@/features/admin-dashboard/components/DashboardKp
 import { SalesOverviewCard } from '@/features/admin-dashboard/components/SalesOverviewCard';
 import { TopProductsCard } from '@/features/admin-dashboard/components/TopProductsCard';
 import { RecentActivityCard } from '@/features/admin-dashboard/components/RecentActivityCard';
+import { TransferActivityCard } from '@/features/admin-dashboard/components/TransferActivityCard';
 
 export function DashboardPage() {
     const p = useDashboardPage();
@@ -43,6 +44,12 @@ export function DashboardPage() {
             {p.isAdmin && (
                 <div className="mb-4">
                     <OverviewPage embedded />
+                </div>
+            )}
+
+            {p.isAdmin && (
+                <div className="mb-4">
+                    <TransferActivityCard />
                 </div>
             )}
 

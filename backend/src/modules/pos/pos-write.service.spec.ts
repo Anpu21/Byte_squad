@@ -16,8 +16,8 @@ import { CreditTransactionRepository } from './credit-transaction.repository';
 import { StockMovementRepository } from './stock-movement.repository';
 import { InvoiceNumberService } from './services/invoice-number.service';
 import { MultiTenderCalculatorService } from './services/multi-tender-calculator.service';
-import { ProductsRepository } from '@products/products.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { ProductsService } from '@products/products.service';
+import { AccountingService } from '@accounting/accounting.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -84,7 +84,7 @@ interface MockBag {
   stockMovements: jest.Mocked<StockMovementRepository>;
   invoiceNumbers: jest.Mocked<InvoiceNumberService>;
   multiTender: MultiTenderCalculatorService;
-  products: jest.Mocked<ProductsRepository>;
+  products: jest.Mocked<ProductsService>;
   accounting: { createLedgerEntryWithManager: jest.Mock };
   loyalty: {
     getOrCreateAccount: jest.Mock;
@@ -247,7 +247,7 @@ function buildMocks(
     {
       create: jest.fn(),
     };
-  const productsRepoMock: Partial<jest.Mocked<ProductsRepository>> = {
+  const productsRepoMock: Partial<jest.Mocked<ProductsService>> = {
     findActiveByIds: jest.fn().mockImplementation((ids: readonly string[]) =>
       Promise.resolve(
         ids
@@ -312,8 +312,8 @@ function buildMocks(
         provide: MultiTenderCalculatorService,
         useValue: new MultiTenderCalculatorService(),
       },
-      { provide: ProductsRepository, useValue: productsRepoMock },
-      { provide: AccountingRepository, useValue: accountingMock },
+      { provide: ProductsService, useValue: productsRepoMock },
+      { provide: AccountingService, useValue: accountingMock },
       { provide: LoyaltyService, useValue: loyaltyServiceMock },
       { provide: LoyaltyWalletService, useValue: loyaltyWalletServiceMock },
       { provide: DataSource, useValue: dataSourceMock },
@@ -330,7 +330,7 @@ function buildMocks(
       stockMovements: module.get(StockMovementRepository),
       invoiceNumbers: module.get(InvoiceNumberService),
       multiTender: module.get(MultiTenderCalculatorService),
-      products: module.get(ProductsRepository),
+      products: module.get(ProductsService),
       accounting: accountingMock,
       loyalty: loyaltyServiceMock,
       loyaltyWallet: loyaltyWalletServiceMock,

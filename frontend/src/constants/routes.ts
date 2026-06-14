@@ -19,6 +19,7 @@ export const FRONTEND_ROUTES = {
     // Dashboard
     DASHBOARD: '/dashboard',
     CASHIER_DASHBOARD: '/cashier-dashboard',
+    WORKER_DASHBOARD: '/worker',
 
     // Inventory
     INVENTORY: '/inventory',
@@ -30,12 +31,23 @@ export const FRONTEND_ROUTES = {
     RETURNS: '/inventory/returns',
     RETURN_NEW: '/inventory/returns/new',
 
-    // POS
+    // Purchases (suppliers + goods receipts)
+    PURCHASES: '/purchases',
+
+    // Categories (managed product categories + per-category sales analytics)
+    ADMIN_CATEGORIES: '/admin/categories',
+    MANAGER_CATEGORIES: '/manager/categories',
+
+    // POS & Sales
     POS: '/pos',
+    SALES: '/sales',
     TRANSACTIONS: '/transactions',
 
-    // Accounting
+    // Accounting — unified hub (Ledger / Receivables / Reports / Expenses / P&L tabs)
+    ACCOUNTING: '/accounting',
     LEDGER: '/accounting/ledger',
+    RECEIVABLES: '/accounting/receivables',
+    FINANCIAL_REPORTS: '/accounting/reports',
     EXPENSES: '/accounting/expenses',
     PROFIT_LOSS: '/accounting/profit-loss',
 
@@ -61,6 +73,13 @@ export const FRONTEND_ROUTES = {
 
     // Admin / manager — unified HR workspace (Employees / Attendance / Leaves / Payroll tabs)
     ADMIN_HR: '/admin/hr',
+    ADMIN_AUDIT: '/admin/audit',
+
+    // Admin / manager — automatic POS discount schemes
+    ADMIN_SCHEMES: '/admin/schemes',
+
+    // Admin / manager — unified reports hub (salesman report + launcher)
+    REPORTS: '/reports',
 
     // Admin / manager — HR employee management
     ADMIN_EMPLOYEES: '/admin/employees',
@@ -88,12 +107,18 @@ export const FRONTEND_ROUTES = {
     ADMIN_TRANSFERS: '/admin/transfers',
     ADMIN_TRANSFER_NEW: '/admin/transfers/new',
 
+    // Shipments (courier delivery tracking)
+    SHIPMENTS: '/shipments',
+    SHIPMENT_NEW: '/shipments/new',
+    SHIPMENT_DETAIL: '/shipments/:id',
+
     // Customer storefront (login required)
     SHOP: '/shop',
     SHOP_PRODUCT_DETAIL: '/shop/products/:id',
     SHOP_CART: '/shop/cart',
     SHOP_CHECKOUT: '/shop/checkout',
     SHOP_CHECKOUT_PAY: '/shop/checkout/pay',
+    SHOP_ORDER_GROUP: '/shop/orders/group/:code',
     SHOP_ORDER_CONFIRMATION: '/shop/orders/:code',
     SHOP_ORDER_CONFIRMATION_LEGACY: '/shop/requests/:code',
     SHOP_MY_ORDERS: '/shop/my-orders',

@@ -14,6 +14,7 @@ import { EmployeeLeave } from '@/modules/hr/entities/employee-leave.entity';
 import { ApplyLeaveDto } from '@/modules/hr/dto/apply-leave.dto';
 import { ListLeavesQueryDto } from '@/modules/hr/dto/list-leaves-query.dto';
 import { RejectLeaveDto } from '@/modules/hr/dto/reject-leave.dto';
+import { UsersService } from '@/modules/users/users.service';
 
 export interface LeavesActor {
   id: string;
@@ -33,6 +34,7 @@ export class EmployeeLeavesService {
   constructor(
     private readonly leaves: EmployeeLeavesRepository,
     private readonly employees: EmployeesRepository,
+    private readonly users: UsersService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -82,13 +84,14 @@ export class EmployeeLeavesService {
   }
 
   /**
-   * Apply for a new leave. Cashiers can only apply for themselves
-   * (the `employeeId` field on the DTO is overwritten with their
-   * own employee id, and a 403 is raised if the value was different
-   * to avoid silently swallowing a mistake). Managers/admins may
-   * apply on-behalf, subject to branch scope. Rejects overlapping
-   * Pending/Approved leaves (409) and Annual leaves that would
-   * drive the running balance negative (422 BadRequest).
+   * Apply for a new leave. An omitted `employeeId` targets the
+   * actor's own employee record (cashier self-apply, manager
+   * applying for themselves). Cashiers can only apply for themselves
+   * — a different explicit `employeeId` raises 403 instead of being
+   * silently swallowed. Managers/admins may apply on-behalf, subject
+   * to branch scope. Rejects overlapping Pending/Approved leaves
+   * (409) and Annual leaves that would drive the running balance
+   * negative (422 BadRequest).
    */
   async apply(dto: ApplyLeaveDto, actor: LeavesActor): Promise<EmployeeLeave> {
     const start = new Date(dto.startDate);
@@ -141,6 +144,7 @@ export class EmployeeLeavesService {
    */
   async approve(id: string, actor: LeavesActor): Promise<EmployeeLeave> {
     const existing = await this.getById(id, actor);
+    await this.assertCanModerate(existing, actor);
     if (existing.status !== 'Pending') {
       throw new ConflictException(
         `Cannot approve leave in status ${existing.status}`,
@@ -177,6 +181,7 @@ export class EmployeeLeavesService {
     actor: LeavesActor,
   ): Promise<EmployeeLeave> {
     const existing = await this.getById(id, actor);
+    await this.assertCanModerate(existing, actor);
     if (existing.status !== 'Pending') {
       throw new ConflictException(
         `Cannot reject leave in status ${existing.status}`,
@@ -237,12 +242,16 @@ export class EmployeeLeavesService {
   ): Promise<Employee> {
     if (actor.role === UserRole.CASHIER) {
       const own = await this.findEmployeeForActor(actor);
-      if (own.id !== dto.employeeId) {
+      if (dto.employeeId && own.id !== dto.employeeId) {
         throw new ForbiddenException(
           'Cashiers can only apply for their own leave',
         );
       }
       return own;
+    }
+    if (!dto.employeeId) {
+      // Manager/admin self-apply — same resolution as the cashier path.
+      return this.findEmployeeForActor(actor);
     }
     const target = await this.employees.findById(dto.employeeId);
     if (!target) throw new NotFoundException('Employee not found');
@@ -260,6 +269,34 @@ export class EmployeeLeavesService {
       throw new ForbiddenException('No employee record linked to your account');
     }
     return employee;
+  }
+
+  /**
+   * Managers may only moderate (approve/reject) leaves of non-manager
+   * staff in their branch. Their own leave — or any leave whose
+   * applicant logs in as a manager/admin — needs an admin; otherwise
+   * same-rank managers could approve each other or themselves.
+   * Cancel is intentionally exempt so a manager can still withdraw
+   * their own pending request.
+   */
+  private async assertCanModerate(
+    leave: EmployeeLeave,
+    actor: LeavesActor,
+  ): Promise<void> {
+    if (actor.role === UserRole.ADMIN) return;
+    const employee = await this.employees.findById(leave.employeeId);
+    if (!employee) throw new NotFoundException('Leave not found');
+    if (employee.userId === actor.id) {
+      throw new ForbiddenException('Your own leave requires admin approval');
+    }
+    if (!employee.userId) return;
+    const applicant = await this.users.findEntityById(employee.userId);
+    if (
+      applicant &&
+      (applicant.role === UserRole.MANAGER || applicant.role === UserRole.ADMIN)
+    ) {
+      throw new ForbiddenException('Manager leaves require admin approval');
+    }
   }
 
   private async assertVisible(

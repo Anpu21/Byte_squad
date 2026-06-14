@@ -14,6 +14,8 @@ function product(
         category: 'beverages',
         sellingPrice: 100,
         imageUrl: null,
+        baseUnit: 'unit',
+        sellableUnits: [],
         stockStatus,
         availableBranches: [],
     };
@@ -27,6 +29,7 @@ function order(
     return {
         id,
         orderCode: `ORD-${id}`,
+        groupCode: null,
         userId: 'u1',
         branchId: 'b1',
         status,

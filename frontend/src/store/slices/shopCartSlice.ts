@@ -2,10 +2,23 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 export interface ShopCartItem {
     productId: string;
+    branchId: string;
+    branchName: string;
     name: string;
+    /** Price of one of the chosen sellable unit (base price if no unit). */
     sellingPrice: number;
     imageUrl: string | null;
+    /** Chosen sellable unit; null = the product base unit. */
+    unitId: string | null;
+    unitLabel: string;
     quantity: number;
+}
+
+/** Identifies a unique cart line: a product, at a branch, in a chosen unit. */
+export interface ShopCartLineRef {
+    productId: string;
+    branchId: string;
+    unitId: string | null;
 }
 
 interface ShopCartState {
@@ -18,6 +31,18 @@ const initialState: ShopCartState = {
     isCartOpen: false,
 };
 
+function round3(value: number): number {
+    return Math.round(value * 1000) / 1000;
+}
+
+function isSameLine(item: ShopCartItem, ref: ShopCartLineRef): boolean {
+    return (
+        item.productId === ref.productId &&
+        item.branchId === ref.branchId &&
+        item.unitId === ref.unitId
+    );
+}
+
 const shopCartSlice = createSlice({
     name: 'shopCart',
     initialState,
@@ -26,42 +51,52 @@ const shopCartSlice = createSlice({
             state,
             action: PayloadAction<{
                 productId: string;
+                branchId: string;
+                branchName: string;
                 name: string;
                 sellingPrice: number;
                 imageUrl: string | null;
+                unitId: string | null;
+                unitLabel: string;
                 quantity?: number;
             }>,
         ) {
-            const qty = action.payload.quantity ?? 1;
-            const existing = state.items.find(
-                (item) => item.productId === action.payload.productId,
+            const qty = round3(action.payload.quantity ?? 1);
+            if (qty <= 0) return;
+            const existing = state.items.find((item) =>
+                isSameLine(item, action.payload),
             );
             if (existing) {
-                existing.quantity += qty;
+                existing.quantity = round3(existing.quantity + qty);
             } else {
                 state.items.push({
                     productId: action.payload.productId,
+                    branchId: action.payload.branchId,
+                    branchName: action.payload.branchName,
                     name: action.payload.name,
                     sellingPrice: action.payload.sellingPrice,
                     imageUrl: action.payload.imageUrl,
+                    unitId: action.payload.unitId,
+                    unitLabel: action.payload.unitLabel,
                     quantity: qty,
                 });
             }
         },
-        removeFromCart(state, action: PayloadAction<string>) {
+        removeFromCart(state, action: PayloadAction<ShopCartLineRef>) {
             state.items = state.items.filter(
-                (item) => item.productId !== action.payload,
+                (item) => !isSameLine(item, action.payload),
             );
         },
         setQuantity(
             state,
-            action: PayloadAction<{ productId: string; quantity: number }>,
+            action: PayloadAction<ShopCartLineRef & { quantity: number }>,
         ) {
-            const item = state.items.find(
-                (i) => i.productId === action.payload.productId,
-            );
+            const item = state.items.find((i) => isSameLine(i, action.payload));
             if (item) {
-                item.quantity = Math.max(1, Math.floor(action.payload.quantity));
+                const next = round3(action.payload.quantity);
+                if (next > 0) {
+                    item.quantity = next;
+                }
             }
         },
         openCartDrawer(state) {

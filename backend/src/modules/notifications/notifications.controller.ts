@@ -38,8 +38,11 @@ export class NotificationsController {
   }
 
   @Patch(APP_ROUTES.NOTIFICATIONS.MARK_READ)
-  async markAsRead(@Param('id') id: string): Promise<void> {
-    await this.notificationsService.markAsRead(id);
+  async markAsRead(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ): Promise<void> {
+    await this.notificationsService.markAsRead(id, userId);
   }
 
   @Patch(APP_ROUTES.NOTIFICATIONS.MARK_ALL_READ)

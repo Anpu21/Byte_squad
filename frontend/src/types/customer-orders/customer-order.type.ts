@@ -8,6 +8,7 @@ import type { ICustomerOrderItem } from '@/types/customer-orders/customer-order-
 export interface ICustomerOrder {
   id: string
   orderCode: string
+  groupCode: string | null
   userId: string | null
   branchId: string
   branch?: IShopBranch

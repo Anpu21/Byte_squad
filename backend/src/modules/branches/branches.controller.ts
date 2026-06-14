@@ -19,6 +19,7 @@ import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { UserRole } from '@common/enums/user-roles.enums';
+import type { BranchActor } from '@common/scope/branch-scope';
 import { APP_ROUTES } from '@common/routes/app.routes';
 import { Branch } from '@branches/entities/branch.entity';
 
@@ -37,8 +38,9 @@ export class BranchesController {
   }
 
   @Get()
-  findAll(): Promise<Branch[]> {
-    return this.branchesService.findAll();
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  findAll(@CurrentUser() actor: BranchActor): Promise<Branch[]> {
+    return this.branchesService.findAll(actor);
   }
 
   // Must be declared before :id routes so Nest does not treat
@@ -54,8 +56,12 @@ export class BranchesController {
   }
 
   @Get(APP_ROUTES.BRANCHES.BY_ID)
-  findOne(@Param('id') id: string): Promise<Branch | null> {
-    return this.branchesService.findById(id);
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  findOne(
+    @Param('id') id: string,
+    @CurrentUser() actor: BranchActor,
+  ): Promise<Branch | null> {
+    return this.branchesService.findById(actor, id);
   }
 
   @Patch(APP_ROUTES.BRANCHES.BY_ID)

@@ -6,6 +6,7 @@ import type { ITransferUserSummary } from '@/types/stock-transfers/transfer-user
 export interface IStockTransferRequest {
   id: string
   batchId: string | null
+  shipmentId: string | null
   productId: string
   product: IProduct
   destinationBranchId: string

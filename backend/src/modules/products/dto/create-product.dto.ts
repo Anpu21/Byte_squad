@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   Min,
   ValidateNested,
@@ -30,9 +31,16 @@ export class CreateProductDto {
   @IsOptional()
   description?: string;
 
+  // Product category — supply the managed-category `categoryId` (preferred) or
+  // its `category` name (the datalist product form sends the name). The service
+  // resolves either to the FK and keeps `product.category` as a synced mirror.
   @IsString()
-  @IsNotEmpty()
-  category!: string;
+  @IsOptional()
+  category?: string;
+
+  @IsUUID('4')
+  @IsOptional()
+  categoryId?: string;
 
   @IsNumber()
   @Min(0)

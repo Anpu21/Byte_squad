@@ -30,7 +30,7 @@ function stableRatio(seed: string): number {
   return stableHash(seed) / 0xffffffff;
 }
 
-function stableInt(seed: string, min: number, max: number): number {
+export function stableInt(seed: string, min: number, max: number): number {
   if (max <= min) return min;
   return min + Math.floor(stableRatio(seed) * (max - min + 1));
 }

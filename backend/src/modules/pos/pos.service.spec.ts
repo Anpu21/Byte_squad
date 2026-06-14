@@ -6,11 +6,11 @@ import { DataSource } from 'typeorm';
 import { PosService } from './pos.service';
 import { PosRepository } from './pos.repository';
 import { SaleRepository } from './sale.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
-import { InventoryRepository } from '@inventory/inventory.repository';
-import { ProductsRepository } from '@products/products.repository';
+import { AccountingService } from '@accounting/accounting.service';
+import { InventoryService } from '@inventory/inventory.service';
+import { ProductsService } from '@products/products.service';
 import { InvoiceNumberService } from './services/invoice-number.service';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Sale } from './entities/sale.entity';
@@ -162,26 +162,26 @@ function makeSale(overrides: Partial<Sale> = {}): Sale {
 
 describe('PosService — Phase 4 read endpoints', () => {
   let service: PosService;
-  let productsRepo: jest.Mocked<ProductsRepository>;
-  let inventoryRepo: jest.Mocked<InventoryRepository>;
+  let productsRepo: jest.Mocked<ProductsService>;
+  let inventoryRepo: jest.Mocked<InventoryService>;
   let posRepo: jest.Mocked<PosRepository>;
   let invoiceNumbers: jest.Mocked<InvoiceNumberService>;
   let salesRepo: jest.Mocked<SaleRepository>;
-  let usersRepo: jest.Mocked<UsersRepository>;
+  let usersRepo: jest.Mocked<UsersService>;
 
   beforeEach(async () => {
     const posRepoMock: Partial<jest.Mocked<PosRepository>> = {
       findRecentSales: jest.fn(),
     };
-    const accountingRepoMock = {} as AccountingRepository;
+    const accountingRepoMock = {} as AccountingService;
     const dataSourceMock = {} as DataSource;
-    const productsRepoMock: Partial<jest.Mocked<ProductsRepository>> = {
+    const productsRepoMock: Partial<jest.Mocked<ProductsService>> = {
       searchByText: jest.fn(),
       findByBarcode: jest.fn(),
       findUnitByBarcode: jest.fn(),
       listUnits: jest.fn(),
     };
-    const inventoryRepoMock: Partial<jest.Mocked<InventoryRepository>> = {
+    const inventoryRepoMock: Partial<jest.Mocked<InventoryService>> = {
       summaryForProduct: jest.fn(),
     };
     const invoiceNumbersMock: Partial<jest.Mocked<InvoiceNumberService>> = {
@@ -191,7 +191,7 @@ describe('PosService — Phase 4 read endpoints', () => {
       findOneById: jest.fn(),
       markPrinted: jest.fn().mockResolvedValue(undefined),
     };
-    const usersRepoMock: Partial<jest.Mocked<UsersRepository>> = {
+    const usersRepoMock: Partial<jest.Mocked<UsersService>> = {
       searchCustomersByText: jest.fn(),
     };
 
@@ -199,23 +199,23 @@ describe('PosService — Phase 4 read endpoints', () => {
       providers: [
         PosService,
         { provide: PosRepository, useValue: posRepoMock },
-        { provide: AccountingRepository, useValue: accountingRepoMock },
+        { provide: AccountingService, useValue: accountingRepoMock },
         { provide: DataSource, useValue: dataSourceMock },
-        { provide: ProductsRepository, useValue: productsRepoMock },
-        { provide: InventoryRepository, useValue: inventoryRepoMock },
+        { provide: ProductsService, useValue: productsRepoMock },
+        { provide: InventoryService, useValue: inventoryRepoMock },
         { provide: InvoiceNumberService, useValue: invoiceNumbersMock },
         { provide: SaleRepository, useValue: salesRepoMock },
-        { provide: UsersRepository, useValue: usersRepoMock },
+        { provide: UsersService, useValue: usersRepoMock },
       ],
     }).compile();
 
     service = module.get(PosService);
-    productsRepo = module.get(ProductsRepository);
-    inventoryRepo = module.get(InventoryRepository);
+    productsRepo = module.get(ProductsService);
+    inventoryRepo = module.get(InventoryService);
     posRepo = module.get(PosRepository);
     invoiceNumbers = module.get(InvoiceNumberService);
     salesRepo = module.get(SaleRepository);
-    usersRepo = module.get(UsersRepository);
+    usersRepo = module.get(UsersService);
   });
 
   // -------------------------------------------------------------------

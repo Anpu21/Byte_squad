@@ -17,6 +17,6 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
   ],
   controllers: [UsersController],
   providers: [UsersService, UsersRepository],
-  exports: [UsersService, UsersRepository, TypeOrmModule],
+  exports: [UsersService, TypeOrmModule],
 })
 export class UsersModule {}

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { usePosCart } from './usePosCart';
+import { usePosCart, type SchemeDiscountResolver } from './usePosCart';
 
 const seed = {
     productId: 'p-1',
@@ -86,5 +86,52 @@ describe('usePosCart', () => {
         act(() => result.current.addItem({ ...seed, unitId: 'u-2' }));
         act(() => result.current.clear());
         expect(result.current.cart).toHaveLength(0);
+    });
+
+    describe('scheme resolver', () => {
+        /** 10% on p-1 once the line reaches 3 units. */
+        const slabResolver: SchemeDiscountResolver = ({
+            productId,
+            quantity,
+        }) => (productId === 'p-1' && quantity >= 3 ? 10 : 0);
+
+        it('applies the scheme discount to a fresh line', () => {
+            const flat: SchemeDiscountResolver = () => 5;
+            const { result } = renderHook(() => usePosCart(flat));
+            act(() => result.current.addItem(seed));
+            expect(result.current.cart[0].discountPercentage).toBe(5);
+            expect(result.current.cart[0].lineTotal).toBe(95);
+        });
+
+        it('re-evaluates the qty slab when stacking a duplicate', () => {
+            const { result } = renderHook(() => usePosCart(slabResolver));
+            act(() => result.current.addItem(seed));
+            act(() => result.current.addItem(seed));
+            expect(result.current.cart[0].discountPercentage).toBe(0);
+            act(() => result.current.addItem(seed));
+            expect(result.current.cart[0].quantity).toBe(3);
+            expect(result.current.cart[0].discountPercentage).toBe(10);
+        });
+
+        it('never overwrites a manual discount', () => {
+            const { result } = renderHook(() => usePosCart(slabResolver));
+            act(() => result.current.addItem({ ...seed, quantity: 2 }));
+            const rowId = result.current.cart[0].rowId;
+            act(() =>
+                result.current.updateItem(rowId, { discountPercentage: 25 }),
+            );
+            act(() => result.current.addItem(seed));
+            expect(result.current.cart[0].quantity).toBe(3);
+            expect(result.current.cart[0].discountPercentage).toBe(25);
+        });
+
+        it('skips products where discount is not allowed', () => {
+            const flat: SchemeDiscountResolver = () => 5;
+            const { result } = renderHook(() => usePosCart(flat));
+            act(() =>
+                result.current.addItem({ ...seed, discountAllowed: false }),
+            );
+            expect(result.current.cart[0].discountPercentage).toBe(0);
+        });
     });
 });

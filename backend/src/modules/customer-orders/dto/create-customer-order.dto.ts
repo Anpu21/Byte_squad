@@ -4,6 +4,7 @@ import {
   IsArray,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -16,8 +17,12 @@ export class CreateCustomerOrderItemDto {
   @IsUUID()
   productId!: string;
 
-  @IsInt()
-  @Min(1)
+  @IsOptional()
+  @IsUUID()
+  unitId?: string;
+
+  @IsNumber()
+  @Min(0.001)
   quantity!: number;
 }
 

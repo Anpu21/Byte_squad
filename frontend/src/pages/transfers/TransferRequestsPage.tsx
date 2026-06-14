@@ -60,6 +60,8 @@ export function TransferRequestsPage() {
                     isLoading={p.isLoading}
                     shippingId={p.shippingId}
                     onShip={p.handleShip}
+                    receivingId={p.receivingId}
+                    onReceive={p.handleReceive}
                     onRowClick={p.goDetail}
                 />
             )}

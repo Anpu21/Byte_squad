@@ -54,6 +54,6 @@ import { PosModule } from '@pos/pos.module';
     StockAdjustmentsService,
     ReturnsService,
   ],
-  exports: [InventoryService, InventoryRepository, ExpiryService],
+  exports: [InventoryService, ExpiryService],
 })
 export class InventoryModule {}

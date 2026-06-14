@@ -5,3 +5,6 @@ export * from './list-mine-filter.type';
 export * from './paginated-transfers-raw.type';
 export * from './paginated-transfers.type';
 export * from './source-option.type';
+export * from './transfer-analytics-filter.type';
+export * from './transfer-analytics-raw.type';
+export * from './transfer-analytics-response.type';

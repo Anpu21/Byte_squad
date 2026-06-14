@@ -6,11 +6,17 @@ import * as bcrypt from 'bcrypt';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
+import { Category } from '@/modules/categories/entities/category.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { defaultSellableUnitsFor } from '@products/lib/default-sellable-units';
 import { Inventory } from '@inventory/entities/inventory.entity';
+import { ProductBatch } from '@inventory/entities/product-batch.entity';
+import { StockAdjustment } from '@inventory/entities/stock-adjustment.entity';
+import { SalesReturn } from '@inventory/entities/sales-return.entity';
+import { SalesReturnItem } from '@inventory/entities/sales-return-item.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
+import { StockMovement } from '@pos/entities/stock-movement.entity';
 import { Payment } from '@pos/entities/payment.entity';
 import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
@@ -23,6 +29,8 @@ import { Notification } from '@notifications/entities/notification.entity';
 import { NotificationType } from '@common/enums/notification.enum';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
+import { StockAdjustmentReason } from '@common/enums/stock-adjustment-reason.enum';
+import { StockAdjustmentStatus } from '@common/enums/stock-adjustment-status.enum';
 import { ExpenseStatus } from '@common/enums/expense-status.enum';
 import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
@@ -35,6 +43,9 @@ import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { pickSeedImageUrl } from '@common/seeds/seed-product-images';
 import { HrSeedService } from '@common/seeds/hr-seed.service';
+import { PurchasesSeedService } from '@common/seeds/purchases-seed.service';
+import { PosAccountingSeedService } from '@common/seeds/pos-accounting-seed.service';
+import { AccountsRepository } from '@accounting/accounts.repository';
 import {
   CATEGORY_THRESHOLDS,
   SUPERMARKET_PRODUCTS,
@@ -42,6 +53,7 @@ import {
 import {
   buildSeedSaleLine,
   generateSeedQuantity,
+  stableInt,
 } from '@common/seeds/seed-quantity';
 import type { PosPaymentMethod } from '@pos/types';
 
@@ -84,10 +96,20 @@ export class AdminSeedService implements OnModuleInit {
     private readonly branchRepository: Repository<Branch>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
     @InjectRepository(ProductSellableUnit)
     private readonly sellableUnitRepository: Repository<ProductSellableUnit>,
     @InjectRepository(Inventory)
     private readonly inventoryRepository: Repository<Inventory>,
+    @InjectRepository(ProductBatch)
+    private readonly productBatchRepository: Repository<ProductBatch>,
+    @InjectRepository(StockAdjustment)
+    private readonly stockAdjustmentRepository: Repository<StockAdjustment>,
+    @InjectRepository(SalesReturn)
+    private readonly salesReturnRepository: Repository<SalesReturn>,
+    @InjectRepository(StockMovement)
+    private readonly stockMovementRepository: Repository<StockMovement>,
     @InjectRepository(Sale)
     private readonly transactionRepository: Repository<Sale>,
     @InjectRepository(SaleItem)
@@ -113,6 +135,9 @@ export class AdminSeedService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly cloudinary: CloudinaryService,
     private readonly hrSeed: HrSeedService,
+    private readonly purchasesSeed: PurchasesSeedService,
+    private readonly posAccountingSeed: PosAccountingSeedService,
+    private readonly accountsRepository: AccountsRepository,
   ) {}
 
   onModuleInit(): void {
@@ -131,6 +156,10 @@ export class AdminSeedService implements OnModuleInit {
   async seed(): Promise<void> {
     this.logger.log('Running supermarket seed...');
     const defaults = this.getSeedDefaults();
+
+    // 0. Chart of accounts — system codes must exist before any posting
+    //    path runs (idempotent; prod gets them via migration instead).
+    await this.accountsRepository.ensureSeeded();
 
     // 1. Branches — three so the inter-branch transfer flow can be demoed end-to-end.
     const mainBranch = await this.ensureBranch(
@@ -225,6 +254,36 @@ export class AdminSeedService implements OnModuleInit {
       branchId: suburbanBranch.id,
     });
 
+    // Workers — branch-floor staff (no POS / management access) who act as
+    // couriers for the stock-transfer delivery flow. Each is linked to an
+    // Employee row in the HR seed so attendance + working hours work.
+    const worker1 = await this.ensureUser({
+      email: 'worker@ledgerpro.com',
+      password: 'Worker@123',
+      firstName: 'Ravi',
+      lastName: 'Bandara',
+      role: UserRole.WORKER,
+      branchId: mainBranch.id,
+    });
+
+    const worker2 = await this.ensureUser({
+      email: 'worker2@ledgerpro.com',
+      password: 'Worker@123',
+      firstName: 'Sunil',
+      lastName: 'Rathnayake',
+      role: UserRole.WORKER,
+      branchId: downtownBranch.id,
+    });
+
+    const worker3 = await this.ensureUser({
+      email: 'worker3@ledgerpro.com',
+      password: 'Worker@123',
+      firstName: 'Pradeep',
+      lastName: 'Gunawardena',
+      role: UserRole.WORKER,
+      branchId: suburbanBranch.id,
+    });
+
     const customerUsers = await Promise.all([
       this.ensureUser({
         email: 'customer.ayesha@ledgerpro.com',
@@ -261,13 +320,36 @@ export class AdminSeedService implements OnModuleInit {
     ]);
 
     // 3. Products — supermarket catalogue (idempotent by barcode)
-    const products = await this.ensureProducts();
+    const categoryMap = await this.ensureCategories(admin);
+    const products = await this.ensureProducts(categoryMap);
 
     // 4. Inventory — vary distribution per branch so low-stock and out-of-stock
     //    states exist naturally for testing the transfer feature.
     await this.ensureInventory(products, mainBranch.id, 'healthy');
     await this.ensureInventory(products, downtownBranch.id, 'healthy');
     await this.ensureInventory(products, suburbanBranch.id, 'short');
+
+    // 4b. Product expiry batches — perishable stock across every severity
+    //     bucket so the expiry report + alerts have data on a fresh DB.
+    //     Additive only: the inventory quantities above are left untouched.
+    await this.ensureProductBatches(
+      products,
+      [mainBranch, downtownBranch, suburbanBranch],
+      admin,
+    );
+
+    // 4c. Stock adjustments — reason-coded corrections spanning every reason
+    //     and all three statuses, each with its audit movement. Additive: the
+    //     inventory quantities above stay the authoritative current totals.
+    await this.ensureStockAdjustments(
+      products,
+      [
+        { branch: mainBranch, manager: mainManager },
+        { branch: downtownBranch, manager: downtownManager },
+        { branch: suburbanBranch, manager: suburbanManager },
+      ],
+      admin,
+    );
 
     // 5. Transactions — last 7 days of POS sales
     await this.ensureTransactions(cashier1, mainBranch.id, products);
@@ -313,6 +395,17 @@ export class AdminSeedService implements OnModuleInit {
       products,
     });
 
+    // 8b. Sales returns — partial, item-level returns against the seeded POS
+    //     sales, each with restock movements + a refund ledger entry. MUST run
+    //     after ensureLedgerAndExpenses (step 6): that seed short-circuits on a
+    //     global ledger-row count, so writing refund rows earlier would suppress
+    //     the whole ledger/expense seed.
+    await this.ensureSalesReturns([
+      { branch: mainBranch, cashier: cashier1 },
+      { branch: downtownBranch, cashier: cashier2 },
+      { branch: suburbanBranch, cashier: cashier3 },
+    ]);
+
     // 9. HR demo seed — employees, salary structures, attendance,
     //    leaves, and a previous-month payroll run.
     await this.hrSeed.seed({
@@ -326,6 +419,34 @@ export class AdminSeedService implements OnModuleInit {
       cashier1,
       cashier2,
       cashier3,
+      worker1,
+      worker2,
+      worker3,
+    });
+
+    // 10. Purchases demo seed — six suppliers and a spread of GRNs, POs,
+    //     payments and debit notes across all three branches, backdated for
+    //     ageing. Drives the real purchases services so stock/cost/ledger
+    //     land consistently.
+    await this.purchasesSeed.seed({
+      admin,
+      mainBranch,
+      downtownBranch,
+      suburbanBranch,
+      products,
+    });
+
+    // 11. Phase 2–4 roadmap demo seed — discount schemes, a closed drawer
+    //     shift, customer credit + a real FIFO repayment, journal vouchers,
+    //     and one locked fiscal period. Runs last so the period lock can
+    //     never reject an earlier seed's ledger posting.
+    await this.posAccountingSeed.seed({
+      admin,
+      mainBranch,
+      mainManager,
+      cashier1,
+      customers: customerUsers,
+      products,
     });
 
     this.logger.log('Supermarket seed completed.');
@@ -409,7 +530,40 @@ export class AdminSeedService implements OnModuleInit {
 
   // ── Products ───────────────────────────────────────────
 
-  private async ensureProducts(): Promise<Product[]> {
+  /**
+   * Ensure a managed Category row exists for each distinct catalogue category,
+   * returning a name→id map so products link via their FK. Idempotent
+   * (find-by-name); created rows are attributed to the seed admin.
+   */
+  private async ensureCategories(admin: User): Promise<Map<string, string>> {
+    const map = new Map<string, string>();
+    const names = Array.from(
+      new Set(SUPERMARKET_PRODUCTS.map((p) => p.category)),
+    );
+    let created = 0;
+    for (const [index, name] of names.entries()) {
+      let category = await this.categoryRepository.findOne({ where: { name } });
+      if (!category) {
+        category = await this.categoryRepository.save(
+          this.categoryRepository.create({
+            name,
+            sortOrder: index,
+            createdByUserId: admin.id,
+          }),
+        );
+        created += 1;
+      }
+      map.set(name, category.id);
+    }
+    if (created > 0) {
+      this.logger.log(`Categories seeded (${created} rows).`);
+    }
+    return map;
+  }
+
+  private async ensureProducts(
+    categoryMap: Map<string, string>,
+  ): Promise<Product[]> {
     const products: Product[] = [];
     let createdCount = 0;
 
@@ -430,7 +584,11 @@ export class AdminSeedService implements OnModuleInit {
       });
       if (!product) {
         product = await this.productRepository.save(
-          this.productRepository.create({ ...p, isActive: true }),
+          this.productRepository.create({
+            ...p,
+            isActive: true,
+            categoryId: categoryMap.get(p.category) ?? null,
+          }),
         );
         createdCount++;
       } else {
@@ -442,6 +600,11 @@ export class AdminSeedService implements OnModuleInit {
         if (product.category !== p.category) {
           patch.category = p.category;
           product.category = p.category;
+        }
+        const desiredCategoryId = categoryMap.get(p.category) ?? null;
+        if (product.categoryId !== desiredCategoryId) {
+          patch.categoryId = desiredCategoryId;
+          product.categoryId = desiredCategoryId;
         }
         if (product.description !== p.description) {
           patch.description = p.description;
@@ -582,6 +745,252 @@ export class AdminSeedService implements OnModuleInit {
       this.logger.log(
         `Inventory seeded for branch ${branchId} (${profile}, ${createdCount} rows).`,
       );
+    }
+  }
+
+  // ── Product expiry batches ─────────────────────────────
+
+  /**
+   * Seed ProductBatch rows for perishable products so the expiry report and
+   * its severity buckets (expired / critical / warning / ok) are populated on
+   * a fresh DB. Purely additive — `inventory.quantity` is the authoritative
+   * sell-from total and is left untouched; batches are a reporting layer.
+   * Deterministic (no randomness) and idempotent via a count-check, matching
+   * the other bulk-demo seeds in this file.
+   */
+  private async ensureProductBatches(
+    products: Product[],
+    branches: Branch[],
+    admin: User,
+  ): Promise<void> {
+    if ((await this.productBatchRepository.count()) > 0) return;
+
+    const perishableCategories = new Set(['Dairy', 'Bakery', 'Produce']);
+    const perishables = products.filter((p) =>
+      perishableCategories.has(p.category),
+    );
+
+    // Day offsets relative to today, one per severity bucket. Each value sits
+    // clear of the bucket boundaries (0 / 7 / 8 / 30) so timezone rounding
+    // can never tip a batch into a neighbouring bucket.
+    const offsets = [-5, 3, 20, 120]; // expired, critical, warning, ok
+    const now = new Date();
+    let createdCount = 0;
+
+    for (const branch of branches) {
+      for (const [index, product] of perishables.entries()) {
+        const key = `batch:${branch.id}:${product.barcode}`;
+        const count = 2 + stableInt(`${key}:count`, 0, 1); // 2..3 batches
+        // Rotate the starting bucket by product index so every branch covers
+        // all four buckets by construction (not left to UUID-hash chance).
+        const start = index % offsets.length;
+        const threshold = CATEGORY_THRESHOLDS[product.category] ?? 15;
+        const floor = product.baseUnit === 'unit' ? 1 : 0.5;
+
+        for (let i = 0; i < count; i += 1) {
+          const offsetDays = offsets[(start + i) % offsets.length];
+          // Clamp to a positive floor: generateSeedQuantity returns 0 ~5% of
+          // the time, and findExpiring requires quantity > 0 to surface a row.
+          const quantity = Math.max(
+            floor,
+            generateSeedQuantity(
+              product.baseUnit,
+              'healthy',
+              threshold,
+              `${key}:${i}:qty`,
+            ),
+          );
+          await this.productBatchRepository.save(
+            this.productBatchRepository.create({
+              productId: product.id,
+              branchId: branch.id,
+              batchNo: `LOT-${product.barcode}-${branch.code}-${i + 1}`,
+              expiryDate: this.addDaysUtcDateString(now, offsetDays),
+              quantity,
+              receivedAt: new Date(now.getTime() - (30 + i) * 86_400_000),
+              notes: null,
+              createdByUserId: admin.id,
+            }),
+          );
+          createdCount += 1;
+        }
+      }
+    }
+
+    if (createdCount > 0) {
+      this.logger.log(`Product expiry batches seeded (${createdCount} rows).`);
+    }
+  }
+
+  /** Format `base + days` as a UTC `YYYY-MM-DD` string for a `date` column. */
+  private addDaysUtcDateString(base: Date, days: number): string {
+    const d = new Date(
+      Date.UTC(
+        base.getUTCFullYear(),
+        base.getUTCMonth(),
+        base.getUTCDate() + days,
+      ),
+    );
+    return d.toISOString().slice(0, 10);
+  }
+
+  // ── Stock adjustments ──────────────────────────────────
+
+  /**
+   * Seed reason-coded `StockAdjustment` rows (Phase C2) so the adjustments
+   * report and its approval queue have data on a fresh DB. Each Approved /
+   * Reversed row also writes the matching `Adjustment` `StockMovement` so the
+   * audit ledger stays complete. Purely additive — these are historical
+   * corrections already reflected in the seeded `inventory.quantity`, so the
+   * on-hand totals are left untouched (same philosophy as `ensureProductBatches`).
+   * Deterministic (`stableInt`) and idempotent via a count-check.
+   */
+  private async ensureStockAdjustments(
+    products: Product[],
+    branches: { branch: Branch; manager: User }[],
+    admin: User,
+  ): Promise<void> {
+    if ((await this.stockAdjustmentRepository.count()) > 0) return;
+    if (products.length === 0) return;
+
+    const round3 = (n: number): number => Math.round(n * 1000) / 1000;
+
+    // Six (reason, status) slots per branch covering every reason and all three
+    // statuses. Loss reasons subtract stock; a stock-take can swing either way.
+    const slots: {
+      reason: StockAdjustmentReason;
+      status: StockAdjustmentStatus;
+      sign: -1 | 1;
+      note: string;
+    }[] = [
+      {
+        reason: StockAdjustmentReason.DAMAGE,
+        status: StockAdjustmentStatus.APPROVED,
+        sign: -1,
+        note: 'Crushed in transit',
+      },
+      {
+        reason: StockAdjustmentReason.EXPIRED,
+        status: StockAdjustmentStatus.APPROVED,
+        sign: -1,
+        note: 'Past sell-by, pulled from shelf',
+      },
+      {
+        reason: StockAdjustmentReason.THEFT,
+        status: StockAdjustmentStatus.APPROVED,
+        sign: -1,
+        note: 'Shrinkage flagged during audit',
+      },
+      {
+        reason: StockAdjustmentReason.STOCK_TAKE,
+        status: StockAdjustmentStatus.APPROVED,
+        sign: 1,
+        note: 'Cycle count correction — found extra',
+      },
+      {
+        reason: StockAdjustmentReason.OTHER,
+        status: StockAdjustmentStatus.PENDING,
+        sign: -1,
+        note: 'Awaiting admin review',
+      },
+      {
+        reason: StockAdjustmentReason.STOCK_TAKE,
+        status: StockAdjustmentStatus.REVERSED,
+        sign: -1,
+        note: 'Miscount — reversed after recount',
+      },
+    ];
+
+    const now = Date.now();
+    let created = 0;
+
+    for (const [branchIndex, { branch, manager }] of branches.entries()) {
+      for (const [slotIndex, slot] of slots.entries()) {
+        const product =
+          products[(branchIndex * slots.length + slotIndex) % products.length];
+
+        const inv = await this.inventoryRepository.findOne({
+          where: { productId: product.id, branchId: branch.id },
+        });
+        const before = inv ? Number(inv.quantity) : 0;
+
+        const magnitude = stableInt(
+          `adj:${branch.id}:${product.barcode}:${slotIndex}`,
+          2,
+          18,
+        );
+        let physical = before + slot.sign * magnitude;
+        if (physical < 0) physical = 0;
+        if (product.baseUnit === 'unit') physical = Math.round(physical);
+        physical = round3(physical);
+        const difference = round3(physical - before);
+
+        const createdAt = new Date(now - (10 - slotIndex) * 86_400_000);
+        const isPending = slot.status === StockAdjustmentStatus.PENDING;
+        const isReversed = slot.status === StockAdjustmentStatus.REVERSED;
+        const reviewedAt = isPending
+          ? null
+          : new Date(createdAt.getTime() + 3 * 3_600_000);
+
+        const saved = await this.stockAdjustmentRepository.save(
+          this.stockAdjustmentRepository.create({
+            productId: product.id,
+            branchId: branch.id,
+            reason: slot.reason,
+            status: slot.status,
+            quantityBefore: before,
+            physicalQuantity: physical,
+            difference,
+            notes: slot.note,
+            createdByUserId: manager.id,
+            reviewedByUserId: isPending ? null : admin.id,
+            reviewedAt,
+            reversedByUserId: isReversed ? admin.id : null,
+            reversedAt: isReversed
+              ? new Date(createdAt.getTime() + 27 * 3_600_000)
+              : null,
+          }),
+        );
+        await this.stockAdjustmentRepository
+          .createQueryBuilder()
+          .update(StockAdjustment)
+          .set({ createdAt })
+          .where('id = :id', { id: saved.id })
+          .execute();
+
+        // Approved + Reversed adjustments were applied to stock at some point,
+        // so they leave an `Adjustment` movement in the audit ledger. Pending
+        // ones have not touched stock yet. `inventory.quantity` is never
+        // modified here — balanceAfter is the historical point-in-time figure.
+        if (!isPending) {
+          const movement = await this.stockMovementRepository.save(
+            this.stockMovementRepository.create({
+              productId: product.id,
+              branchId: branch.id,
+              location: 'Shop',
+              movementType: 'Adjustment',
+              qtyIn: difference > 0 ? difference : 0,
+              qtyOut: difference < 0 ? -difference : 0,
+              balanceAfter: physical,
+              refType: 'StockAdjustment',
+              refId: saved.id,
+              notes: `${slot.reason}: ${slot.note}`,
+              createdByUserId: manager.id,
+            }),
+          );
+          await this.stockMovementRepository
+            .createQueryBuilder()
+            .update(StockMovement)
+            .set({ createdAt: reviewedAt ?? createdAt })
+            .where('id = :id', { id: movement.id })
+            .execute();
+        }
+        created += 1;
+      }
+    }
+
+    if (created > 0) {
+      this.logger.log(`Stock adjustments seeded (${created} rows).`);
     }
   }
 
@@ -1359,8 +1768,15 @@ export class AdminSeedService implements OnModuleInit {
         referenceNumber: 'LED-010',
       },
     ];
+    // Business date the financial reports + fiscal-period locks key on.
+    // Stamped explicitly here because these demo rows are saved straight
+    // through the repository, bypassing AccountingRepository.stampAccount
+    // (which is what fills entry_date on the normal posting path).
+    const entryDate = now.toISOString().slice(0, 10);
     for (const entry of ledgerData) {
-      await this.ledgerRepository.save(this.ledgerRepository.create(entry));
+      await this.ledgerRepository.save(
+        this.ledgerRepository.create({ ...entry, entryDate }),
+      );
     }
 
     const expenseData = [
@@ -1693,6 +2109,201 @@ export class AdminSeedService implements OnModuleInit {
     }
 
     this.logger.log(`${transfers.length} sample stock transfers seeded.`);
+  }
+
+  // ── Sales returns ──────────────────────────────────────
+
+  /**
+   * Seed `SalesReturn` rows (Phase C3) against the POS sales created by
+   * `ensureTransactions`, so the returns report has data on a fresh DB. Each
+   * restocked line writes a `Return` `StockMovement` and every return posts a
+   * refund DEBIT ledger entry, mirroring the per-unit math in
+   * `returns.service.ts`. Purely additive — the restock is treated as already
+   * reflected in the seeded `inventory.quantity`, so on-hand totals are left
+   * untouched. Idempotent via a count-check.
+   *
+   * Must run after `ensureLedgerAndExpenses`: that seed short-circuits on a
+   * global `ledger_entries` count, so writing the refund rows earlier would
+   * suppress the entire ledger/expense seed.
+   */
+  private async ensureSalesReturns(
+    branches: { branch: Branch; cashier: User }[],
+  ): Promise<void> {
+    if ((await this.salesReturnRepository.count()) > 0) return;
+
+    const round2 = (n: number): number => Math.round(n * 100) / 100;
+    const round3 = (n: number): number => Math.round(n * 1000) / 1000;
+
+    const reasons = [
+      'Damaged on arrival',
+      'Wrong item picked',
+      'Customer changed their mind',
+      'Expired before use',
+    ];
+
+    let createdReturns = 0;
+    let createdItems = 0;
+
+    for (const { branch, cashier } of branches) {
+      const sales = await this.transactionRepository.find({
+        where: { cashierId: cashier.id, branchId: branch.id },
+        relations: ['items'],
+        order: { createdAt: 'DESC' },
+        take: 6,
+      });
+
+      let madeForBranch = 0;
+      for (const sale of sales) {
+        if (madeForBranch >= 3) break;
+        const candidates = (sale.items ?? []).filter(
+          (it) => Number(it.quantity) > 0,
+        );
+        if (candidates.length === 0) continue;
+
+        // Return the first 1–2 lines of this sale at a partial quantity.
+        const lineCount = Math.min(candidates.length, 1 + (madeForBranch % 2));
+        const items: SalesReturnItem[] = [];
+        let totalRefund = 0;
+        let restockedValue = 0;
+
+        for (let li = 0; li < lineCount; li += 1) {
+          const item = candidates[li];
+          const soldQty = Number(item.quantity);
+          const perUnitBase =
+            soldQty > 0 ? Number(item.baseUnitQty) / soldQty : 0;
+          const perUnitRefund =
+            soldQty > 0 ? Number(item.lineTotal) / soldQty : 0;
+
+          // Whole-unit lines return one unit (plus one scrapped when there is
+          // headroom); weight/volume lines return half. Keeps good + bad ≤ sold.
+          const whole = Number.isInteger(soldQty);
+          let goodQuantity: number;
+          let badQuantity = 0;
+          if (whole) {
+            goodQuantity = 1;
+            if (soldQty >= 3) badQuantity = 1;
+          } else {
+            goodQuantity = round3(soldQty * 0.5);
+          }
+
+          // For variety, the first line of every second branch-return is a
+          // non-restock (e.g. opened packaging): refunded but not put back.
+          const restockGood = !(madeForBranch === 1 && li === 0);
+          const willRestock = restockGood && goodQuantity > 0;
+          const baseUnitQtyGood = willRestock
+            ? round3(goodQuantity * perUnitBase)
+            : 0;
+          const requested = round3(goodQuantity + badQuantity);
+          const refundAmount = round2(requested * perUnitRefund);
+          totalRefund = round2(totalRefund + refundAmount);
+          if (willRestock) {
+            restockedValue = round2(
+              restockedValue + round2(goodQuantity * perUnitRefund),
+            );
+          }
+
+          const ri = new SalesReturnItem();
+          ri.saleItemId = item.id;
+          ri.productId = item.productId;
+          ri.goodQuantity = goodQuantity;
+          ri.badQuantity = badQuantity;
+          ri.baseUnitQtyGood = baseUnitQtyGood;
+          ri.restockGood = restockGood;
+          ri.refundAmount = refundAmount;
+          items.push(ri);
+        }
+
+        if (items.length === 0) continue;
+
+        const createdAt = new Date(sale.createdAt.getTime() + 2 * 3_600_000);
+        const savedReturn = await this.salesReturnRepository.save(
+          this.salesReturnRepository.create({
+            saleId: sale.id,
+            invoiceNumber: sale.invoiceNumber,
+            branchId: sale.branchId,
+            customerUserId: sale.customerUserId,
+            totalRefundAmount: totalRefund,
+            restockedValue,
+            reason: reasons[createdReturns % reasons.length],
+            status: 'Completed',
+            createdByUserId: cashier.id,
+            items,
+          }),
+        );
+        await this.salesReturnRepository
+          .createQueryBuilder()
+          .update(SalesReturn)
+          .set({ createdAt })
+          .where('id = :id', { id: savedReturn.id })
+          .execute();
+
+        // Audit trail: a `Return` movement per restocked line (inventory itself
+        // is left untouched — balanceAfter is a point-in-time figure) and a
+        // single refund DEBIT ledger entry for the whole return.
+        for (const ri of items) {
+          if (!ri.restockGood || ri.baseUnitQtyGood <= 0) continue;
+          const inv = await this.inventoryRepository.findOne({
+            where: { productId: ri.productId, branchId: sale.branchId },
+          });
+          const balanceAfter = round3(
+            (inv ? Number(inv.quantity) : 0) + ri.baseUnitQtyGood,
+          );
+          const movement = await this.stockMovementRepository.save(
+            this.stockMovementRepository.create({
+              productId: ri.productId,
+              branchId: sale.branchId,
+              location: sale.location,
+              movementType: 'Return',
+              qtyIn: ri.baseUnitQtyGood,
+              qtyOut: 0,
+              balanceAfter,
+              refType: 'SalesReturn',
+              refId: savedReturn.id,
+              notes: `Return ${sale.invoiceNumber}`,
+              createdByUserId: cashier.id,
+            }),
+          );
+          await this.stockMovementRepository
+            .createQueryBuilder()
+            .update(StockMovement)
+            .set({ createdAt })
+            .where('id = :id', { id: movement.id })
+            .execute();
+        }
+
+        if (totalRefund > 0) {
+          const ledger = await this.ledgerRepository.save(
+            this.ledgerRepository.create({
+              branchId: sale.branchId,
+              entryType: LedgerEntryType.DEBIT,
+              amount: totalRefund,
+              description: `Sales Return — ${sale.invoiceNumber}`,
+              referenceNumber: `RET-${savedReturn.id.slice(0, 8).toUpperCase()}`,
+              saleId: sale.id,
+              // Business date = the (backdated) return date; this insert
+              // bypasses stampAccount, so entry_date must be set explicitly.
+              entryDate: createdAt.toISOString().slice(0, 10),
+            }),
+          );
+          await this.ledgerRepository
+            .createQueryBuilder()
+            .update(LedgerEntry)
+            .set({ createdAt })
+            .where('id = :id', { id: ledger.id })
+            .execute();
+        }
+
+        madeForBranch += 1;
+        createdReturns += 1;
+        createdItems += items.length;
+      }
+    }
+
+    if (createdReturns > 0) {
+      this.logger.log(
+        `Sales returns seeded (${createdReturns} returns, ${createdItems} items).`,
+      );
+    }
   }
 
   // ── Helpers ────────────────────────────────────────────
