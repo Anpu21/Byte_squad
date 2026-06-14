@@ -28,7 +28,7 @@ import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
-import { InventoryRepository } from '@inventory/inventory.repository';
+import { InventoryService } from '@inventory/inventory.service';
 import { Sale } from '@pos/entities/sale.entity';
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
 import { CustomerOrderPaymentMode } from '@common/enums/customer-order-payment-mode.enum';
@@ -82,7 +82,7 @@ export class CustomerOrdersService {
     private readonly users: UsersService,
     private readonly pos: PosRepository,
     private readonly accounting: AccountingRepository,
-    private readonly inventory: InventoryRepository,
+    private readonly inventory: InventoryService,
     private readonly loyalty: LoyaltyService,
     private readonly loyaltyWallet: LoyaltyWalletService,
     private readonly notifications: NotificationsService,

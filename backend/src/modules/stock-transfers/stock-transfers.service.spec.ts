@@ -11,7 +11,7 @@ import { StockTransfersService } from './stock-transfers.service';
 import { StockTransfersRepository } from './stock-transfers.repository';
 import { ProductsRepository } from '@products/products.repository';
 import { BranchesService } from '@branches/branches.service';
-import { InventoryRepository } from '@inventory/inventory.repository';
+import { InventoryService } from '@inventory/inventory.service';
 import { UsersService } from '@users/users.service';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationsGateway } from '@notifications/notifications.gateway';
@@ -33,7 +33,7 @@ describe('StockTransfersService', () => {
   let transfers: jest.Mocked<StockTransfersRepository>;
   let products: jest.Mocked<ProductsRepository>;
   let branches: jest.Mocked<BranchesService>;
-  let inventory: jest.Mocked<InventoryRepository>;
+  let inventory: jest.Mocked<InventoryService>;
   let users: jest.Mocked<UsersService>;
   let dataSource: { transaction: jest.Mock };
   let notifications: { create: jest.Mock };
@@ -56,7 +56,7 @@ describe('StockTransfersService', () => {
       findEntityById: jest.fn(),
       findAllSortedByName: jest.fn(),
     };
-    const inventoryMock: Partial<jest.Mocked<InventoryRepository>> = {
+    const inventoryMock: Partial<jest.Mocked<InventoryService>> = {
       findByProductAndBranch: jest.fn(),
       findByProductInBranches: jest.fn(),
     };
@@ -76,7 +76,7 @@ describe('StockTransfersService', () => {
         { provide: StockTransfersRepository, useValue: transfersMock },
         { provide: ProductsRepository, useValue: productsMock },
         { provide: BranchesService, useValue: branchesMock },
-        { provide: InventoryRepository, useValue: inventoryMock },
+        { provide: InventoryService, useValue: inventoryMock },
         { provide: UsersService, useValue: usersMock },
         { provide: NotificationsService, useValue: notificationsMock },
         { provide: NotificationsGateway, useValue: gatewayMock },
@@ -88,7 +88,7 @@ describe('StockTransfersService', () => {
     transfers = module.get(StockTransfersRepository);
     products = module.get(ProductsRepository);
     branches = module.get(BranchesService);
-    inventory = module.get(InventoryRepository);
+    inventory = module.get(InventoryService);
     users = module.get(UsersService);
     dataSource = module.get(DataSource);
     notifications = module.get(NotificationsService);

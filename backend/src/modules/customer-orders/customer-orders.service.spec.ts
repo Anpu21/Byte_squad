@@ -15,7 +15,7 @@ import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
-import { InventoryRepository } from '@inventory/inventory.repository';
+import { InventoryService } from '@inventory/inventory.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
@@ -71,7 +71,7 @@ describe('CustomerOrdersService', () => {
           useValue: { createLedgerEntry: jest.fn() },
         },
         {
-          provide: InventoryRepository,
+          provide: InventoryService,
           useValue: { decrementStockBatch: jest.fn() },
         },
         {

@@ -5,7 +5,7 @@ import { AdminPortalService } from './admin-portal.service';
 import { AdminPortalReportsRepository } from './admin-portal-reports.repository';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
-import { InventoryRepository } from '@inventory/inventory.repository';
+import { InventoryService } from '@inventory/inventory.service';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { BranchActor } from '@common/scope/branch-scope';
 
@@ -36,7 +36,7 @@ describe('AdminPortalService.getBranchComparison', () => {
           },
         },
         {
-          provide: InventoryRepository,
+          provide: InventoryService,
           useValue: {
             findByProductIds: jest.fn(),
             countActiveForBranch: jest.fn(),

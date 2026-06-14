@@ -7,7 +7,7 @@ import { PosService } from './pos.service';
 import { PosRepository } from './pos.repository';
 import { SaleRepository } from './sale.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
-import { InventoryRepository } from '@inventory/inventory.repository';
+import { InventoryService } from '@inventory/inventory.service';
 import { ProductsRepository } from '@products/products.repository';
 import { InvoiceNumberService } from './services/invoice-number.service';
 import { UsersService } from '@users/users.service';
@@ -163,7 +163,7 @@ function makeSale(overrides: Partial<Sale> = {}): Sale {
 describe('PosService — Phase 4 read endpoints', () => {
   let service: PosService;
   let productsRepo: jest.Mocked<ProductsRepository>;
-  let inventoryRepo: jest.Mocked<InventoryRepository>;
+  let inventoryRepo: jest.Mocked<InventoryService>;
   let posRepo: jest.Mocked<PosRepository>;
   let invoiceNumbers: jest.Mocked<InvoiceNumberService>;
   let salesRepo: jest.Mocked<SaleRepository>;
@@ -181,7 +181,7 @@ describe('PosService — Phase 4 read endpoints', () => {
       findUnitByBarcode: jest.fn(),
       listUnits: jest.fn(),
     };
-    const inventoryRepoMock: Partial<jest.Mocked<InventoryRepository>> = {
+    const inventoryRepoMock: Partial<jest.Mocked<InventoryService>> = {
       summaryForProduct: jest.fn(),
     };
     const invoiceNumbersMock: Partial<jest.Mocked<InvoiceNumberService>> = {
@@ -202,7 +202,7 @@ describe('PosService — Phase 4 read endpoints', () => {
         { provide: AccountingRepository, useValue: accountingRepoMock },
         { provide: DataSource, useValue: dataSourceMock },
         { provide: ProductsRepository, useValue: productsRepoMock },
-        { provide: InventoryRepository, useValue: inventoryRepoMock },
+        { provide: InventoryService, useValue: inventoryRepoMock },
         { provide: InvoiceNumberService, useValue: invoiceNumbersMock },
         { provide: SaleRepository, useValue: salesRepoMock },
         { provide: UsersService, useValue: usersRepoMock },
@@ -211,7 +211,7 @@ describe('PosService — Phase 4 read endpoints', () => {
 
     service = module.get(PosService);
     productsRepo = module.get(ProductsRepository);
-    inventoryRepo = module.get(InventoryRepository);
+    inventoryRepo = module.get(InventoryService);
     posRepo = module.get(PosRepository);
     invoiceNumbers = module.get(InvoiceNumberService);
     salesRepo = module.get(SaleRepository);

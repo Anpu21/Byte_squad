@@ -15,7 +15,7 @@ import { SearchCustomersQueryDto } from '@pos/dto/search-customers-query.dto';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { ProductsRepository } from '@products/products.repository';
-import { InventoryRepository } from '@inventory/inventory.repository';
+import { InventoryService } from '@inventory/inventory.service';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { DiscountType } from '@common/enums/discount.enum';
@@ -129,7 +129,7 @@ export class PosService {
     private readonly accounting: AccountingRepository,
     private readonly dataSource: DataSource,
     private readonly products: ProductsRepository,
-    private readonly inventory: InventoryRepository,
+    private readonly inventory: InventoryService,
     private readonly invoiceNumbers: InvoiceNumberService,
     private readonly sales: SaleRepository,
     private readonly users: UsersService,

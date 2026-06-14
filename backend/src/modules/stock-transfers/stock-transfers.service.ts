@@ -14,7 +14,7 @@ import { User } from '@users/entities/user.entity';
 import { StockTransfersRepository } from '@stock-transfers/stock-transfers.repository';
 import { ProductsRepository } from '@products/products.repository';
 import { BranchesService } from '@branches/branches.service';
-import { InventoryRepository } from '@inventory/inventory.repository';
+import { InventoryService } from '@inventory/inventory.service';
 import { UsersService } from '@users/users.service';
 import { CreateTransferRequestDto } from '@stock-transfers/dto/create-transfer-request.dto';
 import { CreateAdminDirectTransferDto } from '@stock-transfers/dto/create-admin-direct-transfer.dto';
@@ -70,7 +70,7 @@ export class StockTransfersService {
     private readonly transfers: StockTransfersRepository,
     private readonly products: ProductsRepository,
     private readonly branches: BranchesService,
-    private readonly inventory: InventoryRepository,
+    private readonly inventory: InventoryService,
     private readonly users: UsersService,
     private readonly notificationsService: NotificationsService,
     private readonly notificationsGateway: NotificationsGateway,

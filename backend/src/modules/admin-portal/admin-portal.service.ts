@@ -3,7 +3,7 @@ import { Branch } from '@branches/entities/branch.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
-import { InventoryRepository } from '@inventory/inventory.repository';
+import { InventoryService } from '@inventory/inventory.service';
 import { AdminPortalReportsRepository } from '@admin-portal/admin-portal-reports.repository';
 import { InventoryMatrixQueryDto } from '@admin-portal/dto/inventory-matrix-query.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -61,7 +61,7 @@ export class AdminPortalService {
   constructor(
     private readonly branches: BranchesService,
     private readonly users: UsersService,
-    private readonly inventory: InventoryRepository,
+    private readonly inventory: InventoryService,
     private readonly reports: AdminPortalReportsRepository,
   ) {}
 
