@@ -23,7 +23,7 @@ import { TransactionType } from '@common/enums/transaction.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { InvoiceNumberService } from '@pos/services/invoice-number.service';
 import { SaleRepository } from '@pos/sale.repository';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import type {
   SearchProductRow,
   ProductUnitRow,
@@ -132,7 +132,7 @@ export class PosService {
     private readonly inventory: InventoryRepository,
     private readonly invoiceNumbers: InvoiceNumberService,
     private readonly sales: SaleRepository,
-    private readonly users: UsersRepository,
+    private readonly users: UsersService,
   ) {}
 
   async createTransaction(

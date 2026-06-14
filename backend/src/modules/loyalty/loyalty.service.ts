@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,7 +11,7 @@ import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entit
 import { LoyaltySettings } from '@/modules/loyalty/entities/loyalty-settings.entity';
 import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
 import { LoyaltyCustomersRepository } from '@/modules/loyalty/loyalty-customers.repository';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { normalizeSriLankaPhone } from '@common/utils/phone.util';
 import type {
   LoyaltyCustomerRow,
@@ -48,7 +50,8 @@ export class LoyaltyService {
     private readonly loyalty: LoyaltyRepository,
     private readonly settings: LoyaltySettingsService,
     private readonly loyaltyCustomers: LoyaltyCustomersRepository,
-    private readonly users: UsersRepository,
+    @Inject(forwardRef(() => UsersService))
+    private readonly users: UsersService,
   ) {}
 
   /**
@@ -287,7 +290,7 @@ export class LoyaltyService {
   }
 
   async syncVerifiedUserByPhone(userId: string): Promise<LoyaltyAccount> {
-    const user = await this.users.findById(userId);
+    const user = await this.users.findEntityById(userId);
     if (!user?.phone) {
       return this.getOrCreateAccount({ userId });
     }

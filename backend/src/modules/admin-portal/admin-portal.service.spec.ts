@@ -4,7 +4,7 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { AdminPortalService } from './admin-portal.service';
 import { AdminPortalReportsRepository } from './admin-portal-reports.repository';
 import { BranchesRepository } from '@branches/branches.repository';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { InventoryRepository } from '@inventory/inventory.repository';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { BranchActor } from '@common/scope/branch-scope';
@@ -27,7 +27,7 @@ describe('AdminPortalService.getBranchComparison', () => {
         AdminPortalService,
         { provide: BranchesRepository, useValue: branchesMock },
         {
-          provide: UsersRepository,
+          provide: UsersService,
           useValue: {
             countByBranch: jest.fn(),
             findFirstByBranchAndRole: jest.fn(),

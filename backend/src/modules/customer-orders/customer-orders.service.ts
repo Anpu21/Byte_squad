@@ -25,7 +25,7 @@ import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { ProductsRepository } from '@products/products.repository';
 import { BranchesRepository } from '@branches/branches.repository';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
@@ -79,7 +79,7 @@ export class CustomerOrdersService {
     private readonly orders: CustomerOrdersRepository,
     private readonly products: ProductsRepository,
     private readonly branches: BranchesRepository,
-    private readonly users: UsersRepository,
+    private readonly users: UsersService,
     private readonly pos: PosRepository,
     private readonly accounting: AccountingRepository,
     private readonly inventory: InventoryRepository,
@@ -123,7 +123,7 @@ export class CustomerOrdersService {
       throw new BadRequestException('Branch not found or inactive');
     }
 
-    const user = await this.users.findById(userId);
+    const user = await this.users.findEntityById(userId);
     if (!user) {
       throw new BadRequestException('Customer not found');
     }
@@ -253,7 +253,7 @@ export class CustomerOrdersService {
     dto: CheckoutCustomerOrderDto,
     userId: string,
   ): Promise<CreateCheckoutResult> {
-    const user = await this.users.findById(userId);
+    const user = await this.users.findEntityById(userId);
     if (!user) {
       throw new BadRequestException('Customer not found');
     }

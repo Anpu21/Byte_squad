@@ -10,7 +10,7 @@ import { AccountingRepository } from '@accounting/accounting.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
 import { ProductsRepository } from '@products/products.repository';
 import { InvoiceNumberService } from './services/invoice-number.service';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Sale } from './entities/sale.entity';
@@ -167,7 +167,7 @@ describe('PosService — Phase 4 read endpoints', () => {
   let posRepo: jest.Mocked<PosRepository>;
   let invoiceNumbers: jest.Mocked<InvoiceNumberService>;
   let salesRepo: jest.Mocked<SaleRepository>;
-  let usersRepo: jest.Mocked<UsersRepository>;
+  let usersRepo: jest.Mocked<UsersService>;
 
   beforeEach(async () => {
     const posRepoMock: Partial<jest.Mocked<PosRepository>> = {
@@ -191,7 +191,7 @@ describe('PosService — Phase 4 read endpoints', () => {
       findOneById: jest.fn(),
       markPrinted: jest.fn().mockResolvedValue(undefined),
     };
-    const usersRepoMock: Partial<jest.Mocked<UsersRepository>> = {
+    const usersRepoMock: Partial<jest.Mocked<UsersService>> = {
       searchCustomersByText: jest.fn(),
     };
 
@@ -205,7 +205,7 @@ describe('PosService — Phase 4 read endpoints', () => {
         { provide: InventoryRepository, useValue: inventoryRepoMock },
         { provide: InvoiceNumberService, useValue: invoiceNumbersMock },
         { provide: SaleRepository, useValue: salesRepoMock },
-        { provide: UsersRepository, useValue: usersRepoMock },
+        { provide: UsersService, useValue: usersRepoMock },
       ],
     }).compile();
 
@@ -215,7 +215,7 @@ describe('PosService — Phase 4 read endpoints', () => {
     posRepo = module.get(PosRepository);
     invoiceNumbers = module.get(InvoiceNumberService);
     salesRepo = module.get(SaleRepository);
-    usersRepo = module.get(UsersRepository);
+    usersRepo = module.get(UsersService);
   });
 
   // -------------------------------------------------------------------

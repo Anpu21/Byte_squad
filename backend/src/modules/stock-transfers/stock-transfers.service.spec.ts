@@ -12,7 +12,7 @@ import { StockTransfersRepository } from './stock-transfers.repository';
 import { ProductsRepository } from '@products/products.repository';
 import { BranchesRepository } from '@branches/branches.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationsGateway } from '@notifications/notifications.gateway';
 import { StockTransferRequest } from './entities/stock-transfer-request.entity';
@@ -34,7 +34,7 @@ describe('StockTransfersService', () => {
   let products: jest.Mocked<ProductsRepository>;
   let branches: jest.Mocked<BranchesRepository>;
   let inventory: jest.Mocked<InventoryRepository>;
-  let users: jest.Mocked<UsersRepository>;
+  let users: jest.Mocked<UsersService>;
   let dataSource: { transaction: jest.Mock };
   let notifications: { create: jest.Mock };
   let gateway: { sendToUser: jest.Mock };
@@ -60,7 +60,7 @@ describe('StockTransfersService', () => {
       findByProductAndBranch: jest.fn(),
       findByProductInBranches: jest.fn(),
     };
-    const usersMock: Partial<jest.Mocked<UsersRepository>> = {
+    const usersMock: Partial<jest.Mocked<UsersService>> = {
       findAllByRole: jest.fn().mockResolvedValue([]),
       findManagersAndAdminsForBranches: jest.fn().mockResolvedValue([]),
     };
@@ -77,7 +77,7 @@ describe('StockTransfersService', () => {
         { provide: ProductsRepository, useValue: productsMock },
         { provide: BranchesRepository, useValue: branchesMock },
         { provide: InventoryRepository, useValue: inventoryMock },
-        { provide: UsersRepository, useValue: usersMock },
+        { provide: UsersService, useValue: usersMock },
         { provide: NotificationsService, useValue: notificationsMock },
         { provide: NotificationsGateway, useValue: gatewayMock },
         { provide: DataSource, useValue: dataSourceMock },
@@ -89,7 +89,7 @@ describe('StockTransfersService', () => {
     products = module.get(ProductsRepository);
     branches = module.get(BranchesRepository);
     inventory = module.get(InventoryRepository);
-    users = module.get(UsersRepository);
+    users = module.get(UsersService);
     dataSource = module.get(DataSource);
     notifications = module.get(NotificationsService);
     gateway = module.get(NotificationsGateway);

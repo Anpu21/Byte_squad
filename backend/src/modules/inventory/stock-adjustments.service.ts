@@ -11,7 +11,7 @@ import { Inventory } from '@inventory/entities/inventory.entity';
 import { StockMovement } from '@pos/entities/stock-movement.entity';
 import { StockAdjustmentRepository } from '@inventory/stock-adjustment.repository';
 import { ProductsRepository } from '@products/products.repository';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationType } from '@common/enums/notification.enum';
 import { StockAdjustmentStatus } from '@common/enums/stock-adjustment-status.enum';
@@ -37,7 +37,7 @@ export class StockAdjustmentsService {
     private readonly dataSource: DataSource,
     private readonly adjustments: StockAdjustmentRepository,
     private readonly products: ProductsRepository,
-    private readonly users: UsersRepository,
+    private readonly users: UsersService,
     private readonly notifications: NotificationsService,
   ) {}
 

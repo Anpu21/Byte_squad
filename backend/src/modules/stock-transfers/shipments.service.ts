@@ -15,7 +15,7 @@ import { Employee } from '@/modules/hr/entities/employee.entity';
 import { ShipmentsRepository } from '@stock-transfers/shipments.repository';
 import { StockTransfersRepository } from '@stock-transfers/stock-transfers.repository';
 import { EmployeesRepository } from '@/modules/hr/employees.repository';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { CreateShipmentDto } from '@stock-transfers/dto/create-shipment.dto';
 import { AssignCourierDto } from '@stock-transfers/dto/assign-courier.dto';
 import { ShipmentCheckpointDto } from '@stock-transfers/dto/shipment-checkpoint.dto';
@@ -53,7 +53,7 @@ export class ShipmentsService {
     private readonly shipments: ShipmentsRepository,
     private readonly transfers: StockTransfersRepository,
     private readonly employees: EmployeesRepository,
-    private readonly users: UsersRepository,
+    private readonly users: UsersService,
     private readonly notificationsService: NotificationsService,
     private readonly notificationsGateway: NotificationsGateway,
     private readonly dataSource: DataSource,

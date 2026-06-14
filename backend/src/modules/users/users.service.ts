@@ -74,6 +74,56 @@ export class UsersService {
     return this.users.findById(id);
   }
 
+  // ── Cross-module read pass-throughs ────────────────────────────────────
+  // Other modules consume UsersService, not UsersRepository (blaxx nestjs-07).
+  // These return raw entities to preserve the prior repository-injection
+  // behaviour; the actor-scoped, password-stripped reads are above.
+
+  findEntityById(id: string): Promise<User | null> {
+    return this.users.findById(id);
+  }
+
+  findByPhone(phone: string): Promise<User | null> {
+    return this.users.findByPhone(phone);
+  }
+
+  findAllByRole(role: UserRole): Promise<User[]> {
+    return this.users.findAllByRole(role);
+  }
+
+  findByBranchAndRole(branchId: string, role: UserRole): Promise<User[]> {
+    return this.users.findByBranchAndRole(branchId, role);
+  }
+
+  findFirstByBranchAndRole(
+    branchId: string,
+    role: UserRole,
+  ): Promise<User | null> {
+    return this.users.findFirstByBranchAndRole(branchId, role);
+  }
+
+  findManagersAndAdminsForBranches(
+    branchIds: readonly string[],
+  ): Promise<User[]> {
+    return this.users.findManagersAndAdminsForBranches(branchIds);
+  }
+
+  countByBranch(branchId: string): Promise<number> {
+    return this.users.countByBranch(branchId);
+  }
+
+  findAllByRoleWithBranch(role: UserRole): Promise<User[]> {
+    return this.users.findAllByRoleWithBranch(role);
+  }
+
+  findAllWithBranch(): Promise<User[]> {
+    return this.users.findAllWithBranch();
+  }
+
+  searchCustomersByText(term: string, limit: number): Promise<User[]> {
+    return this.users.searchCustomersByText(term, limit);
+  }
+
   // ── Helpers reused by AuthService / customer signup ────────────────────
 
   async updatePassword(id: string, passwordHash: string): Promise<void> {

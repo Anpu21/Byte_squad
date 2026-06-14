@@ -15,7 +15,7 @@ import { StockTransfersRepository } from '@stock-transfers/stock-transfers.repos
 import { ProductsRepository } from '@products/products.repository';
 import { BranchesRepository } from '@branches/branches.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { CreateTransferRequestDto } from '@stock-transfers/dto/create-transfer-request.dto';
 import { CreateAdminDirectTransferDto } from '@stock-transfers/dto/create-admin-direct-transfer.dto';
 import { CreateManagerBatchTransferDto } from '@stock-transfers/dto/create-manager-batch-transfer.dto';
@@ -71,7 +71,7 @@ export class StockTransfersService {
     private readonly products: ProductsRepository,
     private readonly branches: BranchesRepository,
     private readonly inventory: InventoryRepository,
-    private readonly users: UsersRepository,
+    private readonly users: UsersService,
     private readonly notificationsService: NotificationsService,
     private readonly notificationsGateway: NotificationsGateway,
     // Service-level transactions still need a DataSource — repos run in

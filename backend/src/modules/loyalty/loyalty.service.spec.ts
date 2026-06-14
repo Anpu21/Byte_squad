@@ -6,7 +6,7 @@ import { LoyaltyRepository } from './loyalty.repository';
 import type { LoyaltyCustomerRow } from './types';
 import { LoyaltyCustomersRepository } from './loyalty-customers.repository';
 import { LoyaltySettingsService } from './loyalty-settings.service';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { LoyaltyAccount } from './entities/loyalty-account.entity';
 import { LoyaltyCustomer } from './entities/loyalty-customer.entity';
 import { LoyaltySettings } from './entities/loyalty-settings.entity';
@@ -106,7 +106,7 @@ describe('LoyaltyService', () => {
   let service: LoyaltyService;
   let loyaltyRepo: jest.Mocked<LoyaltyRepository>;
   let customersRepo: jest.Mocked<LoyaltyCustomersRepository>;
-  let usersRepo: jest.Mocked<UsersRepository>;
+  let usersRepo: jest.Mocked<UsersService>;
   let settings: jest.Mocked<LoyaltySettingsService>;
 
   beforeEach(async () => {
@@ -124,9 +124,9 @@ describe('LoyaltyService', () => {
         findById: jest.fn(),
         create: jest.fn(),
       };
-    const usersRepoMock: Partial<jest.Mocked<UsersRepository>> = {
+    const usersRepoMock: Partial<jest.Mocked<UsersService>> = {
       findByPhone: jest.fn(),
-      findById: jest.fn(),
+      findEntityById: jest.fn(),
     };
     const settingsMock: Partial<jest.Mocked<LoyaltySettingsService>> = {
       get: jest.fn().mockResolvedValue(makeSettings()),
@@ -137,7 +137,7 @@ describe('LoyaltyService', () => {
         LoyaltyService,
         { provide: LoyaltyRepository, useValue: loyaltyRepoMock },
         { provide: LoyaltyCustomersRepository, useValue: customersRepoMock },
-        { provide: UsersRepository, useValue: usersRepoMock },
+        { provide: UsersService, useValue: usersRepoMock },
         { provide: LoyaltySettingsService, useValue: settingsMock },
       ],
     }).compile();
@@ -145,7 +145,7 @@ describe('LoyaltyService', () => {
     service = module.get(LoyaltyService);
     loyaltyRepo = module.get(LoyaltyRepository);
     customersRepo = module.get(LoyaltyCustomersRepository);
-    usersRepo = module.get(UsersRepository);
+    usersRepo = module.get(UsersService);
     settings = module.get(LoyaltySettingsService);
   });
 
@@ -391,7 +391,7 @@ describe('LoyaltyService', () => {
 
   describe('syncVerifiedUserByPhone', () => {
     it('merges an existing walk-in wallet into the verified user wallet', async () => {
-      usersRepo.findById.mockResolvedValue(makeUser());
+      usersRepo.findEntityById.mockResolvedValue(makeUser());
       customersRepo.findByPhone.mockResolvedValue(makeWalkInCustomer());
       const merged = makeUserAccount({ pointsBalance: 330 });
       loyaltyRepo.mergeWalkInIntoUser.mockResolvedValue(merged);
@@ -407,7 +407,7 @@ describe('LoyaltyService', () => {
     });
 
     it('creates or returns the user wallet when no walk-in phone exists', async () => {
-      usersRepo.findById.mockResolvedValue(makeUser());
+      usersRepo.findEntityById.mockResolvedValue(makeUser());
       customersRepo.findByPhone.mockResolvedValue(null);
       loyaltyRepo.findAccountByUser.mockResolvedValue(makeUserAccount());
 

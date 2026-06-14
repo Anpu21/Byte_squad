@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Branch } from '@branches/entities/branch.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { BranchesRepository } from '@branches/branches.repository';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { InventoryRepository } from '@inventory/inventory.repository';
 import { AdminPortalReportsRepository } from '@admin-portal/admin-portal-reports.repository';
 import { InventoryMatrixQueryDto } from '@admin-portal/dto/inventory-matrix-query.dto';
@@ -60,7 +60,7 @@ export type {
 export class AdminPortalService {
   constructor(
     private readonly branches: BranchesRepository,
-    private readonly users: UsersRepository,
+    private readonly users: UsersService,
     private readonly inventory: InventoryRepository,
     private readonly reports: AdminPortalReportsRepository,
   ) {}

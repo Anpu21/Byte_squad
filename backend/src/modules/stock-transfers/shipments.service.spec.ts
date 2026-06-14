@@ -8,7 +8,7 @@ import { ShipmentsService } from './shipments.service';
 import { ShipmentsRepository } from './shipments.repository';
 import { StockTransfersRepository } from './stock-transfers.repository';
 import { EmployeesRepository } from '@/modules/hr/employees.repository';
-import { UsersRepository } from '@users/users.repository';
+import { UsersService } from '@users/users.service';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationsGateway } from '@notifications/notifications.gateway';
 import { StockTransferRequest } from './entities/stock-transfer-request.entity';
@@ -83,7 +83,7 @@ describe('ShipmentsService', () => {
       employees as unknown as EmployeesRepository,
       {
         findManagersAndAdminsForBranches: jest.fn().mockResolvedValue([]),
-      } as unknown as UsersRepository,
+      } as unknown as UsersService,
       { create: jest.fn() } as unknown as NotificationsService,
       { sendToUser: jest.fn() } as unknown as NotificationsGateway,
       { transaction: jest.fn() } as never,
