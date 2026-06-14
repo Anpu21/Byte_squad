@@ -17,8 +17,7 @@ import { Account } from '@accounting/entities/account.entity';
 import { JournalVoucher } from '@accounting/entities/journal-voucher.entity';
 import { JournalCounter } from '@accounting/entities/journal-counter.entity';
 import { Expense } from '@accounting/entities/expense.entity';
-import { Sale } from '@pos/entities/sale.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
+import { ProfitLossSalesRepository } from '@accounting/profit-loss-sales.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
@@ -30,8 +29,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       JournalCounter,
       FiscalPeriodLock,
       Expense,
-      Sale,
-      SaleItem,
     ]),
   ],
   controllers: [
@@ -48,6 +45,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     FinancialReportsService,
     FinancialReportsRepository,
     FiscalPeriodsService,
+    ProfitLossSalesRepository,
   ],
   exports: [
     AccountingService,

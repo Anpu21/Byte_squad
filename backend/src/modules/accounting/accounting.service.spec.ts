@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   BadRequestException,
   ForbiddenException,
@@ -12,8 +11,7 @@ import { AccountsRepository } from './accounts.repository';
 import { Expense } from './entities/expense.entity';
 import { ExpenseStatus } from '@common/enums/expense-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
-import { Sale } from '@pos/entities/sale.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
+import { ProfitLossSalesRepository } from './profit-loss-sales.repository';
 
 describe('AccountingService', () => {
   let service: AccountingService;
@@ -38,8 +36,7 @@ describe('AccountingService', () => {
         AccountingService,
         { provide: AccountingRepository, useValue: repoMock },
         { provide: AccountsRepository, useValue: { list: jest.fn() } },
-        { provide: getRepositoryToken(Sale), useValue: {} },
-        { provide: getRepositoryToken(SaleItem), useValue: {} },
+        { provide: ProfitLossSalesRepository, useValue: {} },
       ],
     }).compile();
 
