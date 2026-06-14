@@ -24,7 +24,7 @@ import {
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { ProductsRepository } from '@products/products.repository';
-import { BranchesRepository } from '@branches/branches.repository';
+import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
@@ -78,7 +78,7 @@ export class CustomerOrdersService {
   constructor(
     private readonly orders: CustomerOrdersRepository,
     private readonly products: ProductsRepository,
-    private readonly branches: BranchesRepository,
+    private readonly branches: BranchesService,
     private readonly users: UsersService,
     private readonly pos: PosRepository,
     private readonly accounting: AccountingRepository,
@@ -118,7 +118,7 @@ export class CustomerOrdersService {
     dto: CreateCustomerOrderDto,
     userId: string,
   ): Promise<CreateCustomerOrderResult> {
-    const branch = await this.branches.findById(dto.branchId);
+    const branch = await this.branches.findEntityById(dto.branchId);
     if (!branch || !branch.isActive) {
       throw new BadRequestException('Branch not found or inactive');
     }
@@ -279,7 +279,7 @@ export class CustomerOrdersService {
     }[] = [];
 
     for (const [branchId, items] of byBranch) {
-      const branch = await this.branches.findById(branchId);
+      const branch = await this.branches.findEntityById(branchId);
       if (!branch || !branch.isActive) {
         throw new BadRequestException(
           `Branch ${branchId} not found or inactive`,
@@ -582,7 +582,7 @@ export class CustomerOrdersService {
     await this.orders.updateStatus(id, CustomerOrderStatus.ACCEPTED);
     const updated = await this.findById(id);
 
-    const branch = await this.branches.findById(updated.branchId);
+    const branch = await this.branches.findEntityById(updated.branchId);
     if (branch) {
       this.notifyBranchCashiers(updated, branch.name).catch((err: unknown) => {
         const message = err instanceof Error ? err.message : String(err);

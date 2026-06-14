@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Branch } from '@branches/entities/branch.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
-import { BranchesRepository } from '@branches/branches.repository';
+import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
 import { InventoryRepository } from '@inventory/inventory.repository';
 import { AdminPortalReportsRepository } from '@admin-portal/admin-portal-reports.repository';
@@ -59,7 +59,7 @@ export type {
 @Injectable()
 export class AdminPortalService {
   constructor(
-    private readonly branches: BranchesRepository,
+    private readonly branches: BranchesService,
     private readonly users: UsersService,
     private readonly inventory: InventoryRepository,
     private readonly reports: AdminPortalReportsRepository,

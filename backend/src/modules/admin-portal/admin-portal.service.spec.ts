@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { AdminPortalService } from './admin-portal.service';
 import { AdminPortalReportsRepository } from './admin-portal-reports.repository';
-import { BranchesRepository } from '@branches/branches.repository';
+import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
 import { InventoryRepository } from '@inventory/inventory.repository';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -15,17 +15,17 @@ const RANGE = [new Date('2026-01-01'), new Date('2026-02-01')] as const;
 
 describe('AdminPortalService.getBranchComparison', () => {
   let service: AdminPortalService;
-  let branches: jest.Mocked<BranchesRepository>;
+  let branches: jest.Mocked<BranchesService>;
 
   beforeEach(async () => {
-    const branchesMock: Partial<jest.Mocked<BranchesRepository>> = {
+    const branchesMock: Partial<jest.Mocked<BranchesService>> = {
       findByIds: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
       providers: [
         AdminPortalService,
-        { provide: BranchesRepository, useValue: branchesMock },
+        { provide: BranchesService, useValue: branchesMock },
         {
           provide: UsersService,
           useValue: {
@@ -48,7 +48,7 @@ describe('AdminPortalService.getBranchComparison', () => {
     }).compile();
 
     service = module.get(AdminPortalService);
-    branches = module.get(BranchesRepository);
+    branches = module.get(BranchesService);
   });
 
   it('rejects empty branchIds before any DB call', async () => {

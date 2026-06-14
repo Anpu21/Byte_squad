@@ -11,7 +11,7 @@ import { CustomerOrder } from './entities/customer-order.entity';
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { ProductsRepository } from '@products/products.repository';
-import { BranchesRepository } from '@branches/branches.repository';
+import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
 import { PosRepository } from '@pos/pos.repository';
 import { AccountingRepository } from '@accounting/accounting.repository';
@@ -54,7 +54,7 @@ describe('CustomerOrdersService', () => {
           provide: ProductsRepository,
           useValue: { findActiveByIds: jest.fn() },
         },
-        { provide: BranchesRepository, useValue: { findById: jest.fn() } },
+        { provide: BranchesService, useValue: { findEntityById: jest.fn() } },
         {
           provide: UsersService,
           useValue: {

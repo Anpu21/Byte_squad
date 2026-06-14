@@ -12,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { User } from '@users/entities/user.entity';
 import { UsersRepository } from '@users/users.repository';
-import { BranchesRepository } from '@branches/branches.repository';
+import { BranchesService } from '@branches/branches.service';
 import { CreateUserDto } from '@users/dto/create-user.dto';
 import { UpdateUserDto } from '@users/dto/update-user.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -43,7 +43,7 @@ export class UsersService {
 
   constructor(
     private readonly users: UsersRepository,
-    private readonly branches: BranchesRepository,
+    private readonly branches: BranchesService,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly cloudinary: CloudinaryService,
@@ -220,7 +220,7 @@ export class UsersService {
       );
     }
 
-    const branch = await this.branches.findById(branchId);
+    const branch = await this.branches.findEntityById(branchId);
     if (!branch || !branch.isActive) {
       throw new NotFoundException('Branch not found or inactive');
     }

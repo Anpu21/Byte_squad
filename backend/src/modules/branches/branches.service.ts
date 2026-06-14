@@ -72,6 +72,22 @@ export class BranchesService {
     return this.branches.findById(id);
   }
 
+  // ── Cross-module read pass-throughs ────────────────────────────────────
+  // Other modules consume BranchesService, not BranchesRepository (blaxx
+  // nestjs-07). Unscoped reads for internal cross-module composition.
+
+  findEntityById(id: string): Promise<Branch | null> {
+    return this.branches.findById(id);
+  }
+
+  findAllSortedByName(): Promise<Branch[]> {
+    return this.branches.findAllSortedByName();
+  }
+
+  findByIds(ids: string[]): Promise<Branch[]> {
+    return this.branches.findByIds(ids);
+  }
+
   async toggleActive(id: string): Promise<Branch> {
     const branch = await this.branches.findById(id);
     if (!branch) {

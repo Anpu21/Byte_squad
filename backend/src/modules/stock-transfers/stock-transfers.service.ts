@@ -13,7 +13,7 @@ import { Inventory } from '@inventory/entities/inventory.entity';
 import { User } from '@users/entities/user.entity';
 import { StockTransfersRepository } from '@stock-transfers/stock-transfers.repository';
 import { ProductsRepository } from '@products/products.repository';
-import { BranchesRepository } from '@branches/branches.repository';
+import { BranchesService } from '@branches/branches.service';
 import { InventoryRepository } from '@inventory/inventory.repository';
 import { UsersService } from '@users/users.service';
 import { CreateTransferRequestDto } from '@stock-transfers/dto/create-transfer-request.dto';
@@ -69,7 +69,7 @@ export class StockTransfersService {
   constructor(
     private readonly transfers: StockTransfersRepository,
     private readonly products: ProductsRepository,
-    private readonly branches: BranchesRepository,
+    private readonly branches: BranchesService,
     private readonly inventory: InventoryRepository,
     private readonly users: UsersService,
     private readonly notificationsService: NotificationsService,
@@ -110,7 +110,7 @@ export class StockTransfersService {
       destinationBranchId = actor.branchId;
     }
 
-    const destBranch = await this.branches.findById(destinationBranchId);
+    const destBranch = await this.branches.findEntityById(destinationBranchId);
     if (!destBranch) {
       throw new NotFoundException('Destination branch could not be found');
     }
@@ -335,14 +335,14 @@ export class StockTransfersService {
       );
     }
 
-    const sourceBranch = await this.branches.findById(dto.sourceBranchId);
+    const sourceBranch = await this.branches.findEntityById(dto.sourceBranchId);
     if (!sourceBranch) {
       throw new NotFoundException('Source branch not found');
     }
     if (!sourceBranch.isActive) {
       throw new BadRequestException('Source branch is inactive');
     }
-    const destinationBranch = await this.branches.findById(
+    const destinationBranch = await this.branches.findEntityById(
       dto.destinationBranchId,
     );
     if (!destinationBranch) {
@@ -514,7 +514,9 @@ export class StockTransfersService {
       );
     }
 
-    const destinationBranch = await this.branches.findById(actor.branchId);
+    const destinationBranch = await this.branches.findEntityById(
+      actor.branchId,
+    );
     if (!destinationBranch) {
       throw new NotFoundException('Destination branch not found');
     }
@@ -639,7 +641,7 @@ export class StockTransfersService {
       );
     }
 
-    const sourceBranch = await this.branches.findById(dto.sourceBranchId);
+    const sourceBranch = await this.branches.findEntityById(dto.sourceBranchId);
     if (!sourceBranch) {
       throw new NotFoundException('Source branch not found');
     }

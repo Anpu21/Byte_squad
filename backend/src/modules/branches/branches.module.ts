@@ -15,6 +15,6 @@ import { BranchPerformanceRepository } from '@branches/branch-performance.reposi
   imports: [TypeOrmModule.forFeature([Branch])],
   controllers: [BranchesController],
   providers: [BranchesService, BranchesRepository, BranchPerformanceRepository],
-  exports: [BranchesService, BranchesRepository],
+  exports: [BranchesService],
 })
 export class BranchesModule {}
