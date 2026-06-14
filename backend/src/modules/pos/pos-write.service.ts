@@ -11,7 +11,7 @@ import { Sale } from '@pos/entities/sale.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
-import { ProductsRepository } from '@products/products.repository';
+import { ProductsService } from '@products/products.service';
 import { User } from '@users/entities/user.entity';
 
 import { CreateSaleDto } from '@pos/dto/create-sale.dto';
@@ -23,12 +23,13 @@ import { CreditTransactionRepository } from '@pos/credit-transaction.repository'
 import { StockMovementRepository } from '@pos/stock-movement.repository';
 import { InvoiceNumberService } from '@pos/services/invoice-number.service';
 import { MultiTenderCalculatorService } from '@pos/services/multi-tender-calculator.service';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { AccountingService } from '@accounting/accounting.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import type { LoyaltyOwner } from '@/modules/loyalty/types';
 
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
+import { assertWithinCreditLimit } from '@pos/lib/credit-limit';
 import { DiscountType } from '@common/enums/discount.enum';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { PaymentMethod } from '@common/enums/payment-method';
@@ -141,8 +142,8 @@ export class PosWriteService {
     private readonly stockMovements: StockMovementRepository,
     private readonly invoiceNumbers: InvoiceNumberService,
     private readonly multiTender: MultiTenderCalculatorService,
-    private readonly products: ProductsRepository,
-    private readonly accounting: AccountingRepository,
+    private readonly products: ProductsService,
+    private readonly accounting: AccountingService,
     private readonly loyalty: LoyaltyService,
     private readonly loyaltyWallet: LoyaltyWalletService,
     private readonly dataSource: DataSource,
@@ -646,6 +647,12 @@ export class PosWriteService {
       throw new NotFoundException('Customer not found');
     }
     let runningBalance = Number(user.currentBalance);
+
+    assertWithinCreditLimit(
+      user.creditLimit === null ? null : Number(user.creditLimit),
+      runningBalance,
+      tender.creditTaken,
+    );
 
     if (tender.creditTaken > 0) {
       runningBalance = round2(runningBalance + tender.creditTaken);

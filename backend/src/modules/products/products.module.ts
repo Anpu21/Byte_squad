@@ -10,6 +10,6 @@ import { ProductSellableUnit } from '@products/entities/product-sellable-unit.en
   imports: [TypeOrmModule.forFeature([Product, ProductSellableUnit])],
   controllers: [ProductsController],
   providers: [ProductsService, ProductsRepository],
-  exports: [ProductsService, ProductsRepository],
+  exports: [ProductsService],
 })
 export class ProductsModule {}

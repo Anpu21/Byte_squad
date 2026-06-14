@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -23,7 +23,9 @@ export class LoyaltySettingsRepository {
     await this.repo.save(this.repo.create(partial));
     const fresh = await this.find();
     if (!fresh) {
-      throw new Error('Loyalty settings row missing after save');
+      throw new InternalServerErrorException(
+        'Loyalty settings row missing after save',
+      );
     }
     return fresh;
   }

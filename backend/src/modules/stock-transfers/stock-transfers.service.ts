@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
@@ -11,10 +12,10 @@ import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-r
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { User } from '@users/entities/user.entity';
 import { StockTransfersRepository } from '@stock-transfers/stock-transfers.repository';
-import { ProductsRepository } from '@products/products.repository';
-import { BranchesRepository } from '@branches/branches.repository';
-import { InventoryRepository } from '@inventory/inventory.repository';
-import { UsersRepository } from '@users/users.repository';
+import { ProductsService } from '@products/products.service';
+import { BranchesService } from '@branches/branches.service';
+import { InventoryService } from '@inventory/inventory.service';
+import { UsersService } from '@users/users.service';
 import { CreateTransferRequestDto } from '@stock-transfers/dto/create-transfer-request.dto';
 import { CreateAdminDirectTransferDto } from '@stock-transfers/dto/create-admin-direct-transfer.dto';
 import { CreateManagerBatchTransferDto } from '@stock-transfers/dto/create-manager-batch-transfer.dto';
@@ -25,6 +26,7 @@ import {
   HISTORY_TERMINAL_STATUSES,
   ListTransferHistoryQueryDto,
 } from '@stock-transfers/dto/list-transfer-history-query.dto';
+import { TransferAnalyticsQueryDto } from '@stock-transfers/dto/transfer-analytics-query.dto';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { NotificationType } from '@common/enums/notification.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -37,7 +39,11 @@ interface ActorContext {
   role: UserRole;
 }
 
-import { SourceOption, PaginatedTransfers } from '@stock-transfers/types';
+import {
+  SourceOption,
+  PaginatedTransfers,
+  TransferAnalyticsResponse,
+} from '@stock-transfers/types';
 
 // Re-export so existing callers that imported these from this file keep working.
 export type { SourceOption, PaginatedTransfers };
@@ -58,12 +64,14 @@ function paginate<T>(
 
 @Injectable()
 export class StockTransfersService {
+  private readonly logger = new Logger(StockTransfersService.name);
+
   constructor(
     private readonly transfers: StockTransfersRepository,
-    private readonly products: ProductsRepository,
-    private readonly branches: BranchesRepository,
-    private readonly inventory: InventoryRepository,
-    private readonly users: UsersRepository,
+    private readonly products: ProductsService,
+    private readonly branches: BranchesService,
+    private readonly inventory: InventoryService,
+    private readonly users: UsersService,
     private readonly notificationsService: NotificationsService,
     private readonly notificationsGateway: NotificationsGateway,
     // Service-level transactions still need a DataSource — repos run in
@@ -102,7 +110,7 @@ export class StockTransfersService {
       destinationBranchId = actor.branchId;
     }
 
-    const destBranch = await this.branches.findById(destinationBranchId);
+    const destBranch = await this.branches.findEntityById(destinationBranchId);
     if (!destBranch) {
       throw new NotFoundException('Destination branch could not be found');
     }
@@ -207,6 +215,63 @@ export class StockTransfersService {
     return paginate(raw, page, limit);
   }
 
+  async getAnalytics(
+    actor: ActorContext,
+    query: TransferAnalyticsQueryDto,
+  ): Promise<TransferAnalyticsResponse> {
+    const from = query.from ? new Date(query.from) : null;
+    const to = query.to ? this.endOfDay(new Date(query.to)) : null;
+    if (from && Number.isNaN(from.getTime())) {
+      throw new BadRequestException('Invalid "from" date');
+    }
+    if (to && Number.isNaN(to.getTime())) {
+      throw new BadRequestException('Invalid "to" date');
+    }
+
+    const raw = await this.transfers.analytics({
+      actorRole: actor.role,
+      actorBranchId: actor.branchId,
+      branchId: query.branchId,
+      from,
+      to,
+    });
+
+    const countOf = (status: TransferStatus): number =>
+      raw.byStatus.find((s) => s.status === status)?.count ?? 0;
+    const total = raw.byStatus.reduce((sum, s) => sum + s.count, 0);
+    const round1 = (n: number | null): number | null =>
+      n != null ? Math.round(n * 10) / 10 : null;
+
+    return {
+      from: from ? from.toISOString() : null,
+      to: to ? to.toISOString() : null,
+      branchId:
+        actor.role === UserRole.ADMIN
+          ? (query.branchId ?? null)
+          : actor.branchId,
+      kpis: {
+        total,
+        pending: countOf(TransferStatus.PENDING),
+        approved: countOf(TransferStatus.APPROVED),
+        inTransit: countOf(TransferStatus.IN_TRANSIT),
+        completed: countOf(TransferStatus.COMPLETED),
+        rejectedCancelled:
+          countOf(TransferStatus.REJECTED) + countOf(TransferStatus.CANCELLED),
+        totalUnits: raw.totalUnits,
+        avgApprovalHours: round1(raw.avgApprovalHours),
+        avgFulfilmentHours: round1(raw.avgFulfilmentHours),
+      },
+      byStatus: raw.byStatus,
+      series: raw.series,
+      topProducts: raw.topProducts,
+    };
+  }
+
+  private endOfDay(d: Date): Date {
+    d.setUTCHours(23, 59, 59, 999);
+    return d;
+  }
+
   async findById(
     id: string,
     actor: ActorContext,
@@ -270,14 +335,14 @@ export class StockTransfersService {
       );
     }
 
-    const sourceBranch = await this.branches.findById(dto.sourceBranchId);
+    const sourceBranch = await this.branches.findEntityById(dto.sourceBranchId);
     if (!sourceBranch) {
       throw new NotFoundException('Source branch not found');
     }
     if (!sourceBranch.isActive) {
       throw new BadRequestException('Source branch is inactive');
     }
-    const destinationBranch = await this.branches.findById(
+    const destinationBranch = await this.branches.findEntityById(
       dto.destinationBranchId,
     );
     if (!destinationBranch) {
@@ -449,7 +514,9 @@ export class StockTransfersService {
       );
     }
 
-    const destinationBranch = await this.branches.findById(actor.branchId);
+    const destinationBranch = await this.branches.findEntityById(
+      actor.branchId,
+    );
     if (!destinationBranch) {
       throw new NotFoundException('Destination branch not found');
     }
@@ -574,7 +641,7 @@ export class StockTransfersService {
       );
     }
 
-    const sourceBranch = await this.branches.findById(dto.sourceBranchId);
+    const sourceBranch = await this.branches.findEntityById(dto.sourceBranchId);
     if (!sourceBranch) {
       throw new NotFoundException('Source branch not found');
     }
@@ -759,6 +826,21 @@ export class StockTransfersService {
     const sourceBranchId = transfer.sourceBranchId;
 
     await this.dataSource.transaction(async (manager) => {
+      // F1: re-load + re-check the transfer status inside the transaction
+      // under a row lock, so a concurrent or retried ship cannot pass a stale
+      // "APPROVED" guard and decrement the source twice.
+      const fresh = await manager
+        .getRepository(StockTransferRequest)
+        .createQueryBuilder('t')
+        .setLock('pessimistic_write')
+        .where('t.id = :id', { id })
+        .getOne();
+      if (!fresh || fresh.status !== TransferStatus.APPROVED) {
+        throw new BadRequestException(
+          `Cannot ship a transfer in status "${fresh?.status ?? 'missing'}"`,
+        );
+      }
+
       // Pessimistic lock on the source inventory row to prevent races
       // with concurrent POS sales or restocks. Repo-class methods can't
       // accept the outer EntityManager yet, so this uses raw access.
@@ -786,10 +868,10 @@ export class StockTransfersService {
       sourceInventory.quantity -= approvedQuantity;
       await manager.getRepository(Inventory).save(sourceInventory);
 
-      transfer.status = TransferStatus.IN_TRANSIT;
-      transfer.shippedByUserId = actor.id;
-      transfer.shippedAt = new Date();
-      await manager.getRepository(StockTransferRequest).save(transfer);
+      fresh.status = TransferStatus.IN_TRANSIT;
+      fresh.shippedByUserId = actor.id;
+      fresh.shippedAt = new Date();
+      await manager.getRepository(StockTransferRequest).save(fresh);
     });
 
     const updated = await this.findByIdOrThrow(id);
@@ -842,6 +924,21 @@ export class StockTransfersService {
     const approvedQuantity = transfer.approvedQuantity;
 
     await this.dataSource.transaction(async (manager) => {
+      // F1: re-load + re-check the transfer status inside the transaction
+      // under a row lock, so a concurrent or retried receive cannot pass a
+      // stale "IN_TRANSIT" guard and credit the destination twice.
+      const fresh = await manager
+        .getRepository(StockTransferRequest)
+        .createQueryBuilder('t')
+        .setLock('pessimistic_write')
+        .where('t.id = :id', { id })
+        .getOne();
+      if (!fresh || fresh.status !== TransferStatus.IN_TRANSIT) {
+        throw new BadRequestException(
+          `Cannot receive a transfer in status "${fresh?.status ?? 'missing'}"`,
+        );
+      }
+
       const inventoryRepo = manager.getRepository(Inventory);
 
       let destInventory = await inventoryRepo
@@ -869,10 +966,10 @@ export class StockTransfersService {
       }
       await inventoryRepo.save(destInventory);
 
-      transfer.status = TransferStatus.COMPLETED;
-      transfer.receivedByUserId = actor.id;
-      transfer.receivedAt = new Date();
-      await manager.getRepository(StockTransferRequest).save(transfer);
+      fresh.status = TransferStatus.COMPLETED;
+      fresh.receivedByUserId = actor.id;
+      fresh.receivedAt = new Date();
+      await manager.getRepository(StockTransferRequest).save(fresh);
     });
 
     const updated = await this.findByIdOrThrow(id);
@@ -923,18 +1020,27 @@ export class StockTransfersService {
       metadata: Record<string, unknown>;
     },
   ): Promise<void> {
-    await this.notificationsService.create({
-      userId,
-      title: payload.title,
-      message: payload.message,
-      type: NotificationType.STOCK_TRANSFER,
-      metadata: payload.metadata,
-    });
-    this.notificationsGateway.sendToUser(userId, {
-      userId,
-      title: payload.title,
-      message: payload.message,
-      type: NotificationType.STOCK_TRANSFER,
-    });
+    // Best-effort (audit finding F3): a notification failure must never roll
+    // back or surface as a 5xx on an already-committed transfer transition.
+    try {
+      await this.notificationsService.create({
+        userId,
+        title: payload.title,
+        message: payload.message,
+        type: NotificationType.STOCK_TRANSFER,
+        metadata: payload.metadata,
+      });
+      this.notificationsGateway.sendToUser(userId, {
+        userId,
+        title: payload.title,
+        message: payload.message,
+        type: NotificationType.STOCK_TRANSFER,
+      });
+    } catch (err) {
+      // Best-effort notification — must not fail the transfer, but never silent.
+      this.logger.warn(
+        `Failed to send stock-transfer notification: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
   }
 }

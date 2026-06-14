@@ -13,7 +13,9 @@ import { InventoryMatrixQueryDto } from '@admin-portal/dto/inventory-matrix-quer
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { UserRole } from '@common/enums/user-roles.enums';
+import type { BranchActor } from '@common/scope/branch-scope';
 import { APP_ROUTES } from '@common/routes/app.routes';
 
 @Controller(APP_ROUTES.ADMIN_PORTAL.BASE)
@@ -29,8 +31,8 @@ export class AdminPortalController {
 
   @Get(APP_ROUTES.ADMIN_PORTAL.BRANCHES)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
-  listBranches(): Promise<BranchWithMeta[]> {
-    return this.adminPortalService.listBranchesWithMeta();
+  listBranches(@CurrentUser() actor: BranchActor): Promise<BranchWithMeta[]> {
+    return this.adminPortalService.listBranchesWithMeta(actor);
   }
 
   @Get(APP_ROUTES.ADMIN_PORTAL.ADMINS)
@@ -46,9 +48,11 @@ export class AdminPortalController {
   @Post(APP_ROUTES.ADMIN_PORTAL.COMPARISON)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   compareBranches(
+    @CurrentUser() actor: BranchActor,
     @Body() dto: BranchComparisonDto,
   ): Promise<BranchComparisonResponse> {
     return this.adminPortalService.getBranchComparison(
+      actor,
       dto.branchIds,
       new Date(dto.startDate),
       new Date(dto.endDate),

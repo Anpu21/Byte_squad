@@ -29,7 +29,7 @@ export class CustomerOrderItem {
   @JoinColumn({ name: 'product_id' })
   product!: Product;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'decimal', precision: 12, scale: 3 })
   quantity!: number;
 
   @Column({
@@ -39,4 +39,21 @@ export class CustomerOrderItem {
     name: 'unit_price_snapshot',
   })
   unitPriceSnapshot!: number;
+
+  /** Chosen sellable unit; null = the product base unit. */
+  @Column({ type: 'uuid', name: 'unit_id', nullable: true })
+  unitId!: string | null;
+
+  @Column({ type: 'varchar', length: 64, name: 'unit_label', nullable: true })
+  unitLabel!: string | null;
+
+  /** quantity × the unit's conversionToBase — the amount inventory decrements. */
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 3,
+    name: 'base_unit_qty',
+    default: 0,
+  })
+  baseUnitQty!: number;
 }

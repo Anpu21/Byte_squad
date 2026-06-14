@@ -1,0 +1,88 @@
+import { useMemo } from 'react';
+import { ScrollText, HandCoins, Scale, Wallet, PiggyBank } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { UserRole } from '@/constants/enums';
+import { Tabs, type TabItem } from '@/components/ui/Tabs';
+import {
+    useAccountingTab,
+    type AccountingTab,
+} from '@/features/accounting/hooks/useAccountingTab';
+import { LedgerPage } from './LedgerPage';
+import { ReceivablesPage } from '@/pages/receivables/ReceivablesPage';
+import { FinancialReportsPage } from './FinancialReportsPage';
+import { ExpensesPage } from './ExpensesPage';
+import { ProfitLossPage } from './ProfitLossPage';
+
+interface AccountingTabConfig extends TabItem<AccountingTab> {
+    roles: UserRole[];
+}
+
+/**
+ * Single source of truth for the accounting hub — each tab's label, icon, the
+ * roles allowed to see it, and (below) the page it renders. Mirrors the HR
+ * workspace pattern (`AdminHrPage`), with per-tab role gating layered on top.
+ */
+const TABS: AccountingTabConfig[] = [
+    {
+        key: 'ledger',
+        label: 'Ledger',
+        Icon: ScrollText,
+        roles: [UserRole.ADMIN],
+    },
+    {
+        key: 'receivables',
+        label: 'Receivables',
+        Icon: HandCoins,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+    },
+    {
+        key: 'reports',
+        label: 'Financial reports',
+        Icon: Scale,
+        roles: [UserRole.ADMIN],
+    },
+    {
+        key: 'expenses',
+        label: 'Expenses',
+        Icon: Wallet,
+        roles: [UserRole.ADMIN, UserRole.MANAGER],
+    },
+    {
+        key: 'profit-loss',
+        label: 'Profit & Loss',
+        Icon: PiggyBank,
+        roles: [UserRole.ADMIN],
+    },
+];
+
+export function AccountingPage() {
+    const { user } = useAuth();
+    const role = user?.role as UserRole | undefined;
+
+    const allowedTabs = useMemo<AccountingTabConfig[]>(
+        () => (role ? TABS.filter((t) => t.roles.includes(role)) : []),
+        [role],
+    );
+    const allowedKeys = useMemo<AccountingTab[]>(
+        () => allowedTabs.map((t) => t.key),
+        [allowedTabs],
+    );
+
+    const { tab, setTab } = useAccountingTab(allowedKeys);
+
+    return (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Tabs
+                tabs={allowedTabs}
+                active={tab}
+                onChange={setTab}
+                ariaLabel="Accounting workspace views"
+            />
+            {tab === 'ledger' && <LedgerPage />}
+            {tab === 'receivables' && <ReceivablesPage />}
+            {tab === 'reports' && <FinancialReportsPage />}
+            {tab === 'expenses' && <ExpensesPage />}
+            {tab === 'profit-loss' && <ProfitLossPage />}
+        </div>
+    );
+}

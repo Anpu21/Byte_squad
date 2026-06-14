@@ -30,3 +30,6 @@ export type {
   CreateSaleResponse,
   CreateSaleLoyaltyResult,
 } from './create-sale-response.type';
+
+// Phase 4 (roadmap) — cashier-wise sales report row.
+export type { SalesmanReportRow } from './salesman-report-row.type';

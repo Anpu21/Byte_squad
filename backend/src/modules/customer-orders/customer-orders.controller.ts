@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { CustomerOrdersService } from '@/modules/customer-orders/customer-orders.service';
 import { CreateCustomerOrderDto } from '@/modules/customer-orders/dto/create-customer-order.dto';
+import { CheckoutCustomerOrderDto } from '@/modules/customer-orders/dto/checkout-customer-order.dto';
 import { FulfillCustomerOrderDto } from '@/modules/customer-orders/dto/fulfill-customer-order.dto';
 import { ListCustomerOrdersQueryDto } from '@/modules/customer-orders/dto/list-customer-orders-query.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -33,6 +34,22 @@ export class CustomerOrdersController {
     @CurrentUser('id') userId: string,
   ) {
     return this.service.create(dto, userId);
+  }
+
+  @Post(APP_ROUTES.CUSTOMER_ORDERS.CHECKOUT)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER)
+  checkout(
+    @Body() dto: CheckoutCustomerOrderDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.service.createCheckout(dto, userId);
+  }
+
+  @Get(APP_ROUTES.CUSTOMER_ORDERS.GROUP_BY_CODE)
+  @Public()
+  findGroup(@Param('code') code: string) {
+    return this.service.findGroup(code);
   }
 
   @Post(APP_ROUTES.CUSTOMER_ORDERS.PAYHERE_NOTIFY)

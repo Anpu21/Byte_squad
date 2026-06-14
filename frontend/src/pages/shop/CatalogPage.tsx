@@ -1,45 +1,56 @@
-import { Link, Navigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import Pill from '@/components/ui/Pill';
-import { FRONTEND_ROUTES } from '@/constants/routes';
+import { Select } from '@/components/ui/Select';
 import { useCatalogPage } from '@/features/shop-catalog/hooks/useCatalogPage';
-import { CategoryChips } from '@/features/shop-catalog/components/CategoryChips';
+import type { CatalogSort } from '@/features/shop-catalog/hooks/useCatalogPage';
+import { BranchSwitcher } from '@/features/shop-catalog/components/BranchSwitcher';
 import { ProductGrid } from '@/features/shop-catalog/components/ProductGrid';
 import { NoBranchesCard } from '@/features/shop-catalog/components/NoBranchesCard';
 import { RecommendedProductsSection } from '@/features/shop-catalog/components/RecommendedProductsSection';
 import { BuyAgainSection } from '@/features/shop-catalog/components/BuyAgainSection';
 
+const SORT_OPTIONS = [
+    { label: 'Sort: Name (A–Z)', value: 'name' },
+    { label: 'Price: Low to High', value: 'price_asc' },
+    { label: 'Price: High to Low', value: 'price_desc' },
+];
+
 export function CatalogPage() {
     const p = useCatalogPage();
-
-    if (!p.branchId) {
-        return <Navigate to={FRONTEND_ROUTES.SELECT_BRANCH} replace />;
-    }
 
     if (!p.branchesLoading && p.branches.length === 0) {
         return <NoBranchesCard />;
     }
 
+    if (!p.branchId) {
+        return (
+            <div className="py-20 text-center text-sm text-text-3">
+                Loading branches…
+            </div>
+        );
+    }
+
+    const categoryOptions = [
+        { label: 'All categories', value: '' },
+        ...p.categories.map((c) => ({ label: c, value: c })),
+    ];
+
     return (
         <div>
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold text-text-1 tracking-tight">
-                    Browse products
-                </h1>
-                <p className="text-sm text-text-2 mt-1">
-                    Showing items at{' '}
-                    <span className="text-text-1 font-medium">
-                        {p.currentBranch?.name ?? '…'}
-                    </span>
-                    . Change your pickup branch{' '}
-                    <Link
-                        to={FRONTEND_ROUTES.SHOP_PROFILE}
-                        className="text-primary hover:underline font-medium"
-                    >
-                        in your profile
-                    </Link>
-                    .
-                </p>
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-text-1 tracking-tight">
+                        Browse products
+                    </h1>
+                    <p className="text-sm text-text-2 mt-1">
+                        Add items from any branch — your cart can mix branches.
+                    </p>
+                </div>
+                <BranchSwitcher
+                    branches={p.branches}
+                    activeBranchId={p.activeBranchId}
+                    onChange={p.handleBranchChange}
+                />
             </div>
 
             {p.search && (
@@ -58,11 +69,22 @@ export function CatalogPage() {
                 </div>
             )}
 
-            <CategoryChips
-                categories={p.categories}
-                value={p.category}
-                onChange={p.setCategory}
-            />
+            <div className="mb-6 flex flex-wrap items-center gap-3">
+                <Select
+                    aria-label="Filter by category"
+                    value={p.category}
+                    onChange={p.setCategory}
+                    options={categoryOptions}
+                    className="min-w-[11rem]"
+                />
+                <Select
+                    aria-label="Sort products"
+                    value={p.sort}
+                    onChange={(v) => p.setSort(v as CatalogSort)}
+                    options={SORT_OPTIONS}
+                    className="min-w-[11rem]"
+                />
+            </div>
 
             {!p.search && !p.category && (
                 <>

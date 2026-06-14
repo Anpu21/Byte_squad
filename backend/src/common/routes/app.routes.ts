@@ -5,6 +5,14 @@
 const API_PREFIX = 'api/v1';
 
 export const APP_ROUTES = {
+  // Health — infra endpoints, intentionally NOT under API_PREFIX so
+  // orchestrators / load balancers hit a stable path.
+  HEALTH: {
+    BASE: 'health',
+    LIVE: '',
+    READY: 'ready',
+  },
+
   // Auth
   AUTH: {
     BASE: `${API_PREFIX}/auth`,
@@ -44,6 +52,14 @@ export const APP_ROUTES = {
     BY_ID: ':id',
     BY_BARCODE: 'barcode/:barcode',
     IMAGE: ':id/image',
+  },
+
+  // Managed product categories (CRUD + per-category sales analytics)
+  CATEGORIES: {
+    BASE: `${API_PREFIX}/categories`,
+    ANALYTICS: 'analytics',
+    BY_ID: ':id',
+    ARCHIVE: ':id/archive',
   },
 
   // Inventory
@@ -105,6 +121,22 @@ export const APP_ROUTES = {
     SALE_BY_ID: 'sales/:id',
     SALE_PRINT: 'sales/:id/print',
     SALE_VOID: 'sales/:id/void',
+    // Phase 2 — customer receivables (AR mirror of supplier payables).
+    RECEIVABLES: 'receivables',
+    RECEIVABLES_STATEMENT: 'receivables/:userId/statement',
+    RECEIVABLES_PAYMENTS: 'receivables/:userId/payments',
+    RECEIVABLES_CREDIT_LIMIT: 'receivables/:userId/credit-limit',
+    // Phase 2 — drawer sessions + day-end Z-report.
+    SHIFTS: 'shifts',
+    SHIFTS_CURRENT: 'shifts/current',
+    SHIFTS_OPEN: 'shifts/open',
+    SHIFTS_CLOSE: 'shifts/close',
+    // Phase 4 — automatic discount schemes (date-window / qty-slab rules).
+    SCHEMES: 'schemes',
+    SCHEMES_ACTIVE: 'schemes/active',
+    SCHEME_BY_ID: 'schemes/:id',
+    // Phase 4 — cashier-wise sales report.
+    REPORTS_SALESMAN: 'reports/salesman',
   },
 
   // Accounting
@@ -116,6 +148,15 @@ export const APP_ROUTES = {
     EXPENSE_BY_ID: 'expenses/:id',
     EXPENSE_REVIEW: 'expenses/:id/review',
     PROFIT_LOSS: 'profit-loss',
+    // Phase 3 — chart of accounts.
+    ACCOUNTS: 'accounts',
+    JOURNALS: 'journals',
+    TRIAL_BALANCE: 'reports/trial-balance',
+    BALANCE_SHEET: 'reports/balance-sheet',
+    DAY_BOOK: 'reports/day-book',
+    PERIODS: 'periods',
+    PERIODS_LOCK: 'periods/lock',
+    PERIODS_UNLOCK: 'periods/unlock',
   },
 
   // Notifications
@@ -156,7 +197,9 @@ export const APP_ROUTES = {
   // Customer pickup orders (cart -> order -> QR -> fulfill at counter)
   CUSTOMER_ORDERS: {
     BASE: `${API_PREFIX}/customer-orders`,
+    CHECKOUT: 'checkout',
     MINE: 'mine',
+    GROUP_BY_CODE: 'group/:code',
     BY_CODE: 'code/:code',
     BY_ID: ':id',
     CANCEL: ':id/cancel',
@@ -200,6 +243,7 @@ export const APP_ROUTES = {
       BULK: 'bulk',
       CHECK_IN: 'check-in',
       CHECK_OUT: 'check-out',
+      ME: 'me',
     },
     LEAVES: {
       BASE: `${API_PREFIX}/hr/leaves`,
@@ -236,6 +280,7 @@ export const APP_ROUTES = {
     MY_REQUESTS: 'my-requests',
     INCOMING: 'incoming',
     HISTORY: 'history',
+    ANALYTICS: 'analytics',
     ADMIN_DIRECT: 'admin-direct',
     MANAGER_BATCH: 'manager-batch',
     BY_ID: ':id',
@@ -245,6 +290,59 @@ export const APP_ROUTES = {
     CANCEL: ':id/cancel',
     SHIP: ':id/ship',
     RECEIVE: ':id/receive',
+  },
+
+  // Shipments (courier-driven delivery tracking over transfer lines)
+  SHIPMENTS: {
+    BASE: `${API_PREFIX}/shipments`,
+    BY_ID: ':id',
+    ASSIGN_COURIER: ':id/assign-courier',
+    DISPATCH: ':id/dispatch',
+    CHECKPOINT: ':id/checkpoint',
+    OUT_FOR_DELIVERY: ':id/out-for-delivery',
+    DELIVER: ':id/deliver',
+    RETURN: ':id/return',
+    CANCEL: ':id/cancel',
+  },
+
+  // Append-only activity log (global mutation interceptor)
+  AUDIT: {
+    BASE: `${API_PREFIX}/audit/logs`,
+  },
+
+  // Supplier master (the "party" registry behind purchases)
+  SUPPLIERS: {
+    BASE: `${API_PREFIX}/suppliers`,
+    BY_ID: ':id',
+  },
+
+  // Purchases — BUSY-style procurement cycle (PO → GRN → bills → payments)
+  PURCHASES: {
+    BASE: `${API_PREFIX}/purchases`,
+    ORDERS: {
+      BASE: `${API_PREFIX}/purchases/orders`,
+      BY_ID: ':id',
+      SEND: ':id/send',
+      CANCEL: ':id/cancel',
+    },
+    GRNS: {
+      BASE: `${API_PREFIX}/purchases/grns`,
+      BY_ID: ':id',
+      VOID: ':id/void',
+    },
+    PAYMENTS: {
+      BASE: `${API_PREFIX}/purchases/payments`,
+      BY_ID: ':id',
+    },
+    RETURNS: {
+      BASE: `${API_PREFIX}/purchases/returns`,
+      BY_ID: ':id',
+    },
+    REPORTS: {
+      BASE: `${API_PREFIX}/purchases/reports`,
+      OUTSTANDING: 'outstanding',
+      AGEING: 'ageing',
+    },
   },
 } as const;
 

@@ -75,6 +75,13 @@ export const queryKeys = {
         byBranch: (branchId: string, params?: IInventoryParams) =>
             ['inventory', 'by-branch', branchId, params ?? {}] as const,
     },
+    categories: {
+        all: () => ['categories'] as const,
+        list: (includeInactive: boolean) =>
+            ['categories', 'list', includeInactive] as const,
+        analytics: (params: unknown) =>
+            ['categories', 'analytics', params] as const,
+    },
     expiry: {
         report: (params?: IExpiryReportParams) =>
             ['expiry', 'report', params ?? {}] as const,
@@ -109,6 +116,8 @@ export const queryKeys = {
         sourceOptions: (id: string) =>
             ['stock-transfers', 'source-options', id] as const,
         counts: () => ['stock-transfers', 'counts'] as const,
+        analytics: (params: unknown) =>
+            ['stock-transfers', 'analytics', params] as const,
     },
     branches: {
         all: () => ['branches'] as const,
@@ -166,11 +175,73 @@ export const queryKeys = {
         employee: (id: string) => ['hr', 'employee', id] as const,
         attendance: (params: ListAttendanceQueryKey) =>
             ['hr', 'attendance', params] as const,
+        myAttendance: (params: { startDate: string; endDate: string }) =>
+            ['hr', 'attendance', 'me', params] as const,
         todayAttendance: () => ['hr', 'attendance', 'today'] as const,
         leaves: (params: ListLeavesQueryKey) => ['hr', 'leaves', params] as const,
         leave: (id: string) => ['hr', 'leave', id] as const,
         payroll: (params: ListPayrollQueryKey) => ['hr', 'payroll', params] as const,
         payrollOne: (id: string) => ['hr', 'payroll', id] as const,
+    },
+    purchases: {
+        all: () => ['purchases'] as const,
+        suppliers: (params: {
+            search?: string;
+            status?: string;
+            limit?: number;
+            offset?: number;
+        }) => ['purchases', 'suppliers', params] as const,
+        supplier: (id: string) => ['purchases', 'supplier', id] as const,
+        grns: (params: {
+            supplierId?: string;
+            branchId?: string;
+            status?: string;
+            paymentStatus?: string;
+            startDate?: string;
+            endDate?: string;
+            limit?: number;
+            offset?: number;
+        }) => ['purchases', 'grns', params] as const,
+        grn: (id: string) => ['purchases', 'grn', id] as const,
+        payments: (params: {
+            supplierId?: string;
+            limit?: number;
+            offset?: number;
+        }) => ['purchases', 'payments', params] as const,
+        orders: (params: {
+            supplierId?: string;
+            status?: string;
+            limit?: number;
+            offset?: number;
+        }) => ['purchases', 'orders', params] as const,
+        outstanding: () => ['purchases', 'outstanding'] as const,
+        ageing: () => ['purchases', 'ageing'] as const,
+        returnsForGrn: (grnId: string) =>
+            ['purchases', 'returns', grnId] as const,
+    },
+    receivables: {
+        all: () => ['receivables'] as const,
+        list: () => ['receivables', 'list'] as const,
+        statement: (userId: string) =>
+            ['receivables', 'statement', userId] as const,
+    },
+    shifts: {
+        all: () => ['shifts'] as const,
+        current: () => ['shifts', 'current'] as const,
+    },
+    audit: {
+        logs: (params: Record<string, string | number | undefined>) =>
+            ['audit', 'logs', params] as const,
+    },
+    shipments: {
+        all: () => ['shipments'] as const,
+        list: (params: {
+            status?: string
+            branchId?: string
+            page?: number
+            limit?: number
+        }) => ['shipments', 'list', params] as const,
+        detail: (id: string) => ['shipments', 'detail', id] as const,
     },
     adminLoyalty: {
         customers: (params: {
@@ -205,6 +276,14 @@ export const queryKeys = {
             limit: number;
         }) => ['ledger', 'entries', filters] as const,
         summary: () => ['ledger', 'summary'] as const,
+        accounts: () => ['ledger', 'accounts'] as const,
+        trialBalance: (params: Record<string, string | undefined>) =>
+            ['ledger', 'trial-balance', params] as const,
+        balanceSheet: (params: Record<string, string | undefined>) =>
+            ['ledger', 'balance-sheet', params] as const,
+        dayBook: (params: Record<string, string | undefined>) =>
+            ['ledger', 'day-book', params] as const,
+        periods: (year: number) => ['ledger', 'periods', year] as const,
     },
     accounting: {
         profitLoss: (startDate: string, endDate: string) =>
@@ -230,5 +309,14 @@ export const queryKeys = {
         adminDashboard: () => ['pos', 'adminDashboard'] as const,
         myTransactions: () => ['pos', 'myTransactions'] as const,
         allTransactions: () => ['pos', 'allTransactions'] as const,
+        schemes: (isActive?: boolean) =>
+            ['pos', 'schemes', { isActive }] as const,
+        schemesAll: () => ['pos', 'schemes'] as const,
+        activeSchemes: () => ['pos', 'activeSchemes'] as const,
+        salesmanReport: (params: {
+            startDate?: string;
+            endDate?: string;
+            branchId?: string;
+        }) => ['pos', 'salesmanReport', params] as const,
     },
 } as const;

@@ -4,6 +4,8 @@ import type {
     ICustomerOrder,
     ICustomerOrderCreateResponse,
     ICustomerOrderCreatePayload,
+    ICheckoutPayload,
+    ICheckoutResponse,
     IFulfillOrderPayload,
     CustomerOrderStatus,
     ISale,
@@ -29,9 +31,26 @@ export const customerOrdersService = {
         return response.data.data;
     },
 
+    checkout: async (
+        payload: ICheckoutPayload,
+    ): Promise<ICheckoutResponse> => {
+        const response = await api.post<IApiResponse<ICheckoutResponse>>(
+            '/customer-orders/checkout',
+            payload,
+        );
+        return response.data.data;
+    },
+
     findByCode: async (code: string): Promise<ICustomerOrder> => {
         const response = await api.get<IApiResponse<ICustomerOrder>>(
             `/customer-orders/code/${code}`,
+        );
+        return response.data.data;
+    },
+
+    findGroup: async (code: string): Promise<ICustomerOrder[]> => {
+        const response = await api.get<IApiResponse<ICustomerOrder[]>>(
+            `/customer-orders/group/${code}`,
         );
         return response.data.data;
     },

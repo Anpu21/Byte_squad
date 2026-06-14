@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from './users.service';
 import { UsersRepository } from './users.repository';
-import { BranchesRepository } from '@branches/branches.repository';
+import { BranchesService } from '@branches/branches.service';
 import { EmailService } from '../email/email.service';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
@@ -59,7 +59,7 @@ function makeTarget(overrides: Partial<User> = {}): User {
 describe('UsersService', () => {
   let service: UsersService;
   let users: jest.Mocked<UsersRepository>;
-  let branches: jest.Mocked<BranchesRepository>;
+  let branches: jest.Mocked<BranchesService>;
   let emailService: jest.Mocked<EmailService>;
   let loyalty: jest.Mocked<LoyaltyService>;
 
@@ -73,15 +73,15 @@ describe('UsersService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     };
-    const branchesMock: Partial<jest.Mocked<BranchesRepository>> = {
-      findById: jest.fn(),
+    const branchesMock: Partial<jest.Mocked<BranchesService>> = {
+      findEntityById: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: UsersRepository, useValue: usersMock },
-        { provide: BranchesRepository, useValue: branchesMock },
+        { provide: BranchesService, useValue: branchesMock },
         {
           provide: EmailService,
           useValue: {
@@ -110,7 +110,7 @@ describe('UsersService', () => {
 
     service = module.get(UsersService);
     users = module.get(UsersRepository);
-    branches = module.get(BranchesRepository);
+    branches = module.get(BranchesService);
     emailService = module.get(EmailService);
     loyalty = module.get(LoyaltyService);
   });
@@ -154,7 +154,7 @@ describe('UsersService', () => {
         role: UserRole.CUSTOMER,
         email: 'c@x',
       } as User);
-      branches.findById.mockResolvedValue({
+      branches.findEntityById.mockResolvedValue({
         id: 'b1',
         name: 'X',
         isActive: false,

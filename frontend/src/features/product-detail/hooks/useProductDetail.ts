@@ -1,54 +1,74 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import toast from 'react-hot-toast';
-import axios from 'axios';
 import { shopProductsService } from '@/services/shop-products.service';
-import { userService } from '@/services/user.service';
-import { addToCart, clearShopCart } from '@/store/slices/shopCartSlice';
-import { setUserBranch } from '@/store/slices/authSlice';
-import { selectShopCartItems } from '@/store/selectors/shopCart';
+import { addToCart } from '@/store/slices/shopCartSlice';
+import { setActiveBranch } from '@/store/slices/shopBranchSlice';
+import { selectActiveBranchId } from '@/store/selectors/shopBranch';
 import { useAuth } from '@/hooks/useAuth';
-import { useConfirm } from '@/hooks/useConfirm';
 import { queryKeys } from '@/lib/queryKeys';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import type { IShopProduct } from '@/types';
+import type { IShopProduct, IShopSellableUnit } from '@/types';
 
 export function useProductDetail() {
     const { id } = useParams<{ id: string }>();
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
-    const confirm = useConfirm();
     const { user } = useAuth();
-    const cartItems = useAppSelector(selectShopCartItems);
-    const userBranchId = user?.branchId ?? null;
+    const activeBranchId = useAppSelector(selectActiveBranchId);
+    const branchId = activeBranchId ?? user?.branchId ?? null;
 
     const [qty, setQty] = useState(1);
+    const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+
+    const branchesQuery = useQuery({
+        queryKey: queryKeys.shop.branches(),
+        queryFn: shopProductsService.listBranches,
+    });
+    const branchName = useMemo(
+        () =>
+            branchesQuery.data?.find((b) => b.id === branchId)?.name ?? '',
+        [branchesQuery.data, branchId],
+    );
 
     const { data: product, isLoading } = useQuery({
-        queryKey: queryKeys.shop.publicProduct(id ?? '', userBranchId),
+        queryKey: queryKeys.shop.publicProduct(id ?? '', branchId),
         queryFn: () =>
-            shopProductsService.getProduct(id!, userBranchId ?? undefined),
+            shopProductsService.getProduct(id!, branchId ?? undefined),
         enabled: !!id,
     });
 
     const { data: recommendedProducts = [] } = useQuery({
         queryKey: queryKeys.shop.recommended({
-            branchId: userBranchId,
+            branchId,
             productId: id,
             category: product?.category,
             limit: 4,
         }),
         queryFn: () =>
             shopProductsService.listRecommended({
-                branchId: userBranchId!,
+                branchId: branchId!,
                 productId: id,
                 category: product?.category,
                 limit: 4,
             }),
-        enabled: Boolean(userBranchId && id && product),
+        enabled: Boolean(branchId && id && product),
     });
+
+    const selectedUnit: IShopSellableUnit | null = useMemo(() => {
+        if (!product) return null;
+        return (
+            product.sellableUnits.find((u) => u.id === selectedUnitId) ??
+            product.sellableUnits.find((u) => u.isBase) ??
+            null
+        );
+    }, [product, selectedUnitId]);
+
+    const unitPrice = selectedUnit
+        ? selectedUnit.sellingPrice
+        : (product?.sellingPrice ?? 0);
 
     const availableIds = product?.availableBranches.map((b) => b.id) ?? [];
     const isOutEverywhere =
@@ -56,52 +76,29 @@ export function useProductDetail() {
     const currentBranchHasIt = !!product && product.stockStatus !== 'out';
     const branchSwitchNeeded =
         !!product && !currentBranchHasIt && availableIds.length > 0;
+    const targetBranch = product?.availableBranches[0] ?? null;
 
-    const targetBranch =
-        product?.availableBranches[0] ?? null;
+    // Switch the browsing branch — keeps the cart (items can span branches).
+    const handleSwitchBranch = () => {
+        if (targetBranch) dispatch(setActiveBranch(targetBranch.id));
+    };
 
     const handleAdd = async (): Promise<boolean> => {
-        if (!product) return false;
-        if (isOutEverywhere) {
-            toast.error("This product isn't stocked anywhere right now");
+        if (!product || !branchId) return false;
+        if (product.stockStatus === 'out') {
+            toast.error('Out of stock at this branch');
             return false;
         }
-
-        if (branchSwitchNeeded) {
-            if (cartItems.length > 0) {
-                const ok = await confirm({
-                    title: 'Switch pickup branch?',
-                    body: `This item is at ${targetBranch?.name ?? 'another branch'}. Switching will clear your cart and update your profile pickup branch.`,
-                    confirmLabel: 'Switch & clear cart',
-                    tone: 'danger',
-                });
-                if (!ok) return false;
-                dispatch(clearShopCart());
-            }
-            if (targetBranch) {
-                try {
-                    await userService.updateMyBranch(targetBranch.id);
-                    dispatch(setUserBranch(targetBranch.id));
-                } catch (err: unknown) {
-                    if (axios.isAxiosError(err)) {
-                        const data = err.response?.data as
-                            | { message?: string }
-                            | undefined;
-                        toast.error(data?.message ?? 'Could not switch branch');
-                    } else {
-                        toast.error('Could not switch branch');
-                    }
-                    return false;
-                }
-            }
-        }
-
         dispatch(
             addToCart({
                 productId: product.id,
+                branchId,
+                branchName,
                 name: product.name,
-                sellingPrice: product.sellingPrice,
+                sellingPrice: unitPrice,
                 imageUrl: product.imageUrl,
+                unitId: selectedUnit ? selectedUnit.id : null,
+                unitLabel: selectedUnit ? selectedUnit.name : product.baseUnit,
                 quantity: qty,
             }),
         );
@@ -115,13 +112,19 @@ export function useProductDetail() {
     };
 
     const handleAddRecommended = (recommended: IShopProduct) => {
-        if (recommended.stockStatus === 'out') return;
+        if (recommended.stockStatus === 'out' || !branchId) return;
+        const base =
+            recommended.sellableUnits.find((u) => u.isBase) ?? null;
         dispatch(
             addToCart({
                 productId: recommended.id,
+                branchId,
+                branchName,
                 name: recommended.name,
-                sellingPrice: recommended.sellingPrice,
+                sellingPrice: base ? base.sellingPrice : recommended.sellingPrice,
                 imageUrl: recommended.imageUrl,
+                unitId: base ? base.id : null,
+                unitLabel: base ? base.name : recommended.baseUnit,
             }),
         );
         toast.success(`${recommended.name} added`);
@@ -133,9 +136,15 @@ export function useProductDetail() {
         qty,
         increment: () => setQty((q) => q + 1),
         decrement: () => setQty((q) => Math.max(1, q - 1)),
+        units: product?.sellableUnits ?? [],
+        // Effective unit id (falls back to base) so the unit <Select> stays controlled.
+        selectedUnitId: selectedUnit?.id ?? null,
+        setSelectedUnitId,
+        unitPrice,
         isOutEverywhere,
         branchSwitchNeeded,
         targetBranch,
+        handleSwitchBranch,
         recommendedProducts,
         handleAddRecommended,
         handleAdd,

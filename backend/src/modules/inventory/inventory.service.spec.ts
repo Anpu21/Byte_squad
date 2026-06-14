@@ -3,13 +3,13 @@ import { Test } from '@nestjs/testing';
 import { InventoryService } from './inventory.service';
 import { InventoryRepository } from './inventory.repository';
 import { Inventory } from './entities/inventory.entity';
-import { ProductsRepository } from '@products/products.repository';
+import { ProductsService } from '@products/products.service';
 import { Product } from '@products/entities/product.entity';
 
 describe('InventoryService', () => {
   let service: InventoryService;
   let repo: jest.Mocked<InventoryRepository>;
-  let products: jest.Mocked<ProductsRepository>;
+  let products: jest.Mocked<ProductsService>;
 
   beforeEach(async () => {
     const repoMock: Partial<jest.Mocked<InventoryRepository>> = {
@@ -20,7 +20,7 @@ describe('InventoryService', () => {
       findLowStock: jest.fn(),
       findByBranchPaged: jest.fn(),
     };
-    const productsMock: Partial<jest.Mocked<ProductsRepository>> = {
+    const productsMock: Partial<jest.Mocked<ProductsService>> = {
       findById: jest.fn().mockResolvedValue({
         id: 'p',
         baseUnit: 'unit',
@@ -31,13 +31,13 @@ describe('InventoryService', () => {
       providers: [
         InventoryService,
         { provide: InventoryRepository, useValue: repoMock },
-        { provide: ProductsRepository, useValue: productsMock },
+        { provide: ProductsService, useValue: productsMock },
       ],
     }).compile();
 
     service = module.get(InventoryService);
     repo = module.get(InventoryRepository);
-    products = module.get(ProductsRepository);
+    products = module.get(ProductsService);
   });
 
   describe('checkLowStockByProductAndBranch', () => {

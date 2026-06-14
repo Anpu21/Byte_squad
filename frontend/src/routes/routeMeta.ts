@@ -26,12 +26,19 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     [FRONTEND_ROUTES.RETURN_NEW]: { title: 'New return', crumbs: ['Inventory', 'Returns', 'New'] },
     [FRONTEND_ROUTES.INVENTORY_ADD]: { title: 'New product', crumbs: ['Inventory', 'Products', 'Add new'] },
     [FRONTEND_ROUTES.INVENTORY_EDIT]: { title: 'Edit product', crumbs: ['Inventory', 'Products', 'Edit'] },
+    [FRONTEND_ROUTES.PURCHASES]: { title: 'Purchases', crumbs: ['Inventory', 'Purchases'] },
 
-    [FRONTEND_ROUTES.POS]: { title: 'Point of Sale', crumbs: ['Operations', 'POS'] },
-    [FRONTEND_ROUTES.TRANSACTIONS]: { title: 'Transactions', crumbs: ['Operations', 'Transactions'] },
-    [FRONTEND_ROUTES.SCAN_ORDER]: { title: 'Scan pickup order', crumbs: ['POS', 'Scan pickup'] },
+    [FRONTEND_ROUTES.POS]: { title: 'Point of Sale', crumbs: ['Sales', 'POS'] },
+    [FRONTEND_ROUTES.SALES]: { title: 'Sales', crumbs: ['Sales'] },
+    [FRONTEND_ROUTES.TRANSACTIONS]: { title: 'Transactions', crumbs: ['Sales', 'Transactions'] },
 
+    [FRONTEND_ROUTES.ACCOUNTING]: { title: 'Accounting', crumbs: ['Accounting'] },
     [FRONTEND_ROUTES.LEDGER]: { title: 'General ledger', crumbs: ['Accounting', 'Ledger'] },
+    [FRONTEND_ROUTES.RECEIVABLES]: { title: 'Receivables', crumbs: ['Accounting', 'Receivables'] },
+    [FRONTEND_ROUTES.FINANCIAL_REPORTS]: { title: 'Financial reports', crumbs: ['Accounting', 'Reports'] },
+    [FRONTEND_ROUTES.ADMIN_AUDIT]: { title: 'Audit log', crumbs: ['System', 'Audit'] },
+    [FRONTEND_ROUTES.ADMIN_SCHEMES]: { title: 'Discount schemes', crumbs: ['Operations', 'Schemes'] },
+    [FRONTEND_ROUTES.REPORTS]: { title: 'Reports', crumbs: ['Finance', 'Reports'] },
     [FRONTEND_ROUTES.EXPENSES]: { title: 'Expenses', crumbs: ['Accounting', 'Expenses'] },
     [FRONTEND_ROUTES.PROFIT_LOSS]: { title: 'Profit & Loss', crumbs: ['Accounting', 'Profit & Loss'] },
 

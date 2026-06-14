@@ -13,6 +13,7 @@ import storage from 'redux-persist/lib/storage';
 import cartReducer from './slices/cartSlice';
 import authReducer from './slices/authSlice';
 import shopCartReducer from './slices/shopCartSlice';
+import shopBranchReducer from './slices/shopBranchSlice';
 import adminContextReducer from './slices/adminContextSlice';
 import { migrateLegacyPersistedState } from './migrations';
 
@@ -22,6 +23,7 @@ const rootReducer = combineReducers({
     cart: cartReducer,
     auth: authReducer,
     shopCart: shopCartReducer,
+    shopBranch: shopBranchReducer,
     adminContext: adminContextReducer,
 });
 
@@ -32,7 +34,7 @@ const persistedReducer = persistReducer(
         storage,
         // POS `cart` is intentionally session-scoped — the register clears
         // on reload. Only persist auth / shopCart / adminContext.
-        whitelist: ['auth', 'shopCart', 'adminContext'],
+        whitelist: ['auth', 'shopCart', 'shopBranch', 'adminContext'],
     },
     rootReducer,
 );

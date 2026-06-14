@@ -26,6 +26,7 @@ export function useTransferRequestsPage() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const [shippingId, setShippingId] = useState<string | null>(null);
+    const [receivingId, setReceivingId] = useState<string | null>(null);
 
     const tab = useMemo<ScopeTab>(() => {
         const raw = searchParams.get(TAB_PARAM);
@@ -72,6 +73,23 @@ export function useTransferRequestsPage() {
         }
     };
 
+    const handleReceive = async (transfer: IStockTransferRequest) => {
+        setReceivingId(transfer.id);
+        try {
+            await stockTransfersService.receive(transfer.id);
+            toast.success('Transfer received');
+            myRequests.refetch();
+        } catch (err) {
+            const message =
+                axios.isAxiosError(err) && err.response?.data?.message
+                    ? String(err.response.data.message)
+                    : 'Failed to receive transfer';
+            toast.error(message);
+        } finally {
+            setReceivingId(null);
+        }
+    };
+
     return {
         tab,
         setTab,
@@ -81,6 +99,8 @@ export function useTransferRequestsPage() {
         incomingCount: incoming.total,
         shippingId,
         handleShip,
+        receivingId,
+        handleReceive,
         goNew: () => navigate(FRONTEND_ROUTES.TRANSFERS_NEW),
         goDetail: (id: string) =>
             navigate(FRONTEND_ROUTES.TRANSFER_DETAIL.replace(':id', id)),

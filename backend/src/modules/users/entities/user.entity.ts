@@ -73,6 +73,19 @@ export class User {
   })
   currentBalance!: number;
 
+  /**
+   * Max credit a customer may carry (`currentBalance` ceiling at POS
+   * checkout). NULL = unlimited — preserves pre-limit behavior.
+   */
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'credit_limit',
+    nullable: true,
+  })
+  creditLimit!: number | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

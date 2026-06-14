@@ -1,26 +1,23 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Branch } from '@branches/entities/branch.entity';
-import { Sale } from '@pos/entities/sale.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
-import { Product } from '@products/entities/product.entity';
-import { Expense } from '@accounting/entities/expense.entity';
-import { BranchesRepository } from '@branches/branches.repository';
-import { UsersRepository } from '@users/users.repository';
-import { InventoryRepository } from '@inventory/inventory.repository';
+import { BranchesService } from '@branches/branches.service';
+import { UsersService } from '@users/users.service';
+import { InventoryService } from '@inventory/inventory.service';
+import { AdminPortalReportsRepository } from '@admin-portal/admin-portal-reports.repository';
 import { InventoryMatrixQueryDto } from '@admin-portal/dto/inventory-matrix-query.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
-import { TransactionType } from '@common/enums/transaction.enum';
+import {
+  allowedBranchIds,
+  assertBranchScope,
+  type BranchActor,
+} from '@common/scope/branch-scope';
 
-// Documented Rules.md §7 exception: admin-portal owns no entity of its own —
-// it composes cross-domain reporting that doesn't naturally fit any single
-// domain repo. Simple read-by-id / count-by-branch operations go through the
-// extracted repos below; bespoke aggregations (sales × products × expenses
-// joined for per-branch comparison) stay inline with @InjectRepository on
-// Sale / SaleItem / Product / Expense to avoid bloating those
-// repos with admin-only reporting helpers.
+// admin-portal owns no entity of its own — it composes cross-domain reporting.
+// Simple read-by-id / count-by-branch operations go through the domain repos
+// (BranchesRepository / UsersRepository / InventoryRepository); the bespoke
+// admin aggregations (sales × products × expenses) live in the DataSource-
+// injected AdminPortalReportsRepository, so no TypeORM leaks into this service.
 
 import {
   BranchPerformance,
@@ -62,17 +59,10 @@ export type {
 @Injectable()
 export class AdminPortalService {
   constructor(
-    private readonly branches: BranchesRepository,
-    private readonly users: UsersRepository,
-    private readonly inventory: InventoryRepository,
-    @InjectRepository(Sale)
-    private readonly transactionRepo: Repository<Sale>,
-    @InjectRepository(SaleItem)
-    private readonly transactionItemRepo: Repository<SaleItem>,
-    @InjectRepository(Product)
-    private readonly productRepo: Repository<Product>,
-    @InjectRepository(Expense)
-    private readonly expenseRepo: Repository<Expense>,
+    private readonly branches: BranchesService,
+    private readonly users: UsersService,
+    private readonly inventory: InventoryService,
+    private readonly reports: AdminPortalReportsRepository,
   ) {}
 
   async getOverview(): Promise<OverviewResponse> {
@@ -99,8 +89,11 @@ export class AdminPortalService {
     return { summary, branches: performance, alerts };
   }
 
-  async listBranchesWithMeta(): Promise<BranchWithMeta[]> {
-    const branches = await this.branches.findAllSortedByName();
+  async listBranchesWithMeta(actor: BranchActor): Promise<BranchWithMeta[]> {
+    const all = await this.branches.findAllSortedByName();
+    // Non-admins see only their own branch (multi-tenant safety).
+    const allowed = allowedBranchIds(actor);
+    const branches = allowed ? all.filter((b) => allowed.includes(b.id)) : all;
 
     return Promise.all(
       branches.map(async (branch) => {
@@ -151,6 +144,7 @@ export class AdminPortalService {
   }
 
   async getBranchComparison(
+    actor: BranchActor,
     branchIds: string[],
     startDate: Date,
     endDate: Date,
@@ -160,6 +154,10 @@ export class AdminPortalService {
     }
     if (startDate > endDate) {
       throw new BadRequestException('startDate must be before endDate');
+    }
+    // Non-admins may only compare their own branch (multi-tenant safety).
+    for (const branchId of branchIds) {
+      assertBranchScope(actor, branchId);
     }
 
     const branches = await this.branches.findByIds(branchIds);
@@ -217,38 +215,18 @@ export class AdminPortalService {
       isActive: b.isActive,
     }));
 
-    const productQb = this.productRepo
-      .createQueryBuilder('p')
-      .where('p.is_active = :active', { active: true })
-      .orderBy('p.name', 'ASC');
-
-    if (query.search) {
-      productQb.andWhere('(p.name ILIKE :q OR p.barcode ILIKE :q)', {
-        q: `%${query.search}%`,
-      });
-    }
-    if (query.category) {
-      productQb.andWhere('p.category = :category', {
-        category: query.category,
-      });
-    }
-
     // When `lowStockOnly` is set we cannot reliably paginate at the SQL layer
     // because the flag depends on per-branch thresholds in the inventory rows.
-    // Fetch the full filtered product list and post-filter + paginate in JS.
-    let products: Product[];
-    let total = 0;
-
-    if (query.lowStockOnly) {
-      products = await productQb.getMany();
-    } else {
-      const [rows, count] = await productQb
-        .skip(offset)
-        .take(limit)
-        .getManyAndCount();
-      products = rows;
-      total = count;
-    }
+    // The repo returns the full filtered list and we post-filter + paginate in JS.
+    const { products, total } = await this.reports.findProductsForMatrix(
+      {
+        search: query.search,
+        category: query.category,
+        lowStockOnly: query.lowStockOnly,
+      },
+      offset,
+      limit,
+    );
 
     if (products.length === 0) {
       return {
@@ -351,17 +329,7 @@ export class AdminPortalService {
   ): Promise<BranchPerformance> {
     const [salesAgg, staffCount, activeProducts, lowStockItems, managerUser] =
       await Promise.all([
-        this.transactionRepo
-          .createQueryBuilder('txn')
-          .select('COALESCE(SUM(txn.total), 0)', 'total')
-          .addSelect('COUNT(txn.id)', 'count')
-          .where('txn.branch_id = :branchId', { branchId: branch.id })
-          .andWhere('txn.type = :type', { type: TransactionType.SALE })
-          .andWhere('txn.created_at BETWEEN :start AND :end', {
-            start: todayStart,
-            end: todayEnd,
-          })
-          .getRawOne<{ total: string; count: string }>(),
+        this.reports.branchSalesAggregate(branch.id, todayStart, todayEnd),
         this.users.countByBranch(branch.id),
         this.inventory.countActiveForBranch(branch.id),
         this.inventory.countLowStockForBranch(branch.id),
@@ -389,51 +357,10 @@ export class AdminPortalService {
     endDate: Date,
   ): Promise<BranchComparisonEntry> {
     const [salesAgg, expensesAgg, staffCount, topProducts] = await Promise.all([
-      this.transactionRepo
-        .createQueryBuilder('txn')
-        .select('COALESCE(SUM(txn.total), 0)', 'total')
-        .addSelect('COUNT(txn.id)', 'count')
-        .where('txn.branch_id = :branchId', { branchId: branch.id })
-        .andWhere('txn.type = :type', { type: TransactionType.SALE })
-        .andWhere('txn.created_at BETWEEN :start AND :end', {
-          start: startDate,
-          end: endDate,
-        })
-        .getRawOne<{ total: string; count: string }>(),
-      this.expenseRepo
-        .createQueryBuilder('exp')
-        .select('COALESCE(SUM(exp.amount), 0)', 'total')
-        .where('exp.branch_id = :branchId', { branchId: branch.id })
-        .andWhere('exp.expense_date BETWEEN :start AND :end', {
-          start: startDate,
-          end: endDate,
-        })
-        .getRawOne<{ total: string }>(),
+      this.reports.branchSalesAggregate(branch.id, startDate, endDate),
+      this.reports.branchExpensesTotal(branch.id, startDate, endDate),
       this.users.countByBranch(branch.id),
-      this.transactionItemRepo
-        .createQueryBuilder('item')
-        .innerJoin('item.sale', 'txn')
-        .innerJoin('item.product', 'product')
-        .select('product.id', 'productId')
-        .addSelect('product.name', 'productName')
-        .addSelect('SUM(item.quantity)', 'quantity')
-        .addSelect('SUM(item.line_total)', 'revenue')
-        .where('txn.branch_id = :branchId', { branchId: branch.id })
-        .andWhere('txn.type = :type', { type: TransactionType.SALE })
-        .andWhere('txn.created_at BETWEEN :start AND :end', {
-          start: startDate,
-          end: endDate,
-        })
-        .groupBy('product.id')
-        .addGroupBy('product.name')
-        .orderBy('SUM(item.line_total)', 'DESC')
-        .limit(5)
-        .getRawMany<{
-          productId: string;
-          productName: string;
-          quantity: string;
-          revenue: string;
-        }>(),
+      this.reports.branchTopProducts(branch.id, startDate, endDate),
     ]);
 
     const revenue = Number(salesAgg?.total ?? 0);

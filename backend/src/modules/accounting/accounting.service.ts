@@ -4,15 +4,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { Expense } from '@accounting/entities/expense.entity';
-import { AccountingRepository } from '@accounting/accounting.repository';
-// TODO Phase C8 — replace these cross-module borrowings with PosRepository /
-// TransactionItemsRepository once POS migrates.
-import { Sale } from '@pos/entities/sale.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
+import {
+  AccountingRepository,
+  LedgerPostInput,
+} from '@accounting/accounting.repository';
+import { AccountsRepository } from '@accounting/accounts.repository';
+import { Account } from '@accounting/entities/account.entity';
+import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+import { EntityManager } from 'typeorm';
+import { ProfitLossSalesRepository } from '@accounting/profit-loss-sales.repository';
 import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
 import { ReviewExpenseDto } from '@accounting/dto/review-expense.dto';
 import { ExpenseStatus } from '@common/enums/expense-status.enum';
@@ -43,11 +45,28 @@ export type {
 export class AccountingService {
   constructor(
     private readonly accounting: AccountingRepository,
-    @InjectRepository(Sale)
-    private readonly transactionRepository: Repository<Sale>,
-    @InjectRepository(SaleItem)
-    private readonly transactionItemRepository: Repository<SaleItem>,
+    private readonly accounts: AccountsRepository,
+    private readonly profitLossSales: ProfitLossSalesRepository,
   ) {}
+
+  // ── Cross-module pass-throughs (owner-service surface; blaxx nestjs-07) ──
+  // POS, purchases, returns and customer-orders post ledger entries through
+  // these instead of injecting AccountingRepository.
+  createLedgerEntry(partial: LedgerPostInput): Promise<LedgerEntry> {
+    return this.accounting.createLedgerEntry(partial);
+  }
+
+  createLedgerEntryWithManager(
+    manager: EntityManager,
+    partial: LedgerPostInput,
+  ): Promise<LedgerEntry> {
+    return this.accounting.createLedgerEntryWithManager(manager, partial);
+  }
+
+  /** Chart of accounts, ordered by code. */
+  async listAccounts(): Promise<Account[]> {
+    return this.accounts.list();
+  }
 
   async getLedgerEntries(
     branchId: string | null,
@@ -187,12 +206,11 @@ export class AccountingService {
 
     // Revenue: sum of all transactions in the period.
     // branchId === null means "across all branches" (admin cross-branch view).
-    const transactions = await this.transactionRepository.find({
-      where:
-        branchId !== null
-          ? { branchId, createdAt: Between(start, end) }
-          : { createdAt: Between(start, end) },
-    });
+    const transactions = await this.profitLossSales.salesInPeriod(
+      branchId,
+      start,
+      end,
+    );
 
     const totalSales = transactions.reduce(
       (sum, t) => sum + Number(t.total),
@@ -209,23 +227,11 @@ export class AccountingService {
     const netRevenue = totalSales;
 
     // COGS: sum of (costPrice × quantity) for all items sold
-    const cogsQb = this.transactionItemRepository
-      .createQueryBuilder('ti')
-      .select('SUM(p.cost_price * ti.quantity)', 'totalCOGS')
-      .addSelect('SUM(ti.quantity)', 'itemsSold')
-      .innerJoin('ti.sale', 't')
-      .innerJoin('ti.product', 'p')
-      .where('t.created_at BETWEEN :start AND :end', { start, end });
-    if (branchId !== null) {
-      cogsQb.andWhere('t.branch_id = :branchId', { branchId });
-    }
-    const cogsResult = await cogsQb.getRawOne<{
-      totalCOGS: string | null;
-      itemsSold: string | null;
-    }>();
-
-    const totalCOGS = Number(cogsResult?.totalCOGS ?? 0);
-    const itemsSold = Number(cogsResult?.itemsSold ?? 0);
+    const { totalCOGS, itemsSold } = await this.profitLossSales.cogsInPeriod(
+      branchId,
+      start,
+      end,
+    );
 
     // Gross profit
     const grossProfit = netRevenue - totalCOGS;

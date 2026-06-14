@@ -29,6 +29,7 @@ export function PosUnitSelect({
     const unitsQuery = usePosProductUnits(productId);
     const units = unitsQuery.data ?? [];
     const isLoading = unitsQuery.isLoading;
+    const baseUnit = units.find((u) => u.isBaseUnit);
 
     function handleChange(e: ChangeEvent<HTMLSelectElement>) {
         const picked = units.find((u) => u.unitId === e.target.value);
@@ -48,12 +49,14 @@ export function PosUnitSelect({
         >
             {value === null && (
                 <option value="">
-                    {isLoading ? 'Loading…' : 'Base unit'}
+                    {isLoading
+                        ? 'Loading…'
+                        : (baseUnit?.unitName?.toUpperCase() ?? 'Base unit')}
                 </option>
             )}
             {units.map((u) => (
                 <option key={u.unitId} value={u.unitId}>
-                    {u.unitName}
+                    {u.unitName.toUpperCase()}
                     {u.isBaseUnit ? ' (base)' : ''}
                 </option>
             ))}

@@ -20,6 +20,7 @@ import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
 import { ReviewExpenseDto } from '@accounting/dto/review-expense.dto';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Expense } from '@accounting/entities/expense.entity';
+import { Account } from '@accounting/entities/account.entity';
 import { ExpenseStatus } from '@common/enums/expense-status.enum';
 
 @Controller(APP_ROUTES.ACCOUNTING.BASE)
@@ -135,5 +136,12 @@ export class AccountingController {
     const end = endDate || now.toISOString().split('T')[0];
     // Admins not tied to a branch — omit ?branchId= for cross-branch P&L.
     return this.accountingService.getProfitLoss(branchId ?? null, start, end);
+  }
+
+  /** Chart of accounts (read-only master for reports + journal entry). */
+  @Get(APP_ROUTES.ACCOUNTING.ACCOUNTS)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  listAccounts(): Promise<Account[]> {
+    return this.accountingService.listAccounts();
   }
 }

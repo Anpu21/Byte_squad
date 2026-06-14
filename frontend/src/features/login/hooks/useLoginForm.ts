@@ -57,7 +57,6 @@ export function useLoginForm() {
             toast.success('Successfully logged in!');
             navigate('/');
         } catch (error) {
-            console.error('Login failed:', error);
             if (isLoginReject(error)) {
                 if (error.status === 403) {
                     toast('Verify your email first', { icon: '📧' });

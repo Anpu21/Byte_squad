@@ -13,6 +13,8 @@ import { EmployeeLeavesRepository } from './employee-leaves.repository';
 import { EmployeesRepository } from './employees.repository';
 import { Employee } from './entities/employee.entity';
 import { EmployeeLeave } from './entities/employee-leave.entity';
+import { UsersService } from '../users/users.service';
+import { User } from '../users/entities/user.entity';
 
 const BRANCH_A = '11111111-1111-1111-1111-111111111111';
 const BRANCH_B = '22222222-2222-2222-2222-222222222222';
@@ -98,6 +100,7 @@ describe('EmployeeLeavesService', () => {
   let service: EmployeeLeavesService;
   let leavesRepo: jest.Mocked<EmployeeLeavesRepository>;
   let employeesRepo: jest.Mocked<EmployeesRepository>;
+  let usersRepo: jest.Mocked<UsersService>;
   let dataSource: { transaction: jest.Mock };
 
   beforeEach(async () => {
@@ -125,12 +128,19 @@ describe('EmployeeLeavesService', () => {
             adjustAnnualLeaveBalance: jest.fn(),
           },
         },
+        {
+          provide: UsersService,
+          useValue: {
+            findEntityById: jest.fn(),
+          },
+        },
         { provide: DataSource, useValue: dataSource },
       ],
     }).compile();
     service = moduleRef.get(EmployeeLeavesService);
     leavesRepo = moduleRef.get(EmployeeLeavesRepository);
     employeesRepo = moduleRef.get(EmployeesRepository);
+    usersRepo = moduleRef.get(UsersService);
   });
 
   describe('list', () => {
@@ -216,6 +226,49 @@ describe('EmployeeLeavesService', () => {
         ),
       ).rejects.toBeInstanceOf(ForbiddenException);
       expect(leavesRepo.save).not.toHaveBeenCalled();
+    });
+
+    const selfDto = {
+      leaveType: 'Annual' as const,
+      startDate: '2026-06-01',
+      endDate: '2026-06-02',
+      totalDays: 2,
+    };
+
+    it('cashier self-applies when employeeId is omitted', async () => {
+      employeesRepo.findByUserId.mockResolvedValue(makeEmployee());
+      leavesRepo.findOverlapping.mockResolvedValue([]);
+      leavesRepo.save.mockImplementation((input) =>
+        Promise.resolve(makeLeave(input as Partial<EmployeeLeave>)),
+      );
+      await service.apply(selfDto, {
+        id: CASHIER_USER_ID,
+        role: UserRole.CASHIER,
+        branchId: BRANCH_A,
+      });
+      expect(employeesRepo.findByUserId).toHaveBeenCalledWith(CASHIER_USER_ID);
+      expect(leavesRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ employeeId: EMP_A_ID }),
+      );
+    });
+
+    it('manager self-applies when employeeId is omitted', async () => {
+      employeesRepo.findByUserId.mockResolvedValue(
+        makeEmployee({ id: EMP_B_ID, userId: MANAGER_ID, role: 'Manager' }),
+      );
+      leavesRepo.findOverlapping.mockResolvedValue([]);
+      leavesRepo.save.mockImplementation((input) =>
+        Promise.resolve(makeLeave(input as Partial<EmployeeLeave>)),
+      );
+      await service.apply(selfDto, {
+        id: MANAGER_ID,
+        role: UserRole.MANAGER,
+        branchId: BRANCH_A,
+      });
+      expect(employeesRepo.findByUserId).toHaveBeenCalledWith(MANAGER_ID);
+      expect(leavesRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ employeeId: EMP_B_ID }),
+      );
     });
 
     it('manager cannot apply on-behalf across branches', async () => {
@@ -319,6 +372,87 @@ describe('EmployeeLeavesService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
     });
 
+    it('manager cannot approve their own leave', async () => {
+      leavesRepo.findById.mockResolvedValue(makeLeave());
+      employeesRepo.findById.mockResolvedValue(
+        makeEmployee({ userId: MANAGER_ID, role: 'Manager' }),
+      );
+      await expect(
+        service.approve(LEAVE_ID, {
+          id: MANAGER_ID,
+          role: UserRole.MANAGER,
+          branchId: BRANCH_A,
+        }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(leavesRepo.updatePartial).not.toHaveBeenCalled();
+    });
+
+    it("manager cannot approve another manager's leave", async () => {
+      leavesRepo.findById.mockResolvedValue(makeLeave());
+      employeesRepo.findById.mockResolvedValue(
+        makeEmployee({ userId: 'manager-2', role: 'Manager' }),
+      );
+      usersRepo.findEntityById.mockResolvedValue({
+        id: 'manager-2',
+        role: UserRole.MANAGER,
+      } as User);
+      await expect(
+        service.approve(LEAVE_ID, {
+          id: MANAGER_ID,
+          role: UserRole.MANAGER,
+          branchId: BRANCH_A,
+        }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(leavesRepo.updatePartial).not.toHaveBeenCalled();
+    });
+
+    it("manager approves a branch cashier's leave", async () => {
+      const leave = makeLeave({ status: 'Pending', totalDays: 2 });
+      leavesRepo.findById
+        .mockResolvedValueOnce(leave)
+        .mockResolvedValueOnce({ ...leave, status: 'Approved' });
+      employeesRepo.findById.mockResolvedValue(
+        makeEmployee({ userId: CASHIER_USER_ID }),
+      );
+      usersRepo.findEntityById.mockResolvedValue({
+        id: CASHIER_USER_ID,
+        role: UserRole.CASHIER,
+      } as User);
+      leavesRepo.updatePartial.mockResolvedValue({
+        ...leave,
+        status: 'Approved',
+      });
+
+      const result = await service.approve(LEAVE_ID, {
+        id: MANAGER_ID,
+        role: UserRole.MANAGER,
+        branchId: BRANCH_A,
+      });
+      expect(result.status).toBe('Approved');
+    });
+
+    it("admin approves a manager's leave (guard skipped)", async () => {
+      const leave = makeLeave({ status: 'Pending' });
+      leavesRepo.findById
+        .mockResolvedValueOnce(leave)
+        .mockResolvedValueOnce({ ...leave, status: 'Approved' });
+      employeesRepo.findById.mockResolvedValue(
+        makeEmployee({ userId: 'manager-2', role: 'Manager' }),
+      );
+      leavesRepo.updatePartial.mockResolvedValue({
+        ...leave,
+        status: 'Approved',
+      });
+
+      const result = await service.approve(LEAVE_ID, {
+        id: ADMIN_ID,
+        role: UserRole.ADMIN,
+        branchId: null,
+      });
+      expect(usersRepo.findEntityById).not.toHaveBeenCalled();
+      expect(result.status).toBe('Approved');
+    });
+
     it('Sick leave approval skips the balance adjustment', async () => {
       const leave = makeLeave({ status: 'Pending', leaveType: 'Sick' });
       leavesRepo.findById
@@ -361,6 +495,25 @@ describe('EmployeeLeavesService', () => {
           rejectionReason: 'Insufficient cover',
         }),
       );
+    });
+
+    it("manager cannot reject another manager's leave", async () => {
+      leavesRepo.findById.mockResolvedValue(makeLeave());
+      employeesRepo.findById.mockResolvedValue(
+        makeEmployee({ userId: 'manager-2', role: 'Manager' }),
+      );
+      usersRepo.findEntityById.mockResolvedValue({
+        id: 'manager-2',
+        role: UserRole.MANAGER,
+      } as User);
+      await expect(
+        service.reject(
+          LEAVE_ID,
+          { rejectionReason: 'No cover available' },
+          { id: MANAGER_ID, role: UserRole.MANAGER, branchId: BRANCH_A },
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(leavesRepo.updatePartial).not.toHaveBeenCalled();
     });
 
     it('refuses to reject a non-Pending leave', async () => {

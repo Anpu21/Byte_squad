@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
@@ -44,7 +48,7 @@ export class EmailService {
     label: string,
   ): Promise<void> {
     if (!this.resend) {
-      throw new Error('Email is not configured (RESEND_API_KEY missing)');
+      throw new ServiceUnavailableException('Email service is not configured');
     }
     const { error } = await this.resend.emails.send({
       from: this.from,
@@ -54,7 +58,7 @@ export class EmailService {
     });
     if (error) {
       this.logger.error(`Failed to send ${label} to ${to}: ${error.message}`);
-      throw new Error(error.message);
+      throw new ServiceUnavailableException('Failed to send email');
     }
     this.logger.log(`${label} sent to ${to}`);
   }

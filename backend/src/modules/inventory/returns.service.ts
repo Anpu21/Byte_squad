@@ -10,8 +10,8 @@ import { StockMovement } from '@pos/entities/stock-movement.entity';
 import { SalesReturn } from '@inventory/entities/sales-return.entity';
 import { SalesReturnItem } from '@inventory/entities/sales-return-item.entity';
 import { SalesReturnRepository } from '@inventory/sales-return.repository';
-import { SaleRepository } from '@pos/sale.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
+import { PosService } from '@pos/pos.service';
+import { AccountingService } from '@accounting/accounting.service';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { AuthUser } from '@common/types/auth-user.type';
@@ -35,8 +35,8 @@ export class ReturnsService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly returns: SalesReturnRepository,
-    private readonly sales: SaleRepository,
-    private readonly accounting: AccountingRepository,
+    private readonly sales: PosService,
+    private readonly accounting: AccountingService,
   ) {}
 
   /** Look up a sale by invoice and report what's still returnable per line. */

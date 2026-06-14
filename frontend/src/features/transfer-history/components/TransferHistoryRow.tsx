@@ -1,3 +1,4 @@
+import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
@@ -18,36 +19,39 @@ export function TransferHistoryRow({ item }: TransferHistoryRowProps) {
 
     return (
         <tr
-            className="border-b border-border hover:bg-surface-2 transition-colors group cursor-pointer"
+            className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors cursor-pointer"
             onClick={() =>
                 navigate(
                     FRONTEND_ROUTES.TRANSFER_DETAIL.replace(':id', item.id),
                 )
             }
         >
-            <td className="px-6 py-4">
+            <td className="px-5 py-3.5">
                 <TransferStatusPill status={item.status} />
             </td>
-            <td className="px-6 py-4">
-                <span className="text-text-1 font-medium">
-                    {item.product.name}
+            <td className="px-5 py-3.5 text-text-1 font-medium">
+                {item.product.name}
+            </td>
+            <td className="px-5 py-3.5">
+                <span className="inline-flex items-center gap-1.5 text-xs text-text-2">
+                    {item.sourceBranch?.name ?? '—'}
+                    <ArrowRight
+                        size={13}
+                        className="text-text-3 flex-shrink-0"
+                    />
+                    <span className="text-text-1 font-medium">
+                        {item.destinationBranch.name}
+                    </span>
                 </span>
             </td>
-            <td className="px-6 py-4 text-text-2">
-                {item.sourceBranch?.name ?? '—'}
-                <span className="mx-2 text-text-3">→</span>
-                <span className="text-text-1">
-                    {item.destinationBranch.name}
-                </span>
-            </td>
-            <td className="px-6 py-4 text-right tabular-nums text-text-1 font-medium">
+            <td className="px-5 py-3.5 text-right tabular-nums text-text-1 font-medium">
                 {qty}
             </td>
-            <td className="px-6 py-4 text-text-2">{requester}</td>
-            <td className="px-6 py-4 text-text-3">
+            <td className="px-5 py-3.5 text-text-2">{requester}</td>
+            <td className="px-5 py-3.5 text-text-3 whitespace-nowrap">
                 {formatHistoryDate(closedAt)}
             </td>
-            <td className="px-6 py-4 text-right text-text-3 tabular-nums">
+            <td className="px-5 py-3.5 text-right text-text-3 tabular-nums whitespace-nowrap">
                 {formatDuration(item.createdAt, closedAt)}
             </td>
         </tr>

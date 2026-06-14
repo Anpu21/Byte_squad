@@ -1,5 +1,4 @@
 import { Test } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   BadRequestException,
   ConflictException,
@@ -8,11 +7,7 @@ import {
 import { BranchesService } from './branches.service';
 import { BranchesRepository } from './branches.repository';
 import { Branch } from './entities/branch.entity';
-import { User } from '@users/entities/user.entity';
-import { Sale } from '@pos/entities/sale.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
-import { Expense } from '@accounting/entities/expense.entity';
+import { BranchPerformanceRepository } from './branch-performance.repository';
 
 interface BranchesRepoMock {
   createAndSave: jest.Mock;
@@ -70,11 +65,7 @@ describe('BranchesService — direct admin mutations', () => {
       providers: [
         BranchesService,
         { provide: BranchesRepository, useValue: branchesRepo },
-        { provide: getRepositoryToken(User), useValue: { findOne: jest.fn() } },
-        { provide: getRepositoryToken(Sale), useValue: {} },
-        { provide: getRepositoryToken(SaleItem), useValue: {} },
-        { provide: getRepositoryToken(Inventory), useValue: {} },
-        { provide: getRepositoryToken(Expense), useValue: {} },
+        { provide: BranchPerformanceRepository, useValue: {} },
       ],
     }).compile();
 

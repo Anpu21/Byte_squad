@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,11 +8,10 @@ import { clearShopCart } from '@/store/slices/shopCartSlice';
 import {
     selectShopCartItems,
     selectShopCartTotal,
+    selectShopCartGroups,
 } from '@/store/selectors/shopCart';
-import { shopProductsService } from '@/services/shop-products.service';
 import { customerOrdersService } from '@/services/customer-orders.service';
 import { loyaltyService } from '@/services/loyalty.service';
-import { useAuth } from '@/hooks/useAuth';
 import { queryKeys } from '@/lib/queryKeys';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { CustomerOrderPaymentMode } from '@/types';
@@ -21,20 +20,9 @@ export function useCheckout() {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const { user } = useAuth();
     const items = useAppSelector(selectShopCartItems);
-    const branchId = user?.branchId ?? null;
+    const groups = useAppSelector(selectShopCartGroups);
     const total = useAppSelector(selectShopCartTotal);
-
-    const { data: branches = [] } = useQuery({
-        queryKey: queryKeys.shop.branches(),
-        queryFn: shopProductsService.listBranches,
-    });
-
-    const branch = useMemo(
-        () => branches.find((b) => b.id === branchId) ?? null,
-        [branches, branchId],
-    );
 
     const [note, setNote] = useState('');
     const [paymentMode, setPaymentMode] =
@@ -62,8 +50,7 @@ export function useCheckout() {
         availablePoints - (loyaltySettings?.minRedeemablePoints ?? 0),
     );
     const maxBySubtotal = Math.floor(
-        ((total * (loyaltySettings?.redeemCapPercent ?? 20)) / 100) /
-            pointValue,
+        (total * (loyaltySettings?.redeemCapPercent ?? 20)) / 100 / pointValue,
     );
     const maxRedeemable = Math.min(redeemableBalance, maxBySubtotal);
     const redeemingPoints = Math.min(loyaltyPointsToRedeem, maxRedeemable);
@@ -78,26 +65,20 @@ export function useCheckout() {
             : 0
         : Math.floor(finalTotal / 100);
 
-    useEffect(() => {
-        if (items.length > 0 && !branchId) {
-            toast.error('Pick a branch before checking out');
-            navigate(FRONTEND_ROUTES.SHOP);
-        }
-    }, [items.length, branchId, navigate]);
-
     const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!branchId) {
-            setError('Please choose a branch');
+        if (items.length === 0) {
+            setError('Your cart is empty');
             return;
         }
         setError(null);
         setSubmitting(true);
         try {
-            const result = await customerOrdersService.create({
-                branchId,
+            const result = await customerOrdersService.checkout({
                 items: items.map((i) => ({
                     productId: i.productId,
+                    branchId: i.branchId,
+                    unitId: i.unitId ?? undefined,
                     quantity: i.quantity,
                 })),
                 note: note.trim() || undefined,
@@ -107,34 +88,37 @@ export function useCheckout() {
             toast.success(
                 paymentMode === 'online'
                     ? 'Redirecting to PayHere'
-                    : 'Pickup order created',
+                    : 'Pickup order(s) created',
             );
-            const cartItemCount = items.length;
+            const itemCount = items.length;
             dispatch(clearShopCart());
-            queryClient.invalidateQueries({
-                queryKey: queryKeys.loyalty.mine(),
-            });
+            queryClient.invalidateQueries({ queryKey: queryKeys.loyalty.mine() });
             queryClient.invalidateQueries({ queryKey: ['loyalty', 'history'] });
             queryClient.invalidateQueries({
                 queryKey: queryKeys.customerOrders.my(),
             });
+
             if (result.payment) {
+                const groupFinal = result.orders.reduce(
+                    (sum, o) => sum + Number(o.finalTotal),
+                    0,
+                );
                 navigate(FRONTEND_ROUTES.SHOP_CHECKOUT_PAY, {
                     state: {
                         payment: result.payment,
-                        orderCode: result.order.orderCode,
-                        branchName: branch?.name ?? '',
-                        finalTotal: Number(result.order.finalTotal),
-                        itemCount: cartItemCount,
+                        orderCode: result.orders[0]?.orderCode ?? result.groupCode,
+                        branchName:
+                            result.orders.length === 1
+                                ? (result.orders[0]?.branch?.name ?? '')
+                                : `${result.orders.length} branches`,
+                        finalTotal: groupFinal,
+                        itemCount,
                     },
                 });
                 return;
             }
             navigate(
-                FRONTEND_ROUTES.SHOP_ORDER_CONFIRMATION.replace(
-                    ':code',
-                    result.order.orderCode,
-                ),
+                FRONTEND_ROUTES.SHOP_ORDER_GROUP.replace(':code', result.groupCode),
             );
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
@@ -155,8 +139,7 @@ export function useCheckout() {
 
     return {
         items,
-        branchId,
-        branch,
+        groups,
         total,
         availablePoints,
         maxRedeemable,

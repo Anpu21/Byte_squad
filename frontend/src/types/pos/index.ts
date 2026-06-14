@@ -33,3 +33,27 @@ export type { ICashierTransactionRow } from './cashier-transaction-row.type';
 export type { ICashierTransactionsSummary } from './cashier-transactions-summary.type';
 export type { ICashierDashboard } from './cashier-dashboard.type';
 export type { IAdminDashboard } from './admin-dashboard.type';
+export type {
+    CreditPaymentMethod,
+    ICreditStatement,
+    ICreditTransactionRow,
+    IReceivableRow,
+    IReceiveCreditPaymentPayload,
+} from './receivable.type';
+export type {
+    ICurrentShiftResponse,
+    IPosShift,
+    IShiftLiveSummary,
+    ShiftStatus,
+} from './shift.type';
+export type {
+    DiscountSchemeScope,
+    IDiscountScheme,
+    IDiscountSchemePayload,
+    IDiscountSchemesListResponse,
+} from './discount-scheme.type';
+export type {
+    ISalesmanReportParams,
+    ISalesmanReportResponse,
+    ISalesmanReportRow,
+} from './salesman-report.type';

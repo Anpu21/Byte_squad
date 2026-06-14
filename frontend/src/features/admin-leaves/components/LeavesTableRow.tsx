@@ -8,6 +8,8 @@ interface ILeavesTableRowProps {
     employeeName: string;
     canModerate: boolean;
     canCancel: boolean;
+    /** Manager viewing their own leave — only an admin may moderate it. */
+    requiresAdminApproval?: boolean;
     onApprove: (id: string) => void;
     onReject: (leave: ILeave) => void;
     onCancel: (id: string) => void;
@@ -15,7 +17,9 @@ interface ILeavesTableRowProps {
 
 /**
  * Single row in the leaves table. Action buttons gate on:
- *   - approve/reject: manager/admin + leave is still Pending.
+ *   - approve/reject: manager/admin + leave is still Pending, unless
+ *     the row needs admin approval (a manager's own leave) — then a
+ *     muted hint replaces the buttons.
  *   - cancel: actor's role allows it AND the leave isn't already
  *     in a terminal state.
  *
@@ -26,6 +30,7 @@ export function LeavesTableRow({
     employeeName,
     canModerate,
     canCancel,
+    requiresAdminApproval = false,
     onApprove,
     onReject,
     onCancel,
@@ -58,22 +63,28 @@ export function LeavesTableRow({
             <td className="px-3 py-2.5 text-right">
                 <div className="inline-flex gap-1.5">
                     {canModerate && isPending ? (
-                        <>
-                            <Button
-                                size="sm"
-                                variant="primary"
-                                onClick={() => onApprove(leave.id)}
-                            >
-                                Approve
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => onReject(leave)}
-                            >
-                                Reject
-                            </Button>
-                        </>
+                        requiresAdminApproval ? (
+                            <Pill tone="neutral" dot={false}>
+                                Admin approval
+                            </Pill>
+                        ) : (
+                            <>
+                                <Button
+                                    size="sm"
+                                    variant="primary"
+                                    onClick={() => onApprove(leave.id)}
+                                >
+                                    Approve
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => onReject(leave)}
+                                >
+                                    Reject
+                                </Button>
+                            </>
+                        )
                     ) : null}
                     {canCancel && !isTerminal ? (
                         <Button

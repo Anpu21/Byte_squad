@@ -10,12 +10,12 @@ import { CustomerOrdersRepository } from './customer-orders.repository';
 import { CustomerOrder } from './entities/customer-order.entity';
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
-import { ProductsRepository } from '@products/products.repository';
-import { BranchesRepository } from '@branches/branches.repository';
-import { UsersRepository } from '@users/users.repository';
-import { PosRepository } from '@pos/pos.repository';
-import { AccountingRepository } from '@accounting/accounting.repository';
-import { InventoryRepository } from '@inventory/inventory.repository';
+import { ProductsService } from '@products/products.service';
+import { BranchesService } from '@branches/branches.service';
+import { UsersService } from '@users/users.service';
+import { PosService } from '@pos/pos.service';
+import { AccountingService } from '@accounting/accounting.service';
+import { InventoryService } from '@inventory/inventory.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
@@ -51,27 +51,27 @@ describe('CustomerOrdersService', () => {
         CustomerOrdersService,
         { provide: CustomerOrdersRepository, useValue: repoMock },
         {
-          provide: ProductsRepository,
+          provide: ProductsService,
           useValue: { findActiveByIds: jest.fn() },
         },
-        { provide: BranchesRepository, useValue: { findById: jest.fn() } },
+        { provide: BranchesService, useValue: { findEntityById: jest.fn() } },
         {
-          provide: UsersRepository,
+          provide: UsersService,
           useValue: {
             findManagersAndAdminsForBranches: jest.fn(),
             findByBranchAndRole: jest.fn(),
           },
         },
         {
-          provide: PosRepository,
+          provide: PosService,
           useValue: { createAndSaveTransaction: jest.fn() },
         },
         {
-          provide: AccountingRepository,
+          provide: AccountingService,
           useValue: { createLedgerEntry: jest.fn() },
         },
         {
-          provide: InventoryRepository,
+          provide: InventoryService,
           useValue: { decrementStockBatch: jest.fn() },
         },
         {

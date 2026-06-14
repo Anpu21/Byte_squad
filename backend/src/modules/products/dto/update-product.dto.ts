@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   Min,
   ValidateNested,
@@ -32,6 +33,10 @@ export class UpdateProductDto {
   @IsString()
   @IsOptional()
   category?: string;
+
+  @IsUUID('4')
+  @IsOptional()
+  categoryId?: string;
 
   @IsNumber()
   @Min(0)

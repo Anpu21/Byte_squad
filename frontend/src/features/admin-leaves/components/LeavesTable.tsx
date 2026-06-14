@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 import EmptyState from '@/components/ui/EmptyState';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -14,6 +15,12 @@ interface ILeavesTableProps {
     canModerate: boolean;
     canCancel: boolean;
     isLoading: boolean;
+    /**
+     * Employee whose pending leaves only an admin may moderate —
+     * the acting manager's own record. Rows for it swap the
+     * approve/reject buttons for an "Admin approval" hint.
+     */
+    adminApprovalEmployeeId?: string;
 }
 
 /**
@@ -27,6 +34,7 @@ export function LeavesTable({
     canModerate,
     canCancel,
     isLoading,
+    adminApprovalEmployeeId,
 }: ILeavesTableProps) {
     const confirm = useConfirm();
     const approve = useApproveLeave();
@@ -45,8 +53,17 @@ export function LeavesTable({
         try {
             await approve.mutateAsync(id);
             toast.success('Leave approved');
-        } catch {
-            toast.error('Could not approve leave');
+        } catch (err: unknown) {
+            // Surface BE rule violations verbatim (e.g. "Manager
+            // leaves require admin approval").
+            if (axios.isAxiosError(err)) {
+                const data = err.response?.data as
+                    | { message?: string }
+                    | undefined;
+                toast.error(data?.message ?? 'Could not approve leave');
+            } else {
+                toast.error('Could not approve leave');
+            }
         }
     }
 
@@ -103,6 +120,10 @@ export function LeavesTable({
                                 }
                                 canModerate={canModerate}
                                 canCancel={canCancel}
+                                requiresAdminApproval={
+                                    leave.employeeId ===
+                                    adminApprovalEmployeeId
+                                }
                                 onApprove={handleApprove}
                                 onReject={setRejectTarget}
                                 onCancel={handleCancel}

@@ -32,6 +32,7 @@ export class InventoryMatrixQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  // Allow the bulk fetch the admin inventory export uses (EXPORT_FETCH_LIMIT).
+  @Max(10000)
   limit?: number;
 }

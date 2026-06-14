@@ -9,12 +9,13 @@ import { LEAVE_TYPES, inclusiveDays } from '../lib/leave-formatting';
 interface IApplyLeaveModalProps {
     isOpen: boolean;
     onClose: () => void;
-    /** Selectable employees. For cashier self-apply, pass `[self]`. */
+    /** Selectable employees (manager/admin on-behalf flows). */
     employees: IEmployee[];
-    /** Pre-selected employee — typically the actor's own id. */
-    defaultEmployeeId?: string;
-    /** Cashier flows lock the employee picker. */
-    lockEmployee?: boolean;
+    /**
+     * Self-apply flows (cashier) hide the employee picker — the BE
+     * resolves the actor's own employee record when the id is omitted.
+     */
+    hideEmployee?: boolean;
 }
 
 const INPUT_CLASS =
@@ -28,8 +29,7 @@ export function ApplyLeaveModal({
     isOpen,
     onClose,
     employees,
-    defaultEmployeeId,
-    lockEmployee = false,
+    hideEmployee = false,
 }: IApplyLeaveModalProps) {
     return (
         <Modal
@@ -43,8 +43,7 @@ export function ApplyLeaveModal({
                 <ApplyLeaveForm
                     onClose={onClose}
                     employees={employees}
-                    defaultEmployeeId={defaultEmployeeId}
-                    lockEmployee={lockEmployee}
+                    hideEmployee={hideEmployee}
                 />
             ) : null}
         </Modal>
@@ -54,8 +53,7 @@ export function ApplyLeaveModal({
 interface IApplyLeaveFormProps {
     onClose: () => void;
     employees: IEmployee[];
-    defaultEmployeeId?: string;
-    lockEmployee?: boolean;
+    hideEmployee?: boolean;
 }
 
 /**
@@ -66,11 +64,10 @@ interface IApplyLeaveFormProps {
 function ApplyLeaveForm({
     onClose,
     employees,
-    defaultEmployeeId,
-    lockEmployee = false,
+    hideEmployee = false,
 }: IApplyLeaveFormProps) {
     const apply = useApplyLeave();
-    const [employeeId, setEmployeeId] = useState(defaultEmployeeId ?? '');
+    const [employeeId, setEmployeeId] = useState('');
     const [leaveType, setLeaveType] = useState<LeaveType>('Annual');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -88,7 +85,7 @@ function ApplyLeaveForm({
             : daysOverride;
     const daysNum = Number(effectiveDays);
     const canSubmit =
-        employeeId.length > 0 &&
+        (hideEmployee || employeeId.length > 0) &&
         startDate.length > 0 &&
         endDate.length > 0 &&
         Number.isFinite(daysNum) &&
@@ -101,7 +98,9 @@ function ApplyLeaveForm({
         if (!canSubmit) return;
         try {
             await apply.mutateAsync({
-                employeeId,
+                // Omitted on self-apply — the BE targets the actor's
+                // own employee record.
+                employeeId: hideEmployee ? undefined : employeeId,
                 leaveType,
                 startDate,
                 endDate,
@@ -118,25 +117,26 @@ function ApplyLeaveForm({
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="block space-y-1.5">
-                    <span className="text-[11px] uppercase tracking-wide text-text-3">
-                        Employee
-                    </span>
-                    <select
-                        className={`${INPUT_CLASS} w-full`}
-                        value={employeeId}
-                        onChange={(e) => setEmployeeId(e.target.value)}
-                        disabled={lockEmployee}
-                        required
-                    >
-                        <option value="">Select…</option>
-                        {employees.map((emp) => (
-                            <option key={emp.id} value={emp.id}>
-                                {emp.fullName}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                {!hideEmployee && (
+                    <label className="block space-y-1.5">
+                        <span className="text-[11px] uppercase tracking-wide text-text-3">
+                            Employee
+                        </span>
+                        <select
+                            className={`${INPUT_CLASS} w-full`}
+                            value={employeeId}
+                            onChange={(e) => setEmployeeId(e.target.value)}
+                            required
+                        >
+                            <option value="">Select…</option>
+                            {employees.map((emp) => (
+                                <option key={emp.id} value={emp.id}>
+                                    {emp.fullName}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                )}
                 <label className="block space-y-1.5">
                     <span className="text-[11px] uppercase tracking-wide text-text-3">
                         Leave type

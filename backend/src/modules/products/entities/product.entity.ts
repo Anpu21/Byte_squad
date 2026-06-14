@@ -2,13 +2,16 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  ManyToOne,
   OneToMany,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
+import { Category } from '@/modules/categories/entities/category.entity';
 
 @Entity('products')
 export class Product {
@@ -24,8 +27,21 @@ export class Product {
   @Column({ type: 'varchar', nullable: true })
   description!: string | null;
 
+  // Denormalized mirror of `categoryRef.name`, kept in sync by ProductsService.
+  // Retained so existing readers (inventory filter, shop catalog, POS
+  // productType, seeds, exports) keep working without a join.
   @Column({ type: 'varchar' })
   category!: string;
+
+  // Source of truth for the product's category. Nullable at the DB level so a
+  // DB_SYNC boot never fails on pre-existing rows; ProductsService always sets
+  // it on create/update, and the FK guarantees integrity.
+  @Column({ type: 'uuid', name: 'category_id', nullable: true })
+  categoryId!: string | null;
+
+  @ManyToOne(() => Category, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'category_id' })
+  categoryRef!: Category | null;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, name: 'cost_price' })
   costPrice!: number;
