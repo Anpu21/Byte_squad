@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
+import toast from 'react-hot-toast';
 
 interface UniversalScannerProps {
     onScanSuccess?: (text: string) => void;
@@ -37,13 +38,12 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
                 setTimeout(() => setIsScanning(true), 2000);
             }
 
-            if (err) {
-                if (err.name !== 'NotFoundException') {
-                    console.error('Barcode scanning error:', err);
-                }
+            if (err && err.name !== 'NotFoundException') {
+                // Non-fatal per-frame decode error — ignore (NotFoundException
+                // = no code in view); fatal camera errors surface below.
             }
-        }).catch((err: Error) => {
-            console.error('Camera initialization failed:', err);
+        }).catch(() => {
+            toast.error('Could not access the camera');
         });
 
         const videoEl = videoRef.current;

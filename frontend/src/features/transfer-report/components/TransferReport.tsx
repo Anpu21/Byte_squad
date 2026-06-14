@@ -90,8 +90,7 @@ export function TransferReport({ isAdmin }: TransferReportProps) {
       toast.success(
         format === 'pdf' ? 'PDF download started' : 'Excel download started',
       )
-    } catch (err) {
-      console.error('Transfer report export failed', err)
+    } catch {
       toast.error('Could not generate export — please try again')
     } finally {
       setIsExporting(false)

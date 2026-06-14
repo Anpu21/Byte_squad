@@ -36,8 +36,8 @@ export function useOrderConfirmation() {
             .then((url) => {
                 if (!cancelled) setGenerated({ code, url });
             })
-            .catch((err) => {
-                console.error('QR render failed', err);
+            .catch(() => {
+                // QR is non-critical — drop it and render without.
                 if (!cancelled) setGenerated(null);
             });
         return () => {

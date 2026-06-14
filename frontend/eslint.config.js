@@ -46,7 +46,7 @@ export default defineConfig([
         },
       ],
       // ratchet — visible now, flip to 'error' in the noted phase
-      'no-console': 'warn', // Phase 2: flip to error once console.error → toast/logger
+      'no-console': 'error', // enforced (Phase 2) — surface failures via toast, not console
       'max-lines': ['warn', { max: 200, skipBlankLines: true, skipComments: true }], // Phase 5: components ≤ 200
     },
   },

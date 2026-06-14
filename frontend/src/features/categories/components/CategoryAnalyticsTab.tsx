@@ -82,8 +82,7 @@ export function CategoryAnalyticsTab({ isAdmin }: CategoryAnalyticsTabProps) {
       toast.success(
         format === 'pdf' ? 'PDF download started' : 'Excel download started',
       )
-    } catch (err) {
-      console.error('Category analytics export failed', err)
+    } catch {
       toast.error('Could not generate export — please try again')
     } finally {
       setIsExporting(false)
