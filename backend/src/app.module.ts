@@ -63,12 +63,14 @@ import { PosAccountingSeedService } from '@common/seeds/pos-accounting-seed.serv
 import { CloudinaryModule } from '@common/cloudinary/cloudinary.module';
 
 import appConfig from '@common/config/app.config';
+import { validateEnv } from '@common/config/env.validation';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig],
+      validate: validateEnv,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
