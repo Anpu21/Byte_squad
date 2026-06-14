@@ -5,8 +5,8 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 // ── Forbidden-pattern ratchet (governed by blaxx-memory; see docs/definition-of-done.md) ──
-// Known-debt categories are 'warn' and flip to 'error' in the phase that clears them
-// (raw Error → Phase 2; @InjectRepository/typeorm-in-service → Phase 3; size → Phase 5).
+// Cleared categories are now 'error' (raw Error in services/repos — Phase 2;
+// @InjectRepository in services — Phase 3). Size stays 'warn' until Phase 5.
 const RAW_ERROR = {
   selector: "ThrowStatement > NewExpression[callee.name='Error']",
   message:
@@ -50,13 +50,13 @@ export default tseslint.config(
   {
     // Repositories own persistence but still must not throw raw Error.
     files: ['**/*.repository.ts'],
-    rules: { 'no-restricted-syntax': ['warn', RAW_ERROR] },
+    rules: { 'no-restricted-syntax': ['error', RAW_ERROR] },
   },
   {
     // Services: no raw Error, no @InjectRepository (DataSource for transactions is fine).
     files: ['**/*.service.ts'],
     rules: {
-      'no-restricted-syntax': ['warn', RAW_ERROR, INJECT_REPOSITORY],
+      'no-restricted-syntax': ['error', RAW_ERROR, INJECT_REPOSITORY],
       'max-lines': ['warn', { max: 400, skipBlankLines: true, skipComments: true }], // Phase 5: split mega-services
     },
   },
