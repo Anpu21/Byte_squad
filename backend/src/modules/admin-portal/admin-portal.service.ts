@@ -13,6 +13,11 @@ import { InventoryRepository } from '@inventory/inventory.repository';
 import { InventoryMatrixQueryDto } from '@admin-portal/dto/inventory-matrix-query.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { TransactionType } from '@common/enums/transaction.enum';
+import {
+  allowedBranchIds,
+  assertBranchScope,
+  type BranchActor,
+} from '@common/scope/branch-scope';
 
 // Documented Rules.md §7 exception: admin-portal owns no entity of its own —
 // it composes cross-domain reporting that doesn't naturally fit any single
@@ -99,8 +104,11 @@ export class AdminPortalService {
     return { summary, branches: performance, alerts };
   }
 
-  async listBranchesWithMeta(): Promise<BranchWithMeta[]> {
-    const branches = await this.branches.findAllSortedByName();
+  async listBranchesWithMeta(actor: BranchActor): Promise<BranchWithMeta[]> {
+    const all = await this.branches.findAllSortedByName();
+    // Non-admins see only their own branch (multi-tenant safety).
+    const allowed = allowedBranchIds(actor);
+    const branches = allowed ? all.filter((b) => allowed.includes(b.id)) : all;
 
     return Promise.all(
       branches.map(async (branch) => {
@@ -151,6 +159,7 @@ export class AdminPortalService {
   }
 
   async getBranchComparison(
+    actor: BranchActor,
     branchIds: string[],
     startDate: Date,
     endDate: Date,
@@ -160,6 +169,10 @@ export class AdminPortalService {
     }
     if (startDate > endDate) {
       throw new BadRequestException('startDate must be before endDate');
+    }
+    // Non-admins may only compare their own branch (multi-tenant safety).
+    for (const branchId of branchIds) {
+      assertBranchScope(actor, branchId);
     }
 
     const branches = await this.branches.findByIds(branchIds);

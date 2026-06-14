@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { AdminPortalService } from './admin-portal.service';
 import { BranchesRepository } from '@branches/branches.repository';
 import { UsersRepository } from '@users/users.repository';
@@ -10,6 +10,12 @@ import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Product } from '@products/entities/product.entity';
 import { Expense } from '@accounting/entities/expense.entity';
+import { UserRole } from '@common/enums/user-roles.enums';
+import type { BranchActor } from '@common/scope/branch-scope';
+
+const ADMIN: BranchActor = { role: UserRole.ADMIN, branchId: null };
+const MANAGER_B1: BranchActor = { role: UserRole.MANAGER, branchId: 'b1' };
+const RANGE = [new Date('2026-01-01'), new Date('2026-02-01')] as const;
 
 describe('AdminPortalService.getBranchComparison', () => {
   let service: AdminPortalService;
@@ -54,7 +60,7 @@ describe('AdminPortalService.getBranchComparison', () => {
 
   it('rejects empty branchIds before any DB call', async () => {
     await expect(
-      service.getBranchComparison([], new Date(), new Date()),
+      service.getBranchComparison(ADMIN, [], ...RANGE),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(branches.findByIds).not.toHaveBeenCalled();
   });
@@ -62,6 +68,7 @@ describe('AdminPortalService.getBranchComparison', () => {
   it('rejects when startDate is after endDate', async () => {
     await expect(
       service.getBranchComparison(
+        ADMIN,
         ['b1'],
         new Date('2026-02-01'),
         new Date('2026-01-01'),
@@ -72,11 +79,23 @@ describe('AdminPortalService.getBranchComparison', () => {
   it('rejects when no matching branches are found', async () => {
     branches.findByIds.mockResolvedValue([]);
     await expect(
-      service.getBranchComparison(
-        ['ghost'],
-        new Date('2026-01-01'),
-        new Date('2026-02-01'),
-      ),
+      service.getBranchComparison(ADMIN, ['ghost'], ...RANGE),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('forbids a manager comparing a branch outside their own (no DB call)', async () => {
+    await expect(
+      service.getBranchComparison(MANAGER_B1, ['b2'], ...RANGE),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(branches.findByIds).not.toHaveBeenCalled();
+  });
+
+  it('lets a manager through for their own branch (scope check passes)', async () => {
+    branches.findByIds.mockResolvedValue([]);
+    // Scope passes, so it proceeds past the guard and hits the empty-result path.
+    await expect(
+      service.getBranchComparison(MANAGER_B1, ['b1'], ...RANGE),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(branches.findByIds).toHaveBeenCalledWith(['b1']);
   });
 });
