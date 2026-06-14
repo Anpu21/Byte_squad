@@ -1,15 +1,11 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { AdminPortalService } from './admin-portal.service';
+import { AdminPortalReportsRepository } from './admin-portal-reports.repository';
 import { BranchesRepository } from '@branches/branches.repository';
 import { UsersRepository } from '@users/users.repository';
 import { InventoryRepository } from '@inventory/inventory.repository';
-import { Sale } from '@pos/entities/sale.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
-import { Product } from '@products/entities/product.entity';
-import { Expense } from '@accounting/entities/expense.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { BranchActor } from '@common/scope/branch-scope';
 
@@ -47,10 +43,7 @@ describe('AdminPortalService.getBranchComparison', () => {
             countLowStockForBranch: jest.fn(),
           },
         },
-        { provide: getRepositoryToken(Sale), useValue: {} },
-        { provide: getRepositoryToken(SaleItem), useValue: {} },
-        { provide: getRepositoryToken(Product), useValue: {} },
-        { provide: getRepositoryToken(Expense), useValue: {} },
+        { provide: AdminPortalReportsRepository, useValue: {} },
       ],
     }).compile();
 
