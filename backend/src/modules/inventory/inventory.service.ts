@@ -12,7 +12,7 @@ import {
 import { InventorySummaryForProduct } from '@inventory/types/inventory-summary-for-product.type';
 import { CreateInventoryDto } from '@inventory/dto/create-inventory.dto';
 import { UpdateStockDto } from '@inventory/dto/update-stock.dto';
-import { ProductsRepository } from '@products/products.repository';
+import { ProductsService } from '@products/products.service';
 
 function hasAtMostThreeDecimals(value: number): boolean {
   const scaled = value * 1000;
@@ -23,7 +23,7 @@ function hasAtMostThreeDecimals(value: number): boolean {
 export class InventoryService {
   constructor(
     private readonly inventory: InventoryRepository,
-    private readonly products: ProductsRepository,
+    private readonly products: ProductsService,
   ) {}
 
   // ── Cross-module pass-throughs (owner-service surface; blaxx nestjs-07) ──

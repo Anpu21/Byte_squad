@@ -123,6 +123,29 @@ export class ProductsService {
     return this.products.findByBarcode(barcode);
   }
 
+  // ── Cross-module pass-throughs (owner-service surface; blaxx nestjs-07) ──
+  // POS, inventory, customer-orders and stock-transfers read products through
+  // these instead of injecting ProductsRepository.
+  findUnitByBarcode(barcode: string): Promise<ProductSellableUnit | null> {
+    return this.products.findUnitByBarcode(barcode);
+  }
+
+  listUnits(productId: string): Promise<ProductSellableUnit[]> {
+    return this.products.listUnits(productId);
+  }
+
+  searchByText(term: string, limit: number): Promise<Product[]> {
+    return this.products.searchByText(term, limit);
+  }
+
+  findActiveByIds(ids: readonly string[]): Promise<Product[]> {
+    return this.products.findActiveByIds(ids);
+  }
+
+  findActiveByIdsWithUnits(ids: readonly string[]): Promise<Product[]> {
+    return this.products.findActiveByIdsWithUnits(ids);
+  }
+
   /**
    * Update a product and (when relevant) atomically replace its sellable
    * units. Precedence — explicit `sellableUnits` wins over implicit

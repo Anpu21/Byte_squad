@@ -9,7 +9,7 @@ import {
 import { DataSource } from 'typeorm';
 import { StockTransfersService } from './stock-transfers.service';
 import { StockTransfersRepository } from './stock-transfers.repository';
-import { ProductsRepository } from '@products/products.repository';
+import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
 import { InventoryService } from '@inventory/inventory.service';
 import { UsersService } from '@users/users.service';
@@ -31,7 +31,7 @@ interface InventoryQB {
 describe('StockTransfersService', () => {
   let service: StockTransfersService;
   let transfers: jest.Mocked<StockTransfersRepository>;
-  let products: jest.Mocked<ProductsRepository>;
+  let products: jest.Mocked<ProductsService>;
   let branches: jest.Mocked<BranchesService>;
   let inventory: jest.Mocked<InventoryService>;
   let users: jest.Mocked<UsersService>;
@@ -49,7 +49,7 @@ describe('StockTransfersService', () => {
       listIncoming: jest.fn(),
       listHistory: jest.fn(),
     };
-    const productsMock: Partial<jest.Mocked<ProductsRepository>> = {
+    const productsMock: Partial<jest.Mocked<ProductsService>> = {
       findById: jest.fn(),
     };
     const branchesMock: Partial<jest.Mocked<BranchesService>> = {
@@ -74,7 +74,7 @@ describe('StockTransfersService', () => {
       providers: [
         StockTransfersService,
         { provide: StockTransfersRepository, useValue: transfersMock },
-        { provide: ProductsRepository, useValue: productsMock },
+        { provide: ProductsService, useValue: productsMock },
         { provide: BranchesService, useValue: branchesMock },
         { provide: InventoryService, useValue: inventoryMock },
         { provide: UsersService, useValue: usersMock },
@@ -86,7 +86,7 @@ describe('StockTransfersService', () => {
 
     service = module.get(StockTransfersService);
     transfers = module.get(StockTransfersRepository);
-    products = module.get(ProductsRepository);
+    products = module.get(ProductsService);
     branches = module.get(BranchesService);
     inventory = module.get(InventoryService);
     users = module.get(UsersService);

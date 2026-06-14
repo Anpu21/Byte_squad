@@ -11,7 +11,7 @@ import { Sale } from '@pos/entities/sale.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
-import { ProductsRepository } from '@products/products.repository';
+import { ProductsService } from '@products/products.service';
 import { User } from '@users/entities/user.entity';
 
 import { CreateSaleDto } from '@pos/dto/create-sale.dto';
@@ -142,7 +142,7 @@ export class PosWriteService {
     private readonly stockMovements: StockMovementRepository,
     private readonly invoiceNumbers: InvoiceNumberService,
     private readonly multiTender: MultiTenderCalculatorService,
-    private readonly products: ProductsRepository,
+    private readonly products: ProductsService,
     private readonly accounting: AccountingService,
     private readonly loyalty: LoyaltyService,
     private readonly loyaltyWallet: LoyaltyWalletService,

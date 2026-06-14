@@ -23,7 +23,7 @@ import {
 } from '@/modules/customer-orders/payhere.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
-import { ProductsRepository } from '@products/products.repository';
+import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
 import { PosRepository } from '@pos/pos.repository';
@@ -77,7 +77,7 @@ export class CustomerOrdersService {
 
   constructor(
     private readonly orders: CustomerOrdersRepository,
-    private readonly products: ProductsRepository,
+    private readonly products: ProductsService,
     private readonly branches: BranchesService,
     private readonly users: UsersService,
     private readonly pos: PosRepository,

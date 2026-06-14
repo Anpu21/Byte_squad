@@ -10,7 +10,7 @@ import { CustomerOrdersRepository } from './customer-orders.repository';
 import { CustomerOrder } from './entities/customer-order.entity';
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
-import { ProductsRepository } from '@products/products.repository';
+import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
 import { PosRepository } from '@pos/pos.repository';
@@ -51,7 +51,7 @@ describe('CustomerOrdersService', () => {
         CustomerOrdersService,
         { provide: CustomerOrdersRepository, useValue: repoMock },
         {
-          provide: ProductsRepository,
+          provide: ProductsService,
           useValue: { findActiveByIds: jest.fn() },
         },
         { provide: BranchesService, useValue: { findEntityById: jest.fn() } },

@@ -9,7 +9,7 @@ import { ProductBatch } from '@inventory/entities/product-batch.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { StockMovement } from '@pos/entities/stock-movement.entity';
 import { ProductBatchRepository } from '@inventory/product-batch.repository';
-import { ProductsRepository } from '@products/products.repository';
+import { ProductsService } from '@products/products.service';
 import { UsersService } from '@users/users.service';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationsGateway } from '@notifications/notifications.gateway';
@@ -39,7 +39,7 @@ export class ExpiryService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly batches: ProductBatchRepository,
-    private readonly products: ProductsRepository,
+    private readonly products: ProductsService,
     private readonly users: UsersService,
     private readonly notifications: NotificationsService,
     private readonly gateway: NotificationsGateway,

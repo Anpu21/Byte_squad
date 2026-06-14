@@ -12,7 +12,7 @@ import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-r
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { User } from '@users/entities/user.entity';
 import { StockTransfersRepository } from '@stock-transfers/stock-transfers.repository';
-import { ProductsRepository } from '@products/products.repository';
+import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
 import { InventoryService } from '@inventory/inventory.service';
 import { UsersService } from '@users/users.service';
@@ -68,7 +68,7 @@ export class StockTransfersService {
 
   constructor(
     private readonly transfers: StockTransfersRepository,
-    private readonly products: ProductsRepository,
+    private readonly products: ProductsService,
     private readonly branches: BranchesService,
     private readonly inventory: InventoryService,
     private readonly users: UsersService,
