@@ -88,6 +88,22 @@ export class Payment {
   })
   creditAmount!: number;
 
+  /**
+   * Portion of the invoice settled by redeemed loyalty points (points
+   * priced at the current `pointValue`). Treated as a non-cash tender:
+   * `cash + cheque + bank + credit + loyalty_amount` reconciles to the
+   * gross `invoice_total`, so revenue/tax on the Sale row stay at gross
+   * while the customer hands over only the money remainder.
+   */
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'loyalty_amount',
+    default: 0,
+  })
+  loyaltyAmount!: number;
+
   @Column({ type: 'boolean', name: 'keep_balance', default: false })
   keepBalance!: boolean;
 

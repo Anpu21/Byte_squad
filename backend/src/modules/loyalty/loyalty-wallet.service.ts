@@ -6,6 +6,8 @@ import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 import type { LoyaltyOwner } from '@/modules/loyalty/types';
 
+const round2 = (n: number): number => Math.round(n * 100) / 100;
+
 /**
  * Wallet write path for loyalty: earn, redeem, reverse, and the
  * supporting calculation helpers. Split out of `LoyaltyService` so
@@ -38,6 +40,40 @@ export class LoyaltyWalletService {
       availablePoints - settings.minRedeemablePoints,
     );
     return Math.max(0, Math.min(redeemableBalance, pointsForCap));
+  }
+
+  /**
+   * Read-only sizing of a redemption BEFORE the sale transaction opens, so
+   * the cashier's payable can be reduced by the points' money value up
+   * front. It applies the SAME server-authoritative cap as
+   * `redeemForOrder` (which re-validates and debits inside the txn), but
+   * writes no ledger and moves no points. `cappedPoints` is what will
+   * actually be redeemed; `redeemValue` is its money worth at the current
+   * `pointValue`. Caller passes `itemsSubtotal` as the cap base because
+   * `redeemForOrder` caps on the same figure — keeping the two in lockstep.
+   */
+  async previewRedeemValue(params: {
+    owner: LoyaltyOwner | null;
+    itemsSubtotal: number;
+    requestedPoints: number;
+  }): Promise<{ cappedPoints: number; redeemValue: number; pointValue: number }> {
+    const pointValue = await this.loyaltyService.getPointValue();
+    const requested = Math.floor(params.requestedPoints);
+    if (!params.owner || requested <= 0) {
+      return { cappedPoints: 0, redeemValue: 0, pointValue };
+    }
+
+    const account = await this.loyaltyService.getOrCreateAccount(params.owner);
+    const max = await this.calculateMaxRedeemable(
+      params.itemsSubtotal,
+      account.pointsBalance,
+    );
+    const cappedPoints = Math.max(0, Math.min(requested, max));
+    return {
+      cappedPoints,
+      redeemValue: round2(cappedPoints * pointValue),
+      pointValue,
+    };
   }
 
   async calculateEarnedPoints(paidAmount: number): Promise<number> {

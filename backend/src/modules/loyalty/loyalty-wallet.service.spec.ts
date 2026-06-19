@@ -78,6 +78,7 @@ describe('LoyaltyWalletService', () => {
     };
     const loyaltyServiceMock: Partial<jest.Mocked<LoyaltyService>> = {
       getOrCreateAccount: jest.fn(),
+      getPointValue: jest.fn().mockResolvedValue(1),
     };
     const settingsMock: Partial<jest.Mocked<LoyaltySettingsService>> = {
       get: jest.fn().mockResolvedValue(makeSettings()),
@@ -399,6 +400,80 @@ describe('LoyaltyWalletService', () => {
 
       expect(result).toBe(0);
       expect(loyaltyRepo.applyEarnReversal).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('previewRedeemValue', () => {
+    it('returns zeros and reads no wallet when owner is null', async () => {
+      const result = await service.previewRedeemValue({
+        owner: null,
+        itemsSubtotal: 1000,
+        requestedPoints: 100,
+      });
+
+      expect(result).toEqual({
+        cappedPoints: 0,
+        redeemValue: 0,
+        pointValue: 1,
+      });
+      expect(loyaltyService.getOrCreateAccount).not.toHaveBeenCalled();
+    });
+
+    it('returns zeros when requested points is zero', async () => {
+      const result = await service.previewRedeemValue({
+        owner: { userId: USER_ID },
+        itemsSubtotal: 1000,
+        requestedPoints: 0,
+      });
+
+      expect(result.cappedPoints).toBe(0);
+      expect(result.redeemValue).toBe(0);
+      expect(loyaltyService.getOrCreateAccount).not.toHaveBeenCalled();
+    });
+
+    it('sizes the redeem value without writing any ledger row', async () => {
+      // balance 250, subtotal 1000 → cap = min(250-100, 1000*20%) = 150
+      loyaltyService.getOrCreateAccount.mockResolvedValue(makeUserAccount());
+
+      const result = await service.previewRedeemValue({
+        owner: { userId: USER_ID },
+        itemsSubtotal: 1000,
+        requestedPoints: 100,
+      });
+
+      expect(result.cappedPoints).toBe(100);
+      expect(result.redeemValue).toBe(100); // 100 pts * pointValue 1
+      expect(loyaltyService.getOrCreateAccount).toHaveBeenCalledTimes(1);
+      expect(loyaltyRepo.applyRedeem).not.toHaveBeenCalled();
+      expect(loyaltyRepo.createLedgerEntry).not.toHaveBeenCalled();
+    });
+
+    it('clamps the request down to the server cap', async () => {
+      loyaltyService.getOrCreateAccount.mockResolvedValue(makeUserAccount());
+
+      const result = await service.previewRedeemValue({
+        owner: { userId: USER_ID },
+        itemsSubtotal: 1000,
+        requestedPoints: 300, // above the 150 cap
+      });
+
+      expect(result.cappedPoints).toBe(150);
+      expect(result.redeemValue).toBe(150);
+    });
+
+    it('prices the redeem value at the current pointValue', async () => {
+      loyaltyService.getOrCreateAccount.mockResolvedValue(makeUserAccount());
+      loyaltyService.getPointValue.mockResolvedValue(2);
+
+      const result = await service.previewRedeemValue({
+        owner: { userId: USER_ID },
+        itemsSubtotal: 1000,
+        requestedPoints: 300,
+      });
+
+      expect(result.cappedPoints).toBe(150);
+      expect(result.redeemValue).toBe(300); // 150 pts * 2
+      expect(result.pointValue).toBe(2);
     });
   });
 });

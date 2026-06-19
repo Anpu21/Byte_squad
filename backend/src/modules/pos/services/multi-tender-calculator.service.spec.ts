@@ -158,4 +158,80 @@ describe('MultiTenderCalculatorService', () => {
       'Overpayment requires keepBalance=true',
     );
   });
+
+  it('omitting loyaltyAmount keeps loyaltyApplied at 0', () => {
+    const result = svc.calculate(
+      100,
+      payment({ cashAmount: 100, cashTendered: 100 }),
+    );
+
+    expect(result.loyaltyApplied).toBe(0);
+    expect(result.paymentAmount).toBe(100);
+  });
+
+  it('loyalty tender + cash: Paid; money owed drops by the redeem value', () => {
+    // Rs1000 bill, 200 settled by points → cashier only collects Rs800.
+    const result = svc.calculate(
+      1000,
+      payment({ cashAmount: 800, cashTendered: 800 }),
+      200,
+    );
+
+    expect(result.paymentStatus).toBe('Paid');
+    expect(result.balanceDue).toBe(0);
+    expect(result.paymentAmount).toBe(800); // money only
+    expect(result.loyaltyApplied).toBe(200);
+    expect(result.paidAmount).toBe(1000); // fully settled (money + points)
+    expect(result.cashChange).toBe(0);
+  });
+
+  it('loyalty tender covering the whole bill: Paid with zero cash', () => {
+    const result = svc.calculate(
+      1000,
+      payment({ cashAmount: 0, cashTendered: 0 }),
+      1000,
+    );
+
+    expect(result.paymentStatus).toBe('Paid');
+    expect(result.paymentAmount).toBe(0);
+    expect(result.loyaltyApplied).toBe(1000);
+    expect(result.paidAmount).toBe(1000);
+    expect(result.balanceDue).toBe(0);
+  });
+
+  it('loyalty tender + partial cash: Partially_Paid, balanceDue nets points', () => {
+    const result = svc.calculate(
+      1000,
+      payment({ cashAmount: 500, cashTendered: 500 }),
+      200,
+    );
+
+    expect(result.paymentStatus).toBe('Partially_Paid');
+    expect(result.balanceDue).toBe(300); // 1000 - (500 + 200)
+    expect(result.paidAmount).toBe(700);
+    expect(result.paymentAmount).toBe(500);
+    expect(result.loyaltyApplied).toBe(200);
+  });
+
+  it('money overpay alongside loyalty kept as credit when keepBalance set', () => {
+    const result = svc.calculate(
+      1000,
+      payment({ cashAmount: 900, cashTendered: 900, keepBalance: true }),
+      200,
+    );
+
+    expect(result.overpayKeptBalance).toBe(100); // 1100 settled - 1000
+    expect(result.paidAmount).toBe(1000);
+    expect(result.paymentStatus).toBe('Paid');
+  });
+
+  it('money overpay alongside loyalty throws without keepBalance', () => {
+    expect(() =>
+      svc.calculate(
+        1000,
+        payment({ cashAmount: 900, cashTendered: 900 }),
+        200,
+      ),
+    ).toThrow(BadRequestException);
+  });
 });
