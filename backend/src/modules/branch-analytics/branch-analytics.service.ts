@@ -5,6 +5,7 @@ import { BranchAnalyticsRepository } from './branch-analytics.repository';
 import type { BranchAnalyticsComparisonDto } from './dto/branch-analytics-comparison.dto';
 import {
   BRANCH_ANALYTICS_SECTIONS,
+  type BranchAnalyticsBranchOption,
   type BranchAnalyticsComparisonResponse,
 } from './types';
 
@@ -60,6 +61,21 @@ export class BranchAnalyticsService {
       },
       ownBranchId: actor.role === UserRole.MANAGER ? actor.branchId : null,
     });
+  }
+
+  /**
+   * Branch roster for the comparison picker. Returns every branch (id + name +
+   * active flag) for admins AND managers, so a manager can pick which other
+   * branches to compare their own against. Intentionally NOT branch-scoped —
+   * the comparison feature is cross-branch by design.
+   */
+  async listBranches(): Promise<BranchAnalyticsBranchOption[]> {
+    const branches = await this.analytics.listBranches();
+    return branches.map((branch) => ({
+      id: branch.id,
+      name: branch.name,
+      isActive: branch.isActive,
+    }));
   }
 
   private resolveAdminBranchIds(branchIds: readonly string[]): string[] {

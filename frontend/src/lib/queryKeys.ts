@@ -67,6 +67,8 @@ export const queryKeys = {
             ['admin', 'comparison', submitted] as const,
         branchAnalyticsComparison: (submitted: unknown) =>
             ['admin', 'branch-analytics-comparison', submitted] as const,
+        branchAnalyticsBranches: () =>
+            ['admin', 'branch-analytics-branches'] as const,
         dashboard: () => ['admin', 'dashboard'] as const,
     },
     inventory: {

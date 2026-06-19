@@ -182,6 +182,7 @@ export const APP_ROUTES = {
   BRANCH_ANALYTICS: {
     BASE: `${API_PREFIX}/branch-analytics`,
     COMPARISON: 'comparison',
+    BRANCHES: 'branches',
   },
 
   // Storefront catalog (CUSTOMER role only)
