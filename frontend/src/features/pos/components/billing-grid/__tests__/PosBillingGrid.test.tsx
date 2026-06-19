@@ -75,20 +75,16 @@ function setup(cart: ICartItem[] = []) {
 }
 
 describe('PosBillingGrid', () => {
-    it('adds a line keyboard-first: item → Enter → qty → Enter', () => {
+    it('adds a line on pick at quantity 1: item → Enter', () => {
         const { addItem } = setup([]);
         const itemInput = screen.getByLabelText('Add item');
         fireEvent.change(itemInput, { target: { value: 'milk' } });
-        fireEvent.keyDown(itemInput, { key: 'Enter' });
-
-        const qty = screen.getByLabelText('New line quantity');
-        fireEvent.change(qty, { target: { value: '3' } });
-        fireEvent.keyDown(qty, { key: 'Enter' });
+        fireEvent.keyDown(itemInput, { key: 'Enter' }); // pick → auto-adds
 
         expect(addItem).toHaveBeenCalledTimes(1);
         expect(addItem.mock.calls[0][0]).toMatchObject({
             productId: 'p1',
-            quantity: 3,
+            quantity: 1,
         });
     });
 
@@ -133,25 +129,26 @@ describe('PosBillingGrid', () => {
     function addOneLine() {
         const itemInput = screen.getByLabelText('Add item');
         fireEvent.change(itemInput, { target: { value: 'milk' } });
-        fireEvent.keyDown(itemInput, { key: 'Enter' }); // pick product
-        const qty = screen.getByLabelText('New line quantity');
-        fireEvent.change(qty, { target: { value: '1' } });
-        fireEvent.keyDown(qty, { key: 'Enter' }); // commit
+        fireEvent.keyDown(itemInput, { key: 'Enter' }); // pick → auto-adds qty 1
     }
 
-    it('leaves the Item input ready+focused so a second product can be entered', () => {
+    it('clears+refocuses the Item input on pick so a second product follows', async () => {
         render(<StatefulGrid />);
 
         addOneLine();
 
-        // First line committed.
+        // First line landed in the cart at quantity 1.
         expect(screen.getAllByText('Milk 1L').length).toBeGreaterThanOrEqual(1);
 
-        // The entry Item input must be editable (not stuck readOnly on the
-        // just-picked product) AND focused, so the cashier can type the next.
-        const entryInput = screen.getByLabelText('Add item');
-        expect(entryInput).not.toHaveAttribute('readonly');
-        expect(document.activeElement).toBe(entryInput);
+        // The entry Item input is cleared (ready for the next product) and
+        // re-focused, so the cashier can keep typing without clicking back.
+        const entryInput = screen.getByLabelText('Add item') as HTMLInputElement;
+        expect(entryInput.value).toBe('');
+        await waitFor(() =>
+            expect(document.activeElement).toBe(
+                screen.getByLabelText('Add item'),
+            ),
+        );
 
         // And a second product can actually be entered.
         addOneLine();
