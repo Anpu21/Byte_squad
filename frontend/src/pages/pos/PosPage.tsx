@@ -6,6 +6,7 @@ import {
     usePosCart,
     type SchemeDiscountResolver,
 } from '@/features/pos/hooks/usePosCart';
+import { usePosAddItemGuard } from '@/features/pos/hooks/usePosAddItemGuard';
 import { useActiveSchemes } from '@/features/pos/hooks/useActiveSchemes';
 import { resolveSchemeDiscount } from '@/features/pos/lib/scheme-discount';
 import { usePosPageState } from '@/features/pos/hooks/usePosPageState';
@@ -54,6 +55,9 @@ export function PosPage(): React.ReactElement {
         return (input) => resolveSchemeDiscount(schemes, input);
     }, [schemesQuery.data]);
     const cart = usePosCart(schemeResolver);
+    // Gate every add behind a branch-stock check so an out-of-stock product is
+    // rejected with a toast at pick/scan time instead of failing at checkout.
+    const guardedAddItem = usePosAddItemGuard(cart.addItem);
     const state = usePosPageState();
     const heldBills = usePosHeldBills();
     const [showHeldBills, setShowHeldBills] = useState(false);
@@ -64,8 +68,8 @@ export function PosPage(): React.ReactElement {
     const loyaltySettingsQuery = usePosLoyaltySettings();
     const previewInvoiceNumber = invoiceNumberQuery.data?.invoiceNo ?? '';
     const handleScanHit = useCallback(
-        (row: ISearchProductRow) => cart.addItem(toCartItemSeed(row)),
-        [cart],
+        (row: ISearchProductRow) => guardedAddItem(toCartItemSeed(row)),
+        [guardedAddItem],
     );
     const barcode = usePosBarcodeScan({
         onProductFound: handleScanHit,
@@ -244,7 +248,7 @@ export function PosPage(): React.ReactElement {
                 <div className="flex flex-col gap-3">
                     <PosBillingGrid
                         cart={cart.cart}
-                        addItem={cart.addItem}
+                        addItem={guardedAddItem}
                         updateItem={cart.updateItem}
                         removeItem={cart.removeItem}
                         onClear={cart.clear}
