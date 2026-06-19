@@ -6,6 +6,7 @@ import { store, persistor } from '@/store/index';
 import AppRouter from '@/routes/AppRouter';
 import { ConfirmProvider } from '@/hooks/ConfirmProvider';
 import { AppBootSpinner } from '@/components/ui/AppBootSpinner';
+import { LanguageSync } from '@/i18n/LanguageSync';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -22,6 +23,7 @@ function App() {
             <PersistGate loading={<AppBootSpinner />} persistor={persistor}>
                 <QueryClientProvider client={queryClient}>
                     <ConfirmProvider>
+                        <LanguageSync />
                         <AppRouter />
                     </ConfirmProvider>
                     <Toaster

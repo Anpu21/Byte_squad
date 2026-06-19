@@ -49,6 +49,14 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   address!: string | null;
 
+  /**
+   * Preferred UI language (BCP-47-ish short code: 'en', 'ta'). Saved from
+   * profile settings so the choice follows the user across devices; the
+   * frontend also caches it in localStorage for instant first paint.
+   */
+  @Column({ type: 'varchar', length: 8, name: 'language', default: 'en' })
+  language!: string;
+
   @Column({ type: 'boolean', name: 'is_first_login', default: true })
   isFirstLogin!: boolean;
 

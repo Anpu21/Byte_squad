@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     BarChart3,
     Bell,
@@ -46,6 +47,7 @@ type NavGroup =
     | 'System';
 
 interface NavItem {
+    /** i18n key under the `common` namespace, e.g. `nav.dashboard`. */
     label: string;
     path: string;
     roles: UserRole[];
@@ -62,21 +64,21 @@ function resolveNavPath(item: NavItem, role?: UserRole): string {
 const NAV_ITEMS: NavItem[] = [
     // ── Overview ──
     {
-        label: 'Dashboard',
+        label: 'nav.dashboard',
         path: FRONTEND_ROUTES.DASHBOARD,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Home size={15} />,
         group: 'Overview',
     },
     {
-        label: 'Dashboard',
+        label: 'nav.dashboard',
         path: FRONTEND_ROUTES.CASHIER_DASHBOARD,
         roles: [UserRole.CASHIER],
         icon: <Home size={15} />,
         group: 'Overview',
     },
     {
-        label: 'Dashboard',
+        label: 'nav.dashboard',
         path: FRONTEND_ROUTES.WORKER_DASHBOARD,
         roles: [UserRole.WORKER],
         icon: <Home size={15} />,
@@ -84,14 +86,14 @@ const NAV_ITEMS: NavItem[] = [
     },
     // ── Sales ──
     {
-        label: 'POS',
+        label: 'nav.pos',
         path: FRONTEND_ROUTES.POS,
         roles: [UserRole.CASHIER],
         icon: <Receipt size={15} />,
         group: 'Sales',
     },
     {
-        label: 'Sales',
+        label: 'nav.sales',
         path: FRONTEND_ROUTES.SALES,
         roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
         icon: <ShoppingBag size={15} />,
@@ -99,14 +101,14 @@ const NAV_ITEMS: NavItem[] = [
     },
     // ── Fulfillment ──
     {
-        label: 'My Deliveries',
+        label: 'nav.myDeliveries',
         path: FRONTEND_ROUTES.SHIPMENTS,
         roles: [UserRole.WORKER],
         icon: <Truck size={15} />,
         group: 'Fulfillment',
     },
     {
-        label: 'Shipments',
+        label: 'nav.shipments',
         path: FRONTEND_ROUTES.SHIPMENTS,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Truck size={15} />,
@@ -114,14 +116,14 @@ const NAV_ITEMS: NavItem[] = [
     },
     // ── Inventory ──
     {
-        label: 'Inventory',
+        label: 'nav.inventory',
         path: FRONTEND_ROUTES.INVENTORY,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Boxes size={15} />,
         group: 'Inventory',
     },
     {
-        label: 'Purchases',
+        label: 'nav.purchases',
         path: FRONTEND_ROUTES.PURCHASES,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <PackagePlus size={15} />,
@@ -129,14 +131,14 @@ const NAV_ITEMS: NavItem[] = [
     },
     // ── Finance ──
     {
-        label: 'Accounting',
+        label: 'nav.accounting',
         path: FRONTEND_ROUTES.ACCOUNTING,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Calculator size={15} />,
         group: 'Finance',
     },
     {
-        label: 'Reports',
+        label: 'nav.reports',
         path: FRONTEND_ROUTES.REPORTS,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <BarChart3 size={15} />,
@@ -144,35 +146,35 @@ const NAV_ITEMS: NavItem[] = [
     },
     // ── People ──
     {
-        label: 'Customer loyalty',
+        label: 'nav.customerLoyalty',
         path: FRONTEND_ROUTES.ADMIN_LOYALTY,
         roles: [UserRole.ADMIN],
         icon: <Sparkles size={15} />,
         group: 'People',
     },
     {
-        label: 'Customer loyalty',
+        label: 'nav.customerLoyalty',
         path: FRONTEND_ROUTES.MANAGER_LOYALTY,
         roles: [UserRole.MANAGER],
         icon: <Sparkles size={15} />,
         group: 'People',
     },
     {
-        label: 'Users',
+        label: 'nav.users',
         path: FRONTEND_ROUTES.USER_MANAGEMENT,
         roles: [UserRole.ADMIN],
         icon: <Users size={15} />,
         group: 'People',
     },
     {
-        label: 'HR',
+        label: 'nav.hr',
         path: FRONTEND_ROUTES.ADMIN_HR,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Briefcase size={15} />,
         group: 'People',
     },
     {
-        label: 'Leaves',
+        label: 'nav.leaves',
         path: FRONTEND_ROUTES.ADMIN_LEAVES,
         roles: [UserRole.CASHIER],
         icon: <CalendarRange size={15} />,
@@ -180,27 +182,38 @@ const NAV_ITEMS: NavItem[] = [
     },
     // ── System ──
     {
-        label: 'Branches',
+        label: 'nav.branches',
         path: FRONTEND_ROUTES.BRANCHES,
         roles: [UserRole.ADMIN, UserRole.MANAGER],
         icon: <Building2 size={15} />,
         group: 'System',
     },
     {
-        label: 'Audit log',
+        label: 'nav.auditLog',
         path: FRONTEND_ROUTES.ADMIN_AUDIT,
         roles: [UserRole.ADMIN],
         icon: <FileClock size={15} />,
         group: 'System',
     },
     {
-        label: 'Notifications',
+        label: 'nav.notifications',
         path: FRONTEND_ROUTES.NOTIFICATIONS,
         roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
         icon: <Bell size={15} />,
         group: 'System',
     },
 ];
+
+/** Group header → i18n key under `common` (`nav.groups.*`). */
+const GROUP_LABEL_KEY: Record<NavGroup, string> = {
+    Overview: 'nav.groups.overview',
+    Sales: 'nav.groups.sales',
+    Fulfillment: 'nav.groups.fulfillment',
+    Inventory: 'nav.groups.inventory',
+    Finance: 'nav.groups.finance',
+    People: 'nav.groups.people',
+    System: 'nav.groups.system',
+};
 
 const GROUP_ORDER: NavGroup[] = [
     'Overview',
@@ -213,6 +226,7 @@ const GROUP_ORDER: NavGroup[] = [
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+    const { t } = useTranslation('common');
     const { user, logout } = useAuth();
     const { unreadCount } = useNotifications();
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -286,7 +300,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 href="#main-content"
                 className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-modal focus:px-3 focus:py-2 focus:rounded-md focus:bg-primary focus:text-text-inv focus:text-sm focus:font-medium focus:shadow-md-token focus:outline-none focus:ring-[3px] focus:ring-primary/30"
             >
-                Skip to main content
+                {t('shell.skipToMain')}
             </a>
             {mobileNavOpen && (
                 <div
@@ -321,7 +335,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             <div key={group} className="mb-2">
                                 {isExpanded && (
                                     <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-text-3 px-3 pt-3 pb-1.5">
-                                        {group}
+                                        {t(GROUP_LABEL_KEY[group])}
                                     </div>
                                 )}
                                 <div className="space-y-0.5">
@@ -332,7 +346,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                             <Link
                                                 key={`${itemPath}-${item.label}`}
                                                 to={itemPath}
-                                                title={!isExpanded ? item.label : undefined}
+                                                title={!isExpanded ? t(item.label) : undefined}
                                                 onClick={() => setMobileNavOpen(false)}
                                                 className={cn(
                                                     'relative flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors',
@@ -351,7 +365,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                                 <span className="flex-shrink-0">{item.icon}</span>
                                                 {isExpanded && (
                                                     <>
-                                                        <span className="flex-1 truncate">{item.label}</span>
+                                                        <span className="flex-1 truncate">{t(item.label)}</span>
                                                         {itemPath === FRONTEND_ROUTES.NOTIFICATIONS &&
                                                             unreadCount > 0 && (
                                                                 <span
@@ -395,7 +409,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                         {user.firstName} {user.lastName}
                                     </p>
                                     <p className="text-[11px] text-text-2 capitalize truncate">
-                                        {user.role.toLowerCase()} · Profile
+                                        {user.role.toLowerCase()} · {t('shell.profile')}
                                     </p>
                                 </div>
                             )}
@@ -418,7 +432,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             }
                         }}
                         className="p-1.5 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors flex-shrink-0"
-                        aria-label="Toggle sidebar"
+                        aria-label={t('shell.toggleSidebar')}
                     >
                         <MenuIcon size={18} />
                     </button>
@@ -458,7 +472,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 <button
                                     onClick={() => setProfileOpen((s) => !s)}
                                     className="p-1 rounded-full hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
-                                    aria-label="Open user menu"
+                                    aria-label={t('shell.openUserMenu')}
                                     aria-haspopup="menu"
                                     aria-expanded={profileOpen}
                                 >
@@ -489,7 +503,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                             }}
                                             className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:bg-surface-2"
                                         >
-                                            <UserCog size={14} /> Profile
+                                            <UserCog size={14} /> {t('shell.profile')}
                                         </button>
                                         <div className="h-px bg-border" role="separator" />
                                         <button
@@ -497,7 +511,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                             onClick={handleLogout}
                                             className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-danger hover:bg-danger-soft transition-colors focus:outline-none focus:bg-danger-soft"
                                         >
-                                            <LogOut size={14} /> Logout
+                                            <LogOut size={14} /> {t('shell.logout')}
                                         </button>
                                     </div>
                                 )}

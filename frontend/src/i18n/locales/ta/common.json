@@ -5,13 +5,50 @@
   "saving": "சேமிக்கிறது...",
   "saveChanges": "மாற்றங்களைச் சேமி",
   "loading": "ஏற்றுகிறது...",
+  "delete": "Delete",
+  "edit": "Edit",
+  "add": "Add",
+  "search": "Search",
+  "export": "Export",
+  "noData": "No data",
+  "confirm": "Confirm",
   "nav": {
     "dashboard": "டாஷ்போர்டு",
+    "pos": "POS",
+    "sales": "Sales",
+    "myDeliveries": "My Deliveries",
+    "shipments": "Shipments",
     "inventory": "சரக்கு",
+    "purchases": "Purchases",
+    "accounting": "Accounting",
+    "reports": "Reports",
+    "customerLoyalty": "Customer loyalty",
+    "users": "Users",
+    "hr": "HR",
+    "leaves": "Leaves",
+    "branches": "Branches",
+    "auditLog": "Audit log",
+    "notifications": "Notifications",
     "expiry": "காலாவதி",
     "adjustments": "சரிசெய்தல்கள்",
     "returns": "திருப்பங்கள்",
     "profile": "சுயவிவரம்",
-    "language": "மொழி"
+    "language": "மொழி",
+    "groups": {
+      "overview": "Overview",
+      "sales": "Sales",
+      "fulfillment": "Fulfillment",
+      "inventory": "Inventory",
+      "finance": "Finance",
+      "people": "People",
+      "system": "System"
+    }
+  },
+  "shell": {
+    "skipToMain": "Skip to main content",
+    "toggleSidebar": "Toggle sidebar",
+    "openUserMenu": "Open user menu",
+    "profile": "சுயவிவரம்",
+    "logout": "Logout"
   }
 }
