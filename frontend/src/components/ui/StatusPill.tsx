@@ -26,6 +26,7 @@ const STATUS_MAP: Record<string, { tone: PillTone; label: string }> = {
     failed: { tone: 'danger', label: 'Failed' },
     cancelled: { tone: 'neutral', label: 'Cancelled' },
     canceled: { tone: 'neutral', label: 'Cancelled' },
+    not_collected: { tone: 'danger', label: 'Not collected' },
     expired: { tone: 'neutral', label: 'Expired' },
     void: { tone: 'neutral', label: 'Voided' },
     voided: { tone: 'neutral', label: 'Voided' },

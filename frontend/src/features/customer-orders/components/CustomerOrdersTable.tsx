@@ -15,10 +15,10 @@ interface CustomerOrdersTableProps {
     setSearch: (v: string) => void;
     statusFilter: CustomerOrderStatus | '';
     setStatusFilter: (v: CustomerOrderStatus | '') => void;
-    canReview: (branchId: string) => boolean;
+    canManage: (branchId: string) => boolean;
     onView: (id: string) => void;
-    onAccept: (id: string) => void;
-    onReject: (id: string) => void;
+    onCollect: (order: ICustomerOrder) => void;
+    onMarkNotCollected: (id: string) => void;
 }
 
 export function CustomerOrdersTable({
@@ -31,10 +31,10 @@ export function CustomerOrdersTable({
     setSearch,
     statusFilter,
     setStatusFilter,
-    canReview,
+    canManage,
     onView,
-    onAccept,
-    onReject,
+    onCollect,
+    onMarkNotCollected,
 }: CustomerOrdersTableProps) {
     const showBranchCol = isAdmin;
 
@@ -117,11 +117,11 @@ export function CustomerOrdersTable({
                                         key={req.id}
                                         request={req}
                                         showBranchCol={showBranchCol}
-                                        canReview={canReview(req.branchId)}
+                                        canManage={canManage(req.branchId)}
                                         actionPending={actionPending}
                                         onView={onView}
-                                        onAccept={onAccept}
-                                        onReject={onReject}
+                                        onCollect={onCollect}
+                                        onMarkNotCollected={onMarkNotCollected}
                                     />
                                 ))}
                             </tbody>

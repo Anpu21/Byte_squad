@@ -86,16 +86,9 @@ export const customerOrdersService = {
         return response.data.data;
     },
 
-    acceptByStaff: async (id: string): Promise<ICustomerOrder> => {
+    markNotCollected: async (id: string): Promise<ICustomerOrder> => {
         const response = await api.patch<IApiResponse<ICustomerOrder>>(
-            `/customer-orders/${id}/accept`,
-        );
-        return response.data.data;
-    },
-
-    rejectByStaff: async (id: string): Promise<ICustomerOrder> => {
-        const response = await api.patch<IApiResponse<ICustomerOrder>>(
-            `/customer-orders/${id}/reject`,
+            `/customer-orders/${id}/not-collected`,
         );
         return response.data.data;
     },

@@ -7,14 +7,15 @@ import type { ICustomerOrder } from '@/types';
 import { OrderItemsList } from './OrderItemsList';
 import { OrderStatusActions } from './OrderStatusActions';
 import { PaymentStatusBadge } from '@/features/my-orders/components/PaymentStatusBadge';
+import { STAFF_ORDER_STATUS_LABEL } from '@/features/customer-orders/lib/order-status';
 
 interface StaffOrderDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
     request: ICustomerOrder | null;
-    canReview: boolean;
-    onAccept: (id: string) => void | Promise<void>;
-    onReject: (id: string) => void | Promise<void>;
+    canManage: boolean;
+    onCollect: (order: ICustomerOrder) => void | Promise<void>;
+    onMarkNotCollected: (id: string) => void | Promise<void>;
     actionPending?: boolean;
 }
 
@@ -22,9 +23,9 @@ export function StaffOrderDetailsModal({
     isOpen,
     onClose,
     request,
-    canReview,
-    onAccept,
-    onReject,
+    canManage,
+    onCollect,
+    onMarkNotCollected,
     actionPending = false,
 }: StaffOrderDetailsModalProps) {
     const [fallback, setFallback] = useState<{ code: string; url: string } | null>(null);
@@ -58,7 +59,6 @@ export function StaffOrderDetailsModal({
     const customerName = request.user
         ? `${request.user.firstName} ${request.user.lastName}`
         : (request.guestName ?? 'Guest');
-    const isPending = request.status === 'pending';
 
     return (
         <Modal
@@ -72,7 +72,10 @@ export function StaffOrderDetailsModal({
                 <div className="flex flex-col">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex flex-wrap items-center gap-2">
-                            <StatusPill status={request.status} />
+                            <StatusPill
+                                status={request.status}
+                                label={STAFF_ORDER_STATUS_LABEL[request.status]}
+                            />
                             <PaymentStatusBadge
                                 status={request.paymentStatus}
                             />
@@ -149,13 +152,11 @@ export function StaffOrderDetailsModal({
                     </div>
 
                     <OrderStatusActions
-                        orderId={request.id}
-                        isPending={isPending}
-                        canReject={request.paymentStatus !== 'paid'}
-                        canReview={canReview}
+                        order={request}
+                        canManage={canManage}
                         actionPending={actionPending}
-                        onAccept={onAccept}
-                        onReject={onReject}
+                        onCollect={onCollect}
+                        onMarkNotCollected={onMarkNotCollected}
                     />
                 </div>
             </div>

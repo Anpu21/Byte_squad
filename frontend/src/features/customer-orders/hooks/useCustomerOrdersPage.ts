@@ -46,8 +46,8 @@ export function useCustomerOrdersPage() {
         [requestsApi.requests],
     );
 
-    const canReview = (branchId: string) =>
-        isAdmin || (isManager && user?.branchId === branchId);
+    const canManage = (branchId: string) =>
+        isAdmin || ((isManager || isCashier) && user?.branchId === branchId);
 
     const hasFilters =
         requestsApi.statusFilter !== '' || requestsApi.search.trim() !== '';
@@ -65,9 +65,9 @@ export function useCustomerOrdersPage() {
         setSelectedRequestId,
         selectedRequest,
         actionPending: actions.actionPending,
-        onAccept: actions.onAccept,
-        onReject: actions.onReject,
-        canReview,
+        onCollect: actions.onCollect,
+        onMarkNotCollected: actions.onMarkNotCollected,
+        canManage,
         kpis,
         isAdmin,
         isCashier,
