@@ -47,6 +47,7 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
     const [editingTarget, setEditingTarget] = useState<EditingTarget | null>(
         null,
     );
+    const [roleFilter, setRoleFilter] = useState<string>('');
 
     const { year, month } = parseIsoMonth(monthValue);
     const startDate = useMemo(
@@ -72,6 +73,24 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
     const employees = useMemo(
         () => employeesQuery.data?.rows ?? [],
         [employeesQuery.data],
+    );
+
+    // Roster role filter (e.g. "Courier" for workers). Client-side — the
+    // roster already loads every active employee for the branch.
+    const roleOptions = useMemo(
+        () =>
+            Array.from(
+                new Set(employees.map((e) => e.role).filter(Boolean)),
+            ).sort(),
+        [employees],
+    );
+    const activeRole = roleOptions.includes(roleFilter) ? roleFilter : '';
+    const visibleEmployees = useMemo(
+        () =>
+            activeRole
+                ? employees.filter((e) => e.role === activeRole)
+                : employees,
+        [employees, activeRole],
     );
 
     const attendanceQuery = useAttendance({
@@ -115,9 +134,12 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
                     branchId={branchId}
                     onBranchIdChange={setBranchId}
                     canPickBranch={canPickBranch}
+                    roleFilter={activeRole}
+                    roleOptions={roleOptions}
+                    onRoleChange={setRoleFilter}
                 />
                 <AttendanceWeeklyTables
-                    employees={employees}
+                    employees={visibleEmployees}
                     rows={rows}
                     monthValue={monthValue}
                     isLoading={

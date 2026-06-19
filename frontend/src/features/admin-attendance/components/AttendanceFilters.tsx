@@ -13,6 +13,9 @@ interface IAttendanceFiltersProps {
     branchId: string;
     onBranchIdChange: (id: string) => void;
     canPickBranch: boolean;
+    roleFilter: string;
+    roleOptions: string[];
+    onRoleChange: (role: string) => void;
 }
 
 const INPUT_CLASS =
@@ -39,6 +42,9 @@ export function AttendanceFilters({
     branchId,
     onBranchIdChange,
     canPickBranch,
+    roleFilter,
+    roleOptions,
+    onRoleChange,
 }: IAttendanceFiltersProps) {
     const branchesQuery = useQuery({
         queryKey: queryKeys.admin.branches(),
@@ -110,6 +116,26 @@ export function AttendanceFilters({
                 </label>
             )}
 
+            {roleOptions.length > 1 && (
+                <label className="flex items-center gap-1.5">
+                    <span className="text-[11px] uppercase tracking-wide text-text-3">
+                        Role
+                    </span>
+                    <select
+                        value={roleFilter}
+                        onChange={(e) => onRoleChange(e.target.value)}
+                        aria-label="Filter by role"
+                        className={`${INPUT_CLASS} w-44`}
+                    >
+                        <option value="">All roles</option>
+                        {roleOptions.map((r) => (
+                            <option key={r} value={r}>
+                                {r}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+            )}
         </div>
     );
 }

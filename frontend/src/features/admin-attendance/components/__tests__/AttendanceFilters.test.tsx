@@ -29,10 +29,13 @@ function renderFilters(props: {
     canPickBranch?: boolean;
     onMonthChange?: (v: string) => void;
     onBranchIdChange?: (v: string) => void;
+    roleOptions?: string[];
+    onRoleChange?: (v: string) => void;
 }) {
     const { Wrapper } = makeWrapper();
     const onMonthChange = props.onMonthChange ?? vi.fn();
     const onBranchIdChange = props.onBranchIdChange ?? vi.fn();
+    const onRoleChange = props.onRoleChange ?? vi.fn();
     render(
         <Wrapper>
             <AttendanceFilters
@@ -41,10 +44,13 @@ function renderFilters(props: {
                 branchId=""
                 onBranchIdChange={onBranchIdChange}
                 canPickBranch={props.canPickBranch ?? true}
+                roleFilter=""
+                roleOptions={props.roleOptions ?? []}
+                onRoleChange={onRoleChange}
             />
         </Wrapper>,
     );
-    return { onMonthChange, onBranchIdChange };
+    return { onMonthChange, onBranchIdChange, onRoleChange };
 }
 
 describe('AttendanceFilters', () => {
@@ -70,5 +76,20 @@ describe('AttendanceFilters', () => {
         renderFilters({ onMonthChange });
         await userEvent.click(screen.getByLabelText(/previous month/i));
         expect(onMonthChange).toHaveBeenCalledWith('2025-05');
+    });
+
+    it('hides the role filter when fewer than two roles are present', () => {
+        renderFilters({ roleOptions: ['Courier'] });
+        expect(screen.queryByLabelText(/filter by role/i)).toBeNull();
+    });
+
+    it('shows the role filter and fires onRoleChange when multiple roles exist', async () => {
+        const onRoleChange = vi.fn();
+        renderFilters({ roleOptions: ['Cashier', 'Courier'], onRoleChange });
+        await userEvent.selectOptions(
+            screen.getByLabelText(/filter by role/i),
+            'Courier',
+        );
+        expect(onRoleChange).toHaveBeenCalledWith('Courier');
     });
 });
