@@ -45,6 +45,7 @@ function buildPayment(overrides: Partial<ISalePayment> = {}): ISalePayment {
         chequeAmount: 0,
         bankTransferAmount: 0,
         creditAmount: 0,
+        loyaltyAmount: 0,
         keepBalance: false,
         chequeNo: null,
         chequeDate: null,
@@ -263,6 +264,26 @@ describe('PosBillTemplate', () => {
         const sale = buildSale({ billPrintCount: 1 });
         render(<PosBillTemplate sale={sale} />);
         expect(screen.queryByText(/^Reprint/)).not.toBeInTheDocument();
+    });
+
+    it('renders the "Points redeemed" money line from the persisted payment column', () => {
+        const sale = buildSale({
+            payment: buildPayment({
+                loyaltyAmount: 200,
+                cashAmount: 800,
+                cashTendered: 800,
+                cashChange: 0,
+                paymentAmount: 800,
+            }),
+            total: 1000,
+            subtotal: 1000,
+            paidAmount: 1000,
+        });
+        render(<PosBillTemplate sale={sale} />);
+        const redeemedRow = screen
+            .getByText('Points redeemed')
+            .closest('div') as HTMLElement;
+        expect(within(redeemedRow).getByText(/−LKR\s*200/)).toBeInTheDocument();
     });
 
     it('renders the danger-toned balance-due row when the sale is short-paid', () => {
