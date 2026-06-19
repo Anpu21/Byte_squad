@@ -81,6 +81,14 @@ export function PosBillingEntryRow({
             discountPercentage: pending.discountAllowed ? disc : 0,
         });
         reset();
+        // Re-assert focus on the Item field on the next frame. The synchronous
+        // refocus (the [pending] effect below) can be undone by page-level work
+        // this commit triggers — e.g. the payment panel mounting when the cart
+        // goes 0→1 — leaving the entry input unfocused. An unfocused grid also
+        // lets the global barcode scan wedge swallow the cashier's next
+        // keystrokes, so the next product can't be entered. rAF runs after the
+        // page settles, so it wins that race.
+        requestAnimationFrame(() => focusCell('item'));
     }
 
     function handleNumericKey(e: KeyboardEvent<HTMLInputElement>) {
