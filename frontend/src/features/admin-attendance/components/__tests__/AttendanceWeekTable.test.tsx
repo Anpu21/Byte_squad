@@ -42,6 +42,8 @@ describe('AttendanceWeekTable', () => {
         expect(screen.getByText('Emma')).toBeInTheDocument();
         // 1 "Employee" + 7 day headers.
         expect(screen.getAllByRole('columnheader')).toHaveLength(8);
+        // 7-day shop: weekend cells are not auto-labelled "Weekend".
+        expect(screen.queryByText('Weekend')).toBeNull();
     });
 
     it('clicking a cell fires onCellClick with the employee and that date', async () => {

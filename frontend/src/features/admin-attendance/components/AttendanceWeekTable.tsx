@@ -5,7 +5,6 @@ import type { IAttendance, IEmployee } from '@/types';
 import {
     formatHoursDuration,
     formatIsoDate,
-    isWeekend,
 } from '../lib/attendance-grid-helpers';
 import { AttendanceStatusPill } from './AttendanceStatusPill';
 
@@ -68,12 +67,11 @@ export function AttendanceWeekTable({
                         </th>
                         {days.map((date) => {
                             const { weekday, dayNum } = dayHeader(date);
-                            const isWknd = isWeekend(date);
                             return (
                                 <th
                                     key={date}
                                     scope="col"
-                                    className={`px-3 py-2.5 font-semibold ${isWknd ? 'bg-surface-2/40' : ''} ${date === todayIso ? 'text-primary' : ''}`}
+                                    className={`px-3 py-2.5 font-semibold ${date === todayIso ? 'text-primary' : ''}`}
                                 >
                                     {weekday}
                                     <span className="ml-1.5 text-text-2 font-medium tabular-nums">
@@ -123,11 +121,10 @@ export function AttendanceWeekTable({
                                       const row =
                                           rowByCell.get(key(employee.id, date)) ??
                                           null;
-                                      const isWknd = isWeekend(date);
                                       return (
                                           <td
                                               key={date}
-                                              className={`p-0 align-top border-l border-border ${isWknd ? 'bg-surface-2/40' : ''} ${date === todayIso ? 'bg-primary-soft/10' : ''}`}
+                                              className={`p-0 align-top border-l border-border ${date === todayIso ? 'bg-primary-soft/10' : ''}`}
                                           >
                                               <button
                                                   type="button"
@@ -155,9 +152,7 @@ export function AttendanceWeekTable({
                                                       </>
                                                   ) : (
                                                       <span className="text-[12px] text-text-3">
-                                                          {isWknd
-                                                              ? 'Weekend'
-                                                              : '—'}
+                                                          —
                                                       </span>
                                                   )}
                                               </button>

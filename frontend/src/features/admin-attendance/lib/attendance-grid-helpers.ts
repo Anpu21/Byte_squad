@@ -154,7 +154,6 @@ export const STATUS_OPTIONS: ReadonlyArray<{
     { value: 'Half_Day', label: 'Half day' },
     { value: 'Leave', label: 'Leave' },
     { value: 'Holiday', label: 'Holiday' },
-    { value: 'Weekend', label: 'Weekend' },
 ];
 
 /**

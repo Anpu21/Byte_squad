@@ -10,7 +10,6 @@ import type {
 } from '@/types';
 import { useBulkUpsertAttendance } from '../hooks/useBulkUpsertAttendance';
 import {
-    isWeekend,
     STATUS_OPTIONS,
     statusUsesDuration,
 } from '../lib/attendance-grid-helpers';
@@ -33,12 +32,9 @@ const DAY_LABEL_FORMATTER = new Intl.DateTimeFormat('en-GB', {
 const INPUT_CLASS =
     'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 
-function defaultStatusFor(
-    existing: IAttendance | null,
-    date: string | null,
-): AttendanceStatus {
-    if (existing) return existing.status;
-    return date && isWeekend(date) ? 'Weekend' : 'Absent';
+function defaultStatusFor(existing: IAttendance | null): AttendanceStatus {
+    // 7-day shop: no weekend default — unmarked days start at Absent.
+    return existing ? existing.status : 'Absent';
 }
 
 function durationInputFor(totalHours: number | null | undefined): string {
@@ -66,8 +62,8 @@ export function AttendanceEditModal({
     existing,
 }: AttendanceEditModalProps) {
     const initialStatus = useMemo<AttendanceStatus>(
-        () => defaultStatusFor(existing, date),
-        [existing, date],
+        () => defaultStatusFor(existing),
+        [existing],
     );
     const [status, setStatus] = useState<AttendanceStatus>(initialStatus);
     const [duration, setDuration] = useState(

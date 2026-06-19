@@ -40,8 +40,6 @@ const ROWS: IAttendance[] = [
         employeeId: 'e1',
         attendanceDate: '2026-06-19',
         status: 'Present',
-        checkInTime: '08:00:00',
-        checkOutTime: '16:30:00',
         totalHours: 8.5,
     } as IAttendance,
 ];
@@ -77,6 +75,16 @@ describe('AttendanceDayTable', () => {
         ).toBeInTheDocument();
     });
 
+    it('does not show check-in / check-out columns', () => {
+        renderTable();
+        expect(
+            screen.queryByRole('columnheader', { name: /check.?in/i }),
+        ).toBeNull();
+        expect(
+            screen.queryByRole('columnheader', { name: /check.?out/i }),
+        ).toBeNull();
+    });
+
     it('a per-row Present marks just that employee for the day', async () => {
         renderTable();
         const presentButtons = screen.getAllByRole('button', {
@@ -89,6 +97,24 @@ describe('AttendanceDayTable', () => {
                     employeeId: 'e1',
                     attendanceDate: '2026-06-19',
                     status: 'Present',
+                },
+            ],
+        });
+    });
+
+    it('typing hours marks the person Present with those hours', async () => {
+        renderTable();
+        const hoursInputs = screen.getAllByLabelText('Hours');
+        // Emma (e2) has no row → empty hours input.
+        await userEvent.type(hoursInputs[1], '8');
+        await userEvent.tab();
+        expect(hrService.bulkUpsertAttendance).toHaveBeenCalledWith({
+            rows: [
+                {
+                    employeeId: 'e2',
+                    attendanceDate: '2026-06-19',
+                    status: 'Present',
+                    totalHours: 8,
                 },
             ],
         });
