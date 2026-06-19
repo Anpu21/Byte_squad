@@ -15,6 +15,7 @@ import {
 import { AttendanceFilters } from './AttendanceFilters';
 import { AttendanceWeeklyTables } from './AttendanceWeeklyTables';
 import { AttendanceEditModal } from './AttendanceEditModal';
+import { AttendanceTodayBanner } from './AttendanceTodayBanner';
 
 function currentMonthValue(): string {
     const now = new Date();
@@ -127,6 +128,9 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
                     subtitle={`${monthLabel}. Review and edit weekly attendance by employee.`}
                 />
             )}
+            <AttendanceTodayBanner
+                branchId={canPickBranch ? branchId || undefined : undefined}
+            />
             <Card className="overflow-hidden">
                 <AttendanceFilters
                     monthValue={monthValue}

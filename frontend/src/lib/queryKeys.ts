@@ -180,6 +180,8 @@ export const queryKeys = {
         myAttendance: (params: { startDate: string; endDate: string }) =>
             ['hr', 'attendance', 'me', params] as const,
         todayAttendance: () => ['hr', 'attendance', 'today'] as const,
+        branchTodayStatus: (branchId?: string) =>
+            ['hr', 'attendance', 'today-status', branchId ?? 'all'] as const,
         leaves: (params: ListLeavesQueryKey) => ['hr', 'leaves', params] as const,
         leave: (id: string) => ['hr', 'leave', id] as const,
         payroll: (params: ListPayrollQueryKey) => ['hr', 'payroll', params] as const,

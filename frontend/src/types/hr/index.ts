@@ -1,5 +1,6 @@
 export * from './attendance.type';
 export * from './attendance-list-response.type';
+export * from './today-attendance-status.type';
 export * from './attendance-payload.type';
 export * from './employee.type';
 export * from './employee-payload.type';

@@ -244,6 +244,7 @@ export const APP_ROUTES = {
       CHECK_IN: 'check-in',
       CHECK_OUT: 'check-out',
       ME: 'me',
+      TODAY_STATUS: 'today-status',
     },
     LEAVES: {
       BASE: `${API_PREFIX}/hr/leaves`,
