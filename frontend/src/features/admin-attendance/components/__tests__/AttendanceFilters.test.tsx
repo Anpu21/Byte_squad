@@ -27,18 +27,23 @@ function makeWrapper() {
 
 function renderFilters(props: {
     canPickBranch?: boolean;
+    viewMode?: 'day' | 'week';
     onDateChange?: (v: string) => void;
+    onViewModeChange?: (m: 'day' | 'week') => void;
     onBranchIdChange?: (v: string) => void;
     roleOptions?: string[];
     onRoleChange?: (v: string) => void;
 }) {
     const { Wrapper } = makeWrapper();
     const onDateChange = props.onDateChange ?? vi.fn();
+    const onViewModeChange = props.onViewModeChange ?? vi.fn();
     const onBranchIdChange = props.onBranchIdChange ?? vi.fn();
     const onRoleChange = props.onRoleChange ?? vi.fn();
     render(
         <Wrapper>
             <AttendanceFilters
+                viewMode={props.viewMode ?? 'day'}
+                onViewModeChange={onViewModeChange}
                 selectedDate="2025-06-15"
                 onDateChange={onDateChange}
                 branchId=""
@@ -50,7 +55,7 @@ function renderFilters(props: {
             />
         </Wrapper>,
     );
-    return { onDateChange, onBranchIdChange, onRoleChange };
+    return { onDateChange, onViewModeChange, onBranchIdChange, onRoleChange };
 }
 
 describe('AttendanceFilters', () => {
@@ -71,11 +76,25 @@ describe('AttendanceFilters', () => {
         expect(screen.queryByLabelText(/filter by branch/i)).toBeNull();
     });
 
-    it('fires onDateChange when the previous-day button is used', async () => {
+    it('steps one day in day mode (previous-day button)', async () => {
         const onDateChange = vi.fn();
         renderFilters({ onDateChange });
         await userEvent.click(screen.getByLabelText(/previous day/i));
         expect(onDateChange).toHaveBeenCalledWith('2025-06-14');
+    });
+
+    it('switches to week mode via the toggle', async () => {
+        const onViewModeChange = vi.fn();
+        renderFilters({ onViewModeChange });
+        await userEvent.click(screen.getByRole('tab', { name: /week/i }));
+        expect(onViewModeChange).toHaveBeenCalledWith('week');
+    });
+
+    it('steps a full week in week mode (previous-week button)', async () => {
+        const onDateChange = vi.fn();
+        renderFilters({ viewMode: 'week', onDateChange });
+        await userEvent.click(screen.getByLabelText(/previous week/i));
+        expect(onDateChange).toHaveBeenCalledWith('2025-06-08');
     });
 
     it('hides the role filter when fewer than two roles are present', () => {

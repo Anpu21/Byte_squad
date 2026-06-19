@@ -219,3 +219,11 @@ export function shiftIsoDate(value: string, deltaDays: number): string {
     const [y, m, d] = value.split('-').map(Number);
     return formatIsoDate(new Date(y, m - 1, d + deltaDays));
 }
+
+/** The 7 YYYY-MM-DD dates (Mon..Sun) of the week containing `isoDate`. */
+export function weekDates(isoDate: string): string[] {
+    const [y, m, d] = isoDate.split('-').map(Number);
+    const mondayOffset = (new Date(y, m - 1, d).getDay() + 6) % 7; // Mon=0..Sun=6
+    const monday = shiftIsoDate(isoDate, -mondayOffset);
+    return Array.from({ length: 7 }, (_, i) => shiftIsoDate(monday, i));
+}

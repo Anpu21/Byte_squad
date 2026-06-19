@@ -5,6 +5,8 @@ import { queryKeys } from '@/lib/queryKeys';
 import { formatIsoDate, shiftIsoDate } from '../lib/attendance-grid-helpers';
 
 interface IAttendanceFiltersProps {
+    viewMode: 'day' | 'week';
+    onViewModeChange: (mode: 'day' | 'week') => void;
     selectedDate: string;
     onDateChange: (value: string) => void;
     branchId: string;
@@ -28,6 +30,8 @@ const ICON_BUTTON_CLASS =
  * appears when the branch roster spans more than one role.
  */
 export function AttendanceFilters({
+    viewMode,
+    onViewModeChange,
     selectedDate,
     onDateChange,
     branchId,
@@ -46,17 +50,39 @@ export function AttendanceFilters({
     const branches = branchesQuery.data ?? [];
     const today = formatIsoDate(new Date());
     const isToday = selectedDate === today;
+    const step = viewMode === 'week' ? 7 : 1;
 
     return (
         <div className="px-5 py-3.5 border-b border-border bg-surface-2/40 flex items-center flex-wrap gap-3">
+            <div
+                className="inline-flex rounded-md border border-border bg-surface p-0.5"
+                role="tablist"
+                aria-label="View mode"
+            >
+                {(['day', 'week'] as const).map((m) => (
+                    <button
+                        key={m}
+                        type="button"
+                        role="tab"
+                        aria-selected={viewMode === m}
+                        onClick={() => onViewModeChange(m)}
+                        className={`h-8 px-3 rounded text-[12px] font-medium capitalize transition-colors focus:outline-none focus:ring-[2px] focus:ring-primary/30 ${
+                            viewMode === m
+                                ? 'bg-primary text-text-inv'
+                                : 'text-text-2 hover:text-text-1'
+                        }`}
+                    >
+                        {m}
+                    </button>
+                ))}
+            </div>
             <div className="flex items-center gap-1.5">
-                <span className="text-[11px] uppercase tracking-wide text-text-3 mr-1">
-                    Day
-                </span>
                 <button
                     type="button"
-                    aria-label="Previous day"
-                    onClick={() => onDateChange(shiftIsoDate(selectedDate, -1))}
+                    aria-label={`Previous ${viewMode}`}
+                    onClick={() =>
+                        onDateChange(shiftIsoDate(selectedDate, -step))
+                    }
                     className={ICON_BUTTON_CLASS}
                 >
                     <ChevronLeft size={16} />
@@ -70,8 +96,10 @@ export function AttendanceFilters({
                 />
                 <button
                     type="button"
-                    aria-label="Next day"
-                    onClick={() => onDateChange(shiftIsoDate(selectedDate, 1))}
+                    aria-label={`Next ${viewMode}`}
+                    onClick={() =>
+                        onDateChange(shiftIsoDate(selectedDate, step))
+                    }
                     className={ICON_BUTTON_CLASS}
                 >
                     <ChevronRight size={16} />

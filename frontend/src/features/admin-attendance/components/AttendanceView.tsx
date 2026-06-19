@@ -6,15 +6,23 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEmployees } from '@/features/admin-employees/hooks/useEmployees';
 import type { IEmployee } from '@/types';
 import { useAttendance } from '../hooks/useAttendance';
-import { formatIsoDate } from '../lib/attendance-grid-helpers';
+import { formatIsoDate, weekDates } from '../lib/attendance-grid-helpers';
 import { AttendanceFilters } from './AttendanceFilters';
 import { AttendanceDayTable } from './AttendanceDayTable';
+import { AttendanceWeekTable } from './AttendanceWeekTable';
 import { AttendanceEditModal } from './AttendanceEditModal';
 
 const EMPLOYEE_PAGE_SIZE = 100;
 
+type ViewMode = 'day' | 'week';
+
 interface AttendanceViewProps {
     showHeader?: boolean;
+}
+
+interface EditingTarget {
+    employee: IEmployee;
+    date: string;
 }
 
 const DATE_LABEL = new Intl.DateTimeFormat('en-GB', {
@@ -23,6 +31,10 @@ const DATE_LABEL = new Intl.DateTimeFormat('en-GB', {
     month: 'long',
     year: 'numeric',
 });
+const RANGE_LABEL = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+});
 
 function parseIsoToDate(iso: string): Date {
     const [y, m, d] = iso.split('-').map(Number);
@@ -30,23 +42,28 @@ function parseIsoToDate(iso: string): Date {
 }
 
 /**
- * Admin / manager attendance workspace — one table, one day at a time. The day
- * toolbar (Prev / Today / Next + date picker) moves through past records; the
- * table marks the selected day per employee. Edits reuse the bulk endpoint via
- * the day table's quick buttons and the click-to-edit modal.
+ * Admin / manager attendance workspace with a Day / Week toggle. Day = a single
+ * fast roster table for the selected date (Present/Absent + Mark-all). Week =
+ * one table of all 7 days (Mon–Sun) for overview + click-to-edit. Both reuse the
+ * attendance query (just a 1- or 7-day window) and the edit modal.
  */
 export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
     const { user } = useAuth();
     const canPickBranch = user?.role === UserRole.ADMIN;
 
+    const [viewMode, setViewMode] = useState<ViewMode>('day');
     const [selectedDate, setSelectedDate] = useState<string>(() =>
         formatIsoDate(new Date()),
     );
     const [branchId, setBranchId] = useState<string>('');
     const [roleFilter, setRoleFilter] = useState<string>('');
-    const [editingEmployee, setEditingEmployee] = useState<IEmployee | null>(
+    const [editingTarget, setEditingTarget] = useState<EditingTarget | null>(
         null,
     );
+
+    const days = useMemo(() => weekDates(selectedDate), [selectedDate]);
+    const startDate = viewMode === 'week' ? days[0] : selectedDate;
+    const endDate = viewMode === 'week' ? days[6] : selectedDate;
 
     const employeesQuery = useEmployees({
         branchId: canPickBranch ? branchId || undefined : undefined,
@@ -59,8 +76,7 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
         [employeesQuery.data],
     );
 
-    // Roster role filter (e.g. "Courier" for workers). Client-side — the roster
-    // already loads every active employee for the branch.
+    // Roster role filter (e.g. "Courier" for workers). Client-side.
     const roleOptions = useMemo(
         () =>
             Array.from(
@@ -79,8 +95,8 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
 
     const attendanceQuery = useAttendance({
         branchId: canPickBranch ? branchId || undefined : undefined,
-        startDate: selectedDate,
-        endDate: selectedDate,
+        startDate,
+        endDate,
     });
     const rows = useMemo(
         () => attendanceQuery.data?.rows ?? [],
@@ -88,15 +104,32 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
     );
 
     const editingRow = useMemo(() => {
-        if (!editingEmployee) return null;
-        return rows.find((r) => r.employeeId === editingEmployee.id) ?? null;
-    }, [editingEmployee, rows]);
+        if (!editingTarget) return null;
+        return (
+            rows.find(
+                (r) =>
+                    r.employeeId === editingTarget.employee.id &&
+                    r.attendanceDate === editingTarget.date,
+            ) ?? null
+        );
+    }, [editingTarget, rows]);
 
-    const handleEdit = useCallback((employee: IEmployee) => {
-        setEditingEmployee(employee);
+    const handleEditDay = useCallback(
+        (employee: IEmployee) => {
+            setEditingTarget({ employee, date: selectedDate });
+        },
+        [selectedDate],
+    );
+    const handleCellClick = useCallback((employee: IEmployee, date: string) => {
+        setEditingTarget({ employee, date });
     }, []);
 
-    const dateLabel = DATE_LABEL.format(parseIsoToDate(selectedDate));
+    const subtitle =
+        viewMode === 'week'
+            ? `${RANGE_LABEL.format(parseIsoToDate(days[0]))} – ${RANGE_LABEL.format(parseIsoToDate(days[6]))}. Click any day to mark or edit.`
+            : `${DATE_LABEL.format(parseIsoToDate(selectedDate))}. Mark or edit one day at a time.`;
+
+    const isLoading = attendanceQuery.isLoading || employeesQuery.isLoading;
 
     return (
         <>
@@ -104,11 +137,13 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
                 <PageHeader
                     eyebrow="People"
                     title="Attendance"
-                    subtitle={`${dateLabel}. Mark or edit one day at a time.`}
+                    subtitle={subtitle}
                 />
             )}
             <Card className="overflow-hidden">
                 <AttendanceFilters
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
                     selectedDate={selectedDate}
                     onDateChange={setSelectedDate}
                     branchId={branchId}
@@ -118,22 +153,30 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
                     roleOptions={roleOptions}
                     onRoleChange={setRoleFilter}
                 />
-                <AttendanceDayTable
-                    employees={visibleEmployees}
-                    rows={rows}
-                    date={selectedDate}
-                    isLoading={
-                        attendanceQuery.isLoading || employeesQuery.isLoading
-                    }
-                    onEdit={handleEdit}
-                />
+                {viewMode === 'week' ? (
+                    <AttendanceWeekTable
+                        employees={visibleEmployees}
+                        rows={rows}
+                        days={days}
+                        isLoading={isLoading}
+                        onCellClick={handleCellClick}
+                    />
+                ) : (
+                    <AttendanceDayTable
+                        employees={visibleEmployees}
+                        rows={rows}
+                        date={selectedDate}
+                        isLoading={isLoading}
+                        onEdit={handleEditDay}
+                    />
+                )}
             </Card>
 
             <AttendanceEditModal
-                isOpen={editingEmployee !== null}
-                onClose={() => setEditingEmployee(null)}
-                employee={editingEmployee}
-                date={editingEmployee ? selectedDate : null}
+                isOpen={editingTarget !== null}
+                onClose={() => setEditingTarget(null)}
+                employee={editingTarget?.employee ?? null}
+                date={editingTarget?.date ?? null}
                 existing={editingRow}
             />
         </>
