@@ -63,16 +63,26 @@ every mutation re-verifies branch ownership. Multi-tenant-safe.
 
 ## 4. Enhancements (roadmap)
 
-The capability exists; these are polish + process wins:
+The capability exists; these were the polish + process wins.
 
-- **P1 · Worker focus** — add a **role filter** (All / Workers / Cashiers …) to the attendance roster so a
-  manager can isolate workers (the employees list filters by branch + search today). Plus role-neutral
-  "HR / Attendance" labels (the UI is branded "Admin HR" though managers use it).
-- **P1 · Proactive absence visibility** — today attendance is *pull* (open the grid). Add a daily
-  "**N staff not checked in today**" manager signal (dashboard card / notification) so managers act early.
-- **P2 · `AttendanceSummary`** — the entity/table is registered but **no service reads or writes it**
-  (month totals are recomputed client-side in `AttendanceCalendar`). Either surface a server monthly rollup
-  per employee, or remove the dead table.
-- **P2 · "Marked by" transparency** — surface `markedBy` (self vs manual override) in the roster.
-- **P3** — shared branch **kiosk** check-in; confirm the employee edit form exposes
-  `workingHoursStart/End` so managers can set worker schedules.
+### Shipped
+- **Role filter on the roster** — the attendance grid filters by role (e.g. *Courier*) so a manager can
+  focus on workers. Client-side over the loaded branch roster (`AttendanceFilters` / `AttendanceView`);
+  appears only when the branch has more than one role. (User-facing labels were already role-neutral —
+  "HR / Attendance" — so no relabel was needed; only internal `admin-*` file names say "admin".)
+- **Proactive absence visibility** — `GET /hr/attendance/today-status` (branch-scoped, ADMIN+MANAGER) plus
+  an `AttendanceTodayBanner` above the grid surface "**N of M staff not recorded today**" with names +
+  roles — turning attendance from *pull* (open the grid) into *push*.
+
+### Decisions
+- **`AttendanceSummary` — kept as reserved (not removed, not duplicated).** The table is registered but
+  unwritten today; it is **intentional reserved schema** for the **monthly payroll rollup** (see its JSDoc
+  + the `CreateHrModule` migration — designed to feed payroll / attendance-bonus). We do **not** drop it
+  (it's planned, not accidental cruft, and a destructive migration isn't warranted) and do **not** add a
+  duplicate server rollup now, since `AttendanceCalendar` already computes month totals client-side. Wire
+  it when the monthly payroll-close is implemented — that's its natural writer.
+
+### Remaining (optional)
+- **"Marked by" transparency** — surface `markedBy` (self vs manual override) in the roster.
+- Shared branch **kiosk** check-in; confirm the employee edit form exposes `workingHoursStart/End` so
+  managers can set worker schedules.
