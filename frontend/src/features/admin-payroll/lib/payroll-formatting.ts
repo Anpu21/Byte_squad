@@ -8,11 +8,7 @@ export const PAYROLL_STATUSES: ReadonlyArray<PayrollStatus> = [
     'Cancelled',
 ];
 
-export const PAYMENT_METHODS: ReadonlyArray<PaymentMethod> = [
-    'Cash',
-    'Bank_Transfer',
-    'Cheque',
-];
+export const PAYMENT_METHODS: ReadonlyArray<PaymentMethod> = ['Cash', 'Card'];
 
 const STATUS_TONE: Record<PayrollStatus, PillTone> = {
     Pending: 'warning',
@@ -26,7 +22,7 @@ export function payrollStatusTone(status: PayrollStatus): PillTone {
 }
 
 export function formatPaymentMethod(method: PaymentMethod): string {
-    return method.replace('_', ' ');
+    return method;
 }
 
 const LKR = new Intl.NumberFormat('en-LK', {

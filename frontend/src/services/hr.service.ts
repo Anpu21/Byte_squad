@@ -66,7 +66,8 @@ export interface IMarkPayrollPaidPayload {
     /** ISO date `YYYY-MM-DD`. */
     paymentDate: string;
     paymentMethod: PaymentMethod;
-    bankReferenceNo?: string;
+    /** Optional disbursement reference (e.g. card terminal / transfer ref). */
+    paymentReference?: string;
 }
 
 export interface IExportPayrollCsvQuery {

@@ -14,9 +14,9 @@ describe('payroll-formatting', () => {
         expect(payrollStatusTone('Cancelled')).toBe('neutral');
     });
 
-    it('formats payment method by replacing underscores', () => {
-        expect(formatPaymentMethod('Bank_Transfer')).toBe('Bank Transfer');
+    it('formats payment method labels', () => {
         expect(formatPaymentMethod('Cash')).toBe('Cash');
+        expect(formatPaymentMethod('Card')).toBe('Card');
     });
 
     it('formats LKR currency with 2 decimal places and the LKR symbol', () => {

@@ -43,8 +43,10 @@ export function PayrollView({ showHeader = true }: PayrollViewProps) {
     const { user } = useAuth();
     const role = user?.role;
     const canPickBranch = role === UserRole.ADMIN;
-    const canExportAndGenerate =
-        role === UserRole.ADMIN || role === UserRole.MANAGER;
+    // Admin owns the lifecycle (generate/approve/mark-paid/cancel); managers
+    // get a read-only branch view but can still export the payroll CSV.
+    const canManage = role === UserRole.ADMIN;
+    const canExport = role === UserRole.ADMIN || role === UserRole.MANAGER;
 
     const [monthValue, setMonthValue] = useState<string>(currentMonthValue);
     const [branchId, setBranchId] = useState('');
@@ -122,9 +124,13 @@ export function PayrollView({ showHeader = true }: PayrollViewProps) {
                 <PageHeader
                     eyebrow="People"
                     title="Payroll"
-                    subtitle={`${periodLabel}. Generate the monthly run, approve rows, mark them paid, and export the bank-file CSV.`}
+                    subtitle={`${periodLabel}. ${
+                        canManage
+                            ? 'Generate the monthly run, approve rows, mark them paid, and export the payroll CSV.'
+                            : "Review your branch's payroll for the period and export the CSV."
+                    }`}
                     actions={
-                        canExportAndGenerate ? (
+                        canExport ? (
                             <div className="flex gap-2">
                                 <Button
                                     variant="secondary"
@@ -133,15 +139,17 @@ export function PayrollView({ showHeader = true }: PayrollViewProps) {
                                 >
                                     {isExporting ? 'Exporting…' : 'Export CSV'}
                                 </Button>
-                                <Button
-                                    variant="primary"
-                                    onClick={handleGenerate}
-                                    disabled={generate.isPending}
-                                >
-                                    {generate.isPending
-                                        ? 'Generating…'
-                                        : `Generate ${periodLabel}`}
-                                </Button>
+                                {canManage ? (
+                                    <Button
+                                        variant="primary"
+                                        onClick={handleGenerate}
+                                        disabled={generate.isPending}
+                                    >
+                                        {generate.isPending
+                                            ? 'Generating…'
+                                            : `Generate ${periodLabel}`}
+                                    </Button>
+                                ) : null}
                             </div>
                         ) : null
                     }
@@ -161,6 +169,7 @@ export function PayrollView({ showHeader = true }: PayrollViewProps) {
                     rows={rows}
                     employees={employees}
                     isLoading={payrollQuery.isLoading}
+                    canManage={canManage}
                 />
             </Card>
         </>

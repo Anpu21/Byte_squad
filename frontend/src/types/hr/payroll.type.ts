@@ -7,7 +7,7 @@
  */
 export type PayrollStatus = 'Pending' | 'Approved' | 'Paid' | 'Cancelled';
 
-export type PaymentMethod = 'Cash' | 'Bank_Transfer' | 'Cheque';
+export type PaymentMethod = 'Cash' | 'Card';
 
 export interface IPayroll {
     id: string;
@@ -33,7 +33,8 @@ export interface IPayroll {
     /** ISO date `YYYY-MM-DD`, null until marked Paid. */
     paymentDate: string | null;
     paymentMethod: PaymentMethod;
-    bankReferenceNo: string | null;
+    /** Optional disbursement reference (e.g. card terminal / transfer ref). */
+    paymentReference: string | null;
     paySlipGenerated: boolean;
     paySlipUrl: string | null;
     notes: string | null;

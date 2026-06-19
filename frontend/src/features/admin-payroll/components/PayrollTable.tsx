@@ -15,17 +15,21 @@ interface IPayrollTableProps {
     rows: IPayroll[];
     employees: IEmployee[];
     isLoading: boolean;
+    /** Admin-only: show the approve/mark-paid/cancel actions column. */
+    canManage: boolean;
 }
 
 /**
  * Owns the inline approve/cancel mutations and the mark-paid modal.
  * Footer row totals gross/deductions/net across the visible page so
- * the manager has the bank-file totals at a glance.
+ * the admin has the payroll totals at a glance. Managers see the same
+ * table read-only (no actions column).
  */
 export function PayrollTable({
     rows,
     employees,
     isLoading,
+    canManage,
 }: IPayrollTableProps) {
     const confirm = useConfirm();
     const approve = useApprovePayroll();
@@ -98,9 +102,11 @@ export function PayrollTable({
                             <th className="px-3 py-2.5 font-medium">Net</th>
                             <th className="px-3 py-2.5 font-medium">Status</th>
                             <th className="px-3 py-2.5 font-medium">Paid</th>
-                            <th className="px-3 py-2.5 font-medium text-right">
-                                Actions
-                            </th>
+                            {canManage ? (
+                                <th className="px-3 py-2.5 font-medium text-right">
+                                    Actions
+                                </th>
+                            ) : null}
                         </tr>
                     </thead>
                     <tbody>
@@ -112,6 +118,7 @@ export function PayrollTable({
                                     nameByEmployee.get(p.employeeId) ??
                                     p.employeeId.slice(0, 8)
                                 }
+                                canManage={canManage}
                                 onApprove={handleApprove}
                                 onMarkPaid={setPaidTarget}
                                 onCancel={handleCancel}
@@ -133,16 +140,18 @@ export function PayrollTable({
                                 <td className="px-3 py-2.5 tabular-nums font-medium text-text-1">
                                     {formatLkr(totals.net)}
                                 </td>
-                                <td colSpan={3} />
+                                <td colSpan={canManage ? 3 : 2} />
                             </tr>
                         </tfoot>
                     ) : null}
                 </table>
             </div>
-            <MarkPaidModal
-                payroll={paidTarget}
-                onClose={() => setPaidTarget(null)}
-            />
+            {canManage ? (
+                <MarkPaidModal
+                    payroll={paidTarget}
+                    onClose={() => setPaidTarget(null)}
+                />
+            ) : null}
         </>
     );
 }
