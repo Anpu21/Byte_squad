@@ -12,6 +12,10 @@ const lUnits: ISellableUnitRow[] = [
     { rowId: 'r2', name: '0.250 L', barcode: '', isBase: false, conversionToBase: '0.25', sellingPrice: '100', displayOrder: 1 },
 ];
 
+const kgUnits: ISellableUnitRow[] = [
+    { rowId: 'r1', name: 'kg', barcode: '', isBase: true, conversionToBase: '1', sellingPrice: '', displayOrder: 0 },
+];
+
 describe('normalizePriceToBaseUnit', () => {
     it('returns the entered price unchanged when the unit is the base', () => {
         expect(normalizePriceToBaseUnit(60, 'unit', unitUnits)).toBe(60);
@@ -56,5 +60,29 @@ describe('normalizePriceToBaseUnit', () => {
     it('throws on non-finite price (NaN/Infinity)', () => {
         expect(() => normalizePriceToBaseUnit(NaN, 'unit', unitUnits)).toThrow(/price/i);
         expect(() => normalizePriceToBaseUnit(Infinity, 'unit', unitUnits)).toThrow(/price/i);
+    });
+
+    it('divides the entered price by the basis quantity (200 for 0.5 kg → 400/kg)', () => {
+        expect(normalizePriceToBaseUnit(200, 'kg', kgUnits, 0.5)).toBe(400);
+    });
+
+    it('handles a basis greater than 1 (1000 for 2 kg → 500/kg)', () => {
+        expect(normalizePriceToBaseUnit(1000, 'kg', kgUnits, 2)).toBe(500);
+    });
+
+    it('defaults the basis to 1 so existing 3-arg calls are unchanged', () => {
+        expect(normalizePriceToBaseUnit(400, 'kg', kgUnits)).toBe(400);
+        expect(normalizePriceToBaseUnit(400, 'kg', kgUnits, 1)).toBe(400);
+    });
+
+    it('combines the basis quantity with the unit conversion factor', () => {
+        // 1300 for two 12-PACKs → 1300 / 2 / 12 per base unit.
+        expect(normalizePriceToBaseUnit(1300, '12-PACK', unitUnits, 2)).toBeCloseTo(54.1667);
+    });
+
+    it('throws on a non-positive or non-finite basis quantity', () => {
+        expect(() => normalizePriceToBaseUnit(100, 'kg', kgUnits, 0)).toThrow(/quantity/i);
+        expect(() => normalizePriceToBaseUnit(100, 'kg', kgUnits, -1)).toThrow(/quantity/i);
+        expect(() => normalizePriceToBaseUnit(100, 'kg', kgUnits, NaN)).toThrow(/quantity/i);
     });
 });

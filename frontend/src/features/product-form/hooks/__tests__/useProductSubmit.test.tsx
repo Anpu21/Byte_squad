@@ -28,6 +28,8 @@ interface MakeFormOverrides {
     sellingPrice?: string;
     costPriceUnit?: string;
     sellingPriceUnit?: string;
+    costPriceQty?: string;
+    sellingPriceQty?: string;
     baseUnit?: string;
 }
 
@@ -81,6 +83,10 @@ function makeForm(overrides: MakeFormOverrides = {}): ProductFormState {
         setCostPriceUnit: vi.fn(),
         sellingPriceUnit: overrides.sellingPriceUnit ?? baseUnit,
         setSellingPriceUnit: vi.fn(),
+        costPriceQty: overrides.costPriceQty ?? '1',
+        setCostPriceQty: vi.fn(),
+        sellingPriceQty: overrides.sellingPriceQty ?? '1',
+        setSellingPriceQty: vi.fn(),
         resetPriceUnitsTo: vi.fn(),
     } as unknown as ProductFormState;
 }
@@ -347,6 +353,74 @@ describe('useProductSubmit price normalization', () => {
         const setErrors = vi.fn();
         const form = {
             ...makeForm({ sellingPriceUnit: 'sack' }),
+            setErrors,
+        } as ProductFormState;
+        const { result } = renderHook(
+            () =>
+                useProductSubmit({
+                    form,
+                    isEditMode: true,
+                    productId: 'prod-1',
+                    branchId: null,
+                    pendingImageFile: null,
+                    onSuccess: vi.fn(),
+                }),
+            { wrapper: Wrapper },
+        );
+
+        await act(async () => {
+            await result.current.handleSubmit({
+                preventDefault: vi.fn(),
+            } as unknown as React.FormEvent);
+        });
+
+        expect(inventoryService.updateProduct).not.toHaveBeenCalled();
+        expect(setErrors).toHaveBeenCalledWith(
+            expect.objectContaining({
+                general: expect.stringContaining('Price normalization failed'),
+            }),
+        );
+    });
+
+    it('divides the entered price by the basis quantity before storing (200 for 0.5 kg → 400)', async () => {
+        const { Wrapper } = makeWrapper();
+        const form = makeForm({
+            sellingPrice: '200',
+            sellingPriceQty: '0.5',
+            costPrice: '100',
+            costPriceQty: '0.5',
+        });
+        const { result } = renderHook(
+            () =>
+                useProductSubmit({
+                    form,
+                    isEditMode: true,
+                    productId: 'prod-1',
+                    branchId: null,
+                    pendingImageFile: null,
+                    onSuccess: vi.fn(),
+                }),
+            { wrapper: Wrapper },
+        );
+
+        await act(async () => {
+            await result.current.handleSubmit({
+                preventDefault: vi.fn(),
+            } as unknown as React.FormEvent);
+        });
+
+        // Stored prices are per 1 base unit: 200 / 0.5 = 400, 100 / 0.5 = 200.
+        expect(inventoryService.updateProduct).toHaveBeenCalledWith(
+            'prod-1',
+            expect.objectContaining({ sellingPrice: 400, costPrice: 200 }),
+        );
+    });
+
+    it('surfaces a general error and skips the API call when a price basis quantity is zero', async () => {
+        const { Wrapper } = makeWrapper();
+        const setErrors = vi.fn();
+        const form = {
+            ...makeForm({ sellingPriceQty: '0' }),
             setErrors,
         } as ProductFormState;
         const { result } = renderHook(

@@ -29,6 +29,8 @@ export function PricingCard({ form, derived }: PricingCardProps) {
                     label="Selling price (LKR)"
                     value={form.sellingPrice}
                     onChange={form.setSellingPrice}
+                    qty={form.sellingPriceQty}
+                    onQtyChange={form.setSellingPriceQty}
                     unit={form.sellingPriceUnit}
                     onUnitChange={form.setSellingPriceUnit}
                     units={form.units}
@@ -41,6 +43,8 @@ export function PricingCard({ form, derived }: PricingCardProps) {
                     label="Cost price (LKR)"
                     value={form.costPrice}
                     onChange={form.setCostPrice}
+                    qty={form.costPriceQty}
+                    onQtyChange={form.setCostPriceQty}
                     unit={form.costPriceUnit}
                     onUnitChange={form.setCostPriceUnit}
                     units={form.units}
