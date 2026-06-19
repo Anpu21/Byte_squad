@@ -6,22 +6,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEmployees } from '@/features/admin-employees/hooks/useEmployees';
 import type { IEmployee } from '@/types';
 import { useAttendance } from '../hooks/useAttendance';
-import {
-    firstDayOfMonth,
-    formatIsoDate,
-    formatIsoMonth,
-    lastDayOfMonth,
-    parseIsoMonth,
-} from '../lib/attendance-grid-helpers';
+import { formatIsoDate } from '../lib/attendance-grid-helpers';
 import { AttendanceFilters } from './AttendanceFilters';
-import { AttendanceWeeklyTables } from './AttendanceWeeklyTables';
+import { AttendanceDayTable } from './AttendanceDayTable';
 import { AttendanceEditModal } from './AttendanceEditModal';
-import { AttendanceTodayBanner } from './AttendanceTodayBanner';
-
-function currentMonthValue(): string {
-    const now = new Date();
-    return formatIsoMonth(now.getFullYear(), now.getMonth() + 1);
-}
 
 const EMPLOYEE_PAGE_SIZE = 100;
 
@@ -29,41 +17,35 @@ interface AttendanceViewProps {
     showHeader?: boolean;
 }
 
-interface EditingTarget {
-    employee: IEmployee;
-    date: string;
+const DATE_LABEL = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+});
+
+function parseIsoToDate(iso: string): Date {
+    const [y, m, d] = iso.split('-').map(Number);
+    return new Date(y, m - 1, d);
 }
 
 /**
- * Admin / manager attendance workspace. Renders one Monday-Sunday
- * attendance table per week in the selected month, with one row per
- * employee. Edits live behind a click-to-edit modal and reuse the
- * existing bulk endpoint.
+ * Admin / manager attendance workspace — one table, one day at a time. The day
+ * toolbar (Prev / Today / Next + date picker) moves through past records; the
+ * table marks the selected day per employee. Edits reuse the bulk endpoint via
+ * the day table's quick buttons and the click-to-edit modal.
  */
 export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
     const { user } = useAuth();
     const canPickBranch = user?.role === UserRole.ADMIN;
 
-    const [monthValue, setMonthValue] = useState<string>(currentMonthValue);
+    const [selectedDate, setSelectedDate] = useState<string>(() =>
+        formatIsoDate(new Date()),
+    );
     const [branchId, setBranchId] = useState<string>('');
-    const [editingTarget, setEditingTarget] = useState<EditingTarget | null>(
-        null,
-    );
     const [roleFilter, setRoleFilter] = useState<string>('');
-
-    const { year, month } = parseIsoMonth(monthValue);
-    const startDate = useMemo(
-        () => firstDayOfMonth(year, month),
-        [year, month],
-    );
-    const endDate = useMemo(() => lastDayOfMonth(year, month), [year, month]);
-    const monthLabel = useMemo(
-        () =>
-            new Intl.DateTimeFormat('en-GB', {
-                month: 'long',
-                year: 'numeric',
-            }).format(new Date(year, month - 1, 1)),
-        [year, month],
+    const [editingEmployee, setEditingEmployee] = useState<IEmployee | null>(
+        null,
     );
 
     const employeesQuery = useEmployees({
@@ -77,8 +59,8 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
         [employeesQuery.data],
     );
 
-    // Roster role filter (e.g. "Courier" for workers). Client-side — the
-    // roster already loads every active employee for the branch.
+    // Roster role filter (e.g. "Courier" for workers). Client-side — the roster
+    // already loads every active employee for the branch.
     const roleOptions = useMemo(
         () =>
             Array.from(
@@ -97,8 +79,8 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
 
     const attendanceQuery = useAttendance({
         branchId: canPickBranch ? branchId || undefined : undefined,
-        startDate,
-        endDate,
+        startDate: selectedDate,
+        endDate: selectedDate,
     });
     const rows = useMemo(
         () => attendanceQuery.data?.rows ?? [],
@@ -106,30 +88,15 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
     );
 
     const editingRow = useMemo(() => {
-        if (!editingTarget) return null;
-        return (
-            rows.find(
-                (r) =>
-                    r.employeeId === editingTarget.employee.id &&
-                    r.attendanceDate === editingTarget.date,
-            ) ?? null
-        );
-    }, [editingTarget, rows]);
+        if (!editingEmployee) return null;
+        return rows.find((r) => r.employeeId === editingEmployee.id) ?? null;
+    }, [editingEmployee, rows]);
 
-    const handleCellClick = useCallback((employee: IEmployee, date: string) => {
-        setEditingTarget({ employee, date });
+    const handleEdit = useCallback((employee: IEmployee) => {
+        setEditingEmployee(employee);
     }, []);
 
-    // One-click "mark today" from the not-recorded-today banner: open the same
-    // edit modal for that employee on today's date.
-    const todayIso = useMemo(() => formatIsoDate(new Date()), []);
-    const handleMarkToday = useCallback(
-        (employeeId: string) => {
-            const employee = employees.find((e) => e.id === employeeId);
-            if (employee) handleCellClick(employee, todayIso);
-        },
-        [employees, handleCellClick, todayIso],
-    );
+    const dateLabel = DATE_LABEL.format(parseIsoToDate(selectedDate));
 
     return (
         <>
@@ -137,17 +104,13 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
                 <PageHeader
                     eyebrow="People"
                     title="Attendance"
-                    subtitle={`${monthLabel}. Click any day to mark or edit attendance.`}
+                    subtitle={`${dateLabel}. Mark or edit one day at a time.`}
                 />
             )}
-            <AttendanceTodayBanner
-                branchId={canPickBranch ? branchId || undefined : undefined}
-                onMark={handleMarkToday}
-            />
             <Card className="overflow-hidden">
                 <AttendanceFilters
-                    monthValue={monthValue}
-                    onMonthChange={setMonthValue}
+                    selectedDate={selectedDate}
+                    onDateChange={setSelectedDate}
                     branchId={branchId}
                     onBranchIdChange={setBranchId}
                     canPickBranch={canPickBranch}
@@ -155,22 +118,22 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
                     roleOptions={roleOptions}
                     onRoleChange={setRoleFilter}
                 />
-                <AttendanceWeeklyTables
+                <AttendanceDayTable
                     employees={visibleEmployees}
                     rows={rows}
-                    monthValue={monthValue}
+                    date={selectedDate}
                     isLoading={
                         attendanceQuery.isLoading || employeesQuery.isLoading
                     }
-                    onCellClick={handleCellClick}
+                    onEdit={handleEdit}
                 />
             </Card>
 
             <AttendanceEditModal
-                isOpen={editingTarget !== null}
-                onClose={() => setEditingTarget(null)}
-                employee={editingTarget?.employee ?? null}
-                date={editingTarget?.date ?? null}
+                isOpen={editingEmployee !== null}
+                onClose={() => setEditingEmployee(null)}
+                employee={editingEmployee}
+                date={editingEmployee ? selectedDate : null}
                 existing={editingRow}
             />
         </>

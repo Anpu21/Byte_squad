@@ -213,3 +213,9 @@ export function shiftIsoMonth(value: string, delta: number): string {
     const nm = (total % 12) + 1;
     return formatIsoMonth(ny, nm);
 }
+
+/** Shift a YYYY-MM-DD value by `deltaDays` (positive or negative). */
+export function shiftIsoDate(value: string, deltaDays: number): string {
+    const [y, m, d] = value.split('-').map(Number);
+    return formatIsoDate(new Date(y, m - 1, d + deltaDays));
+}

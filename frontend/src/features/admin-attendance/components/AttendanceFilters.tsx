@@ -2,14 +2,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';
-import {
-    formatIsoMonth,
-    shiftIsoMonth,
-} from '../lib/attendance-grid-helpers';
+import { formatIsoDate, shiftIsoDate } from '../lib/attendance-grid-helpers';
 
 interface IAttendanceFiltersProps {
-    monthValue: string;
-    onMonthChange: (value: string) => void;
+    selectedDate: string;
+    onDateChange: (value: string) => void;
     branchId: string;
     onBranchIdChange: (id: string) => void;
     canPickBranch: boolean;
@@ -24,21 +21,15 @@ const INPUT_CLASS =
 const ICON_BUTTON_CLASS =
     'h-9 w-9 inline-flex items-center justify-center bg-surface border border-border rounded-md text-text-2 hover:text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20';
 
-function currentMonth(): string {
-    const now = new Date();
-    return formatIsoMonth(now.getFullYear(), now.getMonth() + 1);
-}
-
 /**
- * Filter chip row that drives the attendance view. Branch select
- * is hidden for managers (they're pinned to their branch BE-side).
- * Month picker is flanked by Prev / Today / Next chevrons for fast
- * nav. Employee select toggles the view: empty → roster summary,
- * selected → calendar for that employee.
+ * Toolbar for the day-at-a-time attendance table. A Prev / Today / Next day
+ * navigator + date picker moves through past records; the branch select is
+ * hidden for managers (pinned to their branch BE-side); the role select only
+ * appears when the branch roster spans more than one role.
  */
 export function AttendanceFilters({
-    monthValue,
-    onMonthChange,
+    selectedDate,
+    onDateChange,
     branchId,
     onBranchIdChange,
     canPickBranch,
@@ -53,42 +44,42 @@ export function AttendanceFilters({
         enabled: canPickBranch,
     });
     const branches = branchesQuery.data ?? [];
-    const today = currentMonth();
-    const isThisMonth = monthValue === today;
+    const today = formatIsoDate(new Date());
+    const isToday = selectedDate === today;
 
     return (
         <div className="px-5 py-3.5 border-b border-border bg-surface-2/40 flex items-center flex-wrap gap-3">
             <div className="flex items-center gap-1.5">
                 <span className="text-[11px] uppercase tracking-wide text-text-3 mr-1">
-                    Month
+                    Day
                 </span>
                 <button
                     type="button"
-                    aria-label="Previous month"
-                    onClick={() => onMonthChange(shiftIsoMonth(monthValue, -1))}
+                    aria-label="Previous day"
+                    onClick={() => onDateChange(shiftIsoDate(selectedDate, -1))}
                     className={ICON_BUTTON_CLASS}
                 >
                     <ChevronLeft size={16} />
                 </button>
                 <input
-                    type="month"
-                    value={monthValue}
-                    onChange={(e) => onMonthChange(e.target.value)}
-                    aria-label="Pick attendance month"
-                    className={`${INPUT_CLASS} w-40`}
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => onDateChange(e.target.value)}
+                    aria-label="Pick attendance day"
+                    className={`${INPUT_CLASS} w-44`}
                 />
                 <button
                     type="button"
-                    aria-label="Next month"
-                    onClick={() => onMonthChange(shiftIsoMonth(monthValue, 1))}
+                    aria-label="Next day"
+                    onClick={() => onDateChange(shiftIsoDate(selectedDate, 1))}
                     className={ICON_BUTTON_CLASS}
                 >
                     <ChevronRight size={16} />
                 </button>
                 <button
                     type="button"
-                    onClick={() => onMonthChange(today)}
-                    disabled={isThisMonth}
+                    onClick={() => onDateChange(today)}
+                    disabled={isToday}
                     className="h-9 px-3 bg-surface border border-border rounded-md text-[12px] font-medium text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                     Today
