@@ -48,7 +48,7 @@ export function ProductFormPage() {
                         onOpenCamera={() => p.setShowCameraScanner(true)}
                     />
                     <PricingCard form={form} derived={p.priceDerived} />
-                    <SellableUnitsCard form={form} />
+                    <SellableUnitsCard form={form} isEditMode={p.isEditMode} />
                     {!p.isEditMode && <StockCard form={form} />}
                 </div>
                 <div className="flex flex-col gap-4">
