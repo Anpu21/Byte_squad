@@ -43,6 +43,7 @@ export interface AuthResult {
     branchId: string | null;
     isFirstLogin: boolean;
     isVerified: boolean;
+    language: string;
   };
 }
 
@@ -286,6 +287,7 @@ export class AuthService {
           branchId: user.branchId,
           isFirstLogin: user.isFirstLogin,
           isVerified: user.isVerified,
+          language: user.language,
         },
       };
     } catch (error: unknown) {
