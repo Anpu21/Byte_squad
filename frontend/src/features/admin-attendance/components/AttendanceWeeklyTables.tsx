@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Pencil } from 'lucide-react';
 import EmptyState from '@/components/ui/EmptyState';
 import Avatar from '@/components/ui/Avatar';
 import type { AttendanceStatus, IAttendance, IEmployee } from '@/types';
@@ -230,13 +231,19 @@ export function AttendanceWeeklyTables({
                                                                       date,
                                                                   )
                                                               }
+                                                              title="Click to mark / edit"
                                                               aria-label={`Edit attendance for ${employee.fullName} on ${date}, currently ${statusLabel}`}
-                                                              className={`flex h-full min-h-[76px] w-full flex-col items-center justify-center gap-1.5 px-2 py-3 text-center transition-colors hover:bg-surface-2 focus:outline-none focus:ring-[2px] focus:ring-inset focus:ring-primary/40 ${
+                                                              className={`group relative flex h-full min-h-[76px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 px-2 py-3 text-center transition-colors hover:bg-surface-2 focus:outline-none focus:ring-[2px] focus:ring-inset focus:ring-primary/40 ${
                                                                   date === todayIso
                                                                       ? 'bg-primary-soft/10 ring-[1px] ring-inset ring-primary/40'
                                                                       : ''
                                                               }`}
                                                           >
+                                                              <Pencil
+                                                                  size={11}
+                                                                  aria-hidden
+                                                                  className="absolute right-1.5 top-1.5 text-text-3 opacity-0 transition-opacity group-hover:opacity-100"
+                                                              />
                                                               <AttendanceStatusPill
                                                                   status={status}
                                                               />

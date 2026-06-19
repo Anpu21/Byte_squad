@@ -8,6 +8,7 @@ import type { IEmployee } from '@/types';
 import { useAttendance } from '../hooks/useAttendance';
 import {
     firstDayOfMonth,
+    formatIsoDate,
     formatIsoMonth,
     lastDayOfMonth,
     parseIsoMonth,
@@ -119,17 +120,29 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
         setEditingTarget({ employee, date });
     }, []);
 
+    // One-click "mark today" from the not-recorded-today banner: open the same
+    // edit modal for that employee on today's date.
+    const todayIso = useMemo(() => formatIsoDate(new Date()), []);
+    const handleMarkToday = useCallback(
+        (employeeId: string) => {
+            const employee = employees.find((e) => e.id === employeeId);
+            if (employee) handleCellClick(employee, todayIso);
+        },
+        [employees, handleCellClick, todayIso],
+    );
+
     return (
         <>
             {showHeader && (
                 <PageHeader
                     eyebrow="People"
                     title="Attendance"
-                    subtitle={`${monthLabel}. Review and edit weekly attendance by employee.`}
+                    subtitle={`${monthLabel}. Click any day to mark or edit attendance.`}
                 />
             )}
             <AttendanceTodayBanner
                 branchId={canPickBranch ? branchId || undefined : undefined}
+                onMark={handleMarkToday}
             />
             <Card className="overflow-hidden">
                 <AttendanceFilters

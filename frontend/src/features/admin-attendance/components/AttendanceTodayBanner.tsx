@@ -6,6 +6,8 @@ import { queryKeys } from '@/lib/queryKeys';
 interface AttendanceTodayBannerProps {
     /** Admin's selected branch; managers are pinned to their own server-side. */
     branchId?: string;
+    /** When provided, each pending name becomes a one-click "mark today". */
+    onMark?: (employeeId: string) => void;
 }
 
 /**
@@ -13,7 +15,10 @@ interface AttendanceTodayBannerProps {
  * Turns attendance from a pull (open the grid and scan) into a push: a manager
  * sees at a glance who still needs marking or chasing for the current day.
  */
-export function AttendanceTodayBanner({ branchId }: AttendanceTodayBannerProps) {
+export function AttendanceTodayBanner({
+    branchId,
+    onMark,
+}: AttendanceTodayBannerProps) {
     const { data } = useQuery({
         queryKey: queryKeys.hr.branchTodayStatus(branchId),
         queryFn: () => hrService.getBranchTodayStatus(branchId),
@@ -38,15 +43,28 @@ export function AttendanceTodayBanner({ branchId }: AttendanceTodayBannerProps) 
                 {data.pendingCount} of {data.total} staff not recorded today
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
-                {data.pending.map((p) => (
-                    <span
-                        key={p.employeeId}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface border border-border text-[12px] text-text-1"
-                    >
-                        {p.fullName}
-                        <span className="text-text-3">· {p.role}</span>
-                    </span>
-                ))}
+                {data.pending.map((p) =>
+                    onMark ? (
+                        <button
+                            key={p.employeeId}
+                            type="button"
+                            onClick={() => onMark(p.employeeId)}
+                            title={`Mark ${p.fullName} for today`}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface border border-border text-[12px] text-text-1 hover:border-primary hover:bg-primary-soft/30 transition-colors focus:outline-none focus:ring-[2px] focus:ring-primary/40"
+                        >
+                            {p.fullName}
+                            <span className="text-text-3">· {p.role}</span>
+                        </button>
+                    ) : (
+                        <span
+                            key={p.employeeId}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface border border-border text-[12px] text-text-1"
+                        >
+                            {p.fullName}
+                            <span className="text-text-3">· {p.role}</span>
+                        </span>
+                    ),
+                )}
             </div>
         </div>
     );
