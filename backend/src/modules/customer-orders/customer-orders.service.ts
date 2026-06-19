@@ -229,6 +229,12 @@ export class CustomerOrdersService {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Notification fan-out failed: ${message}`);
     });
+    // Cashiers now collect directly (no manager approval gate), so they're
+    // notified at creation time rather than on a separate accept step.
+    this.notifyBranchCashiers(saved, branch.name).catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Cashier notification fan-out failed: ${message}`);
+    });
 
     this.notificationsGateway.broadcast('customer-order:created', {
       branchId: saved.branchId,
@@ -364,6 +370,10 @@ export class CustomerOrdersService {
       this.notifyBranchStaff(c.order, c.branchName).catch((err: unknown) => {
         const message = err instanceof Error ? err.message : String(err);
         this.logger.error(`Notification fan-out failed: ${message}`);
+      });
+      this.notifyBranchCashiers(c.order, c.branchName).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(`Cashier notification fan-out failed: ${message}`);
       });
       this.notificationsGateway.broadcast('customer-order:created', {
         branchId: c.order.branchId,
@@ -571,42 +581,39 @@ export class CustomerOrdersService {
     return this.findById(id);
   }
 
-  async acceptByStaff(id: string, actor: StaffActor): Promise<CustomerOrder> {
+  /**
+   * Cashier/manager records a no-show: the customer never collected an
+   * awaiting pickup order. Allowed only while the order is still awaiting
+   * collection (PENDING, or the legacy ACCEPTED). Reverses any loyalty
+   * redemption (the discount went unused) and cancels the payment hold for
+   * pay-at-pickup orders. Online orders already PAID keep their paid status —
+   * a refund, if any, is handled out of band.
+   */
+  async markNotCollected(
+    id: string,
+    actor: StaffActor,
+  ): Promise<CustomerOrder> {
     const order = await this.findById(id);
     if (actor.role !== UserRole.ADMIN && order.branchId !== actor.branchId) {
       throw new ForbiddenException('Cannot manage orders for another branch');
     }
-    if (order.status !== CustomerOrderStatus.PENDING) {
-      throw new BadRequestException('Only pending orders can be accepted');
+    if (
+      order.status !== CustomerOrderStatus.PENDING &&
+      order.status !== CustomerOrderStatus.ACCEPTED
+    ) {
+      throw new BadRequestException(
+        'Only an order awaiting collection can be marked not collected',
+      );
     }
-    await this.orders.updateStatus(id, CustomerOrderStatus.ACCEPTED);
-    const updated = await this.findById(id);
-
-    const branch = await this.branches.findEntityById(updated.branchId);
-    if (branch) {
-      this.notifyBranchCashiers(updated, branch.name).catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(`Cashier notification fan-out failed: ${message}`);
-      });
-    }
-
-    return updated;
-  }
-
-  async rejectByStaff(id: string, actor: StaffActor): Promise<CustomerOrder> {
-    const order = await this.findById(id);
-    if (actor.role !== UserRole.ADMIN && order.branchId !== actor.branchId) {
-      throw new ForbiddenException('Cannot manage orders for another branch');
-    }
-    if (order.status !== CustomerOrderStatus.PENDING) {
-      throw new BadRequestException('Only pending orders can be rejected');
-    }
-    if (order.paymentStatus === CustomerOrderPaymentStatus.PAID) {
-      throw new BadRequestException('Paid online orders cannot be rejected');
-    }
-    await this.orders.updateStatus(id, CustomerOrderStatus.REJECTED, {
-      paymentStatus: CustomerOrderPaymentStatus.CANCELLED,
-    });
+    const patch =
+      order.paymentStatus === CustomerOrderPaymentStatus.PAID
+        ? undefined
+        : { paymentStatus: CustomerOrderPaymentStatus.CANCELLED };
+    await this.orders.updateStatus(
+      id,
+      CustomerOrderStatus.NOT_COLLECTED,
+      patch,
+    );
     await this.reverseLoyaltyRedemption(order);
     return this.findById(id);
   }
@@ -987,8 +994,8 @@ export class CustomerOrdersService {
       ? `${order.user.firstName} ${order.user.lastName}`
       : (order.guestName ?? 'a customer');
     const itemCount = order.items?.length ?? 0;
-    const title = 'Pickup ready to fulfill';
-    const message = `${branchName} accepted ${customerName}'s pickup. Code ${order.orderCode}, ${itemCount} item${itemCount === 1 ? '' : 's'}.`;
+    const title = 'New pickup order to fulfill';
+    const message = `${branchName}: ${customerName}'s pickup. Code ${order.orderCode}, ${itemCount} item${itemCount === 1 ? '' : 's'}.`;
 
     await Promise.all(
       cashiers.map((c) =>
