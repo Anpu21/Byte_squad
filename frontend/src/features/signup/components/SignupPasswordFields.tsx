@@ -1,6 +1,6 @@
 import { Eye, EyeOff } from 'lucide-react';
 import Input from '@/components/ui/Input';
-import PasswordStrength from '@/components/auth/PasswordStrength';
+import PasswordStrength from './PasswordStrength';
 import type { SignupErrors } from '../hooks/useSignupForm';
 
 interface SignupPasswordFieldsProps {
