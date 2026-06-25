@@ -15,7 +15,7 @@ import { AvatarCard } from '@/features/customer-profile/components/AvatarCard';
 import { PersonalInfoForm } from '@/features/customer-profile/components/PersonalInfoForm';
 import { BranchPickerSection } from '@/features/customer-profile/components/BranchPickerSection';
 import { PasswordChangeForm } from '@/features/customer-profile/components/PasswordChangeForm';
-import { LoyaltyProfileCard } from '@/features/loyalty/components/LoyaltyProfileCard';
+import { LoyaltyProfileCard } from '@/features/loyalty';
 
 export function CustomerProfilePage() {
     const { user } = useAuth();

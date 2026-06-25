@@ -4,7 +4,7 @@ import { useOrderConfirmation } from '@/features/order-confirmation/hooks/useOrd
 import { QrCodeCard } from '@/features/order-confirmation/components/QrCodeCard';
 import { OrderSummaryPanel } from '@/features/order-confirmation/components/OrderSummaryPanel';
 import { OrderNotFound } from '@/features/order-confirmation/components/OrderNotFound';
-import { PointsEarnedBanner } from '@/features/loyalty/components/PointsEarnedBanner';
+import { PointsEarnedBanner } from '@/features/loyalty';
 
 export function OrderConfirmationPage() {
     const p = useOrderConfirmation();

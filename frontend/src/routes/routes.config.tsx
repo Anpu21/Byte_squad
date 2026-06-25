@@ -41,13 +41,15 @@ import { ShipmentDetailPage } from '@/pages/transfers/ShipmentDetailPage';
 import { CatalogPage } from '@/features/shop-catalog';
 import { ProductDetailPage } from '@/features/product-detail';
 import { CartPage } from '@/features/shop-cart';
-import { CheckoutPage } from '@/pages/shop/CheckoutPage';
-import { OrderConfirmationPage } from '@/pages/shop/OrderConfirmationPage';
-import { OrderGroupConfirmationPage } from '@/pages/shop/OrderGroupConfirmationPage';
-import { PayhereGatewayPage } from '@/pages/shop/PayhereGatewayPage';
-import { MyOrdersPage } from '@/pages/shop/MyOrdersPage';
-import { CustomerProfilePage } from '@/pages/shop/ProfilePage';
-import { RewardsPage } from '@/pages/shop/RewardsPage';
+import { CheckoutPage } from '@/features/checkout';
+import {
+    OrderConfirmationPage,
+    OrderGroupConfirmationPage,
+} from '@/features/order-confirmation';
+import { PayhereGatewayPage } from '@/features/payhere-gateway';
+import { MyOrdersPage } from '@/features/my-orders';
+import { CustomerProfilePage } from '@/features/customer-profile';
+import { RewardsPage } from '@/features/loyalty';
 import { InventoryRedirect } from './InventoryRedirect';
 import { FirstSetupOnly } from './FirstSetupOnly';
 import { LegacyOrderConfirmationRedirect } from './LegacyOrderConfirmationRedirect';
