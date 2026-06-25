@@ -7,11 +7,11 @@ import {
     useAccountingTab,
     type AccountingTab,
 } from '@/features/accounting/hooks/useAccountingTab';
-import { LedgerPage } from './LedgerPage';
-import { ReceivablesPage } from '@/pages/receivables/ReceivablesPage';
-import { FinancialReportsPage } from './FinancialReportsPage';
-import { ExpensesPage } from './ExpensesPage';
-import { ProfitLossPage } from './ProfitLossPage';
+import { LedgerPage } from '@/features/ledger';
+import { ReceivablesPage } from '@/features/receivables';
+import { FinancialReportsPage } from '@/features/financial-reports';
+import { ExpensesPage } from '@/features/expenses';
+import { ProfitLossPage } from '@/features/profit-loss';
 
 interface AccountingTabConfig extends TabItem<AccountingTab> {
     roles: UserRole[];

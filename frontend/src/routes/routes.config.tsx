@@ -18,7 +18,7 @@ import { StockAdjustmentNewPage } from '@/features/stock-adjustments';
 import { ReturnNewPage } from '@/features/returns';
 import { PosPage } from '@/features/pos';
 import { SalesPage } from '@/pages/sales/SalesPage';
-import { AccountingPage } from '@/pages/accounting/AccountingPage';
+import { AccountingPage } from '@/features/accounting';
 import { AuditLogPage } from '@/pages/admin/AuditLogPage';
 import { ReportsHubPage } from '@/features/reports';
 import { UserManagementPage } from '@/features/user-management';
