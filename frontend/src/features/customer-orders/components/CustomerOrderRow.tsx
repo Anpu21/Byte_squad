@@ -1,33 +1,45 @@
-import { Check, Eye, X } from 'lucide-react';
+import { Ban, Check, Eye } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import StatusPill from '@/components/ui/StatusPill';
 import { formatCurrency } from '@/lib/utils';
 import type { ICustomerOrder } from '@/types';
 import { formatOrderDateTime } from '../lib/date-helpers';
+import {
+    STAFF_ORDER_STATUS_LABEL,
+    isAwaitingCollection,
+} from '../lib/order-status';
 import { PaymentStatusBadge } from '@/features/my-orders/components/PaymentStatusBadge';
 
 interface CustomerOrderRowProps {
     request: ICustomerOrder;
     showBranchCol: boolean;
-    canReview: boolean;
+    canManage: boolean;
     actionPending: boolean;
     onView: (id: string) => void;
-    onAccept: (id: string) => void;
-    onReject: (id: string) => void;
+    onCollect: (order: ICustomerOrder) => void;
+    onMarkNotCollected: (id: string) => void;
 }
 
 export function CustomerOrderRow({
     request: req,
     showBranchCol,
-    canReview,
+    canManage,
     actionPending,
     onView,
-    onAccept,
-    onReject,
+    onCollect,
+    onMarkNotCollected,
 }: CustomerOrderRowProps) {
     const customerName = req.user
         ? `${req.user.firstName} ${req.user.lastName}`
         : (req.guestName ?? 'Guest');
+
+    const awaiting = isAwaitingCollection(req.status);
+    // Online pre-paid orders collect in one click; pay-at-pickup orders take
+    // payment at the POS (onCollect routes there). Online-but-unpaid orders
+    // aren't collectable yet, so no Collect action is offered.
+    const onlinePaid =
+        req.paymentMode === 'online' && req.paymentStatus === 'paid';
+    const canCollect = onlinePaid || req.paymentMode === 'manual';
 
     return (
         <tr className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors">
@@ -50,7 +62,10 @@ export function CustomerOrderRow({
                 {formatCurrency(Number(req.finalTotal))}
             </td>
             <td className="px-5 py-3">
-                <StatusPill status={req.status} />
+                <StatusPill
+                    status={req.status}
+                    label={STAFF_ORDER_STATUS_LABEL[req.status]}
+                />
             </td>
             <td className="px-5 py-3">
                 <PaymentStatusBadge status={req.paymentStatus} />
@@ -66,28 +81,28 @@ export function CustomerOrderRow({
                         <Eye size={12} />
                         View
                     </button>
-                    {req.status === 'pending' && canReview && (
+                    {awaiting && canManage && (
                         <>
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => onAccept(req.id)}
-                                disabled={actionPending}
-                            >
-                                <Check size={12} />
-                                Accept
-                            </Button>
-                            {req.paymentStatus !== 'paid' && (
+                            {canCollect && (
                                 <Button
-                                    variant="danger"
+                                    variant="primary"
                                     size="sm"
-                                    onClick={() => onReject(req.id)}
+                                    onClick={() => onCollect(req)}
                                     disabled={actionPending}
                                 >
-                                    <X size={12} />
-                                    Reject
+                                    <Check size={12} />
+                                    Collect
                                 </Button>
                             )}
+                            <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={() => onMarkNotCollected(req.id)}
+                                disabled={actionPending}
+                            >
+                                <Ban size={12} />
+                                Not collected
+                            </Button>
                         </>
                     )}
                 </div>

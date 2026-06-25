@@ -31,23 +31,23 @@ export function CustomerOrdersPage() {
                 setSearch={p.setSearch}
                 statusFilter={p.statusFilter}
                 setStatusFilter={p.setStatusFilter}
-                canReview={p.canReview}
+                canManage={p.canManage}
                 onView={p.setSelectedRequestId}
-                onAccept={p.onAccept}
-                onReject={p.onReject}
+                onCollect={p.onCollect}
+                onMarkNotCollected={p.onMarkNotCollected}
             />
 
             <StaffOrderDetailsModal
                 isOpen={!!p.selectedRequestId}
                 onClose={() => p.setSelectedRequestId(null)}
                 request={p.selectedRequest}
-                canReview={
+                canManage={
                     p.selectedRequest
-                        ? p.canReview(p.selectedRequest.branchId)
+                        ? p.canManage(p.selectedRequest.branchId)
                         : false
                 }
-                onAccept={p.onAccept}
-                onReject={p.onReject}
+                onCollect={p.onCollect}
+                onMarkNotCollected={p.onMarkNotCollected}
                 actionPending={p.actionPending}
             />
         </div>

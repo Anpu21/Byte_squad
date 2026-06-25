@@ -91,6 +91,7 @@ describe('BranchAnalyticsService', () => {
     const repoMock: Partial<jest.Mocked<BranchAnalyticsRepository>> = {
       findBranchesByIds: jest.fn(),
       getComparison: jest.fn().mockResolvedValue(makeResponse()),
+      listBranches: jest.fn(),
     };
     const loyaltySettingsMock: Partial<jest.Mocked<LoyaltySettingsService>> = {
       get: jest.fn().mockResolvedValue({
@@ -214,5 +215,19 @@ describe('BranchAnalyticsService', () => {
         },
       }),
     );
+  });
+
+  it('lists every branch (id/name/isActive) for the comparison picker', async () => {
+    repo.listBranches.mockResolvedValue([
+      { id: 'branch-own', name: 'Main', isActive: true } as Branch,
+      { id: 'branch-peer', name: 'Downtown', isActive: false } as Branch,
+    ]);
+
+    const result = await service.listBranches();
+
+    expect(result).toEqual([
+      { id: 'branch-own', name: 'Main', isActive: true },
+      { id: 'branch-peer', name: 'Downtown', isActive: false },
+    ]);
   });
 });

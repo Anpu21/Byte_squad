@@ -188,7 +188,12 @@ export class UsersService {
 
   async updateProfile(
     id: string,
-    data: { firstName?: string; lastName?: string; phone?: string | null },
+    data: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string | null;
+      language?: string;
+    },
   ): Promise<User | null> {
     const user = await this.users.findById(id);
     if (!user) {
@@ -200,6 +205,7 @@ export class UsersService {
     if (data.phone !== undefined) {
       updateData.phone = this.normalizeOptionalPhone(data.phone);
     }
+    if (data.language) updateData.language = data.language;
     if (Object.keys(updateData).length > 0) {
       await this.users.update(id, updateData);
     }

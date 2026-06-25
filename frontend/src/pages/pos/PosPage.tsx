@@ -6,6 +6,7 @@ import {
     usePosCart,
     type SchemeDiscountResolver,
 } from '@/features/pos/hooks/usePosCart';
+import { usePosAddItemGuard } from '@/features/pos/hooks/usePosAddItemGuard';
 import { useActiveSchemes } from '@/features/pos/hooks/useActiveSchemes';
 import { resolveSchemeDiscount } from '@/features/pos/lib/scheme-discount';
 import { usePosPageState } from '@/features/pos/hooks/usePosPageState';
@@ -34,6 +35,7 @@ import { createInitialTenderBag, resolveTenderInputs } from '@/features/pos/comp
 import { PosCashTenderForm } from '@/features/pos/components/payment-forms/PosCashTenderForm';
 import { PosPaymentBanners } from '@/features/pos/components/payment-forms/PosPaymentBanners';
 import { applyCartDiscount } from '@/features/pos/components/invoice-total/pos-invoice-total.helpers';
+import { sizeLoyaltyRedeem } from '@/features/pos/lib/loyalty-redeem-value';
 import { toCartItemSeed } from '@/features/pos/lib/cart-item-seed';
 import type { ISale, ISearchProductRow } from '@/types';
 
@@ -53,6 +55,9 @@ export function PosPage(): React.ReactElement {
         return (input) => resolveSchemeDiscount(schemes, input);
     }, [schemesQuery.data]);
     const cart = usePosCart(schemeResolver);
+    // Gate every add behind a branch-stock check so an out-of-stock product is
+    // rejected with a toast at pick/scan time instead of failing at checkout.
+    const guardedAddItem = usePosAddItemGuard(cart.addItem);
     const state = usePosPageState();
     const heldBills = usePosHeldBills();
     const [showHeldBills, setShowHeldBills] = useState(false);
@@ -63,8 +68,8 @@ export function PosPage(): React.ReactElement {
     const loyaltySettingsQuery = usePosLoyaltySettings();
     const previewInvoiceNumber = invoiceNumberQuery.data?.invoiceNo ?? '';
     const handleScanHit = useCallback(
-        (row: ISearchProductRow) => cart.addItem(toCartItemSeed(row)),
-        [cart],
+        (row: ISearchProductRow) => guardedAddItem(toCartItemSeed(row)),
+        [guardedAddItem],
     );
     const barcode = usePosBarcodeScan({
         onProductFound: handleScanHit,
@@ -81,16 +86,40 @@ export function PosPage(): React.ReactElement {
         state.cartDiscountPercentage,
     ).cartTotal;
 
-    const [cashTendered, setCashTendered] = useState(invoiceTotal);
+    // Redeemed loyalty points settle part of the bill (Model B): the cashier
+    // collects `invoiceTotal - redeemValue` in money while the Sale total
+    // stays gross. Sized via the shared helper so the cap + money value match
+    // the backend's `previewRedeemValue`; the backend re-caps authoritatively.
+    const loyaltyRedeem = useMemo(
+        () =>
+            sizeLoyaltyRedeem({
+                owner: state.loyaltyOwner,
+                requestedPoints: state.loyaltyRedeemPoints,
+                itemsSubtotal: cart.itemsSubtotal,
+                settings: loyaltySettingsQuery.data ?? null,
+            }),
+        [
+            state.loyaltyOwner,
+            state.loyaltyRedeemPoints,
+            cart.itemsSubtotal,
+            loyaltySettingsQuery.data,
+        ],
+    );
+    const payableByMoney = Math.max(
+        0,
+        Math.round((invoiceTotal - loyaltyRedeem.redeemValue) * 100) / 100,
+    );
+
+    const [cashTendered, setCashTendered] = useState(payableByMoney);
     useEffect(() => {
-        setCashTendered(invoiceTotal);
-    }, [invoiceTotal]);
+        setCashTendered(payableByMoney);
+    }, [payableByMoney]);
 
     const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
     const tenderInputs = useMemo(
-        () => resolveTenderInputs('Cash', { ...createInitialTenderBag(invoiceTotal), cashTendered }, invoiceTotal),
-        [cashTendered, invoiceTotal]
+        () => resolveTenderInputs('Cash', { ...createInitialTenderBag(payableByMoney), cashTendered }, payableByMoney),
+        [cashTendered, payableByMoney]
     );
     const calc = useMemo(() => tryCalculateMultiTender(tenderInputs), [tenderInputs]);
 
@@ -106,11 +135,11 @@ export function PosPage(): React.ReactElement {
         cart: cart.cart,
         cartDiscountPercentage: state.cartDiscountPercentage,
         paymentMethod: 'Cash',
-        bag: { ...createInitialTenderBag(invoiceTotal), cashTendered },
+        bag: { ...createInitialTenderBag(payableByMoney), cashTendered },
         tenderInputs,
         idempotencyKey,
         loyaltyOwner: state.loyaltyOwner,
-        loyaltyRedeemPoints: state.loyaltyRedeemPoints,
+        loyaltyRedeemPoints: loyaltyRedeem.cappedPoints,
         onSaleCreated: (sale) => {
             setIdempotencyKey(crypto.randomUUID());
             handleSaleCreated(sale);
@@ -119,7 +148,12 @@ export function PosPage(): React.ReactElement {
     });
 
     const hasError = calc === null;
-    const isEmptyTender = calc !== null && calc.paymentAmount === 0;
+    // A fully points-covered bill has zero money tender but is still
+    // chargeable, so only block on an empty tender when no points settle it.
+    const isEmptyTender =
+        calc !== null &&
+        calc.paymentAmount === 0 &&
+        loyaltyRedeem.redeemValue === 0;
     const disableCharge = submit.isPending || hasError || isEmptyTender || cart.cart.length === 0;
     const handlePrintLast = useCallback(() => {
         if (state.lastSale) void print.printReceipt(state.lastSale);
@@ -214,7 +248,7 @@ export function PosPage(): React.ReactElement {
                 <div className="flex flex-col gap-3">
                     <PosBillingGrid
                         cart={cart.cart}
-                        addItem={cart.addItem}
+                        addItem={guardedAddItem}
                         updateItem={cart.updateItem}
                         removeItem={cart.removeItem}
                         onClear={cart.clear}
@@ -237,6 +271,7 @@ export function PosPage(): React.ReactElement {
                         onDetach={() => state.setLoyaltyOwner(null)}
                         redeemPoints={state.loyaltyRedeemPoints}
                         onRedeemChange={state.setLoyaltyRedeemPoints}
+                        maxRedeemable={loyaltyRedeem.maxRedeemable}
                     />
                     <PosBillLivePreview
                         cart={cart.cart} invoiceNumber={previewInvoiceNumber}
@@ -248,9 +283,10 @@ export function PosPage(): React.ReactElement {
                     {cart.cart.length > 0 && (
                         <>
                             <PosCashTenderForm
-                                invoiceTotal={invoiceTotal}
+                                invoiceTotal={payableByMoney}
                                 cashTendered={cashTendered}
                                 onCashTenderedChange={setCashTendered}
+                                loyaltyRedeemValue={loyaltyRedeem.redeemValue}
                             />
                             <PosPaymentBanners
                                 hasMultiTenderError={hasError}

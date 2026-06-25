@@ -29,6 +29,12 @@ import { Notification } from '@notifications/entities/notification.entity';
 import { NotificationType } from '@common/enums/notification.enum';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
+import { Shipment } from '@stock-transfers/entities/shipment.entity';
+import { ShipmentEvent } from '@stock-transfers/entities/shipment-event.entity';
+import { ShipmentStatus } from '@common/enums/shipment-status.enum';
+import { ShipmentEventType } from '@common/enums/shipment-event-type.enum';
+import { Employee } from '@/modules/hr/entities/employee.entity';
+import { eventsForStatus } from '@common/seeds/shipment-seed-timeline';
 import { StockAdjustmentReason } from '@common/enums/stock-adjustment-reason.enum';
 import { StockAdjustmentStatus } from '@common/enums/stock-adjustment-status.enum';
 import { ExpenseStatus } from '@common/enums/expense-status.enum';
@@ -132,6 +138,12 @@ export class AdminSeedService implements OnModuleInit {
     private readonly notificationRepository: Repository<Notification>,
     @InjectRepository(StockTransferRequest)
     private readonly stockTransferRepository: Repository<StockTransferRequest>,
+    @InjectRepository(Shipment)
+    private readonly shipmentRepository: Repository<Shipment>,
+    @InjectRepository(ShipmentEvent)
+    private readonly shipmentEventRepository: Repository<ShipmentEvent>,
+    @InjectRepository(Employee)
+    private readonly employeeRepository: Repository<Employee>,
     private readonly configService: ConfigService,
     private readonly cloudinary: CloudinaryService,
     private readonly hrSeed: HrSeedService,
@@ -422,6 +434,24 @@ export class AdminSeedService implements OnModuleInit {
       worker1,
       worker2,
       worker3,
+    });
+
+    // 9b. Shipments demo seed — courier delivery tracking for inter-branch
+    //     transfers. Runs after the HR seed so the worker Employee rows exist
+    //     to assign as couriers. Additive: writes shipments + their tracking
+    //     timeline + one approved transfer line each, never touching inventory.
+    await this.ensureShipments({
+      admin,
+      mainBranch,
+      downtownBranch,
+      suburbanBranch,
+      mainManager,
+      downtownManager,
+      suburbanManager,
+      worker1,
+      worker2,
+      worker3,
+      products,
     });
 
     // 10. Purchases demo seed — six suppliers and a spread of GRNs, POs,
@@ -2109,6 +2139,265 @@ export class AdminSeedService implements OnModuleInit {
     }
 
     this.logger.log(`${transfers.length} sample stock transfers seeded.`);
+  }
+
+  // ── Shipments (courier delivery tracking) ──────────────
+
+  /**
+   * Seed one Shipment per ShipmentStatus (7 total) across the three branch
+   * pairs so the /shipments page — its KPI summary, status-filter chips, the
+   * tracking timeline, and the WORKER "My deliveries" view — all have data on
+   * a fresh DB. Without this the whole shipments feature renders empty.
+   *
+   * Each shipment carries the lifecycle fields its status implies (courier,
+   * eta, dispatched/delivered/returned/cancelled actors + timestamps), one
+   * linked transfer line (so the detail view shows an item), and a back-dated
+   * `ShipmentEvent` timeline from {@link eventsForStatus}.
+   *
+   * Idempotent via a shipments count-check. Purely additive — like
+   * `ensureStockTransfers` it never moves inventory; these are history rows.
+   */
+  private async ensureShipments(ctx: {
+    admin: User;
+    mainBranch: Branch;
+    downtownBranch: Branch;
+    suburbanBranch: Branch;
+    mainManager: User;
+    downtownManager: User;
+    suburbanManager: User;
+    worker1: User;
+    worker2: User;
+    worker3: User;
+    products: Product[];
+  }): Promise<void> {
+    if ((await this.shipmentRepository.count()) > 0) return;
+
+    const productByBarcode = new Map(ctx.products.map((p) => [p.barcode, p]));
+    const get = (barcode: string): Product | null =>
+      productByBarcode.get(barcode) ?? null;
+
+    // Couriers are the WORKER HR employee rows (created by the HR seed),
+    // keyed by the branch each worker belongs to.
+    const courierByBranchId = new Map<string, string>();
+    for (const worker of [ctx.worker1, ctx.worker2, ctx.worker3]) {
+      const employee = await this.employeeRepository.findOne({
+        where: { userId: worker.id },
+      });
+      if (employee && worker.branchId) {
+        courierByBranchId.set(worker.branchId, employee.id);
+      }
+    }
+
+    const managerByBranchId = new Map<string, User>([
+      [ctx.mainBranch.id, ctx.mainManager],
+      [ctx.downtownBranch.id, ctx.downtownManager],
+      [ctx.suburbanBranch.id, ctx.suburbanManager],
+    ]);
+
+    const now = Date.now();
+    const hoursAgo = (n: number): Date => new Date(now - n * 3_600_000);
+
+    const specs: {
+      status: ShipmentStatus;
+      source: Branch;
+      destination: Branch;
+      product: Product | null;
+      qty: number;
+      exceptionReason?: string;
+    }[] = [
+      {
+        status: ShipmentStatus.PENDING,
+        source: ctx.mainBranch,
+        destination: ctx.downtownBranch,
+        product: get('BVG-001'),
+        qty: 40,
+      },
+      {
+        status: ShipmentStatus.READY_TO_SHIP,
+        source: ctx.mainBranch,
+        destination: ctx.suburbanBranch,
+        product: get('BKY-001'),
+        qty: 24,
+      },
+      {
+        status: ShipmentStatus.DISPATCHED,
+        source: ctx.downtownBranch,
+        destination: ctx.mainBranch,
+        product: get('DRY-001'),
+        qty: 60,
+      },
+      {
+        status: ShipmentStatus.OUT_FOR_DELIVERY,
+        source: ctx.suburbanBranch,
+        destination: ctx.downtownBranch,
+        product: get('DRY-003'),
+        qty: 18,
+      },
+      {
+        status: ShipmentStatus.DELIVERED,
+        source: ctx.mainBranch,
+        destination: ctx.downtownBranch,
+        product: get('SNK-001'),
+        qty: 30,
+      },
+      {
+        status: ShipmentStatus.RETURNED,
+        source: ctx.mainBranch,
+        destination: ctx.suburbanBranch,
+        product: get('PNT-002'),
+        qty: 50,
+        exceptionReason: 'Destination cold-room full — parcel returned to source',
+      },
+      {
+        status: ShipmentStatus.CANCELLED,
+        source: ctx.downtownBranch,
+        destination: ctx.suburbanBranch,
+        product: get('BVG-005'),
+        qty: 36,
+        exceptionReason: 'Duplicate request — cancelled before pick',
+      },
+    ];
+
+    const dispatchedStatuses = new Set<ShipmentStatus>([
+      ShipmentStatus.DISPATCHED,
+      ShipmentStatus.OUT_FOR_DELIVERY,
+      ShipmentStatus.DELIVERED,
+      ShipmentStatus.RETURNED,
+    ]);
+
+    let created = 0;
+    for (let i = 0; i < specs.length; i++) {
+      const spec = specs[i];
+      if (!spec.product) continue;
+
+      const sourceManager = managerByBranchId.get(spec.source.id) ?? ctx.admin;
+      const destManager =
+        managerByBranchId.get(spec.destination.id) ?? ctx.admin;
+      const hasCourier =
+        spec.status !== ShipmentStatus.PENDING &&
+        spec.status !== ShipmentStatus.CANCELLED;
+      const isDispatched = dispatchedStatuses.has(spec.status);
+      const isInTransit =
+        spec.status === ShipmentStatus.DISPATCHED ||
+        spec.status === ShipmentStatus.OUT_FOR_DELIVERY;
+
+      const createdAt = hoursAgo(48 - i * 5);
+
+      const draft: Partial<Shipment> = {
+        trackingRef: `SHP-DEMO-${String(i + 1).padStart(4, '0')}`,
+        batchId: null,
+        sourceBranchId: spec.source.id,
+        destinationBranchId: spec.destination.id,
+        status: spec.status,
+        courierEmployeeId: hasCourier
+          ? (courierByBranchId.get(spec.source.id) ?? null)
+          : null,
+        eta: isInTransit ? hoursAgo(-6) : null,
+        createdByUserId: sourceManager.id,
+        dispatchedByUserId: isDispatched ? sourceManager.id : null,
+        dispatchedAt: isDispatched ? hoursAgo(30 - i) : null,
+        deliveredByUserId:
+          spec.status === ShipmentStatus.DELIVERED ? destManager.id : null,
+        deliveredAt:
+          spec.status === ShipmentStatus.DELIVERED ? hoursAgo(6) : null,
+        returnedByUserId:
+          spec.status === ShipmentStatus.RETURNED ? sourceManager.id : null,
+        returnedAt:
+          spec.status === ShipmentStatus.RETURNED ? hoursAgo(8) : null,
+        cancelledByUserId:
+          spec.status === ShipmentStatus.CANCELLED ? sourceManager.id : null,
+        cancelledAt:
+          spec.status === ShipmentStatus.CANCELLED ? hoursAgo(20) : null,
+        exceptionReason: spec.exceptionReason ?? null,
+      };
+
+      const shipment = await this.shipmentRepository.save(
+        this.shipmentRepository.create(draft),
+      );
+      await this.shipmentRepository
+        .createQueryBuilder()
+        .update(Shipment)
+        .set({ createdAt })
+        .where('id = :id', { id: shipment.id })
+        .execute();
+
+      // One approved transfer line bundled into the shipment so the detail
+      // view shows an item; its TransferStatus mirrors the delivery stage.
+      const lineStatus =
+        spec.status === ShipmentStatus.DELIVERED
+          ? TransferStatus.COMPLETED
+          : isDispatched
+            ? TransferStatus.IN_TRANSIT
+            : TransferStatus.APPROVED;
+      const line = await this.stockTransferRepository.save(
+        this.stockTransferRepository.create({
+          productId: spec.product.id,
+          destinationBranchId: spec.destination.id,
+          sourceBranchId: spec.source.id,
+          requestedQuantity: spec.qty,
+          approvedQuantity: spec.qty,
+          status: lineStatus,
+          requestReason: 'Branch top-up (shipment demo)',
+          requestedByUserId: destManager.id,
+          reviewedByUserId: ctx.admin.id,
+          reviewedAt: createdAt,
+          shipmentId: shipment.id,
+        }),
+      );
+      await this.stockTransferRepository
+        .createQueryBuilder()
+        .update(StockTransferRequest)
+        .set({ createdAt })
+        .where('id = :id', { id: line.id })
+        .execute();
+
+      // Tracking timeline: one event per stage, back-dated in order.
+      const eventTypes = eventsForStatus(spec.status);
+      for (let e = 0; e < eventTypes.length; e++) {
+        const type = eventTypes[e];
+        const eventAt = new Date(createdAt.getTime() + e * 3_600_000);
+        const event = await this.shipmentEventRepository.save(
+          this.shipmentEventRepository.create({
+            shipmentId: shipment.id,
+            type,
+            location: this.shipmentEventLocation(
+              type,
+              spec.source,
+              spec.destination,
+            ),
+            note: null,
+            actorUserId: sourceManager.id,
+          }),
+        );
+        await this.shipmentEventRepository
+          .createQueryBuilder()
+          .update(ShipmentEvent)
+          .set({ createdAt: eventAt })
+          .where('id = :id', { id: event.id })
+          .execute();
+      }
+
+      created++;
+    }
+
+    this.logger.log(`${created} demo shipments seeded.`);
+  }
+
+  /** Human-readable waypoint stamped on a seeded shipment-tracking event. */
+  private shipmentEventLocation(
+    type: ShipmentEventType,
+    source: Branch,
+    destination: Branch,
+  ): string | null {
+    switch (type) {
+      case ShipmentEventType.CHECKPOINT:
+        return 'In transit';
+      case ShipmentEventType.OUT_FOR_DELIVERY:
+      case ShipmentEventType.DELIVERED:
+        return destination.name;
+      default:
+        return source.name;
+    }
   }
 
   // ── Sales returns ──────────────────────────────────────

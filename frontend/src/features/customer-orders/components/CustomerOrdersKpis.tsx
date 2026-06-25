@@ -10,11 +10,11 @@ export function CustomerOrdersKpis({ kpis }: CustomerOrdersKpisProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <KpiCard
-                label="Pending"
+                label="Awaiting pickup"
                 value={kpis.pending}
                 delta={
                     kpis.pending > 0
-                        ? `${kpis.pending} need attention`
+                        ? `${kpis.pending} awaiting collection`
                         : 'All clear'
                 }
                 deltaPositive={kpis.pending === 0}
@@ -23,9 +23,9 @@ export function CustomerOrdersKpis({ kpis }: CustomerOrdersKpisProps) {
                 icon={<Clock size={14} />}
             />
             <KpiCard
-                label="Completed today"
+                label="Collected today"
                 value={kpis.completedToday}
-                delta="Pickups fulfilled"
+                delta="Picked up today"
                 sparkData={[1, 2, 3, 4, 5, 6, 7]}
                 sparkColor="var(--accent)"
                 icon={<CheckCircle2 size={14} />}

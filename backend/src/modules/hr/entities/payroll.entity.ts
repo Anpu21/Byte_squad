@@ -16,7 +16,7 @@ const decimalTransformer = {
 /**
  * Monthly payroll run for one employee. One row per (employee, month,
  * year) — re-generating a period overwrites the same row, but the
- * `paymentStatus` machine + `paymentDate` + `bankReferenceNo` mean
+ * `paymentStatus` machine + `paymentDate` + `paymentReference` mean
  * regenerating a *paid* row is a policy decision the service layer
  * (BE-H2+) must reject.
  *
@@ -199,19 +199,20 @@ export class Payroll {
 
   @Column({
     type: 'enum',
-    enum: ['Cash', 'Bank_Transfer', 'Cheque'],
+    enum: ['Cash', 'Card'],
     name: 'payment_method',
-    default: 'Bank_Transfer',
+    default: 'Cash',
   })
-  paymentMethod!: 'Cash' | 'Bank_Transfer' | 'Cheque';
+  paymentMethod!: 'Cash' | 'Card';
 
+  /** Optional disbursement reference — e.g. a card terminal / transfer ref. */
   @Column({
     type: 'varchar',
     length: 100,
-    name: 'bank_reference_no',
+    name: 'payment_reference',
     nullable: true,
   })
-  bankReferenceNo!: string | null;
+  paymentReference!: string | null;
 
   @Column({ type: 'boolean', name: 'pay_slip_generated', default: false })
   paySlipGenerated!: boolean;

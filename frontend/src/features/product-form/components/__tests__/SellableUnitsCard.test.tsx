@@ -27,15 +27,15 @@ function makeForm(
 }
 
 describe('SellableUnitsCard', () => {
-    it('renders the baseUnit select with the supported stock units', () => {
-        render(<SellableUnitsCard form={makeForm([])} />);
+    it('renders the baseUnit select with the supported stock units (add mode)', () => {
+        render(<SellableUnitsCard form={makeForm([])} isEditMode={false} />);
         const select = screen.getByLabelText(/base unit/i) as HTMLSelectElement;
         expect(select.options).toHaveLength(3);
     });
 
-    it('selecting a baseUnit calls resetUnitsForBase', async () => {
+    it('selecting a baseUnit calls resetUnitsForBase (add mode)', async () => {
         const form = makeForm([], 'unit');
-        render(<SellableUnitsCard form={form} />);
+        render(<SellableUnitsCard form={form} isEditMode={false} />);
         await userEvent.selectOptions(
             screen.getByLabelText(/base unit/i),
             'kg',
@@ -43,7 +43,32 @@ describe('SellableUnitsCard', () => {
         expect(form.resetUnitsForBase).toHaveBeenCalledWith('kg');
     });
 
-    it('renders one row per unit with its name and conversion', () => {
+    it('hides the units table and "Add unit" in add mode but keeps the base-unit select', () => {
+        const baseRow: ISellableUnitRow = {
+            rowId: 'r1',
+            name: 'unit',
+            barcode: '',
+            isBase: true,
+            conversionToBase: '1',
+            sellingPrice: '',
+            displayOrder: 0,
+        };
+        render(
+            <SellableUnitsCard form={makeForm([baseRow])} isEditMode={false} />,
+        );
+        // Managers still pick UNIT / KG / L when creating the product.
+        expect(screen.getByLabelText(/base unit/i)).toBeInTheDocument();
+        // The companion-unit editor is gone on the Add page.
+        expect(
+            screen.queryByRole('button', { name: /add unit/i }),
+        ).not.toBeInTheDocument();
+        expect(screen.queryByRole('table')).not.toBeInTheDocument();
+        expect(
+            screen.queryByText(/conversion to base/i),
+        ).not.toBeInTheDocument();
+    });
+
+    it('renders one row per unit with its name and conversion (edit mode)', () => {
         const units: ISellableUnitRow[] = [
             {
                 rowId: 'r1',
@@ -64,7 +89,7 @@ describe('SellableUnitsCard', () => {
                 displayOrder: 1,
             },
         ];
-        render(<SellableUnitsCard form={makeForm(units, 'kg')} />);
+        render(<SellableUnitsCard form={makeForm(units, 'kg')} isEditMode />);
         // +1 header row
         expect(screen.getAllByRole('row')).toHaveLength(units.length + 1);
         // The name 'kg' shows up in both the base-unit <select> and the first
@@ -78,16 +103,16 @@ describe('SellableUnitsCard', () => {
         expect(screen.getByDisplayValue('2200')).toBeInTheDocument();
     });
 
-    it('clicking "Add unit" calls form.addUnit', async () => {
+    it('clicking "Add unit" calls form.addUnit (edit mode)', async () => {
         const form = makeForm([], 'unit');
-        render(<SellableUnitsCard form={form} />);
+        render(<SellableUnitsCard form={form} isEditMode />);
         await userEvent.click(
             screen.getByRole('button', { name: /add unit/i }),
         );
         expect(form.addUnit).toHaveBeenCalledTimes(1);
     });
 
-    it('changing the isBase radio for row 2 calls setBaseRow with its rowId', async () => {
+    it('changing the isBase radio for row 2 calls setBaseRow with its rowId (edit mode)', async () => {
         const units: ISellableUnitRow[] = [
             {
                 rowId: 'r1',
@@ -109,13 +134,13 @@ describe('SellableUnitsCard', () => {
             },
         ];
         const form = makeForm(units, 'kg');
-        render(<SellableUnitsCard form={form} />);
+        render(<SellableUnitsCard form={form} isEditMode />);
         const radios = screen.getAllByRole('radio');
         await userEvent.click(radios[1]);
         expect(form.setBaseRow).toHaveBeenCalledWith('r2');
     });
 
-    it('clicking remove on a row calls form.removeUnit with its rowId', async () => {
+    it('clicking remove on a row calls form.removeUnit with its rowId (edit mode)', async () => {
         const units: ISellableUnitRow[] = [
             {
                 rowId: 'r1',
@@ -137,7 +162,7 @@ describe('SellableUnitsCard', () => {
             },
         ];
         const form = makeForm(units, 'kg');
-        render(<SellableUnitsCard form={form} />);
+        render(<SellableUnitsCard form={form} isEditMode />);
         const removeButtons = screen.getAllByRole('button', { name: /remove/i });
         await userEvent.click(removeButtons[1]);
         expect(form.removeUnit).toHaveBeenCalledWith('r2');
@@ -147,12 +172,12 @@ describe('SellableUnitsCard', () => {
         const form = makeForm([], 'unit', {
             errors: { sellableUnits: 'Duplicate unit name: kg' },
         });
-        render(<SellableUnitsCard form={form} />);
+        render(<SellableUnitsCard form={form} isEditMode />);
         const alert = screen.getByRole('alert');
         expect(alert.textContent).toMatch(/duplicate unit name: kg/i);
     });
 
-    it('rejects a non-decimal keystroke on the conversion-factor field', async () => {
+    it('rejects a non-decimal keystroke on the conversion-factor field (edit mode)', async () => {
         const units: ISellableUnitRow[] = [
             {
                 rowId: 'r1',
@@ -165,7 +190,7 @@ describe('SellableUnitsCard', () => {
             },
         ];
         const form = makeForm(units, 'kg');
-        render(<SellableUnitsCard form={form} />);
+        render(<SellableUnitsCard form={form} isEditMode />);
         const conversionInput = screen.getByDisplayValue('1');
         await userEvent.type(conversionInput, 'abc');
         expect(form.updateUnit).not.toHaveBeenCalled();

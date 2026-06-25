@@ -126,6 +126,11 @@ export class BranchAnalyticsRepository {
     return ids.map((id) => byId.get(id)).filter((row): row is Branch => !!row);
   }
 
+  /** All branches, name-sorted — the roster behind the comparison picker. */
+  async listBranches(): Promise<Branch[]> {
+    return this.branchRepo.find({ order: { name: 'ASC' } });
+  }
+
   async getComparison(
     params: ComparisonParams,
   ): Promise<BranchAnalyticsComparisonResponse> {

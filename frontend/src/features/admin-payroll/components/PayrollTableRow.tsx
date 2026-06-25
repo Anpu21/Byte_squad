@@ -9,6 +9,8 @@ import {
 interface IPayrollTableRowProps {
     payroll: IPayroll;
     employeeName: string;
+    /** Admin-only: render the actions cell (approve / mark-paid / cancel). */
+    canManage: boolean;
     onApprove: (id: string) => void;
     onMarkPaid: (payroll: IPayroll) => void;
     onCancel: (id: string) => void;
@@ -22,6 +24,7 @@ interface IPayrollTableRowProps {
 export function PayrollTableRow({
     payroll,
     employeeName,
+    canManage,
     onApprove,
     onMarkPaid,
     onCancel,
@@ -51,37 +54,39 @@ export function PayrollTableRow({
             <td className="px-3 py-2.5 text-[12px] text-text-3">
                 {payroll.paymentDate ?? '—'}
             </td>
-            <td className="px-3 py-2.5 text-right">
-                <div className="inline-flex gap-1.5">
-                    {canApprove ? (
-                        <Button
-                            size="sm"
-                            variant="primary"
-                            onClick={() => onApprove(payroll.id)}
-                        >
-                            Approve
-                        </Button>
-                    ) : null}
-                    {canMarkPaid ? (
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => onMarkPaid(payroll)}
-                        >
-                            Mark paid
-                        </Button>
-                    ) : null}
-                    {canCancel ? (
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onCancel(payroll.id)}
-                        >
-                            Cancel
-                        </Button>
-                    ) : null}
-                </div>
-            </td>
+            {canManage ? (
+                <td className="px-3 py-2.5 text-right">
+                    <div className="inline-flex gap-1.5">
+                        {canApprove ? (
+                            <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={() => onApprove(payroll.id)}
+                            >
+                                Approve
+                            </Button>
+                        ) : null}
+                        {canMarkPaid ? (
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => onMarkPaid(payroll)}
+                            >
+                                Mark paid
+                            </Button>
+                        ) : null}
+                        {canCancel ? (
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => onCancel(payroll.id)}
+                            >
+                                Cancel
+                            </Button>
+                        ) : null}
+                    </div>
+                </td>
+            ) : null}
         </tr>
     );
 }

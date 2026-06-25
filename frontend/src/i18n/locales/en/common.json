@@ -5,13 +5,50 @@
   "saving": "Saving...",
   "saveChanges": "Save Changes",
   "loading": "Loading...",
+  "delete": "Delete",
+  "edit": "Edit",
+  "add": "Add",
+  "search": "Search",
+  "export": "Export",
+  "noData": "No data",
+  "confirm": "Confirm",
   "nav": {
     "dashboard": "Dashboard",
+    "pos": "POS",
+    "sales": "Sales",
+    "myDeliveries": "My Deliveries",
+    "shipments": "Shipments",
     "inventory": "Inventory",
+    "purchases": "Purchases",
+    "accounting": "Accounting",
+    "reports": "Reports",
+    "customerLoyalty": "Customer loyalty",
+    "users": "Users",
+    "hr": "HR",
+    "leaves": "Leaves",
+    "branches": "Branches",
+    "auditLog": "Audit log",
+    "notifications": "Notifications",
     "expiry": "Expiry",
     "adjustments": "Adjustments",
     "returns": "Returns",
     "profile": "Profile",
-    "language": "Language"
+    "language": "Language",
+    "groups": {
+      "overview": "Overview",
+      "sales": "Sales",
+      "fulfillment": "Fulfillment",
+      "inventory": "Inventory",
+      "finance": "Finance",
+      "people": "People",
+      "system": "System"
+    }
+  },
+  "shell": {
+    "skipToMain": "Skip to main content",
+    "toggleSidebar": "Toggle sidebar",
+    "openUserMenu": "Open user menu",
+    "profile": "Profile",
+    "logout": "Logout"
   }
 }

@@ -268,11 +268,14 @@ export class PosWriteService {
     const total = round2(Math.max(0, itemsSubtotal - cartDiscount + taxTotal));
 
     // ---------------------------------------------------------------
-    // 5. Multi-tender breakdown
+    // 5. Loyalty owner + redemption sizing (BEFORE the tender)
+    //
+    // Resolve the owner (validated above as at-most-one), then size the
+    // redemption read-only so the payable can drop by the points' money
+    // value. The actual point debit happens inside the transaction via
+    // `redeemForOrder`, which re-caps on the same `itemsSubtotal`; sizing
+    // here only decides how much money the customer still owes.
     // ---------------------------------------------------------------
-    const tender = this.multiTender.calculate(total, dto.payment);
-
-    // Resolve the loyalty owner (validated above as at-most-one).
     const loyaltyOwner: LoyaltyOwner | null = dto.customerUserId
       ? { userId: dto.customerUserId }
       : dto.loyaltyCustomerId
@@ -284,8 +287,24 @@ export class PosWriteService {
         ? 'walkIn'
         : null;
 
+    const redeem = await this.loyaltyWallet.previewRedeemValue({
+      owner: loyaltyOwner,
+      itemsSubtotal,
+      requestedPoints: dto.loyaltyRedeemPoints ?? 0,
+    });
+
     // ---------------------------------------------------------------
-    // 6. Transactional write
+    // 6. Multi-tender breakdown — redeemed points settle like a non-cash
+    //    tender, so the customer owes `total - redeemValue` in money.
+    // ---------------------------------------------------------------
+    const tender = this.multiTender.calculate(
+      total,
+      dto.payment,
+      redeem.redeemValue,
+    );
+
+    // ---------------------------------------------------------------
+    // 7. Transactional write
     // ---------------------------------------------------------------
     const { sale: saved, loyaltyResult } = await this.dataSource.transaction(
       async (manager) => {
@@ -356,6 +375,7 @@ export class PosWriteService {
             chequeAmount: Number(dto.payment.chequeAmount ?? 0),
             bankTransferAmount: Number(dto.payment.bankTransferAmount ?? 0),
             creditAmount: tender.creditTaken,
+            loyaltyAmount: tender.loyaltyApplied,
             keepBalance: dto.payment.keepBalance ?? false,
             chequeNo: dto.payment.chequeNo ?? null,
             chequeDate: dto.payment.chequeDate
@@ -414,8 +434,13 @@ export class PosWriteService {
           owner: loyaltyOwner,
           ownerType: loyaltyOwnerType,
           sale,
-          grossPaidAmount: tender.paidAmount,
-          redeemPoints: dto.loyaltyRedeemPoints ?? 0,
+          redeemPoints: redeem.cappedPoints,
+          redeemValue: redeem.redeemValue,
+          // Earn on the money actually paid (settled minus the points
+          // tender) — the customer doesn't earn on the value they redeemed.
+          earnBaseAmount: round2(
+            Math.max(0, tender.paidAmount - tender.loyaltyApplied),
+          ),
           subtotal: itemsSubtotal,
           branchId,
           manager,
@@ -463,17 +488,21 @@ export class PosWriteService {
    * loyalty summary that the controller appends to the response, or
    * null when the cashier did not attach any loyalty owner.
    *
-   * Redeem-first / award-second ordering is deliberate: the customer
-   * does NOT earn points on the value of points they just spent. The
-   * award amount is therefore the GROSS paid amount minus the redeem
-   * value (`redeemedPoints * pointValue`).
+   * `redeemPoints` arrives already server-capped by `previewRedeemValue`
+   * (the same figure that reduced the payable up front). `redeemForOrder`
+   * re-validates the cap inside the transaction and commits the debit;
+   * if it ends up redeeming a different count than we booked the payable
+   * against (e.g. the balance moved between sizing and the txn), we roll
+   * back rather than mis-bill. The earn base is the money actually paid
+   * (`earnBaseAmount`), so the customer does NOT earn on redeemed value.
    */
   private async applyLoyalty(params: {
     owner: LoyaltyOwner | null;
     ownerType: 'user' | 'walkIn' | null;
     sale: Sale;
-    grossPaidAmount: number;
     redeemPoints: number;
+    redeemValue: number;
+    earnBaseAmount: number;
     subtotal: number;
     branchId: string;
     manager: EntityManager;
@@ -493,17 +522,17 @@ export class PosWriteService {
           })
         : 0;
 
-    const pointValue = redeemed > 0 ? await this.loyalty.getPointValue() : 0;
-    const redeemValueLkr = round2(redeemed * pointValue);
-    const netPaidAmount = round2(
-      Math.max(0, params.grossPaidAmount - redeemValueLkr),
-    );
+    if (redeemed !== params.redeemPoints) {
+      throw new ConflictException(
+        'Loyalty balance changed during checkout — please retry',
+      );
+    }
 
     const earned = await this.loyaltyWallet.awardForOrder({
       owner: params.owner,
       orderId: params.sale.id,
       orderCode: params.sale.invoiceNumber,
-      paidAmount: netPaidAmount,
+      paidAmount: params.earnBaseAmount,
       branchId: params.branchId,
       manager: params.manager,
     });
@@ -517,6 +546,7 @@ export class PosWriteService {
       ownerType: params.ownerType,
       earned,
       redeemed,
+      redeemValue: params.redeemValue,
       newBalance: account.pointsBalance,
     };
   }

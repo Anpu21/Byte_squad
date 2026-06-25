@@ -93,6 +93,7 @@ interface MockBag {
   loyaltyWallet: {
     awardForOrder: jest.Mock;
     redeemForOrder: jest.Mock;
+    previewRedeemValue: jest.Mock;
   };
   dataSource: jest.Mocked<DataSource>;
   managerCalls: {
@@ -277,10 +278,20 @@ function buildMocks(
   const earnedPoints = loyaltyOpts.earnedPoints ?? 0;
   const redeemedPoints = loyaltyOpts.redeemedPoints ?? 0;
 
+  const round2 = (n: number): number => Math.round(n * 100) / 100;
+
   const awardForOrder = jest.fn().mockResolvedValue(earnedPoints);
   const redeemForOrder = loyaltyOpts.redeemError
     ? jest.fn().mockRejectedValue(loyaltyOpts.redeemError)
     : jest.fn().mockResolvedValue(redeemedPoints);
+  // Read-only pre-tender sizing. `cappedPoints` mirrors what `redeemForOrder`
+  // will commit so the in-service assert (committed === sized) passes; tests
+  // exercising divergence override this per case.
+  const previewRedeemValue = jest.fn().mockResolvedValue({
+    cappedPoints: redeemedPoints,
+    redeemValue: round2(redeemedPoints * pointValue),
+    pointValue,
+  });
   const getOrCreateAccount = jest.fn().mockResolvedValue({
     id: 'acc-1',
     pointsBalance,
@@ -296,6 +307,7 @@ function buildMocks(
   const loyaltyWalletServiceMock = {
     awardForOrder,
     redeemForOrder,
+    previewRedeemValue,
   };
 
   return Test.createTestingModule({
@@ -940,6 +952,7 @@ describe('PosWriteService.createSale', () => {
       ownerType: 'user',
       earned: 10,
       redeemed: 0,
+      redeemValue: 0,
       newBalance: 10,
     });
   });
@@ -973,12 +986,14 @@ describe('PosWriteService.createSale', () => {
       ownerType: 'walkIn',
       earned: 5,
       redeemed: 0,
+      redeemValue: 0,
       newBalance: 5,
     });
   });
 
-  it('redeem + award: paidAmount for award is gross MINUS redeem value in LKR', async () => {
-    // Arrange — invoice 1000, redeem 50 pts @ Rs 1/pt → net paid 950
+  it('redeem + award: cashier collects net cash, award earns on money paid', async () => {
+    // Arrange — invoice 1000, redeem 50 pts @ Rs 1/pt → Rs50 settled by
+    // points, so the cashier only collects Rs950 in cash.
     const bag = await buildMocks({
       inventoryRows: [makeInvRow('p-1', 50)],
       userRows: new Map([['cust-1', { id: 'cust-1', currentBalance: 0 }]]),
@@ -995,9 +1010,9 @@ describe('PosWriteService.createSale', () => {
       items: [{ productId: 'p-1', quantity: 10, unitPrice: 100 }],
       payment: {
         paymentMethod: 'Cash',
-        paymentAmount: 1000,
-        cashAmount: 1000,
-        cashTendered: 1000,
+        paymentAmount: 950,
+        cashAmount: 950,
+        cashTendered: 950,
       },
     });
     bag.sales.create.mockResolvedValue({
@@ -1006,9 +1021,9 @@ describe('PosWriteService.createSale', () => {
     } as Sale);
 
     // Act
-    await bag.service.createSale(makeCashier(), dto);
+    const result = await bag.service.createSale(makeCashier(), dto);
 
-    // Assert: redeem invoked first with requestedPoints + subtotal cap.
+    // Assert: redeem invoked with the pre-sized cap (cappedPoints) + subtotal.
     expect(bag.loyaltyWallet.redeemForOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         owner: { userId: 'cust-1' },
@@ -1018,7 +1033,7 @@ describe('PosWriteService.createSale', () => {
         branchId: 'branch-A',
       }),
     );
-    // Award called with NET paid = 1000 - (50 * 1) = 950.
+    // Award earns on money paid = settled(1000) - loyalty(50) = 950.
     expect(bag.loyaltyWallet.awardForOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         owner: { userId: 'cust-1' },
@@ -1027,6 +1042,27 @@ describe('PosWriteService.createSale', () => {
         branchId: 'branch-A',
       }),
     );
+    // Sale total stays GROSS; payment splits 950 money + 50 loyalty tender.
+    expect(bag.sales.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        total: 1000,
+        paidAmount: 1000,
+        balanceDue: 0,
+        paymentStatus: 'Paid',
+      }),
+      expect.anything(),
+    );
+    expect(bag.payments.create).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentAmount: 950, loyaltyAmount: 50 }),
+      expect.anything(),
+    );
+    expect((result as { loyalty?: { redeemValue: number } }).loyalty).toEqual({
+      ownerType: 'user',
+      earned: 9,
+      redeemed: 50,
+      redeemValue: 50,
+      newBalance: 150,
+    });
   });
 
   it('both ownership fields set → BadRequestException before any DB write', async () => {
@@ -1055,12 +1091,21 @@ describe('PosWriteService.createSale', () => {
     const bag = await buildMocks({
       userRows: new Map([['cust-1', { id: 'cust-1', currentBalance: 0 }]]),
       loyalty: {
+        redeemedPoints: 50, // sized cap so redeemForOrder is reached in-txn
         redeemError: new BadRequestException('Not enough loyalty points'),
       },
     });
     const dto = makeDto({
       customerUserId: 'cust-1',
-      loyaltyRedeemPoints: 9999,
+      loyaltyRedeemPoints: 50,
+      // Net cash after the Rs50 points tender so the overpay guard doesn't
+      // fire before we reach the in-transaction redeem.
+      payment: {
+        paymentMethod: 'Cash',
+        paymentAmount: 50,
+        cashAmount: 50,
+        cashTendered: 50,
+      },
     });
     bag.sales.create.mockResolvedValue({
       id: 'sale-redeem-fail',
@@ -1070,6 +1115,108 @@ describe('PosWriteService.createSale', () => {
     // Act + Assert: BadRequestException bubbles, award never runs.
     await expect(bag.service.createSale(makeCashier(), dto)).rejects.toThrow(
       BadRequestException,
+    );
+    expect(bag.loyaltyWallet.awardForOrder).not.toHaveBeenCalled();
+  });
+
+  it('redeem reduces payable: Rs1000 bill, redeem 200 → cashier collects Rs800', async () => {
+    // Headline behaviour: redeeming points lowers the money the customer
+    // hands over while the Sale total/ledger stay at gross.
+    const bag = await buildMocks({
+      inventoryRows: [makeInvRow('p-1', 50)],
+      loyalty: {
+        pointValue: 1,
+        redeemedPoints: 200,
+        earnedPoints: 8, // earns on the Rs800 money paid
+        pointsBalance: 308,
+      },
+    });
+    const dto = makeDto({
+      loyaltyCustomerId: 'walkin-1',
+      loyaltyRedeemPoints: 200,
+      items: [{ productId: 'p-1', quantity: 10, unitPrice: 100 }],
+      payment: {
+        paymentMethod: 'Cash',
+        paymentAmount: 800,
+        cashAmount: 800,
+        cashTendered: 800,
+      },
+    });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-redeem-headline',
+      invoiceNumber: 'INV-2026-000205',
+    } as Sale);
+
+    // Act
+    const result = await bag.service.createSale(makeCashier(), dto);
+
+    // Assert: gross total, fully settled, payment split money + points.
+    expect(bag.sales.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        total: 1000,
+        paidAmount: 1000,
+        balanceDue: 0,
+        paymentStatus: 'Paid',
+      }),
+      expect.anything(),
+    );
+    expect(bag.payments.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paymentAmount: 800,
+        loyaltyAmount: 200,
+        invoiceTotal: 1000,
+      }),
+      expect.anything(),
+    );
+    // Ledger revenue stays GROSS (the points are a tender, not a discount).
+    expect(bag.accounting.createLedgerEntryWithManager).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ amount: 1000 }),
+    );
+    expect(bag.loyaltyWallet.awardForOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ paidAmount: 800 }),
+    );
+    expect((result as { loyalty?: { redeemValue: number } }).loyalty).toEqual({
+      ownerType: 'walkIn',
+      earned: 8,
+      redeemed: 200,
+      redeemValue: 200,
+      newBalance: 308,
+    });
+  });
+
+  it('committed redeem diverging from the sized cap throws ConflictException', async () => {
+    // The payable was reduced by the SIZED 200 pts, but the in-txn debit
+    // only commits 150 (balance moved) → roll back rather than mis-bill.
+    const bag = await buildMocks({
+      inventoryRows: [makeInvRow('p-1', 50)],
+      loyalty: { pointValue: 1, redeemedPoints: 200, pointsBalance: 300 },
+    });
+    bag.loyaltyWallet.previewRedeemValue.mockResolvedValue({
+      cappedPoints: 200,
+      redeemValue: 200,
+      pointValue: 1,
+    });
+    bag.loyaltyWallet.redeemForOrder.mockResolvedValue(150); // diverges
+
+    const dto = makeDto({
+      loyaltyCustomerId: 'walkin-1',
+      loyaltyRedeemPoints: 200,
+      items: [{ productId: 'p-1', quantity: 10, unitPrice: 100 }],
+      payment: {
+        paymentMethod: 'Cash',
+        paymentAmount: 800,
+        cashAmount: 800,
+        cashTendered: 800,
+      },
+    });
+    bag.sales.create.mockResolvedValue({
+      id: 'sale-divergence',
+      invoiceNumber: 'INV-2026-000206',
+    } as Sale);
+
+    await expect(bag.service.createSale(makeCashier(), dto)).rejects.toThrow(
+      ConflictException,
     );
     expect(bag.loyaltyWallet.awardForOrder).not.toHaveBeenCalled();
   });

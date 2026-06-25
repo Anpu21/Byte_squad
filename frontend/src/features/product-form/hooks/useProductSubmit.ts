@@ -71,11 +71,13 @@ export function useProductSubmit({
                 parseFloat(form.costPrice),
                 form.costPriceUnit,
                 form.units,
+                parseFloat(form.costPriceQty || '1'),
             );
             normalizedSellingPrice = normalizePriceToBaseUnit(
                 parseFloat(form.sellingPrice),
                 form.sellingPriceUnit,
                 form.units,
+                parseFloat(form.sellingPriceQty || '1'),
             );
         } catch (err) {
             form.setErrors({

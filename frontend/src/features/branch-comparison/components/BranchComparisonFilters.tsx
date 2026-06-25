@@ -1,6 +1,6 @@
 import { AlertCircle, CheckCheck, Loader2, RefreshCw, X } from "lucide-react";
 import Card from "@/components/ui/Card";
-import type { IBranch } from "@/types";
+import type { IBranchAnalyticsBranchOption } from "@/types";
 import {
   PRESET_LABELS,
   PRESET_ORDER,
@@ -24,7 +24,7 @@ export interface BranchComparisonFilterActions {
 }
 
 interface BranchComparisonFiltersProps {
-  branches: IBranch[];
+  branches: IBranchAnalyticsBranchOption[];
   filters: BranchComparisonFilterValues;
   actions: BranchComparisonFilterActions;
   lockedBranchIds: string[];

@@ -1,26 +1,18 @@
 import { Search } from 'lucide-react';
 import type { CustomerOrderStatus } from '@/types';
+import { STAFF_ORDER_STATUS_LABEL } from '../lib/order-status';
 
 const INPUT_CLASS =
     'w-full h-10 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors placeholder:text-text-3';
 
+// Collection-oriented filter set; the legacy accepted/rejected states are no
+// longer produced, so they aren't offered as filters.
 const STATUSES: CustomerOrderStatus[] = [
     'pending',
-    'accepted',
     'completed',
-    'rejected',
+    'not_collected',
     'cancelled',
-    'expired',
 ];
-
-const STATUS_LABEL: Record<CustomerOrderStatus, string> = {
-    pending: 'Pending',
-    accepted: 'Accepted',
-    completed: 'Completed',
-    rejected: 'Rejected',
-    cancelled: 'Cancelled',
-    expired: 'Expired',
-};
 
 interface CustomerOrdersFilterProps {
     search: string;
@@ -66,7 +58,7 @@ export function CustomerOrdersFilter({
                 <option value="">All statuses</option>
                 {STATUSES.map((s) => (
                     <option key={s} value={s}>
-                        {STATUS_LABEL[s]}
+                        {STAFF_ORDER_STATUS_LABEL[s]}
                     </option>
                 ))}
             </select>

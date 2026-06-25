@@ -17,9 +17,9 @@ import { GeneratePayrollDto } from '@/modules/hr/dto/generate-payroll.dto';
 import { MarkPayrollPaidDto } from '@/modules/hr/dto/mark-payroll-paid.dto';
 import { ExportPayrollCsvQueryDto } from '@/modules/hr/dto/export-payroll-csv-query.dto';
 import {
-  BANK_CSV_HEADER,
+  PAYROLL_CSV_HEADER,
   buildPayrollRow,
-  formatBankCsv,
+  formatPayrollCsv,
   summarizeAttendanceRows,
 } from '@/modules/hr/payroll-math';
 
@@ -206,7 +206,7 @@ export class PayrollService {
       paymentStatus: 'Paid',
       paymentDate: new Date(dto.paymentDate),
       paymentMethod: dto.paymentMethod,
-      bankReferenceNo: dto.bankReferenceNo ?? null,
+      paymentReference: dto.paymentReference ?? null,
     });
     if (!updated)
       throw new NotFoundException('Payroll vanished after mark-paid');
@@ -231,11 +231,10 @@ export class PayrollService {
   }
 
   /**
-   * Bank-disbursement CSV for the period. Returns one row per
-   * Approved-or-Paid payroll. Missing bank details surface as quoted
-   * empty fields so the bank's loader still sees a complete row — the
-   * admin is responsible for chasing the missing details before
-   * forwarding.
+   * Payroll export CSV for the period — one row per Approved-or-Paid
+   * payroll: employee, period, gross/net, and how it was paid. A plain
+   * record of the run, not a bank disbursement file. Managers are pinned
+   * to their own branch by `resolveBranchScope`.
    */
   async exportCsv(
     args: ExportPayrollCsvQueryDto,
@@ -249,25 +248,28 @@ export class PayrollService {
       limit: MAX_LIMIT,
       offset: 0,
     });
-    if (rows.length === 0) return `${BANK_CSV_HEADER}\n`;
+    if (rows.length === 0) return `${PAYROLL_CSV_HEADER}\n`;
     const employees = await Promise.all(
       rows.map((r) => this.employees.findById(r.employeeId)),
     );
-    const pairs = rows
+    const csvRows = rows
       .map((p, i) => {
         const e = employees[i];
         if (!e) return null;
         return {
           employeeCode: e.employeeCode,
-          bankName: e.bankName,
-          bankBranch: e.bankBranch,
-          bankAccountNo: e.bankAccountNo,
-          bankAccountName: e.bankAccountName,
+          employeeName: e.fullName,
+          payPeriodMonth: p.payPeriodMonth,
+          payPeriodYear: p.payPeriodYear,
+          grossSalary: p.grossSalary,
           netSalary: p.netSalary,
+          paymentMethod: p.paymentMethod,
+          paymentStatus: p.paymentStatus,
+          paymentDate: p.paymentDate,
         };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
-    return formatBankCsv(pairs);
+    return formatPayrollCsv(csvRows);
   }
 
   // -------------------------------------------------------------------

@@ -26,11 +26,15 @@ export interface ISaleCustomerSnapshot {
  * when the cashier attached a loyalty owner. Mirrors
  * `CreateSaleLoyaltyResult` on the BE so the receipt footer can render
  * the earned/redeemed/balance trio without a follow-up wallet read.
+ * `redeemValue` is the money the redeemed points settled (the amount the
+ * cash collected was reduced by), used for the "Points redeemed −Rs X"
+ * receipt line.
  */
 export interface ISaleLoyaltyResult {
   ownerType: 'user' | 'walkIn';
   earned: number;
   redeemed: number;
+  redeemValue: number;
   newBalance: number;
 }
 

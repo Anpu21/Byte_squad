@@ -1,59 +1,63 @@
-import { Check, X } from 'lucide-react';
+import { Ban, Check } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import type { ICustomerOrder } from '@/types';
+import { isAwaitingCollection } from '@/features/customer-orders/lib/order-status';
 
 interface OrderStatusActionsProps {
-    orderId: string;
-    isPending: boolean;
-    canReject: boolean;
-    canReview: boolean;
+    order: ICustomerOrder;
+    canManage: boolean;
     actionPending?: boolean;
-    onAccept: (id: string) => void | Promise<void>;
-    onReject: (id: string) => void | Promise<void>;
+    onCollect: (order: ICustomerOrder) => void | Promise<void>;
+    onMarkNotCollected: (id: string) => void | Promise<void>;
 }
 
 export function OrderStatusActions({
-    orderId,
-    isPending,
-    canReject,
-    canReview,
+    order,
+    canManage,
     actionPending = false,
-    onAccept,
-    onReject,
+    onCollect,
+    onMarkNotCollected,
 }: OrderStatusActionsProps) {
-    if (!isPending) return null;
+    if (!isAwaitingCollection(order.status)) return null;
 
-    if (!canReview) {
+    if (!canManage) {
         return (
             <p className="mt-3 text-xs text-text-3 text-center">
-                Only staff at this branch can accept or reject.
+                Only staff at this branch can update this order.
             </p>
         );
     }
 
+    const onlinePaid =
+        order.paymentMode === 'online' && order.paymentStatus === 'paid';
+    const canCollect = onlinePaid || order.paymentMode === 'manual';
+
     return (
         <div className="mt-4 flex flex-col gap-2">
-            <Button
-                variant="primary"
-                size="md"
-                onClick={() => onAccept(orderId)}
-                disabled={actionPending}
-                className="w-full"
-            >
-                <Check size={14} />
-                Accept order
-            </Button>
-            {canReject && (
+            {canCollect && (
                 <Button
-                    variant="danger"
+                    variant="primary"
                     size="md"
-                    onClick={() => onReject(orderId)}
+                    onClick={() => onCollect(order)}
                     disabled={actionPending}
                     className="w-full"
                 >
-                    <X size={14} />
-                    Reject
+                    <Check size={14} />
+                    {order.paymentMode === 'manual'
+                        ? 'Collect at POS'
+                        : 'Mark collected'}
                 </Button>
             )}
+            <Button
+                variant="danger"
+                size="md"
+                onClick={() => onMarkNotCollected(order.id)}
+                disabled={actionPending}
+                className="w-full"
+            >
+                <Ban size={14} />
+                Not collected
+            </Button>
         </div>
     );
 }

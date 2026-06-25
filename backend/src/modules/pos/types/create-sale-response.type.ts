@@ -7,12 +7,16 @@ import type { Sale } from '@pos/entities/sale.entity';
  *
  * `earned` and `redeemed` are point counts written to the wallet
  * during the same transaction as the sale; `newBalance` is the
- * wallet balance after both writes settled.
+ * wallet balance after both writes settled. `redeemValue` is the
+ * money value of the redeemed points (`redeemed * pointValue`) that
+ * was deducted from the cash the customer handed over, so the receipt
+ * can print the "Points redeemed −Rs X" line without re-deriving it.
  */
 export interface CreateSaleLoyaltyResult {
   ownerType: 'user' | 'walkIn';
   earned: number;
   redeemed: number;
+  redeemValue: number;
   newBalance: number;
 }
 
