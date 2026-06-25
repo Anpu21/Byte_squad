@@ -60,8 +60,10 @@ export class PosController {
 
   @Get(APP_ROUTES.POS.ADMIN_DASHBOARD)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
-  getAdminDashboard(): Promise<AdminDashboardData> {
-    return this.posService.getAdminDashboard();
+  getAdminDashboard(
+    @CurrentUser() actor: ActorPayload,
+  ): Promise<AdminDashboardData> {
+    return this.posService.getAdminDashboard(actor);
   }
 
   @Get(APP_ROUTES.POS.MY_DASHBOARD)
