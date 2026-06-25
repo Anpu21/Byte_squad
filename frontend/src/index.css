@@ -53,6 +53,26 @@
   --radius-sm: 9px;
   --radius-md: 9px;
   --radius-lg: 12px;
+
+  /* Navigation metrics — single source for sidebar / header / sub-nav sizing.
+     Consume via Tailwind arbitrary syntax: w-[var(--nav-sidebar-w)],
+     h-[var(--nav-row-h)], text-[length:var(--nav-label-size)]. react-icons take
+     a numeric `size` prop (not a CSS var) — see components/ui/icon-sizes.ts. */
+  --nav-sidebar-w: 256px;
+  --nav-rail-w: 64px;
+  --nav-drawer-w: 288px;
+  --nav-row-h: 40px;
+  --nav-label-size: 13px;
+  --nav-badge-size: 18px;
+
+  /* Active sub-nav underline — both themes resolve --primary correctly. */
+  --nav-tab-underline: var(--primary);
+
+  /* Icon-size scale (px). Mirror the numeric constants in icon-sizes.ts. */
+  --icon-xs: 12px;
+  --icon-sm: 14px;
+  --icon-md: 16px;
+  --icon-lg: 18px;
 }
 
 :root {

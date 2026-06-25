@@ -51,6 +51,7 @@ export { default as Avatar } from './Avatar';
 export { default as Logo } from './Logo';
 
 // Navigation & chrome
+export { ICON, NAV_ICON } from './icon-sizes';
 export { Tabs, type TabItem } from './Tabs';
 export { WorkspacePage } from './WorkspacePage';
 export { default as ThemeToggle } from './ThemeToggle';
