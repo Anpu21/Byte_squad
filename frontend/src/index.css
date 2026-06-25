@@ -13,6 +13,8 @@
   --color-surface-3: var(--surface-3);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+  --color-surface-accent: var(--surface-accent);
+  --color-surface-hover: var(--surface-hover);
 
   --color-text-1: var(--text-1);
   --color-text-2: var(--text-2);
@@ -53,6 +55,9 @@
   --surface: #FFFFFF;
   --surface-2: #EEF3F1;
   --surface-3: #E1EBE7;
+  /* opt-in redesign tints (additive — never override the values above) */
+  --surface-accent: rgba(74, 128, 115, .06);
+  --surface-hover: #F8FAFA;
   --border: #D7E2DE;
   --border-strong: #B8CAC4;
 
@@ -99,6 +104,8 @@
   --surface: #19183B;
   --surface-2: #22214A;
   --surface-3: #2C2A55;
+  --surface-accent: rgba(161, 194, 189, .08);
+  --surface-hover: #1E1D42;
   --border: #2C2A55;
   --border-strong: #3D3B70;
 

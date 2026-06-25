@@ -34,7 +34,7 @@ export default function Pill({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1.5 h-[22px] px-2.5 rounded-full text-[11px] font-medium leading-none',
+                'inline-flex items-center gap-1.5 h-[22px] px-2.5 rounded-full text-[11px] font-semibold leading-none',
                 toneClasses[tone],
                 className,
             )}

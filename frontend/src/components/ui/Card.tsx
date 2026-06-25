@@ -1,17 +1,29 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
+type CardAccent = 'primary' | 'accent' | 'info' | 'warning' | 'danger';
+
+const cardAccent: Record<CardAccent, string> = {
+    primary: 'border-t-2 border-t-primary',
+    accent: 'border-t-2 border-t-accent',
+    info: 'border-t-2 border-t-info',
+    warning: 'border-t-2 border-t-warning',
+    danger: 'border-t-2 border-t-danger',
+};
+
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
-    className?: string;
     tone?: 'default' | 'elevated';
+    /** Optional colored top-border for emphasis (per-metric / per-status). */
+    accent?: CardAccent;
 }
 
-export default function Card({ className, tone = 'default', ...props }: CardProps) {
+export default function Card({ className, tone = 'default', accent, ...props }: CardProps) {
     return (
         <div
             className={cn(
                 'bg-surface border border-border overflow-hidden',
                 tone === 'elevated' ? 'rounded-lg shadow-md-token' : 'rounded-md shadow-xs',
+                accent && cardAccent[accent],
                 className,
             )}
             {...props}
@@ -19,7 +31,7 @@ export default function Card({ className, tone = 'default', ...props }: CardProp
     );
 }
 
-export function CardHeader({ className, ...props }: CardProps) {
+export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
         <div
             className={cn(
@@ -46,11 +58,11 @@ export function CardDescription({ className, ...props }: HTMLAttributes<HTMLPara
     );
 }
 
-export function CardContent({ className, ...props }: CardProps) {
+export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return <div className={cn('p-5', className)} {...props} />;
 }
 
-export function CardFooter({ className, ...props }: CardProps) {
+export function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
         <div
             className={cn(
