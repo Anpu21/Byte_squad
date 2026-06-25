@@ -2,9 +2,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { BranchHubTabs } from '@/features/branch-hub/components/BranchHubTabs';
 import { useBranchHubTab } from '@/features/branch-hub/hooks/useBranchHubTab';
-import { BranchManagementPage } from '@/pages/branches/BranchManagementPage';
-import { BranchPerformancePage } from '@/pages/branches/BranchPerformancePage';
-import { BranchComparisonPage } from '@/pages/admin/BranchComparisonPage';
+import { BranchManagementPage } from '@/features/branch-management';
+import { BranchPerformancePage } from '@/features/branch-performance';
+import { BranchComparisonPage } from '@/features/branch-comparison';
 
 export function BranchHubPage() {
     const { user } = useAuth();

@@ -25,7 +25,7 @@ import { UserManagementPage } from '@/pages/users/UserManagementPage';
 import { ProfilePage } from '@/pages/users/ProfilePage';
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage';
 import { NotificationDetailPage } from '@/pages/notifications/NotificationDetailPage';
-import { BranchHubPage } from '@/pages/branches/BranchHubPage';
+import { BranchHubPage } from '@/features/branch-hub';
 import { AdminLoyaltyPage } from '@/pages/admin/AdminLoyaltyPage';
 import { ManagerLoyaltyPage } from '@/pages/manager/ManagerLoyaltyPage';
 import { AdminHrPage } from '@/features/admin-hr';
