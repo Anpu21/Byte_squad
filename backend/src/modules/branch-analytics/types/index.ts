@@ -5,3 +5,4 @@ export * from './branch-analytics-metrics.type';
 export * from './branch-analytics-section.type';
 export * from './branch-analytics-settings.type';
 export * from './branch-analytics-top-product.type';
+export * from './branch-analytics-trend.type';
