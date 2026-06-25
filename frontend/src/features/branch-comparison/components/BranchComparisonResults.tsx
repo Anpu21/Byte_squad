@@ -1,5 +1,8 @@
 import Segmented from "@/components/ui/Segmented";
-import type { IBranchAnalyticsComparisonResponse } from "@/types";
+import type {
+  IBranchAnalyticsComparisonResponse,
+  IBranchAnalyticsTrend,
+} from "@/types";
 import type { LeaderboardRow } from "../hooks/useBranchComparisonPage";
 import { type ComparisonView, type MetricKey } from "../lib/format";
 import { METRIC_OPTIONS } from "../lib/metric-options";
@@ -26,6 +29,9 @@ interface BranchComparisonResultsProps {
     Expenses: number;
     Profit: number;
   }[];
+  trend: IBranchAnalyticsTrend | undefined;
+  branchColors: Record<string, string>;
+  revenueSpark: number[];
   selectedBranchNames: string[];
   embedded: boolean;
   isRefreshing: boolean;
@@ -39,6 +45,9 @@ export function BranchComparisonResults({
   view,
   setView,
   chartData,
+  trend,
+  branchColors,
+  revenueSpark,
   selectedBranchNames,
   embedded,
   isRefreshing,
@@ -77,7 +86,7 @@ export function BranchComparisonResults({
         )}
       </div>
 
-      <BranchKpiStrip comparison={comparison} />
+      <BranchKpiStrip comparison={comparison} revenueSpark={revenueSpark} />
 
       <ViewTabs value={view} onChange={setView} />
 
@@ -87,6 +96,8 @@ export function BranchComparisonResults({
           leaderboard={leaderboard}
           metric={metric}
           chartData={chartData}
+          trend={trend}
+          branchColors={branchColors}
         />
       )}
       {view === "sales" && <SalesView branches={comparison.branches} />}

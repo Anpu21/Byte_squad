@@ -13,10 +13,10 @@ export function ChartCard({
   return (
     <Card className="p-5">
       <div className="mb-4">
-        <h3 className="text-[14px] font-semibold tracking-tight text-text-1">
+        <h3 className="text-[15px] font-semibold tracking-tight text-text-1">
           {title}
         </h3>
-        <p className="mt-0.5 text-[11px] text-text-3">{description}</p>
+        <p className="mt-0.5 text-[12.5px] text-text-3">{description}</p>
       </div>
       {children}
     </Card>

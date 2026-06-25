@@ -8,6 +8,7 @@ import type {
   BranchSalesMetrics,
   BranchStaffMetrics,
 } from './branch-analytics-metrics.type';
+import type { BranchAnalyticsTrend } from './branch-analytics-trend.type';
 
 export interface BranchAnalyticsTotals {
   financial: BranchFinancialMetrics;
@@ -24,4 +25,10 @@ export interface BranchAnalyticsComparisonResponse {
   endDate: string;
   branches: BranchAnalyticsComparisonEntry[];
   totals: BranchAnalyticsTotals;
+  /**
+   * Daily revenue per branch across the range. Present only when the caller
+   * requests the opt-in `'trend'` section (the Summary view); omitted
+   * otherwise.
+   */
+  trend?: BranchAnalyticsTrend;
 }

@@ -31,6 +31,7 @@ interface BranchComparisonFiltersProps {
   isFetching: boolean;
   isDebouncing: boolean;
   dateError: string | null;
+  branchColors?: Record<string, string>;
 }
 
 const INPUT_CLASS =
@@ -44,6 +45,7 @@ export function BranchComparisonFilters({
   isFetching,
   isDebouncing,
   dateError,
+  branchColors,
 }: BranchComparisonFiltersProps) {
   const allSelected =
     branches.length > 0 &&
@@ -123,6 +125,15 @@ export function BranchComparisonFilters({
                           : "bg-surface text-text-1 border-border-strong hover:bg-surface-2"
                       } ${locked ? "cursor-not-allowed opacity-90" : ""}`}
                     >
+                      <span
+                        aria-hidden="true"
+                        className="h-2 w-2 flex-shrink-0 rounded-full"
+                        style={{
+                          backgroundColor: active
+                            ? (branchColors?.[b.id] ?? "var(--primary)")
+                            : "var(--border-strong)",
+                        }}
+                      />
                       {b.name}
                       {locked ? (
                         <span className="text-[10px] font-bold opacity-80">
