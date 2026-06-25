@@ -47,6 +47,8 @@ interface DataTableProps<T> {
     sort?: SortState;
     onSortChange?: (next: SortState) => void;
     stickyHeader?: boolean;
+    /** Subtle alternating row tint for scannability on dense tables. */
+    zebra?: boolean;
     maxHeight?: string;
     className?: string;
     containerClassName?: string;
@@ -71,6 +73,7 @@ export default function DataTable<T>({
     sort,
     onSortChange,
     stickyHeader,
+    zebra,
     maxHeight,
     className,
     containerClassName,
@@ -158,6 +161,7 @@ export default function DataTable<T>({
                         : rows.map((row, i) => (
                               <TableRow
                                   key={getRowKey(row, i)}
+                                  className={zebra ? 'even:bg-surface-2/30' : undefined}
                                   interactive={!!onRowClick}
                                   role={onRowClick ? 'button' : undefined}
                                   tabIndex={onRowClick ? 0 : undefined}

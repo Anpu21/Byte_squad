@@ -25,7 +25,7 @@ export function ProductCard({
 
     return (
         <div
-            className={`bg-surface border border-border rounded-xl overflow-hidden hover:border-border-strong hover:shadow-md-token hover:-translate-y-0.5 transition-all duration-200 ${
+            className={`bg-surface border border-border rounded-xl overflow-hidden shadow-xs hover:border-border-strong hover:shadow-md-token hover:-translate-y-0.5 transition-all duration-200 ${
                 out ? 'opacity-60' : ''
             }`}
         >
@@ -54,16 +54,16 @@ export function ProductCard({
                 </span>
             </Link>
             <div className="p-4">
-                <p className="text-[11px] text-text-3 uppercase tracking-widest">
+                <p className="text-[11px] text-accent-text uppercase tracking-widest font-medium">
                     {product.category}
                 </p>
                 <Link to={detailHref} className="block">
-                    <h3 className="text-sm font-semibold text-text-1 mt-1 line-clamp-2 min-h-[2.5em] hover:text-primary transition-colors">
+                    <h3 className="text-[15px] font-semibold text-text-1 mt-1 line-clamp-2 min-h-[2.5em] hover:text-primary transition-colors">
                         {product.name}
                     </h3>
                 </Link>
                 <div className="mt-3 flex items-center justify-between gap-2">
-                    <p className="text-base font-bold text-text-1">
+                    <p className="text-lg font-bold text-text-1">
                         {formatCurrency(product.sellingPrice)}
                     </p>
                     <button

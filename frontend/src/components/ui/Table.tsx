@@ -61,7 +61,7 @@ export function TableHead({ sticky, className, ...props }: TableHeadProps) {
     return (
         <thead
             className={cn(
-                'bg-surface-2 text-[11px] uppercase tracking-[0.07em] text-text-3',
+                'bg-surface-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-text-2',
                 sticky && 'sticky top-0 z-sticky',
                 className,
             )}
@@ -105,7 +105,7 @@ export function TableHeaderCell({
     return (
         <th
             className={cn(
-                'px-5 py-2.5 font-semibold whitespace-nowrap',
+                'px-4 py-2.5 font-semibold whitespace-nowrap border-b border-border',
                 alignClass[align],
                 className,
             )}
@@ -129,7 +129,7 @@ export function TableCell({
     return (
         <td
             className={cn(
-                'px-5 py-3 text-[13px] text-text-1',
+                'px-4 py-2.5 text-[13px] text-text-1',
                 alignClass[align],
                 numeric && 'mono tabular-nums',
                 className,

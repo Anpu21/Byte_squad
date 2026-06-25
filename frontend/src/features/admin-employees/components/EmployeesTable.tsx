@@ -169,6 +169,7 @@ export function EmployeesTable() {
                 onRowClick={(e) => goToEmployee(e.id)}
                 getRowLabel={(e) => `Edit ${e.fullName}`}
                 isLoading={isLoading}
+                zebra
                 empty={
                     <EmptyState
                         title="No employees yet"
