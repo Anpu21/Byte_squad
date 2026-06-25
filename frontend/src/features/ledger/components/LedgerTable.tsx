@@ -1,7 +1,11 @@
 import { BookOpen } from 'lucide-react';
-import EmptyState from '@/components/ui/EmptyState';
+import {
+    DataTable,
+    EmptyState,
+    type DataTableColumn,
+} from '@/components/ui';
+import { formatCurrency } from '@/lib/utils';
 import type { LedgerEntryWithBalance } from '../lib/compute-balance';
-import { LedgerRow } from './LedgerRow';
 
 interface LedgerTableProps {
     entries: LedgerEntryWithBalance[];
@@ -9,65 +13,92 @@ interface LedgerTableProps {
     hasFilters: boolean;
 }
 
+const columns: DataTableColumn<LedgerEntryWithBalance>[] = [
+    {
+        key: 'date',
+        header: 'Date',
+        numeric: true,
+        className: 'text-xs text-text-2 whitespace-nowrap',
+        render: (e) =>
+            new Date(e.createdAt).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+            }),
+    },
+    {
+        key: 'ref',
+        header: 'Reference',
+        numeric: true,
+        className: 'text-xs whitespace-nowrap',
+        render: (e) => e.referenceNumber,
+    },
+    {
+        key: 'desc',
+        header: 'Description',
+        render: (e) => e.description,
+    },
+    {
+        key: 'debit',
+        header: 'Debit',
+        align: 'right',
+        numeric: true,
+        render: (e) =>
+            e.entryType === 'debit' ? (
+                <span className="text-text-1 font-medium">
+                    {formatCurrency(Number(e.amount))}
+                </span>
+            ) : (
+                <span className="text-text-3">—</span>
+            ),
+    },
+    {
+        key: 'credit',
+        header: 'Credit',
+        align: 'right',
+        numeric: true,
+        render: (e) =>
+            e.entryType === 'credit' ? (
+                <span className="text-accent-text font-medium">
+                    {formatCurrency(Number(e.amount))}
+                </span>
+            ) : (
+                <span className="text-text-3">—</span>
+            ),
+    },
+    {
+        key: 'balance',
+        header: 'Balance',
+        align: 'right',
+        numeric: true,
+        className: 'font-semibold',
+        render: (e) => (
+            <span className={e.balance >= 0 ? 'text-text-1' : 'text-danger'}>
+                {formatCurrency(e.balance)}
+            </span>
+        ),
+    },
+];
+
 export function LedgerTable({ entries, isLoading, hasFilters }: LedgerTableProps) {
-    if (isLoading) {
-        return (
-            <div className="p-6 space-y-3">
-                {[...Array(8)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="h-10 bg-surface-2 rounded-md animate-pulse"
-                    />
-                ))}
-            </div>
-        );
-    }
-
-    if (entries.length === 0) {
-        return (
-            <EmptyState
-                icon={<BookOpen size={20} />}
-                title="No ledger entries found"
-                description={
-                    hasFilters
-                        ? 'No entries match your current filters. Try adjusting your search.'
-                        : 'Ledger entries will appear here when POS sales or expenses are recorded.'
-                }
-            />
-        );
-    }
-
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-left">
-                <thead>
-                    <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 bg-surface-2 border-b border-border">
-                        <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
-                            Date
-                        </th>
-                        <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
-                            Reference
-                        </th>
-                        <th className="px-5 py-2.5 font-semibold">
-                            Description
-                        </th>
-                        <th className="px-5 py-2.5 font-semibold text-right">
-                            Debit
-                        </th>
-                        <th className="px-5 py-2.5 font-semibold text-right">
-                            Credit
-                        </th>
-                        <th className="px-5 py-2.5 font-semibold text-right">
-                            Balance
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {entries.map((entry) => (
-                        <LedgerRow key={entry.id} entry={entry} />
-                    ))}
-                </tbody>
-            </table>
-        </div>
+        <DataTable
+            columns={columns}
+            rows={entries}
+            getRowKey={(e) => e.id}
+            isLoading={isLoading}
+            zebra
+            empty={
+                <EmptyState
+                    icon={<BookOpen size={20} />}
+                    title="No ledger entries found"
+                    description={
+                        hasFilters
+                            ? 'No entries match your current filters. Try adjusting your search.'
+                            : 'Ledger entries will appear here when POS sales or expenses are recorded.'
+                    }
+                />
+            }
+        />
     );
 }
