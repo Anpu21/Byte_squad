@@ -49,6 +49,8 @@ interface DataTableProps<T> {
     stickyHeader?: boolean;
     /** Subtle alternating row tint for scannability on dense tables. */
     zebra?: boolean;
+    /** Class applied to every data row (e.g. 'group' to enable hover-reveal cells). */
+    rowClassName?: string;
     maxHeight?: string;
     className?: string;
     containerClassName?: string;
@@ -74,6 +76,7 @@ export default function DataTable<T>({
     onSortChange,
     stickyHeader,
     zebra,
+    rowClassName,
     maxHeight,
     className,
     containerClassName,
@@ -161,7 +164,10 @@ export default function DataTable<T>({
                         : rows.map((row, i) => (
                               <TableRow
                                   key={getRowKey(row, i)}
-                                  className={zebra ? 'even:bg-surface-2/30' : undefined}
+                                  className={cn(
+                                      zebra && 'even:bg-surface-2/30',
+                                      rowClassName,
+                                  )}
                                   interactive={!!onRowClick}
                                   role={onRowClick ? 'button' : undefined}
                                   tabIndex={onRowClick ? 0 : undefined}
