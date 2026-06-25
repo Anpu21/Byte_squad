@@ -9,7 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
+import { SaleItem } from '@/modules/pos-sales/entities/sale-item.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Category } from '@/modules/categories/entities/category.entity';
 

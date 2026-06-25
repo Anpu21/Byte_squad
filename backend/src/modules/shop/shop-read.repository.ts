@@ -5,7 +5,7 @@ import { ProductSellableUnit } from '@products/entities/product-sellable-unit.en
 import { Branch } from '@branches/entities/branch.entity';
 import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 import { User } from '@users/entities/user.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
+import { SaleItem } from '@/modules/pos-sales/entities/sale-item.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { TransactionType } from '@common/enums/transaction.enum';
 

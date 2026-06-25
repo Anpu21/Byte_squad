@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Between, DataSource, Repository } from 'typeorm';
-import { Sale } from '@pos/entities/sale.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
+import { Sale } from '@/modules/pos-sales/entities/sale.entity';
+import { SaleItem } from '@/modules/pos-sales/entities/sale-item.entity';
 
 export interface ProfitLossCogs {
   totalCOGS: number;

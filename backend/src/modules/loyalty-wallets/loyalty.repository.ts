@@ -5,7 +5,7 @@ import type { UpdateQueryBuilder } from 'typeorm';
 import { LoyaltyAccount } from '@/modules/loyalty-wallets/entities/loyalty-account.entity';
 import { LoyaltyCustomer } from '@/modules/loyalty-customers/entities/loyalty-customer.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty-wallets/entities/loyalty-ledger-entry.entity';
-import { Sale } from '@pos/entities/sale.entity';
+import { Sale } from '@/modules/pos-sales/entities/sale.entity';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 import {
   applyLedgerActivityExists,

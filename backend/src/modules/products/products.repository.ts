@@ -149,7 +149,7 @@ export class ProductsRepository {
   /**
    * List the sellable-unit rows configured for a product, sorted by
    * `displayOrder`. Callers in the POS layer map the raw entity into the
-   * Shanel-shaped `ProductUnitRow` (kept in `@pos/types`) — this repository
+   * Shanel-shaped `ProductUnitRow` (kept in `@/modules/pos-sales/types`) — this repository
    * stays free of cross-module types and just returns entities.
    */
   async listUnits(productId: string): Promise<ProductSellableUnit[]> {

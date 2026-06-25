@@ -26,10 +26,10 @@ import { LoyaltyWalletService } from '@/modules/loyalty-wallets/loyalty-wallet.s
 import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
-import { PosService } from '@pos/pos.service';
+import { PosService } from '@/modules/pos-sales/pos.service';
 import { AccountingService } from '@/modules/accounting-core/accounting.service';
 import { InventoryService } from '@/modules/inventory-core/inventory.service';
-import { Sale } from '@pos/entities/sale.entity';
+import { Sale } from '@/modules/pos-sales/entities/sale.entity';
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
 import { CustomerOrderPaymentMode } from '@common/enums/customer-order-payment-mode.enum';
 import { CustomerOrderPaymentStatus } from '@common/enums/customer-order-payment-status.enum';

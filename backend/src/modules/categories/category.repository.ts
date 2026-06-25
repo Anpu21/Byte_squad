@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { Category } from '@/modules/categories/entities/category.entity';
 import { Product } from '@products/entities/product.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
+import { SaleItem } from '@/modules/pos-sales/entities/sale-item.entity';
 import { TransactionType } from '@common/enums/transaction.enum';
 import type { CategorySalesRow } from '@/modules/categories/types';
 

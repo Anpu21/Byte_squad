@@ -14,10 +14,10 @@ import { ProductBatch } from '@/modules/inventory-expiry/entities/product-batch.
 import { StockAdjustment } from '@/modules/inventory-adjustments/entities/stock-adjustment.entity';
 import { SalesReturn } from '@/modules/inventory-returns/entities/sales-return.entity';
 import { SalesReturnItem } from '@/modules/inventory-returns/entities/sales-return-item.entity';
-import { Sale } from '@pos/entities/sale.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
-import { StockMovement } from '@pos/entities/stock-movement.entity';
-import { Payment } from '@pos/entities/payment.entity';
+import { Sale } from '@/modules/pos-sales/entities/sale.entity';
+import { SaleItem } from '@/modules/pos-sales/entities/sale-item.entity';
+import { StockMovement } from '@/modules/pos-sales/entities/stock-movement.entity';
+import { Payment } from '@/modules/pos-sales/entities/payment.entity';
 import { LedgerEntry } from '@/modules/accounting-core/entities/ledger-entry.entity';
 import { Expense } from '@/modules/accounting-core/entities/expense.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -61,7 +61,7 @@ import {
   generateSeedQuantity,
   stableInt,
 } from '@common/seeds/seed-quantity';
-import type { PosPaymentMethod } from '@pos/types';
+import type { PosPaymentMethod } from '@/modules/pos-sales/types';
 
 interface SeedDefaults {
   adminEmail: string;

@@ -10,7 +10,7 @@ import { PayhereService } from '@/modules/customer-orders/payhere.service';
 import { ProductsModule } from '@products/products.module';
 import { BranchesModule } from '@branches/branches.module';
 import { UsersModule } from '@users/users.module';
-import { PosModule } from '@pos/pos.module';
+import { PosSalesModule } from '@/modules/pos-sales/pos-sales.module';
 import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.module';
 import { NotificationsModule } from '@notifications/notifications.module';
 import { InventoryCoreModule } from '@/modules/inventory-core/inventory-core.module';
@@ -26,7 +26,7 @@ import { LoyaltyWalletsModule } from '@/modules/loyalty-wallets/loyalty-wallets.
     ProductsModule,
     BranchesModule,
     UsersModule,
-    PosModule,
+    PosSalesModule,
     AccountingCoreModule,
     NotificationsModule,
     InventoryCoreModule,

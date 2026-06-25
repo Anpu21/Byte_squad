@@ -5,7 +5,7 @@ import { SalesReturnItem } from '@/modules/inventory-returns/entities/sales-retu
 import { SalesReturnRepository } from '@/modules/inventory-returns/sales-return.repository';
 import { ReturnsService } from '@/modules/inventory-returns/returns.service';
 import { ReturnsController } from '@/modules/inventory-returns/returns.controller';
-import { PosModule } from '@pos/pos.module';
+import { PosSalesModule } from '@/modules/pos-sales/pos-sales.module';
 import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.module';
 
 /**
@@ -16,7 +16,7 @@ import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.
 @Module({
   imports: [
     TypeOrmModule.forFeature([SalesReturn, SalesReturnItem]),
-    PosModule,
+    PosSalesModule,
     AccountingCoreModule,
   ],
   controllers: [ReturnsController],

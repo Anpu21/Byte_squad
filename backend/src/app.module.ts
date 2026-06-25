@@ -13,7 +13,11 @@ import { InventoryExpiryModule } from '@/modules/inventory-expiry/inventory-expi
 import { InventoryAdjustmentsModule } from '@/modules/inventory-adjustments/inventory-adjustments.module';
 import { InventoryReturnsModule } from '@/modules/inventory-returns/inventory-returns.module';
 import { CategoriesModule } from '@/modules/categories/categories.module';
-import { PosModule } from '@pos/pos.module';
+import { PosSalesModule } from '@/modules/pos-sales/pos-sales.module';
+import { PosReceivablesModule } from '@/modules/pos-receivables/pos-receivables.module';
+import { PosShiftsModule } from '@/modules/pos-shifts/pos-shifts.module';
+import { PosDiscountsModule } from '@/modules/pos-discounts/pos-discounts.module';
+import { PosReportsModule } from '@/modules/pos-reports/pos-reports.module';
 import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.module';
 import { AccountingPeriodsModule } from '@/modules/accounting-periods/accounting-periods.module';
 import { AccountingReportsModule } from '@/modules/accounting-reports/accounting-reports.module';
@@ -58,11 +62,11 @@ import { ProductBatch } from '@/modules/inventory-expiry/entities/product-batch.
 import { StockAdjustment } from '@/modules/inventory-adjustments/entities/stock-adjustment.entity';
 import { SalesReturn } from '@/modules/inventory-returns/entities/sales-return.entity';
 import { SalesReturnItem } from '@/modules/inventory-returns/entities/sales-return-item.entity';
-import { Sale } from '@pos/entities/sale.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
-import { StockMovement } from '@pos/entities/stock-movement.entity';
-import { Payment } from '@pos/entities/payment.entity';
-import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
+import { Sale } from '@/modules/pos-sales/entities/sale.entity';
+import { SaleItem } from '@/modules/pos-sales/entities/sale-item.entity';
+import { StockMovement } from '@/modules/pos-sales/entities/stock-movement.entity';
+import { Payment } from '@/modules/pos-sales/entities/payment.entity';
+import { IdempotencyKey } from '@/modules/pos-sales/entities/idempotency-key.entity';
 import { LedgerEntry } from '@/modules/accounting-core/entities/ledger-entry.entity';
 import { Expense } from '@/modules/accounting-core/entities/expense.entity';
 import { Notification } from '@notifications/entities/notification.entity';
@@ -148,7 +152,11 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     InventoryExpiryModule,
     InventoryAdjustmentsModule,
     InventoryReturnsModule,
-    PosModule,
+    PosSalesModule,
+    PosReceivablesModule,
+    PosShiftsModule,
+    PosDiscountsModule,
+    PosReportsModule,
     AccountingCoreModule,
     AccountingPeriodsModule,
     AccountingReportsModule,

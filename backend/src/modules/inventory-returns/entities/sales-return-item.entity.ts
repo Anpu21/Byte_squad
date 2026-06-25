@@ -6,7 +6,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { SalesReturn } from '@/modules/inventory-returns/entities/sales-return.entity';
-import { SaleItem } from '@pos/entities/sale-item.entity';
+import { SaleItem } from '@/modules/pos-sales/entities/sale-item.entity';
 
 /**
  * One returned line of a SalesReturn (Phase C3). Quantities are in the sold

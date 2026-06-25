@@ -8,7 +8,7 @@ import {
 import { DataSource, EntityManager } from 'typeorm';
 import { StockAdjustment } from '@/modules/inventory-adjustments/entities/stock-adjustment.entity';
 import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
-import { StockMovement } from '@pos/entities/stock-movement.entity';
+import { StockMovement } from '@/modules/pos-sales/entities/stock-movement.entity';
 import { StockAdjustmentRepository } from '@/modules/inventory-adjustments/stock-adjustment.repository';
 import { ProductsService } from '@products/products.service';
 import { UsersService } from '@users/users.service';

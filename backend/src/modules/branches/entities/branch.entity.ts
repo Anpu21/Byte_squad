@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { User } from '@users/entities/user.entity';
 import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
-import { Sale } from '@pos/entities/sale.entity';
+import { Sale } from '@/modules/pos-sales/entities/sale.entity';
 
 @Entity('branches')
 export class Branch {

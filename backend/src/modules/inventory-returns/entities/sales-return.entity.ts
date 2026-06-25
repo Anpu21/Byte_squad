@@ -8,7 +8,7 @@ import {
   CreateDateColumn,
   Index,
 } from 'typeorm';
-import { Sale } from '@pos/entities/sale.entity';
+import { Sale } from '@/modules/pos-sales/entities/sale.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { SalesReturnItem } from '@/modules/inventory-returns/entities/sales-return-item.entity';
 

@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
-import { StockMovement } from '@pos/entities/stock-movement.entity';
+import { StockMovement } from '@/modules/pos-sales/entities/stock-movement.entity';
 import { SalesReturn } from '@/modules/inventory-returns/entities/sales-return.entity';
 import { SalesReturnItem } from '@/modules/inventory-returns/entities/sales-return-item.entity';
 import { SalesReturnRepository } from '@/modules/inventory-returns/sales-return.repository';
-import { PosService } from '@pos/pos.service';
+import { PosService } from '@/modules/pos-sales/pos.service';
 import { AccountingService } from '@/modules/accounting-core/accounting.service';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
