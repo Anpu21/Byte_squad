@@ -5,13 +5,13 @@ import { Product } from '@products/entities/product.entity';
 import { User } from '@users/entities/user.entity';
 import { SuppliersService } from '@/modules/suppliers/suppliers.service';
 import { SuppliersRepository } from '@/modules/suppliers/suppliers.repository';
-import { GrnsService } from '@/modules/purchases/grns.service';
-import { PurchaseOrdersService } from '@/modules/purchases/purchase-orders.service';
-import { SupplierPaymentsService } from '@/modules/purchases/supplier-payments.service';
-import { PurchaseReturnsService } from '@/modules/purchases/purchase-returns.service';
-import { Grn } from '@/modules/purchases/entities/grn.entity';
-import type { PurchasesActor } from '@/modules/purchases/types/purchases-actor.type';
-import type { SupplierPaymentMethod } from '@/modules/purchases/types/supplier-payment-method.type';
+import { GrnsService } from '@/modules/purchases-grn/grns.service';
+import { PurchaseOrdersService } from '@/modules/purchases-orders/purchase-orders.service';
+import { SupplierPaymentsService } from '@/modules/purchases-payments/supplier-payments.service';
+import { PurchaseReturnsService } from '@/modules/purchases-returns/purchase-returns.service';
+import { Grn } from '@/modules/purchases-grn/entities/grn.entity';
+import type { PurchasesActor } from '@/modules/purchases-grn/types/purchases-actor.type';
+import type { SupplierPaymentMethod } from '@/modules/purchases-payments/types/supplier-payment-method.type';
 
 export interface PurchasesSeedContext {
   admin: User;

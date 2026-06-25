@@ -22,7 +22,12 @@ import { ShopModule } from '@/modules/shop/shop.module';
 import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
 import { HrModule } from '@/modules/hr/hr.module';
 import { SuppliersModule } from '@/modules/suppliers/suppliers.module';
-import { PurchasesModule } from '@/modules/purchases/purchases.module';
+import { PurchasesDocNumberingModule } from '@/modules/purchases-doc-numbering/purchases-doc-numbering.module';
+import { PurchasesGrnModule } from '@/modules/purchases-grn/purchases-grn.module';
+import { PurchasesOrdersModule } from '@/modules/purchases-orders/purchases-orders.module';
+import { PurchasesPaymentsModule } from '@/modules/purchases-payments/purchases-payments.module';
+import { PurchasesReturnsModule } from '@/modules/purchases-returns/purchases-returns.module';
+import { PurchasesReportsModule } from '@/modules/purchases-reports/purchases-reports.module';
 import { AuditModule } from '@/modules/audit/audit.module';
 import { Attendance } from '@/modules/hr/entities/attendance.entity';
 import { AttendanceSummary } from '@/modules/hr/entities/attendance-summary.entity';
@@ -139,7 +144,12 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     LoyaltyModule,
     HrModule,
     SuppliersModule,
-    PurchasesModule,
+    PurchasesDocNumberingModule,
+    PurchasesGrnModule,
+    PurchasesOrdersModule,
+    PurchasesPaymentsModule,
+    PurchasesReturnsModule,
+    PurchasesReportsModule,
     AuditModule,
   ],
   providers: [
