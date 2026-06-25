@@ -6,7 +6,7 @@ import {
 import { DataSource, EntityManager } from 'typeorm';
 
 import { Sale } from '@pos/entities/sale.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 import { User } from '@users/entities/user.entity';
 
 import { SaleRepository } from '@pos/sale.repository';

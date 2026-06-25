@@ -10,7 +10,7 @@ import { randomUUID } from 'crypto';
 import { DataSource, type EntityManager } from 'typeorm';
 import { Shipment } from '@stock-transfers/entities/shipment.entity';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 import { Employee } from '@/modules/hr-employees/entities/employee.entity';
 import { ShipmentsRepository } from '@stock-transfers/shipments.repository';
 import { StockTransfersRepository } from '@stock-transfers/stock-transfers.repository';

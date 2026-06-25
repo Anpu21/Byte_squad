@@ -3,7 +3,7 @@ import { DataSource, In, Repository } from 'typeorm';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Branch } from '@branches/entities/branch.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 import { User } from '@users/entities/user.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { UserRole } from '@common/enums/user-roles.enums';

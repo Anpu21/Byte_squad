@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Branch } from '@branches/entities/branch.entity';
 import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
 import { Expense } from '@/modules/accounting-core/entities/expense.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 import { LoyaltyAccount } from '@/modules/loyalty-wallets/entities/loyalty-account.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty-wallets/entities/loyalty-ledger-entry.entity';
 import { Payment } from '@pos/entities/payment.entity';

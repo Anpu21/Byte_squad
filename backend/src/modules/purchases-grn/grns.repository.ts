@@ -8,9 +8,9 @@ import {
 } from 'typeorm';
 import { Grn } from '@/modules/purchases-grn/entities/grn.entity';
 import { GrnItem } from '@/modules/purchases-grn/entities/grn-item.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 import { Product } from '@products/entities/product.entity';
-import { ProductBatch } from '@inventory/entities/product-batch.entity';
+import { ProductBatch } from '@/modules/inventory-expiry/entities/product-batch.entity';
 import { StockMovement } from '@pos/entities/stock-movement.entity';
 import type { GrnPaymentStatus } from '@/modules/purchases-grn/types/grn-payment-status.type';
 import type { GrnStatus } from '@/modules/purchases-grn/types/grn-status.type';

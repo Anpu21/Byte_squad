@@ -20,7 +20,7 @@ import { SuppliersRepository } from '@/modules/suppliers/suppliers.repository';
 import { Supplier } from '@/modules/suppliers/entities/supplier.entity';
 import { Grn } from './entities/grn.entity';
 import { Product } from '@products/entities/product.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 
 const BRANCH_A = '11111111-1111-1111-1111-111111111111';
 const BRANCH_B = '22222222-2222-2222-2222-222222222222';

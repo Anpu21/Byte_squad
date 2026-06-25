@@ -8,7 +8,10 @@ import { AuthModule } from '@auth/auth.module';
 import { UsersModule } from '@users/users.module';
 import { BranchesModule } from '@branches/branches.module';
 import { ProductsModule } from '@products/products.module';
-import { InventoryModule } from '@inventory/inventory.module';
+import { InventoryCoreModule } from '@/modules/inventory-core/inventory-core.module';
+import { InventoryExpiryModule } from '@/modules/inventory-expiry/inventory-expiry.module';
+import { InventoryAdjustmentsModule } from '@/modules/inventory-adjustments/inventory-adjustments.module';
+import { InventoryReturnsModule } from '@/modules/inventory-returns/inventory-returns.module';
 import { CategoriesModule } from '@/modules/categories/categories.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.module';
@@ -50,11 +53,11 @@ import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
 import { Category } from '@/modules/categories/entities/category.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
-import { ProductBatch } from '@inventory/entities/product-batch.entity';
-import { StockAdjustment } from '@inventory/entities/stock-adjustment.entity';
-import { SalesReturn } from '@inventory/entities/sales-return.entity';
-import { SalesReturnItem } from '@inventory/entities/sales-return-item.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
+import { ProductBatch } from '@/modules/inventory-expiry/entities/product-batch.entity';
+import { StockAdjustment } from '@/modules/inventory-adjustments/entities/stock-adjustment.entity';
+import { SalesReturn } from '@/modules/inventory-returns/entities/sales-return.entity';
+import { SalesReturnItem } from '@/modules/inventory-returns/entities/sales-return-item.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { StockMovement } from '@pos/entities/stock-movement.entity';
@@ -141,7 +144,10 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     BranchesModule,
     ProductsModule,
     CategoriesModule,
-    InventoryModule,
+    InventoryCoreModule,
+    InventoryExpiryModule,
+    InventoryAdjustmentsModule,
+    InventoryReturnsModule,
     PosModule,
     AccountingCoreModule,
     AccountingPeriodsModule,

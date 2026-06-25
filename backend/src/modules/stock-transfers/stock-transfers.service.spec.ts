@@ -11,13 +11,13 @@ import { StockTransfersService } from './stock-transfers.service';
 import { StockTransfersRepository } from './stock-transfers.repository';
 import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
-import { InventoryService } from '@inventory/inventory.service';
+import { InventoryService } from '@/modules/inventory-core/inventory.service';
 import { UsersService } from '@users/users.service';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationsGateway } from '@notifications/notifications.gateway';
 import { StockTransferRequest } from './entities/stock-transfer-request.entity';
 import { Branch } from '@branches/entities/branch.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 

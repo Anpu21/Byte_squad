@@ -8,7 +8,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Category } from '@/modules/categories/entities/category.entity';

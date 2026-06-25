@@ -5,7 +5,7 @@ import { AdminPortalService } from './admin-portal.service';
 import { AdminPortalReportsRepository } from './admin-portal-reports.repository';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
-import { InventoryService } from '@inventory/inventory.service';
+import { InventoryService } from '@/modules/inventory-core/inventory.service';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { BranchActor } from '@common/scope/branch-scope';
 

@@ -11,7 +11,7 @@ import { Shipment } from '@stock-transfers/entities/shipment.entity';
 import { ShipmentEvent } from '@stock-transfers/entities/shipment-event.entity';
 import { ProductsModule } from '@products/products.module';
 import { BranchesModule } from '@branches/branches.module';
-import { InventoryModule } from '@inventory/inventory.module';
+import { InventoryCoreModule } from '@/modules/inventory-core/inventory-core.module';
 import { UsersModule } from '@users/users.module';
 import { NotificationsModule } from '@notifications/notifications.module';
 import { HrEmployeesModule } from '@/modules/hr-employees/hr-employees.module';
@@ -21,7 +21,7 @@ import { HrEmployeesModule } from '@/modules/hr-employees/hr-employees.module';
     TypeOrmModule.forFeature([StockTransferRequest, Shipment, ShipmentEvent]),
     ProductsModule,
     BranchesModule,
-    InventoryModule,
+    InventoryCoreModule,
     UsersModule,
     NotificationsModule,
     // Courier validation resolves WORKER login accounts to their HR employee.

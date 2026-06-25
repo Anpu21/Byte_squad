@@ -8,7 +8,7 @@ import {
 import { DataSource, EntityManager, QueryFailedError } from 'typeorm';
 
 import { Sale } from '@pos/entities/sale.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { ProductsService } from '@products/products.service';

@@ -16,7 +16,7 @@ import { PurchaseDocNumberService } from '@/modules/purchases-doc-numbering/purc
 import { AccountingService } from '@/modules/accounting-core/accounting.service';
 import { Grn } from '@/modules/purchases-grn/entities/grn.entity';
 import { PurchaseReturn } from './entities/purchase-return.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 
 const BRANCH_A = '11111111-1111-1111-1111-111111111111';
 const BRANCH_B = '22222222-2222-2222-2222-222222222222';

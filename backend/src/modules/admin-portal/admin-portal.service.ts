@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Branch } from '@branches/entities/branch.entity';
-import { Inventory } from '@inventory/entities/inventory.entity';
+import { Inventory } from '@/modules/inventory-core/entities/inventory.entity';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
-import { InventoryService } from '@inventory/inventory.service';
+import { InventoryService } from '@/modules/inventory-core/inventory.service';
 import { AdminPortalReportsRepository } from '@admin-portal/admin-portal-reports.repository';
 import { InventoryMatrixQueryDto } from '@admin-portal/dto/inventory-matrix-query.dto';
 import { UserRole } from '@common/enums/user-roles.enums';

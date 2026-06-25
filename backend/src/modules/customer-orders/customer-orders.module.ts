@@ -13,7 +13,7 @@ import { UsersModule } from '@users/users.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.module';
 import { NotificationsModule } from '@notifications/notifications.module';
-import { InventoryModule } from '@inventory/inventory.module';
+import { InventoryCoreModule } from '@/modules/inventory-core/inventory-core.module';
 import { LoyaltyWalletsModule } from '@/modules/loyalty-wallets/loyalty-wallets.module';
 
 @Module({
@@ -29,7 +29,7 @@ import { LoyaltyWalletsModule } from '@/modules/loyalty-wallets/loyalty-wallets.
     PosModule,
     AccountingCoreModule,
     NotificationsModule,
-    InventoryModule,
+    InventoryCoreModule,
     LoyaltyWalletsModule,
   ],
   controllers: [CustomerOrdersController],

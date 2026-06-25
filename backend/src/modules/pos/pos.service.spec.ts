@@ -7,7 +7,7 @@ import { PosService } from './pos.service';
 import { PosRepository } from './pos.repository';
 import { SaleRepository } from './sale.repository';
 import { AccountingService } from '@/modules/accounting-core/accounting.service';
-import { InventoryService } from '@inventory/inventory.service';
+import { InventoryService } from '@/modules/inventory-core/inventory.service';
 import { ProductsService } from '@products/products.service';
 import { InvoiceNumberService } from './services/invoice-number.service';
 import { UsersService } from '@users/users.service';
