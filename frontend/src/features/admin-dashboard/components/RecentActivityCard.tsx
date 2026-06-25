@@ -1,6 +1,10 @@
 import Card from '@/components/ui/Card';
-import EmptyState from '@/components/ui/EmptyState';
-import Pill from '@/components/ui/Pill';
+import {
+    DataTable,
+    EmptyState,
+    Pill,
+    type DataTableColumn,
+} from '@/components/ui';
 import type { ISale } from '@/types';
 import { formatRevenue, formatTime } from '../lib/format';
 
@@ -13,6 +17,48 @@ interface RecentActivityCardProps {
 }
 
 export function RecentActivityCard({ transactions }: RecentActivityCardProps) {
+    const columns: DataTableColumn<TransactionWithCashier>[] = [
+        {
+            key: 'transaction',
+            header: 'Transaction',
+            numeric: true,
+            className: 'text-xs',
+            render: (txn) => txn.transactionNumber,
+        },
+        {
+            key: 'cashier',
+            header: 'Cashier',
+            className: 'text-text-2',
+            render: (txn) =>
+                txn.cashier
+                    ? `${txn.cashier.firstName} ${txn.cashier.lastName}`
+                    : '—',
+        },
+        {
+            key: 'time',
+            header: 'Time',
+            className: 'mono text-xs text-text-2',
+            render: (txn) => formatTime(txn.createdAt),
+        },
+        {
+            key: 'method',
+            header: 'Method',
+            render: (txn) => (
+                <Pill tone="neutral" dot={false}>
+                    {txn.paymentMethod}
+                </Pill>
+            ),
+        },
+        {
+            key: 'amount',
+            header: 'Amount',
+            align: 'right',
+            numeric: true,
+            className: 'font-semibold',
+            render: (txn) => formatRevenue(Number(txn.total)),
+        },
+    ];
+
     return (
         <Card>
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
@@ -25,61 +71,15 @@ export function RecentActivityCard({ transactions }: RecentActivityCardProps) {
                     </p>
                 </div>
             </div>
-            <div className="overflow-auto max-h-[420px]">
-                {transactions.length > 0 ? (
-                    <table className="w-full">
-                        <thead>
-                            <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 bg-surface-2">
-                                <th className="px-5 py-2.5 text-left font-semibold">
-                                    Transaction
-                                </th>
-                                <th className="px-5 py-2.5 text-left font-semibold">
-                                    Cashier
-                                </th>
-                                <th className="px-5 py-2.5 text-left font-semibold">
-                                    Time
-                                </th>
-                                <th className="px-5 py-2.5 text-left font-semibold">
-                                    Method
-                                </th>
-                                <th className="px-5 py-2.5 text-right font-semibold">
-                                    Amount
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {transactions.map((txn) => (
-                                <tr
-                                    key={txn.id}
-                                    className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors"
-                                >
-                                    <td className="px-5 py-3 mono text-xs text-text-1">
-                                        {txn.transactionNumber}
-                                    </td>
-                                    <td className="px-5 py-3 text-[13px] text-text-2">
-                                        {txn.cashier
-                                            ? `${txn.cashier.firstName} ${txn.cashier.lastName}`
-                                            : '—'}
-                                    </td>
-                                    <td className="px-5 py-3 mono text-xs text-text-2">
-                                        {formatTime(txn.createdAt)}
-                                    </td>
-                                    <td className="px-5 py-3">
-                                        <Pill tone="neutral" dot={false}>
-                                            {txn.paymentMethod}
-                                        </Pill>
-                                    </td>
-                                    <td className="px-5 py-3 mono text-[13px] font-semibold text-text-1 text-right">
-                                        {formatRevenue(Number(txn.total))}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <EmptyState title="No transactions yet" />
-                )}
-            </div>
+            <DataTable
+                columns={columns}
+                rows={transactions}
+                getRowKey={(txn) => txn.id}
+                zebra
+                stickyHeader
+                maxHeight="420px"
+                empty={<EmptyState title="No transactions yet" />}
+            />
         </Card>
     );
 }

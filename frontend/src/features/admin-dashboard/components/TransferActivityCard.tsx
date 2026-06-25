@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import Card from '@/components/ui/Card'
-import EmptyState from '@/components/ui/EmptyState'
+import { DataTable, EmptyState, type DataTableColumn } from '@/components/ui'
 import { stockTransfersService } from '@/services/stock-transfers.service'
 import { queryKeys } from '@/lib/queryKeys'
 import { FRONTEND_ROUTES } from '@/constants/routes'
@@ -29,6 +29,36 @@ export function TransferActivityCard() {
   const inTransit = analytics.data?.kpis.inTransit ?? 0
   const rows = recent.data?.items ?? []
 
+  type Transfer = (typeof rows)[number]
+
+  const columns: DataTableColumn<Transfer>[] = [
+    {
+      key: 'product',
+      header: 'Product',
+      render: (t) => t.product?.name ?? '—',
+    },
+    {
+      key: 'route',
+      header: 'Route',
+      className: 'text-xs text-text-2',
+      render: (t) =>
+        `${t.sourceBranch?.name ?? '—'} → ${t.destinationBranch?.name ?? '—'}`,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'right',
+      className: 'font-medium',
+      render: (t) => {
+        const meta = STATUS_META[t.status] ?? {
+          label: t.status,
+          cls: 'text-text-2',
+        }
+        return <span className={meta.cls}>{meta.label}</span>
+      },
+    },
+  ]
+
   return (
     <Card>
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
@@ -47,47 +77,16 @@ export function TransferActivityCard() {
           View all
         </Link>
       </div>
-      <div className="overflow-auto max-h-[360px]">
-        {rows.length > 0 ? (
-          <table className="w-full">
-            <thead>
-              <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 bg-surface-2">
-                <th className="px-5 py-2.5 text-left font-semibold">Product</th>
-                <th className="px-5 py-2.5 text-left font-semibold">Route</th>
-                <th className="px-5 py-2.5 text-right font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((t) => {
-                const meta = STATUS_META[t.status] ?? {
-                  label: t.status,
-                  cls: 'text-text-2',
-                }
-                return (
-                  <tr
-                    key={t.id}
-                    className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors"
-                  >
-                    <td className="px-5 py-3 text-[13px] text-text-1">
-                      {t.product?.name ?? '—'}
-                    </td>
-                    <td className="px-5 py-3 text-xs text-text-2">
-                      {t.sourceBranch?.name ?? '—'} → {t.destinationBranch?.name ?? '—'}
-                    </td>
-                    <td
-                      className={`px-5 py-3 text-[13px] font-medium text-right ${meta.cls}`}
-                    >
-                      {meta.label}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        ) : (
-          <EmptyState title="No transfers yet" />
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        rows={rows}
+        getRowKey={(t) => t.id}
+        isLoading={recent.isLoading}
+        zebra
+        stickyHeader
+        maxHeight="360px"
+        empty={<EmptyState title="No transfers yet" />}
+      />
     </Card>
   )
 }
