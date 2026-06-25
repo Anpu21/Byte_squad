@@ -62,6 +62,7 @@ export function WorkspacePage<T extends string>({
             active={active}
             onChange={onTabChange}
             ariaLabel={tabsAriaLabel}
+            variant={embedded ? 'pill' : 'underline'}
         />
     );
 
@@ -85,8 +86,9 @@ export function WorkspacePage<T extends string>({
                 />
             )}
             {/* Frosted full-width band. The -mx values cancel <main>'s p-2/lg:p-4
-                so the band + border bleed edge-to-edge; px restores pill align. */}
-            <div className="sticky top-0 z-10 -mx-2 mb-6 border-b border-border bg-canvas/85 px-2 py-2.5 backdrop-blur-sm lg:-mx-4 lg:px-4">
+                so the band bleeds edge-to-edge; px restores tab alignment. The
+                underline Tabs own the bottom rail, so the band carries none. */}
+            <div className="sticky top-0 z-10 -mx-2 mb-6 bg-canvas/85 px-2 pt-2.5 backdrop-blur-sm lg:-mx-4 lg:px-4">
                 {tabBar}
             </div>
             <div
