@@ -1,5 +1,5 @@
 import { useStockTransferRealtime } from '@/hooks/useStockTransferRealtime';
-import { Tabs, type TabItem } from '@/components/ui/Tabs';
+import { WorkspacePage, type TabItem } from '@/components/ui';
 import { TransferBoard } from '@/features/admin-transfer-board/components/TransferBoard';
 import { TransferBoardHeader } from '@/features/admin-transfer-board/components/TransferBoardHeader';
 import { useTransferBoardData } from '@/features/admin-transfer-board/hooks/useTransferBoardData';
@@ -10,7 +10,14 @@ import {
 import { TransferHistoryView } from '@/features/transfer-history/components/TransferHistoryView';
 import { TransferReport } from '@/features/transfer-report/components/TransferReport';
 
-export function AdminTransfersPage() {
+interface AdminTransfersPageProps {
+    /** Rendered inside the Inventory hub's "transfers" tab → no header/sticky band. */
+    embedded?: boolean;
+}
+
+export function AdminTransfersPage({
+    embedded = false,
+}: AdminTransfersPageProps = {}) {
     useStockTransferRealtime();
     const { tab, setTab } = useAdminTransfersTab();
     const board = useTransferBoardData();
@@ -22,21 +29,20 @@ export function AdminTransfersPage() {
     ];
 
     return (
-        <div className="animate-in fade-in duration-300">
-            {tab === 'board' ? (
-                <TransferBoardHeader total={board.total} />
-            ) : null}
-
-            <Tabs
-                tabs={tabs}
-                active={tab}
-                onChange={setTab}
-                ariaLabel="Stock transfer views"
-            />
-
+        <WorkspacePage
+            embedded={embedded}
+            eyebrow="Operations"
+            title="Stock transfers"
+            subtitle="The cross-branch pipeline — requests, shipments, and the full audit trail."
+            tabs={tabs}
+            active={tab}
+            onTabChange={setTab}
+            tabsAriaLabel="Stock transfer views"
+        >
+            {tab === 'board' && <TransferBoardHeader total={board.total} />}
             {tab === 'board' && <TransferBoard />}
             {tab === 'history' && <TransferHistoryView />}
             {tab === 'report' && <TransferReport isAdmin />}
-        </div>
+        </WorkspacePage>
     );
 }

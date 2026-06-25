@@ -5,14 +5,14 @@ import { LuBookOpenCheck as BookOpenCheck, LuCalendarDays as CalendarDays, LuLoc
 import { type IconType as LucideIcon } from 'react-icons';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-import PageHeader from '@/components/ui/PageHeader';
 import Pill from '@/components/ui/Pill';
-import { Tabs } from '@/components/ui/Tabs';
 import {
     DataTable,
     EmptyState,
+    WorkspacePage,
     type DataTableColumn,
 } from '@/components/ui';
+import { useTabParam } from '@/hooks/useTabParam';
 import { formatCurrency } from '@/lib/utils';
 import { accountingService } from '@/services/accounting.service';
 import { queryKeys } from '@/lib/queryKeys';
@@ -40,7 +40,13 @@ const MONTH_NAMES = [
 const INPUT_CLASS =
     'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
-type ReportTab = 'trial-balance' | 'balance-sheet' | 'day-book' | 'periods';
+const REPORT_TABS = [
+    'trial-balance',
+    'balance-sheet',
+    'day-book',
+    'periods',
+] as const;
+type ReportTab = (typeof REPORT_TABS)[number];
 
 const TABS: { key: ReportTab; label: string; Icon: LucideIcon }[] = [
     { key: 'trial-balance', label: 'Trial balance', Icon: Scale },
@@ -205,9 +211,20 @@ function SheetSection({
  * trial balance (with the books' equality check), balance sheet (with
  * virtual retained earnings), and the day book. Admin only.
  */
-export function FinancialReportsPage() {
+interface FinancialReportsPageProps {
+    /** Rendered inside the Accounting hub's "reports" tab → no header/sticky band. */
+    embedded?: boolean;
+}
+
+export function FinancialReportsPage({
+    embedded = false,
+}: FinancialReportsPageProps = {}) {
     const queryClient = useQueryClient();
-    const [tab, setTab] = useState<ReportTab>('trial-balance');
+    const { tab, setTab } = useTabParam<ReportTab>({
+        valid: REPORT_TABS,
+        fallback: 'trial-balance',
+        param: 'reportTab',
+    });
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [asOf, setAsOf] = useState('');
@@ -294,20 +311,16 @@ export function FinancialReportsPage() {
     }
 
     return (
-        <div>
-            <PageHeader
-                eyebrow="Accounting"
-                title="Financial reports"
-                subtitle="Trial balance, balance sheet, and the day book — straight off the account-dimensioned ledger."
-            />
-
-            <Tabs
-                tabs={TABS}
-                active={tab}
-                onChange={setTab}
-                ariaLabel="Financial report views"
-            />
-
+        <WorkspacePage
+            embedded={embedded}
+            eyebrow="Accounting"
+            title="Financial reports"
+            subtitle="Trial balance, balance sheet, and the day book — straight off the account-dimensioned ledger."
+            tabs={TABS}
+            active={tab}
+            onTabChange={setTab}
+            tabsAriaLabel="Financial report views"
+        >
             {tab === 'trial-balance' && (
                 <Card className="overflow-hidden">
                     <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border">
@@ -544,6 +557,6 @@ export function FinancialReportsPage() {
                     </div>
                 </Card>
             )}
-        </div>
+        </WorkspacePage>
     );
 }

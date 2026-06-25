@@ -35,7 +35,7 @@ export function Tabs<T extends string>({
     return (
         <div
             className={cn(
-                'inline-flex items-center gap-1 mb-6 p-[5px] bg-surface-2 rounded-[12px] border border-border w-fit max-w-full overflow-x-auto',
+                'inline-flex items-center gap-1 p-[5px] bg-surface-2 rounded-[12px] border border-border w-fit max-w-full overflow-x-auto',
                 className,
             )}
             role="tablist"

@@ -1,5 +1,5 @@
 import { LuBadgeCheck as BadgeCheck, LuCalendarCheck as CalendarCheck, LuCalendarRange as CalendarRange, LuWallet as Wallet } from 'react-icons/lu';
-import { Tabs, type TabItem } from '@/components/ui';
+import { WorkspacePage, type TabItem } from '@/components/ui';
 import { useAdminHrTab, type AdminHrTab } from './hooks/useAdminHrTab';
 import { EmployeesView } from '@/features/admin-employees';
 import { AttendanceView } from '@/features/admin-attendance';
@@ -21,17 +21,19 @@ export function AdminHrPage() {
     const { tab, setTab } = useAdminHrTab();
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Tabs
-                tabs={TABS}
-                active={tab}
-                onChange={setTab}
-                ariaLabel="HR workspace views"
-            />
+        <WorkspacePage
+            eyebrow="People"
+            title="Human resources"
+            subtitle="Employees, attendance, leave, and payroll — your team in one place."
+            tabs={TABS}
+            active={tab}
+            onTabChange={setTab}
+            tabsAriaLabel="HR workspace views"
+        >
             {tab === 'employees' && <EmployeesView />}
             {tab === 'attendance' && <AttendanceView />}
             {tab === 'leaves' && <LeavesView />}
             {tab === 'payroll' && <PayrollView />}
-        </div>
+        </WorkspacePage>
     );
 }

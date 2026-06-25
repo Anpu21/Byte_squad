@@ -1,7 +1,15 @@
+import {
+    LuBuilding2 as Building2,
+    LuGitCompareArrows as GitCompareArrows,
+    LuStore as Store,
+} from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import { BranchHubTabs } from '@/features/branch-hub/components/BranchHubTabs';
-import { useBranchHubTab } from '@/features/branch-hub/hooks/useBranchHubTab';
+import { WorkspacePage, type TabItem } from '@/components/ui';
+import {
+    useBranchHubTab,
+    type BranchHubTab,
+} from '@/features/branch-hub/hooks/useBranchHubTab';
 import { BranchManagementPage } from '@/features/branch-management';
 import { BranchPerformancePage } from '@/features/branch-performance';
 import { BranchComparisonPage } from '@/features/branch-comparison';
@@ -11,28 +19,32 @@ export function BranchHubPage() {
     const { tab, setTab } = useBranchHubTab();
     const isAdmin = user?.role === UserRole.ADMIN;
 
+    // No hub-level title: the sub-pages own rich headers (Branch directory's
+    // create action, Compare's export menu + metric switch), so the sticky tab
+    // band renders without a duplicate title above them.
+    const tabs: TabItem<BranchHubTab>[] = [
+        {
+            key: 'overview',
+            label: isAdmin ? 'Directory' : 'My Branch',
+            Icon: isAdmin ? Building2 : Store,
+        },
+        { key: 'compare', label: 'Compare', Icon: GitCompareArrows },
+    ];
+
     return (
-        <div>
-            <BranchHubTabs active={tab} onChange={setTab} />
-
-            {/* Keyed so each tab switch plays exactly one entrance; the single
-                animate-in lives here, not in the child pages (avoids double /
-                replayed animation). */}
-            <div
-                key={tab}
-                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
-            >
-                {tab === 'overview' &&
-                    (isAdmin ? (
-                        <BranchManagementPage embedded={false} />
-                    ) : (
-                        <BranchPerformancePage />
-                    ))}
-
-                {tab === 'compare' && (
-                    <BranchComparisonPage embedded={false} />
-                )}
-            </div>
-        </div>
+        <WorkspacePage
+            tabs={tabs}
+            active={tab}
+            onTabChange={setTab}
+            tabsAriaLabel="Branch hub views"
+        >
+            {tab === 'overview' &&
+                (isAdmin ? (
+                    <BranchManagementPage embedded={false} />
+                ) : (
+                    <BranchPerformancePage />
+                ))}
+            {tab === 'compare' && <BranchComparisonPage embedded={false} />}
+        </WorkspacePage>
     );
 }

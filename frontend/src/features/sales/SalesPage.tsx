@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { LuScrollText as ScrollText, LuShoppingCart as ShoppingCart, LuBadgePercent as BadgePercent, LuChartColumnBig as BarChart3 } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import { Tabs, type TabItem } from '@/components/ui/Tabs';
+import { WorkspacePage, type TabItem } from '@/components/ui';
 import { useTabParam } from '@/hooks/useTabParam';
 import { TransactionsPage } from '@/features/transactions';
 import { CustomerOrdersPage } from '@/features/customer-orders';
@@ -67,17 +67,19 @@ export function SalesPage() {
     });
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Tabs
-                tabs={allowedTabs}
-                active={tab}
-                onChange={setTab}
-                ariaLabel="Sales workspace views"
-            />
+        <WorkspacePage
+            eyebrow="Revenue"
+            title="Sales"
+            subtitle="Transactions, customer orders, and schemes — everything that crosses the counter."
+            tabs={allowedTabs}
+            active={tab}
+            onTabChange={setTab}
+            tabsAriaLabel="Sales workspace views"
+        >
             {tab === 'transactions' && <TransactionsPage />}
             {tab === 'orders' && <CustomerOrdersPage />}
             {tab === 'schemes' && <DiscountSchemesPage />}
             {tab === 'salesman' && <SalesmanReportPanel />}
-        </div>
+        </WorkspacePage>
     );
 }

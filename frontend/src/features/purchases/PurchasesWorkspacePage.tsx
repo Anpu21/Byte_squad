@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { LuBuilding2 as Building2, LuCalendarClock as CalendarClock, LuClipboardList as ClipboardList, LuFileText as FileText, LuPackagePlus as PackagePlus, LuWallet as Wallet } from 'react-icons/lu';
-import PageHeader from '@/components/ui/PageHeader';
-import { Tabs, type TabItem } from '@/components/ui/Tabs';
+import { WorkspacePage, type TabItem } from '@/components/ui';
 import type { IPurchaseOrder } from '@/types';
 import {
     usePurchasesTab,
@@ -34,18 +33,15 @@ export function PurchasesWorkspacePage() {
         useState<IPurchaseOrder | null>(null);
 
     return (
-        <div>
-            <PageHeader
-                eyebrow="Inventory"
-                title="Purchases"
-                subtitle="Suppliers and goods receipts — where stock and cost enter the system."
-            />
-            <Tabs
-                tabs={TABS}
-                active={tab}
-                onChange={setTab}
-                ariaLabel="Purchases workspace views"
-            />
+        <WorkspacePage
+            eyebrow="Inventory"
+            title="Purchases"
+            subtitle="Suppliers and goods receipts — where stock and cost enter the system."
+            tabs={TABS}
+            active={tab}
+            onTabChange={setTab}
+            tabsAriaLabel="Purchases workspace views"
+        >
             {tab === 'grns' && <GrnsPanel />}
             {tab === 'new-grn' && (
                 <NewGrnPanel
@@ -68,6 +64,6 @@ export function PurchasesWorkspacePage() {
             {tab === 'bills' && <BillsPanel />}
             {tab === 'ageing' && <AgeingPanel />}
             {tab === 'suppliers' && <SuppliersPanel />}
-        </div>
+        </WorkspacePage>
     );
 }

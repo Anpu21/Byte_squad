@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { LuScrollText as ScrollText, LuHandCoins as HandCoins, LuScale as Scale, LuWallet as Wallet, LuPiggyBank as PiggyBank } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import { Tabs, type TabItem } from '@/components/ui/Tabs';
+import { WorkspacePage, type TabItem } from '@/components/ui';
 import {
     useAccountingTab,
     type AccountingTab,
@@ -71,18 +71,20 @@ export function AccountingPage() {
     const { tab, setTab } = useAccountingTab(allowedKeys);
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Tabs
-                tabs={allowedTabs}
-                active={tab}
-                onChange={setTab}
-                ariaLabel="Accounting workspace views"
-            />
+        <WorkspacePage
+            eyebrow="Finance"
+            title="Accounting"
+            subtitle="Ledger, receivables, expenses, and the P&L — the books behind every branch."
+            tabs={allowedTabs}
+            active={tab}
+            onTabChange={setTab}
+            tabsAriaLabel="Accounting workspace views"
+        >
             {tab === 'ledger' && <LedgerPage />}
             {tab === 'receivables' && <ReceivablesPage />}
-            {tab === 'reports' && <FinancialReportsPage />}
+            {tab === 'reports' && <FinancialReportsPage embedded />}
             {tab === 'expenses' && <ExpensesPage />}
             {tab === 'profit-loss' && <ProfitLossPage />}
-        </div>
+        </WorkspacePage>
     );
 }

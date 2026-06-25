@@ -1,5 +1,5 @@
 import { LuBarcode as Barcode, LuBoxes as Boxes, LuCalendarClock as CalendarClock, LuClipboardList as ClipboardList, LuTags as Tags, LuTruck as Truck, LuUndo2 as Undo2 } from 'react-icons/lu';
-import { Tabs, type TabItem } from '@/components/ui/Tabs';
+import { WorkspacePage, type TabItem } from '@/components/ui';
 import {
     useInventoryTab,
     type InventoryTab,
@@ -38,21 +38,27 @@ export function InventoryWorkspacePage() {
     const isAdmin = user?.role === UserRole.ADMIN;
 
     return (
-        <div>
-            <Tabs
-                tabs={TABS}
-                active={tab}
-                onChange={setTab}
-                ariaLabel="Inventory workspace views"
-            />
+        <WorkspacePage
+            eyebrow="Operations"
+            title="Inventory"
+            subtitle="Stock on hand, expiry, adjustments, returns, transfers, categories, and labels."
+            tabs={TABS}
+            active={tab}
+            onTabChange={setTab}
+            tabsAriaLabel="Inventory workspace views"
+        >
             {tab === 'list' && <InventoryByRole />}
             {tab === 'expiry' && <ExpiryReportPage />}
             {tab === 'adjustments' && <StockAdjustmentsPage />}
             {tab === 'returns' && <ReturnsPage />}
             {tab === 'transfers' &&
-                (isAdmin ? <AdminTransfersPage /> : <TransferRequestsPage />)}
+                (isAdmin ? (
+                    <AdminTransfersPage embedded />
+                ) : (
+                    <TransferRequestsPage embedded />
+                ))}
             {tab === 'categories' && <CategoriesPanel />}
             {tab === 'labels' && <LabelPrintPanel />}
-        </div>
+        </WorkspacePage>
     );
 }
