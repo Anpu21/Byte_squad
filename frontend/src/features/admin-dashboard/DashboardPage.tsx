@@ -1,4 +1,4 @@
-import { OverviewPage } from '@/pages/admin/OverviewPage';
+import { OverviewPage } from '@/features/admin-overview';
 import { useDashboardPage } from '@/features/admin-dashboard/hooks/useDashboardPage';
 import { DashboardHeader } from '@/features/admin-dashboard/components/DashboardHeader';
 import { DashboardKpis } from '@/features/admin-dashboard/components/DashboardKpis';
