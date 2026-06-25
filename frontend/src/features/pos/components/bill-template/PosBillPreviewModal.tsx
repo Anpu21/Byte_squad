@@ -70,7 +70,7 @@ export function PosBillPreviewModal({
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="inline-flex items-center justify-center h-9 px-3 rounded-md text-[13px] font-medium text-text-2 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                                className="inline-flex items-center justify-center h-9 px-3 rounded-md text-[13px] font-medium text-text-2 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25"
                             >
                                 Close
                             </button>

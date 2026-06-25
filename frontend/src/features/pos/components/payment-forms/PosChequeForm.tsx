@@ -47,7 +47,7 @@ export function PosChequeForm({
                     onCommit={(next) => onChange({ chequeAmount: next })}
                     min={0}
                     ariaLabel="Cheque amount"
-                    className="w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 tabular-nums outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/30"
+                    className="w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 tabular-nums outline-none transition-colors focus:border-focus focus:ring-[3px] focus:ring-primary/30"
                 />
             </div>
 

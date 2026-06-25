@@ -27,7 +27,7 @@ interface PosModeSwitchProps {
 export function PosModeSwitch({ mode, onChange }: PosModeSwitchProps) {
     return (
         <div
-            className="flex items-center gap-1 p-1 bg-surface-2 rounded-xl border border-border w-fit"
+            className="inline-flex items-center gap-1 p-[5px] bg-surface-2 rounded-[12px] border border-border w-fit"
             role="tablist"
             aria-label="POS workspace mode"
         >
@@ -40,13 +40,13 @@ export function PosModeSwitch({ mode, onChange }: PosModeSwitchProps) {
                         role="tab"
                         aria-selected={isActive}
                         onClick={() => onChange(key)}
-                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap focus:outline-none focus:ring-[3px] focus:ring-primary/30 ${
+                        className={`inline-flex items-center gap-2 px-4 py-[9px] rounded-md text-[13px] font-semibold whitespace-nowrap transition-all duration-150 outline-none active:scale-[0.97] focus-visible:ring-[3px] focus-visible:ring-focus/25 ${
                             isActive
-                                ? 'bg-primary text-text-inv shadow-sm'
+                                ? 'bg-primary text-text-inv shadow-sm-token'
                                 : 'text-text-2 hover:text-text-1 hover:bg-surface'
                         }`}
                     >
-                        <Icon size={14} strokeWidth={2} aria-hidden />
+                        <Icon size={15} strokeWidth={2.1} aria-hidden />
                         {label}
                     </button>
                 );
