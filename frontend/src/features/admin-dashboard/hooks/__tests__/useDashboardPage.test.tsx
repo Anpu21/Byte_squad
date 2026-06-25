@@ -5,12 +5,25 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useDashboardPage } from '../useDashboardPage';
 import { posService } from '@/services/pos.service';
 import { UserRole } from '@/constants/enums';
+import { CHART_COLORS } from '@/components/charts/chart-palette';
 import type { IAdminDashboard, IUser } from '@/types';
 
 vi.mock('@/services/pos.service', () => ({
     posService: {
         getAdminDashboard: vi.fn(),
     },
+}));
+
+// The page model fans out to the P&L + loyalty queries too; stub those hooks so
+// this test stays focused on the POS-dashboard derivation (sparklines, colours).
+vi.mock('../useDashboardProfitLoss', () => ({
+    useDashboardProfitLoss: () => ({ data: undefined, isLoading: false }),
+}));
+vi.mock('@/features/admin-loyalty/hooks/useLoyaltyDashboard', () => ({
+    useLoyaltyDashboard: () => ({
+        data: { totalMembers: 1234 },
+        isLoading: false,
+    }),
 }));
 
 const adminFixture: IUser = {
@@ -56,9 +69,26 @@ const dashboardFixture: IAdminDashboard = {
     },
     dailyBreakdown: [
         { date: '2026-05-18', totalSales: 2000, transactionCount: 8 },
+        { date: '2026-05-19', totalSales: 3200, transactionCount: 12 },
     ],
     topProducts: [],
     recentTransactions: [],
+    salesByPaymentMethod: [],
+    revenueByBranch: [],
+    dailyBreakdownByBranch: {
+        branches: [
+            { branchId: 'b1', branchName: 'Main' },
+            { branchId: 'b2', branchName: 'Downtown' },
+        ],
+        days: [],
+    },
+    inventorySummary: {
+        totalProducts: 0,
+        lowStock: 0,
+        outOfStock: 0,
+        inventoryValue: 0,
+    },
+    pendingOrders: 3,
 };
 
 function makeWrapper() {
@@ -79,29 +109,36 @@ describe('useDashboardPage', () => {
         getAdminDashboardMock.mockReset();
     });
 
-    it('returns admin dashboard data and derived KPI values', async () => {
+    it('exposes the dashboard data and derives sparklines + branch colours', async () => {
         getAdminDashboardMock.mockResolvedValueOnce(dashboardFixture);
         const { Wrapper } = makeWrapper();
         const { result } = renderHook(() => useDashboardPage(), {
             wrapper: Wrapper,
         });
-        await waitFor(() => expect(result.current.data).toEqual(dashboardFixture));
+        await waitFor(() =>
+            expect(result.current.data).toEqual(dashboardFixture),
+        );
         expect(result.current.isAdmin).toBe(true);
-        expect(result.current.todayRevenue).toBe(25_000);
-        expect(result.current.todayCount).toBe(110);
-        expect(result.current.avgOrderValue).toBe(227);
-        expect(result.current.lowStockCount).toBe(14);
+        expect(result.current.loyalty?.totalMembers).toBe(1234);
+        // Sparklines pivot the daily breakdown into flat numeric series.
+        expect(result.current.revenueSpark).toEqual([2000, 3200]);
+        expect(result.current.ordersSpark).toEqual([8, 12]);
+        // Each branch gets a stable palette colour by index.
+        expect(result.current.branchColors).toEqual({
+            b1: CHART_COLORS[0],
+            b2: CHART_COLORS[1],
+        });
     });
 
-    it('falls back to zeros while the query is loading', () => {
+    it('reports loading and empty derivations while the query is pending', () => {
         getAdminDashboardMock.mockReturnValueOnce(new Promise(() => {}));
         const { Wrapper } = makeWrapper();
         const { result } = renderHook(() => useDashboardPage(), {
             wrapper: Wrapper,
         });
         expect(result.current.isLoading).toBe(true);
-        expect(result.current.todayRevenue).toBe(0);
-        expect(result.current.todayCount).toBe(0);
-        expect(result.current.lowStockCount).toBe(0);
+        expect(result.current.data).toBeUndefined();
+        expect(result.current.revenueSpark).toEqual([]);
+        expect(result.current.branchColors).toEqual({});
     });
 });

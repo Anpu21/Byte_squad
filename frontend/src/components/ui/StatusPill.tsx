@@ -18,6 +18,11 @@ const STATUS_MAP: Record<string, { tone: PillTone; label: string }> = {
     away: { tone: 'warning', label: 'Away' },
     invited: { tone: 'neutral', label: 'Invited' },
 
+    // Sale payment status
+    paid: { tone: 'success', label: 'Paid' },
+    unpaid: { tone: 'danger', label: 'Unpaid' },
+    partially_paid: { tone: 'warning', label: 'Partial' },
+
     refund: { tone: 'danger', label: 'Refunded' },
     refunded: { tone: 'danger', label: 'Refunded' },
     rejected: { tone: 'danger', label: 'Rejected' },

@@ -18,11 +18,6 @@ export const VIEW_OPTIONS: ViewOption[] = [
   { value: "staff", label: "Staff", Icon: UsersRound },
 ];
 
-export const CHART_COLORS = [
-  "var(--primary)",
-  "var(--accent)",
-  "var(--warning)",
-  "var(--info)",
-  "var(--danger)",
-  "var(--brand-400)",
-];
+// Canonical categorical palette now lives with the chart primitives so the
+// donut/multi-line charts and the branch-comparison charts share one source.
+export { CHART_COLORS } from "@/components/charts/chart-palette";

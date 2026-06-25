@@ -28,6 +28,13 @@ export type { IMultiTenderBag } from './multi-tender-bag.type';
 export type { ICustomerSearchRow } from './customer-search-row.type';
 export type { IDailyBreakdown } from './daily-breakdown.type';
 export type { ITopProduct } from './top-product.type';
+export type { IPaymentMethodBreakdown } from './payment-method-breakdown.type';
+export type { IRevenueByBranch } from './revenue-by-branch.type';
+export type {
+    IDailyBranchPoint,
+    IDailyBreakdownByBranch,
+} from './daily-breakdown-by-branch.type';
+export type { IInventorySummary } from './inventory-summary.type';
 export type { ICashierPeriodStats } from './cashier-period-stats.type';
 export type { ICashierTransactionRow } from './cashier-transaction-row.type';
 export type { ICashierTransactionsSummary } from './cashier-transactions-summary.type';

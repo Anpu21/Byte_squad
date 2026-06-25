@@ -26,8 +26,12 @@ interface KpiCardProps {
     value: ReactNode;
     delta?: ReactNode;
     deltaPositive?: boolean;
+    /** Muted caption shown next to the delta pill (e.g. "vs last week", "13 pending"). */
+    note?: ReactNode;
     sparkData?: number[];
     sparkColor?: string;
+    /** Override the sparkline height (the dashboard overview uses 38px). */
+    sparkHeight?: number;
     icon?: ReactNode;
     /** Per-metric accent: colored icon-wrap + value tint (e.g. revenue→accent). */
     accent?: KpiAccent;
@@ -39,8 +43,10 @@ export default function KpiCard({
     value,
     delta,
     deltaPositive = true,
+    note,
     sparkData,
     sparkColor,
+    sparkHeight,
     icon,
     accent,
     className,
@@ -77,18 +83,25 @@ export default function KpiCard({
                     {value}
                 </div>
             </div>
-            {delta && (
+            {(delta || note) && (
                 <div className="flex items-center gap-2 mt-2.5">
-                    <span
-                        className={cn(
-                            'mono inline-flex items-center h-5 px-[7px] rounded-md text-[11.5px] font-semibold',
-                            deltaPositive
-                                ? 'bg-accent-soft text-accent-text'
-                                : 'bg-danger-soft text-danger',
-                        )}
-                    >
-                        {delta}
-                    </span>
+                    {delta && (
+                        <span
+                            className={cn(
+                                'mono inline-flex items-center h-5 px-[7px] rounded-md text-[11.5px] font-semibold',
+                                deltaPositive
+                                    ? 'bg-accent-soft text-accent-text'
+                                    : 'bg-danger-soft text-danger',
+                            )}
+                        >
+                            {delta}
+                        </span>
+                    )}
+                    {note && (
+                        <span className="text-[11.5px] text-text-3 truncate">
+                            {note}
+                        </span>
+                    )}
                 </div>
             )}
             {sparkData && (
@@ -96,6 +109,7 @@ export default function KpiCard({
                     <Spark
                         data={sparkData}
                         color={sparkColor || 'var(--primary)'}
+                        h={sparkHeight}
                         fill
                     />
                 </div>
