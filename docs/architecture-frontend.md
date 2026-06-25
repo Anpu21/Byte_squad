@@ -34,11 +34,14 @@ Vite 7 · React 19 · TypeScript (strict) · Tailwind 4 (CSS-first) · Redux Too
 
 ## Design system
 
-CSS-first tokens in `index.css` via Tailwind 4 `@theme`. **Use tokens, never raw
-hex.** Brand indigo `#19183B`, sage accent `#4A8073`, soft-mint canvas; full
-light/dark (`[data-theme="dark"]`); radius 6/8/12; shadow `xs→lg`; a layered
-z-index scale (`z-sticky`…`z-toast`); fonts Geist / Geist Mono / Noto Sans Tamil;
-`prefers-reduced-motion` honored globally.
+CSS-first tokens in `index.css` via Tailwind 4 `@theme`, following the **Ledger UI
+Kit** (Claude Design, direction A "Crisp") as the single source of truth. **Use
+tokens, never raw hex.** Brand indigo `#19183B` primary; `--accent` is green
+success (the kit's `pos`, `#15795A`) and `--focus` is the purple interactive
+accent (`#4A487A`, focus rings/links/outline); danger red, warning amber, info
+blue; soft-mint canvas; full light/dark (`[data-theme="dark"]`); radius 9/9/12;
+shadow `xs→lg`; a layered z-index scale (`z-sticky`…`z-toast`); fonts **IBM Plex
+Sans / IBM Plex Mono** / Noto Sans Tamil; `prefers-reduced-motion` honored globally.
 
 ### Primitives — `components/ui/` (import via `@/components/ui`)
 
@@ -65,13 +68,13 @@ Mandatory usage:
   text, `tabular-nums` for numbers, dense rows, `shadow-xs/sm`, status colors for
   state. This is the `DataTable`/`Table` default.
 - **Comfortable** — storefront (catalog, product detail, cart, checkout). More
-  whitespace, larger imagery, sage accent more prominent, `shadow-sm/md`. Same
+  whitespace, larger imagery, accent more prominent, `shadow-sm/md`. Same
   primitives, warmer rhythm (achieved with spacing/size props, not new tokens).
 
 ### Quality bar (every screen)
 
 Contrast ≥ 4.5:1 in both themes · visible focus rings · full keyboard nav ·
-transitions 150–300ms · SVG icons only (Lucide), never emoji · tabular figures in
+transitions 150–300ms · SVG icons only (`react-icons/lu`), never emoji · tabular figures in
 data columns · dark-mode parity checked independently.
 
 ## Real-time
