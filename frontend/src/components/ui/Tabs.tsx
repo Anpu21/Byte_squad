@@ -1,5 +1,5 @@
 import { type IconType as LucideIcon } from 'react-icons';
-import { type ReactNode } from 'react';
+import { type KeyboardEvent as ReactKeyboardEvent, type ReactNode, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface TabItem<T extends string> {
@@ -13,7 +13,7 @@ export interface TabItem<T extends string> {
 /**
  * `pill` — the contained surface-2 bar with a solid-primary active pill (POS
  * mode switch, embedded sub-workspaces). `underline` — GitHub-style flat tabs on
- * a full-width rail, the active tab carrying a 2px primary underline (every
+ * a full-width rail, the active tab carrying a 3px primary underline (every
  * top-level workspace sub-nav).
  */
 export type TabsVariant = 'pill' | 'underline';
@@ -26,15 +26,21 @@ interface TabsProps<T extends string> {
     className?: string;
     /** Visual treatment. Defaults to `pill` so existing callers are untouched. */
     variant?: TabsVariant;
+    /**
+     * When set, wires each tab's `id`/`aria-controls` to the matching
+     * `role="tabpanel"` (rendered by `WorkspacePage` with the same base id) so the
+     * full ARIA tabs pattern resolves. Omit for standalone toggles (e.g. POS).
+     */
+    idBase?: string;
 }
 
 /**
  * The app's tab-bar for tabbed workspaces (Accounting, HR, Sales, Transfers,
  * Branches, Financial reports). Two looks via {@link TabsVariant}: the default
- * `pill` (Ledger UI Kit direction A — contained surface-2 bar, solid-primary
- * active pill) and `underline` (GitHub-style, used by the page sub-nav). Pairs
- * with `useTabParam` for URL-synced state. Icons and badges are optional so a
- * single primitive covers every hub — never hand-roll a tab bar.
+ * `pill` (Ledger UI Kit direction A) and `underline` (the page sub-nav). Pairs
+ * with `useTabParam` for URL-synced state. Implements the WAI-ARIA tabs pattern:
+ * a roving tabindex plus Arrow/Home/End keys move and activate tabs. Never
+ * hand-roll a tab bar.
  */
 export function Tabs<T extends string>({
     tabs,
@@ -43,8 +49,39 @@ export function Tabs<T extends string>({
     ariaLabel,
     className,
     variant = 'pill',
+    idBase,
 }: TabsProps<T>) {
     const underline = variant === 'underline';
+    const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+    const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+        const idx = tabs.findIndex((t) => t.key === active);
+        if (idx < 0) return;
+        let nextIdx: number;
+        switch (e.key) {
+            case 'ArrowRight':
+            case 'ArrowDown':
+                nextIdx = (idx + 1) % tabs.length;
+                break;
+            case 'ArrowLeft':
+            case 'ArrowUp':
+                nextIdx = (idx - 1 + tabs.length) % tabs.length;
+                break;
+            case 'Home':
+                nextIdx = 0;
+                break;
+            case 'End':
+                nextIdx = tabs.length - 1;
+                break;
+            default:
+                return;
+        }
+        e.preventDefault();
+        const nextKey = tabs[nextIdx].key;
+        onChange(nextKey);
+        tabRefs.current[nextKey]?.focus();
+    };
+
     return (
         <div
             className={cn(
@@ -55,6 +92,8 @@ export function Tabs<T extends string>({
             )}
             role="tablist"
             aria-label={ariaLabel}
+            aria-orientation="horizontal"
+            onKeyDown={onKeyDown}
         >
             {tabs.map((t) => {
                 const isActive = active === t.key;
@@ -62,17 +101,23 @@ export function Tabs<T extends string>({
                 return (
                     <button
                         key={t.key}
+                        ref={(el) => {
+                            tabRefs.current[t.key] = el;
+                        }}
                         type="button"
                         role="tab"
+                        id={idBase ? `${idBase}-tab-${t.key}` : undefined}
                         aria-selected={isActive}
+                        aria-controls={idBase ? `${idBase}-panel-${t.key}` : undefined}
+                        tabIndex={isActive ? 0 : -1}
                         onClick={() => onChange(t.key)}
                         className={cn(
                             'inline-flex items-center gap-2 text-[13px] whitespace-nowrap outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
                             underline
                                 ? cn(
-                                      'px-3 py-2.5 -mb-px border-b-2 rounded-t-sm font-medium transition-colors duration-150',
+                                      'px-3 py-2.5 -mb-px border-b-[3px] rounded-t-sm font-medium transition-colors duration-150',
                                       isActive
-                                          ? 'border-primary text-text-1 font-semibold'
+                                          ? 'border-[color:var(--nav-tab-underline)] text-text-1 font-semibold'
                                           : 'border-transparent text-text-2 hover:text-text-1 hover:border-border-strong',
                                   )
                                 : cn(

@@ -46,4 +46,35 @@ describe('Tabs', () => {
         );
         expect(screen.getByText('4')).toBeInTheDocument();
     });
+
+    it('uses a roving tabindex (only the active tab is tabbable)', () => {
+        render(
+            <Tabs tabs={TABS} active="two" onChange={() => {}} ariaLabel="Views" />,
+        );
+        expect(screen.getByRole('tab', { name: 'Two' })).toHaveAttribute(
+            'tabindex',
+            '0',
+        );
+        expect(screen.getByRole('tab', { name: 'One' })).toHaveAttribute(
+            'tabindex',
+            '-1',
+        );
+    });
+
+    it('moves to the next/previous tab with arrow keys and to ends with Home/End', async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <Tabs tabs={TABS} active="one" onChange={onChange} ariaLabel="Views" />,
+        );
+        screen.getByRole('tab', { name: 'One' }).focus();
+        await user.keyboard('{ArrowRight}');
+        expect(onChange).toHaveBeenLastCalledWith('two');
+        await user.keyboard('{ArrowLeft}');
+        expect(onChange).toHaveBeenLastCalledWith('three'); // wraps backwards
+        await user.keyboard('{End}');
+        expect(onChange).toHaveBeenLastCalledWith('three');
+        await user.keyboard('{Home}');
+        expect(onChange).toHaveBeenLastCalledWith('one');
+    });
 });

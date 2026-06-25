@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useId } from 'react';
 import PageHeader from './PageHeader';
 import { Tabs, type TabItem } from './Tabs';
 
@@ -56,6 +56,7 @@ export function WorkspacePage<T extends string>({
     embedded = false,
     className,
 }: WorkspacePageProps<T>) {
+    const baseId = useId();
     const tabBar = (
         <Tabs
             tabs={tabs}
@@ -63,14 +64,27 @@ export function WorkspacePage<T extends string>({
             onChange={onTabChange}
             ariaLabel={tabsAriaLabel}
             variant={embedded ? 'pill' : 'underline'}
+            idBase={baseId}
         />
+    );
+    const panel = (
+        <div
+            key={active}
+            role="tabpanel"
+            id={`${baseId}-panel-${active}`}
+            aria-labelledby={`${baseId}-tab-${active}`}
+            tabIndex={0}
+            className="animate-in fade-in slide-in-from-bottom-2 duration-300 focus-visible:outline-none"
+        >
+            {children}
+        </div>
     );
 
     if (embedded) {
         return (
             <div className={className}>
                 <div className="mb-6">{tabBar}</div>
-                {children}
+                {panel}
             </div>
         );
     }
@@ -85,18 +99,13 @@ export function WorkspacePage<T extends string>({
                     actions={actions}
                 />
             )}
-            {/* Frosted full-width band. The -mx values cancel <main>'s p-2/lg:p-4
-                so the band bleeds edge-to-edge; px restores tab alignment. The
-                underline Tabs own the bottom rail, so the band carries none. */}
-            <div className="sticky top-0 z-10 -mx-2 mb-6 bg-canvas/85 px-2 pt-2.5 backdrop-blur-sm lg:-mx-4 lg:px-4">
+            {/* Solid sticky band — shares <main>'s padding box (no negative-margin
+                math). The underline Tabs own the single bottom rail; the band is
+                solid (not frosted) so it matches the solid header above it. */}
+            <div className="sticky top-0 z-10 mb-6 bg-canvas pt-2.5">
                 {tabBar}
             </div>
-            <div
-                key={active}
-                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
-            >
-                {children}
-            </div>
+            {panel}
         </div>
     );
 }
