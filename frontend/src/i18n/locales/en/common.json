@@ -50,6 +50,9 @@
     "openUserMenu": "Open user menu",
     "profile": "Profile",
     "logout": "Logout",
-    "primaryNav": "Primary navigation"
+    "primaryNav": "Primary navigation",
+    "commandPalette": "Command palette",
+    "searchPlaceholder": "Search or jump to…",
+    "noResults": "No matches"
   }
 }

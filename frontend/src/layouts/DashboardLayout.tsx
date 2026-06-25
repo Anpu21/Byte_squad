@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LuChevronRight as ChevronRight, LuLogOut as LogOut, LuMenu as MenuIcon, LuUserCog as UserCog } from 'react-icons/lu';
+import { LuChevronRight as ChevronRight, LuLogOut as LogOut, LuMenu as MenuIcon, LuSearch as Search, LuUserCog as UserCog } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
@@ -16,7 +16,7 @@ import NotificationDropdown from '@/components/notifications/NotificationDropdow
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import Avatar from '@/components/ui/Avatar';
 import Logo from '@/components/ui/Logo';
-import { NAV_ICON } from '@/components/ui';
+import { NAV_ICON, ICON, Tooltip, CommandPalette } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout() {
@@ -28,6 +28,7 @@ export default function DashboardLayout() {
     );
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
+    const [paletteOpen, setPaletteOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
     const navigate = useNavigate();
@@ -43,6 +44,18 @@ export default function DashboardLayout() {
     useEffect(() => {
         localStorage.setItem('nav:sidebar-open', String(sidebarOpen));
     }, [sidebarOpen]);
+
+    // ⌘K / Ctrl-K opens the command palette from anywhere.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                setPaletteOpen(true);
+            }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
 
     useEffect(() => {
         if (!profileOpen) return;
@@ -160,11 +173,14 @@ export default function DashboardLayout() {
                                         const isActive = location.pathname === itemPath;
                                         const Icon = item.Icon;
                                         return (
-                                            <Link
+                                            <Tooltip
                                                 key={item.id}
+                                                label={t(item.label)}
+                                                disabled={isExpanded}
+                                            >
+                                            <Link
                                                 to={itemPath}
                                                 aria-label={!isExpanded ? t(item.label) : undefined}
-                                                title={!isExpanded ? t(item.label) : undefined}
                                                 aria-current={isActive ? 'page' : undefined}
                                                 onClick={() => setMobileNavOpen(false)}
                                                 className={cn(
@@ -201,6 +217,7 @@ export default function DashboardLayout() {
                                                     </>
                                                 )}
                                             </Link>
+                                            </Tooltip>
                                         );
                                     })}
                                 </div>
@@ -293,6 +310,27 @@ export default function DashboardLayout() {
                     )}
 
                     <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+                        <button
+                            type="button"
+                            onClick={() => setPaletteOpen(true)}
+                            aria-label={t('shell.commandPalette')}
+                            aria-keyshortcuts="Meta+K Control+K"
+                            className="hidden sm:flex items-center gap-2 h-9 pl-2.5 pr-2 rounded-md border border-border bg-surface-2 text-text-3 hover:text-text-2 hover:border-border-strong transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
+                        >
+                            <Search size={ICON.md} aria-hidden />
+                            <span className="text-sm">{t('shell.searchPlaceholder')}</span>
+                            <kbd className="ml-3 text-[11px] font-medium text-text-3 bg-surface border border-border rounded px-1.5 py-0.5 leading-none">
+                                ⌘K
+                            </kbd>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPaletteOpen(true)}
+                            aria-label={t('shell.commandPalette')}
+                            className="sm:hidden p-2 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
+                        >
+                            <Search size={18} aria-hidden />
+                        </button>
                         <ThemeToggle />
                         <NotificationDropdown />
                         <div className="w-px h-6 bg-border" aria-hidden="true" />
@@ -356,6 +394,11 @@ export default function DashboardLayout() {
                     </div>
                 </main>
             </div>
+
+            <CommandPalette
+                open={paletteOpen}
+                onClose={() => setPaletteOpen(false)}
+            />
         </div>
     );
 }

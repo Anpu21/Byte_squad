@@ -54,6 +54,8 @@ export { default as Logo } from './Logo';
 export { ICON, NAV_ICON } from './icon-sizes';
 export { Tabs, type TabItem } from './Tabs';
 export { WorkspacePage } from './WorkspacePage';
+export { default as Tooltip } from './Tooltip';
+export { default as CommandPalette } from './CommandPalette';
 export { default as ThemeToggle } from './ThemeToggle';
 export { default as LanguageSwitcher } from './LanguageSwitcher';
 export { AppBootSpinner } from './AppBootSpinner';
