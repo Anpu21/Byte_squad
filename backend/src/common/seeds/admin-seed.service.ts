@@ -42,9 +42,9 @@ import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
 import { CustomerOrderPaymentMode } from '@common/enums/customer-order-payment-mode.enum';
 import { CustomerOrderPaymentStatus } from '@common/enums/customer-order-payment-status.enum';
-import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
-import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
-import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
+import { LoyaltyAccount } from '@/modules/loyalty-wallets/entities/loyalty-account.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty-customers/entities/loyalty-customer.entity';
+import { LoyaltyLedgerEntry } from '@/modules/loyalty-wallets/entities/loyalty-ledger-entry.entity';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { pickSeedImageUrl } from '@common/seeds/seed-product-images';

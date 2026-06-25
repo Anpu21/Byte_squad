@@ -4,7 +4,7 @@ import { DataSource } from 'typeorm';
 import type { Repository, UpdateQueryBuilder } from 'typeorm';
 import { LoyaltyRepository } from './loyalty.repository';
 import { LoyaltyAccount } from './entities/loyalty-account.entity';
-import { LoyaltyCustomer } from './entities/loyalty-customer.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty-customers/entities/loyalty-customer.entity';
 import { LoyaltyLedgerEntry } from './entities/loyalty-ledger-entry.entity';
 import { Sale } from '@pos/entities/sale.entity';
 

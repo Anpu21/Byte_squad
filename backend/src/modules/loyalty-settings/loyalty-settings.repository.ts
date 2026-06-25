@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import {
   LoyaltySettings,
   LOYALTY_SETTINGS_ROW_ID,
-} from '@/modules/loyalty/entities/loyalty-settings.entity';
+} from '@/modules/loyalty-settings/entities/loyalty-settings.entity';
 
 @Injectable()
 export class LoyaltySettingsRepository {

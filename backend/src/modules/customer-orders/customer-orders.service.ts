@@ -21,8 +21,8 @@ import {
   PayhereNotifyPayload,
   PayhereService,
 } from '@/modules/customer-orders/payhere.service';
-import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
-import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
+import { LoyaltyService } from '@/modules/loyalty-wallets/loyalty.service';
+import { LoyaltyWalletService } from '@/modules/loyalty-wallets/loyalty-wallet.service';
 import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';

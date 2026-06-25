@@ -14,13 +14,13 @@ import { PaymentRepository } from '@pos/payment.repository';
 import { CreditTransactionRepository } from '@pos/credit-transaction.repository';
 import { StockMovementRepository } from '@pos/stock-movement.repository';
 import { AccountingService } from '@accounting/accounting.service';
-import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
+import { LoyaltyWalletService } from '@/modules/loyalty-wallets/loyalty-wallet.service';
 
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { CreditTransaction } from '@pos/entities/credit-transaction.entity';
 import type { ActorPayload } from '@pos/pos-write.service';
-import type { LoyaltyOwner } from '@/modules/loyalty/types';
+import type { LoyaltyOwner } from '@/modules/loyalty-wallets/types';
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;

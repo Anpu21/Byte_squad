@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { Branch } from '@branches/entities/branch.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
-import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
+import { LoyaltySettingsService } from '@/modules/loyalty-settings/loyalty-settings.service';
 import { BranchAnalyticsRepository } from './branch-analytics.repository';
 import { BranchAnalyticsService } from './branch-analytics.service';
 import type { BranchAnalyticsComparisonResponse } from './types';

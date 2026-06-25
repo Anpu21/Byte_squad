@@ -3,13 +3,13 @@ import { Test } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { LoyaltyService } from './loyalty.service';
 import { LoyaltyRepository } from './loyalty.repository';
-import type { LoyaltyCustomerRow } from './types';
-import { LoyaltyCustomersRepository } from './loyalty-customers.repository';
-import { LoyaltySettingsService } from './loyalty-settings.service';
+import type { LoyaltyCustomerRow } from '@/modules/loyalty-customers/types';
+import { LoyaltyCustomersRepository } from '@/modules/loyalty-customers/loyalty-customers.repository';
+import { LoyaltySettingsService } from '@/modules/loyalty-settings/loyalty-settings.service';
 import { UsersService } from '@users/users.service';
 import { LoyaltyAccount } from './entities/loyalty-account.entity';
-import { LoyaltyCustomer } from './entities/loyalty-customer.entity';
-import { LoyaltySettings } from './entities/loyalty-settings.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty-customers/entities/loyalty-customer.entity';
+import { LoyaltySettings } from '@/modules/loyalty-settings/entities/loyalty-settings.entity';
 import { User } from '@users/entities/user.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 

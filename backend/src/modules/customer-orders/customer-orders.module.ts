@@ -14,7 +14,7 @@ import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { NotificationsModule } from '@notifications/notifications.module';
 import { InventoryModule } from '@inventory/inventory.module';
-import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
+import { LoyaltyWalletsModule } from '@/modules/loyalty-wallets/loyalty-wallets.module';
 
 @Module({
   imports: [
@@ -30,7 +30,7 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
     AccountingModule,
     NotificationsModule,
     InventoryModule,
-    LoyaltyModule,
+    LoyaltyWalletsModule,
   ],
   controllers: [CustomerOrdersController],
   providers: [CustomerOrdersService, CustomerOrdersRepository, PayhereService],

@@ -19,7 +19,9 @@ import { BranchAnalyticsModule } from '@/modules/branch-analytics/branch-analyti
 import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
 import { CustomerOrdersModule } from '@/modules/customer-orders/customer-orders.module';
 import { ShopModule } from '@/modules/shop/shop.module';
-import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
+import { LoyaltySettingsModule } from '@/modules/loyalty-settings/loyalty-settings.module';
+import { LoyaltyCustomersModule } from '@/modules/loyalty-customers/loyalty-customers.module';
+import { LoyaltyWalletsModule } from '@/modules/loyalty-wallets/loyalty-wallets.module';
 import { HrModule } from '@/modules/hr/hr.module';
 import { SuppliersModule } from '@/modules/suppliers/suppliers.module';
 import { PurchasesDocNumberingModule } from '@/modules/purchases-doc-numbering/purchases-doc-numbering.module';
@@ -60,9 +62,9 @@ import { ShipmentEvent } from '@stock-transfers/entities/shipment-event.entity';
 import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
 import { CustomerOrderItem } from '@/modules/customer-orders/entities/customer-order-item.entity';
 import { PayherePaymentAttempt } from '@/modules/customer-orders/entities/payhere-payment-attempt.entity';
-import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
-import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
-import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
+import { LoyaltyAccount } from '@/modules/loyalty-wallets/entities/loyalty-account.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty-customers/entities/loyalty-customer.entity';
+import { LoyaltyLedgerEntry } from '@/modules/loyalty-wallets/entities/loyalty-ledger-entry.entity';
 import { AdminSeedService } from '@common/seeds/admin-seed.service';
 import { HrSeedService } from '@common/seeds/hr-seed.service';
 import { PurchasesSeedService } from '@common/seeds/purchases-seed.service';
@@ -141,7 +143,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     StockTransfersModule,
     CustomerOrdersModule,
     ShopModule,
-    LoyaltyModule,
+    LoyaltySettingsModule,
+    LoyaltyCustomersModule,
+    LoyaltyWalletsModule,
     HrModule,
     SuppliersModule,
     PurchasesDocNumberingModule,

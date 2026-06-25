@@ -4,9 +4,9 @@ import { Branch } from '@branches/entities/branch.entity';
 import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
-import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
-import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
-import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
+import { LoyaltyAccount } from '@/modules/loyalty-wallets/entities/loyalty-account.entity';
+import { LoyaltyLedgerEntry } from '@/modules/loyalty-wallets/entities/loyalty-ledger-entry.entity';
+import { LoyaltySettingsModule } from '@/modules/loyalty-settings/loyalty-settings.module';
 import { Payment } from '@pos/entities/payment.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
@@ -29,7 +29,7 @@ import { BranchAnalyticsService } from './branch-analytics.service';
       SaleItem,
       User,
     ]),
-    LoyaltyModule,
+    LoyaltySettingsModule,
   ],
   controllers: [BranchAnalyticsController],
   providers: [BranchAnalyticsRepository, BranchAnalyticsService],

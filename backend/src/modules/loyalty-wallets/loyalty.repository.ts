@@ -2,21 +2,21 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, DeepPartial, EntityManager, Repository } from 'typeorm';
 import type { UpdateQueryBuilder } from 'typeorm';
-import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
-import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
-import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
+import { LoyaltyAccount } from '@/modules/loyalty-wallets/entities/loyalty-account.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty-customers/entities/loyalty-customer.entity';
+import { LoyaltyLedgerEntry } from '@/modules/loyalty-wallets/entities/loyalty-ledger-entry.entity';
 import { Sale } from '@pos/entities/sale.entity';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 import {
   applyLedgerActivityExists,
   normalizeCustomerRow,
-} from '@/modules/loyalty/loyalty-customer-accounts.helpers';
+} from '@/modules/loyalty-wallets/loyalty-customer-accounts.helpers';
 import type {
   LoyaltyCustomerAccountsQueryOptions,
   LoyaltyCustomerRawRow,
   LoyaltyCustomerRow,
-  LoyaltyOwner,
-} from '@/modules/loyalty/types';
+} from '@/modules/loyalty-customers/types';
+import type { LoyaltyOwner } from '@/modules/loyalty-wallets/types';
 
 interface LoyaltyDashboardAccountStatsRaw {
   totalMembers: string | null;

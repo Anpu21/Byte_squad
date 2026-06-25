@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import {
   LoyaltySettings,
   LOYALTY_SETTINGS_ROW_ID,
-} from '@/modules/loyalty/entities/loyalty-settings.entity';
-import { LoyaltySettingsRepository } from '@/modules/loyalty/loyalty-settings.repository';
-import { UpdateLoyaltySettingsDto } from '@/modules/loyalty/dto/update-loyalty-settings.dto';
+} from '@/modules/loyalty-settings/entities/loyalty-settings.entity';
+import { LoyaltySettingsRepository } from '@/modules/loyalty-settings/loyalty-settings.repository';
+import { UpdateLoyaltySettingsDto } from '@/modules/loyalty-settings/dto/update-loyalty-settings.dto';
 
 const DEFAULT_SETTINGS = {
   earnPoints: 1,

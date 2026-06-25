@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserRole } from '@common/enums/user-roles.enums';
-import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
+import { LoyaltySettingsService } from '@/modules/loyalty-settings/loyalty-settings.service';
 import { BranchAnalyticsRepository } from './branch-analytics.repository';
 import type { BranchAnalyticsComparisonDto } from './dto/branch-analytics-comparison.dto';
 import {

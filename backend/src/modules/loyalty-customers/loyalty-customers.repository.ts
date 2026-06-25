@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty-customers/entities/loyalty-customer.entity';
 
 /**
  * Repository for the walk-in loyalty identity table. Walk-ins are

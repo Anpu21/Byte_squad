@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
-import { LoyaltyRepository } from '@/modules/loyalty/loyalty.repository';
-import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
-import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
+import { LoyaltyRepository } from '@/modules/loyalty-wallets/loyalty.repository';
+import { LoyaltySettingsService } from '@/modules/loyalty-settings/loyalty-settings.service';
+import { LoyaltyService } from '@/modules/loyalty-wallets/loyalty.service';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
-import type { LoyaltyOwner } from '@/modules/loyalty/types';
+import type { LoyaltyOwner } from '@/modules/loyalty-wallets/types';
 
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 

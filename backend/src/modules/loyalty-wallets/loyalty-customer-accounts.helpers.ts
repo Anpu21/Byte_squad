@@ -1,10 +1,10 @@
 import type { SelectQueryBuilder } from 'typeorm';
-import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltyAccount } from '@/modules/loyalty-wallets/entities/loyalty-account.entity';
 import type {
   LoyaltyCustomerAccountsQueryOptions,
   LoyaltyCustomerRawRow,
   LoyaltyCustomerRow,
-} from '@/modules/loyalty/types';
+} from '@/modules/loyalty-customers/types';
 
 /**
  * Pushes the "any activity in branch / since date" EXISTS clause onto

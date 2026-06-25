@@ -5,11 +5,11 @@ import { UserRole } from '@common/enums/user-roles.enums';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { APP_ROUTES } from '@common/routes/app.routes';
-import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
-import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
-import { LookupLoyaltyByPhoneQueryDto } from '@/modules/loyalty/dto/lookup-loyalty-by-phone-query.dto';
-import { EnrollWalkInCustomerDto } from '@/modules/loyalty/dto/enroll-walk-in-customer.dto';
-import type { LoyaltyLookupResult } from '@/modules/loyalty/types';
+import { LoyaltyService } from '@/modules/loyalty-wallets/loyalty.service';
+import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty-wallets/dto/list-loyalty-history-query.dto';
+import { LookupLoyaltyByPhoneQueryDto } from '@/modules/loyalty-customers/dto/lookup-loyalty-by-phone-query.dto';
+import { EnrollWalkInCustomerDto } from '@/modules/loyalty-customers/dto/enroll-walk-in-customer.dto';
+import type { LoyaltyLookupResult } from '@/modules/loyalty-wallets/types';
 
 @Controller(APP_ROUTES.LOYALTY.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)

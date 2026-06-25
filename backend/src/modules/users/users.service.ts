@@ -18,7 +18,7 @@ import { UpdateUserDto } from '@users/dto/update-user.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { EmailService } from '../email/email.service';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
-import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
+import { LoyaltyService } from '@/modules/loyalty-wallets/loyalty.service';
 import { normalizeSriLankaPhone } from '@common/utils/phone.util';
 import randomPasswordGenerator from '@/common/utils/random-password-generator';
 

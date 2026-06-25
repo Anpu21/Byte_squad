@@ -24,9 +24,9 @@ import { StockMovementRepository } from '@pos/stock-movement.repository';
 import { InvoiceNumberService } from '@pos/services/invoice-number.service';
 import { MultiTenderCalculatorService } from '@pos/services/multi-tender-calculator.service';
 import { AccountingService } from '@accounting/accounting.service';
-import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
-import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
-import type { LoyaltyOwner } from '@/modules/loyalty/types';
+import { LoyaltyService } from '@/modules/loyalty-wallets/loyalty.service';
+import { LoyaltyWalletService } from '@/modules/loyalty-wallets/loyalty-wallet.service';
+import type { LoyaltyOwner } from '@/modules/loyalty-wallets/types';
 
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { assertWithinCreditLimit } from '@pos/lib/credit-limit';

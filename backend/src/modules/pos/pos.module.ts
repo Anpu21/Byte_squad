@@ -36,7 +36,7 @@ import { AccountingModule } from '@accounting/accounting.module';
 import { InventoryModule } from '@inventory/inventory.module';
 import { ProductsModule } from '@products/products.module';
 import { UsersModule } from '@users/users.module';
-import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
+import { LoyaltyWalletsModule } from '@/modules/loyalty-wallets/loyalty-wallets.module';
 
 @Module({
   imports: [
@@ -55,7 +55,7 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
     forwardRef(() => InventoryModule),
     ProductsModule,
     UsersModule,
-    LoyaltyModule,
+    LoyaltyWalletsModule,
   ],
   controllers: [
     PosController,

@@ -11,7 +11,7 @@ import { UsersRepository } from './users.repository';
 import { BranchesService } from '@branches/branches.service';
 import { EmailService } from '../email/email.service';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
-import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
+import { LoyaltyService } from '@/modules/loyalty-wallets/loyalty.service';
 import { User } from './entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { UserRole } from '@common/enums/user-roles.enums';

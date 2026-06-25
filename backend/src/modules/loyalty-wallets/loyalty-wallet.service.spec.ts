@@ -4,11 +4,11 @@ import { BadRequestException } from '@nestjs/common';
 import { LoyaltyWalletService } from './loyalty-wallet.service';
 import { LoyaltyService } from './loyalty.service';
 import { LoyaltyRepository } from './loyalty.repository';
-import { LoyaltySettingsService } from './loyalty-settings.service';
+import { LoyaltySettingsService } from '@/modules/loyalty-settings/loyalty-settings.service';
 import { LoyaltyAccount } from './entities/loyalty-account.entity';
 import { LoyaltyLedgerEntry } from './entities/loyalty-ledger-entry.entity';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
-import { LoyaltySettings } from './entities/loyalty-settings.entity';
+import { LoyaltySettings } from '@/modules/loyalty-settings/entities/loyalty-settings.entity';
 
 const USER_ID = 'user-1';
 const WALK_IN_ID = 'walkin-1';

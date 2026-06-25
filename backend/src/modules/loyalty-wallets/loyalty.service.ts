@@ -6,24 +6,24 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
-import { LoyaltyRepository } from '@/modules/loyalty/loyalty.repository';
-import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
-import { LoyaltySettings } from '@/modules/loyalty/entities/loyalty-settings.entity';
-import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
-import { LoyaltyCustomersRepository } from '@/modules/loyalty/loyalty-customers.repository';
+import { LoyaltyRepository } from '@/modules/loyalty-wallets/loyalty.repository';
+import { LoyaltyAccount } from '@/modules/loyalty-wallets/entities/loyalty-account.entity';
+import { LoyaltySettings } from '@/modules/loyalty-settings/entities/loyalty-settings.entity';
+import { LoyaltySettingsService } from '@/modules/loyalty-settings/loyalty-settings.service';
+import { LoyaltyCustomersRepository } from '@/modules/loyalty-customers/loyalty-customers.repository';
 import { UsersService } from '@users/users.service';
 import { normalizeSriLankaPhone } from '@common/utils/phone.util';
+import type { LoyaltyCustomerRow } from '@/modules/loyalty-customers/types';
 import type {
-  LoyaltyCustomerRow,
   LoyaltyHistoryEntry,
   LoyaltyHistoryResponse,
   LoyaltyLookupResult,
   LoyaltyOwner,
-} from '@/modules/loyalty/types';
-import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
-import { ListLoyaltyCustomersQueryDto } from '@/modules/loyalty/dto/list-loyalty-customers-query.dto';
-import { EnrollWalkInCustomerDto } from '@/modules/loyalty/dto/enroll-walk-in-customer.dto';
-import { AdjustLoyaltyPointsDto } from '@/modules/loyalty/dto/adjust-loyalty-points.dto';
+} from '@/modules/loyalty-wallets/types';
+import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty-wallets/dto/list-loyalty-history-query.dto';
+import { ListLoyaltyCustomersQueryDto } from '@/modules/loyalty-customers/dto/list-loyalty-customers-query.dto';
+import { EnrollWalkInCustomerDto } from '@/modules/loyalty-customers/dto/enroll-walk-in-customer.dto';
+import { AdjustLoyaltyPointsDto } from '@/modules/loyalty-wallets/dto/adjust-loyalty-points.dto';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 
 export interface LoyaltySummary {
