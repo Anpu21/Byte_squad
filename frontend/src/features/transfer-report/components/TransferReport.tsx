@@ -3,6 +3,7 @@ import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
 import BarChart from '@/components/charts/BarChart'
 import ExportMenu from '@/components/common/ExportMenu'
+import { DataTable, type DataTableColumn } from '@/components/ui'
 import { Select } from '@/components/ui/Select'
 import Input from '@/components/ui/Input'
 import { adminService } from '@/services/admin.service'
@@ -11,6 +12,32 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTransferAnalyticsQuery } from '../hooks/useTransferAnalyticsQuery'
 import { exportTransferHistory } from '../lib/export-transfers'
 import type { ExportFormat } from '@/lib/exportUtils'
+import type { ITransferAnalyticsResponse } from '@/types'
+
+type TopProduct = ITransferAnalyticsResponse['topProducts'][number]
+
+const TOP_PRODUCT_COLUMNS: DataTableColumn<TopProduct>[] = [
+  {
+    key: 'productName',
+    header: 'Top products',
+    className: 'font-medium text-text-1',
+    render: (p) => p.productName,
+  },
+  {
+    key: 'transfers',
+    header: 'Transfers',
+    align: 'right',
+    numeric: true,
+    render: (p) => p.transfers,
+  },
+  {
+    key: 'units',
+    header: 'Units',
+    align: 'right',
+    numeric: true,
+    render: (p) => p.units,
+  },
+]
 
 function daysAgoIso(days: number): string {
   const d = new Date()
@@ -202,32 +229,12 @@ export function TransferReport({ isAdmin }: TransferReportProps) {
       )}
 
       {top.length > 0 && (
-        <div className="border border-border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-text-3 text-xs uppercase tracking-wide">
-              <tr>
-                <th className="text-left font-semibold px-4 py-2.5">
-                  Top products
-                </th>
-                <th className="text-right font-semibold px-4 py-2.5">
-                  Transfers
-                </th>
-                <th className="text-right font-semibold px-4 py-2.5">Units</th>
-              </tr>
-            </thead>
-            <tbody>
-              {top.map((p) => (
-                <tr key={p.productId} className="border-t border-border">
-                  <td className="px-4 py-2.5 font-medium text-text-1">
-                    {p.productName}
-                  </td>
-                  <td className="px-4 py-2.5 text-right mono">{p.transfers}</td>
-                  <td className="px-4 py-2.5 text-right mono">{p.units}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={TOP_PRODUCT_COLUMNS}
+          rows={top}
+          getRowKey={(p) => p.productId}
+          zebra
+        />
       )}
     </div>
   )

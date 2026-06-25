@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Button from '@/components/ui/Button';
+import {
+    Button,
+    DataTable,
+    EmptyState,
+    Pill,
+    type DataTableColumn,
+    type PillTone,
+} from '@/components/ui';
 import Card from '@/components/ui/Card';
-import EmptyState from '@/components/ui/EmptyState';
 import PageHeader from '@/components/ui/PageHeader';
-import Pill, { type PillTone } from '@/components/ui/Pill';
 import { auditService } from '@/services/audit.service';
 import { queryKeys } from '@/lib/queryKeys';
+import type { IAuditLog } from '@/types';
 
 const INPUT_CLASS =
     'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
@@ -61,6 +67,82 @@ export function AuditLogPage() {
     const rows = logsQuery.data?.rows ?? [];
     const total = logsQuery.data?.total ?? 0;
     const pageCount = Math.max(Math.ceil(total / PAGE_SIZE), 1);
+
+    const columns: DataTableColumn<IAuditLog>[] = [
+        {
+            key: 'when',
+            header: 'When',
+            className: 'text-[12px] text-text-2 whitespace-nowrap',
+            render: (log) => new Date(log.createdAt).toLocaleString(),
+        },
+        {
+            key: 'actor',
+            header: 'Actor',
+            className: 'text-[12px] text-text-2',
+            render: (log) =>
+                `${log.userRole ?? '—'}${
+                    log.userId ? ` · ${log.userId.slice(0, 8)}…` : ''
+                }`,
+        },
+        {
+            key: 'method',
+            header: 'Method',
+            render: (log) => (
+                <Pill tone={methodTone(log.method)} dot={false}>
+                    {log.method}
+                </Pill>
+            ),
+        },
+        {
+            key: 'path',
+            header: 'Path',
+            className: 'text-[12px] text-text-1 mono max-w-[320px] truncate',
+            render: (log) => log.path,
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            render: (log) => (
+                <Pill tone={statusTone(log.statusCode)} dot={false}>
+                    {log.statusCode}
+                </Pill>
+            ),
+        },
+        {
+            key: 'took',
+            header: 'Took',
+            align: 'right',
+            className: 'text-[12px] text-text-3 tabular-nums',
+            render: (log) => `${log.durationMs} ms`,
+        },
+    ];
+
+    const pager =
+        total > PAGE_SIZE ? (
+            <div className="flex items-center justify-between p-3 border-t border-border">
+                <span className="text-xs text-text-3">
+                    Page {page + 1} of {pageCount}
+                </span>
+                <div className="flex gap-1.5">
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={page === 0}
+                        onClick={() => setPage((p) => p - 1)}
+                    >
+                        Previous
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={page + 1 >= pageCount}
+                        onClick={() => setPage((p) => p + 1)}
+                    >
+                        Next
+                    </Button>
+                </div>
+            </div>
+        ) : undefined;
 
     return (
         <div>
@@ -122,109 +204,20 @@ export function AuditLogPage() {
                     </span>
                 </div>
 
-                {!logsQuery.isLoading && rows.length === 0 ? (
-                    <EmptyState
-                        title="No activity recorded"
-                        description="Mutating API calls will appear here as they happen."
-                    />
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-surface-2/60 border-b border-border">
-                                <tr className="text-[11px] uppercase tracking-wide text-text-3">
-                                    <th className="px-3 py-2.5 font-medium">
-                                        When
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium">
-                                        Actor
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium">
-                                        Method
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium">
-                                        Path
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium">
-                                        Status
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium text-right">
-                                        Took
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((log) => (
-                                    <tr
-                                        key={log.id}
-                                        className="border-b border-border hover:bg-surface-2/40 transition-colors"
-                                    >
-                                        <td className="px-3 py-2 text-[12px] text-text-2 whitespace-nowrap">
-                                            {new Date(
-                                                log.createdAt,
-                                            ).toLocaleString()}
-                                        </td>
-                                        <td className="px-3 py-2 text-[12px] text-text-2">
-                                            {log.userRole ?? '—'}
-                                            {log.userId
-                                                ? ` · ${log.userId.slice(0, 8)}…`
-                                                : ''}
-                                        </td>
-                                        <td className="px-3 py-2">
-                                            <Pill
-                                                tone={methodTone(log.method)}
-                                                dot={false}
-                                            >
-                                                {log.method}
-                                            </Pill>
-                                        </td>
-                                        <td className="px-3 py-2 text-[12px] text-text-1 mono max-w-[320px] truncate">
-                                            {log.path}
-                                        </td>
-                                        <td className="px-3 py-2">
-                                            <Pill
-                                                tone={statusTone(
-                                                    log.statusCode,
-                                                )}
-                                                dot={false}
-                                            >
-                                                {log.statusCode}
-                                            </Pill>
-                                        </td>
-                                        <td className="px-3 py-2 text-right text-[12px] text-text-3 tabular-nums">
-                                            {log.durationMs} ms
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-
-                {total > PAGE_SIZE && (
-                    <div className="flex items-center justify-between p-3 border-t border-border">
-                        <span className="text-xs text-text-3">
-                            Page {page + 1} of {pageCount}
-                        </span>
-                        <div className="flex gap-1.5">
-                            <Button
-                                size="sm"
-                                variant="secondary"
-                                disabled={page === 0}
-                                onClick={() => setPage((p) => p - 1)}
-                            >
-                                Previous
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="secondary"
-                                disabled={page + 1 >= pageCount}
-                                onClick={() => setPage((p) => p + 1)}
-                            >
-                                Next
-                            </Button>
-                        </div>
-                    </div>
-                )}
+                <DataTable
+                    columns={columns}
+                    rows={rows}
+                    getRowKey={(log) => log.id}
+                    isLoading={logsQuery.isLoading}
+                    zebra
+                    footer={pager}
+                    empty={
+                        <EmptyState
+                            title="No activity recorded"
+                            description="Mutating API calls will appear here as they happen."
+                        />
+                    }
+                />
             </Card>
         </div>
     );
