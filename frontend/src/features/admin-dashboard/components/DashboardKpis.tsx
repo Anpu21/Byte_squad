@@ -31,6 +31,7 @@ export function DashboardKpis({
                 delta={`${todayCount} transactions`}
                 sparkData={safeSparkline}
                 sparkColor="var(--accent)"
+                accent="accent"
                 icon={<TrendingUp size={14} />}
             />
             <KpiCard
@@ -39,6 +40,7 @@ export function DashboardKpis({
                 delta={`${monthTransactionCount} this month`}
                 sparkColor="var(--primary)"
                 sparkData={safeSparkline}
+                accent="info"
                 icon={<Receipt size={14} />}
             />
             <KpiCard
@@ -47,6 +49,7 @@ export function DashboardKpis({
                 delta={`${activeProducts} active products`}
                 sparkColor="var(--brand-400)"
                 sparkData={[3, 5, 4, 6, 5, 7]}
+                accent="accent"
                 icon={<ShoppingCart size={14} />}
             />
             <KpiCard
@@ -60,6 +63,7 @@ export function DashboardKpis({
                 deltaPositive={lowStockCount === 0}
                 sparkColor="var(--warning)"
                 sparkData={[2, 3, 3, 4, 4, 5]}
+                accent="warning"
                 icon={<AlertTriangle size={14} />}
             />
         </div>

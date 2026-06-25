@@ -21,21 +21,25 @@ export function WorkerKpis({ metrics }: WorkerKpisProps) {
             <KpiCard
                 label="Hours today"
                 value={hoursToday}
+                accent="warning"
                 icon={<Hourglass size={15} />}
             />
             <KpiCard
                 label="This week"
                 value={`${metrics.hoursThisWeek} h`}
+                accent="info"
                 icon={<Clock size={15} />}
             />
             <KpiCard
                 label="Present (mo)"
                 value={metrics.presentDaysThisMonth}
+                accent="accent"
                 icon={<CalendarCheck size={15} />}
             />
             <KpiCard
                 label="Late (mo)"
                 value={metrics.lateDaysThisMonth}
+                accent="danger"
                 icon={<TimerOff size={15} />}
             />
         </div>

@@ -1,5 +1,10 @@
 import { Link } from 'react-router-dom';
-import { LuArrowRight as ArrowRight, LuTruck as Truck } from 'react-icons/lu';
+import {
+    LuArrowRight as ArrowRight,
+    LuTruck as Truck,
+    LuCircleCheck as CircleCheck,
+    LuPercent as Percent,
+} from 'react-icons/lu';
 import KpiCard from '@/components/ui/KpiCard';
 import ShipmentStatusPill from '@/components/transfers/ShipmentStatusPill';
 import { ShipmentStatus } from '@/constants/enums';
@@ -47,12 +52,20 @@ export function WorkerDeliveriesCard({ shipments }: { shipments: IShipment[] }) 
                 <KpiCard
                     label="Active"
                     value={active.length}
+                    accent="warning"
                     icon={<Truck size={15} />}
                 />
-                <KpiCard label="Delivered" value={delivered.length} />
+                <KpiCard
+                    label="Delivered"
+                    value={delivered.length}
+                    accent="accent"
+                    icon={<CircleCheck size={16} />}
+                />
                 <KpiCard
                     label="On-time"
                     value={onTimePct != null ? `${onTimePct}%` : '—'}
+                    accent="info"
+                    icon={<Percent size={16} />}
                 />
             </div>
 

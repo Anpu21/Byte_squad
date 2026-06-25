@@ -1,6 +1,12 @@
 import KpiCard from '@/components/ui/KpiCard';
 import { ShipmentStatus } from '@/constants/enums';
 import type { IShipment } from '@/types';
+import {
+    LuClock as Clock,
+    LuTruck as Truck,
+    LuCircleCheck as CircleCheck,
+    LuPercent as Percent,
+} from 'react-icons/lu';
 
 /** At-a-glance delivery health computed from the loaded shipment list. */
 export function ShipmentsSummary({ shipments }: { shipments: IShipment[] }) {
@@ -27,12 +33,29 @@ export function ShipmentsSummary({ shipments }: { shipments: IShipment[] }) {
 
     return (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            <KpiCard label="Awaiting dispatch" value={awaiting} />
-            <KpiCard label="In transit" value={inTransit} />
-            <KpiCard label="Delivered" value={delivered.length} />
+            <KpiCard
+                label="Awaiting dispatch"
+                value={awaiting}
+                accent="warning"
+                icon={<Clock size={16} />}
+            />
+            <KpiCard
+                label="In transit"
+                value={inTransit}
+                accent="info"
+                icon={<Truck size={16} />}
+            />
+            <KpiCard
+                label="Delivered"
+                value={delivered.length}
+                accent="accent"
+                icon={<CircleCheck size={16} />}
+            />
             <KpiCard
                 label="On-time"
                 value={onTimePct != null ? `${onTimePct}%` : '—'}
+                accent="primary"
+                icon={<Percent size={16} />}
             />
         </div>
     );

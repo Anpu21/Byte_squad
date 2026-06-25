@@ -20,7 +20,8 @@ export function CustomerOrdersKpis({ kpis }: CustomerOrdersKpisProps) {
                 deltaPositive={kpis.pending === 0}
                 sparkData={[2, 3, 2, 4, 3, 5, 4]}
                 sparkColor="var(--warning)"
-                icon={<Clock size={14} />}
+                accent="warning"
+                icon={<Clock size={16} />}
             />
             <KpiCard
                 label="Collected today"
@@ -28,14 +29,16 @@ export function CustomerOrdersKpis({ kpis }: CustomerOrdersKpisProps) {
                 delta="Picked up today"
                 sparkData={[1, 2, 3, 4, 5, 6, 7]}
                 sparkColor="var(--accent)"
-                icon={<CheckCircle2 size={14} />}
+                accent="accent"
+                icon={<CheckCircle2 size={16} />}
             />
             <KpiCard
                 label="This month"
                 value={kpis.monthTotal}
                 delta="Total orders"
                 sparkData={[3, 5, 4, 6, 7, 8, 9]}
-                icon={<CalendarDays size={14} />}
+                accent="info"
+                icon={<CalendarDays size={16} />}
             />
         </div>
     );
