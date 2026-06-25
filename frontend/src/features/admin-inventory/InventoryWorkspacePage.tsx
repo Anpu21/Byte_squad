@@ -1,5 +1,5 @@
-import { LuBarcode as Barcode, LuBoxes as Boxes, LuCalendarClock as CalendarClock, LuClipboardList as ClipboardList, LuTags as Tags, LuTruck as Truck, LuUndo2 as Undo2 } from 'react-icons/lu';
-import { WorkspacePage, type TabItem } from '@/components/ui';
+import { WorkspacePage } from '@/components/ui';
+import { useNavTabs } from '@/config/navigation';
 import {
     useInventoryTab,
     type InventoryTab,
@@ -15,16 +15,6 @@ import { TransferRequestsPage } from '@/features/transfer-requests';
 import { CategoriesPanel } from '@/features/categories/components/CategoriesPanel';
 import { LabelPrintPanel } from '@/features/labels/components/LabelPrintPanel';
 
-const TABS: TabItem<InventoryTab>[] = [
-    { key: 'list', label: 'Inventory', Icon: Boxes },
-    { key: 'expiry', label: 'Expiry', Icon: CalendarClock },
-    { key: 'adjustments', label: 'Adjustments', Icon: ClipboardList },
-    { key: 'returns', label: 'Returns', Icon: Undo2 },
-    { key: 'transfers', label: 'Transfers', Icon: Truck },
-    { key: 'categories', label: 'Categories', Icon: Tags },
-    { key: 'labels', label: 'Labels', Icon: Barcode },
-];
-
 /**
  * Unified Inventory workspace (mirrors the HR admin page): one route with a tab
  * strip switching between the inventory views. Each tab body is the existing
@@ -36,13 +26,14 @@ export function InventoryWorkspacePage() {
     const { tab, setTab } = useInventoryTab();
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
+    const tabs = useNavTabs<InventoryTab>('inventory');
 
     return (
         <WorkspacePage
             eyebrow="Operations"
             title="Inventory"
             subtitle="Stock on hand, expiry, adjustments, returns, transfers, categories, and labels."
-            tabs={TABS}
+            tabs={tabs}
             active={tab}
             onTabChange={setTab}
             tabsAriaLabel="Inventory workspace views"

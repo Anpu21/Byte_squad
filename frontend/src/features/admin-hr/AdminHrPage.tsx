@@ -1,31 +1,26 @@
-import { LuBadgeCheck as BadgeCheck, LuCalendarCheck as CalendarCheck, LuCalendarRange as CalendarRange, LuWallet as Wallet } from 'react-icons/lu';
-import { WorkspacePage, type TabItem } from '@/components/ui';
+import { WorkspacePage } from '@/components/ui';
+import { useNavTabs } from '@/config/navigation';
 import { useAdminHrTab, type AdminHrTab } from './hooks/useAdminHrTab';
 import { EmployeesView } from '@/features/admin-employees';
 import { AttendanceView } from '@/features/admin-attendance';
 import { LeavesView } from '@/features/admin-leaves';
 import { PayrollView } from '@/features/admin-payroll';
 
-const TABS: TabItem<AdminHrTab>[] = [
-    { key: 'employees', label: 'Employees', Icon: BadgeCheck },
-    { key: 'attendance', label: 'Attendance', Icon: CalendarCheck },
-    { key: 'leaves', label: 'Leaves', Icon: CalendarRange },
-    { key: 'payroll', label: 'Payroll', Icon: Wallet },
-];
-
 /**
  * The unified HR workspace (Admin + Manager). A tab hub that composes the four
- * people features; each tab body owns its own data and header.
+ * people features; each tab body owns its own data and header. Tabs come from
+ * the central navigation config.
  */
 export function AdminHrPage() {
     const { tab, setTab } = useAdminHrTab();
+    const tabs = useNavTabs<AdminHrTab>('hr');
 
     return (
         <WorkspacePage
             eyebrow="People"
             title="Human resources"
             subtitle="Employees, attendance, leave, and payroll — your team in one place."
-            tabs={TABS}
+            tabs={tabs}
             active={tab}
             onTabChange={setTab}
             tabsAriaLabel="HR workspace views"

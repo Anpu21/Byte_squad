@@ -1,11 +1,7 @@
-import {
-    LuBuilding2 as Building2,
-    LuGitCompareArrows as GitCompareArrows,
-    LuStore as Store,
-} from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import { WorkspacePage, type TabItem } from '@/components/ui';
+import { WorkspacePage } from '@/components/ui';
+import { useNavTabs } from '@/config/navigation';
 import {
     useBranchHubTab,
     type BranchHubTab,
@@ -19,17 +15,11 @@ export function BranchHubPage() {
     const { tab, setTab } = useBranchHubTab();
     const isAdmin = user?.role === UserRole.ADMIN;
 
-    // No hub-level title: the sub-pages own rich headers (Branch directory's
-    // create action, Compare's export menu + metric switch), so the sticky tab
-    // band renders without a duplicate title above them.
-    const tabs: TabItem<BranchHubTab>[] = [
-        {
-            key: 'overview',
-            label: isAdmin ? 'Directory' : 'My Branch',
-            Icon: isAdmin ? Building2 : Store,
-        },
-        { key: 'compare', label: 'Compare', Icon: GitCompareArrows },
-    ];
+    // Tabs (including the role-varying "Directory" / "My Branch" label + icon)
+    // come from the central navigation config. No hub-level title: the sub-pages
+    // own rich headers (Branch directory's create action, Compare's export menu
+    // + metric switch), so the sticky tab band renders without a duplicate title.
+    const tabs = useNavTabs<BranchHubTab>('branches');
 
     return (
         <WorkspacePage
