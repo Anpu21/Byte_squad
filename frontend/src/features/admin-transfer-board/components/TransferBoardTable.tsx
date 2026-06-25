@@ -1,7 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { LuArrowRight as ArrowRight } from 'react-icons/lu';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
-import Button from '@/components/ui/Button';
+import {
+    Button,
+    DataTable,
+    EmptyState,
+    type DataTableColumn,
+} from '@/components/ui';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { IStockTransferRequest } from '@/types';
 import { boardActionsForStatus } from '../lib/board-card-actions';
@@ -21,131 +26,95 @@ export function TransferBoardTable({ rows, isLoading }: TransferBoardTableProps)
     const navigate = useNavigate();
     const openAction = useBoardAction();
 
-    if (!isLoading && rows.length === 0) {
-        return (
-            <div className="bg-surface border border-border rounded-xl py-16 text-center">
-                <p className="text-sm font-medium text-text-2">
-                    Nothing here right now
-                </p>
-                <p className="text-xs text-text-3 mt-1">
-                    Transfers in this stage will appear here.
-                </p>
-            </div>
-        );
-    }
+    const columns: DataTableColumn<IStockTransferRequest>[] = [
+        {
+            key: 'product',
+            header: 'Product',
+            className: 'text-text-1 font-medium',
+            render: (t) => t.product?.name ?? '—',
+        },
+        {
+            key: 'route',
+            header: 'Route',
+            render: (t) => (
+                <span className="inline-flex items-center gap-1.5 text-xs text-text-2">
+                    {t.sourceBranch?.name ?? (
+                        <span className="text-text-3 italic">No source</span>
+                    )}
+                    <ArrowRight size={13} className="text-text-3 flex-shrink-0" />
+                    <span className="text-text-1 font-medium">
+                        {t.destinationBranch?.name ?? '—'}
+                    </span>
+                </span>
+            ),
+        },
+        {
+            key: 'qty',
+            header: 'Qty',
+            align: 'right',
+            numeric: true,
+            className: 'text-text-1 font-medium',
+            render: (t) => t.approvedQuantity ?? t.requestedQuantity,
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            render: (t) => <TransferStatusPill status={t.status} />,
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            align: 'right',
+            render: (t) => {
+                const actions = boardActionsForStatus(t.status);
+                return (
+                    <div
+                        className="flex items-center justify-end gap-1.5"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {actions.length > 0 && openAction ? (
+                            actions.map((a) => (
+                                <Button
+                                    key={a.action}
+                                    size="sm"
+                                    variant={a.variant}
+                                    onClick={() => openAction(t, a.action)}
+                                >
+                                    {a.label}
+                                </Button>
+                            ))
+                        ) : (
+                            <span className="text-xs text-text-3">—</span>
+                        )}
+                    </div>
+                );
+            },
+        },
+    ];
 
     return (
         <div className="bg-surface border border-border rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="border-b border-border text-[11px] uppercase tracking-wider text-text-3 bg-surface-2">
-                            <th className="px-5 py-3 font-semibold">Product</th>
-                            <th className="px-5 py-3 font-semibold">Route</th>
-                            <th className="px-5 py-3 font-semibold text-right">
-                                Qty
-                            </th>
-                            <th className="px-5 py-3 font-semibold">Status</th>
-                            <th className="px-5 py-3 font-semibold text-right">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-sm">
-                        {isLoading ? (
-                            [...Array(5)].map((_, i) => (
-                                <tr key={i} className="border-b border-border">
-                                    {[...Array(5)].map((__, j) => (
-                                        <td key={j} className="px-5 py-3.5">
-                                            <div className="h-5 w-24 bg-surface-2 rounded animate-pulse" />
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))
-                        ) : (
-                            rows.map((t) => {
-                                const qty =
-                                    t.approvedQuantity ?? t.requestedQuantity;
-                                const actions = boardActionsForStatus(t.status);
-                                return (
-                                    <tr
-                                        key={t.id}
-                                        className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors cursor-pointer"
-                                        onClick={() =>
-                                            navigate(
-                                                FRONTEND_ROUTES.TRANSFER_DETAIL.replace(
-                                                    ':id',
-                                                    t.id,
-                                                ),
-                                            )
-                                        }
-                                    >
-                                        <td className="px-5 py-3.5 text-text-1 font-medium">
-                                            {t.product?.name ?? '—'}
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <span className="inline-flex items-center gap-1.5 text-xs text-text-2">
-                                                {t.sourceBranch?.name ?? (
-                                                    <span className="text-text-3 italic">
-                                                        No source
-                                                    </span>
-                                                )}
-                                                <ArrowRight
-                                                    size={13}
-                                                    className="text-text-3 flex-shrink-0"
-                                                />
-                                                <span className="text-text-1 font-medium">
-                                                    {t.destinationBranch
-                                                        ?.name ?? '—'}
-                                                </span>
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-3.5 text-right tabular-nums text-text-1 font-medium">
-                                            {qty}
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <TransferStatusPill
-                                                status={t.status}
-                                            />
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <div
-                                                className="flex items-center justify-end gap-1.5"
-                                                onClick={(e) =>
-                                                    e.stopPropagation()
-                                                }
-                                            >
-                                                {actions.length > 0 &&
-                                                openAction ? (
-                                                    actions.map((a) => (
-                                                        <Button
-                                                            key={a.action}
-                                                            size="sm"
-                                                            variant={a.variant}
-                                                            onClick={() =>
-                                                                openAction(
-                                                                    t,
-                                                                    a.action,
-                                                                )
-                                                            }
-                                                        >
-                                                            {a.label}
-                                                        </Button>
-                                                    ))
-                                                ) : (
-                                                    <span className="text-xs text-text-3">
-                                                        —
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            <DataTable
+                columns={columns}
+                rows={rows}
+                getRowKey={(t) => t.id}
+                isLoading={isLoading}
+                zebra
+                onRowClick={(t) =>
+                    navigate(
+                        FRONTEND_ROUTES.TRANSFER_DETAIL.replace(':id', t.id),
+                    )
+                }
+                getRowLabel={(t) =>
+                    `View transfer of ${t.product?.name ?? 'product'}`
+                }
+                empty={
+                    <EmptyState
+                        title="Nothing here right now"
+                        description="Transfers in this stage will appear here."
+                    />
+                }
+            />
         </div>
     );
 }
