@@ -41,9 +41,9 @@ export function CartPage() {
                 {groups.map((group) => (
                     <div
                         key={group.branchId}
-                        className="bg-surface border border-border rounded-md overflow-hidden"
+                        className="bg-surface border border-border rounded-xl shadow-sm-token overflow-hidden"
                     >
-                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-surface-2">
+                        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-surface-2">
                             <span className="text-xs font-semibold uppercase tracking-wider text-text-2">
                                 Pickup at {group.branchName || 'branch'}
                             </span>

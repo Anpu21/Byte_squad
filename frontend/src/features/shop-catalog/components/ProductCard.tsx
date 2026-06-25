@@ -25,7 +25,7 @@ export function ProductCard({
 
     return (
         <div
-            className={`bg-surface border border-border rounded-xl overflow-hidden shadow-xs hover:border-border-strong hover:shadow-md-token hover:-translate-y-0.5 transition-all duration-200 ${
+            className={`bg-surface border border-border rounded-xl overflow-hidden shadow-sm-token hover:border-border-strong hover:shadow-md-token hover:-translate-y-0.5 transition-all duration-200 ${
                 out ? 'opacity-60' : ''
             }`}
         >
@@ -53,7 +53,7 @@ export function ProductCard({
                     {STOCK_LABEL[product.stockStatus]}
                 </span>
             </Link>
-            <div className="p-4">
+            <div className="p-5">
                 <p className="text-[11px] text-accent-text uppercase tracking-widest font-medium">
                     {product.category}
                 </p>
@@ -62,15 +62,15 @@ export function ProductCard({
                         {product.name}
                     </h3>
                 </Link>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                    <p className="text-lg font-bold text-text-1">
+                <div className="mt-4 flex items-center justify-between gap-2">
+                    <p className="text-lg font-bold text-text-1 tabular-nums">
                         {formatCurrency(product.sellingPrice)}
                     </p>
                     <button
                         type="button"
                         onClick={() => onAdd(product)}
                         disabled={out}
-                        className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
+                        className={`inline-flex items-center gap-1 h-10 px-3.5 text-xs font-semibold rounded-md transition-colors ${
                             out
                                 ? 'bg-surface-2 text-text-3 cursor-not-allowed'
                                 : 'bg-primary text-text-inv hover:bg-primary-hover'
@@ -86,7 +86,7 @@ export function ProductCard({
                     </button>
                 </div>
                 {out && product.availableBranches.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-border">
+                    <div className="mt-4 pt-4 border-t border-border">
                         <p className="text-[10px] uppercase tracking-widest text-text-3 mb-1.5 flex items-center gap-1">
                             <Store size={10} /> Available at
                         </p>

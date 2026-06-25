@@ -20,11 +20,11 @@ export function CheckoutBranchCard({ branch }: CheckoutBranchCardProps) {
                     Change branch
                 </Link>
             </div>
-            <div className="bg-surface border border-border rounded-lg px-3 py-2.5 text-sm">
+            <div className="bg-surface border border-border rounded-xl shadow-sm-token px-4 py-3 text-sm">
                 {branch ? (
                     <>
-                        <p className="text-text-1 font-medium">{branch.name}</p>
-                        <p className="text-text-2 text-xs mt-0.5">
+                        <p className="text-text-1 font-semibold">{branch.name}</p>
+                        <p className="text-text-2 text-xs mt-1">
                             {branch.address}
                         </p>
                     </>

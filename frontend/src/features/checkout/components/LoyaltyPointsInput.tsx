@@ -43,13 +43,13 @@ export function LoyaltyPointsInput({
                         if (Number.isNaN(next)) return;
                         onChange(Math.max(0, Math.min(next, maxRedeemable)));
                     }}
-                    className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-focus disabled:opacity-50"
+                    className="flex-1 h-10 bg-surface border border-border rounded-md px-3 text-sm text-text-1 tabular-nums mono focus:outline-none focus:border-focus disabled:opacity-50"
                 />
                 <button
                     type="button"
                     onClick={() => onChange(maxRedeemable)}
                     disabled={disabled || value === maxRedeemable}
-                    className="px-3 text-xs font-semibold bg-warning-soft text-warning rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="h-10 px-4 text-xs font-semibold bg-warning-soft text-warning rounded-md hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                     Use max
                 </button>

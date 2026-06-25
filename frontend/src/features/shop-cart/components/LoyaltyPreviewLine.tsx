@@ -16,7 +16,7 @@ export function LoyaltyPreviewLine({ total }: LoyaltyPreviewLineProps) {
     return (
         <p className="inline-flex items-center gap-1.5 text-xs font-medium text-warning">
             <Sparkles size={12} aria-hidden="true" />
-            <span>{label}</span>
+            <span className="tabular-nums">{label}</span>
         </p>
     );
 }

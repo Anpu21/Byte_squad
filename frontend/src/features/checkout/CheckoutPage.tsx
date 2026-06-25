@@ -30,13 +30,13 @@ export function CheckoutPage() {
                 {p.groups.map((group) => (
                     <div
                         key={group.branchId}
-                        className="bg-surface border border-border rounded-md overflow-hidden"
+                        className="bg-surface border border-border rounded-xl shadow-sm-token overflow-hidden"
                     >
-                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-surface-2">
+                        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-surface-2">
                             <span className="text-xs font-semibold uppercase tracking-wider text-text-2">
                                 Pickup at {group.branchName || 'branch'}
                             </span>
-                            <span className="text-xs font-semibold text-text-1 tabular-nums">
+                            <span className="text-xs font-semibold text-text-1 tabular-nums mono">
                                 {formatCurrency(group.subtotal)}
                             </span>
                         </div>
@@ -44,7 +44,7 @@ export function CheckoutPage() {
                             {group.items.map((it) => (
                                 <li
                                     key={`${it.productId}:${it.unitId ?? 'base'}`}
-                                    className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
+                                    className="flex items-center justify-between gap-3 px-5 py-3 text-sm"
                                 >
                                     <span className="text-text-1 min-w-0">
                                         {it.name}{' '}
@@ -52,7 +52,7 @@ export function CheckoutPage() {
                                             × {it.quantity} {it.unitLabel}
                                         </span>
                                     </span>
-                                    <span className="tabular-nums text-text-1 shrink-0">
+                                    <span className="tabular-nums mono text-text-1 shrink-0">
                                         {formatCurrency(it.sellingPrice * it.quantity)}
                                     </span>
                                 </li>
@@ -70,11 +70,11 @@ export function CheckoutPage() {
                         onChange={(e) => p.setNote(e.target.value)}
                         rows={2}
                         placeholder="Any pickup instructions"
-                        className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-focus resize-none"
+                        className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-1 focus:outline-none focus:border-focus resize-none"
                     />
                 </div>
 
-                <div className="bg-surface border border-border rounded-md p-5 space-y-4">
+                <div className="bg-surface border border-border rounded-xl shadow-sm-token p-6 space-y-5">
                     <div>
                         <p className="text-[11px] uppercase tracking-widest text-text-3 mb-3">
                             Payment
@@ -98,24 +98,24 @@ export function CheckoutPage() {
                     />
                 </div>
 
-                <div className="bg-surface border border-border rounded-md p-4 space-y-1.5 text-sm">
+                <div className="bg-surface border border-border rounded-xl shadow-sm-token p-6 space-y-2 text-sm">
                     <div className="flex justify-between text-text-2">
                         <span>Subtotal</span>
-                        <span className="tabular-nums">
+                        <span className="tabular-nums mono">
                             {formatCurrency(p.total)}
                         </span>
                     </div>
                     {p.loyaltyDiscount > 0 && (
                         <div className="flex justify-between text-success">
                             <span>Loyalty discount</span>
-                            <span className="tabular-nums">
+                            <span className="tabular-nums mono">
                                 −{formatCurrency(p.loyaltyDiscount)}
                             </span>
                         </div>
                     )}
-                    <div className="flex justify-between font-bold text-text-1 pt-1.5 border-t border-border">
+                    <div className="flex justify-between items-baseline font-bold text-text-1 pt-3 mt-1 border-t border-border">
                         <span>Total</span>
-                        <span className="tabular-nums">
+                        <span className="tabular-nums mono text-lg">
                             {formatCurrency(p.finalTotal)}
                         </span>
                     </div>

@@ -20,11 +20,11 @@ export function CheckoutOrderSummary({
     const hasDiscount = loyaltyDiscount > 0;
 
     return (
-        <div className="bg-surface border border-border rounded-md p-5">
+        <div className="bg-surface border border-border rounded-xl shadow-sm-token p-6">
             <p className="text-[11px] uppercase tracking-widest text-text-3 mb-3">
                 Order summary
             </p>
-            <div className="space-y-1.5 text-sm">
+            <div className="space-y-2 text-sm">
                 {items.map((it) => (
                     <div
                         key={it.productId}
@@ -33,16 +33,16 @@ export function CheckoutOrderSummary({
                         <span className="truncate pr-2">
                             {it.name} × {it.quantity}
                         </span>
-                        <span className="tabular-nums">
+                        <span className="tabular-nums mono">
                             {formatCurrency(it.sellingPrice * it.quantity)}
                         </span>
                     </div>
                 ))}
             </div>
-            <div className="mt-3 pt-3 border-t border-border space-y-2">
+            <div className="mt-4 pt-4 border-t border-border space-y-2">
                 <div className="flex items-center justify-between text-sm">
                     <span className="text-text-2">Subtotal</span>
-                    <span className="text-text-1 tabular-nums">
+                    <span className="text-text-1 tabular-nums mono">
                         {formatCurrency(total)}
                     </span>
                 </div>
@@ -56,16 +56,16 @@ export function CheckoutOrderSummary({
                             />
                             Loyalty discount
                         </span>
-                        <span className="text-warning tabular-nums">
+                        <span className="text-warning tabular-nums mono">
                             −{formatCurrency(loyaltyDiscount)}
                         </span>
                     </div>
                 )}
-                <div className="flex items-center justify-between pt-2 border-t border-border">
+                <div className="flex items-center justify-between pt-3 mt-1 border-t border-border">
                     <span className="text-xs uppercase tracking-widest text-text-3">
                         Total
                     </span>
-                    <span className="text-lg font-bold text-text-1 tabular-nums">
+                    <span className="text-lg font-bold text-text-1 tabular-nums mono">
                         {formatCurrency(finalTotal)}
                     </span>
                 </div>

@@ -52,7 +52,7 @@ export function ProductDetailPage() {
                     <h1 className="text-2xl font-bold text-text-1 tracking-tight mt-2">
                         {p.product.name}
                     </h1>
-                    <p className="text-3xl font-bold text-text-1 mt-4">
+                    <p className="text-3xl font-bold text-text-1 tabular-nums mt-4">
                         {formatCurrency(p.unitPrice)}
                         <span className="text-sm font-medium text-text-3">
                             {' '}
@@ -92,7 +92,7 @@ export function ProductDetailPage() {
                     )}
 
                     {p.branchSwitchNeeded && p.targetBranch && (
-                        <div className="mt-4 flex flex-col gap-2 px-3 py-2.5 rounded-md bg-warning-soft border border-warning/40 text-xs text-warning">
+                        <div className="mt-4 flex flex-col gap-2 px-4 py-3 rounded-xl bg-warning-soft border border-warning/40 text-xs text-warning">
                             <span className="flex items-start gap-2">
                                 <Store size={13} className="mt-0.5 flex-shrink-0" />
                                 Out of stock here — available at{' '}

@@ -1,4 +1,5 @@
 import { LuShoppingCart as ShoppingCart } from 'react-icons/lu';
+import Button from '@/components/ui/Button';
 import { QtyStepper } from './QtyStepper';
 
 interface ProductDetailActionsProps {
@@ -25,22 +26,26 @@ export function ProductDetailActions({
                 onIncrement={onIncrement}
                 onDecrement={onDecrement}
             />
-            <button
+            <Button
                 type="button"
+                variant="secondary"
+                size="lg"
                 onClick={onAdd}
                 disabled={disabled}
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-surface border border-border-strong hover:bg-surface-2 text-text-1 font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1"
             >
                 <ShoppingCart size={14} /> Add to cart
-            </button>
-            <button
+            </Button>
+            <Button
                 type="button"
+                variant="primary"
+                size="lg"
                 onClick={onBuyNow}
                 disabled={disabled}
-                className="flex-1 bg-primary text-text-inv font-semibold py-2.5 rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1"
             >
                 Buy now
-            </button>
+            </Button>
         </div>
     );
 }
