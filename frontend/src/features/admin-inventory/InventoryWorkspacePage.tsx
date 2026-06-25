@@ -6,7 +6,7 @@ import {
 } from '@/features/admin-inventory/hooks/useInventoryTab';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import { InventoryByRole } from '@/routes/InventoryByRole';
+import { InventoryByRole } from '@/routes/routeEntries';
 import { ExpiryReportPage } from '@/features/inventory-expiry';
 import { StockAdjustmentsPage } from '@/features/stock-adjustments';
 import { ReturnsPage } from '@/features/returns';

@@ -1,551 +1,105 @@
-import type { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { createRoutesFromElements, Navigate, Route } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { UserRole } from '@/constants/enums';
-import { LoginPage } from '@/features/login';
-import { SignupPage } from '@/features/signup';
-import { OtpVerificationPage } from '@/features/otp-verification';
+import AuthLayout from '@/layouts/AuthLayout';
+import DashboardLayout from '@/layouts/DashboardLayout';
+import {
+    ProtectedRoute,
+    PublicRoute,
+    RequireRole,
+    FirstSetupOnly,
+} from './guards';
+import { SmartRedirect } from './redirects';
 import { ChangePasswordPage } from '@/features/change-password';
-import { ForgotPasswordPage, ResetPasswordPage } from '@/features/reset-password';
 import { BranchSelectionPage } from '@/features/branch-selection';
-import { DashboardPage } from '@/features/admin-dashboard';
-import { CashierDashboardPage } from '@/features/cashier-dashboard';
-import { WorkerDashboardPage } from '@/features/worker-dashboard';
-import { ProductFormPage } from '@/features/product-form';
-import { InventoryWorkspacePage } from '@/features/admin-inventory';
-import { PurchasesWorkspacePage } from '@/features/purchases';
-import { StockAdjustmentNewPage } from '@/features/stock-adjustments';
-import { ReturnNewPage } from '@/features/returns';
-import { PosPage } from '@/features/pos';
-import { SalesPage } from '@/features/sales';
-import { AccountingPage } from '@/features/accounting';
-import { AuditLogPage } from '@/features/audit';
-import { ReportsHubPage } from '@/features/reports';
-import { UserManagementPage } from '@/features/user-management';
-import { ProfilePage } from '@/features/admin-user-profile';
-import { NotificationsPage } from '@/features/notifications';
-import { NotificationDetailPage } from '@/features/notification-detail';
-import { BranchHubPage } from '@/features/branch-hub';
-import { AdminLoyaltyPage } from '@/features/admin-loyalty';
-import { ManagerLoyaltyPage } from '@/features/admin-loyalty';
-import { AdminHrPage } from '@/features/admin-hr';
-import { EmployeeFormPage } from '@/features/employee-form';
-import { TransferRequestsPage } from '@/features/transfer-requests';
-import { NewTransferRequestPage } from '@/features/transfer-request-create';
-import { TransferDetailPage } from '@/features/transfer-detail';
-import { AdminTransfersPage } from '@/features/admin-transfer-board';
-import { AdminTransferCreatePage } from '@/features/admin-transfer-create';
+import { NotFoundPage } from '@/features/not-found';
+import { authRoutes } from './config/auth.routes';
+import { dashboardRoutes } from './config/dashboard.routes';
+import { inventoryRoutes } from './config/inventory.routes';
+import { salesRoutes } from './config/sales.routes';
+import { accountingRoutes } from './config/accounting.routes';
+import { peopleRoutes } from './config/people.routes';
+import { transfersRoutes } from './config/transfers.routes';
 import {
-    ShipmentsListPage,
-    ShipmentCreatePage,
-    ShipmentDetailPage,
-} from '@/features/shipment-tracking';
-import { CatalogPage } from '@/features/shop-catalog';
-import { ProductDetailPage } from '@/features/product-detail';
-import { CartPage } from '@/features/shop-cart';
-import { CheckoutPage } from '@/features/checkout';
-import {
-    OrderConfirmationPage,
-    OrderGroupConfirmationPage,
-} from '@/features/order-confirmation';
-import { PayhereGatewayPage } from '@/features/payhere-gateway';
-import { MyOrdersPage } from '@/features/my-orders';
-import { CustomerProfilePage } from '@/features/customer-profile';
-import { RewardsPage } from '@/features/loyalty';
-import { InventoryRedirect } from './InventoryRedirect';
-import { FirstSetupOnly } from './FirstSetupOnly';
-import { LegacyOrderConfirmationRedirect } from './LegacyOrderConfirmationRedirect';
-import { TransferHistoryRedirect } from './TransferHistoryRedirect';
-import { AdminHrRedirect } from './AdminHrRedirect';
-import { AccountingRedirect } from './AccountingRedirect';
-import { SalesRedirect } from './SalesRedirect';
-import { LeavesRouteEntry } from './LeavesRouteEntry';
+    customerProtectedRoutes,
+    customerPublicRoutes,
+} from './config/customer.routes';
 
-export type Guard = 'public' | 'protected' | 'none';
-export type Layout =
-    | 'auth'
-    | 'dashboard'
-    | 'customer'
-    | 'customer-public'
-    | 'none';
+/**
+ * The full route tree. Guards (`PublicRoute` / `ProtectedRoute` / `RequireRole`)
+ * and layouts (`AuthLayout` / `DashboardLayout` / `CustomerLayout`) are
+ * `<Outlet>` layout-routes, so the dashboard chrome mounts once and persists
+ * across navigations; per-route role-gating lives in the domain fragments under
+ * `config/`. Breadcrumbs come from each route's `handle.crumbs`.
+ */
+export const routes = createRoutesFromElements(
+    <Route>
+        {/* Root → role-aware redirect (does its own auth check) */}
+        <Route index element={<SmartRedirect />} />
 
-export interface RouteDef {
-    path: string;
-    element: ReactNode;
-    guard?: Guard;
-    allowedRoles?: UserRole[];
-    layout?: Layout;
-    innerWrap?: (children: ReactNode) => ReactNode;
-}
+        {/* Public auth screens — bounce already-signed-in users */}
+        <Route element={<PublicRoute />}>
+            <Route element={<AuthLayout />}>{authRoutes}</Route>
+        </Route>
 
-export const ROUTES: RouteDef[] = [
-    {
-        path: FRONTEND_ROUTES.LOGIN,
-        element: <LoginPage />,
-        guard: 'public',
-        layout: 'auth',
-    },
-    {
-        path: FRONTEND_ROUTES.SIGNUP,
-        element: <SignupPage />,
-        guard: 'public',
-        layout: 'auth',
-    },
-    {
-        path: FRONTEND_ROUTES.OTP_VERIFICATION,
-        element: <OtpVerificationPage />,
-        guard: 'public',
-        layout: 'auth',
-    },
-    {
-        path: FRONTEND_ROUTES.FORGOT_PASSWORD,
-        element: <ForgotPasswordPage />,
-        guard: 'public',
-        layout: 'auth',
-    },
-    {
-        path: FRONTEND_ROUTES.RESET_PASSWORD,
-        element: <ResetPasswordPage />,
-        guard: 'public',
-        layout: 'auth',
-    },
-
-    // ─── First-time setup: customer must pick a branch ───
-    {
-        path: FRONTEND_ROUTES.SELECT_BRANCH,
-        element: <BranchSelectionPage />,
-        allowedRoles: [UserRole.CUSTOMER],
-        layout: 'auth',
-        innerWrap: (c) => <FirstSetupOnly>{c}</FirstSetupOnly>,
-    },
-
-    // ─── Protected (no dashboard chrome) ───
-    {
-        path: FRONTEND_ROUTES.CHANGE_PASSWORD,
-        element: <ChangePasswordPage />,
-    },
-
-    // ─── Dashboard ───
-    {
-        path: FRONTEND_ROUTES.DASHBOARD,
-        element: <DashboardPage />,
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.CASHIER_DASHBOARD,
-        element: <CashierDashboardPage />,
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.WORKER_DASHBOARD,
-        element: <WorkerDashboardPage />,
-        allowedRoles: [UserRole.WORKER],
-        layout: 'dashboard',
-    },
-
-    // ─── Inventory ───
-    {
-        path: FRONTEND_ROUTES.INVENTORY,
-        element: <InventoryWorkspacePage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.PURCHASES,
-        element: <PurchasesWorkspacePage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.INVENTORY_EXPIRY,
-        element: <InventoryRedirect tab="expiry" />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.STOCK_ADJUSTMENT_NEW,
-        element: <StockAdjustmentNewPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.STOCK_ADJUSTMENTS,
-        element: <InventoryRedirect tab="adjustments" />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.RETURN_NEW,
-        element: <ReturnNewPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.RETURNS,
-        element: <InventoryRedirect tab="returns" />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.INVENTORY_ADD,
-        element: <ProductFormPage />,
-        allowedRoles: [UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.INVENTORY_EDIT,
-        element: <ProductFormPage />,
-        allowedRoles: [UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-
-    // ─── Categories → now an Inventory workspace tab (redirect legacy paths) ───
-    {
-        path: FRONTEND_ROUTES.ADMIN_CATEGORIES,
-        element: <InventoryRedirect tab="categories" />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.MANAGER_CATEGORIES,
-        element: <InventoryRedirect tab="categories" />,
-        allowedRoles: [UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-
-    // ─── POS & Sales hub + legacy redirects ───
-    {
-        path: FRONTEND_ROUTES.POS,
-        element: <PosPage />,
-        allowedRoles: [UserRole.CASHIER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.SALES,
-        element: <SalesPage />,
-        allowedRoles: [UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.TRANSACTIONS,
-        element: <SalesRedirect tab="transactions" />,
-        allowedRoles: [UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-
-    // ─── Accounting — unified hub + legacy redirects ───
-    {
-        path: FRONTEND_ROUTES.ACCOUNTING,
-        element: <AccountingPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.LEDGER,
-        element: <AccountingRedirect tab="ledger" />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.RECEIVABLES,
-        element: <AccountingRedirect tab="receivables" />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.FINANCIAL_REPORTS,
-        element: <AccountingRedirect tab="reports" />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.ADMIN_AUDIT,
-        element: <AuditLogPage />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.ADMIN_SCHEMES,
-        element: <SalesRedirect tab="schemes" />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.REPORTS,
-        element: <ReportsHubPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.EXPENSES,
-        element: <AccountingRedirect tab="expenses" />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.PROFIT_LOSS,
-        element: <AccountingRedirect tab="profit-loss" />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
-    },
-
-    // ─── Users / profile / notifications ───
-    {
-        path: FRONTEND_ROUTES.USER_MANAGEMENT,
-        element: <UserManagementPage />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.NOTIFICATIONS,
-        element: <NotificationsPage />,
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.NOTIFICATION_DETAIL,
-        element: <NotificationDetailPage />,
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.PROFILE,
-        element: <ProfilePage />,
-        layout: 'dashboard',
-    },
-
-    // ─── Branches ───
-    // ─── Branches Hub (Admin + Manager) ───
-    {
-        path: FRONTEND_ROUTES.BRANCHES,
-        element: <BranchHubPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.BRANCHES_HUB,
-        element: <Navigate to={FRONTEND_ROUTES.BRANCHES} replace />,
-    },
-    {
-        path: FRONTEND_ROUTES.BRANCH_COMPARE,
-        element: (
-            <Navigate
-                to={`${FRONTEND_ROUTES.BRANCHES}?tab=compare&view=summary`}
-                replace
+        {/* Authenticated app */}
+        <Route element={<ProtectedRoute />}>
+            {/* Protected, no chrome */}
+            <Route
+                path={FRONTEND_ROUTES.CHANGE_PASSWORD}
+                element={<ChangePasswordPage />}
+                handle={{ crumbs: ['Change password'] }}
             />
-        ),
-    },
-    {
-        path: FRONTEND_ROUTES.BRANCH_MANAGEMENT,
-        element: <Navigate to={FRONTEND_ROUTES.BRANCHES} replace />,
-    },
-    {
-        path: FRONTEND_ROUTES.ADMIN_LOYALTY,
-        element: <AdminLoyaltyPage />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.MANAGER_LOYALTY,
-        element: <ManagerLoyaltyPage />,
-        allowedRoles: [UserRole.MANAGER],
-        layout: 'dashboard',
-    },
 
-    // ─── HR (Admin + Manager) — unified workspace ───
-    {
-        path: FRONTEND_ROUTES.ADMIN_HR,
-        element: <AdminHrPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.ADMIN_EMPLOYEES,
-        element: <AdminHrRedirect tab="employees" />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.ADMIN_EMPLOYEE_NEW,
-        element: <EmployeeFormPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.ADMIN_EMPLOYEE_EDIT,
-        element: <EmployeeFormPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.ADMIN_ATTENDANCE,
-        element: <AdminHrRedirect tab="attendance" />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.ADMIN_LEAVES,
-        element: <LeavesRouteEntry />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.ADMIN_PAYROLL,
-        element: <AdminHrRedirect tab="payroll" />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
+            {/* First-run: customer must pick a branch (auth layout) */}
+            <Route element={<AuthLayout />}>
+                <Route element={<RequireRole roles={[UserRole.CUSTOMER]} />}>
+                    <Route element={<FirstSetupOnly />}>
+                        <Route
+                            path={FRONTEND_ROUTES.SELECT_BRANCH}
+                            element={<BranchSelectionPage />}
+                        />
+                    </Route>
+                </Route>
+            </Route>
 
-    // ─── Stock Transfers ───
-    {
-        path: FRONTEND_ROUTES.TRANSFERS,
-        element: <TransferRequestsPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.TRANSFERS_NEW,
-        element: <NewTransferRequestPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.TRANSFER_HISTORY,
-        element: <TransferHistoryRedirect />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.TRANSFER_DETAIL,
-        element: <TransferDetailPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.ADMIN_TRANSFER_NEW,
-        element: <AdminTransferCreatePage />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.ADMIN_TRANSFERS,
-        element: <AdminTransfersPage />,
-        allowedRoles: [UserRole.ADMIN],
-        layout: 'dashboard',
-    },
+            {/* Legacy branch paths → unified hub (no chrome; redirect only) */}
+            <Route
+                path={FRONTEND_ROUTES.BRANCHES_HUB}
+                element={<Navigate to={FRONTEND_ROUTES.BRANCHES} replace />}
+            />
+            <Route
+                path={FRONTEND_ROUTES.BRANCH_COMPARE}
+                element={
+                    <Navigate
+                        to={`${FRONTEND_ROUTES.BRANCHES}?tab=compare&view=summary`}
+                        replace
+                    />
+                }
+            />
+            <Route
+                path={FRONTEND_ROUTES.BRANCH_MANAGEMENT}
+                element={<Navigate to={FRONTEND_ROUTES.BRANCHES} replace />}
+            />
 
-    // ─── Shipments (courier delivery tracking) ───
-    {
-        path: FRONTEND_ROUTES.SHIPMENTS,
-        element: <ShipmentsListPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.WORKER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.SHIPMENT_NEW,
-        element: <ShipmentCreatePage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.SHIPMENT_DETAIL,
-        element: <ShipmentDetailPage />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.WORKER],
-        layout: 'dashboard',
-    },
+            {/* Dashboard workspace — shared chrome, persists across navigation */}
+            <Route element={<DashboardLayout />}>
+                {dashboardRoutes}
+                {inventoryRoutes}
+                {salesRoutes}
+                {accountingRoutes}
+                {peopleRoutes}
+                {transfersRoutes}
+            </Route>
 
-    // ─── Cashier — scan pickup now lives inside the POS (mode switch) ───
-    {
-        path: FRONTEND_ROUTES.SCAN_ORDER,
-        element: <Navigate to={FRONTEND_ROUTES.POS} replace />,
-        allowedRoles: [UserRole.CASHIER],
-        layout: 'dashboard',
-    },
-    {
-        path: FRONTEND_ROUTES.SCAN_ORDER_LEGACY,
-        element: <Navigate to={FRONTEND_ROUTES.POS} replace />,
-        allowedRoles: [UserRole.CASHIER],
-        layout: 'dashboard',
-    },
+            {/* Customer storefront (login required) */}
+            {customerProtectedRoutes}
+        </Route>
 
-    // ─── Customer orders — staff (admin / manager / cashier) ───
-    {
-        path: FRONTEND_ROUTES.CUSTOMER_ORDERS,
-        element: <SalesRedirect tab="orders" />,
-        allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
-        layout: 'dashboard',
-    },
+        {/* Public order confirmation — no guard (the code is the credential) */}
+        {customerPublicRoutes}
 
-    // ─── Customer storefront ───
-    {
-        path: FRONTEND_ROUTES.SHOP,
-        element: <CatalogPage />,
-        allowedRoles: [UserRole.CUSTOMER],
-        layout: 'customer',
-    },
-    {
-        path: FRONTEND_ROUTES.SHOP_PRODUCT_DETAIL,
-        element: <ProductDetailPage />,
-        allowedRoles: [UserRole.CUSTOMER],
-        layout: 'customer',
-    },
-    {
-        path: FRONTEND_ROUTES.SHOP_CART,
-        element: <CartPage />,
-        allowedRoles: [UserRole.CUSTOMER],
-        layout: 'customer',
-    },
-    {
-        path: FRONTEND_ROUTES.SHOP_CHECKOUT,
-        element: <CheckoutPage />,
-        allowedRoles: [UserRole.CUSTOMER],
-        layout: 'customer',
-    },
-    {
-        path: FRONTEND_ROUTES.SHOP_CHECKOUT_PAY,
-        element: <PayhereGatewayPage />,
-        allowedRoles: [UserRole.CUSTOMER],
-        layout: 'customer-public',
-    },
-    // Public confirmation — anyone with the code can view (the QR is the credential)
-    {
-        path: FRONTEND_ROUTES.SHOP_ORDER_GROUP,
-        element: <OrderGroupConfirmationPage />,
-        guard: 'none',
-        layout: 'customer-public',
-    },
-    {
-        path: FRONTEND_ROUTES.SHOP_ORDER_CONFIRMATION,
-        element: <OrderConfirmationPage />,
-        guard: 'none',
-        layout: 'customer-public',
-    },
-    {
-        path: FRONTEND_ROUTES.SHOP_ORDER_CONFIRMATION_LEGACY,
-        element: <LegacyOrderConfirmationRedirect />,
-        guard: 'none',
-        layout: 'customer-public',
-    },
-    {
-        path: FRONTEND_ROUTES.SHOP_MY_ORDERS,
-        element: <MyOrdersPage />,
-        allowedRoles: [UserRole.CUSTOMER],
-        layout: 'customer',
-    },
-    {
-        path: FRONTEND_ROUTES.SHOP_MY_ORDERS_LEGACY,
-        element: <Navigate to={FRONTEND_ROUTES.SHOP_MY_ORDERS} replace />,
-        allowedRoles: [UserRole.CUSTOMER],
-        layout: 'customer',
-    },
-    {
-        path: FRONTEND_ROUTES.SHOP_PROFILE,
-        element: <CustomerProfilePage />,
-        allowedRoles: [UserRole.CUSTOMER],
-        layout: 'customer',
-    },
-    {
-        path: FRONTEND_ROUTES.SHOP_REWARDS,
-        element: <RewardsPage />,
-        allowedRoles: [UserRole.CUSTOMER],
-        layout: 'customer',
-    },
-];
+        {/* Catch-all */}
+        <Route path="*" element={<NotFoundPage />} />
+    </Route>,
+);

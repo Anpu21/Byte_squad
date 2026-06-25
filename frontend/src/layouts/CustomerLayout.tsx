@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
     Link,
     Navigate,
+    Outlet,
     useLocation,
     useNavigate,
     useSearchParams,
@@ -9,7 +10,6 @@ import {
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { LuLogOut as LogOut, LuMapPin as MapPin, LuSearch as Search, LuScrollText as ScrollText, LuShoppingCart as ShoppingCart, LuSparkles as Sparkles, LuUser as User, LuUserRound as UserRound, LuX as X } from 'react-icons/lu';
-import type { ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { toggleCartDrawer } from '@/store/slices/shopCartSlice';
@@ -24,7 +24,6 @@ import Avatar from '@/components/ui/Avatar';
 import { LoyaltyHeaderBadge } from '@/features/loyalty/components/LoyaltyHeaderBadge';
 
 interface CustomerLayoutProps {
-    children: ReactNode;
     /**
      * Skip the "select your pickup branch" redirect for routes that anyone
      * (anonymous or branch-less) should reach — e.g. public confirmation pages.
@@ -32,7 +31,9 @@ interface CustomerLayoutProps {
     publicMode?: boolean;
 }
 
-export default function CustomerLayout({ children, publicMode = false }: CustomerLayoutProps) {
+export default function CustomerLayout({
+    publicMode = false,
+}: CustomerLayoutProps) {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { user, isAuthenticated, logout } = useAuth();
@@ -327,7 +328,7 @@ export default function CustomerLayout({ children, publicMode = false }: Custome
             </header>
 
             <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
-                {children}
+                <Outlet />
             </main>
 
             <footer className="border-t border-border">

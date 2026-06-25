@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LuChartColumnBig as BarChart3, LuBell as Bell, LuBoxes as Boxes, LuBriefcase as Briefcase, LuBuilding2 as Building2, LuCalculator as Calculator, LuCalendarRange as CalendarRange, LuChevronRight as ChevronRight, LuHouse as Home, LuLogOut as LogOut, LuMenu as MenuIcon, LuReceipt as Receipt, LuFileClock as FileClock, LuShoppingBag as ShoppingBag, LuSparkles as Sparkles, LuPackagePlus as PackagePlus, LuTruck as Truck, LuUserCog as UserCog, LuUsers as Users } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,10 +12,6 @@ import ThemeToggle from '@/components/ui/ThemeToggle';
 import Avatar from '@/components/ui/Avatar';
 import Logo from '@/components/ui/Logo';
 import { cn } from '@/lib/utils';
-
-interface DashboardLayoutProps {
-    children: ReactNode;
-}
 
 type NavGroup =
     | 'Overview'
@@ -205,7 +201,7 @@ const GROUP_ORDER: NavGroup[] = [
     'System',
 ];
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout() {
     const { t } = useTranslation('common');
     const { user, logout } = useAuth();
     const { unreadCount } = useNotifications();
@@ -501,7 +497,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </header>
 
                 <main id="main-content" className="flex-1 overflow-y-auto p-2 lg:p-4">
-                    <div className="max-w-[1600px] mx-auto">{children}</div>
+                    <div className="max-w-[1600px] mx-auto">
+                        <Outlet />
+                    </div>
                 </main>
             </div>
         </div>
