@@ -100,7 +100,7 @@ export default function DashboardLayout() {
         <div className="h-screen flex bg-canvas text-text-1 font-sans overflow-hidden">
             <a
                 href="#main-content"
-                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-modal focus:px-3 focus:py-2 focus:rounded-md focus:bg-primary focus:text-text-inv focus:text-sm focus:font-medium focus:shadow-md-token focus:outline-none focus:ring-[3px] focus:ring-primary/30"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-modal focus:px-3 focus:py-2 focus:rounded-md focus:bg-primary focus:text-text-inv focus:text-sm focus:font-medium focus:shadow-md-token focus:outline-none focus:ring-[3px] focus:ring-focus/25"
             >
                 {t('shell.skipToMain')}
             </a>
@@ -215,7 +215,7 @@ export default function DashboardLayout() {
                             to={FRONTEND_ROUTES.PROFILE}
                             onClick={() => setMobileNavOpen(false)}
                             className={cn(
-                                'flex items-center gap-2 p-2 rounded-md transition-colors',
+                                'flex items-center gap-2 p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
                                 location.pathname === FRONTEND_ROUTES.PROFILE
                                     ? 'bg-surface-2'
                                     : 'hover:bg-surface-2',
@@ -254,7 +254,7 @@ export default function DashboardLayout() {
                                 setSidebarOpen((s) => !s);
                             }
                         }}
-                        className="p-1.5 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors flex-shrink-0"
+                        className="p-2 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
                         aria-label={t('shell.toggleSidebar')}
                     >
                         <MenuIcon size={18} />
@@ -285,16 +285,23 @@ export default function DashboardLayout() {
                         </nav>
                     )}
 
-                    <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+                    {/* Breadcrumbs hide on mobile — keep a page-identity title. */}
+                    {crumbs.length > 0 && (
+                        <span className="md:hidden text-sm font-semibold text-text-1 truncate min-w-0">
+                            {crumbs[crumbs.length - 1]}
+                        </span>
+                    )}
+
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                         <ThemeToggle />
                         <NotificationDropdown />
-                        <div className="w-px h-6 bg-border mx-1" />
+                        <div className="w-px h-6 bg-border" aria-hidden="true" />
 
                         {user && (
                             <div className="relative" ref={profileRef}>
                                 <button
                                     onClick={() => setProfileOpen((s) => !s)}
-                                    className="p-1 rounded-full hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                                    className="p-1 rounded-full hover:bg-surface-2 transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
                                     aria-label={t('shell.openUserMenu')}
                                     aria-haspopup="menu"
                                     aria-expanded={profileOpen}
