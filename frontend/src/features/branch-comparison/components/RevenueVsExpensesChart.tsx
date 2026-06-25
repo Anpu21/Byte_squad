@@ -18,6 +18,7 @@ interface ChartRow {
     name: string;
     Revenue: number;
     Expenses: number;
+    Profit: number;
 }
 
 interface RevenueVsExpensesChartProps {
@@ -43,22 +44,36 @@ export function RevenueVsExpensesChart({
         data.length > 0
             ? data.reduce((sum, d) => sum + d.Revenue, 0) / data.length
             : 0;
+    const totalRevenue = (row: ChartRow) => row.Profit + row.Expenses;
     const leader = data.reduce<ChartRow | null>(
         (best, row) =>
-            !best || row.Revenue > best.Revenue ? row : best,
+            !best || totalRevenue(row) > totalRevenue(best) ? row : best,
         null,
     );
+
+    // Pre-derive the per-branch "X% cost" label so the LabelList can read it via
+    // dataKey (Recharts 3.7's valueAccessor typing is too strict for inline use).
+    const rows = data.map((row) => {
+        const total = totalRevenue(row);
+        return {
+            ...row,
+            costLabel:
+                total > 0
+                    ? `${((row.Expenses / total) * 100).toFixed(1)}% cost`
+                    : '',
+        };
+    });
 
     return (
         <Card className="p-5 mb-6">
             <div className="mb-4 flex items-start justify-between gap-4">
                 <div>
                     <h3 className="text-[15px] font-semibold text-text-1 tracking-tight">
-                        Revenue vs expenses
+                        Revenue composition
                     </h3>
                     <p className="text-xs text-text-2 mt-0.5">
-                        Compared across {branchCount} branch
-                        {branchCount === 1 ? '' : 'es'}
+                        Each bar is total revenue — split into gross profit and
+                        operating cost
                         {data.length > 0 && (
                             <>
                                 {' '}
@@ -82,11 +97,11 @@ export function RevenueVsExpensesChart({
             <div
                 className="h-72"
                 role="img"
-                aria-label={`Bar chart comparing revenue and expenses across ${branchCount} branch${branchCount === 1 ? '' : 'es'}.`}
+                aria-label={`Bar chart showing revenue composition across ${branchCount} branch${branchCount === 1 ? '' : 'es'}.`}
             >
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                        data={data}
+                        data={rows}
                         margin={{ top: 24, right: 12, left: 0, bottom: 0 }}
                     >
                         <CartesianGrid
@@ -137,29 +152,24 @@ export function RevenueVsExpensesChart({
                             />
                         )}
                         <Bar
-                            dataKey="Revenue"
-                            fill="var(--primary)"
-                            radius={[4, 4, 0, 0]}
-                        >
-                            <LabelList
-                                dataKey="Revenue"
-                                position="top"
-                                fontSize={10}
-                                fill="var(--text-2)"
-                                formatter={(v) => compactCurrency(Number(v ?? 0))}
-                            />
-                        </Bar>
+                            dataKey="Profit"
+                            name="Gross profit"
+                            stackId="composition"
+                            fill="var(--accent)"
+                            radius={[0, 0, 0, 0]}
+                        />
                         <Bar
                             dataKey="Expenses"
-                            fill="var(--accent)"
+                            name="Expenses"
+                            stackId="composition"
+                            fill="var(--warning)"
                             radius={[4, 4, 0, 0]}
                         >
                             <LabelList
-                                dataKey="Expenses"
+                                dataKey="costLabel"
                                 position="top"
                                 fontSize={10}
-                                fill="var(--text-2)"
-                                formatter={(v) => compactCurrency(Number(v ?? 0))}
+                                fill="var(--warning)"
                             />
                         </Bar>
                     </BarChart>

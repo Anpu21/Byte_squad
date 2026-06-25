@@ -1,77 +1,130 @@
 import { useMemo } from 'react';
-import { LuTriangle as Triangle } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
-import type {
-    IBranchAnalyticsComparisonEntry,
-    IBranchAnalyticsTopProduct,
-} from '@/types';
-import { formatCurrencyWhole } from '../lib/format';
+import type { IBranchAnalyticsComparisonEntry } from '@/types';
+import { CHART_COLORS } from '../lib/chart-config';
+import {
+    ProductComparisonCard,
+    type ProductBranchCell,
+    type ProductCardData,
+} from './ProductComparisonCard';
 
 interface TopProductsComparatorProps {
     branches: IBranchAnalyticsComparisonEntry[];
     limit?: number;
+    branchColors?: Record<string, string>;
 }
 
-interface MatrixRow {
-    productId: string;
-    productName: string;
-    totalRevenue: number;
-    perBranch: Record<string, IBranchAnalyticsTopProduct | undefined>;
-    leaderBranchId: string | null;
-}
-
-function buildMatrix(
+function buildProducts(
     branches: IBranchAnalyticsComparisonEntry[],
     limit: number,
-): MatrixRow[] {
-    const productMap = new Map<string, MatrixRow>();
+): ProductCardData[] {
+    const productMap = new Map<
+        string,
+        {
+            productName: string;
+            totalRevenue: number;
+            perBranch: Map<string, { revenue: number; quantity: number }>;
+        }
+    >();
 
     for (const branch of branches) {
         for (const product of branch.sales.topProducts) {
-            let row = productMap.get(product.productId);
-            if (!row) {
-                row = {
-                    productId: product.productId,
+            let entry = productMap.get(product.productId);
+            if (!entry) {
+                entry = {
                     productName: product.productName,
                     totalRevenue: 0,
-                    perBranch: {},
-                    leaderBranchId: null,
+                    perBranch: new Map(),
                 };
-                productMap.set(product.productId, row);
+                productMap.set(product.productId, entry);
             }
-            row.perBranch[branch.branchId] = product;
-            row.totalRevenue += product.revenue;
+            entry.perBranch.set(branch.branchId, {
+                revenue: product.revenue,
+                quantity: product.quantity,
+            });
+            entry.totalRevenue += product.revenue;
         }
     }
 
-    const rows = Array.from(productMap.values());
-    for (const row of rows) {
-        let bestRevenue = -Infinity;
-        let bestBranchId: string | null = null;
-        for (const branch of branches) {
-            const cell = row.perBranch[branch.branchId];
-            if (cell && cell.revenue > bestRevenue) {
-                bestRevenue = cell.revenue;
-                bestBranchId = branch.branchId;
+    const products: ProductCardData[] = [];
+    for (const [productId, entry] of productMap) {
+        let maxRevenue = 0;
+        let leaderBranchId: string | null = null;
+
+        // Union every branch so missing entries render as a zeroed row.
+        const cells: ProductBranchCell[] = branches.map((branch) => {
+            const cell = entry.perBranch.get(branch.branchId);
+            const revenue = cell?.revenue ?? 0;
+            const quantity = cell?.quantity ?? 0;
+            if (revenue > maxRevenue) {
+                maxRevenue = revenue;
+                leaderBranchId = branch.branchId;
             }
-        }
-        row.leaderBranchId = bestBranchId;
+            return {
+                branchId: branch.branchId,
+                branchName: branch.branchName,
+                revenue,
+                quantity,
+            };
+        });
+
+        products.push({
+            productId,
+            productName: entry.productName,
+            totalRevenue: entry.totalRevenue,
+            maxRevenue,
+            leaderBranchId,
+            cells,
+        });
     }
 
-    rows.sort((a, b) => b.totalRevenue - a.totalRevenue);
-    return rows.slice(0, limit);
+    products.sort((a, b) => b.totalRevenue - a.totalRevenue);
+    return products.slice(0, limit);
 }
 
 export function TopProductsComparator({
     branches,
     limit = 10,
+    branchColors,
 }: TopProductsComparatorProps) {
-    const rows = useMemo(() => buildMatrix(branches, limit), [branches, limit]);
+    const products = useMemo(
+        () => buildProducts(branches, limit),
+        [branches, limit],
+    );
+
+    // Stable colour per branch by index, overridable via branchColors map.
+    const colorForBranch = useMemo(() => {
+        const map = new Map<string, string>();
+        branches.forEach((branch, i) => {
+            map.set(
+                branch.branchId,
+                branchColors?.[branch.branchId] ??
+                    CHART_COLORS[i % CHART_COLORS.length],
+            );
+        });
+        return map;
+    }, [branches, branchColors]);
+
+    if (products.length === 0) {
+        return (
+            <Card className="overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-border bg-surface-2/40">
+                    <p className="text-[13px] font-semibold text-text-1 tracking-tight">
+                        Top products by branch
+                    </p>
+                    <p className="text-[11px] text-text-3 mt-0.5">
+                        Best-selling branch per product is highlighted.
+                    </p>
+                </div>
+                <EmptyState title="No sales in this range" />
+            </Card>
+        );
+    }
 
     return (
-        <Card className="overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-border bg-surface-2/40 flex items-center justify-between">
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
                 <div>
                     <p className="text-[13px] font-semibold text-text-1 tracking-tight">
                         Top products by branch
@@ -81,94 +134,22 @@ export function TopProductsComparator({
                     </p>
                 </div>
                 <p className="text-[11px] text-text-3 tabular-nums">
-                    {rows.length} {rows.length === 1 ? 'product' : 'products'}
+                    {products.length}{' '}
+                    {products.length === 1 ? 'product' : 'products'}
                 </p>
             </div>
 
-            {rows.length === 0 ? (
-                <EmptyState title="No sales in this range" />
-            ) : (
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="text-[11px] uppercase tracking-[0.08em] text-text-3 bg-surface-2">
-                                <th className="sticky left-0 bg-surface-2 px-5 py-2.5 font-semibold min-w-[200px]">
-                                    Product
-                                </th>
-                                {branches.map((b) => (
-                                    <th
-                                        key={b.branchId}
-                                        className="px-4 py-2.5 font-semibold text-right whitespace-nowrap"
-                                    >
-                                        {b.branchName}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((row) => (
-                                <tr
-                                    key={row.productId}
-                                    className="border-t border-border hover:bg-surface-2/40 transition-colors"
-                                >
-                                    <td className="sticky left-0 bg-surface px-5 py-3 text-[13px] text-text-1 font-medium">
-                                        {row.productName}
-                                    </td>
-                                    {branches.map((b) => {
-                                        const cell = row.perBranch[b.branchId];
-                                        const isLeader =
-                                            row.leaderBranchId === b.branchId;
-                                        if (!cell) {
-                                            return (
-                                                <td
-                                                    key={b.branchId}
-                                                    className="px-4 py-3 text-right text-text-3 mono text-[12px]"
-                                                >
-                                                    —
-                                                </td>
-                                            );
-                                        }
-                                        return (
-                                            <td
-                                                key={b.branchId}
-                                                className={`px-4 py-3 text-right ${
-                                                    isLeader
-                                                        ? 'bg-primary-soft/40'
-                                                        : ''
-                                                }`}
-                                            >
-                                                <p
-                                                    className={`mono tabular-nums text-[13px] ${
-                                                        isLeader
-                                                            ? 'font-bold text-text-1'
-                                                            : 'text-text-1'
-                                                    }`}
-                                                >
-                                                    {isLeader && (
-                                                        <Triangle
-                                                            size={9}
-                                                            fill="currentColor"
-                                                            className="inline-block mr-1 -mt-0.5 text-primary"
-                                                            aria-label="Top branch"
-                                                        />
-                                                    )}
-                                                    {formatCurrencyWhole(
-                                                        cell.revenue,
-                                                    )}
-                                                </p>
-                                                <p className="text-[11px] text-text-3 mono tabular-nums mt-0.5">
-                                                    {cell.quantity.toLocaleString()}{' '}
-                                                    qty
-                                                </p>
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </Card>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {products.map((product) => (
+                    <ProductComparisonCard
+                        key={product.productId}
+                        product={product}
+                        colorFor={(branchId) =>
+                            colorForBranch.get(branchId) ?? CHART_COLORS[0]
+                        }
+                    />
+                ))}
+            </div>
+        </div>
     );
 }

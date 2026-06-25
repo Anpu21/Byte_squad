@@ -24,10 +24,10 @@ export function BranchMetricTable({
   return (
     <Card className="overflow-hidden">
       <div className="border-b border-border bg-surface-2/40 px-5 py-3.5">
-        <h3 className="text-[14px] font-semibold tracking-tight text-text-1">
+        <h3 className="text-[15px] font-semibold tracking-tight text-text-1">
           {title}
         </h3>
-        <p className="mt-0.5 text-[11px] text-text-3">{description}</p>
+        <p className="mt-0.5 text-[12.5px] text-text-3">{description}</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left">

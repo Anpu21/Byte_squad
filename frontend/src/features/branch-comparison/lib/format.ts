@@ -67,6 +67,13 @@ export function toInputDate(d: Date): string {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+export function formatDayShort(dateIso: string): string {
+    return new Date(dateIso).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+    });
+}
+
 export function formatDateRange(start: string, end: string): string {
     const s = new Date(start);
     const e = new Date(end);

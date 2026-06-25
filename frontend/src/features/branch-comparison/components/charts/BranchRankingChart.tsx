@@ -2,6 +2,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -12,17 +13,24 @@ import { compactNumber } from "../../lib/format";
 import { ChartCard } from "./ChartCard";
 import { ChartTooltip } from "./ChartTooltip";
 
-export function BranchRankingChart({ rows }: { rows: LeaderboardRow[] }) {
+export function BranchRankingChart({
+  rows,
+  branchColors,
+}: {
+  rows: LeaderboardRow[];
+  branchColors?: Record<string, string>;
+}) {
   const data = [...rows]
     .sort((a, b) => b.value - a.value)
     .map((row) => ({
       name: row.entry.branchName,
       value: row.value,
+      branchId: row.entry.branchId,
     }));
   return (
     <ChartCard
       title="Branch ranking"
-      description="Selected leaderboard metric across compared branches."
+      description="Selected metric across compared branches."
     >
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
@@ -57,7 +65,14 @@ export function BranchRankingChart({ rows }: { rows: LeaderboardRow[] }) {
               dataKey="value"
               fill="var(--primary)"
               radius={[0, 4, 4, 0]}
-            />
+            >
+              {data.map((d) => (
+                <Cell
+                  key={d.branchId}
+                  fill={branchColors?.[d.branchId] ?? "var(--primary)"}
+                />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
