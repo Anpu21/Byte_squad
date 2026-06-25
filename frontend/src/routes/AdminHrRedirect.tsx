@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import type { AdminHrTab } from '@/features/admin-hr/hooks/useAdminHrTab';
+import type { AdminHrTab } from '@/features/admin-hr';
 
 interface AdminHrRedirectProps {
     tab: AdminHrTab;

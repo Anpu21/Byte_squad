@@ -1,12 +1,13 @@
-import { useEmployeeFormPage } from '@/features/employee-form/hooks/useEmployeeFormPage';
-import { EmployeeFormHeader } from '@/features/employee-form/components/EmployeeFormHeader';
-import { EmployeeBasicsCard } from '@/features/employee-form/components/EmployeeBasicsCard';
-import { EmployeeContactCard } from '@/features/employee-form/components/EmployeeContactCard';
-import { EmployeeEmploymentCard } from '@/features/employee-form/components/EmployeeEmploymentCard';
-import { EmployeePayrollCard } from '@/features/employee-form/components/EmployeePayrollCard';
-import { EmployeePhotoCard } from '@/features/employee-form/components/EmployeePhotoCard';
+import { useEmployeeFormPage } from './hooks/useEmployeeFormPage';
+import { EmployeeFormHeader } from './components/EmployeeFormHeader';
+import { EmployeeBasicsCard } from './components/EmployeeBasicsCard';
+import { EmployeeContactCard } from './components/EmployeeContactCard';
+import { EmployeeEmploymentCard } from './components/EmployeeEmploymentCard';
+import { EmployeePayrollCard } from './components/EmployeePayrollCard';
+import { EmployeePhotoCard } from './components/EmployeePhotoCard';
 
-export function AdminEmployeeFormPage() {
+/** Create / edit an employee. Route entry for `/admin/employees/new` and `/:id`. */
+export function EmployeeFormPage() {
     const p = useEmployeeFormPage();
     const { form } = p;
 

@@ -1,13 +1,10 @@
 import { BadgeCheck, CalendarCheck, CalendarRange, Wallet } from 'lucide-react';
-import { Tabs, type TabItem } from '@/components/ui/Tabs';
-import {
-    useAdminHrTab,
-    type AdminHrTab,
-} from '@/features/admin-hr/hooks/useAdminHrTab';
-import { EmployeesView } from '@/features/admin-employees/components/EmployeesView';
-import { AttendanceView } from '@/features/admin-attendance/components/AttendanceView';
-import { LeavesView } from '@/features/admin-leaves/components/LeavesView';
-import { PayrollView } from '@/features/admin-payroll/components/PayrollView';
+import { Tabs, type TabItem } from '@/components/ui';
+import { useAdminHrTab, type AdminHrTab } from './hooks/useAdminHrTab';
+import { EmployeesView } from '@/features/admin-employees';
+import { AttendanceView } from '@/features/admin-attendance';
+import { LeavesView } from '@/features/admin-leaves';
+import { PayrollView } from '@/features/admin-payroll';
 
 const TABS: TabItem<AdminHrTab>[] = [
     { key: 'employees', label: 'Employees', Icon: BadgeCheck },
@@ -16,6 +13,10 @@ const TABS: TabItem<AdminHrTab>[] = [
     { key: 'payroll', label: 'Payroll', Icon: Wallet },
 ];
 
+/**
+ * The unified HR workspace (Admin + Manager). A tab hub that composes the four
+ * people features; each tab body owns its own data and header.
+ */
 export function AdminHrPage() {
     const { tab, setTab } = useAdminHrTab();
 

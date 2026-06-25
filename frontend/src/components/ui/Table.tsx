@@ -85,7 +85,7 @@ export function TableRow({ interactive, className, ...props }: TableRowProps) {
             className={cn(
                 'border-b border-border last:border-b-0',
                 interactive &&
-                    'hover:bg-surface-2 transition-colors cursor-pointer focus:outline-none focus-visible:bg-surface-2',
+                    'hover:bg-surface-2 transition-colors cursor-pointer focus:outline-none focus-visible:bg-surface-2 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40',
                 className,
             )}
             {...props}

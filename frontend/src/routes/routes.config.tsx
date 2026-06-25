@@ -29,8 +29,8 @@ import { NotificationDetailPage } from '@/pages/notifications/NotificationDetail
 import { BranchHubPage } from '@/pages/branches/BranchHubPage';
 import { AdminLoyaltyPage } from '@/pages/admin/AdminLoyaltyPage';
 import { ManagerLoyaltyPage } from '@/pages/manager/ManagerLoyaltyPage';
-import { AdminHrPage } from '@/pages/admin/AdminHrPage';
-import { AdminEmployeeFormPage } from '@/pages/admin/AdminEmployeeFormPage';
+import { AdminHrPage } from '@/features/admin-hr';
+import { EmployeeFormPage } from '@/features/employee-form';
 import { TransferRequestsPage } from '@/pages/transfers/TransferRequestsPage';
 import { NewTransferRequestPage } from '@/pages/transfers/NewTransferRequestPage';
 import { TransferDetailPage } from '@/pages/transfers/TransferDetailPage';
@@ -362,13 +362,13 @@ export const ROUTES: RouteDef[] = [
     },
     {
         path: FRONTEND_ROUTES.ADMIN_EMPLOYEE_NEW,
-        element: <AdminEmployeeFormPage />,
+        element: <EmployeeFormPage />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },
     {
         path: FRONTEND_ROUTES.ADMIN_EMPLOYEE_EDIT,
-        element: <AdminEmployeeFormPage />,
+        element: <EmployeeFormPage />,
         allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
         layout: 'dashboard',
     },

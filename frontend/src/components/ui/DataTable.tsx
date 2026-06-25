@@ -37,6 +37,8 @@ interface DataTableProps<T> {
     rows: T[];
     getRowKey: (row: T, index: number) => string | number;
     onRowClick?: (row: T) => void;
+    /** Accessible name for a clickable row (announced when the row acts as a button). */
+    getRowLabel?: (row: T) => string;
     isLoading?: boolean;
     /** Skeleton row count while loading (default 6). */
     loadingRows?: number;
@@ -62,6 +64,7 @@ export default function DataTable<T>({
     rows,
     getRowKey,
     onRowClick,
+    getRowLabel,
     isLoading,
     loadingRows = 6,
     empty,
@@ -158,6 +161,9 @@ export default function DataTable<T>({
                                   interactive={!!onRowClick}
                                   role={onRowClick ? 'button' : undefined}
                                   tabIndex={onRowClick ? 0 : undefined}
+                                  aria-label={
+                                      onRowClick ? getRowLabel?.(row) : undefined
+                                  }
                                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                                   onKeyDown={
                                       onRowClick ? (e) => handleRowKey(e, row) : undefined
