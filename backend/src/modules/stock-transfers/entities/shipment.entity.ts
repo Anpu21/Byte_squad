@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { Branch } from '@branches/entities/branch.entity';
 import { User } from '@users/entities/user.entity';
-import { Employee } from '@/modules/hr/entities/employee.entity';
+import { Employee } from '@/modules/hr-employees/entities/employee.entity';
 import { ShipmentStatus } from '@common/enums/shipment-status.enum';
 import { ShipmentEvent } from '@stock-transfers/entities/shipment-event.entity';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';

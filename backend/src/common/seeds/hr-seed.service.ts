@@ -3,12 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Branch } from '@branches/entities/branch.entity';
 import { User } from '@users/entities/user.entity';
-import { Employee } from '@/modules/hr/entities/employee.entity';
-import { SalaryStructure } from '@/modules/hr/entities/salary-structure.entity';
-import { PayrollSettings } from '@/modules/hr/entities/payroll-settings.entity';
-import { Attendance } from '@/modules/hr/entities/attendance.entity';
-import { EmployeeLeave } from '@/modules/hr/entities/employee-leave.entity';
-import { Payroll } from '@/modules/hr/entities/payroll.entity';
+import { Employee } from '@/modules/hr-employees/entities/employee.entity';
+import { SalaryStructure } from '@/modules/hr-salary-structures/entities/salary-structure.entity';
+import { PayrollSettings } from '@/modules/hr-payroll-settings/entities/payroll-settings.entity';
+import { Attendance } from '@/modules/hr-attendance/entities/attendance.entity';
+import { EmployeeLeave } from '@/modules/hr-leaves/entities/employee-leave.entity';
+import { Payroll } from '@/modules/hr-payroll/entities/payroll.entity';
 
 /**
  * Demo HR seed. Runs after the admin seed lands branches + users so it

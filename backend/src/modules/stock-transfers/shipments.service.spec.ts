@@ -7,12 +7,12 @@ import {
 import { ShipmentsService } from './shipments.service';
 import { ShipmentsRepository } from './shipments.repository';
 import { StockTransfersRepository } from './stock-transfers.repository';
-import { EmployeesRepository } from '@/modules/hr/employees.repository';
+import { EmployeesRepository } from '@/modules/hr-employees/employees.repository';
 import { UsersService } from '@users/users.service';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationsGateway } from '@notifications/notifications.gateway';
 import { StockTransferRequest } from './entities/stock-transfer-request.entity';
-import { Employee } from '@/modules/hr/entities/employee.entity';
+import { Employee } from '@/modules/hr-employees/entities/employee.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 

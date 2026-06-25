@@ -33,7 +33,7 @@ import { Shipment } from '@stock-transfers/entities/shipment.entity';
 import { ShipmentEvent } from '@stock-transfers/entities/shipment-event.entity';
 import { ShipmentStatus } from '@common/enums/shipment-status.enum';
 import { ShipmentEventType } from '@common/enums/shipment-event-type.enum';
-import { Employee } from '@/modules/hr/entities/employee.entity';
+import { Employee } from '@/modules/hr-employees/entities/employee.entity';
 import { eventsForStatus } from '@common/seeds/shipment-seed-timeline';
 import { StockAdjustmentReason } from '@common/enums/stock-adjustment-reason.enum';
 import { StockAdjustmentStatus } from '@common/enums/stock-adjustment-status.enum';

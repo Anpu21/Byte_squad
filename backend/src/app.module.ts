@@ -22,7 +22,12 @@ import { ShopModule } from '@/modules/shop/shop.module';
 import { LoyaltySettingsModule } from '@/modules/loyalty-settings/loyalty-settings.module';
 import { LoyaltyCustomersModule } from '@/modules/loyalty-customers/loyalty-customers.module';
 import { LoyaltyWalletsModule } from '@/modules/loyalty-wallets/loyalty-wallets.module';
-import { HrModule } from '@/modules/hr/hr.module';
+import { HrEmployeesModule } from '@/modules/hr-employees/hr-employees.module';
+import { HrAttendanceModule } from '@/modules/hr-attendance/hr-attendance.module';
+import { HrLeavesModule } from '@/modules/hr-leaves/hr-leaves.module';
+import { HrSalaryStructuresModule } from '@/modules/hr-salary-structures/hr-salary-structures.module';
+import { HrPayrollSettingsModule } from '@/modules/hr-payroll-settings/hr-payroll-settings.module';
+import { HrPayrollModule } from '@/modules/hr-payroll/hr-payroll.module';
 import { SuppliersModule } from '@/modules/suppliers/suppliers.module';
 import { PurchasesDocNumberingModule } from '@/modules/purchases-doc-numbering/purchases-doc-numbering.module';
 import { PurchasesGrnModule } from '@/modules/purchases-grn/purchases-grn.module';
@@ -31,13 +36,13 @@ import { PurchasesPaymentsModule } from '@/modules/purchases-payments/purchases-
 import { PurchasesReturnsModule } from '@/modules/purchases-returns/purchases-returns.module';
 import { PurchasesReportsModule } from '@/modules/purchases-reports/purchases-reports.module';
 import { AuditModule } from '@/modules/audit/audit.module';
-import { Attendance } from '@/modules/hr/entities/attendance.entity';
-import { AttendanceSummary } from '@/modules/hr/entities/attendance-summary.entity';
-import { Employee } from '@/modules/hr/entities/employee.entity';
-import { EmployeeLeave } from '@/modules/hr/entities/employee-leave.entity';
-import { Payroll } from '@/modules/hr/entities/payroll.entity';
-import { PayrollSettings } from '@/modules/hr/entities/payroll-settings.entity';
-import { SalaryStructure } from '@/modules/hr/entities/salary-structure.entity';
+import { Attendance } from '@/modules/hr-attendance/entities/attendance.entity';
+import { AttendanceSummary } from '@/modules/hr-attendance/entities/attendance-summary.entity';
+import { Employee } from '@/modules/hr-employees/entities/employee.entity';
+import { EmployeeLeave } from '@/modules/hr-leaves/entities/employee-leave.entity';
+import { Payroll } from '@/modules/hr-payroll/entities/payroll.entity';
+import { PayrollSettings } from '@/modules/hr-payroll-settings/entities/payroll-settings.entity';
+import { SalaryStructure } from '@/modules/hr-salary-structures/entities/salary-structure.entity';
 import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
@@ -146,7 +151,12 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     LoyaltySettingsModule,
     LoyaltyCustomersModule,
     LoyaltyWalletsModule,
-    HrModule,
+    HrEmployeesModule,
+    HrAttendanceModule,
+    HrLeavesModule,
+    HrSalaryStructuresModule,
+    HrPayrollSettingsModule,
+    HrPayrollModule,
     SuppliersModule,
     PurchasesDocNumberingModule,
     PurchasesGrnModule,

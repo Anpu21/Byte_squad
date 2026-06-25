@@ -14,7 +14,7 @@ import { BranchesModule } from '@branches/branches.module';
 import { InventoryModule } from '@inventory/inventory.module';
 import { UsersModule } from '@users/users.module';
 import { NotificationsModule } from '@notifications/notifications.module';
-import { HrModule } from '@/modules/hr/hr.module';
+import { HrEmployeesModule } from '@/modules/hr-employees/hr-employees.module';
 
 @Module({
   imports: [
@@ -25,7 +25,7 @@ import { HrModule } from '@/modules/hr/hr.module';
     UsersModule,
     NotificationsModule,
     // Courier validation resolves WORKER login accounts to their HR employee.
-    HrModule,
+    HrEmployeesModule,
   ],
   controllers: [StockTransfersController, ShipmentsController],
   providers: [
