@@ -9,7 +9,7 @@ import { SaleRepository } from './sale.repository';
 import { PaymentRepository } from './payment.repository';
 import { CreditTransactionRepository } from './credit-transaction.repository';
 import { StockMovementRepository } from './stock-movement.repository';
-import { AccountingService } from '@accounting/accounting.service';
+import { AccountingService } from '@/modules/accounting-core/accounting.service';
 import { LoyaltyWalletService } from '@/modules/loyalty-wallets/loyalty-wallet.service';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { Sale } from './entities/sale.entity';

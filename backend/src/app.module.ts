@@ -11,8 +11,10 @@ import { ProductsModule } from '@products/products.module';
 import { InventoryModule } from '@inventory/inventory.module';
 import { CategoriesModule } from '@/modules/categories/categories.module';
 import { PosModule } from '@pos/pos.module';
-import { AccountingModule } from '@accounting/accounting.module';
-import { AccountsRepository } from '@accounting/accounts.repository';
+import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.module';
+import { AccountingPeriodsModule } from '@/modules/accounting-periods/accounting-periods.module';
+import { AccountingReportsModule } from '@/modules/accounting-reports/accounting-reports.module';
+import { AccountsRepository } from '@/modules/accounting-core/accounts.repository';
 import { NotificationsModule } from '@notifications/notifications.module';
 import { AdminPortalModule } from '@admin-portal/admin-portal.module';
 import { BranchAnalyticsModule } from '@/modules/branch-analytics/branch-analytics.module';
@@ -58,8 +60,8 @@ import { SaleItem } from '@pos/entities/sale-item.entity';
 import { StockMovement } from '@pos/entities/stock-movement.entity';
 import { Payment } from '@pos/entities/payment.entity';
 import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
-import { Expense } from '@accounting/entities/expense.entity';
+import { LedgerEntry } from '@/modules/accounting-core/entities/ledger-entry.entity';
+import { Expense } from '@/modules/accounting-core/entities/expense.entity';
 import { Notification } from '@notifications/entities/notification.entity';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
 import { Shipment } from '@stock-transfers/entities/shipment.entity';
@@ -141,7 +143,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     CategoriesModule,
     InventoryModule,
     PosModule,
-    AccountingModule,
+    AccountingCoreModule,
+    AccountingPeriodsModule,
+    AccountingReportsModule,
     NotificationsModule,
     AdminPortalModule,
     BranchAnalyticsModule,

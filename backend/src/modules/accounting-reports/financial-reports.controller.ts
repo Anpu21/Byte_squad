@@ -4,12 +4,12 @@ import { UserRole } from '@common/enums/user-roles.enums';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { APP_ROUTES } from '@common/routes/app.routes';
-import { FinancialReportsService } from '@accounting/financial-reports.service';
+import { FinancialReportsService } from '@/modules/accounting-reports/financial-reports.service';
 import type {
   BalanceSheetReport,
   DayBookReport,
   TrialBalanceReport,
-} from '@accounting/types/financial-report-row.type';
+} from '@/modules/accounting-reports/types/financial-report-row.type';
 
 @Controller(APP_ROUTES.ACCOUNTING.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)

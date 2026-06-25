@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, EntityManager, Repository } from 'typeorm';
-import { Account } from '@accounting/entities/account.entity';
+import { Account } from '@/modules/accounting-core/entities/account.entity';
 import {
   SYSTEM_ACCOUNTS,
   type AccountCode,
-} from '@accounting/types/account-code.type';
+} from '@/modules/accounting-core/types/account-code.type';
 
 /**
  * Chart-of-accounts repository (Rules.md §7). Keeps a code→id cache so

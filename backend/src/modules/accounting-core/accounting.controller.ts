@@ -15,12 +15,12 @@ import {
   UseGuards,
   ForbiddenException,
 } from '@nestjs/common';
-import { AccountingService } from '@accounting/accounting.service';
-import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
-import { ReviewExpenseDto } from '@accounting/dto/review-expense.dto';
+import { AccountingService } from '@/modules/accounting-core/accounting.service';
+import { CreateExpenseDto } from '@/modules/accounting-core/dto/create-expense.dto';
+import { ReviewExpenseDto } from '@/modules/accounting-core/dto/review-expense.dto';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { Expense } from '@accounting/entities/expense.entity';
-import { Account } from '@accounting/entities/account.entity';
+import { Expense } from '@/modules/accounting-core/entities/expense.entity';
+import { Account } from '@/modules/accounting-core/entities/account.entity';
 import { ExpenseStatus } from '@common/enums/expense-status.enum';
 
 @Controller(APP_ROUTES.ACCOUNTING.BASE)

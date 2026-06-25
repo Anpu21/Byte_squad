@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { FinancialReportsRepository } from '@accounting/financial-reports.repository';
-import { accountBalance } from '@accounting/lib/account-balance';
+import { FinancialReportsRepository } from '@/modules/accounting-reports/financial-reports.repository';
+import { accountBalance } from '@/modules/accounting-core/lib/account-balance';
 import type {
   BalanceSheetReport,
   DayBookReport,
   TrialBalanceReport,
-} from '@accounting/types/financial-report-row.type';
+} from '@/modules/accounting-reports/types/financial-report-row.type';
 
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 

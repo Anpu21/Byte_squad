@@ -2,7 +2,7 @@ import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import {
   ACCOUNT_CODES,
   type AccountCode,
-} from '@accounting/types/account-code.type';
+} from '@/modules/accounting-core/types/account-code.type';
 
 /**
  * Map a legacy-shaped ledger posting (no explicit account) onto the chart

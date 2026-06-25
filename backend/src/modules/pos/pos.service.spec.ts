@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 import { PosService } from './pos.service';
 import { PosRepository } from './pos.repository';
 import { SaleRepository } from './sale.repository';
-import { AccountingService } from '@accounting/accounting.service';
+import { AccountingService } from '@/modules/accounting-core/accounting.service';
 import { InventoryService } from '@inventory/inventory.service';
 import { ProductsService } from '@products/products.service';
 import { InvoiceNumberService } from './services/invoice-number.service';

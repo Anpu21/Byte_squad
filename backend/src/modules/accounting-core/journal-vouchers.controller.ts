@@ -8,9 +8,9 @@ import { APP_ROUTES } from '@common/routes/app.routes';
 import {
   JournalVouchersService,
   type JournalActor,
-} from '@accounting/journal-vouchers.service';
-import { JournalVoucher } from '@accounting/entities/journal-voucher.entity';
-import { CreateJournalVoucherDto } from '@accounting/dto/create-journal-voucher.dto';
+} from '@/modules/accounting-core/journal-vouchers.service';
+import { JournalVoucher } from '@/modules/accounting-core/entities/journal-voucher.entity';
+import { CreateJournalVoucherDto } from '@/modules/accounting-core/dto/create-journal-voucher.dto';
 
 @Controller(APP_ROUTES.ACCOUNTING.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)

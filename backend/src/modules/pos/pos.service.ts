@@ -13,7 +13,7 @@ import { CreateTransactionDto } from '@pos/dto/create-transaction.dto.js';
 import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
 import { SearchCustomersQueryDto } from '@pos/dto/search-customers-query.dto';
 import { PosRepository } from '@pos/pos.repository';
-import { AccountingService } from '@accounting/accounting.service';
+import { AccountingService } from '@/modules/accounting-core/accounting.service';
 import { ProductsService } from '@products/products.service';
 import { InventoryService } from '@inventory/inventory.service';
 import { Inventory } from '@inventory/entities/inventory.entity';

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AccountingModule } from '@accounting/accounting.module';
+import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.module';
 import { PurchasesDocNumberingModule } from '@/modules/purchases-doc-numbering/purchases-doc-numbering.module';
 import { PurchasesGrnModule } from '@/modules/purchases-grn/purchases-grn.module';
 import { PurchasesPaymentsModule } from '@/modules/purchases-payments/purchases-payments.module';
@@ -19,7 +19,7 @@ import { PurchaseReturnsController } from '@/modules/purchases-returns/purchase-
   imports: [
     TypeOrmModule.forFeature([PurchaseReturn, PurchaseReturnItem]),
     PurchasesDocNumberingModule,
-    AccountingModule,
+    AccountingCoreModule,
     PurchasesGrnModule,
     PurchasesPaymentsModule,
   ],

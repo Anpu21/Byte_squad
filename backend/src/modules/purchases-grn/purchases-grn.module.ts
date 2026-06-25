@@ -1,6 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AccountingModule } from '@accounting/accounting.module';
+import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.module';
 import { SuppliersModule } from '@/modules/suppliers/suppliers.module';
 import { PurchasesDocNumberingModule } from '@/modules/purchases-doc-numbering/purchases-doc-numbering.module';
 import { PurchasesOrdersModule } from '@/modules/purchases-orders/purchases-orders.module';
@@ -21,7 +21,7 @@ import { GrnsController } from '@/modules/purchases-grn/grns.controller';
     TypeOrmModule.forFeature([Grn, GrnItem]),
     PurchasesDocNumberingModule,
     SuppliersModule,
-    AccountingModule,
+    AccountingCoreModule,
     forwardRef(() => PurchasesOrdersModule),
   ],
   controllers: [GrnsController],

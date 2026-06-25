@@ -1,4 +1,4 @@
-import type { AccountType } from '@accounting/types/account-type.type';
+import type { AccountType } from '@/modules/accounting-core/types/account-type.type';
 
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 

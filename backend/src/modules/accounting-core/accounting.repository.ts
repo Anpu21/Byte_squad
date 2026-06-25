@@ -2,19 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DeepPartial, EntityManager, Repository } from 'typeorm';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
-import { Expense } from '@accounting/entities/expense.entity';
-import { AccountsRepository } from '@accounting/accounts.repository';
-import { FiscalPeriodsService } from '@accounting/fiscal-periods.service';
-import { classifyLedgerAccount } from '@accounting/lib/classify-ledger-account';
-import type { AccountCode } from '@accounting/types/account-code.type';
+import { LedgerEntry } from '@/modules/accounting-core/entities/ledger-entry.entity';
+import { Expense } from '@/modules/accounting-core/entities/expense.entity';
+import { AccountsRepository } from '@/modules/accounting-core/accounts.repository';
+import { FiscalPeriodsService } from '@/modules/accounting-periods/fiscal-periods.service';
+import { classifyLedgerAccount } from '@/modules/accounting-core/lib/classify-ledger-account';
+import type { AccountCode } from '@/modules/accounting-core/types/account-code.type';
 
 import {
   ListLedgerOptions,
   PagedLedger,
   LedgerSummaryRaw,
   ListExpenseOptions,
-} from '@accounting/types';
+} from '@/modules/accounting-core/types';
 
 /** Ledger posting input — explicit account wins over classification. */
 export type LedgerPostInput = DeepPartial<LedgerEntry> & {

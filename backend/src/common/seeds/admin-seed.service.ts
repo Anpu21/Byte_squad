@@ -18,8 +18,8 @@ import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { StockMovement } from '@pos/entities/stock-movement.entity';
 import { Payment } from '@pos/entities/payment.entity';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
-import { Expense } from '@accounting/entities/expense.entity';
+import { LedgerEntry } from '@/modules/accounting-core/entities/ledger-entry.entity';
+import { Expense } from '@/modules/accounting-core/entities/expense.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { DiscountType } from '@common/enums/discount.enum';
@@ -51,7 +51,7 @@ import { pickSeedImageUrl } from '@common/seeds/seed-product-images';
 import { HrSeedService } from '@common/seeds/hr-seed.service';
 import { PurchasesSeedService } from '@common/seeds/purchases-seed.service';
 import { PosAccountingSeedService } from '@common/seeds/pos-accounting-seed.service';
-import { AccountsRepository } from '@accounting/accounts.repository';
+import { AccountsRepository } from '@/modules/accounting-core/accounts.repository';
 import {
   CATEGORY_THRESHOLDS,
   SUPERMARKET_PRODUCTS,

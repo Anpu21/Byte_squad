@@ -3,7 +3,7 @@ import { DataSource, Repository } from 'typeorm';
 import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { Product } from '@products/entities/product.entity';
-import { Expense } from '@accounting/entities/expense.entity';
+import { Expense } from '@/modules/accounting-core/entities/expense.entity';
 import { TransactionType } from '@common/enums/transaction.enum';
 
 export interface BranchSalesAggregate {

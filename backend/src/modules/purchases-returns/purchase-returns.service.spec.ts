@@ -13,7 +13,7 @@ import { PurchaseReturnsRepository } from './purchase-returns.repository';
 import { GrnsRepository } from '@/modules/purchases-grn/grns.repository';
 import { SupplierPaymentsRepository } from '@/modules/purchases-payments/supplier-payments.repository';
 import { PurchaseDocNumberService } from '@/modules/purchases-doc-numbering/purchase-doc-number.service';
-import { AccountingService } from '@accounting/accounting.service';
+import { AccountingService } from '@/modules/accounting-core/accounting.service';
 import { Grn } from '@/modules/purchases-grn/entities/grn.entity';
 import { PurchaseReturn } from './entities/purchase-return.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';

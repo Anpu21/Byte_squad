@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { FiscalPeriodLock } from '@accounting/entities/fiscal-period-lock.entity';
+import { FiscalPeriodLock } from '@/modules/accounting-periods/entities/fiscal-period-lock.entity';
 
 const CACHE_TTL_MS = 15_000;
 

@@ -5,9 +5,9 @@ import { UserRole } from '@common/enums/user-roles.enums';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { APP_ROUTES } from '@common/routes/app.routes';
-import { FiscalPeriodsService } from '@accounting/fiscal-periods.service';
-import { FiscalPeriodLock } from '@accounting/entities/fiscal-period-lock.entity';
-import { LockPeriodDto } from '@accounting/dto/lock-period.dto';
+import { FiscalPeriodsService } from '@/modules/accounting-periods/fiscal-periods.service';
+import { FiscalPeriodLock } from '@/modules/accounting-periods/entities/fiscal-period-lock.entity';
+import { LockPeriodDto } from '@/modules/accounting-periods/dto/lock-period.dto';
 
 @Controller(APP_ROUTES.ACCOUNTING.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)

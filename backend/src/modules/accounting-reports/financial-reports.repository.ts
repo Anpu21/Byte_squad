@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import type { AccountType } from '@accounting/types/account-type.type';
+import type { AccountType } from '@/modules/accounting-core/types/account-type.type';
 
 export interface AccountSumsRaw {
   code: string;

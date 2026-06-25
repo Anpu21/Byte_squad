@@ -15,7 +15,7 @@ import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
 import { UsersService } from '@users/users.service';
 import { PosService } from '@pos/pos.service';
-import { AccountingService } from '@accounting/accounting.service';
+import { AccountingService } from '@/modules/accounting-core/accounting.service';
 import { InventoryService } from '@inventory/inventory.service';
 import { LoyaltyService } from '@/modules/loyalty-wallets/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty-wallets/loyalty-wallet.service';

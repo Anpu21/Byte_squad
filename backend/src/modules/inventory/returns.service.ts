@@ -11,7 +11,7 @@ import { SalesReturn } from '@inventory/entities/sales-return.entity';
 import { SalesReturnItem } from '@inventory/entities/sales-return-item.entity';
 import { SalesReturnRepository } from '@inventory/sales-return.repository';
 import { PosService } from '@pos/pos.service';
-import { AccountingService } from '@accounting/accounting.service';
+import { AccountingService } from '@/modules/accounting-core/accounting.service';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { AuthUser } from '@common/types/auth-user.type';

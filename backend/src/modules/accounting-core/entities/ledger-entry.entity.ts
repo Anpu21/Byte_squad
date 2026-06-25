@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { Branch } from '@branches/entities/branch.entity';
-import { Account } from '@accounting/entities/account.entity';
+import { Account } from '@/modules/accounting-core/entities/account.entity';
 
 @Entity('ledger_entries')
 export class LedgerEntry {

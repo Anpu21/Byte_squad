@@ -1,5 +1,5 @@
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
-import { ACCOUNT_CODES } from '@accounting/types/account-code.type';
+import { ACCOUNT_CODES } from '@/modules/accounting-core/types/account-code.type';
 import { classifyLedgerAccount } from './classify-ledger-account';
 
 describe('classifyLedgerAccount', () => {

@@ -7,11 +7,11 @@ import {
 import { DataSource, EntityManager, In } from 'typeorm';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
-import { JournalVoucher } from '@accounting/entities/journal-voucher.entity';
-import { JournalCounter } from '@accounting/entities/journal-counter.entity';
-import { Account } from '@accounting/entities/account.entity';
-import { AccountingRepository } from '@accounting/accounting.repository';
-import { CreateJournalVoucherDto } from '@accounting/dto/create-journal-voucher.dto';
+import { JournalVoucher } from '@/modules/accounting-core/entities/journal-voucher.entity';
+import { JournalCounter } from '@/modules/accounting-core/entities/journal-counter.entity';
+import { Account } from '@/modules/accounting-core/entities/account.entity';
+import { AccountingRepository } from '@/modules/accounting-core/accounting.repository';
+import { CreateJournalVoucherDto } from '@/modules/accounting-core/dto/create-journal-voucher.dto';
 
 export interface JournalActor {
   id: string;

@@ -20,7 +20,7 @@ import { ReturnsController } from '@inventory/returns.controller';
 import { ProductsModule } from '@products/products.module';
 import { UsersModule } from '@users/users.module';
 import { NotificationsModule } from '@notifications/notifications.module';
-import { AccountingModule } from '@accounting/accounting.module';
+import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.module';
 import { PosModule } from '@pos/pos.module';
 
 @Module({
@@ -35,7 +35,7 @@ import { PosModule } from '@pos/pos.module';
     ProductsModule,
     UsersModule,
     NotificationsModule,
-    AccountingModule,
+    AccountingCoreModule,
     forwardRef(() => PosModule),
   ],
   controllers: [

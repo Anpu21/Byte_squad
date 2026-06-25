@@ -32,7 +32,7 @@ import { CreditTransaction } from '@pos/entities/credit-transaction.entity';
 import { StockMovement } from '@pos/entities/stock-movement.entity';
 import { InvoiceCounter } from '@pos/entities/invoice-counter.entity';
 import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
-import { AccountingModule } from '@accounting/accounting.module';
+import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.module';
 import { InventoryModule } from '@inventory/inventory.module';
 import { ProductsModule } from '@products/products.module';
 import { UsersModule } from '@users/users.module';
@@ -51,7 +51,7 @@ import { LoyaltyWalletsModule } from '@/modules/loyalty-wallets/loyalty-wallets.
       PosShift,
       DiscountScheme,
     ]),
-    AccountingModule,
+    AccountingCoreModule,
     forwardRef(() => InventoryModule),
     ProductsModule,
     UsersModule,

@@ -1,4 +1,4 @@
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+import { LedgerEntry } from '@/modules/accounting-core/entities/ledger-entry.entity';
 
 export interface PagedLedger {
   items: LedgerEntry[];

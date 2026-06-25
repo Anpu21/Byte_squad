@@ -1,4 +1,4 @@
-import type { AccountType } from './account-type.type';
+import type { AccountType } from '@/modules/accounting-core/types/account-type.type';
 
 /** One account line of the trial balance. */
 export interface TrialBalanceRow {

@@ -17,7 +17,7 @@ import { StockMovementRepository } from './stock-movement.repository';
 import { InvoiceNumberService } from './services/invoice-number.service';
 import { MultiTenderCalculatorService } from './services/multi-tender-calculator.service';
 import { ProductsService } from '@products/products.service';
-import { AccountingService } from '@accounting/accounting.service';
+import { AccountingService } from '@/modules/accounting-core/accounting.service';
 import { LoyaltyService } from '@/modules/loyalty-wallets/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty-wallets/loyalty-wallet.service';
 import { UserRole } from '@common/enums/user-roles.enums';

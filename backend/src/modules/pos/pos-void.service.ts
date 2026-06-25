@@ -13,7 +13,7 @@ import { SaleRepository } from '@pos/sale.repository';
 import { PaymentRepository } from '@pos/payment.repository';
 import { CreditTransactionRepository } from '@pos/credit-transaction.repository';
 import { StockMovementRepository } from '@pos/stock-movement.repository';
-import { AccountingService } from '@accounting/accounting.service';
+import { AccountingService } from '@/modules/accounting-core/accounting.service';
 import { LoyaltyWalletService } from '@/modules/loyalty-wallets/loyalty-wallet.service';
 
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';

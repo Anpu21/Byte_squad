@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Branch } from '@branches/entities/branch.entity';
 import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
-import { Expense } from '@accounting/entities/expense.entity';
+import { Expense } from '@/modules/accounting-core/entities/expense.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { LoyaltyAccount } from '@/modules/loyalty-wallets/entities/loyalty-account.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty-wallets/entities/loyalty-ledger-entry.entity';

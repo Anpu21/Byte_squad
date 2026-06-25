@@ -5,18 +5,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
-import { Expense } from '@accounting/entities/expense.entity';
+import { Expense } from '@/modules/accounting-core/entities/expense.entity';
 import {
   AccountingRepository,
   LedgerPostInput,
-} from '@accounting/accounting.repository';
-import { AccountsRepository } from '@accounting/accounts.repository';
-import { Account } from '@accounting/entities/account.entity';
-import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
+} from '@/modules/accounting-core/accounting.repository';
+import { AccountsRepository } from '@/modules/accounting-core/accounts.repository';
+import { Account } from '@/modules/accounting-core/entities/account.entity';
+import { LedgerEntry } from '@/modules/accounting-core/entities/ledger-entry.entity';
 import { EntityManager } from 'typeorm';
-import { ProfitLossSalesRepository } from '@accounting/profit-loss-sales.repository';
-import { CreateExpenseDto } from '@accounting/dto/create-expense.dto';
-import { ReviewExpenseDto } from '@accounting/dto/review-expense.dto';
+import { ProfitLossSalesRepository } from '@/modules/accounting-core/profit-loss-sales.repository';
+import { CreateExpenseDto } from '@/modules/accounting-core/dto/create-expense.dto';
+import { ReviewExpenseDto } from '@/modules/accounting-core/dto/review-expense.dto';
 import { ExpenseStatus } from '@common/enums/expense-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 
@@ -31,7 +31,7 @@ import {
   PaginatedLedger,
   LedgerSummary,
   ProfitLossData,
-} from '@accounting/types';
+} from '@/modules/accounting-core/types';
 
 // Re-export so existing callers that imported these from this file keep working.
 export type {

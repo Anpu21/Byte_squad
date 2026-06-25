@@ -4,7 +4,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import type { AccountType } from '@accounting/types/account-type.type';
+import type { AccountType } from '@/modules/accounting-core/types/account-type.type';
 
 /**
  * Chart-of-accounts node. System accounts are seeded (stable codes that
