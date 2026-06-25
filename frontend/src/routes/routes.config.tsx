@@ -17,7 +17,7 @@ import { InventoryWorkspacePage } from '@/pages/inventory/InventoryWorkspacePage
 import { PurchasesWorkspacePage } from '@/pages/purchases/PurchasesWorkspacePage';
 import { StockAdjustmentNewPage } from '@/pages/inventory/StockAdjustmentNewPage';
 import { ReturnNewPage } from '@/pages/inventory/ReturnNewPage';
-import { PosPage } from '@/pages/pos/PosPage';
+import { PosPage } from '@/features/pos';
 import { SalesPage } from '@/pages/sales/SalesPage';
 import { AccountingPage } from '@/pages/accounting/AccountingPage';
 import { AuditLogPage } from '@/pages/admin/AuditLogPage';
