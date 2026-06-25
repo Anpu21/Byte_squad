@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download } from 'lucide-react';
+import { LuDownload as Download } from 'react-icons/lu';
 import { useQuery } from '@tanstack/react-query';
 import {
     Button,

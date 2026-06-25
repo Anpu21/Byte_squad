@@ -1,5 +1,5 @@
 import type { ChangeEvent } from 'react';
-import { Loader2, Phone } from 'lucide-react';
+import { LuLoaderCircle as Loader2, LuPhone as Phone } from 'react-icons/lu';
 import Input from '@/components/ui/Input';
 
 export interface IPosLoyaltyPhoneFieldProps {

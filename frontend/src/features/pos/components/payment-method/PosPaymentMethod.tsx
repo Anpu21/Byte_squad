@@ -1,12 +1,6 @@
 import { useEffect } from 'react';
-import {
-    Banknote,
-    CreditCard,
-    Smartphone,
-    FileText,
-    Building2,
-    type LucideIcon,
-} from 'lucide-react';
+import { LuBanknote as Banknote, LuCreditCard as CreditCard, LuSmartphone as Smartphone, LuFileText as FileText, LuBuilding2 as Building2 } from 'react-icons/lu';
+import { type IconType as LucideIcon } from 'react-icons';
 import type { TPaymentMethod } from '@/types';
 
 interface IPosPaymentMethodProps {

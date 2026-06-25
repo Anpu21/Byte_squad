@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Mail } from 'lucide-react';
+import { LuArrowRight as ArrowRight, LuMail as Mail } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';

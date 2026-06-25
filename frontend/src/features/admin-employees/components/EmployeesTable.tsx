@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil } from 'lucide-react';
+import { LuPencil as Pencil } from 'react-icons/lu';
 import {
     Avatar,
     Card,

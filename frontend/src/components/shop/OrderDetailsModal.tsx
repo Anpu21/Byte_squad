@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import QRCode from 'qrcode';
-import { ExternalLink, MapPin } from 'lucide-react';
+import { LuExternalLink as ExternalLink, LuMapPin as MapPin } from 'react-icons/lu';
 import Modal from '@/components/ui/Modal';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { CustomerOrderStatus, ICustomerOrder } from '@/types';

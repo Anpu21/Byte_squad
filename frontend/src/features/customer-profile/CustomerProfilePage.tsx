@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { LuLoaderCircle as Loader2 } from 'react-icons/lu';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/hooks/useAuth';
 import {

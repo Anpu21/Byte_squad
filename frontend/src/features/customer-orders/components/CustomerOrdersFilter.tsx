@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { LuSearch as Search } from 'react-icons/lu';
 import type { CustomerOrderStatus } from '@/types';
 import { STAFF_ORDER_STATUS_LABEL } from '../lib/order-status';
 

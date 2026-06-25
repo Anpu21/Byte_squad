@@ -6,7 +6,7 @@ import {
     useRef,
     useState,
 } from 'react';
-import { Camera, Plus } from 'lucide-react';
+import { LuCamera as Camera, LuPlus as Plus } from 'react-icons/lu';
 import { useInventoryByBranchQuery } from '@/hooks/useInventoryByBranchQuery';
 import type { IProduct } from '@/types';
 

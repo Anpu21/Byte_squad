@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookPlus } from 'lucide-react';
+import { LuBookPlus as BookPlus } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { useLedgerPage } from '@/features/ledger/hooks/useLedgerPage';

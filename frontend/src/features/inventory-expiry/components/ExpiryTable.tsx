@@ -1,4 +1,4 @@
-import { CalendarClock } from 'lucide-react';
+import { LuCalendarClock as CalendarClock } from 'react-icons/lu';
 import {
     DataTable,
     EmptyState,

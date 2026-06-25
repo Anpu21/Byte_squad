@@ -1,4 +1,4 @@
-import { Camera } from 'lucide-react';
+import { LuCamera as Camera } from 'react-icons/lu';
 import Pill from '@/components/ui/Pill';
 import { FormField } from './FormField';
 import type { ProductFormState } from '../hooks/useProductFormState';

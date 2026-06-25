@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { Layers, PauseCircle, Undo2 } from 'lucide-react';
+import { LuLayers as Layers, LuCirclePause as PauseCircle, LuUndo2 as Undo2 } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import {
     usePosCart,

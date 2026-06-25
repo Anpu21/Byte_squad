@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { ArrowLeft, ArrowRight, Mail } from 'lucide-react';
+import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuMail as Mail } from 'react-icons/lu';
 import { authService } from '@/services/auth.service';
 import { isValidEmail } from '@/lib/utils';
 import { FRONTEND_ROUTES } from '@/constants/routes';

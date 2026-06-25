@@ -1,4 +1,4 @@
-import { Building2 } from 'lucide-react';
+import { LuBuilding2 as Building2 } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import type { IMyBranchPerformance } from '@/types';
 

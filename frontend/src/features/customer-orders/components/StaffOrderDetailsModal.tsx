@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { Mail, MapPin, Phone, User } from 'lucide-react';
+import { LuMail as Mail, LuMapPin as MapPin, LuPhone as Phone, LuUser as User } from 'react-icons/lu';
 import Modal from '@/components/ui/Modal';
 import StatusPill from '@/components/ui/StatusPill';
 import type { ICustomerOrder } from '@/types';

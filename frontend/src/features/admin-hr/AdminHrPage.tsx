@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarCheck, CalendarRange, Wallet } from 'lucide-react';
+import { LuBadgeCheck as BadgeCheck, LuCalendarCheck as CalendarCheck, LuCalendarRange as CalendarRange, LuWallet as Wallet } from 'react-icons/lu';
 import { Tabs, type TabItem } from '@/components/ui';
 import { useAdminHrTab, type AdminHrTab } from './hooks/useAdminHrTab';
 import { EmployeesView } from '@/features/admin-employees';

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Eye } from 'lucide-react';
+import { LuEye as Eye } from 'react-icons/lu';
 import { DataTable, type DataTableColumn } from '@/components/ui';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { formatCurrency } from '@/lib/utils';

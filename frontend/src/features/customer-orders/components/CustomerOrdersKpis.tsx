@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2, Clock } from 'lucide-react';
+import { LuCalendarDays as CalendarDays, LuCircleCheckBig as CheckCircle2, LuClock as Clock } from 'react-icons/lu';
 import KpiCard from '@/components/ui/KpiCard';
 import type { OrdersKpis } from '../lib/metrics';
 

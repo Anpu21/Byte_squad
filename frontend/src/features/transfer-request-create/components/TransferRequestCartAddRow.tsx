@@ -7,7 +7,7 @@ import {
     useState,
 } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { LuPlus as Plus } from 'react-icons/lu';
 import { inventoryService } from '@/services/inventory.service';
 import { queryKeys } from '@/lib/queryKeys';
 import type { IProduct } from '@/types';

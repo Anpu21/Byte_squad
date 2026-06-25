@@ -1,9 +1,5 @@
-import {
-    Building2,
-    GitCompareArrows,
-    Store,
-    type LucideIcon,
-} from 'lucide-react';
+import { LuBuilding2 as Building2, LuGitCompareArrows as GitCompareArrows, LuStore as Store } from 'react-icons/lu';
+import { type IconType as LucideIcon } from 'react-icons';
 import { UserRole } from '@/constants/enums';
 import { useAuth } from '@/hooks/useAuth';
 import type { BranchHubTab } from '../hooks/useBranchHubTab';

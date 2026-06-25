@@ -1,4 +1,4 @@
-import { Receipt } from 'lucide-react';
+import { LuReceipt as Receipt } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import { useCashierDashboard } from '@/features/cashier-dashboard/hooks/useCashierDashboard';
 import { CashierKpis } from '@/features/cashier-dashboard/components/CashierKpis';

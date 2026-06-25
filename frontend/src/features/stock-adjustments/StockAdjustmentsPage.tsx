@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { LuPlus as Plus } from 'react-icons/lu';
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'

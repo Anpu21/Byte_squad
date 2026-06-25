@@ -1,4 +1,4 @@
-import { FileSpreadsheet, FileText } from 'lucide-react';
+import { LuFileSpreadsheet as FileSpreadsheet, LuFileText as FileText } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import { exportData, type ExportColumn } from '@/lib/exportUtils';
 import type { ILoyaltyCustomerRow } from '@/types';

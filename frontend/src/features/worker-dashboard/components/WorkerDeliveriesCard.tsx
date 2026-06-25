@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Truck } from 'lucide-react';
+import { LuArrowRight as ArrowRight, LuTruck as Truck } from 'react-icons/lu';
 import KpiCard from '@/components/ui/KpiCard';
 import ShipmentStatusPill from '@/components/transfers/ShipmentStatusPill';
 import { ShipmentStatus } from '@/constants/enums';

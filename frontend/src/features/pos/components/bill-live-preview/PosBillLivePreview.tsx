@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Receipt } from 'lucide-react';
+import { LuReceipt as Receipt } from 'react-icons/lu';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type { IPosLoyaltyOwner } from '@/features/pos/hooks/useLoyaltyAttach';
 import type { ILoyaltySettings } from '@/types';

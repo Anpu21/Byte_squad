@@ -1,13 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import {
-    MapPin,
-    Navigation,
-    PackageCheck,
-    Truck,
-    Undo2,
-    UserPlus,
-    XCircle,
-} from 'lucide-react';
+import { LuMapPin as MapPin, LuNavigation as Navigation, LuPackageCheck as PackageCheck, LuTruck as Truck, LuUndo2 as Undo2, LuUserPlus as UserPlus, LuCircleX as XCircle } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import { ShipmentStatus, UserRole } from '@/constants/enums';
 import type { IShipment } from '@/types';

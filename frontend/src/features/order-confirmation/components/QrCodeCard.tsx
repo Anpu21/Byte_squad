@@ -1,4 +1,4 @@
-import { Download } from 'lucide-react';
+import { LuDownload as Download } from 'react-icons/lu';
 
 interface QrCodeCardProps {
     qrDataUrl: string | null;

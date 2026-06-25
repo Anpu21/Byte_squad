@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { LuBell as Bell } from 'react-icons/lu';
 import { useNotifications } from '@/hooks/useNotifications';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { timeAgo } from './notificationUtils';

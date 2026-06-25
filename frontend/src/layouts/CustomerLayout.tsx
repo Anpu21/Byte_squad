@@ -8,17 +8,7 @@ import {
 } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useQuery } from '@tanstack/react-query';
-import {
-    LogOut,
-    MapPin,
-    Search,
-    ScrollText,
-    ShoppingCart,
-    Sparkles,
-    User,
-    UserRound,
-    X,
-} from 'lucide-react';
+import { LuLogOut as LogOut, LuMapPin as MapPin, LuSearch as Search, LuScrollText as ScrollText, LuShoppingCart as ShoppingCart, LuSparkles as Sparkles, LuUser as User, LuUserRound as UserRound, LuX as X } from 'react-icons/lu';
 import type { ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';

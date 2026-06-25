@@ -1,9 +1,4 @@
-import {
-    AlertTriangle,
-    Receipt,
-    ShoppingCart,
-    TrendingUp,
-} from 'lucide-react';
+import { LuTriangleAlert as AlertTriangle, LuReceipt as Receipt, LuShoppingCart as ShoppingCart, LuTrendingUp as TrendingUp } from 'react-icons/lu';
 import KpiCard from '@/components/ui/KpiCard';
 import { formatRevenue } from '../lib/format';
 

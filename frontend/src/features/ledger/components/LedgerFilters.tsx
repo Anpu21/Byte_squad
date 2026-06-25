@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { LuSearch as Search } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import type { LedgerFiltersState } from '../hooks/useLedgerFilters';
 import type {

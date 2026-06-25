@@ -1,4 +1,4 @@
-import { Download } from 'lucide-react';
+import { LuDownload as Download } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 
 interface DashboardHeaderProps {

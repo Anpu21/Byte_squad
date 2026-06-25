@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Printer } from 'lucide-react';
+import { LuPrinter as Printer } from 'react-icons/lu';
 import Modal from '@/components/ui/Modal';
 import type { ISale } from '@/types';
 import { usePrintReceipt } from '@/features/pos/hooks/usePrintReceipt';

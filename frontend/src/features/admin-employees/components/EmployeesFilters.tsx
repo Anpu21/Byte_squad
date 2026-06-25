@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Search, X } from 'lucide-react';
+import { LuSearch as Search, LuX as X } from 'react-icons/lu';
 import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';
 

@@ -1,4 +1,4 @@
-import { Minus, Plus } from 'lucide-react';
+import { LuMinus as Minus, LuPlus as Plus } from 'react-icons/lu';
 
 interface QtyStepperProps {
     qty: number;

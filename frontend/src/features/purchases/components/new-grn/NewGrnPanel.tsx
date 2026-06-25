@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Plus, Trash2 } from 'lucide-react';
+import { LuPlus as Plus, LuTrash2 as Trash2 } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils';

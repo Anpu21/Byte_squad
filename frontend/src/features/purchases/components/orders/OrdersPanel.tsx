@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Plus } from 'lucide-react';
+import { LuPlus as Plus } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Pill, { type PillTone } from '@/components/ui/Pill';

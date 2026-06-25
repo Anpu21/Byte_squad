@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Triangle } from 'lucide-react';
+import { LuTriangle as Triangle } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 import type {

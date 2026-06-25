@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { LuArrowLeft as ArrowLeft } from 'react-icons/lu';
 import { useShipmentQuery } from '@/features/shipment-tracking/hooks/useShipmentQuery';
 import { useStockTransferRealtime } from '@/hooks/useStockTransferRealtime';
 import { ShipmentHeader } from '@/features/shipment-tracking/components/ShipmentHeader';

@@ -1,4 +1,4 @@
-import { RotateCcw } from 'lucide-react';
+import { LuRotateCcw as RotateCcw } from 'react-icons/lu';
 import type { IShopProduct } from '@/types';
 import { ProductCard } from './ProductCard';
 

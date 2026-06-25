@@ -1,18 +1,6 @@
 import type { ReactNode } from "react";
-import {
-  AlertTriangle,
-  BadgePercent,
-  BarChart3,
-  Boxes,
-  CircleDollarSign,
-  CreditCard,
-  ReceiptText,
-  ShoppingBag,
-  TrendingUp,
-  UsersRound,
-  WalletCards,
-  type LucideIcon,
-} from "lucide-react";
+import { LuTriangleAlert as AlertTriangle, LuBadgePercent as BadgePercent, LuChartColumnBig as BarChart3, LuBoxes as Boxes, LuCircleDollarSign as CircleDollarSign, LuCreditCard as CreditCard, LuReceiptText as ReceiptText, LuShoppingBag as ShoppingBag, LuTrendingUp as TrendingUp, LuUsersRound as UsersRound, LuWalletCards as WalletCards } from 'react-icons/lu';
+import { type IconType as LucideIcon } from 'react-icons';
 import {
   Bar,
   BarChart,

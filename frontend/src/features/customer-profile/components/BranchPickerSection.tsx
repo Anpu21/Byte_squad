@@ -1,4 +1,4 @@
-import { Check, Loader2, MapPin } from 'lucide-react';
+import { LuCheck as Check, LuLoaderCircle as Loader2, LuMapPin as MapPin } from 'react-icons/lu';
 import type { IUserProfile } from '@/types';
 
 interface Branch {

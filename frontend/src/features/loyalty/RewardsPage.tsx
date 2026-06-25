@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Sparkles, ShoppingBag } from 'lucide-react';
+import { LuChevronLeft as ChevronLeft, LuSparkles as Sparkles, LuShoppingBag as ShoppingBag } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useLoyaltySummary } from '@/features/loyalty/hooks/useLoyaltySummary';
 import { useLoyaltySettings } from '@/features/loyalty/hooks/useLoyaltySettings';

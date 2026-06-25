@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { LuSearch as Search } from 'react-icons/lu';
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'

@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { LuArrowRight as ArrowRight } from 'react-icons/lu';
 import { TransferStatus } from '@/constants/enums';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
 import {

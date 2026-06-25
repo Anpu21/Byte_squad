@@ -1,4 +1,4 @@
-import { MapPin, Package } from 'lucide-react';
+import { LuMapPin as MapPin, LuPackage as Package } from 'react-icons/lu';
 import { formatCurrency } from '@/lib/utils';
 import type { ICustomerOrder } from '@/types';
 import { STATUS_LABEL, STATUS_TONE } from '../lib/status-style';

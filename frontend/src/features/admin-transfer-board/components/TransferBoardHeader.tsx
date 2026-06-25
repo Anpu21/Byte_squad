@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { LuPlus as Plus } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
 interface TransferBoardHeaderProps {

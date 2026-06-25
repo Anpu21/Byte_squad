@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Printer } from 'lucide-react';
+import { LuPrinter as Printer } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { formatCurrency } from '@/lib/utils';

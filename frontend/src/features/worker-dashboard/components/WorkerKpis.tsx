@@ -1,4 +1,4 @@
-import { CalendarCheck, Clock, Hourglass, TimerOff } from 'lucide-react';
+import { LuCalendarCheck as CalendarCheck, LuClock as Clock, LuHourglass as Hourglass, LuTimerOff as TimerOff } from 'react-icons/lu';
 import KpiCard from '@/components/ui/KpiCard';
 import type { WorkerAttendanceMetrics } from '@/features/worker-dashboard/lib/attendance-metrics';
 

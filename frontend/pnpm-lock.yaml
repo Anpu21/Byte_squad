@@ -41,9 +41,6 @@ importers:
       jspdf-autotable:
         specifier: 5.0.7
         version: 5.0.7(jspdf@4.2.1)
-      lucide-react:
-        specifier: 0.574.0
-        version: 0.574.0(react@19.2.4)
       qrcode:
         specifier: 1.5.4
         version: 1.5.4
@@ -59,6 +56,9 @@ importers:
       react-i18next:
         specifier: 17.0.8
         version: 17.0.8(i18next@26.3.1(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      react-icons:
+        specifier: 5.6.0
+        version: 5.6.0(react@19.2.4)
       react-redux:
         specifier: 9.2.0
         version: 9.2.0(@types/react@19.2.14)(react@19.2.4)(redux@5.0.1)
@@ -1747,11 +1747,6 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  lucide-react@0.574.0:
-    resolution: {integrity: sha512-dJ8xb5juiZVIbdSn3HTyHsjjIwUwZ4FNwV0RtYDScOyySOeie1oXZTymST6YPJ4Qwt3Po8g4quhYl4OxtACiuQ==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
@@ -1915,6 +1910,11 @@ packages:
         optional: true
       typescript:
         optional: true
+
+  react-icons@5.6.0:
+    resolution: {integrity: sha512-RH93p5ki6LfOiIt0UtDyNg/cee+HLVR6cHHtW3wALfo+eOHTp8RnU2kRkI6E+H19zMIs03DyxUG/GfZMOGvmiA==}
+    peerDependencies:
+      react: '*'
 
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
@@ -3884,10 +3884,6 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lucide-react@0.574.0(react@19.2.4):
-    dependencies:
-      react: 19.2.4
-
   lz-string@1.5.0: {}
 
   magic-string@0.30.21:
@@ -4027,6 +4023,10 @@ snapshots:
     optionalDependencies:
       react-dom: 19.2.4(react@19.2.4)
       typescript: 5.9.3
+
+  react-icons@5.6.0(react@19.2.4):
+    dependencies:
+      react: 19.2.4
 
   react-is@17.0.2: {}
 

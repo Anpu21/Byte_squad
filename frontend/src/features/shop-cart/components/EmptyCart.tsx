@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart } from 'lucide-react';
+import { LuShoppingCart as ShoppingCart } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
 export function EmptyCart() {

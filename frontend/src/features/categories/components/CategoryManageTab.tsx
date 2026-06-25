@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Archive, Pencil, Plus } from 'lucide-react';
+import { LuArchive as Archive, LuPencil as Pencil, LuPlus as Plus } from 'react-icons/lu';
 import {
     Button,
     DataTable,

@@ -1,4 +1,4 @@
-import { Inbox } from 'lucide-react';
+import { LuInbox as Inbox } from 'react-icons/lu';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 import type { CustomerOrderStatus, ICustomerOrder } from '@/types';

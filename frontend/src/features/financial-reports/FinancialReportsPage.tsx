@@ -1,14 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import {
-    BookOpenCheck,
-    CalendarDays,
-    Lock,
-    LockOpen,
-    Scale,
-    type LucideIcon,
-} from 'lucide-react';
+import { LuBookOpenCheck as BookOpenCheck, LuCalendarDays as CalendarDays, LuLock as Lock, LuLockOpen as LockOpen, LuScale as Scale } from 'react-icons/lu';
+import { type IconType as LucideIcon } from 'react-icons';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import PageHeader from '@/components/ui/PageHeader';

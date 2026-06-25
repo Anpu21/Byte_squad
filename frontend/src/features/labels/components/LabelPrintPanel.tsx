@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Printer, Search } from 'lucide-react';
+import { LuPrinter as Printer, LuSearch as Search } from 'react-icons/lu';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';

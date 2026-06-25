@@ -1,4 +1,4 @@
-import { Check, Clock } from 'lucide-react';
+import { LuCheck as Check, LuClock as Clock } from 'react-icons/lu';
 import { TransferStatus } from '@/constants/enums';
 import type { IStockTransferRequest } from '@/types';
 

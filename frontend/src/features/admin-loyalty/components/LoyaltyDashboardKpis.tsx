@@ -1,4 +1,4 @@
-import { Users, Coins, TrendingUp, Gift } from 'lucide-react';
+import { LuUsers as Users, LuCoins as Coins, LuTrendingUp as TrendingUp, LuGift as Gift } from 'react-icons/lu';
 import { useLoyaltyDashboard } from '../hooks/useLoyaltyDashboard';
 import KpiCard from '@/components/ui/KpiCard';
 

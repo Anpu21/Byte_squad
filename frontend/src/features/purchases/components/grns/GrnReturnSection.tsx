@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Undo2 } from 'lucide-react';
+import { LuUndo2 as Undo2 } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
 import type { IGrn } from '@/types';

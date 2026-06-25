@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { LuSearch as Search } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import { UserRole } from '@/constants/enums';
 import type { IBranch } from '@/types';

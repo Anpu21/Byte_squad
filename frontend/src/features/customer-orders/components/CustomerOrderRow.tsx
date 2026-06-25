@@ -1,4 +1,4 @@
-import { Ban, Check, Eye } from 'lucide-react';
+import { LuBan as Ban, LuCheck as Check, LuEye as Eye } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import StatusPill from '@/components/ui/StatusPill';
 import { formatCurrency } from '@/lib/utils';

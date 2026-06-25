@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Plus, Minus } from 'lucide-react';
+import { LuLoaderCircle as Loader2, LuPlus as Plus, LuMinus as Minus } from 'react-icons/lu';
 import { useLoyaltyAdjustPoints } from '../hooks/useLoyaltyAdjustPoints';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';

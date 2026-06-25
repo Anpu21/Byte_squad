@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { CheckCircle2, Pencil } from 'lucide-react';
+import { LuCircleCheckBig as CheckCircle2, LuPencil as Pencil } from 'react-icons/lu';
 import Avatar from '@/components/ui/Avatar';
 import EmptyState from '@/components/ui/EmptyState';
 import type {

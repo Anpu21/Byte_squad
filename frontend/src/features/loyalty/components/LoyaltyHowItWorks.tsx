@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { LuChevronDown as ChevronDown } from 'react-icons/lu';
 import { useLoyaltySettings } from '../hooks/useLoyaltySettings';
 import {
     formatEarnRule,

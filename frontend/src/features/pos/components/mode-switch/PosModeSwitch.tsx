@@ -1,4 +1,5 @@
-import { ReceiptText, ScanLine, type LucideIcon } from 'lucide-react';
+import { LuReceiptText as ReceiptText, LuScanLine as ScanLine } from 'react-icons/lu';
+import { type IconType as LucideIcon } from 'react-icons';
 
 export type PosMode = 'billing' | 'scan';
 

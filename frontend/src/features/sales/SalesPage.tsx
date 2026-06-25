@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ScrollText, ShoppingCart, BadgePercent, BarChart3 } from 'lucide-react';
+import { LuScrollText as ScrollText, LuShoppingCart as ShoppingCart, LuBadgePercent as BadgePercent, LuChartColumnBig as BarChart3 } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';

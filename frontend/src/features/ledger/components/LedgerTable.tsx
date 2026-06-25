@@ -1,4 +1,4 @@
-import { BookOpen } from 'lucide-react';
+import { LuBookOpen as BookOpen } from 'react-icons/lu';
 import {
     DataTable,
     EmptyState,

@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { LuX as X } from 'react-icons/lu';
 import Pill from '@/components/ui/Pill';
 import { Select } from '@/components/ui/Select';
 import { useCatalogPage } from '@/features/shop-catalog/hooks/useCatalogPage';

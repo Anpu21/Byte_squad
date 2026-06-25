@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { LuArrowRight as ArrowRight } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import OnboardingStepper from '@/components/auth/OnboardingStepper';
 import { useBranchSelection } from '@/features/branch-selection/hooks/useBranchSelection';

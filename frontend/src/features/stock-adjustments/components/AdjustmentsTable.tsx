@@ -1,4 +1,4 @@
-import { ClipboardList } from 'lucide-react';
+import { LuClipboardList as ClipboardList } from 'react-icons/lu';
 import {
     Button,
     DataTable,

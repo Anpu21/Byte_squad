@@ -1,4 +1,4 @@
-import { PackagePlus, BellRing } from 'lucide-react'
+import { LuPackagePlus as PackagePlus, LuBellRing as BellRing } from 'react-icons/lu';
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'

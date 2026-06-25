@@ -1,4 +1,4 @@
-import { Moon, Sun } from 'lucide-react';
+import { LuMoon as Moon, LuSun as Sun } from 'react-icons/lu';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 

@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react';
+import { LuSparkles as Sparkles } from 'react-icons/lu';
 
 interface LoyaltyPreviewLineProps {
     total: number;

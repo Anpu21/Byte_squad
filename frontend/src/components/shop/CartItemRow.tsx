@@ -1,5 +1,5 @@
 import { useAppDispatch } from '@/store/hooks';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { LuMinus as Minus, LuPlus as Plus, LuTrash2 as Trash2 } from 'react-icons/lu';
 import {
     removeFromCart,
     setQuantity,

@@ -1,4 +1,4 @@
-import { Calendar, CalendarDays, TrendingUp } from 'lucide-react';
+import { LuCalendar as Calendar, LuCalendarDays as CalendarDays, LuTrendingUp as TrendingUp } from 'react-icons/lu';
 import KpiCard from '@/components/ui/KpiCard';
 import type { ICashierTransactionsSummary } from '@/types';
 import { formatRevenue } from '../lib/format';

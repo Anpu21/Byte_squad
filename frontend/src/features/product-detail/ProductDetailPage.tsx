@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Store, Flame } from 'lucide-react';
+import { LuChevronLeft as ChevronLeft, LuStore as Store, LuFlame as Flame } from 'react-icons/lu';
 import { formatCurrency } from '@/lib/utils';
 import { Select } from '@/components/ui/Select';
 import { FRONTEND_ROUTES } from '@/constants/routes';

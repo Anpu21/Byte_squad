@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react';
+import { LuSparkles as Sparkles } from 'react-icons/lu';
 import { formatCurrency } from '@/lib/utils';
 import type { ShopCartItem } from '@/store/slices/shopCartSlice';
 

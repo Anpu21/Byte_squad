@@ -1,4 +1,4 @@
-import { Lock } from 'lucide-react';
+import { LuLock as Lock } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Card, {
     CardContent,

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Search } from 'lucide-react';
+import { LuSearch as Search } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { formatCurrency } from '@/lib/utils';

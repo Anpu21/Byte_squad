@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight } from 'react-icons/lu';
 import { useQuery } from '@tanstack/react-query';
 import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';

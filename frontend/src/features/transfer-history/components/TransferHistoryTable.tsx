@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { LuArrowRight as ArrowRight } from 'react-icons/lu';
 import { useNavigate } from 'react-router-dom';
 import {
     DataTable,

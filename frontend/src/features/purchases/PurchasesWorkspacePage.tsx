@@ -1,12 +1,5 @@
 import { useState } from 'react';
-import {
-    Building2,
-    CalendarClock,
-    ClipboardList,
-    FileText,
-    PackagePlus,
-    Wallet,
-} from 'lucide-react';
+import { LuBuilding2 as Building2, LuCalendarClock as CalendarClock, LuClipboardList as ClipboardList, LuFileText as FileText, LuPackagePlus as PackagePlus, LuWallet as Wallet } from 'react-icons/lu';
 import PageHeader from '@/components/ui/PageHeader';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import type { IPurchaseOrder } from '@/types';

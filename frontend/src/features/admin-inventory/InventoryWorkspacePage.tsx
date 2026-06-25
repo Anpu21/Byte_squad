@@ -1,12 +1,4 @@
-import {
-    Barcode,
-    Boxes,
-    CalendarClock,
-    ClipboardList,
-    Tags,
-    Truck,
-    Undo2,
-} from 'lucide-react';
+import { LuBarcode as Barcode, LuBoxes as Boxes, LuCalendarClock as CalendarClock, LuClipboardList as ClipboardList, LuTags as Tags, LuTruck as Truck, LuUndo2 as Undo2 } from 'react-icons/lu';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import {
     useInventoryTab,

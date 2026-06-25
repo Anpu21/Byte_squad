@@ -1,4 +1,4 @@
-import { Loader2, X } from 'lucide-react';
+import { LuLoaderCircle as Loader2, LuX as X } from 'react-icons/lu';
 import EmptyState from '@/components/ui/EmptyState';
 import type { ILoyaltyCustomerRow } from '@/types';
 import { LoyaltyHistoryRow } from '@/features/loyalty/components/LoyaltyHistoryRow';

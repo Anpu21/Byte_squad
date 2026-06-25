@@ -1,4 +1,4 @@
-import { Trash2, Minus, Plus } from 'lucide-react';
+import { LuTrash2 as Trash2, LuMinus as Minus, LuPlus as Plus } from 'react-icons/lu';
 import { formatCurrency } from '@/lib/utils';
 import ProductImage from '@/components/shop/ProductImage';
 import type {

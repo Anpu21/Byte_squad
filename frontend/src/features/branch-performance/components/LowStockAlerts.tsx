@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react';
+import { LuTriangleAlert as AlertTriangle } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import Pill from '@/components/ui/Pill';
 import EmptyState from '@/components/ui/EmptyState';

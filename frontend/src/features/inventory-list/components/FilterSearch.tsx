@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { LuSearch as Search } from 'react-icons/lu';
 
 interface FilterSearchProps {
     value: string;

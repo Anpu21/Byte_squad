@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { X, ShoppingCart } from 'lucide-react';
+import { LuX as X, LuShoppingCart as ShoppingCart } from 'react-icons/lu';
 import { closeCartDrawer } from '@/store/slices/shopCartSlice';
 import {
     selectShopCartItems,

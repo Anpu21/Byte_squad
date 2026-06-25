@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ScrollText, HandCoins, Scale, Wallet, PiggyBank } from 'lucide-react';
+import { LuScrollText as ScrollText, LuHandCoins as HandCoins, LuScale as Scale, LuWallet as Wallet, LuPiggyBank as PiggyBank } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';

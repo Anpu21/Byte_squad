@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { LuPlus as Plus } from 'react-icons/lu';
 import { useQuery } from '@tanstack/react-query';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';

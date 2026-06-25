@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { LuPlus as Plus, LuSearch as Search } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import type { ISupplier, SupplierStatus } from '@/types';

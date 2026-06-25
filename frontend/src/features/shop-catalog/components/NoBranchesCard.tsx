@@ -1,4 +1,4 @@
-import { Store } from 'lucide-react';
+import { LuStore as Store } from 'react-icons/lu';
 
 export function NoBranchesCard() {
     return (

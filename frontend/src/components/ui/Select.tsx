@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { LuChevronDown as ChevronDown } from 'react-icons/lu';
 import { cn } from '@/lib/utils';
 
 export interface SelectOption {

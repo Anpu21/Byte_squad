@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { LuPlus as Plus } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import { ShipmentStatus, UserRole } from '@/constants/enums';
 import { FRONTEND_ROUTES } from '@/constants/routes';

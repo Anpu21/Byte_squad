@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { ArrowLeft, ArrowRight, PackagePlus } from 'lucide-react';
+import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuPackagePlus as PackagePlus } from 'react-icons/lu';
 import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import { TransferStatus, UserRole } from '@/constants/enums';

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ImageIcon, Package, Pencil } from 'lucide-react';
+import { LuImage as ImageIcon, LuPackage as Package, LuPencil as Pencil } from 'react-icons/lu';
 import {
     Button,
     DataTable,

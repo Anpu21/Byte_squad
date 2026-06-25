@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GitCompareArrows } from "lucide-react";
+import { LuGitCompareArrows as GitCompareArrows } from 'react-icons/lu';
 import toast from "react-hot-toast";
 import Card from "@/components/ui/Card";
 import Segmented from "@/components/ui/Segmented";

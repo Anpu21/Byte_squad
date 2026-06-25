@@ -1,4 +1,4 @@
-import { MoreHorizontal, Pencil, KeyRound, Trash2 } from 'lucide-react';
+import { LuEllipsis as MoreHorizontal, LuPencil as Pencil, LuKeyRound as KeyRound, LuTrash2 as Trash2 } from 'react-icons/lu';
 import type { IUser } from '@/types';
 
 interface UserActionsMenuProps {

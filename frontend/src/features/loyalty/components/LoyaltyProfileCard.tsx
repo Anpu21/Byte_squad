@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { LuArrowRight as ArrowRight, LuSparkles as Sparkles } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useLoyaltySummary } from '../hooks/useLoyaltySummary';
 import { useLoyaltySettings } from '../hooks/useLoyaltySettings';

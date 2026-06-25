@@ -1,4 +1,4 @@
-import { Percent } from 'lucide-react';
+import { LuPercent as Percent } from 'react-icons/lu';
 import { formatCurrency } from '@/lib/utils';
 import { PosCartNumericCell } from '@/features/pos/components/item-table/PosCartNumericCell';
 import { applyCartDiscount } from './pos-invoice-total.helpers';

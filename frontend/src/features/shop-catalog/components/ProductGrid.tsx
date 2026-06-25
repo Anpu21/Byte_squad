@@ -1,4 +1,4 @@
-import { ShoppingBag } from 'lucide-react';
+import { LuShoppingBag as ShoppingBag } from 'react-icons/lu';
 import type { IShopProduct } from '@/types';
 import { ProductCard } from './ProductCard';
 

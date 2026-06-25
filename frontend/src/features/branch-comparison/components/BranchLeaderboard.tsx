@@ -1,4 +1,4 @@
-import { TrendingDown, Trophy } from 'lucide-react';
+import { LuTrendingDown as TrendingDown, LuTrophy as Trophy } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import Pill from '@/components/ui/Pill';
 import type { LeaderboardRow } from '../hooks/useBranchComparisonPage';

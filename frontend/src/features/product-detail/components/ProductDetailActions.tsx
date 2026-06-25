@@ -1,4 +1,4 @@
-import { ShoppingCart } from 'lucide-react';
+import { LuShoppingCart as ShoppingCart } from 'react-icons/lu';
 import { QtyStepper } from './QtyStepper';
 
 interface ProductDetailActionsProps {

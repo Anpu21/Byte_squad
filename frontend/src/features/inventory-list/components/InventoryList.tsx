@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Package, Plus } from 'lucide-react';
+import { LuPackage as Package, LuPlus as Plus } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';

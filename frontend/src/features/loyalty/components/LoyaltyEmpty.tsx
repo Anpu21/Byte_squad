@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react';
+import { LuSparkles as Sparkles } from 'react-icons/lu';
 
 export function LoyaltyEmpty() {
     return (

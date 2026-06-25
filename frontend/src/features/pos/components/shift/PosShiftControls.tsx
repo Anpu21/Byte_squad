@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Clock3, Lock } from 'lucide-react';
+import { LuClock3 as Clock3, LuLock as Lock } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { formatCurrency } from '@/lib/utils';

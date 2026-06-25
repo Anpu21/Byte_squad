@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { LuArrowRight as ArrowRight } from 'react-icons/lu';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
 import Button from '@/components/ui/Button';
 import { FRONTEND_ROUTES } from '@/constants/routes';

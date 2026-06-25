@@ -1,4 +1,4 @@
-import { Building2, Check, Trash2, XCircle } from 'lucide-react';
+import { LuBuilding2 as Building2, LuCheck as Check, LuTrash2 as Trash2, LuCircleX as XCircle } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import Pill from '@/components/ui/Pill';
 import StatusPill from '@/components/ui/StatusPill';

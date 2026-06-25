@@ -1,4 +1,4 @@
-import { Undo2 } from 'lucide-react';
+import { LuUndo2 as Undo2 } from 'react-icons/lu';
 import {
     DataTable,
     EmptyState,

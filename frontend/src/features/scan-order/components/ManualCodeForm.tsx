@@ -1,4 +1,4 @@
-import { Keyboard } from 'lucide-react';
+import { LuKeyboard as Keyboard } from 'react-icons/lu';
 import { type RefObject } from 'react';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';

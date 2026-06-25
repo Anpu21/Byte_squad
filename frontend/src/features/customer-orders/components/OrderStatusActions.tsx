@@ -1,4 +1,4 @@
-import { Ban, Check } from 'lucide-react';
+import { LuBan as Ban, LuCheck as Check } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import type { ICustomerOrder } from '@/types';
 import { isAwaitingCollection } from '@/features/customer-orders/lib/order-status';

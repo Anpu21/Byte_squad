@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Plus, Store } from 'lucide-react';
+import { LuPlus as Plus, LuStore as Store } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { formatCurrency } from '@/lib/utils';
 import ProductImage from '@/components/shop/ProductImage';

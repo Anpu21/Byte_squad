@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCheck, Loader2, RefreshCw, X } from "lucide-react";
+import { LuCircleAlert as AlertCircle, LuCheckCheck as CheckCheck, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuX as X } from 'react-icons/lu';
 import Card from "@/components/ui/Card";
 import type { IBranchAnalyticsBranchOption } from "@/types";
 import {

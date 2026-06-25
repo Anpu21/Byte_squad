@@ -1,4 +1,4 @@
-import { ArrowLeftRight } from 'lucide-react';
+import { LuArrowLeftRight as ArrowLeftRight } from 'react-icons/lu';
 import type { IBranch } from '@/types';
 
 const SELECT_CLASS =

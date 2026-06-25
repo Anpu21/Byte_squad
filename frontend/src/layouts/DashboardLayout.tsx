@@ -1,27 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {
-    BarChart3,
-    Bell,
-    Boxes,
-    Briefcase,
-    Building2,
-    Calculator,
-    CalendarRange,
-    ChevronRight,
-    Home,
-    LogOut,
-    Menu as MenuIcon,
-    Receipt,
-    FileClock,
-    ShoppingBag,
-    Sparkles,
-    PackagePlus,
-    Truck,
-    UserCog,
-    Users,
-} from 'lucide-react';
+import { LuChartColumnBig as BarChart3, LuBell as Bell, LuBoxes as Boxes, LuBriefcase as Briefcase, LuBuilding2 as Building2, LuCalculator as Calculator, LuCalendarRange as CalendarRange, LuChevronRight as ChevronRight, LuHouse as Home, LuLogOut as LogOut, LuMenu as MenuIcon, LuReceipt as Receipt, LuFileClock as FileClock, LuShoppingBag as ShoppingBag, LuSparkles as Sparkles, LuPackagePlus as PackagePlus, LuTruck as Truck, LuUserCog as UserCog, LuUsers as Users } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
