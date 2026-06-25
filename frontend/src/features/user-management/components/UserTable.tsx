@@ -1,6 +1,10 @@
+import Avatar from '@/components/ui/Avatar';
 import Card from '@/components/ui/Card';
+import { DataTable, EmptyState, type DataTableColumn } from '@/components/ui';
 import type { IUser } from '@/types';
-import { UserRow } from './UserRow';
+import { RolePill } from './RolePill';
+import { UserStatusBadge } from './UserStatusBadge';
+import { UserActionsMenu } from './UserActionsMenu';
 
 interface UserTableProps {
     users: IUser[];
@@ -27,81 +31,110 @@ export function UserTable({
     onRequestResetPassword,
     onRequestDelete,
 }: UserTableProps) {
+    const columns: DataTableColumn<IUser>[] = [
+        {
+            key: 'user',
+            header: 'User',
+            render: (user) => (
+                <div className="flex items-center gap-3">
+                    <Avatar
+                        name={`${user.firstName} ${user.lastName}`}
+                        src={user.avatarUrl ?? undefined}
+                        size={32}
+                    />
+                    <span className="text-text-1 font-medium">
+                        {user.firstName} {user.lastName}
+                    </span>
+                </div>
+            ),
+        },
+        {
+            key: 'email',
+            header: 'Email',
+            className: 'text-text-2',
+            render: (user) => user.email,
+        },
+        {
+            key: 'phone',
+            header: 'Phone',
+            className: 'text-text-2 hidden md:table-cell',
+            headerClassName: 'hidden md:table-cell',
+            render: (user) => user.phone || '—',
+        },
+        {
+            key: 'role',
+            header: 'Role',
+            render: (user) => <RolePill role={user.role} />,
+        },
+        {
+            key: 'branch',
+            header: 'Branch',
+            className: 'text-text-2',
+            render: (user) => getBranchName(user.branchId),
+        },
+        {
+            key: 'address',
+            header: 'Address',
+            className: 'text-text-2 hidden lg:table-cell max-w-[220px]',
+            headerClassName: 'hidden lg:table-cell',
+            render: (user) => (
+                <span className="block truncate" title={user.address ?? undefined}>
+                    {user.address || '—'}
+                </span>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            render: (user) => <UserStatusBadge user={user} />,
+        },
+        {
+            key: 'joined',
+            header: 'Joined',
+            className: 'text-text-3 hidden xl:table-cell',
+            headerClassName: 'hidden xl:table-cell',
+            render: (user) => new Date(user.createdAt).toLocaleDateString(),
+        },
+        {
+            key: 'actions',
+            header: '',
+            align: 'right',
+            render: (user) => (
+                <UserActionsMenu
+                    user={user}
+                    isOpen={openMenuId === user.id}
+                    onToggle={() => onToggleMenu(user.id)}
+                    onEdit={onEdit}
+                    onRequestResetPassword={onRequestResetPassword}
+                    onRequestDelete={onRequestDelete}
+                />
+            ),
+        },
+    ];
+
     return (
         <Card>
-            <div className="overflow-auto max-h-[calc(100vh-320px)]">
-                {isLoading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="w-6 h-6 border-2 border-border border-t-primary rounded-full animate-spin" />
+            <DataTable
+                columns={columns}
+                rows={users}
+                getRowKey={(user) => user.id}
+                isLoading={isLoading}
+                stickyHeader
+                zebra
+                maxHeight="calc(100vh - 320px)"
+                empty={
+                    <EmptyState
+                        title={hasFilters ? 'No users match your filters' : 'No users found'}
+                    />
+                }
+                footer={
+                    <div className="px-5 py-3 border-t border-border flex items-center justify-between text-xs text-text-3 bg-surface-2">
+                        <span>
+                            Showing {users.length} of {totalCount} users
+                        </span>
                     </div>
-                ) : (
-                    <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 bg-surface-2 z-[1]">
-                            <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 border-b border-border">
-                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
-                                    User
-                                </th>
-                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
-                                    Email
-                                </th>
-                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap hidden md:table-cell">
-                                    Phone
-                                </th>
-                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
-                                    Role
-                                </th>
-                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
-                                    Branch
-                                </th>
-                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap hidden lg:table-cell">
-                                    Address
-                                </th>
-                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap">
-                                    Status
-                                </th>
-                                <th className="px-5 py-2.5 font-semibold whitespace-nowrap hidden xl:table-cell">
-                                    Joined
-                                </th>
-                                <th className="px-5 py-2.5 font-semibold text-right" />
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm">
-                            {users.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan={9}
-                                        className="px-5 py-16 text-center text-text-3"
-                                    >
-                                        {hasFilters
-                                            ? 'No users match your filters'
-                                            : 'No users found'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                users.map((user) => (
-                                    <UserRow
-                                        key={user.id}
-                                        user={user}
-                                        branchName={getBranchName(user.branchId)}
-                                        isMenuOpen={openMenuId === user.id}
-                                        onToggleMenu={() => onToggleMenu(user.id)}
-                                        onEdit={onEdit}
-                                        onRequestResetPassword={
-                                            onRequestResetPassword
-                                        }
-                                        onRequestDelete={onRequestDelete}
-                                    />
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                )}
-            </div>
-            <div className="px-5 py-3 border-t border-border flex items-center justify-between text-xs text-text-3 bg-surface-2">
-                <span>
-                    Showing {users.length} of {totalCount} users
-                </span>
-            </div>
+                }
+            />
         </Card>
     );
 }

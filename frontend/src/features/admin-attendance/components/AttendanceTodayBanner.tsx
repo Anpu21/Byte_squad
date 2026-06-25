@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { LuCircleAlert as AlertCircle, LuCircleCheckBig as CheckCircle2 } from 'react-icons/lu';
 import { hrService } from '@/services/hr.service';
 import { queryKeys } from '@/lib/queryKeys';
 import type { AttendanceStatus, IBulkAttendanceRow } from '@/types';

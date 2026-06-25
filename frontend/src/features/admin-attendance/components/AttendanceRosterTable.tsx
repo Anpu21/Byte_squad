@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { LuChevronRight as ChevronRight } from 'react-icons/lu';
 import EmptyState from '@/components/ui/EmptyState';
 import type { AttendanceStatus, IAttendance, IEmployee } from '@/types';
 import { formatHoursDuration } from '../lib/attendance-grid-helpers';

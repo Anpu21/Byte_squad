@@ -1,5 +1,5 @@
 import { type RefObject, useMemo } from 'react';
-import { AlertTriangle, Minus, Plus, X } from 'lucide-react';
+import { LuTriangleAlert as AlertTriangle, LuMinus as Minus, LuPlus as Plus, LuX as X } from 'react-icons/lu';
 import { useInventoryByBranchQuery } from '@/hooks/useInventoryByBranchQuery';
 import type { IProduct } from '@/types';
 import type { TransferCartLine } from '../types/transfer-cart-line.type';

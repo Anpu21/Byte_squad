@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Printer, Search } from 'lucide-react';
+import { LuPrinter as Printer, LuSearch as Search } from 'react-icons/lu';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
@@ -13,7 +13,7 @@ import type { ILabelItem } from '../lib/label-sheet-html';
 import { usePrintLabelSheet } from '../hooks/usePrintLabelSheet';
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
 const MAX_PER_PRODUCT = 99;
 

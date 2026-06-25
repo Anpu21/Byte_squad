@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Upload } from 'lucide-react';
+import { LuImage as ImageIcon, LuUpload as Upload } from 'react-icons/lu';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 

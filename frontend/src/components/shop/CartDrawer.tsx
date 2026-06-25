@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { X, ShoppingCart } from 'lucide-react';
+import { LuX as X, LuShoppingCart as ShoppingCart } from 'react-icons/lu';
 import { closeCartDrawer } from '@/store/slices/shopCartSlice';
 import {
     selectShopCartItems,
@@ -125,7 +125,7 @@ export function CartDrawer() {
                     <button
                         type="button"
                         onClick={close}
-                        className="p-1.5 rounded-lg hover:bg-surface-2 text-text-2 hover:text-text-1 focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                        className="p-1.5 rounded-lg hover:bg-surface-2 text-text-2 hover:text-text-1 focus:outline-none focus:ring-[3px] focus:ring-focus/25"
                         aria-label="Close cart"
                     >
                         <X size={18} />

@@ -1,6 +1,10 @@
-import Button from '@/components/ui/Button';
-import Pill from '@/components/ui/Pill';
-import EmptyState from '@/components/ui/EmptyState';
+import {
+    Button,
+    DataTable,
+    EmptyState,
+    Pill,
+    type DataTableColumn,
+} from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import type { ISupplier } from '@/types';
 
@@ -11,85 +15,75 @@ interface ISuppliersTableProps {
 }
 
 /** Supplier master list — read view with an Edit action per row. */
-export function SuppliersTable({
-    rows,
-    isLoading,
-    onEdit,
-}: ISuppliersTableProps) {
-    if (!isLoading && rows.length === 0) {
-        return (
-            <EmptyState
-                title="No suppliers yet"
-                description="Add your first supplier to start receiving goods against them."
-            />
-        );
-    }
+export function SuppliersTable({ rows, isLoading, onEdit }: ISuppliersTableProps) {
+    const columns: DataTableColumn<ISupplier>[] = [
+        {
+            key: 'name',
+            header: 'Supplier',
+            className: 'font-medium',
+            render: (s) => s.name,
+        },
+        {
+            key: 'contact',
+            header: 'Contact',
+            className: 'text-text-2',
+            render: (s) => s.contactName ?? '—',
+        },
+        {
+            key: 'phone',
+            header: 'Phone',
+            className: 'text-text-2',
+            render: (s) => s.phone ?? '—',
+        },
+        {
+            key: 'terms',
+            header: 'Terms',
+            align: 'right',
+            numeric: true,
+            className: 'text-text-2',
+            render: (s) => `${s.creditTermDays}d`,
+        },
+        {
+            key: 'opening',
+            header: 'Opening balance',
+            align: 'right',
+            numeric: true,
+            render: (s) => formatCurrency(Number(s.openingBalance)),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            render: (s) => (
+                <Pill tone={s.status === 'Active' ? 'success' : 'neutral'}>
+                    {s.status}
+                </Pill>
+            ),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            align: 'right',
+            render: (s) => (
+                <Button size="sm" variant="secondary" onClick={() => onEdit(s)}>
+                    Edit
+                </Button>
+            ),
+        },
+    ];
 
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-left">
-                <thead className="bg-surface-2/60 border-b border-border">
-                    <tr className="text-[11px] uppercase tracking-wide text-text-3">
-                        <th className="px-3 py-2.5 font-medium">Supplier</th>
-                        <th className="px-3 py-2.5 font-medium">Contact</th>
-                        <th className="px-3 py-2.5 font-medium">Phone</th>
-                        <th className="px-3 py-2.5 font-medium text-right">
-                            Terms
-                        </th>
-                        <th className="px-3 py-2.5 font-medium text-right">
-                            Opening balance
-                        </th>
-                        <th className="px-3 py-2.5 font-medium">Status</th>
-                        <th className="px-3 py-2.5 font-medium text-right">
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows.map((s) => (
-                        <tr
-                            key={s.id}
-                            className="border-b border-border hover:bg-surface-2/40 transition-colors"
-                        >
-                            <td className="px-3 py-2.5 text-[13px] font-medium text-text-1">
-                                {s.name}
-                            </td>
-                            <td className="px-3 py-2.5 text-[13px] text-text-2">
-                                {s.contactName ?? '—'}
-                            </td>
-                            <td className="px-3 py-2.5 text-[13px] text-text-2">
-                                {s.phone ?? '—'}
-                            </td>
-                            <td className="px-3 py-2.5 text-[13px] text-text-2 text-right tabular-nums">
-                                {s.creditTermDays}d
-                            </td>
-                            <td className="px-3 py-2.5 text-[13px] text-text-1 text-right tabular-nums">
-                                {formatCurrency(Number(s.openingBalance))}
-                            </td>
-                            <td className="px-3 py-2.5">
-                                <Pill
-                                    tone={
-                                        s.status === 'Active'
-                                            ? 'success'
-                                            : 'neutral'
-                                    }
-                                >
-                                    {s.status}
-                                </Pill>
-                            </td>
-                            <td className="px-3 py-2.5 text-right">
-                                <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    onClick={() => onEdit(s)}
-                                >
-                                    Edit
-                                </Button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+        <DataTable
+            columns={columns}
+            rows={rows}
+            getRowKey={(s) => s.id}
+            isLoading={isLoading}
+            zebra
+            empty={
+                <EmptyState
+                    title="No suppliers yet"
+                    description="Add your first supplier to start receiving goods against them."
+                />
+            }
+        />
     );
 }

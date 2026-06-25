@@ -27,7 +27,7 @@ export default function PageHeader({
                 {eyebrow && (
                     <div className="text-xs text-text-2 mb-1">{eyebrow}</div>
                 )}
-                <h1 className="text-2xl font-bold text-text-1 tracking-[-0.015em]">
+                <h1 className="text-2xl font-bold text-text-1 tracking-[-0.02em]">
                     {title}
                 </h1>
                 {subtitle && (

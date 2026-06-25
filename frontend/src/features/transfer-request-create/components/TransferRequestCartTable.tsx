@@ -1,5 +1,5 @@
 import { type RefObject } from 'react';
-import { Minus, Plus, X } from 'lucide-react';
+import { LuMinus as Minus, LuPlus as Plus, LuX as X } from 'react-icons/lu';
 import type { IProduct } from '@/types';
 import type { TransferRequestCartLine } from '../types/transfer-request-cart-line.type';
 import { TransferRequestCartAddRow } from './TransferRequestCartAddRow';

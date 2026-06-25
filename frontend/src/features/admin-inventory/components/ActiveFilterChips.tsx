@@ -1,4 +1,4 @@
-import { Search, X } from 'lucide-react';
+import { LuSearch as Search, LuX as X } from 'react-icons/lu';
 import type { IInventoryMatrixBranchColumn } from '@/types';
 import type { AdminInventoryFiltersState } from '../hooks/useAdminInventoryFilters';
 import { STOCK_LABEL } from '../constants';

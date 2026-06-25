@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { CheckCircle2, Pencil } from 'lucide-react';
+import { LuCircleCheckBig as CheckCircle2, LuPencil as Pencil } from 'react-icons/lu';
 import Avatar from '@/components/ui/Avatar';
 import EmptyState from '@/components/ui/EmptyState';
 import type {
@@ -59,7 +59,7 @@ function HoursCell({
             }}
             aria-label="Hours"
             placeholder="—"
-            className="w-16 h-7 px-2 text-right text-[12px] tabular-nums bg-surface border border-border rounded outline-none focus:border-primary focus:ring-[2px] focus:ring-primary/30 transition-colors disabled:opacity-60"
+            className="w-16 h-7 px-2 text-right text-[12px] tabular-nums bg-surface border border-border rounded outline-none focus:border-focus focus:ring-[2px] focus:ring-primary/30 transition-colors disabled:opacity-60"
         />
     );
 }

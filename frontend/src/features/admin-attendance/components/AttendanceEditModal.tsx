@@ -30,7 +30,7 @@ const DAY_LABEL_FORMATTER = new Intl.DateTimeFormat('en-GB', {
 });
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 
 function defaultStatusFor(existing: IAttendance | null): AttendanceStatus {
     // 7-day shop: no weekend default — unmarked days start at Absent.

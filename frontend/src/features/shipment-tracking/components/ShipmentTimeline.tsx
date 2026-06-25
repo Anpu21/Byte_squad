@@ -1,15 +1,5 @@
-import type { LucideIcon } from 'lucide-react';
-import {
-    CheckCircle2,
-    MapPin,
-    Navigation,
-    Package,
-    PackageCheck,
-    Truck,
-    Undo2,
-    UserCheck,
-    XCircle,
-} from 'lucide-react';
+import { type IconType as LucideIcon } from 'react-icons';
+import { LuCircleCheckBig as CheckCircle2, LuMapPin as MapPin, LuNavigation as Navigation, LuPackage as Package, LuPackageCheck as PackageCheck, LuTruck as Truck, LuUndo2 as Undo2, LuUserCheck as UserCheck, LuCircleX as XCircle } from 'react-icons/lu';
 import { ShipmentEventType } from '@/constants/enums';
 import type { IShipmentEvent } from '@/types';
 import {

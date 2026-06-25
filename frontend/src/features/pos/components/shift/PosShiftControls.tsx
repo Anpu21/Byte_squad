@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Clock3, Lock } from 'lucide-react';
+import { LuClock3 as Clock3, LuLock as Lock } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { formatCurrency } from '@/lib/utils';
@@ -10,7 +10,7 @@ import { useShiftMutations } from '../../hooks/useShiftMutations';
 import { PosShiftCloseModal } from './PosShiftCloseModal';
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
 /**
  * Drawer-session controls for the POS header: open a shift with a float,

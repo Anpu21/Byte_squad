@@ -3,7 +3,7 @@ import Card from '@/components/ui/Card';
 import PageHeader from '@/components/ui/PageHeader';
 import { UserRole } from '@/constants/enums';
 import { useAuth } from '@/hooks/useAuth';
-import { useEmployees } from '@/features/admin-employees/hooks/useEmployees';
+import { useEmployees } from '@/features/admin-employees';
 import type { IEmployee } from '@/types';
 import { useAttendance } from '../hooks/useAttendance';
 import { formatIsoDate, weekDates } from '../lib/attendance-grid-helpers';

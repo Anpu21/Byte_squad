@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Award, X } from 'lucide-react';
+import { LuAward as Award, LuX as X } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import { usePosLoyaltyLookup } from '@/features/pos/hooks/usePosLoyaltyLookup';
 import { usePosLoyaltyEnroll } from '@/features/pos/hooks/usePosLoyaltyEnroll';

@@ -33,7 +33,7 @@ export function RejectTransferModal({
                     rows={3}
                     maxLength={500}
                     placeholder="Reason for rejection…"
-                    className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3 resize-none"
+                    className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3 resize-none"
                 />
                 <div className="flex items-center justify-end gap-3 mt-4">
                     <button

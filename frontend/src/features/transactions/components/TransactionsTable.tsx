@@ -1,7 +1,13 @@
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import EmptyState from '@/components/ui/EmptyState';
+import {
+    DataTable,
+    EmptyState,
+    type DataTableColumn,
+} from '@/components/ui';
 import type { ICashierTransactionsSummary } from '@/types';
 import { formatDateTime, formatRevenue } from '../lib/format';
+
+type Txn = ICashierTransactionsSummary['recentTransactions'][number];
 
 interface TransactionsTableProps {
     data: ICashierTransactionsSummary;
@@ -22,6 +28,56 @@ export function TransactionsTable({
 }: TransactionsTableProps) {
     const count = data.recentTransactions.length;
 
+    const columns: DataTableColumn<Txn>[] = [
+        {
+            key: 'txn',
+            header: 'Transaction #',
+            numeric: true,
+            className: 'text-xs',
+            render: (t) => t.transactionNumber,
+        },
+        {
+            key: 'datetime',
+            header: 'Date / Time',
+            className: 'mono text-xs text-text-2',
+            render: (t) => formatDateTime(t.createdAt),
+        },
+        ...(showBranchCol
+            ? [
+                  {
+                      key: 'branch',
+                      header: 'Branch',
+                      render: (t: Txn) => t.branchName ?? '—',
+                  } satisfies DataTableColumn<Txn>,
+              ]
+            : []),
+        ...(showCashierCol
+            ? [
+                  {
+                      key: 'cashier',
+                      header: 'Cashier',
+                      className: 'text-text-2',
+                      render: (t: Txn) => t.cashierName,
+                  } satisfies DataTableColumn<Txn>,
+              ]
+            : []),
+        {
+            key: 'items',
+            header: 'Items',
+            align: 'right',
+            numeric: true,
+            render: (t) => t.itemCount,
+        },
+        {
+            key: 'total',
+            header: 'Total',
+            align: 'right',
+            numeric: true,
+            className: 'font-semibold',
+            render: (t) => formatRevenue(Number(t.total)),
+        },
+    ];
+
     return (
         <Card>
             <CardHeader>
@@ -34,71 +90,15 @@ export function TransactionsTable({
                 </div>
             </CardHeader>
             <CardContent className="p-0">
-                <div className="overflow-auto max-h-[600px]">
-                    {count > 0 ? (
-                        <table className="w-full">
-                            <thead className="sticky top-0 bg-surface-2 z-10">
-                                <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 border-b border-border">
-                                    <th className="px-5 py-2.5 text-left font-semibold">
-                                        Transaction #
-                                    </th>
-                                    <th className="px-5 py-2.5 text-left font-semibold">
-                                        Date / Time
-                                    </th>
-                                    {showBranchCol && (
-                                        <th className="px-5 py-2.5 text-left font-semibold">
-                                            Branch
-                                        </th>
-                                    )}
-                                    {showCashierCol && (
-                                        <th className="px-5 py-2.5 text-left font-semibold">
-                                            Cashier
-                                        </th>
-                                    )}
-                                    <th className="px-5 py-2.5 text-right font-semibold">
-                                        Items
-                                    </th>
-                                    <th className="px-5 py-2.5 text-right font-semibold">
-                                        Total
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {data.recentTransactions.map((txn) => (
-                                    <tr
-                                        key={txn.id}
-                                        className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors"
-                                    >
-                                        <td className="px-5 py-3 mono text-xs text-text-1">
-                                            {txn.transactionNumber}
-                                        </td>
-                                        <td className="px-5 py-3 mono text-xs text-text-2">
-                                            {formatDateTime(txn.createdAt)}
-                                        </td>
-                                        {showBranchCol && (
-                                            <td className="px-5 py-3 text-[13px] text-text-1">
-                                                {txn.branchName ?? '—'}
-                                            </td>
-                                        )}
-                                        {showCashierCol && (
-                                            <td className="px-5 py-3 text-[13px] text-text-2">
-                                                {txn.cashierName}
-                                            </td>
-                                        )}
-                                        <td className="px-5 py-3 mono text-[13px] text-text-1 text-right">
-                                            {txn.itemCount}
-                                        </td>
-                                        <td className="px-5 py-3 mono text-[13px] font-semibold text-text-1 text-right">
-                                            {formatRevenue(Number(txn.total))}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <EmptyState title="No transactions yet" />
-                    )}
-                </div>
+                <DataTable
+                    columns={columns}
+                    rows={data.recentTransactions}
+                    getRowKey={(t) => t.id}
+                    zebra
+                    stickyHeader
+                    maxHeight="600px"
+                    empty={<EmptyState title="No transactions yet" />}
+                />
             </CardContent>
         </Card>
     );

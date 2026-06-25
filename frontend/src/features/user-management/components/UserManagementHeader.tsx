@@ -1,4 +1,4 @@
-import { UserPlus } from 'lucide-react';
+import { LuUserPlus as UserPlus } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 
 interface UserManagementHeaderProps {

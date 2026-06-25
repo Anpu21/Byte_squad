@@ -1,5 +1,5 @@
 import { useAppDispatch } from '@/store/hooks';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { LuMinus as Minus, LuPlus as Plus, LuTrash2 as Trash2 } from 'react-icons/lu';
 import {
     removeFromCart,
     setQuantity,
@@ -48,7 +48,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
                         }
                         disabled={item.quantity <= 1}
                         aria-label={`Decrease quantity of ${item.name}`}
-                        className="w-9 h-9 flex items-center justify-center rounded-md bg-surface-2 hover:bg-primary-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                        className="w-9 h-9 flex items-center justify-center rounded-md bg-surface-2 hover:bg-primary-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25"
                     >
                         <Minus size={14} />
                     </button>
@@ -69,7 +69,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
                             )
                         }
                         aria-label={`Increase quantity of ${item.name}`}
-                        className="w-9 h-9 flex items-center justify-center rounded-md bg-surface-2 hover:bg-primary-soft transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                        className="w-9 h-9 flex items-center justify-center rounded-md bg-surface-2 hover:bg-primary-soft transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25"
                     >
                         <Plus size={14} />
                     </button>
@@ -81,7 +81,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
             <button
                 type="button"
                 onClick={() => dispatch(removeFromCart(lineRef))}
-                className="p-2 rounded-md hover:bg-danger-soft text-text-3 hover:text-danger transition-colors self-start focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                className="p-2 rounded-md hover:bg-danger-soft text-text-3 hover:text-danger transition-colors self-start focus:outline-none focus:ring-[3px] focus:ring-focus/25"
                 aria-label={`Remove ${item.name} from cart`}
             >
                 <Trash2 size={14} />

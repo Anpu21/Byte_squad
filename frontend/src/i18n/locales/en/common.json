@@ -49,6 +49,10 @@
     "toggleSidebar": "Toggle sidebar",
     "openUserMenu": "Open user menu",
     "profile": "Profile",
-    "logout": "Logout"
+    "logout": "Logout",
+    "primaryNav": "Primary navigation",
+    "commandPalette": "Command palette",
+    "searchPlaceholder": "Search or jump to…",
+    "noResults": "No matches"
   }
 }

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { useCreateEmployee } from '@/features/admin-employees/hooks/useCreateEmployee';
-import { useUpdateEmployee } from '@/features/admin-employees/hooks/useUpdateEmployee';
+import { useCreateEmployee, useUpdateEmployee } from '@/features/admin-employees';
 import type { IEmployee } from '@/types';
 import { validateEmployeeForm } from '../lib/validate-form';
 import { formToPayload } from '../lib/form-to-payload';

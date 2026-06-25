@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { LuPlus as Plus } from 'react-icons/lu';
 import { useNavigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';

@@ -1,4 +1,4 @@
-import { Minus, Plus } from 'lucide-react';
+import { LuMinus as Minus, LuPlus as Plus } from 'react-icons/lu';
 import { cn } from '@/lib/utils';
 
 interface StepperProps {

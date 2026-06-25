@@ -1,7 +1,9 @@
 import Card from '@/components/ui/Card';
-import EmptyState from '@/components/ui/EmptyState';
+import { DataTable, EmptyState, type DataTableColumn } from '@/components/ui';
 import type { IMyBranchPerformance } from '@/types';
 import { formatCurrencyWhole, formatDateTime } from '../lib/format';
+
+type Txn = IMyBranchPerformance['recentTransactions'][number];
 
 interface RecentTransactionsTableProps {
     recentTransactions: IMyBranchPerformance['recentTransactions'];
@@ -10,6 +12,35 @@ interface RecentTransactionsTableProps {
 export function RecentTransactionsTable({
     recentTransactions,
 }: RecentTransactionsTableProps) {
+    const columns: DataTableColumn<Txn>[] = [
+        {
+            key: 'txn',
+            header: 'Tx#',
+            className: 'mono text-xs tabular-nums',
+            render: (t) => t.transactionNumber,
+        },
+        {
+            key: 'cashier',
+            header: 'Cashier',
+            className: 'text-text-2',
+            render: (t) => t.cashierName,
+        },
+        {
+            key: 'when',
+            header: 'When',
+            className: 'mono text-xs text-text-3',
+            render: (t) => formatDateTime(t.createdAt),
+        },
+        {
+            key: 'total',
+            header: 'Total',
+            align: 'right',
+            numeric: true,
+            className: 'font-semibold',
+            render: (t) => formatCurrencyWhole(t.total),
+        },
+    ];
+
     return (
         <Card className="overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
@@ -20,43 +51,13 @@ export function RecentTransactionsTable({
                     Latest at this branch
                 </p>
             </div>
-            {recentTransactions.length === 0 ? (
-                <EmptyState title="No transactions yet" />
-            ) : (
-                <table className="w-full text-left">
-                    <thead>
-                        <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 bg-surface-2">
-                            <th className="px-5 py-2.5 font-semibold">Tx#</th>
-                            <th className="px-5 py-2.5 font-semibold">Cashier</th>
-                            <th className="px-5 py-2.5 font-semibold">When</th>
-                            <th className="px-5 py-2.5 font-semibold text-right">
-                                Total
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {recentTransactions.map((t) => (
-                            <tr
-                                key={t.id}
-                                className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors"
-                            >
-                                <td className="px-5 py-3 mono text-xs text-text-1">
-                                    {t.transactionNumber}
-                                </td>
-                                <td className="px-5 py-3 text-[13px] text-text-2">
-                                    {t.cashierName}
-                                </td>
-                                <td className="px-5 py-3 mono text-xs text-text-3">
-                                    {formatDateTime(t.createdAt)}
-                                </td>
-                                <td className="px-5 py-3 mono text-[13px] font-semibold text-text-1 text-right">
-                                    {formatCurrencyWhole(t.total)}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
+            <DataTable
+                columns={columns}
+                rows={recentTransactions}
+                getRowKey={(t) => t.id}
+                zebra
+                empty={<EmptyState title="No transactions yet" />}
+            />
         </Card>
     );
 }

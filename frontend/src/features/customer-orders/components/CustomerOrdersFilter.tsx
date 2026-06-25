@@ -1,9 +1,9 @@
-import { Search } from 'lucide-react';
+import { LuSearch as Search } from 'react-icons/lu';
 import type { CustomerOrderStatus } from '@/types';
 import { STAFF_ORDER_STATUS_LABEL } from '../lib/order-status';
 
 const INPUT_CLASS =
-    'w-full h-10 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors placeholder:text-text-3';
+    'w-full h-10 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-2 focus:ring-focus/25 transition-colors placeholder:text-text-3';
 
 // Collection-oriented filter set; the legacy accepted/rejected states are no
 // longer produced, so they aren't offered as filters.

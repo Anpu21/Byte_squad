@@ -2,81 +2,79 @@ import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { useAdminDashboardQuery } from '@/features/pos/hooks/useAdminDashboardQuery';
-import type { IAdminDashboard, IDailyBreakdown } from '@/types';
-import { getGreeting, getTodayLabel } from '../lib/format';
-
-interface ChartPoint {
-    name: string;
-    value: number;
-}
-
-function buildSparkline(breakdown: IDailyBreakdown[] | undefined): number[] {
-    if (!breakdown || breakdown.length === 0) return [];
-    return breakdown.map((day) => day.totalSales);
-}
-
-function buildChartData(breakdown: IDailyBreakdown[] | undefined): ChartPoint[] {
-    if (!breakdown || breakdown.length === 0) return [];
-    return breakdown.map((day) => ({
-        name: new Date(`${day.date}T00:00:00`).toLocaleDateString('en-US', {
-            weekday: 'short',
-        }),
-        value: day.totalSales,
-    }));
-}
+import { useLoyaltyDashboard } from '@/features/admin-loyalty/hooks/useLoyaltyDashboard';
+import { useDashboardProfitLoss } from './useDashboardProfitLoss';
+import { CHART_COLORS } from '@/components/charts/chart-palette';
+import type {
+    IAdminDashboard,
+    ILoyaltyDashboardStats,
+    IProfitLossData,
+} from '@/types';
+import { getTodayLabel } from '../lib/format';
 
 interface UseDashboardPageResult {
     user: ReturnType<typeof useAuth>['user'];
     isAdmin: boolean;
+    /** Gated on the primary dashboard query; P&L/loyalty fill in progressively. */
     isLoading: boolean;
     data: IAdminDashboard | undefined;
-    sparkline: number[];
-    chartData: ChartPoint[];
-    todayRevenue: number;
-    todayCount: number;
-    avgOrderValue: number;
-    lowStockCount: number;
-    greeting: string;
+    profitLoss: IProfitLossData | undefined;
+    loyalty: ILoyaltyDashboardStats | undefined;
+    /** branchId → palette colour, shared by the trend lines and the branch donut. */
+    branchColors: Record<string, string>;
+    /** Daily revenue series (week) for the Total Revenue KPI sparkline. */
+    revenueSpark: number[];
+    /** Daily order-count series (week) for the Total Orders KPI sparkline. */
+    ordersSpark: number[];
     todayLabel: string;
 }
 
 /**
- * Admin/manager dashboard page model. Wraps `useAdminDashboardQuery` and
- * derives sparkline + chart series from the canonical daily breakdown.
- * Branch scoping is handled server-side based on the JWT, so non-admins
- * naturally see only their branch.
+ * Admin dashboard page model. Fans out to the three queries that back the
+ * ShopPOS overview — the POS admin dashboard (sales/branch/payment/inventory
+ * aggregations), the accounting P&L (profit + expense breakdown), and the
+ * loyalty dashboard (member count) — and derives the cross-widget bits
+ * (shared branch colours, KPI sparklines). Each widget does its own light
+ * view-model derivation from the slice it receives.
  */
 export function useDashboardPage(): UseDashboardPageResult {
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
-    const query = useAdminDashboardQuery();
 
-    const sparkline = useMemo(
-        () => buildSparkline(query.data?.dailyBreakdown),
-        [query.data?.dailyBreakdown],
-    );
-    const chartData = useMemo(
-        () => buildChartData(query.data?.dailyBreakdown),
-        [query.data?.dailyBreakdown],
-    );
+    const dashboard = useAdminDashboardQuery();
+    const profitLoss = useDashboardProfitLoss();
+    const loyalty = useLoyaltyDashboard('admin');
 
-    const todayRevenue = query.data?.today.totalSales ?? 0;
-    const todayCount = query.data?.today.transactionCount ?? 0;
-    const avgOrderValue = query.data?.today.averageSale ?? 0;
-    const lowStockCount = query.data?.stats.lowStockItems ?? 0;
+    const data = dashboard.data;
+
+    const branchColors = useMemo<Record<string, string>>(() => {
+        const branches = data?.dailyBreakdownByBranch.branches ?? [];
+        const map: Record<string, string> = {};
+        branches.forEach((b, i) => {
+            map[b.branchId] = CHART_COLORS[i % CHART_COLORS.length];
+        });
+        return map;
+    }, [data?.dailyBreakdownByBranch.branches]);
+
+    const revenueSpark = useMemo(
+        () => (data?.dailyBreakdown ?? []).map((d) => d.totalSales),
+        [data?.dailyBreakdown],
+    );
+    const ordersSpark = useMemo(
+        () => (data?.dailyBreakdown ?? []).map((d) => d.transactionCount),
+        [data?.dailyBreakdown],
+    );
 
     return {
         user,
         isAdmin,
-        isLoading: query.isLoading,
-        data: query.data,
-        sparkline,
-        chartData,
-        todayRevenue,
-        todayCount,
-        avgOrderValue,
-        lowStockCount,
-        greeting: getGreeting(),
+        isLoading: dashboard.isLoading,
+        data,
+        profitLoss: profitLoss.data,
+        loyalty: loyalty.data,
+        branchColors,
+        revenueSpark,
+        ordersSpark,
         todayLabel: getTodayLabel(),
     };
 }

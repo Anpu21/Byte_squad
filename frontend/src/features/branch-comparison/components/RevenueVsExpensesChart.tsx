@@ -10,7 +10,7 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
-import { Trophy } from 'lucide-react';
+import { LuTrophy as Trophy } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import { formatCurrencyWhole } from '../lib/format';
 

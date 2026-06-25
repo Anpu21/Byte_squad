@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type RefObject } from 'react';
-import { Search } from 'lucide-react';
+import { LuSearch as Search } from 'react-icons/lu';
 import Input from '@/components/ui/Input';
 
 interface IPosItemSearchInputProps {

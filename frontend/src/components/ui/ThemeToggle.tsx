@@ -1,4 +1,4 @@
-import { Moon, Sun } from 'lucide-react';
+import { LuMoon as Moon, LuSun as Sun } from 'react-icons/lu';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +15,7 @@ export default function ThemeToggle({ className, size = 16 }: ThemeToggleProps) 
             onClick={toggle}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             className={cn(
-                'p-2 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors',
+                'p-2 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
                 className,
             )}
         >

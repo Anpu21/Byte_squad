@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { LuBell as Bell } from 'react-icons/lu';
 import { useNotifications } from '@/hooks/useNotifications';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { timeAgo } from './notificationUtils';
@@ -39,7 +39,7 @@ export default function NotificationDropdown() {
         <div className="relative" ref={ref}>
             <button
                 onClick={() => setOpen(!open)}
-                className="relative p-2 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors"
+                className="relative p-2 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
                 aria-label="Notifications"
             >
                 <Bell size={18} />

@@ -2,26 +2,30 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+    variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
     size?: 'sm' | 'md' | 'lg';
     children: ReactNode;
 }
 
+// Ledger UI Kit — direction A. Solid primary, bordered secondary, quiet ghost,
+// purple outline (uses --focus), solid danger. Weight 600, radius-sm (9px).
 const variants = {
     primary:
-        'bg-primary text-text-inv hover:bg-primary-hover focus:ring-[3px] focus:ring-primary/30',
+        'border border-primary bg-primary text-text-inv hover:bg-primary-hover hover:border-primary-hover focus-visible:ring-[3px] focus-visible:ring-primary/30',
     secondary:
-        'bg-surface text-text-1 border border-border-strong hover:bg-surface-2 focus:ring-[3px] focus:ring-primary/30',
+        'border border-border-strong bg-surface text-text-1 hover:bg-surface-hover hover:border-text-3 focus-visible:ring-[3px] focus-visible:ring-focus/25',
     danger:
-        'bg-danger text-white hover:opacity-90 focus:ring-[3px] focus:ring-danger/30',
+        'border border-danger bg-danger text-white opacity-95 hover:opacity-100 focus-visible:ring-[3px] focus-visible:ring-danger/30',
     ghost:
-        'bg-transparent text-text-1 hover:bg-surface-2 focus:ring-[3px] focus:ring-primary/25',
+        'border border-transparent bg-transparent text-text-2 hover:bg-surface-2 hover:text-text-1 focus-visible:ring-[3px] focus-visible:ring-focus/25',
+    outline:
+        'border border-focus bg-transparent text-focus hover:bg-focus-soft focus-visible:ring-[3px] focus-visible:ring-focus/25',
 };
 
 const sizes = {
-    sm: 'h-[30px] px-2.5 text-xs rounded-md',
-    md: 'h-9 px-3.5 text-[13px] rounded-md',
-    lg: 'h-11 px-4.5 text-sm rounded-md',
+    sm: 'h-8 px-3.5 text-[13px] rounded-md',
+    md: 'h-10 px-[18px] text-sm rounded-md',
+    lg: 'h-12 px-6 text-[15px] rounded-md',
 };
 
 export default function Button({
@@ -34,7 +38,7 @@ export default function Button({
     return (
         <button
             className={cn(
-                'inline-flex items-center justify-center gap-2 font-medium whitespace-nowrap transition-all duration-150 outline-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
+                'inline-flex items-center justify-center gap-2 font-semibold whitespace-nowrap transition-all duration-150 outline-none active:scale-[0.98] disabled:opacity-45 disabled:cursor-not-allowed disabled:active:scale-100',
                 variants[variant],
                 sizes[size],
                 className,

@@ -96,7 +96,7 @@ export function PriceFieldWithUnit({
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         aria-invalid={Boolean(error)}
-                        className={`w-full h-[38px] pl-9 pr-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono focus:border-primary focus:ring-[3px] focus:ring-primary/30 ${
+                        className={`w-full h-[38px] pl-9 pr-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono focus:border-focus focus:ring-[3px] focus:ring-primary/30 ${
                             error
                                 ? 'border-danger'
                                 : 'border-border-strong hover:border-text-3'
@@ -117,7 +117,7 @@ export function PriceFieldWithUnit({
                     value={qty}
                     onChange={(e) => onQtyChange(e.target.value)}
                     aria-label={`${label} per quantity`}
-                    className="h-[38px] w-14 px-2 text-center bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/30 hover:border-text-3 mono"
+                    className="h-[38px] w-14 px-2 text-center bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none transition-colors focus:border-focus focus:ring-[3px] focus:ring-primary/30 hover:border-text-3 mono"
                     placeholder="1"
                 />
                 <label htmlFor={unitSelectId} className="sr-only">
@@ -128,7 +128,7 @@ export function PriceFieldWithUnit({
                     value={unit}
                     onChange={handleUnitChange}
                     disabled={disableUnitSelect}
-                    className="h-[38px] px-2 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/30 hover:border-text-3 disabled:opacity-60 disabled:cursor-not-allowed min-w-[64px]"
+                    className="h-[38px] px-2 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none transition-colors focus:border-focus focus:ring-[3px] focus:ring-primary/30 hover:border-text-3 disabled:opacity-60 disabled:cursor-not-allowed min-w-[64px]"
                 >
                     {units.map((row) => (
                         <option key={row.rowId} value={row.name}>

@@ -1,13 +1,19 @@
 import { useMemo, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import EmptyState from '@/components/ui/EmptyState';
+import {
+    Button,
+    DataTable,
+    EmptyState,
+    Pill,
+    type DataTableColumn,
+} from '@/components/ui';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { IEmployee, ILeave } from '@/types';
 import { useApproveLeave } from '../hooks/useApproveLeave';
 import { useCancelLeave } from '../hooks/useCancelLeave';
-import { LeavesTableRow } from './LeavesTableRow';
 import { RejectLeaveModal } from './RejectLeaveModal';
+import { formatLeaveType, leaveStatusTone } from '../lib/leave-formatting';
 
 interface ILeavesTableProps {
     rows: ILeave[];
@@ -83,55 +89,124 @@ export function LeavesTable({
         }
     }
 
-    if (!isLoading && rows.length === 0) {
-        return (
-            <EmptyState
-                title="No leaves found"
-                description="Try widening the filters above, or apply a new leave to get started."
-            />
-        );
-    }
+    const columns: DataTableColumn<ILeave>[] = [
+        {
+            key: 'employee',
+            header: 'Employee',
+            render: (leave) =>
+                nameByEmployee.get(leave.employeeId) ??
+                leave.employeeId.slice(0, 8),
+        },
+        {
+            key: 'type',
+            header: 'Type',
+            className: 'text-text-2',
+            render: (leave) => formatLeaveType(leave.leaveType),
+        },
+        {
+            key: 'dates',
+            header: 'Dates',
+            className: 'text-text-2 whitespace-nowrap',
+            render: (leave) =>
+                `${leave.startDate}${
+                    leave.startDate !== leave.endDate
+                        ? ` → ${leave.endDate}`
+                        : ''
+                }`,
+        },
+        {
+            key: 'days',
+            header: 'Days',
+            className: 'tabular-nums',
+            render: (leave) => Number(leave.totalDays).toFixed(1),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            render: (leave) => (
+                <Pill tone={leaveStatusTone(leave.status)}>{leave.status}</Pill>
+            ),
+        },
+        {
+            key: 'reason',
+            header: 'Reason',
+            className: 'text-text-3 text-[12px] max-w-[240px] truncate',
+            render: (leave) =>
+                leave.reason || leave.rejectionReason || '—',
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            align: 'right',
+            render: (leave) => {
+                const isPending = leave.status === 'Pending';
+                const isTerminal =
+                    leave.status === 'Cancelled' ||
+                    leave.status === 'Rejected';
+                const requiresAdminApproval =
+                    leave.employeeId === adminApprovalEmployeeId;
+                return (
+                    <div className="inline-flex gap-1.5">
+                        {canModerate && isPending
+                            ? requiresAdminApproval
+                                ? (
+                                      <Pill tone="neutral" dot={false}>
+                                          Admin approval
+                                      </Pill>
+                                  )
+                                : (
+                                      <>
+                                          <Button
+                                              size="sm"
+                                              variant="primary"
+                                              onClick={() =>
+                                                  handleApprove(leave.id)
+                                              }
+                                          >
+                                              Approve
+                                          </Button>
+                                          <Button
+                                              size="sm"
+                                              variant="secondary"
+                                              onClick={() =>
+                                                  setRejectTarget(leave)
+                                              }
+                                          >
+                                              Reject
+                                          </Button>
+                                      </>
+                                  )
+                            : null}
+                        {canCancel && !isTerminal ? (
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleCancel(leave.id)}
+                            >
+                                Cancel
+                            </Button>
+                        ) : null}
+                    </div>
+                );
+            },
+        },
+    ];
 
     return (
         <>
-            <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                    <thead className="bg-surface-2/60 border-b border-border">
-                        <tr className="text-[11px] uppercase tracking-wide text-text-3">
-                            <th className="px-3 py-2.5 font-medium">Employee</th>
-                            <th className="px-3 py-2.5 font-medium">Type</th>
-                            <th className="px-3 py-2.5 font-medium">Dates</th>
-                            <th className="px-3 py-2.5 font-medium">Days</th>
-                            <th className="px-3 py-2.5 font-medium">Status</th>
-                            <th className="px-3 py-2.5 font-medium">Reason</th>
-                            <th className="px-3 py-2.5 font-medium text-right">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.map((leave) => (
-                            <LeavesTableRow
-                                key={leave.id}
-                                leave={leave}
-                                employeeName={
-                                    nameByEmployee.get(leave.employeeId) ??
-                                    leave.employeeId.slice(0, 8)
-                                }
-                                canModerate={canModerate}
-                                canCancel={canCancel}
-                                requiresAdminApproval={
-                                    leave.employeeId ===
-                                    adminApprovalEmployeeId
-                                }
-                                onApprove={handleApprove}
-                                onReject={setRejectTarget}
-                                onCancel={handleCancel}
-                            />
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <DataTable
+                columns={columns}
+                rows={rows}
+                getRowKey={(leave) => leave.id}
+                isLoading={isLoading}
+                zebra
+                empty={
+                    <EmptyState
+                        title="No leaves found"
+                        description="Try widening the filters above, or apply a new leave to get started."
+                    />
+                }
+            />
             <RejectLeaveModal
                 leave={rejectTarget}
                 onClose={() => setRejectTarget(null)}

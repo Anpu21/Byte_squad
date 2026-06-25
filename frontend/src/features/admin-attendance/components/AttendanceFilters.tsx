@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { LuChevronLeft as ChevronLeft, LuChevronRight as ChevronRight } from 'react-icons/lu';
 import { useQuery } from '@tanstack/react-query';
 import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';
@@ -18,10 +18,10 @@ interface IAttendanceFiltersProps {
 }
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
 const ICON_BUTTON_CLASS =
-    'h-9 w-9 inline-flex items-center justify-center bg-surface border border-border rounded-md text-text-2 hover:text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20';
+    'h-9 w-9 inline-flex items-center justify-center bg-surface border border-border rounded-md text-text-2 hover:text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25';
 
 /**
  * Toolbar for the day-at-a-time attendance table. A Prev / Today / Next day
@@ -108,7 +108,7 @@ export function AttendanceFilters({
                     type="button"
                     onClick={() => onDateChange(today)}
                     disabled={isToday}
-                    className="h-9 px-3 bg-surface border border-border rounded-md text-[12px] font-medium text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="h-9 px-3 bg-surface border border-border rounded-md text-[12px] font-medium text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                     Today
                 </button>

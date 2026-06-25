@@ -18,7 +18,7 @@ interface ReceiveBatchModalProps {
 }
 
 const SELECT_CLASS =
-  'w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none transition-colors hover:border-text-3 focus:border-primary focus:ring-[3px] focus:ring-primary/30'
+  'w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none transition-colors hover:border-text-3 focus:border-focus focus:ring-[3px] focus:ring-primary/30'
 
 export function ReceiveBatchModal({
   isOpen,
