@@ -5,6 +5,11 @@ import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Pill from '@/components/ui/Pill';
+import {
+    DataTable,
+    EmptyState,
+    type DataTableColumn,
+} from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { userService } from '@/services/user.service';
 import { queryKeys } from '@/lib/queryKeys';
@@ -22,6 +27,55 @@ interface ICustomerStatementModalProps {
     userId: string | null;
     onClose: () => void;
 }
+
+type StatementTransaction = NonNullable<
+    ReturnType<typeof useCreditStatement>['data']
+>['transactions'][number];
+
+const STATEMENT_COLUMNS: DataTableColumn<StatementTransaction>[] = [
+    {
+        key: 'date',
+        header: 'Date',
+        className: 'text-[12px] text-text-2 whitespace-nowrap',
+        render: (t) => new Date(t.createdAt).toLocaleString(),
+    },
+    {
+        key: 'ref',
+        header: 'Ref',
+        className: 'text-[12px] text-text-2 mono',
+        render: (t) => t.referenceNo,
+    },
+    {
+        key: 'type',
+        header: 'Type',
+        render: (t) => (
+            <Pill
+                tone={
+                    t.transactionType === 'Credit_Taken' ? 'warning' : 'success'
+                }
+                dot={false}
+            >
+                {t.transactionType === 'Credit_Taken' ? 'Taken' : 'Paid'}
+            </Pill>
+        ),
+    },
+    {
+        key: 'amount',
+        header: 'Amount',
+        align: 'right',
+        numeric: true,
+        className: 'text-text-1',
+        render: (t) => formatCurrency(Number(t.amount)),
+    },
+    {
+        key: 'balance',
+        header: 'Balance',
+        align: 'right',
+        numeric: true,
+        className: 'text-text-2',
+        render: (t) => formatCurrency(Number(t.runningBalance)),
+    },
+];
 
 /**
  * Customer credit statement: running ledger, receive-payment form
@@ -251,83 +305,15 @@ export function CustomerStatementModal({
                         </Button>
                     </div>
 
-                    <div className="overflow-x-auto border border-border rounded-md max-h-72 overflow-y-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-surface-2/60 border-b border-border sticky top-0">
-                                <tr className="text-[11px] uppercase tracking-wide text-text-3">
-                                    <th className="px-3 py-2 font-medium">
-                                        Date
-                                    </th>
-                                    <th className="px-3 py-2 font-medium">
-                                        Ref
-                                    </th>
-                                    <th className="px-3 py-2 font-medium">
-                                        Type
-                                    </th>
-                                    <th className="px-3 py-2 font-medium text-right">
-                                        Amount
-                                    </th>
-                                    <th className="px-3 py-2 font-medium text-right">
-                                        Balance
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {statement.transactions.length === 0 ? (
-                                    <tr>
-                                        <td
-                                            colSpan={5}
-                                            className="px-3 py-6 text-center text-sm text-text-3"
-                                        >
-                                            No credit activity yet.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    statement.transactions.map((t) => (
-                                        <tr
-                                            key={t.id}
-                                            className="border-b border-border last:border-b-0"
-                                        >
-                                            <td className="px-3 py-2 text-[12px] text-text-2 whitespace-nowrap">
-                                                {new Date(
-                                                    t.createdAt,
-                                                ).toLocaleString()}
-                                            </td>
-                                            <td className="px-3 py-2 text-[12px] text-text-2 mono">
-                                                {t.referenceNo}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <Pill
-                                                    tone={
-                                                        t.transactionType ===
-                                                        'Credit_Taken'
-                                                            ? 'warning'
-                                                            : 'success'
-                                                    }
-                                                    dot={false}
-                                                >
-                                                    {t.transactionType ===
-                                                    'Credit_Taken'
-                                                        ? 'Taken'
-                                                        : 'Paid'}
-                                                </Pill>
-                                            </td>
-                                            <td className="px-3 py-2 text-[13px] text-right tabular-nums text-text-1">
-                                                {formatCurrency(
-                                                    Number(t.amount),
-                                                )}
-                                            </td>
-                                            <td className="px-3 py-2 text-[13px] text-right tabular-nums text-text-2">
-                                                {formatCurrency(
-                                                    Number(t.runningBalance),
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable
+                        columns={STATEMENT_COLUMNS}
+                        rows={statement.transactions}
+                        getRowKey={(t) => t.id}
+                        zebra
+                        stickyHeader
+                        maxHeight="18rem"
+                        empty={<EmptyState title="No credit activity yet." />}
+                    />
                 </div>
             )}
         </Modal>

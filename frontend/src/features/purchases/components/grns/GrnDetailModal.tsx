@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Pill from '@/components/ui/Pill';
+import { DataTable, type DataTableColumn } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
@@ -12,6 +13,45 @@ import { useGrn } from '../../hooks/useGrn';
 import { useVoidGrn } from '../../hooks/useVoidGrn';
 import { GrnPaymentPill } from './GrnPaymentPill';
 import { GrnReturnSection } from './GrnReturnSection';
+
+type GrnLine = NonNullable<IGrn['items']>[number];
+
+const GRN_LINE_COLUMNS: DataTableColumn<GrnLine>[] = [
+    {
+        key: 'item',
+        header: 'Item',
+        render: (it) => it.product?.name ?? it.productId,
+    },
+    {
+        key: 'qty',
+        header: 'Qty',
+        align: 'right',
+        numeric: true,
+        render: (it) => Number(it.quantity),
+    },
+    {
+        key: 'unitCost',
+        header: 'Unit cost',
+        align: 'right',
+        numeric: true,
+        className: 'text-text-2',
+        render: (it) => formatCurrency(Number(it.unitCost)),
+    },
+    {
+        key: 'batch',
+        header: 'Batch / expiry',
+        className: 'text-[12px] text-text-3',
+        render: (it) =>
+            `${it.batchNo ?? '—'}${it.expiryDate ? ` · exp ${it.expiryDate}` : ''}`,
+    },
+    {
+        key: 'amount',
+        header: 'Amount',
+        align: 'right',
+        numeric: true,
+        render: (it) => formatCurrency(Number(it.lineTotal)),
+    },
+];
 
 interface IGrnDetailModalProps {
     grnId: string | null;
@@ -88,59 +128,13 @@ export function GrnDetailModal({ grnId, onClose }: IGrnDetailModalProps) {
                         </span>
                     </div>
 
-                    <div className="overflow-x-auto border border-border rounded-md">
-                        <table className="w-full text-left">
-                            <thead className="bg-surface-2/60 border-b border-border">
-                                <tr className="text-[11px] uppercase tracking-wide text-text-3">
-                                    <th className="px-3 py-2 font-medium">
-                                        Item
-                                    </th>
-                                    <th className="px-3 py-2 font-medium text-right">
-                                        Qty
-                                    </th>
-                                    <th className="px-3 py-2 font-medium text-right">
-                                        Unit cost
-                                    </th>
-                                    <th className="px-3 py-2 font-medium">
-                                        Batch / expiry
-                                    </th>
-                                    <th className="px-3 py-2 font-medium text-right">
-                                        Amount
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {(grn.items ?? []).map((it) => (
-                                    <tr
-                                        key={it.id}
-                                        className="border-b border-border last:border-b-0"
-                                    >
-                                        <td className="px-3 py-2 text-[13px] text-text-1">
-                                            {it.product?.name ?? it.productId}
-                                        </td>
-                                        <td className="px-3 py-2 text-[13px] text-text-1 text-right tabular-nums">
-                                            {Number(it.quantity)}
-                                        </td>
-                                        <td className="px-3 py-2 text-[13px] text-text-2 text-right tabular-nums">
-                                            {formatCurrency(
-                                                Number(it.unitCost),
-                                            )}
-                                        </td>
-                                        <td className="px-3 py-2 text-[12px] text-text-3">
-                                            {it.batchNo ?? '—'}
-                                            {it.expiryDate
-                                                ? ` · exp ${it.expiryDate}`
-                                                : ''}
-                                        </td>
-                                        <td className="px-3 py-2 text-[13px] text-text-1 text-right tabular-nums">
-                                            {formatCurrency(
-                                                Number(it.lineTotal),
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="border border-border rounded-md overflow-hidden">
+                        <DataTable
+                            columns={GRN_LINE_COLUMNS}
+                            rows={grn.items ?? []}
+                            getRowKey={(it) => it.id}
+                            zebra
+                        />
                     </div>
 
                     <div className="space-y-1 text-sm">

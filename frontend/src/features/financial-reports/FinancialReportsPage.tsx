@@ -8,10 +8,19 @@ import Card from '@/components/ui/Card';
 import PageHeader from '@/components/ui/PageHeader';
 import Pill from '@/components/ui/Pill';
 import { Tabs } from '@/components/ui/Tabs';
+import {
+    DataTable,
+    EmptyState,
+    type DataTableColumn,
+} from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { accountingService } from '@/services/accounting.service';
 import { queryKeys } from '@/lib/queryKeys';
-import type { IBalanceSheetLine } from '@/types';
+import type {
+    IBalanceSheetLine,
+    IDayBookRow,
+    ITrialBalanceRow,
+} from '@/types';
 
 const MONTH_NAMES = [
     'January',
@@ -38,6 +47,114 @@ const TABS: { key: ReportTab; label: string; Icon: LucideIcon }[] = [
     { key: 'balance-sheet', label: 'Balance sheet', Icon: BookOpenCheck },
     { key: 'day-book', label: 'Day book', Icon: CalendarDays },
     { key: 'periods', label: 'Period locks', Icon: Lock },
+];
+
+/**
+ * A trial-balance row is either a mapped account row or the synthetic
+ * "Unmapped (pre-chart entries)" row that the old table appended after the
+ * account rows when there were debits/credits outside the chart of accounts.
+ */
+type TrialRow =
+    | { kind: 'account'; data: ITrialBalanceRow }
+    | { kind: 'unmapped'; debits: number; credits: number };
+
+const TRIAL_COLUMNS: DataTableColumn<TrialRow>[] = [
+    {
+        key: 'account',
+        header: 'Account',
+        render: (row) =>
+            row.kind === 'account' ? (
+                <span className="text-text-1">
+                    {row.data.accountCode} — {row.data.accountName}
+                </span>
+            ) : (
+                <span className="italic text-text-2">
+                    Unmapped (pre-chart entries)
+                </span>
+            ),
+    },
+    {
+        key: 'type',
+        header: 'Type',
+        className: 'text-[12px] text-text-3',
+        render: (row) => (row.kind === 'account' ? row.data.accountType : '—'),
+    },
+    {
+        key: 'debits',
+        header: 'Debits',
+        align: 'right',
+        numeric: true,
+        render: (row) =>
+            row.kind === 'account' ? (
+                <span className="text-text-1">
+                    {formatCurrency(row.data.debits)}
+                </span>
+            ) : (
+                <span className="text-text-2">{formatCurrency(row.debits)}</span>
+            ),
+    },
+    {
+        key: 'credits',
+        header: 'Credits',
+        align: 'right',
+        numeric: true,
+        render: (row) =>
+            row.kind === 'account' ? (
+                <span className="text-text-1">
+                    {formatCurrency(row.data.credits)}
+                </span>
+            ) : (
+                <span className="text-text-2">
+                    {formatCurrency(row.credits)}
+                </span>
+            ),
+    },
+];
+
+const DAY_BOOK_COLUMNS: DataTableColumn<IDayBookRow>[] = [
+    {
+        key: 'time',
+        header: 'Time',
+        className: 'text-[12px] text-text-3 whitespace-nowrap',
+        render: (r) => new Date(r.createdAt).toLocaleTimeString(),
+    },
+    {
+        key: 'ref',
+        header: 'Ref',
+        className: 'text-[12px] text-text-2 mono',
+        render: (r) => r.referenceNumber,
+    },
+    {
+        key: 'account',
+        header: 'Account',
+        className: 'text-text-1',
+        render: (r) =>
+            r.accountCode ? `${r.accountCode} — ${r.accountName}` : '—',
+    },
+    {
+        key: 'description',
+        header: 'Description',
+        className: 'text-[12px] text-text-2 max-w-[280px] truncate',
+        render: (r) => r.description,
+    },
+    {
+        key: 'debit',
+        header: 'Debit',
+        align: 'right',
+        numeric: true,
+        className: 'text-text-1',
+        render: (r) =>
+            r.entryType === 'debit' ? formatCurrency(r.amount) : '—',
+    },
+    {
+        key: 'credit',
+        header: 'Credit',
+        align: 'right',
+        numeric: true,
+        className: 'text-text-1',
+        render: (r) =>
+            r.entryType === 'credit' ? formatCurrency(r.amount) : '—',
+    },
 ];
 
 function BalancedPill({ balanced }: { balanced: boolean }) {
@@ -130,6 +247,23 @@ export function FinancialReportsPage() {
     const trial = trialQuery.data;
     const sheet = sheetQuery.data;
     const book = dayQuery.data;
+
+    const trialRows: TrialRow[] = trial
+        ? [
+              ...trial.rows.map(
+                  (data): TrialRow => ({ kind: 'account', data }),
+              ),
+              ...(trial.unmappedDebits > 0 || trial.unmappedCredits > 0
+                  ? [
+                        {
+                            kind: 'unmapped',
+                            debits: trial.unmappedDebits,
+                            credits: trial.unmappedCredits,
+                        } satisfies TrialRow,
+                    ]
+                  : []),
+          ]
+        : [];
     const lockedMonths = new Set(
         (periodsQuery.data ?? []).map((p) => p.month),
     );
@@ -196,85 +330,36 @@ export function FinancialReportsPage() {
                             {trial && <BalancedPill balanced={trial.balanced} />}
                         </div>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-surface-2/60 border-b border-border">
-                                <tr className="text-[11px] uppercase tracking-wide text-text-3">
-                                    <th className="px-3 py-2.5 font-medium">
-                                        Account
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium">
-                                        Type
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium text-right">
-                                        Debits
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium text-right">
-                                        Credits
-                                    </th>
+                    <DataTable<TrialRow>
+                        columns={TRIAL_COLUMNS}
+                        rows={trialRows}
+                        getRowKey={(row, i) =>
+                            row.kind === 'account'
+                                ? row.data.accountCode
+                                : `unmapped-${i}`
+                        }
+                        isLoading={trialQuery.isLoading}
+                        zebra
+                        footerRow={
+                            trial ? (
+                                <tr className="font-semibold text-text-1">
+                                    <td className="px-4 py-3.5 text-[13px]">
+                                        Totals
+                                    </td>
+                                    <td />
+                                    <td className="px-4 py-3.5 text-right text-[13px] tabular-nums">
+                                        {formatCurrency(trial.totalDebits)}
+                                    </td>
+                                    <td className="px-4 py-3.5 text-right text-[13px] tabular-nums">
+                                        {formatCurrency(trial.totalCredits)}
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {(trial?.rows ?? []).map((r) => (
-                                    <tr
-                                        key={r.accountCode}
-                                        className="border-b border-border"
-                                    >
-                                        <td className="px-3 py-2 text-[13px] text-text-1">
-                                            {r.accountCode} — {r.accountName}
-                                        </td>
-                                        <td className="px-3 py-2 text-[12px] text-text-3">
-                                            {r.accountType}
-                                        </td>
-                                        <td className="px-3 py-2 text-right text-[13px] tabular-nums text-text-1">
-                                            {formatCurrency(r.debits)}
-                                        </td>
-                                        <td className="px-3 py-2 text-right text-[13px] tabular-nums text-text-1">
-                                            {formatCurrency(r.credits)}
-                                        </td>
-                                    </tr>
-                                ))}
-                                {trial &&
-                                    (trial.unmappedDebits > 0 ||
-                                        trial.unmappedCredits > 0) && (
-                                        <tr className="border-b border-border bg-surface-2/30">
-                                            <td className="px-3 py-2 text-[13px] italic text-text-2">
-                                                Unmapped (pre-chart entries)
-                                            </td>
-                                            <td className="px-3 py-2 text-[12px] text-text-3">
-                                                —
-                                            </td>
-                                            <td className="px-3 py-2 text-right text-[13px] tabular-nums text-text-2">
-                                                {formatCurrency(
-                                                    trial.unmappedDebits,
-                                                )}
-                                            </td>
-                                            <td className="px-3 py-2 text-right text-[13px] tabular-nums text-text-2">
-                                                {formatCurrency(
-                                                    trial.unmappedCredits,
-                                                )}
-                                            </td>
-                                        </tr>
-                                    )}
-                                {trial && (
-                                    <tr className="font-semibold text-text-1">
-                                        <td className="px-3 py-2.5 text-[13px]">
-                                            Totals
-                                        </td>
-                                        <td />
-                                        <td className="px-3 py-2.5 text-right text-[13px] tabular-nums">
-                                            {formatCurrency(trial.totalDebits)}
-                                        </td>
-                                        <td className="px-3 py-2.5 text-right text-[13px] tabular-nums">
-                                            {formatCurrency(
-                                                trial.totalCredits,
-                                            )}
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                            ) : undefined
+                        }
+                        empty={
+                            <EmptyState title="No trial-balance rows for this range" />
+                        }
+                    />
                 </Card>
             )}
 
@@ -376,77 +461,16 @@ export function FinancialReportsPage() {
                             </span>
                         )}
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-surface-2/60 border-b border-border">
-                                <tr className="text-[11px] uppercase tracking-wide text-text-3">
-                                    <th className="px-3 py-2.5 font-medium">
-                                        Time
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium">
-                                        Ref
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium">
-                                        Account
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium">
-                                        Description
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium text-right">
-                                        Debit
-                                    </th>
-                                    <th className="px-3 py-2.5 font-medium text-right">
-                                        Credit
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {(book?.rows ?? []).map((r) => (
-                                    <tr
-                                        key={r.id}
-                                        className="border-b border-border"
-                                    >
-                                        <td className="px-3 py-2 text-[12px] text-text-3 whitespace-nowrap">
-                                            {new Date(
-                                                r.createdAt,
-                                            ).toLocaleTimeString()}
-                                        </td>
-                                        <td className="px-3 py-2 text-[12px] text-text-2 mono">
-                                            {r.referenceNumber}
-                                        </td>
-                                        <td className="px-3 py-2 text-[13px] text-text-1">
-                                            {r.accountCode
-                                                ? `${r.accountCode} — ${r.accountName}`
-                                                : '—'}
-                                        </td>
-                                        <td className="px-3 py-2 text-[12px] text-text-2 max-w-[280px] truncate">
-                                            {r.description}
-                                        </td>
-                                        <td className="px-3 py-2 text-right text-[13px] tabular-nums text-text-1">
-                                            {r.entryType === 'debit'
-                                                ? formatCurrency(r.amount)
-                                                : '—'}
-                                        </td>
-                                        <td className="px-3 py-2 text-right text-[13px] tabular-nums text-text-1">
-                                            {r.entryType === 'credit'
-                                                ? formatCurrency(r.amount)
-                                                : '—'}
-                                        </td>
-                                    </tr>
-                                ))}
-                                {book && book.rows.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan={6}
-                                            className="px-3 py-6 text-center text-sm text-text-3"
-                                        >
-                                            No postings on this day.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable<IDayBookRow>
+                        columns={DAY_BOOK_COLUMNS}
+                        rows={book?.rows ?? []}
+                        getRowKey={(r) => r.id}
+                        isLoading={dayQuery.isLoading}
+                        zebra
+                        empty={
+                            <EmptyState title="No postings on this day." />
+                        }
+                    />
                 </Card>
             )}
 
