@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import type { ICustomerOrder } from '@/types';
-import { CustomerOrderRow } from '../CustomerOrderRow';
+import { CustomerOrdersTable } from '../CustomerOrdersTable';
 
 function order(over: Partial<ICustomerOrder> = {}): ICustomerOrder {
     return {
@@ -37,24 +37,26 @@ function renderRow(req: ICustomerOrder, canManage = true) {
     const onCollect = vi.fn();
     const onMarkNotCollected = vi.fn();
     render(
-        <table>
-            <tbody>
-                <CustomerOrderRow
-                    request={req}
-                    showBranchCol={false}
-                    canManage={canManage}
-                    actionPending={false}
-                    onView={vi.fn()}
-                    onCollect={onCollect}
-                    onMarkNotCollected={onMarkNotCollected}
-                />
-            </tbody>
-        </table>,
+        <CustomerOrdersTable
+            requests={[req]}
+            isLoading={false}
+            hasFilters={false}
+            isAdmin={false}
+            actionPending={false}
+            search=""
+            setSearch={vi.fn()}
+            statusFilter=""
+            setStatusFilter={vi.fn()}
+            canManage={() => canManage}
+            onView={vi.fn()}
+            onCollect={onCollect}
+            onMarkNotCollected={onMarkNotCollected}
+        />,
     );
     return { onCollect, onMarkNotCollected };
 }
 
-describe('CustomerOrderRow', () => {
+describe('CustomerOrdersTable', () => {
     it('offers Collect + Not collected for an awaiting order (and never Accept/Reject)', () => {
         renderRow(order({ status: 'pending' }));
         expect(
@@ -69,7 +71,9 @@ describe('CustomerOrderRow', () => {
         expect(
             screen.queryByRole('button', { name: /^reject$/i }),
         ).not.toBeInTheDocument();
-        expect(screen.getByText('Awaiting pickup')).toBeInTheDocument();
+        expect(
+            within(screen.getByRole('table')).getByText('Awaiting pickup'),
+        ).toBeInTheDocument();
     });
 
     it('shows a collected order with no actions and the "Collected" label', () => {
@@ -80,7 +84,9 @@ describe('CustomerOrderRow', () => {
         expect(
             screen.queryByRole('button', { name: /not collected/i }),
         ).not.toBeInTheDocument();
-        expect(screen.getByText('Collected')).toBeInTheDocument();
+        expect(
+            within(screen.getByRole('table')).getByText('Collected'),
+        ).toBeInTheDocument();
     });
 
     it('omits Collect for an online order that is not yet paid', () => {
