@@ -1,205 +1,22 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LuChartColumnBig as BarChart3, LuBell as Bell, LuBoxes as Boxes, LuBriefcase as Briefcase, LuBuilding2 as Building2, LuCalculator as Calculator, LuCalendarRange as CalendarRange, LuChevronRight as ChevronRight, LuHouse as Home, LuLogOut as LogOut, LuMenu as MenuIcon, LuReceipt as Receipt, LuFileClock as FileClock, LuShoppingBag as ShoppingBag, LuSparkles as Sparkles, LuPackagePlus as PackagePlus, LuTruck as Truck, LuUserCog as UserCog, LuUsers as Users } from 'react-icons/lu';
+import { LuChevronRight as ChevronRight, LuLogOut as LogOut, LuMenu as MenuIcon, LuUserCog as UserCog } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { UserRole } from '@/constants/enums';
+import {
+    getSidebarSections,
+    GROUP_LABEL_KEY,
+    resolveNavPath,
+} from '@/config/navigation';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import Avatar from '@/components/ui/Avatar';
 import Logo from '@/components/ui/Logo';
 import { cn } from '@/lib/utils';
-
-type NavGroup =
-    | 'Overview'
-    | 'Sales'
-    | 'Fulfillment'
-    | 'Inventory'
-    | 'Finance'
-    | 'People'
-    | 'System';
-
-interface NavItem {
-    /** i18n key under the `common` namespace, e.g. `nav.dashboard`. */
-    label: string;
-    path: string;
-    roles: UserRole[];
-    icon: ReactNode;
-    group: NavGroup;
-    pathByRole?: Partial<Record<UserRole, string>>;
-}
-
-function resolveNavPath(item: NavItem, role?: UserRole): string {
-    if (role && item.pathByRole?.[role]) return item.pathByRole[role]!;
-    return item.path;
-}
-
-const NAV_ITEMS: NavItem[] = [
-    // ── Overview ──
-    {
-        label: 'nav.dashboard',
-        path: FRONTEND_ROUTES.DASHBOARD,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Home size={15} />,
-        group: 'Overview',
-    },
-    {
-        label: 'nav.dashboard',
-        path: FRONTEND_ROUTES.CASHIER_DASHBOARD,
-        roles: [UserRole.CASHIER],
-        icon: <Home size={15} />,
-        group: 'Overview',
-    },
-    {
-        label: 'nav.dashboard',
-        path: FRONTEND_ROUTES.WORKER_DASHBOARD,
-        roles: [UserRole.WORKER],
-        icon: <Home size={15} />,
-        group: 'Overview',
-    },
-    // ── Sales ──
-    {
-        label: 'nav.pos',
-        path: FRONTEND_ROUTES.POS,
-        roles: [UserRole.CASHIER],
-        icon: <Receipt size={15} />,
-        group: 'Sales',
-    },
-    {
-        label: 'nav.sales',
-        path: FRONTEND_ROUTES.SALES,
-        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
-        icon: <ShoppingBag size={15} />,
-        group: 'Sales',
-    },
-    // ── Fulfillment ──
-    {
-        label: 'nav.myDeliveries',
-        path: FRONTEND_ROUTES.SHIPMENTS,
-        roles: [UserRole.WORKER],
-        icon: <Truck size={15} />,
-        group: 'Fulfillment',
-    },
-    {
-        label: 'nav.shipments',
-        path: FRONTEND_ROUTES.SHIPMENTS,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Truck size={15} />,
-        group: 'Fulfillment',
-    },
-    // ── Inventory ──
-    {
-        label: 'nav.inventory',
-        path: FRONTEND_ROUTES.INVENTORY,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Boxes size={15} />,
-        group: 'Inventory',
-    },
-    {
-        label: 'nav.purchases',
-        path: FRONTEND_ROUTES.PURCHASES,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <PackagePlus size={15} />,
-        group: 'Inventory',
-    },
-    // ── Finance ──
-    {
-        label: 'nav.accounting',
-        path: FRONTEND_ROUTES.ACCOUNTING,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Calculator size={15} />,
-        group: 'Finance',
-    },
-    {
-        label: 'nav.reports',
-        path: FRONTEND_ROUTES.REPORTS,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <BarChart3 size={15} />,
-        group: 'Finance',
-    },
-    // ── People ──
-    {
-        label: 'nav.customerLoyalty',
-        path: FRONTEND_ROUTES.ADMIN_LOYALTY,
-        roles: [UserRole.ADMIN],
-        icon: <Sparkles size={15} />,
-        group: 'People',
-    },
-    {
-        label: 'nav.customerLoyalty',
-        path: FRONTEND_ROUTES.MANAGER_LOYALTY,
-        roles: [UserRole.MANAGER],
-        icon: <Sparkles size={15} />,
-        group: 'People',
-    },
-    {
-        label: 'nav.users',
-        path: FRONTEND_ROUTES.USER_MANAGEMENT,
-        roles: [UserRole.ADMIN],
-        icon: <Users size={15} />,
-        group: 'People',
-    },
-    {
-        label: 'nav.hr',
-        path: FRONTEND_ROUTES.ADMIN_HR,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Briefcase size={15} />,
-        group: 'People',
-    },
-    {
-        label: 'nav.leaves',
-        path: FRONTEND_ROUTES.ADMIN_LEAVES,
-        roles: [UserRole.CASHIER],
-        icon: <CalendarRange size={15} />,
-        group: 'People',
-    },
-    // ── System ──
-    {
-        label: 'nav.branches',
-        path: FRONTEND_ROUTES.BRANCHES,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Building2 size={15} />,
-        group: 'System',
-    },
-    {
-        label: 'nav.auditLog',
-        path: FRONTEND_ROUTES.ADMIN_AUDIT,
-        roles: [UserRole.ADMIN],
-        icon: <FileClock size={15} />,
-        group: 'System',
-    },
-    {
-        label: 'nav.notifications',
-        path: FRONTEND_ROUTES.NOTIFICATIONS,
-        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
-        icon: <Bell size={15} />,
-        group: 'System',
-    },
-];
-
-/** Group header → i18n key under `common` (`nav.groups.*`). */
-const GROUP_LABEL_KEY: Record<NavGroup, string> = {
-    Overview: 'nav.groups.overview',
-    Sales: 'nav.groups.sales',
-    Fulfillment: 'nav.groups.fulfillment',
-    Inventory: 'nav.groups.inventory',
-    Finance: 'nav.groups.finance',
-    People: 'nav.groups.people',
-    System: 'nav.groups.system',
-};
-
-const GROUP_ORDER: NavGroup[] = [
-    'Overview',
-    'Sales',
-    'Fulfillment',
-    'Inventory',
-    'Finance',
-    'People',
-    'System',
-];
 
 export default function DashboardLayout() {
     const { t } = useTranslation('common');
@@ -214,7 +31,8 @@ export default function DashboardLayout() {
     const crumbs = useBreadcrumbs();
     const isExpanded = sidebarOpen || mobileNavOpen;
 
-    const filteredNavItems = NAV_ITEMS.filter((item) =>
+    const { groups, items: sidebarItems } = getSidebarSections();
+    const filteredNavItems = sidebarItems.filter((item) =>
         user ? item.roles.includes(user.role as UserRole) : false,
     );
 
@@ -304,13 +122,13 @@ export default function DashboardLayout() {
                 </div>
 
                 <nav className="flex-1 px-3 py-3 overflow-y-auto">
-                    {GROUP_ORDER.map((group) => {
+                    {groups.map((group) => {
                         const items = filteredNavItems.filter((i) => i.group === group);
                         if (items.length === 0) return null;
                         return (
                             <div key={group} className="mb-2">
                                 {isExpanded && (
-                                    <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-text-3 px-3 pt-3 pb-1.5">
+                                    <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-text-3 px-3 pt-4 pb-1">
                                         {t(GROUP_LABEL_KEY[group])}
                                     </div>
                                 )}
@@ -318,27 +136,35 @@ export default function DashboardLayout() {
                                     {items.map((item) => {
                                         const itemPath = resolveNavPath(item, user?.role);
                                         const isActive = location.pathname === itemPath;
+                                        const Icon = item.Icon;
                                         return (
                                             <Link
-                                                key={`${itemPath}-${item.label}`}
+                                                key={item.id}
                                                 to={itemPath}
                                                 title={!isExpanded ? t(item.label) : undefined}
                                                 onClick={() => setMobileNavOpen(false)}
                                                 className={cn(
-                                                    'relative flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors',
+                                                    'relative flex items-center gap-2.5 px-3 py-1.5 rounded-md text-[13px] transition-colors',
                                                     isActive
-                                                        ? 'bg-primary-soft text-primary-soft-text'
-                                                        : 'text-text-2 hover:bg-surface-2 hover:text-text-1',
+                                                        ? 'bg-surface-2 text-text-1 font-semibold'
+                                                        : 'font-medium text-text-2 hover:bg-surface-2 hover:text-text-1',
                                                     !isExpanded && 'justify-center px-0',
                                                 )}
                                             >
                                                 {isActive && (
                                                     <span
-                                                        className="absolute left-[-13px] top-2 bottom-2 w-[3px] bg-primary rounded-r"
+                                                        className="absolute left-[-13px] top-1.5 bottom-1.5 w-[3px] bg-primary rounded-r"
                                                         aria-hidden="true"
                                                     />
                                                 )}
-                                                <span className="flex-shrink-0">{item.icon}</span>
+                                                <Icon
+                                                    size={15}
+                                                    aria-hidden
+                                                    className={cn(
+                                                        'flex-shrink-0',
+                                                        isActive ? 'text-text-1' : 'text-text-3',
+                                                    )}
+                                                />
                                                 {isExpanded && (
                                                     <>
                                                         <span className="flex-1 truncate">{t(item.label)}</span>

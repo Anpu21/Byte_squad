@@ -40,8 +40,8 @@ Roll out module by module; missing `ta` keys fall back to English, so the UI nev
    - Interpolation: `t('greeting', { name })` ↔ `"greeting": "Hi {{name}}"`.
    - Plurals/counts: `t('items', { count })` ↔ `items_one` / `items_other`.
    - Strings outside components (module-level arrays, e.g. nav items) store the **key**, and the
-     component calls `t(key)` at render — see `layouts/DashboardLayout.tsx` (`NAV_ITEMS` +
-     `GROUP_LABEL_KEY`).
+     component calls `t(key)` at render — see `config/navigation.ts` (`SIDEBAR` +
+     `GROUP_LABEL_KEY`), consumed by `layouts/DashboardLayout.tsx`.
 4. **Verify**: switch to Tamil in profile settings → translated keys flip; un-filled keys show the
    English placeholder. `pnpm typecheck` + `pnpm test`.
 
