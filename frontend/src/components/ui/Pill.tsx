@@ -26,7 +26,7 @@ const toneClasses: Record<PillTone, string> = {
 
 export default function Pill({
     tone = 'neutral',
-    dot = true,
+    dot = false,
     className,
     children,
     ...props
@@ -34,7 +34,7 @@ export default function Pill({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1.5 h-[22px] px-2.5 rounded-full text-[11px] font-semibold leading-none',
+                'inline-flex items-center gap-1.5 h-[24px] px-[11px] rounded-full text-[12px] font-semibold leading-none',
                 toneClasses[tone],
                 className,
             )}

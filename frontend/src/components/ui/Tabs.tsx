@@ -33,7 +33,7 @@ export function Tabs<T extends string>({
     return (
         <div
             className={cn(
-                'flex items-center gap-1 mb-6 p-1 bg-surface-2 rounded-xl border border-border w-fit overflow-x-auto',
+                'flex items-center gap-1 mb-6 p-[5px] bg-surface-2 rounded-[12px] border border-border w-fit overflow-x-auto',
                 className,
             )}
             role="tablist"
@@ -50,10 +50,10 @@ export function Tabs<T extends string>({
                         aria-selected={isActive}
                         onClick={() => onChange(t.key)}
                         className={cn(
-                            'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap focus:outline-none focus:ring-[3px] focus:ring-primary/30',
+                            'flex items-center gap-2 px-4 py-[9px] rounded-md text-[13px] font-semibold transition-all whitespace-nowrap focus:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
                             isActive
-                                ? 'bg-primary text-text-inv shadow-sm'
-                                : 'text-text-2 hover:text-text-1 hover:bg-surface-2',
+                                ? 'bg-primary text-text-inv shadow-sm-token'
+                                : 'text-text-2 hover:text-text-1 hover:bg-surface',
                         )}
                     >
                         {Icon && <Icon size={14} strokeWidth={2} aria-hidden />}

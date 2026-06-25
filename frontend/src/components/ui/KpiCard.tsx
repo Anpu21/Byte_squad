@@ -4,17 +4,18 @@ import Spark from './Spark';
 
 type KpiAccent = 'primary' | 'accent' | 'info' | 'warning' | 'danger';
 
-const accentBar: Record<KpiAccent, string> = {
-    primary: 'border-t-2 border-t-primary',
-    accent: 'border-t-2 border-t-accent',
-    info: 'border-t-2 border-t-info',
-    warning: 'border-t-2 border-t-warning',
-    danger: 'border-t-2 border-t-danger',
+// Ledger UI Kit stat card: mono value, a colored 30×30 icon-wrap, delta pill.
+const iconWrap: Record<KpiAccent, string> = {
+    primary: 'bg-primary-soft text-primary',
+    accent: 'bg-accent-soft text-accent-text',
+    info: 'bg-info-soft text-info',
+    warning: 'bg-warning-soft text-warning',
+    danger: 'bg-danger-soft text-danger',
 };
 
-const accentIcon: Record<KpiAccent, string> = {
-    primary: 'text-primary',
-    accent: 'text-accent',
+const valueColor: Record<KpiAccent, string> = {
+    primary: 'text-text-1',
+    accent: 'text-accent-text',
     info: 'text-info',
     warning: 'text-warning',
     danger: 'text-danger',
@@ -28,7 +29,7 @@ interface KpiCardProps {
     sparkData?: number[];
     sparkColor?: string;
     icon?: ReactNode;
-    /** Per-metric accent: colored top-border + icon tint (e.g. revenue→primary). */
+    /** Per-metric accent: colored icon-wrap + value tint (e.g. revenue→accent). */
     accent?: KpiAccent;
     className?: string;
 }
@@ -47,36 +48,49 @@ export default function KpiCard({
     return (
         <div
             className={cn(
-                'flex-1 bg-surface border border-border rounded-md shadow-xs p-5',
-                accent && accentBar[accent],
+                'flex-1 bg-surface border border-border rounded-lg shadow-sm-token p-5',
                 className,
             )}
         >
             <div className="flex items-center justify-between gap-2">
-                <div className="text-[11px] font-semibold tracking-[0.08em] uppercase text-text-3">
+                <div className="mono text-[11px] font-semibold tracking-[0.1em] uppercase text-text-3">
                     {label}
                 </div>
                 {icon && (
-                    <div className={accent ? accentIcon[accent] : 'text-text-3'}>
+                    <div
+                        className={cn(
+                            'w-[30px] h-[30px] rounded-lg inline-flex items-center justify-center',
+                            accent ? iconWrap[accent] : 'bg-surface-2 text-text-3',
+                        )}
+                    >
                         {icon}
                     </div>
                 )}
             </div>
-            <div className="flex items-baseline justify-between mt-1.5 gap-2">
-                <div className="num text-[26px] font-bold tracking-[-0.02em] text-text-1">
+            <div className="flex items-baseline justify-between mt-3.5 gap-2">
+                <div
+                    className={cn(
+                        'mono text-[26px] font-bold tracking-[-0.01em]',
+                        accent ? valueColor[accent] : 'text-text-1',
+                    )}
+                >
                     {value}
                 </div>
-                {delta && (
-                    <div
+            </div>
+            {delta && (
+                <div className="flex items-center gap-2 mt-2.5">
+                    <span
                         className={cn(
-                            'text-xs font-semibold',
-                            deltaPositive ? 'text-accent-text' : 'text-danger',
+                            'mono inline-flex items-center h-5 px-[7px] rounded-md text-[11.5px] font-semibold',
+                            deltaPositive
+                                ? 'bg-accent-soft text-accent-text'
+                                : 'bg-danger-soft text-danger',
                         )}
                     >
                         {delta}
-                    </div>
-                )}
-            </div>
+                    </span>
+                </div>
+            )}
             {sparkData && (
                 <div className="mt-2">
                     <Spark

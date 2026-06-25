@@ -22,7 +22,7 @@ export default function Card({ className, tone = 'default', accent, ...props }: 
         <div
             className={cn(
                 'bg-surface border border-border overflow-hidden',
-                tone === 'elevated' ? 'rounded-lg shadow-md-token' : 'rounded-md shadow-xs',
+                tone === 'elevated' ? 'rounded-lg shadow-md-token' : 'rounded-lg shadow-sm-token',
                 accent && cardAccent[accent],
                 className,
             )}
