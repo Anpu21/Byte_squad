@@ -39,9 +39,9 @@ import { AdminTransferCreatePage } from '@/pages/transfers/AdminTransferCreatePa
 import { ShipmentsListPage } from '@/pages/transfers/ShipmentsListPage';
 import { ShipmentCreatePage } from '@/pages/transfers/ShipmentCreatePage';
 import { ShipmentDetailPage } from '@/pages/transfers/ShipmentDetailPage';
-import { CatalogPage } from '@/pages/shop/CatalogPage';
-import { ProductDetailPage } from '@/pages/shop/ProductDetailPage';
-import { CartPage } from '@/pages/shop/CartPage';
+import { CatalogPage } from '@/features/shop-catalog';
+import { ProductDetailPage } from '@/features/product-detail';
+import { CartPage } from '@/features/shop-cart';
 import { CheckoutPage } from '@/pages/shop/CheckoutPage';
 import { OrderConfirmationPage } from '@/pages/shop/OrderConfirmationPage';
 import { OrderGroupConfirmationPage } from '@/pages/shop/OrderGroupConfirmationPage';

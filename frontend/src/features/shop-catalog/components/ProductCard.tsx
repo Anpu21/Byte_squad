@@ -25,7 +25,7 @@ export function ProductCard({
 
     return (
         <div
-            className={`bg-surface border border-border rounded-md overflow-hidden hover:border-border-strong transition-colors ${
+            className={`bg-surface border border-border rounded-xl overflow-hidden hover:border-border-strong hover:shadow-md-token hover:-translate-y-0.5 transition-all duration-200 ${
                 out ? 'opacity-60' : ''
             }`}
         >
@@ -53,7 +53,7 @@ export function ProductCard({
                     {STOCK_LABEL[product.stockStatus]}
                 </span>
             </Link>
-            <div className="p-3">
+            <div className="p-4">
                 <p className="text-[11px] text-text-3 uppercase tracking-widest">
                     {product.category}
                 </p>
@@ -63,14 +63,14 @@ export function ProductCard({
                     </h3>
                 </Link>
                 <div className="mt-3 flex items-center justify-between gap-2">
-                    <p className="text-sm font-bold text-text-1">
+                    <p className="text-base font-bold text-text-1">
                         {formatCurrency(product.sellingPrice)}
                     </p>
                     <button
                         type="button"
                         onClick={() => onAdd(product)}
                         disabled={out}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors ${
+                        className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
                             out
                                 ? 'bg-surface-2 text-text-3 cursor-not-allowed'
                                 : 'bg-primary text-text-inv hover:bg-primary-hover'

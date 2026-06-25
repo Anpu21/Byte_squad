@@ -7,7 +7,7 @@ import { useProductDetail } from '@/features/product-detail/hooks/useProductDeta
 import { ProductDetailImage } from '@/features/product-detail/components/ProductImage';
 import { ProductDetailActions } from '@/features/product-detail/components/ProductDetailActions';
 import { StickyAddToCartBar } from '@/features/product-detail/components/StickyAddToCartBar';
-import { RecommendedProductsSection } from '@/features/shop-catalog/components/RecommendedProductsSection';
+import { RecommendedProductsSection } from '@/features/shop-catalog';
 
 export function ProductDetailPage() {
     const p = useProductDetail();
