@@ -113,7 +113,7 @@ export function LoyaltyAdjustPointsDialog({
                 <div className="space-y-1.5">
                     <label className="text-sm font-medium text-text-1">Reason</label>
                     <textarea
-                        className="w-full h-24 px-3 py-2 text-sm bg-surface border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                        className="w-full h-24 px-3 py-2 text-sm bg-surface border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-focus/25 focus:border-focus resize-none"
                         placeholder="E.g. Goodwill gesture, system correction..."
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}

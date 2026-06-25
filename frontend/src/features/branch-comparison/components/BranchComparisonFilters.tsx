@@ -34,7 +34,7 @@ interface BranchComparisonFiltersProps {
 }
 
 const INPUT_CLASS =
-  "w-full h-9 px-3 bg-surface border border-border-strong rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors";
+  "w-full h-9 px-3 bg-surface border border-border-strong rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-colors";
 
 export function BranchComparisonFilters({
   branches,

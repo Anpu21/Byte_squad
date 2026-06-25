@@ -69,7 +69,7 @@ export function AddExpenseModal({
     };
 
     const fieldClass =
-        'w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors placeholder:text-text-3';
+        'w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-colors placeholder:text-text-3';
 
     return (
         <Modal isOpen onClose={onClose} title="Add expense" maxWidth="md">

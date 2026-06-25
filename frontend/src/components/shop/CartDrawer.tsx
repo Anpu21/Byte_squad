@@ -125,7 +125,7 @@ export function CartDrawer() {
                     <button
                         type="button"
                         onClick={close}
-                        className="p-1.5 rounded-lg hover:bg-surface-2 text-text-2 hover:text-text-1 focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                        className="p-1.5 rounded-lg hover:bg-surface-2 text-text-2 hover:text-text-1 focus:outline-none focus:ring-[3px] focus:ring-focus/25"
                         aria-label="Close cart"
                     >
                         <X size={18} />

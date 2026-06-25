@@ -2,7 +2,7 @@ import { LuArrowLeftRight as ArrowLeftRight } from 'react-icons/lu';
 import type { IBranch } from '@/types';
 
 const SELECT_CLASS =
-    'w-full h-9 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/25 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+    'w-full h-9 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/25 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
 const LABEL_CLASS =
     'block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5';
@@ -61,7 +61,7 @@ export function AdminTransferBranchPickers({
                     disabled={!canSwap}
                     aria-label="Swap source and destination"
                     title="Swap source and destination"
-                    className="h-9 w-9 self-end justify-self-center rounded-md border border-border bg-surface-2 text-text-2 hover:text-text-1 hover:border-border-strong hover:bg-surface transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                    className="h-9 w-9 self-end justify-self-center rounded-md border border-border bg-surface-2 text-text-2 hover:text-text-1 hover:border-border-strong hover:bg-surface transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-[3px] focus:ring-focus/25"
                 >
                     <ArrowLeftRight size={14} strokeWidth={2} />
                 </button>

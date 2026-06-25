@@ -70,7 +70,7 @@ export function CheckoutPage() {
                         onChange={(e) => p.setNote(e.target.value)}
                         rows={2}
                         placeholder="Any pickup instructions"
-                        className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-primary resize-none"
+                        className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-focus resize-none"
                     />
                 </div>
 

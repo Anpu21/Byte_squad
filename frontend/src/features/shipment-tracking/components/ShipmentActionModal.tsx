@@ -16,7 +16,7 @@ const TITLES: Record<Mode, string> = {
 };
 
 const FIELD =
-    'w-full bg-surface border border-border rounded-md px-3 py-2 text-sm text-text-1 focus:outline-none focus:ring-[3px] focus:ring-primary/20';
+    'w-full bg-surface border border-border rounded-md px-3 py-2 text-sm text-text-1 focus:outline-none focus:ring-[3px] focus:ring-focus/25';
 
 interface Props {
     mode: Mode;

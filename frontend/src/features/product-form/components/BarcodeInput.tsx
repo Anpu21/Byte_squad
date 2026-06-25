@@ -24,7 +24,7 @@ export function BarcodeInput({
         ? 'border-danger'
         : statusGood
           ? 'border-accent'
-          : 'border-border-strong hover:border-text-3 focus:border-primary focus:ring-[3px] focus:ring-primary/30';
+          : 'border-border-strong hover:border-text-3 focus:border-focus focus:ring-[3px] focus:ring-primary/30';
 
     return (
         <FormField label="Barcode / SKU" error={error}>

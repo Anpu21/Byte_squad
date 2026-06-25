@@ -145,7 +145,7 @@ export function TransferRequestCartAddRow({
                     aria-label="Add product to request"
                     aria-autocomplete="list"
                     aria-expanded={showDropdown}
-                    className="w-full h-8 px-2 bg-canvas border border-border rounded-md text-[12px] text-text-1 outline-none focus:border-primary focus:ring-[2px] focus:ring-primary/30 transition-all placeholder:text-text-3"
+                    className="w-full h-8 px-2 bg-canvas border border-border rounded-md text-[12px] text-text-1 outline-none focus:border-focus focus:ring-[2px] focus:ring-primary/30 transition-all placeholder:text-text-3"
                 />
 
                 {showDropdown && (

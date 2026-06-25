@@ -9,7 +9,7 @@ import { usePurchaseReturns } from '../../hooks/usePurchaseReturns';
 import { useCreatePurchaseReturn } from '../../hooks/useCreatePurchaseReturn';
 
 const INPUT_CLASS =
-    'h-8 px-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-8 px-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
 interface IGrnReturnSectionProps {
     grn: IGrn;
@@ -170,7 +170,7 @@ export function GrnReturnSection({ grn, onReturned }: IGrnReturnSectionProps) {
                         </div>
                     ))}
                     <textarea
-                        className="w-full min-h-[48px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
+                        className="w-full min-h-[48px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25"
                         placeholder="Reason (required)"
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}

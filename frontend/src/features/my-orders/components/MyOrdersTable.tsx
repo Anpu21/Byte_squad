@@ -85,7 +85,7 @@ export function MyOrdersTable({ requests, onView, onCancel }: MyOrdersTableProps
                         type="button"
                         onClick={() => onView(req.id)}
                         aria-label={`View pickup order ${req.orderCode}`}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-text-2 hover:text-text-1 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20 rounded px-1"
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-text-2 hover:text-text-1 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25 rounded px-1"
                     >
                         <Eye size={12} />
                         View

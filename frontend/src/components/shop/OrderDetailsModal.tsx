@@ -134,7 +134,7 @@ export function OrderDetailsModal({
                     <Link
                         to={fullPagePath}
                         onClick={onClose}
-                        className="mt-4 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-text-2 hover:text-text-1 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20 rounded"
+                        className="mt-4 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-text-2 hover:text-text-1 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25 rounded"
                     >
                         Open full page <ExternalLink size={11} />
                     </Link>

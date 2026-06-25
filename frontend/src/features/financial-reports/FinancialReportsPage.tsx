@@ -38,7 +38,7 @@ const MONTH_NAMES = [
 ];
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
 type ReportTab = 'trial-balance' | 'balance-sheet' | 'day-book' | 'periods';
 

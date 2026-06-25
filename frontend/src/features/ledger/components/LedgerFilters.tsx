@@ -8,7 +8,7 @@ import type {
 } from '../types/filters.type';
 
 const SELECT_CLASS =
-    'h-9 px-3 bg-surface border border-border-strong text-text-1 text-sm rounded-md outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors';
+    'h-9 px-3 bg-surface border border-border-strong text-text-1 text-sm rounded-md outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-colors';
 
 interface LedgerFiltersProps {
     filters: LedgerFiltersState;
@@ -32,7 +32,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                         value={filters.search}
                         onChange={(e) => filters.setSearch(e.target.value)}
                         placeholder="Search description or reference…"
-                        className="w-full h-9 pl-9 pr-3 bg-surface border border-border-strong rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 placeholder:text-text-3 transition-colors"
+                        className="w-full h-9 pl-9 pr-3 bg-surface border border-border-strong rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 placeholder:text-text-3 transition-colors"
                     />
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">

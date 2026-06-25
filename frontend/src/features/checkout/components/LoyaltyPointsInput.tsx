@@ -43,7 +43,7 @@ export function LoyaltyPointsInput({
                         if (Number.isNaN(next)) return;
                         onChange(Math.max(0, Math.min(next, maxRedeemable)));
                     }}
-                    className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-primary disabled:opacity-50"
+                    className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-1 focus:outline-none focus:border-focus disabled:opacity-50"
                 />
                 <button
                     type="button"

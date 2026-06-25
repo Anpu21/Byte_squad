@@ -153,7 +153,7 @@ export function AdminTransferCartAddRow({
                         aria-autocomplete="list"
                         aria-expanded={showDropdown}
                         disabled={!sourceBranchId}
-                        className="flex-1 min-w-0 h-8 px-2 bg-canvas border border-border rounded-md text-[12px] text-text-1 outline-none focus:border-primary focus:ring-[2px] focus:ring-primary/30 transition-all placeholder:text-text-3 disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="flex-1 min-w-0 h-8 px-2 bg-canvas border border-border rounded-md text-[12px] text-text-1 outline-none focus:border-focus focus:ring-[2px] focus:ring-primary/30 transition-all placeholder:text-text-3 disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <button
                         type="button"
@@ -161,7 +161,7 @@ export function AdminTransferCartAddRow({
                         disabled={!sourceBranchId}
                         title="Scan with camera"
                         aria-label="Open camera scanner"
-                        className="h-8 w-8 flex-shrink-0 bg-surface border border-border rounded-md flex items-center justify-center text-text-2 hover:text-text-1 hover:border-border-strong hover:bg-surface-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-[2px] focus:ring-primary/20"
+                        className="h-8 w-8 flex-shrink-0 bg-surface border border-border rounded-md flex items-center justify-center text-text-2 hover:text-text-1 hover:border-border-strong hover:bg-surface-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-[2px] focus:ring-focus/25"
                     >
                         <Camera size={14} strokeWidth={1.75} />
                     </button>

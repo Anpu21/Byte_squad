@@ -127,7 +127,7 @@ export function EmployeePayrollCard({ form }: EmployeePayrollCardProps) {
                         value={form.notes}
                         onChange={(e) => form.setNotes(e.target.value)}
                         rows={3}
-                        className="w-full px-3 py-2 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 placeholder:text-text-3 resize-none transition-colors"
+                        className="w-full px-3 py-2 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 placeholder:text-text-3 resize-none transition-colors"
                         placeholder="Anything HR should know"
                     />
                 </EmployeeFormField>

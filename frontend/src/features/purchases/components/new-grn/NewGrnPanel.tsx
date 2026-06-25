@@ -16,7 +16,7 @@ import { useSuppliers } from '../../hooks/useSuppliers';
 import { useCreateGrn } from '../../hooks/useCreateGrn';
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
 interface ILineDraft {
     key: number;
@@ -443,7 +443,7 @@ export function NewGrnPanel({
                             Notes (optional)
                         </span>
                         <textarea
-                            className="w-full min-h-[56px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors"
+                            className="w-full min-h-[56px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors"
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             maxLength={1000}
