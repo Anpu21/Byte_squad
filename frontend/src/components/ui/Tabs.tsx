@@ -20,8 +20,10 @@ interface TabsProps<T extends string> {
 
 /**
  * The app's pill tab-bar for tabbed workspaces (Accounting, HR, Sales,
- * Transfers). Pairs with `useTabParam` for URL-synced state. Icons and badges
- * are optional so a single primitive covers every hub.
+ * Transfers, Branches, Financial reports). Ledger UI Kit direction A: a
+ * contained surface-2 bar with a solid-primary active pill. Pairs with
+ * `useTabParam` for URL-synced state. Icons and badges are optional so a single
+ * primitive covers every hub — never hand-roll a tab bar.
  */
 export function Tabs<T extends string>({
     tabs,
@@ -33,7 +35,7 @@ export function Tabs<T extends string>({
     return (
         <div
             className={cn(
-                'flex items-center gap-1 mb-6 p-[5px] bg-surface-2 rounded-[12px] border border-border w-fit overflow-x-auto',
+                'inline-flex items-center gap-1 mb-6 p-[5px] bg-surface-2 rounded-[12px] border border-border w-fit max-w-full overflow-x-auto',
                 className,
             )}
             role="tablist"
@@ -50,20 +52,20 @@ export function Tabs<T extends string>({
                         aria-selected={isActive}
                         onClick={() => onChange(t.key)}
                         className={cn(
-                            'flex items-center gap-2 px-4 py-[9px] rounded-md text-[13px] font-semibold transition-all whitespace-nowrap focus:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
+                            'inline-flex items-center gap-2 px-4 py-[9px] rounded-md text-[13px] font-semibold whitespace-nowrap transition-all duration-150 outline-none active:scale-[0.97] focus-visible:ring-[3px] focus-visible:ring-focus/25',
                             isActive
                                 ? 'bg-primary text-text-inv shadow-sm-token'
                                 : 'text-text-2 hover:text-text-1 hover:bg-surface',
                         )}
                     >
-                        {Icon && <Icon size={14} strokeWidth={2} aria-hidden />}
+                        {Icon && <Icon size={15} strokeWidth={2.1} aria-hidden />}
                         {t.label}
                         {t.badge != null && (
                             <span
                                 className={cn(
-                                    'text-[11px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1.5',
+                                    'mono text-[11px] font-semibold min-w-[18px] h-[18px] inline-flex items-center justify-center rounded-full px-1.5 leading-none',
                                     isActive
-                                        ? 'bg-primary-soft text-primary-soft-text'
+                                        ? 'bg-text-inv/15 text-text-inv'
                                         : 'bg-surface text-text-3',
                                 )}
                             >

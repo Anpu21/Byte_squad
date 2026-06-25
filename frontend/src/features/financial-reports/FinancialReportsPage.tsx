@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import PageHeader from '@/components/ui/PageHeader';
 import Pill from '@/components/ui/Pill';
+import { Tabs } from '@/components/ui/Tabs';
 import { formatCurrency } from '@/lib/utils';
 import { accountingService } from '@/services/accounting.service';
 import { queryKeys } from '@/lib/queryKeys';
@@ -166,33 +167,12 @@ export function FinancialReportsPage() {
                 subtitle="Trial balance, balance sheet, and the day book — straight off the account-dimensioned ledger."
             />
 
-            <div
-                className="flex items-center gap-1 mb-6 p-1 bg-surface-2 rounded-xl border border-border w-fit overflow-x-auto"
-                role="tablist"
-                aria-label="Financial report views"
-            >
-                {TABS.map((t) => {
-                    const isActive = tab === t.key;
-                    const { Icon } = t;
-                    return (
-                        <button
-                            key={t.key}
-                            type="button"
-                            role="tab"
-                            aria-selected={isActive}
-                            onClick={() => setTab(t.key)}
-                            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap focus:outline-none focus:ring-[3px] focus:ring-primary/30 ${
-                                isActive
-                                    ? 'bg-primary text-text-inv shadow-sm'
-                                    : 'text-text-2 hover:text-text-1 hover:bg-surface'
-                            }`}
-                        >
-                            <Icon size={14} strokeWidth={2} aria-hidden />
-                            {t.label}
-                        </button>
-                    );
-                })}
-            </div>
+            <Tabs
+                tabs={TABS}
+                active={tab}
+                onChange={setTab}
+                ariaLabel="Financial report views"
+            />
 
             {tab === 'trial-balance' && (
                 <Card className="overflow-hidden">
