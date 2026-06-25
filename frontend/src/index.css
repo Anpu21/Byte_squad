@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  /* Geist covers Latin; Noto Sans Tamil supplies Tamil glyphs via font fallback
-     so `lang="ta"` content renders without tofu. Tamil is LTR — no RTL needed. */
-  --font-sans: 'Geist', 'Noto Sans Tamil', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', monospace;
+  /* IBM Plex (Ledger UI Kit). Noto Sans Tamil supplies Tamil glyphs via font
+     fallback so `lang="ta"` content renders without tofu. Tamil is LTR. */
+  --font-sans: 'IBM Plex Sans', 'Noto Sans Tamil', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
 
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
@@ -30,6 +30,11 @@
   --color-accent-soft: var(--accent-soft);
   --color-accent-text: var(--accent-text);
 
+  --color-success: var(--accent);
+  --color-success-soft: var(--accent-soft);
+  --color-focus: var(--focus);
+  --color-focus-soft: var(--focus-soft);
+
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
@@ -45,25 +50,25 @@
   --color-brand-100: #C8DDD8;
   --color-brand-50:  #E7F2EF;
 
-  --radius-sm: 6px;
-  --radius-md: 8px;
+  --radius-sm: 9px;
+  --radius-md: 9px;
   --radius-lg: 12px;
 }
 
 :root {
-  --canvas: #F5F8F7;
+  /* Ledger UI Kit — direction A (Crisp), light. */
+  --canvas: #EDF3F0;
   --surface: #FFFFFF;
-  --surface-2: #EEF3F1;
+  --surface-2: #F3F8F5;
   --surface-3: #E1EBE7;
-  /* opt-in redesign tints (additive — never override the values above) */
-  --surface-accent: rgba(74, 128, 115, .06);
-  --surface-hover: #F8FAFA;
-  --border: #D7E2DE;
-  --border-strong: #B8CAC4;
+  --surface-accent: rgba(74, 72, 122, .06);
+  --surface-hover: #EAF2EE;
+  --border: #DEEAE5;
+  --border-strong: #C8DDD8;
 
   --text-1: #19183B;
-  --text-2: #4F5E63;
-  --text-3: #8A9A9C;
+  --text-2: #4A487A;
+  --text-3: #708993;
   --text-inv: #FFFFFF;
 
   --primary: #19183B;
@@ -71,22 +76,27 @@
   --primary-soft: #E7F2EF;
   --primary-soft-text: #19183B;
 
-  --accent: #4A8073;
-  --accent-soft: #E7F2EF;
-  --accent-text: #2F5A50;
+  /* "accent" is the app's positive/success color → kit green (pos). */
+  --accent: #15795A;
+  --accent-soft: #E0F0E8;
+  --accent-text: #15795A;
 
-  --warning: #B7791F;
-  --warning-soft: #FBF1DD;
-  --danger: #B4342E;
-  --danger-soft: #F8E4E2;
-  --info: #2F6594;
-  --info-soft: #E0EDF5;
+  /* interactive/focus accent → kit purple (focus rings, links, outline). */
+  --focus: #4A487A;
+  --focus-soft: #E7F2EF;
 
-  --shadow-xs: 0 1px 2px rgba(25,24,59,.04);
-  --shadow-sm: 0 1px 3px rgba(25,24,59,.06), 0 1px 2px rgba(25,24,59,.04);
-  --shadow-md: 0 6px 18px rgba(25,24,59,.08);
+  --warning: #9A6A14;
+  --warning-soft: #F8EFD8;
+  --danger: #C0392B;
+  --danger-soft: #FBE9E6;
+  --info: #3A57A8;
+  --info-soft: #E8EDFB;
+
+  --shadow-xs: 0 1px 2px rgba(25,24,59,.05);
+  --shadow-sm: 0 1px 2px rgba(25,24,59,.05), 0 2px 8px -2px rgba(25,24,59,.06);
+  --shadow-md: 0 10px 32px -10px rgba(25,24,59,.16), 0 2px 6px rgba(25,24,59,.05);
   --shadow-lg: 0 18px 40px rgba(25,24,59,.16);
-  --ring: 0 0 0 3px rgba(25,24,59,.18);
+  --ring: 0 0 0 3px rgba(74,72,122,.20);
   --overlay: rgba(0, 0, 0, 0.5);
 
   /* Layered z-index scale — keep stacking predictable across the app.
@@ -100,41 +110,45 @@
 }
 
 [data-theme="dark"] {
-  --canvas: #0E0D24;
-  --surface: #19183B;
-  --surface-2: #22214A;
+  /* Ledger UI Kit — direction A (Crisp), dark. */
+  --canvas: #0C0B1F;
+  --surface: #16153A;
+  --surface-2: #1F1D47;
   --surface-3: #2C2A55;
   --surface-accent: rgba(161, 194, 189, .08);
-  --surface-hover: #1E1D42;
+  --surface-hover: #262458;
   --border: #2C2A55;
-  --border-strong: #3D3B70;
+  --border-strong: #3A3768;
 
-  --text-1: #E7F2EF;
+  --text-1: #EAF3F0;
   --text-2: #A1C2BD;
-  --text-3: #708993;
-  --text-inv: #19183B;
+  --text-3: #7E94A0;
+  --text-inv: #10122B;
 
   --primary: #A1C2BD;
   --primary-hover: #C8DDD8;
   --primary-soft: rgba(161,194,189,.12);
   --primary-soft-text: #C8DDD8;
 
-  --accent: #A1C2BD;
-  --accent-soft: rgba(161,194,189,.14);
-  --accent-text: #C8DDD8;
+  --accent: #56D49B;
+  --accent-soft: rgba(86,212,155,.13);
+  --accent-text: #56D49B;
 
-  --warning: #E0B872;
-  --warning-soft: rgba(224,184,114,.14);
-  --danger: #E08680;
-  --danger-soft: rgba(224,134,128,.14);
-  --info: #8FB5D6;
-  --info-soft: rgba(143,181,214,.14);
+  --focus: #A1C2BD;
+  --focus-soft: rgba(161,194,189,.14);
 
-  --shadow-xs: 0 1px 2px rgba(0,0,0,.35);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.4);
-  --shadow-md: 0 6px 18px rgba(0,0,0,.5);
+  --warning: #E6BC57;
+  --warning-soft: rgba(230,188,87,.13);
+  --danger: #F0837F;
+  --danger-soft: rgba(240,131,127,.13);
+  --info: #9FB4F0;
+  --info-soft: rgba(159,180,240,.13);
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.5);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.5);
+  --shadow-md: 0 12px 36px -12px rgba(0,0,0,.7);
   --shadow-lg: 0 18px 40px rgba(0,0,0,.6);
-  --ring: 0 0 0 3px rgba(161,194,189,.3);
+  --ring: 0 0 0 3px rgba(161,194,189,.28);
   --overlay: rgba(8, 7, 24, 0.7);
 }
 
