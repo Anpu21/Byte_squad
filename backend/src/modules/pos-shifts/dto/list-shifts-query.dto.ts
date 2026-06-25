@@ -1,6 +1,9 @@
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsUUID, Min } from 'class-validator';
-import { SHIFT_STATUSES, type ShiftStatus } from '@/modules/pos-sales/types/shift-status.type';
+import {
+  SHIFT_STATUSES,
+  type ShiftStatus,
+} from '@/modules/pos-sales/types/shift-status.type';
 
 export class ListShiftsQueryDto {
   @IsOptional()

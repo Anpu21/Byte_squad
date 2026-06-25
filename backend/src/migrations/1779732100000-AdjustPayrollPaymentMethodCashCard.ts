@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * the new CHECK, and de-bankify the optional reference column
  * (`bank_reference_no` → `payment_reference`). Reversible.
  */
-export class AdjustPayrollPaymentMethodCashCard1779732100000
-  implements MigrationInterface
-{
+export class AdjustPayrollPaymentMethodCashCard1779732100000 implements MigrationInterface {
   name = 'AdjustPayrollPaymentMethodCashCard1779732100000';
   private readonly logger = new Logger(
     AdjustPayrollPaymentMethodCashCard1779732100000.name,

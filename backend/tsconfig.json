@@ -11,17 +11,8 @@
       "@auth/*": [
         "src/modules/auth/*"
       ],
-      "@accounting/*": [
-        "src/modules/accounting/*"
-      ],
       "@branches/*": [
         "src/modules/branches/*"
-      ],
-      "@inventory/*": [
-        "src/modules/inventory/*"
-      ],
-      "@pos/*": [
-        "src/modules/pos/*"
       ],
       "@products/*": [
         "src/modules/products/*"

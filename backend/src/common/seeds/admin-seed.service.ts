@@ -2246,7 +2246,8 @@ export class AdminSeedService implements OnModuleInit {
         destination: ctx.suburbanBranch,
         product: get('PNT-002'),
         qty: 50,
-        exceptionReason: 'Destination cold-room full — parcel returned to source',
+        exceptionReason:
+          'Destination cold-room full — parcel returned to source',
       },
       {
         status: ShipmentStatus.CANCELLED,

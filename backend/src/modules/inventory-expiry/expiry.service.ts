@@ -18,7 +18,10 @@ import { UserRole } from '@common/enums/user-roles.enums';
 import { AuthUser } from '@common/types/auth-user.type';
 import { CreateProductBatchDto } from '@/modules/inventory-expiry/dto/create-product-batch.dto';
 import { ListExpiryQueryDto } from '@/modules/inventory-expiry/dto/list-expiry-query.dto';
-import { ExpiryReport, ExpiryReportRow } from '@/modules/inventory-expiry/types';
+import {
+  ExpiryReport,
+  ExpiryReportRow,
+} from '@/modules/inventory-expiry/types';
 import {
   daysToExpiry,
   severityForDays,

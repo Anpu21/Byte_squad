@@ -4,7 +4,10 @@ import { LookupSaleQueryDto } from '@/modules/inventory-returns/dto/lookup-sale-
 import { CreateSalesReturnDto } from '@/modules/inventory-returns/dto/create-sales-return.dto';
 import { ListReturnsQueryDto } from '@/modules/inventory-returns/dto/list-returns-query.dto';
 import { SalesReturn } from '@/modules/inventory-returns/entities/sales-return.entity';
-import { PaginatedSalesReturns, SaleReturnLookup } from '@/modules/inventory-returns/types';
+import {
+  PaginatedSalesReturns,
+  SaleReturnLookup,
+} from '@/modules/inventory-returns/types';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';

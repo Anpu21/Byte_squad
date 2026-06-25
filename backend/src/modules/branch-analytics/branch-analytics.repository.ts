@@ -214,8 +214,7 @@ export class BranchAnalyticsRepository {
     for (const row of rows) {
       const bucket = byDay.get(row.day);
       if (bucket) {
-        bucket[row.branchId] =
-          Math.round(Number(row.revenue ?? 0) * 100) / 100;
+        bucket[row.branchId] = Math.round(Number(row.revenue ?? 0) * 100) / 100;
       }
     }
 
@@ -229,11 +228,7 @@ export class BranchAnalyticsRepository {
   private enumerateDays(start: Date, end: Date): string[] {
     const days: string[] = [];
     const cursor = new Date(
-      Date.UTC(
-        start.getUTCFullYear(),
-        start.getUTCMonth(),
-        start.getUTCDate(),
-      ),
+      Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()),
     );
     const last = Date.UTC(
       end.getUTCFullYear(),

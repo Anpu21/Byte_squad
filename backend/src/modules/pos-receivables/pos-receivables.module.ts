@@ -15,7 +15,10 @@ import { AccountingCoreModule } from '@/modules/accounting-core/accounting-core.
  * AccountsRepository in app.module + accounting-core).
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([CreditTransaction]), AccountingCoreModule],
+  imports: [
+    TypeOrmModule.forFeature([CreditTransaction]),
+    AccountingCoreModule,
+  ],
   controllers: [ReceivablesController],
   providers: [CreditTransactionRepository, ReceivablesService],
   exports: [ReceivablesService],
