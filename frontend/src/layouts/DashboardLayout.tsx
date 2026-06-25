@@ -16,13 +16,16 @@ import NotificationDropdown from '@/components/notifications/NotificationDropdow
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import Avatar from '@/components/ui/Avatar';
 import Logo from '@/components/ui/Logo';
+import { NAV_ICON } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout() {
     const { t } = useTranslation('common');
     const { user, logout } = useAuth();
     const { unreadCount } = useNotifications();
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(
+        () => localStorage.getItem('nav:sidebar-open') !== 'false',
+    );
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
@@ -35,6 +38,11 @@ export default function DashboardLayout() {
     const filteredNavItems = sidebarItems.filter((item) =>
         user ? item.roles.includes(user.role as UserRole) : false,
     );
+
+    // Remember the collapsed/expanded sidebar preference across sessions.
+    useEffect(() => {
+        localStorage.setItem('nav:sidebar-open', String(sidebarOpen));
+    }, [sidebarOpen]);
 
     useEffect(() => {
         if (!profileOpen) return;
@@ -107,10 +115,12 @@ export default function DashboardLayout() {
             <aside
                 className={cn(
                     'bg-surface border-r border-border flex flex-col flex-shrink-0 z-40',
-                    'fixed inset-y-0 left-0 w-[280px] transition-transform duration-200',
+                    'fixed inset-y-0 left-0 w-[var(--nav-drawer-w)] transition-transform duration-200',
                     mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
                     'md:relative md:translate-x-0 md:transition-[width] md:w-auto',
-                    sidebarOpen ? 'md:w-[240px]' : 'md:w-[68px]',
+                    sidebarOpen
+                        ? 'md:w-[var(--nav-sidebar-w)]'
+                        : 'md:w-[var(--nav-rail-w)]',
                 )}
             >
                 <div className="h-16 flex items-center px-4 border-b border-border">
@@ -121,14 +131,26 @@ export default function DashboardLayout() {
                     )}
                 </div>
 
-                <nav className="flex-1 px-3 py-3 overflow-y-auto">
+                <nav
+                    aria-label={t('shell.primaryNav')}
+                    className="flex-1 px-3 py-3 overflow-y-auto"
+                >
                     {groups.map((group) => {
                         const items = filteredNavItems.filter((i) => i.group === group);
                         if (items.length === 0) return null;
                         return (
-                            <div key={group} className="mb-2">
+                            <div
+                                key={group}
+                                className={cn(
+                                    'mb-2',
+                                    // Collapsed rail hides group labels — keep grouping legible
+                                    // with a hairline between groups (not above the first one).
+                                    !isExpanded &&
+                                        '[&:not(:first-child)]:mt-1 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-border [&:not(:first-child)]:pt-2',
+                                )}
+                            >
                                 {isExpanded && (
-                                    <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-text-3 px-3 pt-4 pb-1">
+                                    <div className="text-[11px] font-semibold tracking-[0.08em] uppercase text-text-3 px-3 pt-5 pb-1.5">
                                         {t(GROUP_LABEL_KEY[group])}
                                     </div>
                                 )}
@@ -141,28 +163,27 @@ export default function DashboardLayout() {
                                             <Link
                                                 key={item.id}
                                                 to={itemPath}
+                                                aria-label={!isExpanded ? t(item.label) : undefined}
                                                 title={!isExpanded ? t(item.label) : undefined}
+                                                aria-current={isActive ? 'page' : undefined}
                                                 onClick={() => setMobileNavOpen(false)}
                                                 className={cn(
-                                                    'relative flex items-center gap-2.5 px-3 py-1.5 rounded-md text-[13px] transition-colors',
+                                                    'group flex items-center gap-2.5 h-[var(--nav-row-h)] px-3 rounded-md text-[length:var(--nav-label-size)] transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
                                                     isActive
                                                         ? 'bg-surface-2 text-text-1 font-semibold'
                                                         : 'font-medium text-text-2 hover:bg-surface-2 hover:text-text-1',
                                                     !isExpanded && 'justify-center px-0',
                                                 )}
                                             >
-                                                {isActive && (
-                                                    <span
-                                                        className="absolute left-[-13px] top-1.5 bottom-1.5 w-[3px] bg-primary rounded-r"
-                                                        aria-hidden="true"
-                                                    />
-                                                )}
                                                 <Icon
-                                                    size={15}
+                                                    size={NAV_ICON}
+                                                    strokeWidth={2}
                                                     aria-hidden
                                                     className={cn(
-                                                        'flex-shrink-0',
-                                                        isActive ? 'text-text-1' : 'text-text-3',
+                                                        'flex-shrink-0 transition-colors',
+                                                        isActive
+                                                            ? 'text-primary'
+                                                            : 'text-text-3 group-hover:text-text-2',
                                                     )}
                                                 />
                                                 {isExpanded && (

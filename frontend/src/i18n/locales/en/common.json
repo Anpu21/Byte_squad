@@ -49,6 +49,7 @@
     "toggleSidebar": "Toggle sidebar",
     "openUserMenu": "Open user menu",
     "profile": "Profile",
-    "logout": "Logout"
+    "logout": "Logout",
+    "primaryNav": "Primary navigation"
   }
 }
