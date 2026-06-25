@@ -56,6 +56,8 @@ interface DataTableProps<T> {
     containerClassName?: string;
     /** Footer rendered below the table inside the same surface (e.g. <Pagination/>). */
     footer?: ReactNode;
+    /** A <tr> rendered inside a <tfoot> (column-aligned totals row). */
+    footerRow?: ReactNode;
 }
 
 /**
@@ -81,6 +83,7 @@ export default function DataTable<T>({
     className,
     containerClassName,
     footer,
+    footerRow,
 }: DataTableProps<T>) {
     function toggleSort(key: string) {
         if (!onSortChange) return;
@@ -196,6 +199,11 @@ export default function DataTable<T>({
                               </TableRow>
                           ))}
                 </TableBody>
+                {footerRow && (
+                    <tfoot className="bg-surface-2/40 border-t border-border">
+                        {footerRow}
+                    </tfoot>
+                )}
             </Table>
             {footer}
         </div>
