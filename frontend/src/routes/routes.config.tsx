@@ -19,7 +19,7 @@ import { ReturnNewPage } from '@/features/returns';
 import { PosPage } from '@/features/pos';
 import { SalesPage } from '@/features/sales';
 import { AccountingPage } from '@/features/accounting';
-import { AuditLogPage } from '@/pages/admin/AuditLogPage';
+import { AuditLogPage } from '@/features/audit';
 import { ReportsHubPage } from '@/features/reports';
 import { UserManagementPage } from '@/features/user-management';
 import { ProfilePage } from '@/features/admin-user-profile';

@@ -2,7 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { ROUTES } from './routes.config';
 import { SmartRedirect } from './SmartRedirect';
 import { buildRouteElement } from './buildRouteElement';
-import { NotFoundPage } from '@/pages/NotFoundPage';
+import { NotFoundPage } from '@/features/not-found';
 
 export default function AppRouter() {
     return (
