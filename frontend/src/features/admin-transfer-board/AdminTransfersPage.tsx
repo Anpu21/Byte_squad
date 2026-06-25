@@ -6,7 +6,7 @@ import { useTransferBoardData } from '@/features/admin-transfer-board/hooks/useT
 import {
     useAdminTransfersTab,
     type AdminTransfersTab,
-} from '@/features/admin-transfers/hooks/useAdminTransfersTab';
+} from '@/features/admin-transfer-board/hooks/useAdminTransfersTab';
 import { TransferHistoryView } from '@/features/transfer-history/components/TransferHistoryView';
 import { TransferReport } from '@/features/transfer-report/components/TransferReport';
 

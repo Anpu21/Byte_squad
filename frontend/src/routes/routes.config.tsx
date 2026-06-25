@@ -30,14 +30,16 @@ import { AdminLoyaltyPage } from '@/features/admin-loyalty';
 import { ManagerLoyaltyPage } from '@/features/admin-loyalty';
 import { AdminHrPage } from '@/features/admin-hr';
 import { EmployeeFormPage } from '@/features/employee-form';
-import { TransferRequestsPage } from '@/pages/transfers/TransferRequestsPage';
-import { NewTransferRequestPage } from '@/pages/transfers/NewTransferRequestPage';
-import { TransferDetailPage } from '@/pages/transfers/TransferDetailPage';
-import { AdminTransfersPage } from '@/pages/transfers/AdminTransfersPage';
-import { AdminTransferCreatePage } from '@/pages/transfers/AdminTransferCreatePage';
-import { ShipmentsListPage } from '@/pages/transfers/ShipmentsListPage';
-import { ShipmentCreatePage } from '@/pages/transfers/ShipmentCreatePage';
-import { ShipmentDetailPage } from '@/pages/transfers/ShipmentDetailPage';
+import { TransferRequestsPage } from '@/features/transfer-requests';
+import { NewTransferRequestPage } from '@/features/transfer-request-create';
+import { TransferDetailPage } from '@/features/transfer-detail';
+import { AdminTransfersPage } from '@/features/admin-transfer-board';
+import { AdminTransferCreatePage } from '@/features/admin-transfer-create';
+import {
+    ShipmentsListPage,
+    ShipmentCreatePage,
+    ShipmentDetailPage,
+} from '@/features/shipment-tracking';
 import { CatalogPage } from '@/features/shop-catalog';
 import { ProductDetailPage } from '@/features/product-detail';
 import { CartPage } from '@/features/shop-cart';

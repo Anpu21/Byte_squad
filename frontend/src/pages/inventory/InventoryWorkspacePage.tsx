@@ -18,8 +18,8 @@ import { InventoryByRole } from '@/routes/InventoryByRole';
 import { ExpiryReportPage } from '@/pages/inventory/ExpiryReportPage';
 import { StockAdjustmentsPage } from '@/pages/inventory/StockAdjustmentsPage';
 import { ReturnsPage } from '@/pages/inventory/ReturnsPage';
-import { AdminTransfersPage } from '@/pages/transfers/AdminTransfersPage';
-import { TransferRequestsPage } from '@/pages/transfers/TransferRequestsPage';
+import { AdminTransfersPage } from '@/features/admin-transfer-board';
+import { TransferRequestsPage } from '@/features/transfer-requests';
 import { CategoriesPanel } from '@/features/categories/components/CategoriesPanel';
 import { LabelPrintPanel } from '@/features/labels/components/LabelPrintPanel';
 
