@@ -1,10 +1,10 @@
 import { LuPlus as Plus } from 'react-icons/lu';
 import {
     useTransferRequestsPage,
-    TABS,
     type ScopeTab,
 } from '@/features/transfer-requests/hooks/useTransferRequestsPage';
-import { WorkspacePage, Button, type TabItem } from '@/components/ui';
+import { WorkspacePage, Button } from '@/components/ui';
+import { useNavTabs } from '@/config/navigation';
 import { TransferRequestsTable } from '@/features/transfer-requests/components/TransferRequestsTable';
 import { TransferHistoryView } from '@/features/transfer-history/components/TransferHistoryView';
 import { useStockTransferRealtime } from '@/hooks/useStockTransferRealtime';
@@ -20,16 +20,15 @@ export function TransferRequestsPage({
     useStockTransferRealtime();
     const p = useTransferRequestsPage();
 
-    const tabs: TabItem<ScopeTab>[] = TABS.map((t) => ({
-        key: t.key,
-        label: t.label,
-        badge:
-            t.key === 'history'
-                ? undefined
-                : t.key === 'my-requests'
-                  ? p.myCount
-                  : p.incomingCount,
-    }));
+    // Static tabs from the central config; the live counts are overlaid onto the
+    // two open-scope tabs here.
+    const tabs = useNavTabs<ScopeTab>('transfer-requests').map((t) =>
+        t.key === 'my-requests'
+            ? { ...t, badge: p.myCount }
+            : t.key === 'incoming'
+              ? { ...t, badge: p.incomingCount }
+              : t,
+    );
 
     return (
         <WorkspacePage

@@ -10,12 +10,6 @@ import type { IStockTransferRequest } from '@/types';
 
 export type ScopeTab = 'my-requests' | 'incoming' | 'history';
 
-export const TABS: { key: ScopeTab; label: string }[] = [
-    { key: 'my-requests', label: 'My Requests' },
-    { key: 'incoming', label: 'Incoming' },
-    { key: 'history', label: 'History' },
-];
-
 const VALID_TABS = ['my-requests', 'incoming', 'history'] as const;
 
 export function useTransferRequestsPage() {

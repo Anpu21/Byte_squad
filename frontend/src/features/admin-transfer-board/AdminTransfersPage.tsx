@@ -1,5 +1,6 @@
 import { useStockTransferRealtime } from '@/hooks/useStockTransferRealtime';
-import { WorkspacePage, type TabItem } from '@/components/ui';
+import { WorkspacePage } from '@/components/ui';
+import { useNavTabs } from '@/config/navigation';
 import { TransferBoard } from '@/features/admin-transfer-board/components/TransferBoard';
 import { TransferBoardHeader } from '@/features/admin-transfer-board/components/TransferBoardHeader';
 import { useTransferBoardData } from '@/features/admin-transfer-board/hooks/useTransferBoardData';
@@ -22,11 +23,11 @@ export function AdminTransfersPage({
     const { tab, setTab } = useAdminTransfersTab();
     const board = useTransferBoardData();
 
-    const tabs: TabItem<AdminTransfersTab>[] = [
-        { key: 'board', label: 'Pipeline', badge: board.total },
-        { key: 'history', label: 'History' },
-        { key: 'report', label: 'Report' },
-    ];
+    // Static tabs from the central config; the live pipeline count is overlaid
+    // onto the "board" tab here.
+    const tabs = useNavTabs<AdminTransfersTab>('admin-transfers').map((t) =>
+        t.key === 'board' ? { ...t, badge: board.total } : t,
+    );
 
     return (
         <WorkspacePage

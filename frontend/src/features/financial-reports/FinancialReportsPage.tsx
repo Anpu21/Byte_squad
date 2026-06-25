@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { LuBookOpenCheck as BookOpenCheck, LuCalendarDays as CalendarDays, LuLock as Lock, LuLockOpen as LockOpen, LuScale as Scale } from 'react-icons/lu';
-import { type IconType as LucideIcon } from 'react-icons';
+import { LuLock as Lock, LuLockOpen as LockOpen } from 'react-icons/lu';
+import { useNavTabs } from '@/config/navigation';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Pill from '@/components/ui/Pill';
@@ -47,13 +47,6 @@ const REPORT_TABS = [
     'periods',
 ] as const;
 type ReportTab = (typeof REPORT_TABS)[number];
-
-const TABS: { key: ReportTab; label: string; Icon: LucideIcon }[] = [
-    { key: 'trial-balance', label: 'Trial balance', Icon: Scale },
-    { key: 'balance-sheet', label: 'Balance sheet', Icon: BookOpenCheck },
-    { key: 'day-book', label: 'Day book', Icon: CalendarDays },
-    { key: 'periods', label: 'Period locks', Icon: Lock },
-];
 
 /**
  * A trial-balance row is either a mapped account row or the synthetic
@@ -220,6 +213,7 @@ export function FinancialReportsPage({
     embedded = false,
 }: FinancialReportsPageProps = {}) {
     const queryClient = useQueryClient();
+    const tabs = useNavTabs<ReportTab>('financial-reports');
     const { tab, setTab } = useTabParam<ReportTab>({
         valid: REPORT_TABS,
         fallback: 'trial-balance',
@@ -316,7 +310,7 @@ export function FinancialReportsPage({
             eyebrow="Accounting"
             title="Financial reports"
             subtitle="Trial balance, balance sheet, and the day book — straight off the account-dimensioned ledger."
-            tabs={TABS}
+            tabs={tabs}
             active={tab}
             onTabChange={setTab}
             tabsAriaLabel="Financial report views"
