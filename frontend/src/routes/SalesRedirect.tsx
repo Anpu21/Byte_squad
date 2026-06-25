@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import type { SalesTab } from '@/pages/sales/SalesPage';
+import type { SalesTab } from '@/features/sales';
 
 interface SalesRedirectProps {
     tab: SalesTab;

@@ -4,9 +4,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import { useTabParam } from '@/hooks/useTabParam';
-import { TransactionsPage } from '@/pages/pos/TransactionsPage';
-import { CustomerOrdersPage } from '@/pages/orders/CustomerOrdersPage';
-import { DiscountSchemesPage } from '@/pages/admin/DiscountSchemesPage';
+import { TransactionsPage } from '@/features/transactions';
+import { CustomerOrdersPage } from '@/features/customer-orders';
+import { DiscountSchemesPage } from '@/features/schemes';
 import { SalesmanReportPanel } from '@/features/reports/components/SalesmanReportPanel';
 
 export type SalesTab = 'transactions' | 'orders' | 'schemes' | 'salesman';

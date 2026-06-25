@@ -17,7 +17,7 @@ import { PurchasesWorkspacePage } from '@/features/purchases';
 import { StockAdjustmentNewPage } from '@/features/stock-adjustments';
 import { ReturnNewPage } from '@/features/returns';
 import { PosPage } from '@/features/pos';
-import { SalesPage } from '@/pages/sales/SalesPage';
+import { SalesPage } from '@/features/sales';
 import { AccountingPage } from '@/features/accounting';
 import { AuditLogPage } from '@/pages/admin/AuditLogPage';
 import { ReportsHubPage } from '@/features/reports';

@@ -1,4 +1,4 @@
-import { StaffOrderDetailsModal } from '@/components/orders/StaffOrderDetailsModal';
+import { StaffOrderDetailsModal } from './components/StaffOrderDetailsModal';
 import { useCustomerOrdersPage } from '@/features/customer-orders/hooks/useCustomerOrdersPage';
 import { CustomerOrdersHeader } from '@/features/customer-orders/components/CustomerOrdersHeader';
 import { NoBranchWarning } from '@/features/customer-orders/components/NoBranchWarning';
