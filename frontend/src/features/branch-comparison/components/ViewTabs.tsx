@@ -12,7 +12,7 @@ export function ViewTabs({
     <div
       role="tablist"
       aria-label="Branch comparison views"
-      className="mb-4 flex gap-1 overflow-x-auto rounded-md border border-border bg-surface-2 p-1"
+      className="mb-4 flex gap-1 overflow-x-auto rounded-xl border border-border bg-surface p-1.5"
     >
       {VIEW_OPTIONS.map(({ value: optionValue, label, Icon }) => {
         const active = optionValue === value;
@@ -23,10 +23,10 @@ export function ViewTabs({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(optionValue)}
-            className={`inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded px-3 text-xs font-semibold transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/30 ${
+            className={`inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/30 ${
               active
-                ? "bg-surface text-text-1 shadow-xs"
-                : "text-text-2 hover:bg-surface hover:text-text-1"
+                ? "bg-primary text-text-inv"
+                : "text-text-2 hover:text-text-1"
             }`}
           >
             <Icon size={13} />

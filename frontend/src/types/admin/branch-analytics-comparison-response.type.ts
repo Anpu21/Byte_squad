@@ -7,6 +7,7 @@ import type {
   IBranchPaymentMetrics,
   IBranchStaffMetrics,
 } from './branch-analytics-metrics.type'
+import type { IBranchAnalyticsTrend } from './branch-analytics-trend.type'
 
 export interface IBranchAnalyticsSalesTotals {
   transactionCount: number
@@ -30,4 +31,9 @@ export interface IBranchAnalyticsComparisonResponse {
   endDate: string
   branches: IBranchAnalyticsComparisonEntry[]
   totals: IBranchAnalyticsTotals
+  /**
+   * Daily revenue per branch across the range. Present only when the Summary
+   * view requests the opt-in `'trend'` section; omitted otherwise.
+   */
+  trend?: IBranchAnalyticsTrend
 }

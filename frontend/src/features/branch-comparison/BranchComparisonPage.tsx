@@ -82,7 +82,9 @@ export function BranchComparisonPage({
         <PageHeader
           eyebrow="Branches"
           title="Compare branches"
-          subtitle={formatDateRange(p.startDate, p.endDate)}
+          subtitle={`${formatDateRange(p.startDate, p.endDate)} · ${p.selectedIds.length} ${
+            p.selectedIds.length === 1 ? "branch" : "branches"
+          }`}
           actions={
             <div className="flex items-center gap-2">
               {p.comparison && p.view === "summary" && (
@@ -106,6 +108,7 @@ export function BranchComparisonPage({
 
       <BranchComparisonFilters
         branches={p.branches}
+        branchColors={p.branchColors}
         filters={{
           selectedIds: p.selectedIds,
           startDate: p.startDate,
@@ -147,6 +150,9 @@ export function BranchComparisonPage({
           view={p.view}
           setView={p.setView}
           chartData={p.chartData}
+          trend={p.trend}
+          branchColors={p.branchColors}
+          revenueSpark={p.revenueSpark}
           selectedBranchNames={p.selectedBranchNames}
           embedded={embedded}
           isRefreshing={p.isAutoRefreshing}
