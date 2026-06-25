@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTabParam } from '@/hooks/useTabParam';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { useStockTransfers } from '@/hooks/useStockTransfers';
@@ -15,41 +16,20 @@ export const TABS: { key: ScopeTab; label: string }[] = [
     { key: 'history', label: 'History' },
 ];
 
-const TAB_PARAM = 'tab';
-const VALID_TABS: ScopeTab[] = ['my-requests', 'incoming', 'history'];
-
-function isScopeTab(value: string | null): value is ScopeTab {
-    return value !== null && (VALID_TABS as string[]).includes(value);
-}
+const VALID_TABS = ['my-requests', 'incoming', 'history'] as const;
 
 export function useTransferRequestsPage() {
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
+    // Namespaced `transferTab` (matching the admin board + TransferHistoryRedirect)
+    // so it never collides with the Inventory hub's own `tab` param when this
+    // screen is embedded under Inventory → Transfers.
+    const { tab, setTab } = useTabParam<ScopeTab>({
+        valid: VALID_TABS,
+        fallback: 'my-requests',
+        param: 'transferTab',
+    });
     const [shippingId, setShippingId] = useState<string | null>(null);
     const [receivingId, setReceivingId] = useState<string | null>(null);
-
-    const tab = useMemo<ScopeTab>(() => {
-        const raw = searchParams.get(TAB_PARAM);
-        return isScopeTab(raw) ? raw : 'my-requests';
-    }, [searchParams]);
-
-    const setTab = useCallback(
-        (next: ScopeTab) => {
-            setSearchParams(
-                (prev) => {
-                    const params = new URLSearchParams(prev);
-                    if (next === 'my-requests') {
-                        params.delete(TAB_PARAM);
-                    } else {
-                        params.set(TAB_PARAM, next);
-                    }
-                    return params;
-                },
-                { replace: true },
-            );
-        },
-        [setSearchParams],
-    );
 
     const myRequests = useStockTransfers({ scope: 'my-requests' });
     const incoming = useStockTransfers({ scope: 'incoming' });

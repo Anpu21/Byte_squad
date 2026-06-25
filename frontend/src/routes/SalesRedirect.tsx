@@ -1,16 +1,12 @@
-import { Navigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { SalesTab } from '@/features/sales';
-
-interface SalesRedirectProps {
-    tab: SalesTab;
-}
+import { createTabRedirect } from './createTabRedirect';
 
 /**
  * Maps a legacy standalone sales path (e.g. `/transactions`, `/admin/schemes`)
- * onto the unified Sales hub with the matching tab selected. Mirrors
- * `AccountingRedirect`.
+ * onto the unified Sales hub with the matching tab selected.
  */
-export function SalesRedirect({ tab }: SalesRedirectProps) {
-    return <Navigate to={`${FRONTEND_ROUTES.SALES}?tab=${tab}`} replace />;
-}
+export const SalesRedirect = createTabRedirect<SalesTab>(
+    FRONTEND_ROUTES.SALES,
+    'transactions',
+);

@@ -1,17 +1,12 @@
-import { Navigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { AccountingTab } from '@/features/accounting/hooks/useAccountingTab';
-
-interface AccountingRedirectProps {
-    tab: AccountingTab;
-}
+import { createTabRedirect } from './createTabRedirect';
 
 /**
  * Maps a legacy standalone accounting path (e.g. `/accounting/ledger`) onto the
- * unified hub with the matching tab selected. Mirrors `AdminHrRedirect`.
+ * unified hub with the matching tab selected.
  */
-export function AccountingRedirect({ tab }: AccountingRedirectProps) {
-    return (
-        <Navigate to={`${FRONTEND_ROUTES.ACCOUNTING}?tab=${tab}`} replace />
-    );
-}
+export const AccountingRedirect = createTabRedirect<AccountingTab>(
+    FRONTEND_ROUTES.ACCOUNTING,
+    'ledger',
+);

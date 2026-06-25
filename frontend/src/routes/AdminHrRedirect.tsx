@@ -1,12 +1,12 @@
-import { Navigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { AdminHrTab } from '@/features/admin-hr';
+import { createTabRedirect } from './createTabRedirect';
 
-interface AdminHrRedirectProps {
-    tab: AdminHrTab;
-}
-
-export function AdminHrRedirect({ tab }: AdminHrRedirectProps) {
-    const search = tab === 'employees' ? '' : `?tab=${tab}`;
-    return <Navigate to={`${FRONTEND_ROUTES.ADMIN_HR}${search}`} replace />;
-}
+/**
+ * Maps a legacy standalone HR path onto the unified HR hub with the matching
+ * tab selected. The default `employees` tab is kept out of the URL.
+ */
+export const AdminHrRedirect = createTabRedirect<AdminHrTab>(
+    FRONTEND_ROUTES.ADMIN_HR,
+    'employees',
+);
