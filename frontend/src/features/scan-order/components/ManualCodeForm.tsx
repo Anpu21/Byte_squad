@@ -1,4 +1,4 @@
-import { Keyboard } from 'lucide-react';
+import { LuKeyboard as Keyboard } from 'react-icons/lu';
 import { type RefObject } from 'react';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -33,7 +33,7 @@ export function ManualCodeForm({
                         value={manualCode}
                         onChange={(e) => setManualCode(e.target.value)}
                         placeholder="ORD-XXXXXXXX"
-                        className="w-full bg-canvas border border-border rounded-md px-3 py-2 text-sm font-mono text-text-1 focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/25"
+                        className="w-full bg-canvas border border-border rounded-md px-3 py-2 text-sm font-mono text-text-1 focus:outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/25"
                     />
                     <Button type="submit" disabled={loading} className="w-full">
                         {loading ? 'Looking up…' : 'Look up'}

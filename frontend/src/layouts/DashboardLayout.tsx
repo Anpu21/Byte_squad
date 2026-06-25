@@ -1,232 +1,61 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import {
-    BarChart3,
-    Bell,
-    Boxes,
-    Briefcase,
-    Building2,
-    Calculator,
-    CalendarRange,
-    ChevronRight,
-    Home,
-    LogOut,
-    Menu as MenuIcon,
-    Receipt,
-    FileClock,
-    ShoppingBag,
-    Sparkles,
-    PackagePlus,
-    Truck,
-    UserCog,
-    Users,
-} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { LuChevronRight as ChevronRight, LuLogOut as LogOut, LuMenu as MenuIcon, LuSearch as Search, LuUserCog as UserCog } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { UserRole } from '@/constants/enums';
+import {
+    getSidebarSections,
+    GROUP_LABEL_KEY,
+    resolveNavPath,
+} from '@/config/navigation';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import Avatar from '@/components/ui/Avatar';
 import Logo from '@/components/ui/Logo';
+import { NAV_ICON, ICON, Tooltip, CommandPalette } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
-interface DashboardLayoutProps {
-    children: ReactNode;
-}
-
-type NavGroup =
-    | 'Overview'
-    | 'Sales'
-    | 'Fulfillment'
-    | 'Inventory'
-    | 'Finance'
-    | 'People'
-    | 'System';
-
-interface NavItem {
-    label: string;
-    path: string;
-    roles: UserRole[];
-    icon: ReactNode;
-    group: NavGroup;
-    pathByRole?: Partial<Record<UserRole, string>>;
-}
-
-function resolveNavPath(item: NavItem, role?: UserRole): string {
-    if (role && item.pathByRole?.[role]) return item.pathByRole[role]!;
-    return item.path;
-}
-
-const NAV_ITEMS: NavItem[] = [
-    // ── Overview ──
-    {
-        label: 'Dashboard',
-        path: FRONTEND_ROUTES.DASHBOARD,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Home size={15} />,
-        group: 'Overview',
-    },
-    {
-        label: 'Dashboard',
-        path: FRONTEND_ROUTES.CASHIER_DASHBOARD,
-        roles: [UserRole.CASHIER],
-        icon: <Home size={15} />,
-        group: 'Overview',
-    },
-    {
-        label: 'Dashboard',
-        path: FRONTEND_ROUTES.WORKER_DASHBOARD,
-        roles: [UserRole.WORKER],
-        icon: <Home size={15} />,
-        group: 'Overview',
-    },
-    // ── Sales ──
-    {
-        label: 'POS',
-        path: FRONTEND_ROUTES.POS,
-        roles: [UserRole.CASHIER],
-        icon: <Receipt size={15} />,
-        group: 'Sales',
-    },
-    {
-        label: 'Sales',
-        path: FRONTEND_ROUTES.SALES,
-        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
-        icon: <ShoppingBag size={15} />,
-        group: 'Sales',
-    },
-    // ── Fulfillment ──
-    {
-        label: 'My Deliveries',
-        path: FRONTEND_ROUTES.SHIPMENTS,
-        roles: [UserRole.WORKER],
-        icon: <Truck size={15} />,
-        group: 'Fulfillment',
-    },
-    {
-        label: 'Shipments',
-        path: FRONTEND_ROUTES.SHIPMENTS,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Truck size={15} />,
-        group: 'Fulfillment',
-    },
-    // ── Inventory ──
-    {
-        label: 'Inventory',
-        path: FRONTEND_ROUTES.INVENTORY,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Boxes size={15} />,
-        group: 'Inventory',
-    },
-    {
-        label: 'Purchases',
-        path: FRONTEND_ROUTES.PURCHASES,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <PackagePlus size={15} />,
-        group: 'Inventory',
-    },
-    // ── Finance ──
-    {
-        label: 'Accounting',
-        path: FRONTEND_ROUTES.ACCOUNTING,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Calculator size={15} />,
-        group: 'Finance',
-    },
-    {
-        label: 'Reports',
-        path: FRONTEND_ROUTES.REPORTS,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <BarChart3 size={15} />,
-        group: 'Finance',
-    },
-    // ── People ──
-    {
-        label: 'Customer loyalty',
-        path: FRONTEND_ROUTES.ADMIN_LOYALTY,
-        roles: [UserRole.ADMIN],
-        icon: <Sparkles size={15} />,
-        group: 'People',
-    },
-    {
-        label: 'Customer loyalty',
-        path: FRONTEND_ROUTES.MANAGER_LOYALTY,
-        roles: [UserRole.MANAGER],
-        icon: <Sparkles size={15} />,
-        group: 'People',
-    },
-    {
-        label: 'Users',
-        path: FRONTEND_ROUTES.USER_MANAGEMENT,
-        roles: [UserRole.ADMIN],
-        icon: <Users size={15} />,
-        group: 'People',
-    },
-    {
-        label: 'HR',
-        path: FRONTEND_ROUTES.ADMIN_HR,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Briefcase size={15} />,
-        group: 'People',
-    },
-    {
-        label: 'Leaves',
-        path: FRONTEND_ROUTES.ADMIN_LEAVES,
-        roles: [UserRole.CASHIER],
-        icon: <CalendarRange size={15} />,
-        group: 'People',
-    },
-    // ── System ──
-    {
-        label: 'Branches',
-        path: FRONTEND_ROUTES.BRANCHES,
-        roles: [UserRole.ADMIN, UserRole.MANAGER],
-        icon: <Building2 size={15} />,
-        group: 'System',
-    },
-    {
-        label: 'Audit log',
-        path: FRONTEND_ROUTES.ADMIN_AUDIT,
-        roles: [UserRole.ADMIN],
-        icon: <FileClock size={15} />,
-        group: 'System',
-    },
-    {
-        label: 'Notifications',
-        path: FRONTEND_ROUTES.NOTIFICATIONS,
-        roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER],
-        icon: <Bell size={15} />,
-        group: 'System',
-    },
-];
-
-const GROUP_ORDER: NavGroup[] = [
-    'Overview',
-    'Sales',
-    'Fulfillment',
-    'Inventory',
-    'Finance',
-    'People',
-    'System',
-];
-
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout() {
+    const { t } = useTranslation('common');
     const { user, logout } = useAuth();
     const { unreadCount } = useNotifications();
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(
+        () => localStorage.getItem('nav:sidebar-open') !== 'false',
+    );
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
+    const [paletteOpen, setPaletteOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
     const navigate = useNavigate();
     const crumbs = useBreadcrumbs();
     const isExpanded = sidebarOpen || mobileNavOpen;
 
-    const filteredNavItems = NAV_ITEMS.filter((item) =>
+    const { groups, items: sidebarItems } = getSidebarSections();
+    const filteredNavItems = sidebarItems.filter((item) =>
         user ? item.roles.includes(user.role as UserRole) : false,
     );
+
+    // Remember the collapsed/expanded sidebar preference across sessions.
+    useEffect(() => {
+        localStorage.setItem('nav:sidebar-open', String(sidebarOpen));
+    }, [sidebarOpen]);
+
+    // ⌘K / Ctrl-K opens the command palette from anywhere.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                setPaletteOpen(true);
+            }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
 
     useEffect(() => {
         if (!profileOpen) return;
@@ -284,9 +113,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="h-screen flex bg-canvas text-text-1 font-sans overflow-hidden">
             <a
                 href="#main-content"
-                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-modal focus:px-3 focus:py-2 focus:rounded-md focus:bg-primary focus:text-text-inv focus:text-sm focus:font-medium focus:shadow-md-token focus:outline-none focus:ring-[3px] focus:ring-primary/30"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-modal focus:px-3 focus:py-2 focus:rounded-md focus:bg-primary focus:text-text-inv focus:text-sm focus:font-medium focus:shadow-md-token focus:outline-none focus:ring-[3px] focus:ring-focus/25"
             >
-                Skip to main content
+                {t('shell.skipToMain')}
             </a>
             {mobileNavOpen && (
                 <div
@@ -299,10 +128,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <aside
                 className={cn(
                     'bg-surface border-r border-border flex flex-col flex-shrink-0 z-40',
-                    'fixed inset-y-0 left-0 w-[280px] transition-transform duration-200',
+                    'fixed inset-y-0 left-0 w-[var(--nav-drawer-w)] transition-transform duration-200',
                     mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
                     'md:relative md:translate-x-0 md:transition-[width] md:w-auto',
-                    sidebarOpen ? 'md:w-[240px]' : 'md:w-[68px]',
+                    sidebarOpen
+                        ? 'md:w-[var(--nav-sidebar-w)]'
+                        : 'md:w-[var(--nav-rail-w)]',
                 )}
             >
                 <div className="h-16 flex items-center px-4 border-b border-border">
@@ -313,45 +144,67 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     )}
                 </div>
 
-                <nav className="flex-1 px-3 py-3 overflow-y-auto">
-                    {GROUP_ORDER.map((group) => {
+                <nav
+                    aria-label={t('shell.primaryNav')}
+                    className="flex-1 px-3 py-3 overflow-y-auto"
+                >
+                    {groups.map((group) => {
                         const items = filteredNavItems.filter((i) => i.group === group);
                         if (items.length === 0) return null;
                         return (
-                            <div key={group} className="mb-2">
+                            <div
+                                key={group}
+                                className={cn(
+                                    'mb-2',
+                                    // Collapsed rail hides group labels — keep grouping legible
+                                    // with a hairline between groups (not above the first one).
+                                    !isExpanded &&
+                                        '[&:not(:first-child)]:mt-1 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-border [&:not(:first-child)]:pt-2',
+                                )}
+                            >
                                 {isExpanded && (
-                                    <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-text-3 px-3 pt-3 pb-1.5">
-                                        {group}
+                                    <div className="text-[11px] font-semibold tracking-[0.08em] uppercase text-text-3 px-3 pt-5 pb-1.5">
+                                        {t(GROUP_LABEL_KEY[group])}
                                     </div>
                                 )}
                                 <div className="space-y-0.5">
                                     {items.map((item) => {
                                         const itemPath = resolveNavPath(item, user?.role);
                                         const isActive = location.pathname === itemPath;
+                                        const Icon = item.Icon;
                                         return (
+                                            <Tooltip
+                                                key={item.id}
+                                                label={t(item.label)}
+                                                disabled={isExpanded}
+                                            >
                                             <Link
-                                                key={`${itemPath}-${item.label}`}
                                                 to={itemPath}
-                                                title={!isExpanded ? item.label : undefined}
+                                                aria-label={!isExpanded ? t(item.label) : undefined}
+                                                aria-current={isActive ? 'page' : undefined}
                                                 onClick={() => setMobileNavOpen(false)}
                                                 className={cn(
-                                                    'relative flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors',
+                                                    'group flex items-center gap-2.5 h-[var(--nav-row-h)] px-3 rounded-md text-[length:var(--nav-label-size)] transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
                                                     isActive
-                                                        ? 'bg-primary-soft text-primary-soft-text'
-                                                        : 'text-text-2 hover:bg-surface-2 hover:text-text-1',
+                                                        ? 'bg-surface-2 text-text-1 font-semibold'
+                                                        : 'font-medium text-text-2 hover:bg-surface-2 hover:text-text-1',
                                                     !isExpanded && 'justify-center px-0',
                                                 )}
                                             >
-                                                {isActive && (
-                                                    <span
-                                                        className="absolute left-[-13px] top-2 bottom-2 w-[3px] bg-primary rounded-r"
-                                                        aria-hidden="true"
-                                                    />
-                                                )}
-                                                <span className="flex-shrink-0">{item.icon}</span>
+                                                <Icon
+                                                    size={NAV_ICON}
+                                                    strokeWidth={2}
+                                                    aria-hidden
+                                                    className={cn(
+                                                        'flex-shrink-0 transition-colors',
+                                                        isActive
+                                                            ? 'text-primary'
+                                                            : 'text-text-3 group-hover:text-text-2',
+                                                    )}
+                                                />
                                                 {isExpanded && (
                                                     <>
-                                                        <span className="flex-1 truncate">{item.label}</span>
+                                                        <span className="flex-1 truncate">{t(item.label)}</span>
                                                         {itemPath === FRONTEND_ROUTES.NOTIFICATIONS &&
                                                             unreadCount > 0 && (
                                                                 <span
@@ -364,6 +217,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                                     </>
                                                 )}
                                             </Link>
+                                            </Tooltip>
                                         );
                                     })}
                                 </div>
@@ -378,7 +232,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             to={FRONTEND_ROUTES.PROFILE}
                             onClick={() => setMobileNavOpen(false)}
                             className={cn(
-                                'flex items-center gap-2 p-2 rounded-md transition-colors',
+                                'flex items-center gap-2 p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
                                 location.pathname === FRONTEND_ROUTES.PROFILE
                                     ? 'bg-surface-2'
                                     : 'hover:bg-surface-2',
@@ -395,7 +249,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                         {user.firstName} {user.lastName}
                                     </p>
                                     <p className="text-[11px] text-text-2 capitalize truncate">
-                                        {user.role.toLowerCase()} · Profile
+                                        {user.role.toLowerCase()} · {t('shell.profile')}
                                     </p>
                                 </div>
                             )}
@@ -417,8 +271,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 setSidebarOpen((s) => !s);
                             }
                         }}
-                        className="p-1.5 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors flex-shrink-0"
-                        aria-label="Toggle sidebar"
+                        className="p-2 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
+                        aria-label={t('shell.toggleSidebar')}
                     >
                         <MenuIcon size={18} />
                     </button>
@@ -448,17 +302,45 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         </nav>
                     )}
 
-                    <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+                    {/* Breadcrumbs hide on mobile — keep a page-identity title. */}
+                    {crumbs.length > 0 && (
+                        <span className="md:hidden text-sm font-semibold text-text-1 truncate min-w-0">
+                            {crumbs[crumbs.length - 1]}
+                        </span>
+                    )}
+
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+                        <button
+                            type="button"
+                            onClick={() => setPaletteOpen(true)}
+                            aria-label={t('shell.commandPalette')}
+                            aria-keyshortcuts="Meta+K Control+K"
+                            className="hidden sm:flex items-center gap-2 h-9 pl-2.5 pr-2 rounded-md border border-border bg-surface-2 text-text-3 hover:text-text-2 hover:border-border-strong transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
+                        >
+                            <Search size={ICON.md} aria-hidden />
+                            <span className="text-sm">{t('shell.searchPlaceholder')}</span>
+                            <kbd className="ml-3 text-[11px] font-medium text-text-3 bg-surface border border-border rounded px-1.5 py-0.5 leading-none">
+                                ⌘K
+                            </kbd>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPaletteOpen(true)}
+                            aria-label={t('shell.commandPalette')}
+                            className="sm:hidden p-2 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
+                        >
+                            <Search size={18} aria-hidden />
+                        </button>
                         <ThemeToggle />
                         <NotificationDropdown />
-                        <div className="w-px h-6 bg-border mx-1" />
+                        <div className="w-px h-6 bg-border" aria-hidden="true" />
 
                         {user && (
                             <div className="relative" ref={profileRef}>
                                 <button
                                     onClick={() => setProfileOpen((s) => !s)}
-                                    className="p-1 rounded-full hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
-                                    aria-label="Open user menu"
+                                    className="p-1 rounded-full hover:bg-surface-2 transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
+                                    aria-label={t('shell.openUserMenu')}
                                     aria-haspopup="menu"
                                     aria-expanded={profileOpen}
                                 >
@@ -489,7 +371,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                             }}
                                             className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:bg-surface-2"
                                         >
-                                            <UserCog size={14} /> Profile
+                                            <UserCog size={14} /> {t('shell.profile')}
                                         </button>
                                         <div className="h-px bg-border" role="separator" />
                                         <button
@@ -497,7 +379,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                             onClick={handleLogout}
                                             className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-danger hover:bg-danger-soft transition-colors focus:outline-none focus:bg-danger-soft"
                                         >
-                                            <LogOut size={14} /> Logout
+                                            <LogOut size={14} /> {t('shell.logout')}
                                         </button>
                                     </div>
                                 )}
@@ -507,9 +389,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </header>
 
                 <main id="main-content" className="flex-1 overflow-y-auto p-2 lg:p-4">
-                    <div className="max-w-[1600px] mx-auto">{children}</div>
+                    <div className="max-w-[1600px] mx-auto">
+                        <Outlet />
+                    </div>
                 </main>
             </div>
+
+            <CommandPalette
+                open={paletteOpen}
+                onClose={() => setPaletteOpen(false)}
+            />
         </div>
     );
 }

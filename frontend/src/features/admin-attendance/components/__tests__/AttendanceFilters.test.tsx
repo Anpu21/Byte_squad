@@ -27,24 +27,35 @@ function makeWrapper() {
 
 function renderFilters(props: {
     canPickBranch?: boolean;
-    onMonthChange?: (v: string) => void;
+    viewMode?: 'day' | 'week';
+    onDateChange?: (v: string) => void;
+    onViewModeChange?: (m: 'day' | 'week') => void;
     onBranchIdChange?: (v: string) => void;
+    roleOptions?: string[];
+    onRoleChange?: (v: string) => void;
 }) {
     const { Wrapper } = makeWrapper();
-    const onMonthChange = props.onMonthChange ?? vi.fn();
+    const onDateChange = props.onDateChange ?? vi.fn();
+    const onViewModeChange = props.onViewModeChange ?? vi.fn();
     const onBranchIdChange = props.onBranchIdChange ?? vi.fn();
+    const onRoleChange = props.onRoleChange ?? vi.fn();
     render(
         <Wrapper>
             <AttendanceFilters
-                monthValue="2025-06"
-                onMonthChange={onMonthChange}
+                viewMode={props.viewMode ?? 'day'}
+                onViewModeChange={onViewModeChange}
+                selectedDate="2025-06-15"
+                onDateChange={onDateChange}
                 branchId=""
                 onBranchIdChange={onBranchIdChange}
                 canPickBranch={props.canPickBranch ?? true}
+                roleFilter=""
+                roleOptions={props.roleOptions ?? []}
+                onRoleChange={onRoleChange}
             />
         </Wrapper>,
     );
-    return { onMonthChange, onBranchIdChange };
+    return { onDateChange, onViewModeChange, onBranchIdChange, onRoleChange };
 }
 
 describe('AttendanceFilters', () => {
@@ -52,10 +63,10 @@ describe('AttendanceFilters', () => {
         vi.mocked(adminService.listBranches).mockResolvedValue([]);
     });
 
-    it('renders the month picker and branch select for admins', () => {
+    it('renders the day picker and branch select for admins', () => {
         renderFilters({});
         expect(
-            screen.getByLabelText(/pick attendance month/i),
+            screen.getByLabelText(/pick attendance day/i),
         ).toBeInTheDocument();
         expect(screen.getByLabelText(/filter by branch/i)).toBeInTheDocument();
     });
@@ -65,10 +76,39 @@ describe('AttendanceFilters', () => {
         expect(screen.queryByLabelText(/filter by branch/i)).toBeNull();
     });
 
-    it('fires onMonthChange when the previous month button is used', async () => {
-        const onMonthChange = vi.fn();
-        renderFilters({ onMonthChange });
-        await userEvent.click(screen.getByLabelText(/previous month/i));
-        expect(onMonthChange).toHaveBeenCalledWith('2025-05');
+    it('steps one day in day mode (previous-day button)', async () => {
+        const onDateChange = vi.fn();
+        renderFilters({ onDateChange });
+        await userEvent.click(screen.getByLabelText(/previous day/i));
+        expect(onDateChange).toHaveBeenCalledWith('2025-06-14');
+    });
+
+    it('switches to week mode via the toggle', async () => {
+        const onViewModeChange = vi.fn();
+        renderFilters({ onViewModeChange });
+        await userEvent.click(screen.getByRole('tab', { name: /week/i }));
+        expect(onViewModeChange).toHaveBeenCalledWith('week');
+    });
+
+    it('steps a full week in week mode (previous-week button)', async () => {
+        const onDateChange = vi.fn();
+        renderFilters({ viewMode: 'week', onDateChange });
+        await userEvent.click(screen.getByLabelText(/previous week/i));
+        expect(onDateChange).toHaveBeenCalledWith('2025-06-08');
+    });
+
+    it('hides the role filter when fewer than two roles are present', () => {
+        renderFilters({ roleOptions: ['Courier'] });
+        expect(screen.queryByLabelText(/filter by role/i)).toBeNull();
+    });
+
+    it('shows the role filter and fires onRoleChange when multiple roles exist', async () => {
+        const onRoleChange = vi.fn();
+        renderFilters({ roleOptions: ['Cashier', 'Courier'], onRoleChange });
+        await userEvent.selectOptions(
+            screen.getByLabelText(/filter by role/i),
+            'Courier',
+        );
+        expect(onRoleChange).toHaveBeenCalledWith('Courier');
     });
 });

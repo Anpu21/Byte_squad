@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { LuX as X } from 'react-icons/lu';
 import { usePosRecentSales } from '@/features/pos/hooks/usePosRecentSales';
 import { formatCurrency } from '@/lib/utils';
 import { formatTimeAgo } from '@/lib/format-time-ago';

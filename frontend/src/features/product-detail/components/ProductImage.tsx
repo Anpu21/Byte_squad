@@ -9,7 +9,7 @@ export function ProductDetailImage({ src, alt }: ProductImageProps) {
     const [failed, setFailed] = useState(false);
 
     return (
-        <div className="aspect-square bg-surface border border-border rounded-md overflow-hidden flex items-center justify-center">
+        <div className="aspect-square bg-surface border border-border rounded-xl shadow-sm-token overflow-hidden flex items-center justify-center">
             {src && !failed ? (
                 <img
                     src={src}

@@ -1,4 +1,5 @@
 import type { UserRole } from '@/constants/enums'
+import type { AppLanguage } from '@/i18n/config'
 
 export interface IUser {
   id: string
@@ -10,6 +11,8 @@ export interface IUser {
   branchId: string | null
   phone?: string | null
   address?: string | null
+  /** Preferred UI language, persisted from profile settings. */
+  language?: AppLanguage
   isFirstLogin: boolean
   isVerified: boolean
   createdAt: string

@@ -1,4 +1,4 @@
-import { Check, Loader2, UserRound } from 'lucide-react';
+import { LuCheck as Check, LuLoaderCircle as Loader2, LuUserRound as UserRound } from 'react-icons/lu';
 import { ProfileField } from './ProfileField';
 import { PROFILE_INPUT_CLASS } from '../lib/input-classes';
 

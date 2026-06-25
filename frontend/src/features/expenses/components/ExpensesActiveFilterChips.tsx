@@ -1,4 +1,4 @@
-import { Building2, Search, X } from 'lucide-react';
+import { LuBuilding2 as Building2, LuSearch as Search, LuX as X } from 'react-icons/lu';
 import type { ExpensesFiltersState } from '../hooks/useExpensesFilters';
 
 interface ExpensesActiveFilterChipsProps {

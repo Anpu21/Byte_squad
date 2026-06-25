@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { UserRole } from "@/constants/enums";
 import { useAuth } from "@/hooks/useAuth";
 import { adminService } from "@/services/admin.service";
-import { userService } from "@/services/user.service";
 import { queryKeys } from "@/lib/queryKeys";
 import type {
   IBranchAnalyticsComparisonEntry,
@@ -139,9 +138,12 @@ export function useBranchComparisonPage() {
   const userBranchId = user?.branchId;
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // The full /branches list is multi-tenant scoped (a manager only sees their
+  // own branch), which would leave the picker with nothing to compare against.
+  // The branch-analytics roster returns every branch for admins AND managers.
   const branchesQuery = useQuery({
-    queryKey: queryKeys.branches.all(),
-    queryFn: userService.getBranches,
+    queryKey: queryKeys.admin.branchAnalyticsBranches(),
+    queryFn: adminService.getBranchAnalyticsBranches,
   });
 
   const defaultRange = useMemo(() => {

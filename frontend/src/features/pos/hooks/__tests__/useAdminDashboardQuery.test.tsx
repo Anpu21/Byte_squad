@@ -26,6 +26,16 @@ const dashboardFixture: IAdminDashboard = {
     dailyBreakdown: [],
     topProducts: [],
     recentTransactions: [],
+    salesByPaymentMethod: [],
+    revenueByBranch: [],
+    dailyBreakdownByBranch: { branches: [], days: [] },
+    inventorySummary: {
+        totalProducts: 0,
+        lowStock: 0,
+        outOfStock: 0,
+        inventoryValue: 0,
+    },
+    pendingOrders: 0,
 };
 
 describe('useAdminDashboardQuery', () => {

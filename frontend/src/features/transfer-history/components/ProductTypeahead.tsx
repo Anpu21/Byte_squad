@@ -68,7 +68,7 @@ export function ProductTypeahead({
                 onFocus={() => setOpen(true)}
                 onBlur={() => setTimeout(() => setOpen(false), 150)}
                 placeholder="Search product or barcode…"
-                className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3"
+                className="w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3"
             />
             {open && results.length > 0 && (
                 <div className="absolute z-20 mt-1 left-0 right-0 bg-surface border border-border rounded-lg shadow-2xl max-h-56 overflow-y-auto">

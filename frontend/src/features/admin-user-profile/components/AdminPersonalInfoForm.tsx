@@ -10,7 +10,7 @@ interface AdminPersonalInfoFormProps {
 }
 
 const INPUT_CLASS =
-    'w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all';
+    'w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-all';
 const DISABLED_INPUT_CLASS =
     'w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-3 outline-none cursor-not-allowed';
 const LABEL_CLASS =

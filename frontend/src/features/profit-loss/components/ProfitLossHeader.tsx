@@ -3,7 +3,7 @@ import { formatDateRangeLabel } from '../lib/format';
 import { PERIOD_OPTIONS, type PeriodKey } from '../lib/period';
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border-strong text-text-1 text-sm rounded-md outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors';
+    'h-9 px-3 bg-surface border border-border-strong text-text-1 text-sm rounded-md outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-colors';
 
 interface ProfitLossHeaderProps {
     startDate: string;

@@ -1,4 +1,5 @@
 export * from './admin-with-branch.type'
+export * from './branch-analytics-branch-option.type'
 export * from './branch-analytics-comparison-entry.type'
 export * from './branch-analytics-comparison-request.type'
 export * from './branch-analytics-comparison-response.type'

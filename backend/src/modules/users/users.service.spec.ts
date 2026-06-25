@@ -211,6 +211,24 @@ describe('UsersService', () => {
     });
   });
 
+  describe('updateProfile language', () => {
+    it('persists a language change from profile settings', async () => {
+      users.findById.mockResolvedValue(
+        makeTarget({ id: 'u1', role: UserRole.MANAGER }),
+      );
+      await service.updateProfile('u1', { language: 'ta' });
+      expect(users.update).toHaveBeenCalledWith('u1', { language: 'ta' });
+    });
+
+    it('leaves language untouched when the update omits it', async () => {
+      users.findById.mockResolvedValue(
+        makeTarget({ id: 'u1', role: UserRole.MANAGER }),
+      );
+      await service.updateProfile('u1', { firstName: 'New' });
+      expect(users.update).toHaveBeenCalledWith('u1', { firstName: 'New' });
+    });
+  });
+
   describe('create', () => {
     const dto: CreateUserDto = {
       email: 'new@example.com',

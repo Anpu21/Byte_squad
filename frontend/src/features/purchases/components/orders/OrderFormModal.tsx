@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Plus, Trash2 } from 'lucide-react';
+import { LuPlus as Plus, LuTrash2 as Trash2 } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { formatCurrency } from '@/lib/utils';
@@ -15,7 +15,7 @@ import { useSuppliers } from '../../hooks/useSuppliers';
 import { usePurchaseOrderMutations } from '../../hooks/usePurchaseOrderMutations';
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
 interface IOrderLineDraft {
     key: number;
@@ -345,7 +345,7 @@ function OrderForm({ onClose }: { onClose: () => void }) {
                     Notes (optional)
                 </span>
                 <textarea
-                    className="w-full min-h-[56px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors"
+                    className="w-full min-h-[56px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     maxLength={1000}

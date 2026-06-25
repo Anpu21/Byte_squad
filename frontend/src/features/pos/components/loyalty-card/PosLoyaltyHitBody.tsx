@@ -5,20 +5,27 @@ export interface IPosLoyaltyHitBodyProps {
     owner: IPosLoyaltyOwner;
     redeemPoints: number;
     onRedeemChange: (next: number) => void;
+    /**
+     * Server-mirrored redeem cap (subtotal-scaled, computed by
+     * `sizeLoyaltyRedeem`). Falls back to the wallet balance when the
+     * caller hasn't sized it yet (e.g. before settings load).
+     */
+    maxRedeemable?: number;
 }
 
 /**
  * Renders the "hit" state of the loyalty card — name + tier label,
- * point balance, and a redeem-points input clamped to the wallet
- * balance. Backend enforces the precise redeem cap (subtotal-scaled);
- * the FE just guards against redeeming more than is in the wallet.
+ * point balance, and a redeem-points input clamped to the server-mirrored
+ * redeem cap so the cashier can't request more than the bill actually
+ * settles. The backend re-caps authoritatively on submit.
  */
 export function PosLoyaltyHitBody({
     owner,
     redeemPoints,
     onRedeemChange,
+    maxRedeemable,
 }: IPosLoyaltyHitBodyProps) {
-    const maxRedeemable = Math.max(0, owner.pointsBalance);
+    const redeemCap = maxRedeemable ?? Math.max(0, owner.pointsBalance);
     const tierLabel =
         owner.tier === 'gold'
             ? 'Gold'
@@ -54,12 +61,12 @@ export function PosLoyaltyHitBody({
                         value={redeemPoints}
                         onCommit={onRedeemChange}
                         min={0}
-                        max={maxRedeemable}
+                        max={redeemCap}
                         ariaLabel="Redeem points"
-                        className="w-24 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-primary focus:ring-[2px] focus:ring-primary/30"
+                        className="w-24 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-focus focus:ring-[2px] focus:ring-primary/30"
                     />
                     <span className="mt-1 text-[10px] text-text-3">
-                        Redeem up to {maxRedeemable.toLocaleString()}
+                        Redeem up to {redeemCap.toLocaleString()}
                     </span>
                 </div>
             </div>

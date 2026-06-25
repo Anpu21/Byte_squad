@@ -43,7 +43,7 @@ export function PosUnitSelect({
             disabled={disabled || isLoading || !productId}
             aria-label="Unit"
             className={cn(
-                'h-8 px-2 text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none focus:border-primary focus:ring-[2px] focus:ring-primary/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+                'h-8 px-2 text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none focus:border-focus focus:ring-[2px] focus:ring-primary/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
                 className,
             )}
         >

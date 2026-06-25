@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import Segmented from '@/components/ui/Segmented'
-import { useLanguage } from '@/hooks/useLanguage'
+import { useLanguagePreference } from '@/hooks/useLanguagePreference'
 import type { AppLanguage } from '@/i18n/config'
 
 export default function LanguageSwitcher() {
-  const { language, setLanguage } = useLanguage()
+  const { language, setLanguage } = useLanguagePreference()
   const { t } = useTranslation('profile')
 
   return (

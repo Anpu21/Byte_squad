@@ -182,6 +182,7 @@ export const APP_ROUTES = {
   BRANCH_ANALYTICS: {
     BASE: `${API_PREFIX}/branch-analytics`,
     COMPARISON: 'comparison',
+    BRANCHES: 'branches',
   },
 
   // Storefront catalog (CUSTOMER role only)
@@ -203,8 +204,7 @@ export const APP_ROUTES = {
     BY_CODE: 'code/:code',
     BY_ID: ':id',
     CANCEL: ':id/cancel',
-    ACCEPT: ':id/accept',
-    REJECT: ':id/reject',
+    NOT_COLLECTED: ':id/not-collected',
     FULFILL: 'code/:code/fulfill',
     PAYHERE_NOTIFY: 'payhere/notify',
   },
@@ -244,6 +244,7 @@ export const APP_ROUTES = {
       CHECK_IN: 'check-in',
       CHECK_OUT: 'check-out',
       ME: 'me',
+      TODAY_STATUS: 'today-status',
     },
     LEAVES: {
       BASE: `${API_PREFIX}/hr/leaves`,

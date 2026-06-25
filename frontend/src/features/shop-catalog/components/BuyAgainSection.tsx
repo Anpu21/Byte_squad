@@ -1,4 +1,4 @@
-import { RotateCcw } from 'lucide-react';
+import { LuRotateCcw as RotateCcw } from 'react-icons/lu';
 import type { IShopProduct } from '@/types';
 import { ProductCard } from './ProductCard';
 
@@ -27,7 +27,7 @@ export function BuyAgainSection({
                     Buy it again
                 </h2>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
                 {products.map((product) => (
                     <ProductCard
                         key={product.id}

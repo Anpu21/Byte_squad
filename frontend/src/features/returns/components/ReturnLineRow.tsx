@@ -8,7 +8,7 @@ interface ReturnLineRowProps {
 }
 
 const QTY_CLASS =
-  'w-20 h-[34px] px-2 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 text-right outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 num disabled:opacity-50'
+  'w-20 h-[34px] px-2 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 text-right outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 num disabled:opacity-50'
 
 export function ReturnLineRow({ line, draft, onChange }: ReturnLineRowProps) {
   const good = draft?.good ?? ''

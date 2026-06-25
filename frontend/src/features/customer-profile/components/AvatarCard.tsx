@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Camera, Loader2 } from 'lucide-react';
+import { LuCamera as Camera, LuLoaderCircle as Loader2 } from 'react-icons/lu';
 import Avatar from '@/components/ui/Avatar';
 
 interface AvatarCardProps {

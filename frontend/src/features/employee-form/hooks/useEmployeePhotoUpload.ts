@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { useUploadEmployeePhoto } from '@/features/admin-employees/hooks/useUploadEmployeePhoto';
+import { useUploadEmployeePhoto } from '@/features/admin-employees';
 
 interface UseEmployeePhotoUploadArgs {
     employeeId: string | null;

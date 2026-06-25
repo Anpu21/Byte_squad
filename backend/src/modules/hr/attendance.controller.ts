@@ -18,6 +18,7 @@ import {
   AttendanceService,
   type AttendanceActor,
   type AttendanceListResponse,
+  type TodayAttendanceStatus,
 } from '@/modules/hr/attendance.service';
 import { Attendance } from '@/modules/hr/entities/attendance.entity';
 import { ListAttendanceQueryDto } from '@/modules/hr/dto/list-attendance-query.dto';
@@ -47,6 +48,17 @@ export class AttendanceController {
     @CurrentUser() actor: AttendanceActor,
   ): Promise<AttendanceListResponse> {
     return this.attendanceService.listSelf(query, actor);
+  }
+
+  // Branch-scoped "who hasn't been recorded today" — the manager's daily
+  // action list. Admins may pass ?branchId= to scope or omit it to span all.
+  @Get(APP_ROUTES.HR.ATTENDANCE.TODAY_STATUS)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  todayStatus(
+    @Query('branchId') branchId: string | undefined,
+    @CurrentUser() actor: AttendanceActor,
+  ): Promise<TodayAttendanceStatus> {
+    return this.attendanceService.todayStatus(actor, branchId);
   }
 
   @Post(APP_ROUTES.HR.ATTENDANCE.BULK)

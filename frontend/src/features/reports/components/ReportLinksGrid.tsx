@@ -1,16 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import {
-    BarChart3,
-    CalendarClock,
-    FileClock,
-    HandCoins,
-    PackagePlus,
-    PiggyBank,
-    Scale,
-    ScrollText,
-    Wallet,
-} from 'lucide-react';
+import { LuChartColumnBig as BarChart3, LuCalendarClock as CalendarClock, LuFileClock as FileClock, LuHandCoins as HandCoins, LuPackagePlus as PackagePlus, LuPiggyBank as PiggyBank, LuScale as Scale, LuScrollText as ScrollText, LuWallet as Wallet } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';

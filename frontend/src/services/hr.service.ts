@@ -13,6 +13,7 @@ import type {
     ILeavesListResponse,
     IPayroll,
     IPayrollListResponse,
+    ITodayAttendanceStatus,
     LeaveStatus,
     PaymentMethod,
     PayrollStatus,
@@ -65,7 +66,8 @@ export interface IMarkPayrollPaidPayload {
     /** ISO date `YYYY-MM-DD`. */
     paymentDate: string;
     paymentMethod: PaymentMethod;
-    bankReferenceNo?: string;
+    /** Optional disbursement reference (e.g. card terminal / transfer ref). */
+    paymentReference?: string;
 }
 
 export interface IExportPayrollCsvQuery {
@@ -181,6 +183,21 @@ export const hrService = {
         const response = await api.get<IApiResponse<IAttendanceListResponse>>(
             '/hr/attendance/me',
             { params: query },
+        );
+        return response.data.data;
+    },
+
+    /**
+     * `GET /hr/attendance/today-status` — branch "who hasn't been recorded
+     * today". Admins may pass `branchId`; managers are pinned to their own
+     * branch server-side.
+     */
+    getBranchTodayStatus: async (
+        branchId?: string,
+    ): Promise<ITodayAttendanceStatus> => {
+        const response = await api.get<IApiResponse<ITodayAttendanceStatus>>(
+            '/hr/attendance/today-status',
+            { params: branchId ? { branchId } : undefined },
         );
         return response.data.data;
     },

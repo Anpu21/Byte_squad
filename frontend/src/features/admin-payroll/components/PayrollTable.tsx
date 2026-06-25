@@ -1,31 +1,39 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import EmptyState from '@/components/ui/EmptyState';
+import {
+    Button,
+    DataTable,
+    EmptyState,
+    Pill,
+    type DataTableColumn,
+} from '@/components/ui';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { IEmployee, IPayroll } from '@/types';
 import {
     useApprovePayroll,
     useCancelPayroll,
 } from '../hooks/usePayrollMutations';
-import { formatLkr } from '../lib/payroll-formatting';
+import { formatLkr, payrollStatusTone } from '../lib/payroll-formatting';
 import { MarkPaidModal } from './MarkPaidModal';
-import { PayrollTableRow } from './PayrollTableRow';
 
 interface IPayrollTableProps {
     rows: IPayroll[];
     employees: IEmployee[];
     isLoading: boolean;
+    /** Admin-only: show the approve/mark-paid/cancel actions column. */
+    canManage: boolean;
 }
 
 /**
  * Owns the inline approve/cancel mutations and the mark-paid modal.
- * Footer row totals gross/deductions/net across the visible page so
- * the manager has the bank-file totals at a glance.
+ * A column-aligned totals footer sums gross/deductions/net across the visible
+ * page. Managers see the same table read-only (no actions column).
  */
 export function PayrollTable({
     rows,
     employees,
     isLoading,
+    canManage,
 }: IPayrollTableProps) {
     const confirm = useConfirm();
     const approve = useApprovePayroll();
@@ -77,72 +85,131 @@ export function PayrollTable({
         }
     }
 
-    if (!isLoading && rows.length === 0) {
-        return (
-            <EmptyState
-                title="No payroll rows for this period"
-                description="Generate the monthly run to populate the table."
-            />
-        );
-    }
+    const columns: DataTableColumn<IPayroll>[] = [
+        {
+            key: 'employee',
+            header: 'Employee',
+            render: (p) =>
+                nameByEmployee.get(p.employeeId) ?? p.employeeId.slice(0, 8),
+        },
+        {
+            key: 'gross',
+            header: 'Gross',
+            className: 'text-text-2 tabular-nums',
+            render: (p) => formatLkr(p.grossSalary),
+        },
+        {
+            key: 'deductions',
+            header: 'Deductions',
+            className: 'text-text-2 tabular-nums',
+            render: (p) => formatLkr(p.totalDeductions),
+        },
+        {
+            key: 'net',
+            header: 'Net',
+            className: 'text-text-1 font-medium tabular-nums',
+            render: (p) => formatLkr(p.netSalary),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            render: (p) => (
+                <Pill tone={payrollStatusTone(p.paymentStatus)}>
+                    {p.paymentStatus}
+                </Pill>
+            ),
+        },
+        {
+            key: 'paid',
+            header: 'Paid',
+            className: 'text-text-3 text-[12px]',
+            render: (p) => p.paymentDate ?? '—',
+        },
+        ...(canManage
+            ? [
+                  {
+                      key: 'actions',
+                      header: 'Actions',
+                      align: 'right',
+                      render: (p: IPayroll) => {
+                          const status = p.paymentStatus;
+                          return (
+                              <div className="inline-flex gap-1.5">
+                                  {status === 'Pending' && (
+                                      <Button
+                                          size="sm"
+                                          variant="primary"
+                                          onClick={() => handleApprove(p.id)}
+                                      >
+                                          Approve
+                                      </Button>
+                                  )}
+                                  {status === 'Approved' && (
+                                      <Button
+                                          size="sm"
+                                          variant="secondary"
+                                          onClick={() => setPaidTarget(p)}
+                                      >
+                                          Mark paid
+                                      </Button>
+                                  )}
+                                  {(status === 'Pending' ||
+                                      status === 'Approved') && (
+                                      <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleCancel(p.id)}
+                                      >
+                                          Cancel
+                                      </Button>
+                                  )}
+                              </div>
+                          );
+                      },
+                  } satisfies DataTableColumn<IPayroll>,
+              ]
+            : []),
+    ];
+
+    const footerRow =
+        rows.length > 0 ? (
+            <tr className="text-[12px] text-text-2">
+                <td className="px-4 py-2.5 font-medium text-text-1">Totals</td>
+                <td className="px-4 py-2.5 tabular-nums">
+                    {formatLkr(totals.gross)}
+                </td>
+                <td className="px-4 py-2.5 tabular-nums">
+                    {formatLkr(totals.deductions)}
+                </td>
+                <td className="px-4 py-2.5 tabular-nums font-medium text-text-1">
+                    {formatLkr(totals.net)}
+                </td>
+                <td colSpan={canManage ? 3 : 2} />
+            </tr>
+        ) : undefined;
 
     return (
         <>
-            <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                    <thead className="bg-surface-2/60 border-b border-border">
-                        <tr className="text-[11px] uppercase tracking-wide text-text-3">
-                            <th className="px-3 py-2.5 font-medium">Employee</th>
-                            <th className="px-3 py-2.5 font-medium">Gross</th>
-                            <th className="px-3 py-2.5 font-medium">Deductions</th>
-                            <th className="px-3 py-2.5 font-medium">Net</th>
-                            <th className="px-3 py-2.5 font-medium">Status</th>
-                            <th className="px-3 py-2.5 font-medium">Paid</th>
-                            <th className="px-3 py-2.5 font-medium text-right">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.map((p) => (
-                            <PayrollTableRow
-                                key={p.id}
-                                payroll={p}
-                                employeeName={
-                                    nameByEmployee.get(p.employeeId) ??
-                                    p.employeeId.slice(0, 8)
-                                }
-                                onApprove={handleApprove}
-                                onMarkPaid={setPaidTarget}
-                                onCancel={handleCancel}
-                            />
-                        ))}
-                    </tbody>
-                    {rows.length > 0 ? (
-                        <tfoot className="bg-surface-2/40 border-t border-border">
-                            <tr className="text-[12px] text-text-2">
-                                <td className="px-3 py-2.5 font-medium text-text-1">
-                                    Totals
-                                </td>
-                                <td className="px-3 py-2.5 tabular-nums">
-                                    {formatLkr(totals.gross)}
-                                </td>
-                                <td className="px-3 py-2.5 tabular-nums">
-                                    {formatLkr(totals.deductions)}
-                                </td>
-                                <td className="px-3 py-2.5 tabular-nums font-medium text-text-1">
-                                    {formatLkr(totals.net)}
-                                </td>
-                                <td colSpan={3} />
-                            </tr>
-                        </tfoot>
-                    ) : null}
-                </table>
-            </div>
-            <MarkPaidModal
-                payroll={paidTarget}
-                onClose={() => setPaidTarget(null)}
+            <DataTable
+                columns={columns}
+                rows={rows}
+                getRowKey={(p) => p.id}
+                isLoading={isLoading}
+                zebra
+                footerRow={footerRow}
+                empty={
+                    <EmptyState
+                        title="No payroll rows for this period"
+                        description="Generate the monthly run to populate the table."
+                    />
+                }
             />
+            {canManage && (
+                <MarkPaidModal
+                    payroll={paidTarget}
+                    onClose={() => setPaidTarget(null)}
+                />
+            )}
         </>
     );
 }

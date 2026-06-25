@@ -1,4 +1,4 @@
-import { ScrollText } from 'lucide-react';
+import { LuScrollText as ScrollText } from 'react-icons/lu';
 
 export function MyOrdersEmpty() {
     return (

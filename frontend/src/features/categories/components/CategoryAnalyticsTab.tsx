@@ -5,6 +5,11 @@ import BarChart from '@/components/charts/BarChart'
 import ExportMenu from '@/components/common/ExportMenu'
 import { Select } from '@/components/ui/Select'
 import Input from '@/components/ui/Input'
+import {
+  DataTable,
+  EmptyState,
+  type DataTableColumn,
+} from '@/components/ui'
 import { adminService } from '@/services/admin.service'
 import { queryKeys } from '@/lib/queryKeys'
 import { formatCurrency } from '@/lib/utils'
@@ -12,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useCategoryAnalyticsQuery } from '../hooks/useCategoryAnalyticsQuery'
 import { exportCategoryAnalytics } from '../lib/export-category-analytics'
 import type { ExportFormat } from '@/lib/exportUtils'
+import type { ICategorySalesRow } from '@/types'
 
 function daysAgoIso(days: number): string {
   const d = new Date()
@@ -52,6 +58,51 @@ export function CategoryAnalyticsTab({ isAdmin }: CategoryAnalyticsTabProps) {
   const { data, isLoading } = useCategoryAnalyticsQuery(params)
   const rows = data?.rows ?? []
   const chartData = rows.map((r) => ({ name: r.categoryName, value: r.revenue }))
+
+  const columns: DataTableColumn<ICategorySalesRow>[] = [
+    {
+      key: 'category',
+      header: 'Category',
+      className: 'font-medium text-text-1',
+      render: (r) => (
+        <span className="inline-flex items-center gap-2">
+          <span
+            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            style={{ background: r.color ?? 'var(--primary)' }}
+          />
+          {r.categoryName}
+        </span>
+      ),
+    },
+    {
+      key: 'units',
+      header: 'Units',
+      align: 'right',
+      numeric: true,
+      render: (r) => Math.round(r.units),
+    },
+    {
+      key: 'revenue',
+      header: 'Revenue',
+      align: 'right',
+      numeric: true,
+      render: (r) => formatCurrency(r.revenue),
+    },
+    {
+      key: 'share',
+      header: 'Share',
+      align: 'right',
+      numeric: true,
+      render: (r) => `${r.sharePct}%`,
+    },
+    {
+      key: 'txns',
+      header: 'Txns',
+      align: 'right',
+      numeric: true,
+      render: (r) => r.transactions,
+    },
+  ]
 
   const scopeLabel = isAdmin
     ? branchId
@@ -172,44 +223,19 @@ export function CategoryAnalyticsTab({ isAdmin }: CategoryAnalyticsTabProps) {
       </div>
 
       {rows.length > 0 && (
-        <div className="border border-border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-text-3 text-xs uppercase tracking-wide">
-              <tr>
-                <th className="text-left font-semibold px-4 py-2.5">Category</th>
-                <th className="text-right font-semibold px-4 py-2.5">Units</th>
-                <th className="text-right font-semibold px-4 py-2.5">Revenue</th>
-                <th className="text-right font-semibold px-4 py-2.5">Share</th>
-                <th className="text-right font-semibold px-4 py-2.5">Txns</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.categoryId} className="border-t border-border">
-                  <td className="px-4 py-2.5 font-medium text-text-1">
-                    <span className="inline-flex items-center gap-2">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ background: r.color ?? 'var(--primary)' }}
-                      />
-                      {r.categoryName}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right mono">
-                    {Math.round(r.units)}
-                  </td>
-                  <td className="px-4 py-2.5 text-right mono">
-                    {formatCurrency(r.revenue)}
-                  </td>
-                  <td className="px-4 py-2.5 text-right mono">{r.sharePct}%</td>
-                  <td className="px-4 py-2.5 text-right mono">
-                    {r.transactions}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable<ICategorySalesRow>
+          columns={columns}
+          rows={rows}
+          getRowKey={(r) => r.categoryId}
+          isLoading={isLoading}
+          zebra
+          empty={
+            <EmptyState
+              title="No sales in this range"
+              description="Adjust the date range or branch filter to see category sales."
+            />
+          }
+        />
       )}
     </div>
   )

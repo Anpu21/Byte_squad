@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Banknote } from 'lucide-react';
+import { LuBanknote as Banknote } from 'react-icons/lu';
 import { PAYMENT_METHODS, type Payment } from '../types/payment.type';
 
 interface PaymentMethodPickerProps {

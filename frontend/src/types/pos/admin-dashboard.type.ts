@@ -1,6 +1,10 @@
 import type { IDailyBreakdown } from './daily-breakdown.type';
 import type { ITopProduct } from './top-product.type';
 import type { ISale } from './sale.type';
+import type { IPaymentMethodBreakdown } from './payment-method-breakdown.type';
+import type { IRevenueByBranch } from './revenue-by-branch.type';
+import type { IDailyBreakdownByBranch } from './daily-breakdown-by-branch.type';
+import type { IInventorySummary } from './inventory-summary.type';
 
 /**
  * Response envelope for `GET /pos/admin-dashboard` (admin/manager-scoped).
@@ -29,4 +33,11 @@ export interface IAdminDashboard {
   dailyBreakdown: IDailyBreakdown[];
   topProducts: ITopProduct[];
   recentTransactions: ISale[];
+
+  // ── ShopPOS overview redesign (additive) ──
+  salesByPaymentMethod: IPaymentMethodBreakdown[];
+  revenueByBranch: IRevenueByBranch[];
+  dailyBreakdownByBranch: IDailyBreakdownByBranch;
+  inventorySummary: IInventorySummary;
+  pendingOrders: number;
 }

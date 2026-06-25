@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ScanLine } from 'lucide-react';
+import { LuScanLine as ScanLine } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';
 

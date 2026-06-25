@@ -1,4 +1,4 @@
-import { Sparkles, Crown } from 'lucide-react';
+import { LuSparkles as Sparkles, LuCrown as Crown } from 'react-icons/lu';
 import { formatCurrency } from '@/lib/utils';
 import type { LoyaltyTier } from '@/types';
 

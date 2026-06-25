@@ -1,6 +1,6 @@
-import { AlertCircle, CheckCheck, Loader2, RefreshCw, X } from "lucide-react";
+import { LuCircleAlert as AlertCircle, LuCheckCheck as CheckCheck, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuX as X } from 'react-icons/lu';
 import Card from "@/components/ui/Card";
-import type { IBranch } from "@/types";
+import type { IBranchAnalyticsBranchOption } from "@/types";
 import {
   PRESET_LABELS,
   PRESET_ORDER,
@@ -24,7 +24,7 @@ export interface BranchComparisonFilterActions {
 }
 
 interface BranchComparisonFiltersProps {
-  branches: IBranch[];
+  branches: IBranchAnalyticsBranchOption[];
   filters: BranchComparisonFilterValues;
   actions: BranchComparisonFilterActions;
   lockedBranchIds: string[];
@@ -34,7 +34,7 @@ interface BranchComparisonFiltersProps {
 }
 
 const INPUT_CLASS =
-  "w-full h-9 px-3 bg-surface border border-border-strong rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors";
+  "w-full h-9 px-3 bg-surface border border-border-strong rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-colors";
 
 export function BranchComparisonFilters({
   branches,

@@ -5,6 +5,7 @@ import { Sale } from '@pos/entities/sale.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { IdempotencyKey } from '@pos/entities/idempotency-key.entity';
 import { TransactionType } from '@common/enums/transaction.enum';
+import type { InventorySummary } from '@pos/types';
 
 export interface PeriodAggregate {
   total: number;
@@ -224,6 +225,65 @@ export class PosRepository {
       { count: string }[]
     >(`SELECT COUNT(*) as count FROM branches WHERE is_active = true`);
     return Number(rows[0].count);
+  }
+
+  /**
+   * Active branches (id + name) for the dashboard trend legend and the
+   * revenue-by-branch colour map. When `branchId` is non-null (manager scope)
+   * the result is narrowed to that single branch so the multi-line trend and
+   * donut only ever surface the actor's own branch.
+   */
+  async listBranches(
+    branchId: string | null,
+  ): Promise<{ id: string; name: string }[]> {
+    if (branchId) {
+      return this.transactionItemRepo.manager.query<
+        { id: string; name: string }[]
+      >(
+        `SELECT id, name FROM branches WHERE is_active = true AND id = $1 ORDER BY name`,
+        [branchId],
+      );
+    }
+    return this.transactionItemRepo.manager.query<
+      { id: string; name: string }[]
+    >(`SELECT id, name FROM branches WHERE is_active = true ORDER BY name`);
+  }
+
+  /**
+   * Inventory tiles for the dashboard: row count, low-stock and out-of-stock
+   * counts (same CASE-sum shape as branch-performance), plus on-hand valuation
+   * (Σ quantity × product.cost_price). Branch-scoped for non-admins. Read-only,
+   * parameter-bound — uses raw SQL through the shared manager to mirror the
+   * existing count helpers and avoid pulling extra repositories into the module.
+   */
+  async inventorySummary(branchId: string | null): Promise<InventorySummary> {
+    const params = branchId ? [branchId] : [];
+    const counts = await this.transactionItemRepo.manager.query<
+      { total: string; low: string; out: string }[]
+    >(
+      `SELECT COUNT(inv.id) AS total,
+              COALESCE(SUM(CASE WHEN inv.quantity <= inv.low_stock_threshold THEN 1 ELSE 0 END), 0) AS low,
+              COALESCE(SUM(CASE WHEN inv.quantity = 0 THEN 1 ELSE 0 END), 0) AS out
+       FROM inventory inv
+       ${branchId ? 'WHERE inv.branch_id = $1' : ''}`,
+      params,
+    );
+    const valuation = await this.transactionItemRepo.manager.query<
+      { value: string }[]
+    >(
+      `SELECT COALESCE(SUM(inv.quantity * p.cost_price), 0) AS value
+       FROM inventory inv
+       INNER JOIN products p ON p.id = inv.product_id
+       ${branchId ? 'WHERE inv.branch_id = $1' : ''}`,
+      params,
+    );
+    const c = counts[0];
+    return {
+      totalProducts: Number(c?.total ?? 0),
+      lowStock: Number(c?.low ?? 0),
+      outOfStock: Number(c?.out ?? 0),
+      inventoryValue: Math.round(Number(valuation[0]?.value ?? 0) * 100) / 100,
+    };
   }
 
   async findIdempotencyKey(

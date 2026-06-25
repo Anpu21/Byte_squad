@@ -1,5 +1,5 @@
 import { type RefObject } from 'react';
-import { Send } from 'lucide-react';
+import { LuSend as Send } from 'react-icons/lu';
 import type { IBranch, IProduct } from '@/types';
 import type { TransferCartLine } from '../types/transfer-cart-line.type';
 import { AdminTransferCartTable } from './AdminTransferCartTable';

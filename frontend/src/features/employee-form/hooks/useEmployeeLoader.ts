@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useEmployee } from '@/features/admin-employees/hooks/useEmployee';
+import { useEmployee } from '@/features/admin-employees';
 import type { EmployeeFormState } from './useEmployeeFormState';
 import type {
     GenderField,

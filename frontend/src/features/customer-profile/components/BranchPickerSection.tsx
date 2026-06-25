@@ -1,4 +1,4 @@
-import { Check, Loader2, MapPin } from 'lucide-react';
+import { LuCheck as Check, LuLoaderCircle as Loader2, LuMapPin as MapPin } from 'react-icons/lu';
 import type { IUserProfile } from '@/types';
 
 interface Branch {
@@ -71,7 +71,7 @@ export function BranchPickerSection({
                             value={selectedBranchId}
                             onChange={(e) => setSelectedBranchId(e.target.value)}
                             disabled={branchesLoading || isSaving}
-                            className="w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {branchesLoading ? (
                                 <option value="">Loading branches…</option>

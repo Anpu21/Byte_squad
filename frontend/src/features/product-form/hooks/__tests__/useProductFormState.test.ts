@@ -158,4 +158,19 @@ describe('useProductFormState — per-price unit state', () => {
         expect(result.current.sellingPriceUnit).toBe('12-PACK');
         expect(result.current.costPriceUnit).toBe('kg');
     });
+
+    it('initialises both price-basis quantities to "1"', () => {
+        const { result } = renderHook(() => useProductFormState());
+        expect(result.current.costPriceQty).toBe('1');
+        expect(result.current.sellingPriceQty).toBe('1');
+    });
+
+    it('resetUnitsForBase resets both price-basis quantities back to "1"', () => {
+        const { result } = renderHook(() => useProductFormState());
+        act(() => result.current.setSellingPriceQty('0.5'));
+        act(() => result.current.setCostPriceQty('2'));
+        act(() => result.current.resetUnitsForBase('kg'));
+        expect(result.current.sellingPriceQty).toBe('1');
+        expect(result.current.costPriceQty).toBe('1');
+    });
 });

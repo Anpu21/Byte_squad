@@ -2,15 +2,19 @@ import { formatCurrency } from '@/lib/utils';
 import { PosCartNumericCell } from '@/features/pos/components/item-table/PosCartNumericCell';
 
 interface IPosCashTenderFormProps {
+    /** Money the customer owes after any loyalty-points settlement. */
     invoiceTotal: number;
     cashTendered: number;
     onCashTenderedChange: (next: number) => void;
+    /** Money settled by redeemed points; shows a deduction note when > 0. */
+    loyaltyRedeemValue?: number;
 }
 
 /**
  * Cash tender form for the Shanel multi-tender flow. The cashier types the
- * amount handed over (`cashTendered`). Cash applied is capped at the
- * invoice total so any extra is presented as change rather than overpayment.
+ * amount handed over (`cashTendered`). Cash applied is capped at the money
+ * owed (`invoiceTotal`, already net of any loyalty-points settlement) so any
+ * extra is presented as change rather than overpayment.
  *
  * Cash applied + change are derived inline (not via `calculateMultiTender`)
  * because the orchestrator already runs the full calc — keeping this form
@@ -21,6 +25,7 @@ export function PosCashTenderForm({
     invoiceTotal,
     cashTendered,
     onCashTenderedChange,
+    loyaltyRedeemValue = 0,
 }: IPosCashTenderFormProps) {
     const cashApplied = Math.min(Math.max(0, cashTendered), invoiceTotal);
     const cashChange = Math.max(0, cashTendered - cashApplied);
@@ -31,12 +36,21 @@ export function PosCashTenderForm({
                 <label className="block text-xs font-medium text-text-2 mb-1.5">
                     Cash tendered
                 </label>
+                {loyaltyRedeemValue > 0 ? (
+                    <p className="mb-1.5 text-[11px] text-text-2">
+                        <span className="font-semibold text-primary">
+                            −{formatCurrency(loyaltyRedeemValue)}
+                        </span>{' '}
+                        settled by points · collect{' '}
+                        {formatCurrency(invoiceTotal)}
+                    </p>
+                ) : null}
                 <PosCartNumericCell
                     value={cashTendered}
                     onCommit={onCashTenderedChange}
                     min={0}
                     ariaLabel="Cash tendered"
-                    className="w-full h-[42px] px-3 bg-surface border border-border-strong rounded-md text-[14px] text-text-1 tabular-nums outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/30"
+                    className="w-full h-[42px] px-3 bg-surface border border-border-strong rounded-md text-[14px] text-text-1 tabular-nums outline-none transition-colors focus:border-focus focus:ring-[3px] focus:ring-primary/30"
                 />
                 <p className="mt-1.5 text-[11px] text-text-3">
                     Enter what the customer handed over, including any

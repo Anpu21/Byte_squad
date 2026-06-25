@@ -1,5 +1,5 @@
 import {
-  BANK_CSV_HEADER,
+  PAYROLL_CSV_HEADER,
   buildPayrollRow,
   computeAttendanceBonus,
   computeBasicMonthly,
@@ -11,7 +11,7 @@ import {
   computeProductionEarnings,
   computeTeaAllowance,
   csvField,
-  formatBankCsv,
+  formatPayrollCsv,
   round2,
   summarizeAttendanceRows,
 } from './payroll-math';
@@ -393,38 +393,43 @@ describe('payroll-math', () => {
     });
   });
 
-  describe('formatBankCsv', () => {
-    it('emits the header + one row per pair, trailing newline', () => {
-      const out = formatBankCsv([
+  describe('formatPayrollCsv', () => {
+    it('emits the header + one row per payroll, trailing newline', () => {
+      const out = formatPayrollCsv([
         {
           employeeCode: 'EMP001',
-          bankName: 'Sampath',
-          bankBranch: 'Colombo Main',
-          bankAccountNo: '1234567890',
-          bankAccountName: 'Jane Doe',
+          employeeName: 'Jane Doe',
+          payPeriodMonth: 5,
+          payPeriodYear: 2026,
+          grossSalary: 106560,
           netSalary: 92000,
+          paymentMethod: 'Card',
+          paymentStatus: 'Paid',
+          paymentDate: '2026-06-05',
         },
       ]);
-      expect(out.startsWith(BANK_CSV_HEADER)).toBe(true);
+      expect(out.startsWith(PAYROLL_CSV_HEADER)).toBe(true);
       expect(out.endsWith('\n')).toBe(true);
       expect(out).toContain(
-        'EMP001,Sampath,Colombo Main,1234567890,Jane Doe,92000',
+        'EMP001,Jane Doe,2026-05,106560,92000,Card,Paid,2026-06-05',
       );
     });
 
-    it('surfaces missing bank fields as quoted empty', () => {
-      const out = formatBankCsv([
+    it('renders a null payment date as an empty field', () => {
+      const out = formatPayrollCsv([
         {
           employeeCode: 'EMP002',
-          bankName: null,
-          bankBranch: null,
-          bankAccountNo: null,
-          bankAccountName: null,
-          netSalary: 50000,
+          employeeName: 'John Roe',
+          payPeriodMonth: 12,
+          payPeriodYear: 2026,
+          grossSalary: 50000,
+          netSalary: 46000,
+          paymentMethod: 'Cash',
+          paymentStatus: 'Approved',
+          paymentDate: null,
         },
       ]);
-      // 4 empty-quoted bank fields + numeric net.
-      expect(out).toContain('EMP002,"","","","",50000');
+      expect(out).toContain('EMP002,John Roe,2026-12,50000,46000,Cash,Approved,');
     });
   });
 });

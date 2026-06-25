@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ImageIcon, Pencil, Trash2 } from 'lucide-react';
+import { LuImage as ImageIcon, LuPencil as Pencil, LuTrash2 as Trash2 } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import Pill from '@/components/ui/Pill';
 import StatusPill from '@/components/ui/StatusPill';

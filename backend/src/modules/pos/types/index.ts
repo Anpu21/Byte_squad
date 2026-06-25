@@ -6,6 +6,12 @@ export * from './cashier-transactions-summary.type';
 export * from './daily-breakdown.type';
 export * from './top-product.type';
 
+// ShopPOS dashboard redesign — admin-overview aggregation shapes.
+export * from './payment-method-breakdown.type';
+export * from './revenue-by-branch.type';
+export * from './daily-breakdown-by-branch.type';
+export * from './inventory-summary.type';
+
 // Phase 2 — Shanel POS literal-union types
 export type { SaleStatus } from './sale-status.type';
 export type { SalePaymentStatus } from './sale-payment-status.type';

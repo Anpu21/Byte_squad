@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import Card from '@/components/ui/Card';
-import EmptyState from '@/components/ui/EmptyState';
+import {
+    DataTable,
+    EmptyState,
+    type DataTableColumn,
+} from '@/components/ui';
 import type { ILoyaltyCustomerRow } from '@/types';
 import { useLoyaltyCustomers } from '../hooks/useLoyaltyCustomers';
 import { LoyaltyCustomersFilters } from './LoyaltyCustomersFilters';
@@ -32,7 +36,9 @@ function parsePointsInput(raw: string): number | undefined {
     return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
-
+function customerFullName(row: ILoyaltyCustomerRow): string {
+    return [row.firstName, row.lastName].filter(Boolean).join(' ');
+}
 
 export function LoyaltyCustomersTable({
     role,
@@ -86,6 +92,63 @@ export function LoyaltyCustomersTable({
     const pageStart = total === 0 ? 0 : offset + 1;
     const pageEnd = Math.min(total, offset + rows.length);
 
+    const columns: DataTableColumn<ILoyaltyCustomerRow>[] = [
+        {
+            key: 'customer',
+            header: 'Customer',
+            className: 'text-text-1 font-medium',
+            render: (row) => customerFullName(row),
+        },
+        {
+            key: 'contact',
+            header: 'Contact',
+            className: 'text-text-2 truncate',
+            render: (row) => row.email ?? row.phone ?? '—',
+        },
+        {
+            key: 'tier',
+            header: 'Tier',
+            render: (row) => <LoyaltyTierBadge tier={row.tier} />,
+        },
+        {
+            key: 'balance',
+            header: 'Balance',
+            align: 'right',
+            numeric: true,
+            className: 'font-bold text-text-1',
+            render: (row) => row.pointsBalance,
+        },
+        {
+            key: 'lifetimeEarned',
+            header: 'Lifetime earned',
+            align: 'right',
+            numeric: true,
+            className: 'text-text-2',
+            render: (row) => row.lifetimePointsEarned,
+        },
+        {
+            key: 'lifetimeRedeemed',
+            header: 'Lifetime redeemed',
+            align: 'right',
+            numeric: true,
+            className: 'text-text-2',
+            render: (row) => row.lifetimePointsRedeemed,
+        },
+        {
+            key: 'lastBranch',
+            header: 'Last branch',
+            className: 'text-text-2',
+            render: (row) => row.lastActivityBranchName ?? '—',
+        },
+        {
+            key: 'lastActivity',
+            header: 'Last activity',
+            align: 'right',
+            className: 'text-text-3 tabular-nums whitespace-nowrap',
+            render: (row) => formatLastActivity(row.lastActivityAt),
+        },
+    ];
+
     return (
         <Card className="overflow-hidden">
             <LoyaltyCustomersFilters
@@ -107,118 +170,55 @@ export function LoyaltyCustomersTable({
                 </p>
             </div>
 
-            {rows.length === 0 && !isLoading ? (
-                <EmptyState
-                    title="No loyalty activity yet"
-                    description={
-                        search || branchId || activeSince || minPoints || maxPoints
-                            ? 'Try a different filter combination.'
-                            : 'Customer balances will appear here once they place pickup orders or visit a branch.'
-                    }
-                />
-            ) : isLoading ? (
-                <div className="flex flex-col" role="status" aria-label="Loading customers">
-                    {Array.from({ length: 10 }).map((_, idx) => (
-                        <div
-                            key={idx}
-                            className="px-5 py-4 border-b border-border flex items-center justify-between animate-pulse"
-                        >
-                            <div className="flex flex-col gap-2 w-1/3">
-                                <div className="h-4 w-32 bg-surface-2 rounded"></div>
-                                <div className="h-3 w-48 bg-surface-2 rounded"></div>
-                            </div>
-                            <div className="h-6 w-16 bg-surface-2 rounded-full"></div>
-                            <div className="h-4 w-12 bg-surface-2 rounded"></div>
+            <DataTable
+                columns={columns}
+                rows={rows}
+                getRowKey={(row) => row.id}
+                isLoading={isLoading}
+                zebra
+                onRowClick={(row) => onSelectCustomer(row)}
+                getRowLabel={(row) =>
+                    `View loyalty history for ${customerFullName(row)}`
+                }
+                empty={
+                    <EmptyState
+                        title="No loyalty activity yet"
+                        description={
+                            search ||
+                            branchId ||
+                            activeSince ||
+                            minPoints ||
+                            maxPoints
+                                ? 'Try a different filter combination.'
+                                : 'Customer balances will appear here once they place pickup orders or visit a branch.'
+                        }
+                    />
+                }
+                footer={
+                    total > PAGE_SIZE ? (
+                        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border bg-surface-2/30">
+                            <button
+                                type="button"
+                                disabled={offset === 0}
+                                onClick={() =>
+                                    setOffset((o) => Math.max(0, o - PAGE_SIZE))
+                                }
+                                className="h-8 px-3 rounded-md border border-border text-[12px] font-semibold text-text-1 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-surface-2"
+                            >
+                                Previous
+                            </button>
+                            <button
+                                type="button"
+                                disabled={offset + PAGE_SIZE >= total}
+                                onClick={() => setOffset((o) => o + PAGE_SIZE)}
+                                className="h-8 px-3 rounded-md border border-border text-[12px] font-semibold text-text-1 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-surface-2"
+                            >
+                                Next
+                            </button>
                         </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="text-[11px] uppercase tracking-[0.08em] text-text-3 bg-surface-2">
-                                <th className="px-5 py-2.5 font-semibold">Customer</th>
-                                <th className="px-5 py-2.5 font-semibold">Contact</th>
-                                <th className="px-5 py-2.5 font-semibold">Tier</th>
-                                <th className="px-5 py-2.5 font-semibold text-right">Balance</th>
-                                <th className="px-5 py-2.5 font-semibold text-right">Lifetime earned</th>
-                                <th className="px-5 py-2.5 font-semibold text-right">Lifetime redeemed</th>
-                                <th className="px-5 py-2.5 font-semibold">Last branch</th>
-                                <th className="px-5 py-2.5 font-semibold text-right">Last activity</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((row) => {
-                                const fullName = [row.firstName, row.lastName]
-                                    .filter(Boolean)
-                                    .join(' ');
-                                return (
-                                    <tr
-                                        key={row.id}
-                                        onClick={() => onSelectCustomer(row)}
-                                        tabIndex={0}
-                                        role="button"
-                                        aria-label={`View loyalty history for ${fullName}`}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault();
-                                                onSelectCustomer(row);
-                                            }
-                                        }}
-                                        className="border-t border-border hover:bg-surface-2/40 cursor-pointer transition-colors focus:outline-none focus:bg-surface-2/40 focus:ring-2 focus:ring-inset focus:ring-primary/30"
-                                    >
-                                        <td className="px-5 py-3 text-[13px] text-text-1 font-medium">
-                                            {fullName}
-                                        </td>
-                                        <td className="px-5 py-3 text-[12px] text-text-2 truncate">
-                                            {row.email ?? row.phone ?? '—'}
-                                        </td>
-                                        <td className="px-5 py-3">
-                                            <LoyaltyTierBadge tier={row.tier} />
-                                        </td>
-                                        <td className="px-5 py-3 text-right mono tabular-nums text-[13px] font-bold text-text-1">
-                                            {row.pointsBalance}
-                                        </td>
-                                        <td className="px-5 py-3 text-right mono tabular-nums text-[12px] text-text-2">
-                                            {row.lifetimePointsEarned}
-                                        </td>
-                                        <td className="px-5 py-3 text-right mono tabular-nums text-[12px] text-text-2">
-                                            {row.lifetimePointsRedeemed}
-                                        </td>
-                                        <td className="px-5 py-3 text-[12px] text-text-2">
-                                            {row.lastActivityBranchName ?? '—'}
-                                        </td>
-                                        <td className="px-5 py-3 text-right text-[12px] text-text-3 tabular-nums whitespace-nowrap">
-                                            {formatLastActivity(row.lastActivityAt)}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            {total > PAGE_SIZE && (
-                <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border bg-surface-2/30">
-                    <button
-                        type="button"
-                        disabled={offset === 0}
-                        onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
-                        className="h-8 px-3 rounded-md border border-border text-[12px] font-semibold text-text-1 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-surface-2"
-                    >
-                        Previous
-                    </button>
-                    <button
-                        type="button"
-                        disabled={offset + PAGE_SIZE >= total}
-                        onClick={() => setOffset((o) => o + PAGE_SIZE)}
-                        className="h-8 px-3 rounded-md border border-border text-[12px] font-semibold text-text-1 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-surface-2"
-                    >
-                        Next
-                    </button>
-                </div>
-            )}
+                    ) : undefined
+                }
+            />
         </Card>
     );
 }

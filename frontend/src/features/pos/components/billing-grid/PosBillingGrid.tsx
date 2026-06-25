@@ -5,7 +5,7 @@ import {
     type ReactNode,
     type RefObject,
 } from 'react';
-import { Camera, Trash2 } from 'lucide-react';
+import { LuCamera as Camera, LuTrash2 as Trash2 } from 'react-icons/lu';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type { UsePosCartReturn } from '@/features/pos/hooks/usePosCart';

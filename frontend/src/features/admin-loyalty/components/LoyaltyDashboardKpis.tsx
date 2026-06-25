@@ -1,4 +1,4 @@
-import { Users, Coins, TrendingUp, Gift } from 'lucide-react';
+import { LuUsers as Users, LuCoins as Coins, LuTrendingUp as TrendingUp, LuGift as Gift } from 'react-icons/lu';
 import { useLoyaltyDashboard } from '../hooks/useLoyaltyDashboard';
 import KpiCard from '@/components/ui/KpiCard';
 
@@ -28,22 +28,26 @@ export function LoyaltyDashboardKpis({ role }: LoyaltyDashboardKpisProps) {
             <KpiCard
                 label="Total Members"
                 value={data.totalMembers.toLocaleString()}
-                icon={<Users className="w-4 h-4 opacity-70" />}
+                accent="info"
+                icon={<Users size={16} />}
             />
             <KpiCard
                 label="Total Points"
                 value={data.totalPointsInCirculation.toLocaleString()}
-                icon={<Coins className="w-4 h-4 opacity-70" />}
+                accent="info"
+                icon={<Coins size={16} />}
             />
             <KpiCard
                 label="Earned (This Month)"
                 value={`+${data.pointsEarnedThisMonth.toLocaleString()}`}
-                icon={<TrendingUp className="w-4 h-4 text-primary" />}
+                accent="accent"
+                icon={<TrendingUp size={16} />}
             />
             <KpiCard
                 label="Redeemed (This Month)"
                 value={`-${data.pointsRedeemedThisMonth.toLocaleString()}`}
-                icon={<Gift className="w-4 h-4 text-danger" />}
+                accent="danger"
+                icon={<Gift size={16} />}
             />
         </div>
     );

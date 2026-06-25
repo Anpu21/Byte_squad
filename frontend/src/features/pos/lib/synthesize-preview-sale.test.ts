@@ -1,6 +1,38 @@
 import { describe, it, expect } from 'vitest';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
+import type { IPosLoyaltyOwner } from '@/features/pos/hooks/useLoyaltyAttach';
+import type { ILoyaltySettings } from '@/types';
 import { synthesizePreviewSale } from './synthesize-preview-sale';
+
+function buildOwner(overrides: Partial<IPosLoyaltyOwner> = {}): IPosLoyaltyOwner {
+    return {
+        ownerType: 'walkIn',
+        userId: null,
+        loyaltyCustomerId: 'walkin-1',
+        tier: 'bronze',
+        firstName: 'Nimal',
+        pointsBalance: 500,
+        ...overrides,
+    };
+}
+
+function buildSettings(
+    overrides: Partial<ILoyaltySettings> = {},
+): ILoyaltySettings {
+    return {
+        id: 'default',
+        earnPoints: 1,
+        earnPerAmount: 100,
+        pointValue: 1,
+        redeemCapPercent: 20,
+        minRedeemablePoints: 100,
+        silverTierPoints: 1000,
+        goldTierPoints: 5000,
+        updatedByUserId: null,
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        ...overrides,
+    };
+}
 
 /**
  * Build a fully-derived `ICartItem` for the synthesizer specs. The
@@ -191,5 +223,59 @@ describe('synthesizePreviewSale', () => {
         // The preview is, by definition, not a printed receipt.
         expect(sale.billPrinted).toBe(false);
         expect(sale.billPrintCount).toBe(0);
+    });
+
+    it('keeps total gross and shows the points-settled amount as paid in the preview', () => {
+        const cart = [
+            buildCartItem({
+                lineSubtotal: 1000,
+                lineTotal: 1000,
+                lineDiscountAmount: 0,
+                lineTaxAmount: 0,
+            }),
+        ];
+        const sale = synthesizePreviewSale({
+            cart,
+            invoiceNumber: 'INV-PREVIEW',
+            cartDiscountPercentage: 0,
+            loyaltyOwner: buildOwner({ pointsBalance: 500 }),
+            loyaltyRedeemPoints: 200, // exactly the 20%-of-1000 cap
+            loyaltySettings: buildSettings(),
+        });
+
+        // Sale total stays GROSS; points settle Rs200 so Rs800 is still owed.
+        expect(sale.total).toBe(1000);
+        expect(sale.paidAmount).toBe(200);
+        expect(sale.balanceDue).toBe(800);
+        expect(sale.loyalty).toEqual({
+            ownerType: 'walkIn',
+            earned: 8, // floor(800 / 100)
+            redeemed: 200,
+            redeemValue: 200,
+            newBalance: 308, // 500 - 200 + 8
+        });
+    });
+
+    it('clamps the previewed redeem to the subtotal cap, not the wallet balance', () => {
+        const cart = [
+            buildCartItem({
+                lineSubtotal: 1000,
+                lineTotal: 1000,
+                lineDiscountAmount: 0,
+                lineTaxAmount: 0,
+            }),
+        ];
+        const sale = synthesizePreviewSale({
+            cart,
+            invoiceNumber: 'INV-PREVIEW',
+            cartDiscountPercentage: 0,
+            loyaltyOwner: buildOwner({ pointsBalance: 500 }),
+            loyaltyRedeemPoints: 500, // asks for all 500, capped to 200
+            loyaltySettings: buildSettings(),
+        });
+
+        expect(sale.loyalty?.redeemed).toBe(200);
+        expect(sale.loyalty?.redeemValue).toBe(200);
+        expect(sale.paidAmount).toBe(200);
     });
 });

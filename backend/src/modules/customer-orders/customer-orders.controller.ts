@@ -89,26 +89,15 @@ export class CustomerOrdersController {
     return this.service.cancelByUser(id, userId);
   }
 
-  @Patch(APP_ROUTES.CUSTOMER_ORDERS.ACCEPT)
+  @Patch(APP_ROUTES.CUSTOMER_ORDERS.NOT_COLLECTED)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
-  accept(
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  markNotCollected(
     @Param('id') id: string,
     @CurrentUser()
     actor: { id: string; role: UserRole; branchId: string | null },
   ) {
-    return this.service.acceptByStaff(id, actor);
-  }
-
-  @Patch(APP_ROUTES.CUSTOMER_ORDERS.REJECT)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
-  reject(
-    @Param('id') id: string,
-    @CurrentUser()
-    actor: { id: string; role: UserRole; branchId: string | null },
-  ) {
-    return this.service.rejectByStaff(id, actor);
+    return this.service.markNotCollected(id, actor);
   }
 
   @Post(APP_ROUTES.CUSTOMER_ORDERS.FULFILL)

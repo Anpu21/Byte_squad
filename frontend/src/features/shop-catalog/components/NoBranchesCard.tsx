@@ -1,9 +1,9 @@
-import { Store } from 'lucide-react';
+import { LuStore as Store } from 'react-icons/lu';
 
 export function NoBranchesCard() {
     return (
         <div className="max-w-md mx-auto py-16">
-            <div className="bg-surface border border-border rounded-md p-7 text-center">
+            <div className="bg-surface border border-border rounded-xl shadow-sm-token p-6 text-center">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-2 border border-border mb-4">
                     <Store size={20} className="text-text-1" />
                 </div>

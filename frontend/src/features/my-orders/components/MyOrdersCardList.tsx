@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Eye } from 'lucide-react';
+import { LuEye as Eye } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { formatCurrency } from '@/lib/utils';
 import type { ICustomerOrder } from '@/types';

@@ -1,5 +1,6 @@
 import api from './api';
 import type { IApiResponse, IUserProfile } from '@/types';
+import type { AppLanguage } from '@/i18n/config';
 
 export const profileService = {
     getProfile: async (): Promise<IUserProfile> => {
@@ -11,6 +12,7 @@ export const profileService = {
         firstName?: string;
         lastName?: string;
         phone?: string | null;
+        language?: AppLanguage;
     }): Promise<IUserProfile> => {
         const response = await api.patch<IApiResponse<IUserProfile>>('/users/profile', data);
         return response.data.data;
