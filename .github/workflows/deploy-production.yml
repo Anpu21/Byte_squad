@@ -1,19 +1,28 @@
-# ╔═══════════════════════════════════════════════════════════╗
-# ║  LedgerPro — Production CI/CD                              ║
-# ║  Test (BE + FE) → Deploy backend (Fly) → Deploy frontend  ║
-# ╚═══════════════════════════════════════════════════════════╝
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║  LedgerPro — Production CI/CD                                      ║
+# ║  Test (BE + FE) → Build+push backend (GHCR) → Deploy backend      ║
+# ║  (DigitalOcean droplet) → Deploy frontend (Cloudflare Pages)      ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 #
-# On push to main: both test suites run in parallel; on success the Fly backend
-# deploys (its release_command runs pending DB migrations), then the Cloudflare
-# Pages frontend deploys. A failing test blocks both deploys; a failing
-# migration aborts the backend release so the frontend never ships.
+# On push to main: both test suites run in parallel; on success the backend
+# image is built and pushed to GHCR, then deployed to the DigitalOcean droplet
+# over SSH (a one-shot `migrate` service runs pending DB migrations before the
+# app serves), then the Cloudflare Pages frontend deploys. A failing test blocks
+# all deploys; a failing migration aborts `compose up`, so the old container
+# keeps serving and the frontend never ships.
 #
 # Required repo secrets (Settings → Secrets and variables → Actions):
-#   FLY_API_TOKEN          — fly tokens create deploy -a ledgerpro-api
+#   SERVER_HOST            — DigitalOcean droplet host / IP
+#   SERVER_USER            — SSH user on the droplet
+#   SSH_PRIVATE_KEY        — SSH private key for that user
+#   GHCR_PAT               — GitHub PAT with read:packages (droplet pulls the image)
 #   CLOUDFLARE_API_TOKEN   — Account · Cloudflare Pages · Edit
 #   CLOUDFLARE_ACCOUNT_ID
 #   VITE_API_URL           — https://api.ledgerpro.shop/api/v1
 #   VITE_SOCKET_URL        — https://api.ledgerpro.shop
+#
+# One-time on the droplet: place docker-compose.prod.yml in ~/ledgerpro and
+# create ~/ledgerpro/.env (see .env.production.example).
 
 name: Deploy Production
 
@@ -70,20 +79,70 @@ jobs:
       - run: pnpm run test
       - run: pnpm run build
 
-  deploy-backend:
-    name: Deploy · Backend (Fly)
+  build-backend:
+    name: Build & Push · Backend (GHCR)
     needs: [test-backend, test-frontend]
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.img.outputs.image }}
+      image_tag: ${{ steps.img.outputs.image_tag }}
     steps:
       - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Deploy to Fly (release_command runs pending DB migrations)
-        run: flyctl deploy --remote-only
+      - name: Resolve image ref (GHCR paths must be lowercase)
+        id: img
+        run: |
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "image=ghcr.io/${owner}/ledgerpro-backend" >> "$GITHUB_OUTPUT"
+          echo "image_tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          target: production
+          push: true
+          tags: |
+            ${{ steps.img.outputs.image }}:${{ steps.img.outputs.image_tag }}
+            ${{ steps.img.outputs.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-backend:
+    name: Deploy · Backend (DigitalOcean Droplet)
+    needs: [build-backend]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # Pull the freshly-built image on the droplet and restart via compose.
+      # docker-compose.prod.yml + .env are pre-placed in ~/ledgerpro (one-time).
+      - name: Deploy over SSH (pull → migrate → restart)
+        uses: appleboy/ssh-action@v1
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          IMAGE_TAG: ${{ needs.build-backend.outputs.image_tag }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: IMAGE_TAG,GHCR_USERNAME,GHCR_PAT
+          script: |
+            set -euo pipefail
+            cd ~/ledgerpro
+            echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+            export IMAGE_TAG
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker image prune -f
 
   deploy-frontend:
     name: Deploy · Frontend (Cloudflare Pages)
