@@ -77,8 +77,10 @@ export class PayrollController {
     return this.payroll.getById(id, actor);
   }
 
+  // Writes own the payment lifecycle — admin-only. Managers keep the read
+  // endpoints above (list / csv / getById), branch-scoped in the service.
   @Post(APP_ROUTES.HR.PAYROLL.GENERATE)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   generate(
     @Body() dto: GeneratePayrollDto,
     @CurrentUser() actor: PayrollActor,
@@ -87,7 +89,7 @@ export class PayrollController {
   }
 
   @Patch(APP_ROUTES.HR.PAYROLL.APPROVE)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   approve(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() actor: PayrollActor,
@@ -96,7 +98,7 @@ export class PayrollController {
   }
 
   @Patch(APP_ROUTES.HR.PAYROLL.MARK_PAID)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   markPaid(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: MarkPayrollPaidDto,
@@ -106,7 +108,7 @@ export class PayrollController {
   }
 
   @Patch(APP_ROUTES.HR.PAYROLL.CANCEL)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   cancel(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() actor: PayrollActor,

@@ -100,8 +100,8 @@ describe('PayrollController', () => {
   it('markPaid delegates dto and actor', async () => {
     const dto = {
       paymentDate: '2026-06-05',
-      paymentMethod: 'Bank_Transfer' as const,
-      bankReferenceNo: 'TRX-001',
+      paymentMethod: 'Card' as const,
+      paymentReference: 'TRX-001',
     };
     service.markPaid.mockResolvedValue(makePayroll({ paymentStatus: 'Paid' }));
     await controller.markPaid(PAYROLL_ID, dto, ADMIN_ACTOR);

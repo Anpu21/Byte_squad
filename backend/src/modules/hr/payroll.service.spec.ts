@@ -146,8 +146,8 @@ function makePayroll(over: Partial<Payroll> = {}): Payroll {
     etfEmployerContribution: 3196.8,
     paymentStatus: 'Pending',
     paymentDate: null,
-    paymentMethod: 'Bank_Transfer',
-    bankReferenceNo: null,
+    paymentMethod: 'Card',
+    paymentReference: null,
     paySlipGenerated: false,
     paySlipUrl: null,
     notes: null,
@@ -430,8 +430,8 @@ describe('PayrollService', () => {
   describe('markPaid', () => {
     const dto = {
       paymentDate: '2026-06-05',
-      paymentMethod: 'Bank_Transfer' as const,
-      bankReferenceNo: 'TRX-001',
+      paymentMethod: 'Card' as const,
+      paymentReference: 'TRX-001',
     };
 
     it('Approved → Paid stamps payment fields', async () => {
@@ -442,8 +442,8 @@ describe('PayrollService', () => {
         makePayroll({
           paymentStatus: 'Paid',
           paymentDate: new Date('2026-06-05'),
-          paymentMethod: 'Bank_Transfer',
-          bankReferenceNo: 'TRX-001',
+          paymentMethod: 'Card',
+          paymentReference: 'TRX-001',
         }),
       );
       const out = await service.markPaid(PAYROLL_ID, dto, ADMIN_ACTOR);
@@ -452,8 +452,8 @@ describe('PayrollService', () => {
         PAYROLL_ID,
         expect.objectContaining({
           paymentStatus: 'Paid',
-          paymentMethod: 'Bank_Transfer',
-          bankReferenceNo: 'TRX-001',
+          paymentMethod: 'Card',
+          paymentReference: 'TRX-001',
         }),
       );
     });
@@ -501,10 +501,10 @@ describe('PayrollService', () => {
         ADMIN_ACTOR,
       );
       expect(csv).toContain(
-        'employee_code,bank_name,bank_branch,bank_account_no,bank_account_name,net_salary',
+        'employee_code,employee_name,pay_period,gross_salary,net_salary,payment_method,payment_status,payment_date',
       );
       expect(csv).toContain(
-        'EMP001,Sampath,Colombo Main,1234567890,Jane Doe,92000',
+        'EMP001,Jane Doe,2026-05,106560,92000,Card,Approved,',
       );
       // listForBranch invoked once with the IN([Approved, Paid]) filter.
       expect(payrollRepo.listForBranch).toHaveBeenCalledTimes(1);

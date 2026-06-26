@@ -345,11 +345,10 @@ export function buildPayrollRow(args: BuildPayrollRowArgs): Partial<Payroll> {
 /**
  * CSV field escape. Wraps the value in double quotes when it contains
  * any of `,`, `"`, `\n`, or `\r`, doubling any embedded quotes. Numbers
- * round-trip via `String(n)` so the bank's loader sees `1500.50` not
- * `1500.5`.
+ * round-trip via `String(n)` so the reader sees `1500.50` not `1500.5`.
  *
- * `null` / `undefined` collapse to `""` so a missing bank field still
- * holds its column position in the row.
+ * `null` / `undefined` collapse to `""` so a missing field still holds
+ * its column position in the row.
  */
 export function csvField(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return '""';
@@ -360,42 +359,56 @@ export function csvField(value: string | number | null | undefined): string {
   return str;
 }
 
-export const BANK_CSV_HEADER = [
+/** Render a `date` value (Date or `YYYY-MM-DD` string) as `YYYY-MM-DD`, `''` when null. */
+function formatCsvDate(value: Date | string | null | undefined): string {
+  if (value === null || value === undefined) return '';
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).slice(0, 10);
+}
+
+export const PAYROLL_CSV_HEADER = [
   'employee_code',
-  'bank_name',
-  'bank_branch',
-  'bank_account_no',
-  'bank_account_name',
+  'employee_name',
+  'pay_period',
+  'gross_salary',
   'net_salary',
+  'payment_method',
+  'payment_status',
+  'payment_date',
 ].join(',');
 
 /**
- * Format the bank-disbursement CSV. One row per (payroll, employee)
- * pair — caller is responsible for aligning the two lists and for
- * filtering out skipped employees. Returns a string ending with a
- * trailing newline so the bank's import script can stream the result
- * directly without re-terminating.
+ * Format the payroll export CSV — one row per payroll. A plain record of
+ * each run (who, which period, the gross/net, and how it was paid); no
+ * bank details. Returns a string ending with a trailing newline so a
+ * reader can stream the result directly without re-terminating.
  */
-export function formatBankCsv(
-  pairs: Array<{
+export function formatPayrollCsv(
+  rows: Array<{
     employeeCode: string;
-    bankName: string | null;
-    bankBranch: string | null;
-    bankAccountNo: string | null;
-    bankAccountName: string | null;
+    employeeName: string;
+    payPeriodMonth: number;
+    payPeriodYear: number;
+    grossSalary: number;
     netSalary: number;
+    paymentMethod: string;
+    paymentStatus: string;
+    paymentDate: Date | string | null;
   }>,
 ): string {
-  const lines = [BANK_CSV_HEADER];
-  for (const p of pairs) {
+  const lines = [PAYROLL_CSV_HEADER];
+  for (const r of rows) {
+    const period = `${r.payPeriodYear}-${String(r.payPeriodMonth).padStart(2, '0')}`;
     lines.push(
       [
-        csvField(p.employeeCode),
-        csvField(p.bankName),
-        csvField(p.bankBranch),
-        csvField(p.bankAccountNo),
-        csvField(p.bankAccountName),
-        csvField(p.netSalary),
+        csvField(r.employeeCode),
+        csvField(r.employeeName),
+        csvField(period),
+        csvField(r.grossSalary),
+        csvField(r.netSalary),
+        csvField(r.paymentMethod),
+        csvField(r.paymentStatus),
+        csvField(formatCsvDate(r.paymentDate)),
       ].join(','),
     );
   }
