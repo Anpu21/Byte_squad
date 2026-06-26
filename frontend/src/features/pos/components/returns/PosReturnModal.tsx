@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Search } from 'lucide-react';
+import { LuSearch as Search } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { formatCurrency } from '@/lib/utils';
@@ -10,7 +10,7 @@ import { returnsService } from '@/services/returns.service';
 import type { ICreateSalesReturnLine, ISaleReturnLookup } from '@/types';
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
 interface IPosReturnModalProps {
     isOpen: boolean;

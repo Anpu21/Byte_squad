@@ -132,6 +132,7 @@ describe('AttendanceService', () => {
     const employeesRepoMock: Partial<jest.Mocked<EmployeesRepository>> = {
       findById: jest.fn(),
       findByUserId: jest.fn(),
+      listForBranch: jest.fn(),
     };
     const payrollSettingsMock: Partial<jest.Mocked<PayrollSettingsService>> = {
       // Default to the seed grace window so existing late-window
@@ -155,6 +156,33 @@ describe('AttendanceService', () => {
     employeesRepo = module.get(EmployeesRepository);
     payrollSettings = module.get(PayrollSettingsService);
     void payrollSettings;
+  });
+
+  describe('todayStatus', () => {
+    it('flags active employees with no row today as pending (manager → own branch)', async () => {
+      employeesRepo.listForBranch.mockResolvedValue({
+        rows: [
+          makeEmployee({ id: 'e1', fullName: 'Ravi', role: 'Courier' }),
+          makeEmployee({ id: 'e2', fullName: 'Emma', role: 'Cashier' }),
+        ],
+        total: 2,
+      });
+      // Only e2 has a row today → e1 is pending.
+      attendanceRepo.listForBranch.mockResolvedValue([
+        makeAttendance({ employeeId: 'e2' }),
+      ]);
+
+      const result = await service.todayStatus(MANAGER_A_ACTOR);
+
+      expect(employeesRepo.listForBranch).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: BRANCH_A, status: 'Active' }),
+      );
+      expect(result.total).toBe(2);
+      expect(result.recorded).toBe(1);
+      expect(result.pendingCount).toBe(1);
+      expect(result.pending.map((p) => p.employeeId)).toEqual(['e1']);
+      expect(result.pending[0].role).toBe('Courier');
+    });
   });
 
   describe('list', () => {

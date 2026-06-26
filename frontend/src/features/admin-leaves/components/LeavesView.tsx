@@ -4,7 +4,7 @@ import Card from '@/components/ui/Card';
 import PageHeader from '@/components/ui/PageHeader';
 import { UserRole } from '@/constants/enums';
 import { useAuth } from '@/hooks/useAuth';
-import { useEmployees } from '@/features/admin-employees/hooks/useEmployees';
+import { useEmployees } from '@/features/admin-employees';
 import { ApplyLeaveModal } from './ApplyLeaveModal';
 import { LeavesFilters } from './LeavesFilters';
 import { LeavesTable } from './LeavesTable';

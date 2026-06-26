@@ -42,19 +42,17 @@ export default defineConfig([
               message:
                 'Import types from the @/types barrel, not deep domain paths (DoD).',
             },
+            {
+              group: ['@/pages', '@/pages/*', '@/pages/**'],
+              message:
+                'pages/ was removed in the feature-based migration — every screen lives in its feature. Import via @/features/<feature> (its barrel).',
+            },
           ],
         },
       ],
       // ratchet — visible now, flip to 'error' in the noted phase
       'no-console': 'error', // enforced (Phase 2) — surface failures via toast, not console
       'max-lines': ['warn', { max: 200, skipBlankLines: true, skipComments: true }], // Phase 5: components ≤ 200
-    },
-  },
-  {
-    // Pages are thin orchestrators — stricter budget. Phase 5: flip to error.
-    files: ['src/pages/**/*.{ts,tsx}'],
-    rules: {
-      'max-lines': ['warn', { max: 120, skipBlankLines: true, skipComments: true }],
     },
   },
   {

@@ -6,6 +6,22 @@ export function formatRevenue(amount: number): string {
     }).format(amount);
 }
 
+/**
+ * Compact money for donut centres and chart axes: 1_815_377 → "1.82M",
+ * 235_225 → "235K". No currency symbol — callers pair it with a "Total" caption
+ * or an axis. Negatives are preserved.
+ */
+export function formatCompact(amount: number): string {
+    const abs = Math.abs(amount);
+    if (abs >= 1_000_000) {
+        return `${(amount / 1_000_000).toFixed(2).replace(/\.?0+$/, '')}M`;
+    }
+    if (abs >= 1_000) {
+        return `${Math.round(amount / 1_000)}K`;
+    }
+    return String(Math.round(amount));
+}
+
 export function formatTime(dateStr: string): string {
     return new Date(dateStr).toLocaleTimeString('en-US', {
         hour: '2-digit',

@@ -1,4 +1,4 @@
-import { Bell } from 'lucide-react';
+import { LuBell as Bell } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import type { INotification } from '@/types/index';
 import { NotificationRow } from './NotificationRow';

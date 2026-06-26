@@ -1,4 +1,4 @@
-import { Award, Shield, Crown } from 'lucide-react';
+import { LuAward as Award, LuShield as Shield, LuCrown as Crown } from 'react-icons/lu';
 import type { LoyaltyTier } from '@/types';
 import { cn } from '@/lib/utils';
 

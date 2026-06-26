@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { LuPlus as Plus } from 'react-icons/lu';
 import PageHeader from '@/components/ui/PageHeader';
 import Button from '@/components/ui/Button';
 import { FRONTEND_ROUTES } from '@/constants/routes';

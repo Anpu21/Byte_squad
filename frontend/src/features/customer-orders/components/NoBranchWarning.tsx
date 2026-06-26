@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react';
+import { LuTriangleAlert as AlertTriangle } from 'react-icons/lu';
 
 export function NoBranchWarning() {
     return (

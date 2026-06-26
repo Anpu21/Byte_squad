@@ -9,6 +9,7 @@ import type {
 import type { IPosLoyaltyOwner } from '@/features/pos/hooks/useLoyaltyAttach';
 import { TransactionType, DiscountType, PaymentMethod } from '@/constants/enums';
 import { applyCartDiscount } from '@/features/pos/components/invoice-total/pos-invoice-total.helpers';
+import { sizeLoyaltyRedeem } from '@/features/pos/lib/loyalty-redeem-value';
 
 interface IPreviewSaleArgs {
     cart: readonly ICartItem[];
@@ -126,8 +127,13 @@ export function synthesizePreviewSale({
         owner: loyaltyOwner ?? null,
         redeemPoints: loyaltyRedeemPoints ?? 0,
         settings: loyaltySettings ?? null,
+        itemsSubtotal,
         grossPaidAmount: cartTotal,
     });
+    // Points settle `redeemValue` of the bill up front; the money remainder
+    // is what the cashier still collects, so the preview shows it as the
+    // outstanding balance with the points portion already "paid".
+    const redeemValue = loyalty?.redeemValue ?? 0;
 
     return {
         id: `${PREVIEW_ID_PREFIX}sale`,
@@ -153,8 +159,8 @@ export function synthesizePreviewSale({
         priceLevel: 'Retail',
         discountPercentage: cartDiscountPercentage,
         taxRate: 0,
-        paidAmount: 0,
-        balanceDue: cartTotal,
+        paidAmount: redeemValue,
+        balanceDue: Math.max(0, cartTotal - redeemValue),
         paymentStatus: 'Unpaid',
         status: 'Active',
         location: 'Shop',
@@ -174,60 +180,45 @@ interface ISynthesizeLoyaltyFooterArgs {
     owner: IPosLoyaltyOwner | null;
     redeemPoints: number;
     settings: ILoyaltySettings | null;
+    itemsSubtotal: number;
     grossPaidAmount: number;
 }
 
 /**
  * Mirror of the BE `applyLoyalty` math used purely for the live
- * preview. We award points on the **net** paid amount (gross minus
- * the redeem value), matching `pos-write.service.ts`: the cashier
- * does not earn points on the value of the points they just spent.
- * Returns `null` when no owner is attached so the bill template
- * suppresses the footer block.
+ * preview. The redeem cap is sized via the shared `sizeLoyaltyRedeem`
+ * helper (same `itemsSubtotal` base as the backend), and points are
+ * awarded on the **net** paid amount (gross minus the redeem value),
+ * matching `pos-write.service.ts`: the cashier does not earn points on
+ * the value of the points they just spent. Returns `null` when no owner
+ * is attached so the bill template suppresses the footer block.
  */
 function synthesizeLoyaltyFooter({
     owner,
     redeemPoints,
     settings,
+    itemsSubtotal,
     grossPaidAmount,
 }: ISynthesizeLoyaltyFooterArgs): ISaleLoyaltyResult | null {
     if (!owner) return null;
-    const pointValue =
-        settings && settings.pointValue > 0 ? settings.pointValue : 1;
-    const maxBySettings = settings
-        ? Math.min(
-              Math.max(0, owner.pointsBalance - settings.minRedeemablePoints),
-              Math.floor(
-                  ((grossPaidAmount * settings.redeemCapPercent) / 100) /
-                      pointValue,
-              ),
-          )
-        : owner.pointsBalance;
-    const clampedRedeem = Math.max(
-        0,
-        Math.min(Math.floor(redeemPoints), maxBySettings),
-    );
-    if (!settings) {
-        return {
-            ownerType: owner.ownerType,
-            earned: 0,
-            redeemed: clampedRedeem,
-            newBalance: owner.pointsBalance - clampedRedeem,
-        };
-    }
-    const redeemValueLkr = clampedRedeem * pointValue;
-    const netPaidAmount = Math.max(0, grossPaidAmount - redeemValueLkr);
+    const { cappedPoints, redeemValue } = sizeLoyaltyRedeem({
+        owner,
+        requestedPoints: redeemPoints,
+        itemsSubtotal,
+        settings,
+    });
+    const netPaidAmount = Math.max(0, grossPaidAmount - redeemValue);
     const earned =
-        settings.earnPerAmount > 0
+        settings && settings.earnPerAmount > 0
             ? Math.floor(
-                  (netPaidAmount / settings.earnPerAmount) *
-                      settings.earnPoints,
+                  (netPaidAmount / settings.earnPerAmount) * settings.earnPoints,
               )
             : 0;
     return {
         ownerType: owner.ownerType,
         earned,
-        redeemed: clampedRedeem,
-        newBalance: owner.pointsBalance - clampedRedeem + earned,
+        redeemed: cappedPoints,
+        redeemValue,
+        newBalance: owner.pointsBalance - cappedPoints + earned,
     };
 }

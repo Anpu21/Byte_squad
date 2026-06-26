@@ -1,4 +1,4 @@
-import { Clock, LogIn, LogOut } from 'lucide-react';
+import { LuClock as Clock, LuLogIn as LogIn, LuLogOut as LogOut } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import type { IAttendance } from '@/types';
 import { clockHm } from '@/features/worker-dashboard/lib/attendance-metrics';

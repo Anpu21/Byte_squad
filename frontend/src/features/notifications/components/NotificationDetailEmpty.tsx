@@ -1,4 +1,4 @@
-import { Bell } from 'lucide-react';
+import { LuBell as Bell } from 'react-icons/lu';
 import Card, { CardContent } from '@/components/ui/Card';
 
 export function NotificationDetailEmpty() {

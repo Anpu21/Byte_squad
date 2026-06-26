@@ -25,7 +25,7 @@ export interface TenderTotalsRaw {
 }
 
 /**
- * Shift repository (Rules.md §7). Also owns the window aggregates the
+ * Shift repository (Rules.md R7). Also owns the window aggregates the
  * Z-report needs: tender totals come from the payments join, sale
  * count/total from sales alone (so payment-row cardinality can never
  * double-count), refunds from sales_returns by the same cashier.

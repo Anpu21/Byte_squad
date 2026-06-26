@@ -1,4 +1,4 @@
-import { ArrowLeft, Save } from 'lucide-react';
+import { LuArrowLeft as ArrowLeft, LuSave as Save } from 'react-icons/lu';
 import { useNavigate } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';

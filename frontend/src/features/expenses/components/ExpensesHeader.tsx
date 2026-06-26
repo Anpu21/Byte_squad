@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { LuPlus as Plus } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import { monthLabel } from '../lib/format';
 

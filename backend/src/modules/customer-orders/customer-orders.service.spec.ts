@@ -9,6 +9,7 @@ import { CustomerOrdersService } from './customer-orders.service';
 import { CustomerOrdersRepository } from './customer-orders.repository';
 import { CustomerOrder } from './entities/customer-order.entity';
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
+import { CustomerOrderPaymentStatus } from '@common/enums/customer-order-payment-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
@@ -168,6 +169,66 @@ describe('CustomerOrdersService', () => {
       } as CustomerOrder);
       await expect(service.cancelByUser('r1', 'owner')).rejects.toBeInstanceOf(
         BadRequestException,
+      );
+    });
+  });
+
+  describe('markNotCollected', () => {
+    const actor = { id: 'c1', role: UserRole.CASHIER, branchId: 'branch-7' };
+
+    it('forbids marking an order from another branch (non-admin)', async () => {
+      repo.findById.mockResolvedValue({
+        id: 'o1',
+        branchId: 'branch-OTHER',
+        status: CustomerOrderStatus.PENDING,
+      } as CustomerOrder);
+      await expect(
+        service.markNotCollected('o1', actor),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repo.updateStatus).not.toHaveBeenCalled();
+    });
+
+    it('rejects an order that is no longer awaiting collection', async () => {
+      repo.findById.mockResolvedValue({
+        id: 'o1',
+        branchId: 'branch-7',
+        status: CustomerOrderStatus.COMPLETED,
+      } as CustomerOrder);
+      await expect(
+        service.markNotCollected('o1', actor),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repo.updateStatus).not.toHaveBeenCalled();
+    });
+
+    it('marks an unpaid pickup not collected and cancels the payment hold', async () => {
+      repo.findById.mockResolvedValue({
+        id: 'o1',
+        branchId: 'branch-7',
+        status: CustomerOrderStatus.PENDING,
+        paymentStatus: CustomerOrderPaymentStatus.UNPAID,
+        loyaltyPointsRedeemed: 0,
+      } as CustomerOrder);
+      await service.markNotCollected('o1', actor);
+      expect(repo.updateStatus).toHaveBeenCalledWith(
+        'o1',
+        CustomerOrderStatus.NOT_COLLECTED,
+        { paymentStatus: CustomerOrderPaymentStatus.CANCELLED },
+      );
+    });
+
+    it('keeps a PAID online order paid when marking not collected', async () => {
+      repo.findById.mockResolvedValue({
+        id: 'o1',
+        branchId: 'branch-7',
+        status: CustomerOrderStatus.PENDING,
+        paymentStatus: CustomerOrderPaymentStatus.PAID,
+        loyaltyPointsRedeemed: 0,
+      } as CustomerOrder);
+      await service.markNotCollected('o1', actor);
+      expect(repo.updateStatus).toHaveBeenCalledWith(
+        'o1',
+        CustomerOrderStatus.NOT_COLLECTED,
+        undefined,
       );
     });
   });

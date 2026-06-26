@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react';
-import { Save, RotateCcw } from 'lucide-react';
+import { LuSave as Save, LuRotateCcw as RotateCcw } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';

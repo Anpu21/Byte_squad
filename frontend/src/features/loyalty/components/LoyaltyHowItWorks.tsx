@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { LuChevronDown as ChevronDown } from 'react-icons/lu';
 import { useLoyaltySettings } from '../hooks/useLoyaltySettings';
 import {
     formatEarnRule,
@@ -17,7 +17,7 @@ export function LoyaltyHowItWorks() {
                 type="button"
                 onClick={() => setOpen((o) => !o)}
                 aria-expanded={open}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20 rounded-md"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25 rounded-md"
             >
                 <span>How it works</span>
                 <ChevronDown

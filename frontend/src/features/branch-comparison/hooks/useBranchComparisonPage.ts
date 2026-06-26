@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { UserRole } from "@/constants/enums";
 import { useAuth } from "@/hooks/useAuth";
 import { adminService } from "@/services/admin.service";
-import { userService } from "@/services/user.service";
 import { queryKeys } from "@/lib/queryKeys";
+import { CHART_COLORS } from "@/components/charts/chart-palette";
+import { BRANCH_ANALYTICS_SECTIONS } from "@/types";
 import type {
   IBranchAnalyticsComparisonEntry,
   IBranchAnalyticsComparisonRequest,
@@ -77,6 +78,12 @@ function unique(ids: readonly string[]): string[] {
   return Array.from(new Set(ids));
 }
 
+// Request the opt-in `trend` section (the Summary daily-revenue chart + the
+// Revenue KPI sparkline) alongside the default metric sections. Kept
+// view-independent so switching sub-tabs reuses the cached response instead of
+// refetching; `trend` is cheap and Summary is the default view.
+const COMPARISON_SECTIONS = [...BRANCH_ANALYTICS_SECTIONS, "trend" as const];
+
 function toRequest(
   ids: readonly string[],
   start: string,
@@ -86,6 +93,7 @@ function toRequest(
     branchIds: [...ids],
     startDate: new Date(start).toISOString(),
     endDate: new Date(`${end}T23:59:59.999`).toISOString(),
+    sections: COMPARISON_SECTIONS,
   };
 }
 
@@ -139,9 +147,12 @@ export function useBranchComparisonPage() {
   const userBranchId = user?.branchId;
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // The full /branches list is multi-tenant scoped (a manager only sees their
+  // own branch), which would leave the picker with nothing to compare against.
+  // The branch-analytics roster returns every branch for admins AND managers.
   const branchesQuery = useQuery({
-    queryKey: queryKeys.branches.all(),
-    queryFn: userService.getBranches,
+    queryKey: queryKeys.admin.branchAnalyticsBranches(),
+    queryFn: adminService.getBranchAnalyticsBranches,
   });
 
   const defaultRange = useMemo(() => {
@@ -343,6 +354,27 @@ export function useBranchComparisonPage() {
     };
   }, [comparisonQuery.data]);
 
+  const trend = comparisonQuery.data?.trend;
+
+  // branchId → palette colour, shared by the daily-trend lines, filter chips,
+  // ranking, scatter and top-products so a branch reads the same colour
+  // everywhere. Keyed off the returned entry order (matches `trend.branches`).
+  const branchColors = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    (comparisonQuery.data?.branches ?? []).forEach((branch, idx) => {
+      map[branch.branchId] = CHART_COLORS[idx % CHART_COLORS.length];
+    });
+    return map;
+  }, [comparisonQuery.data?.branches]);
+
+  // Combined daily revenue across branches — the Revenue KPI sparkline. The
+  // only KPI with a real daily series; the rest show value + tag + note only.
+  const revenueSpark = useMemo<number[]>(() => {
+    return (trend?.days ?? []).map((day) =>
+      Object.values(day.byBranch).reduce((sum, value) => sum + value, 0),
+    );
+  }, [trend]);
+
   const selectedBranchNames = selectedIds
     .map((id) => branches.find((branch) => branch.id === id)?.name)
     .filter(Boolean) as string[];
@@ -377,6 +409,9 @@ export function useBranchComparisonPage() {
     chartData,
     leaderboard,
     totals,
+    trend,
+    branchColors,
+    revenueSpark,
     selectedBranchNames,
   };
 }

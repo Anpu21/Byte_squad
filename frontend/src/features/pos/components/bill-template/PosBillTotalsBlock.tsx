@@ -20,6 +20,10 @@ interface ITotalsRowProps {
  * own file so the parent template stays under the file-size budget.
  */
 export function PosBillTotalsBlock({ sale, payment }: IPosBillTotalsBlockProps) {
+    // Money settled by redeemed points. Prefer the persisted Payment column
+    // (present on reprints from the DB); fall back to the create-response
+    // loyalty summary (present in the live preview, where payment is null).
+    const loyaltyRedeemValue = payment?.loyaltyAmount ?? sale.loyalty?.redeemValue ?? 0;
     return (
         <dl className="pos-bill__totals w-full space-y-0.5 text-[11px] tabular-nums">
             <TotalsRow label="Subtotal" value={formatCurrency(sale.subtotal)} />
@@ -37,6 +41,12 @@ export function PosBillTotalsBlock({ sale, payment }: IPosBillTotalsBlockProps) 
                 value={formatCurrency(sale.total)}
                 emphasis
             />
+            {loyaltyRedeemValue > 0 ? (
+                <TotalsRow
+                    label="Points redeemed"
+                    value={`−${formatCurrency(loyaltyRedeemValue)}`}
+                />
+            ) : null}
             {payment && payment.cashAmount > 0 ? (
                 <TotalsRow
                     label="Cash"

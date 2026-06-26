@@ -1,283 +1,105 @@
 # Folder structure & file conventions
 
-> Loaded on demand from [`CLAUDE.md`](../CLAUDE.md).
+Source of truth for where code lives and how files are named. The frontend is
+mid-migration to a **feature-based** layout; this document defines the target
+shape every feature converges on. When existing code disagrees with this doc,
+the doc wins — that code is on its way to being migrated.
 
-This page is the **map** of the repo — where things live, what each folder is for, and the file-naming + one-thing-per-file conventions every change must follow. The full coding rules behind these conventions are in [`rules.md`](../rules.md) (§13 File organization, §14 Naming).
+> One thing per file. Services, controllers, repositories, modules, entities,
+> components, hooks, and interfaces each get their own file.
 
 ---
 
-## Repo root
+## Repository
 
 ```
 Byte_squad/
-├── backend/                  # NestJS 11 service (its own pnpm lockfile)
-├── frontend/                 # Vite 7 + React 19 SPA (its own pnpm lockfile)
-├── docs/                     # CLAUDE.md deep-dive index
-├── docker-compose.yml        # Postgres 16 + both apps
-├── ecosystem.config.cjs      # PM2 services (gitignored on prod)
-├── CLAUDE.md                 # Root index — slim, always loaded
-├── README.md                 # Public README
-├── Rules.md / rules.md       # Engineering rules (canonical)
-└── .gitattributes            # LF normalization for source files
+├── backend/          NestJS 11 · TypeORM · Passport JWT · socket.io
+├── frontend/         Vite 7 · React 19 · TS · Tailwind 4 · Redux Toolkit · TanStack Query
+├── docs/             these deep-dive docs
+├── docker-compose.yml
+├── rules.md          coding standards (authoritative)
+└── CLAUDE.md         agent guidance
 ```
-
-There is no root `package.json` and no `pnpm-workspace.yaml`. The two packages are independent (separate lockfiles); shared dev tooling (e.g. linters) lives in each package.
 
 ---
 
-## `backend/src/`
-
-NestJS 11 service. Module-per-domain under `modules/`, cross-cutting code under `common/`.
+## Frontend — `frontend/src/`
 
 ```
-backend/src/
-├── main.ts
-├── app.module.ts
-├── common/
-│   ├── cloudinary/           # @Global() CloudinaryService (uploadImage, uploadBuffer)
-│   ├── config/               # Config schemas + factory
-│   ├── decorators/           # @CurrentUser, @Public, @Roles
-│   ├── enums/                # UserRole, ExpenseStatus, …
-│   ├── filters/              # Global exception filters
-│   ├── guards/               # JwtAuthGuard, RolesGuard
-│   ├── interceptors/         # TransformInterceptor (success envelope)
-│   ├── pipes/                # Validation pipes
-│   ├── routes/app.routes.ts  # APP_ROUTES — single source of /api/v1 paths
-│   ├── seeds/                # admin-seed.service (idempotent, runs on boot)
-│   └── utils/                # random-password-generator, helpers
-└── modules/
-    ├── accounting/
-    ├── admin-portal/
-    ├── auth/
-    ├── branches/
-    ├── customer-requests/
-    ├── email/
-    ├── inventory/
-    ├── notifications/
-    ├── pos/
-    ├── products/
-    ├── shop/
-    ├── stock-transfers/
-    └── users/
-```
-
-### Per-module shape (canonical layout)
-
-```
-modules/<feature>/
-├── <feature>.module.ts             # Nest @Module definition
-├── <feature>.controller.ts         # Thin: request/response only
-├── <feature>.service.ts            # Business logic, no TypeORM imports
-├── <feature>.repository.ts         # All TypeORM calls (Repository Pattern §7)
-├── dto/
-│   ├── create-<thing>.dto.ts       # class-validator-decorated request shapes
-│   └── update-<thing>.dto.ts
-├── entities/
-│   └── <thing>.entity.ts           # TypeORM entities, one per file
-├── types/
-│   ├── index.ts                    # barrel — re-exports only
-│   └── <name>.type.ts              # one interface/type per file, kebab-case
-└── strategies/                     # auth/ only — passport strategies
-```
-
-### Repository Pattern status (per Rules.md §7)
-
-Modules that own their own DB tables get a `.repository.ts`:
-
-- **Migrated:** `accounting`, `branches`, `customer-requests`, `inventory`, `notifications`, `pos`, `products`, `stock-transfers`, `users`
-- **No repository (composes other modules / no DB access):** `admin-portal` (read-only aggregates), `auth` (uses `users` repo), `email` (no DB), `shop` (composes `products` + `inventory` + `branches`)
-
-**New modules MUST follow the Repository Pattern.** Service files must not contain `@InjectRepository` or any TypeORM symbol.
-
----
-
-## `frontend/src/`
-
-Vite 7 + React 19. Tailwind 4 with `@theme`-based design tokens. Redux Toolkit for session-critical state, TanStack Query for server data.
-
-```
-frontend/src/
-├── main.tsx
-├── App.tsx
-├── index.css                       # Design tokens (CSS vars + @theme)
-├── assets/                         # Static images / SVG
+src/
 ├── components/
-│   ├── Scanner/                    # UniversalScanner (camera barcode reader)
-│   ├── auth/                       # Auth widgets
-│   ├── charts/                     # AreaChart, BarChart (Recharts wrappers)
-│   ├── common/                     # Shared cross-feature widgets
-│   ├── notifications/              # NotificationDropdown, NotificationIcon, notificationUtils
-│   ├── requests/                   # StaffRequestDetailsModal, …
-│   ├── shop/                       # RequestDetailsModal, shop widgets
-│   ├── transfers/                  # Stock-transfer widgets
-│   └── ui/                         # MANDATORY UI primitives — see below
-├── constants/
-│   ├── enums.ts                    # NotificationType, UserRole, … (mirror of backend enums)
-│   └── routes.ts                   # FRONTEND_ROUTES — single source of paths
-├── features/                       # Feature-scoped UI + hooks + lib + types
-│   └── pos/                        # Cashier checkout workspace (see below)
-├── hooks/                          # One hook per file — useAuth, useConfirm, useTheme, useNotifications, …
-├── layouts/                        # AuthLayout, DashboardLayout, CustomerLayout
-├── lib/                            # utils.ts, exportUtils.ts (lazy jspdf/xlsx loaders), queryKeys.ts
-├── pages/                          # Route-level pages, grouped by feature folder
-│   ├── accounting/
-│   ├── admin/
-│   ├── auth/
-│   ├── branches/
-│   ├── dashboard/
-│   ├── inventory/
-│   ├── notifications/
-│   ├── pos/                        # PosPage.tsx (cashier), ScanOrderPage.tsx, TransactionsPage.tsx
-│   ├── requests/
-│   ├── shop/
-│   ├── transfers/
-│   └── users/
-├── routes/
-│   ├── AppRouter.tsx               # Single source of route truth
-│   ├── ProtectedRoute.tsx          # allowedRoles enforcement
-│   ├── PublicRoute.tsx             # Redirect logged-in users
-│   ├── SmartRedirect.tsx           # Role-based home dispatch
-│   └── routeMeta.ts                # Per-route metadata + helpers
-├── services/                       # API + socket clients (axios wrappers)
-├── store/
-│   ├── index.ts                    # Redux store wiring
-│   └── slices/                     # auth.slice, shopCart.slice (items only, no branchId)
-├── test/
-│   └── setup.ts                    # Vitest setup — jest-dom matchers + cleanup
-└── types/                          # See "Frontend types" below
+│   ├── ui/           SHARED design-system primitives (the only place primitives live)
+│   ├── charts/       shared chart wrappers (Recharts)
+│   ├── common/       cross-feature shared widgets (e.g. ExportMenu)
+│   ├── notifications/ app-wide notification chrome
+│   └── Scanner/      shared barcode/QR scanner
+├── features/         FEATURE MODULES — the bulk of the app (see "Feature shape")
+├── layouts/          AuthLayout · DashboardLayout · CustomerLayout
+├── routes/           central route registry (routes.config.tsx, guards, redirects)
+├── hooks/            app-wide hooks (useAuth, useConfirm, useTabParam, useTheme…)
+├── services/         per-domain API layer over one axios client (api.ts)
+├── store/            Redux Toolkit slices + selectors (session-critical state only)
+├── types/            domain/server types, barrelled per domain (@/types is the contract)
+├── lib/              framework-agnostic utilities (cn, formatCurrency, queryKeys…)
+├── constants/        FRONTEND_ROUTES, enums
+├── i18n/             i18next config + en/ta locales
+└── App.tsx · main.tsx
 ```
 
-### POS workspace (`features/pos/`)
+### Feature shape (canonical)
 
-Nine Shanel-shaped sections, plus hooks / lib / types. Page entry is `pages/pos/PosPage.tsx`. See `docs/architecture-frontend.md` for the surface guide.
-
-```
-frontend/src/features/pos/
-├── components/
-│   ├── action-buttons/              # F-key shortcut row
-│   ├── bill-template/               # Print template + portal-to-body host + preview modal
-│   ├── customer-info/               # Walk-in default + picker modal + snapshot card
-│   ├── information-box/             # Invoice no / cashier / branch / date-time card
-│   ├── invoice-total/               # Subtotals, discounts, tax, grand total
-│   ├── item-table/                  # Search input, results, sticky cart, numeric cells, unit + price-level
-│   ├── payment-forms/               # Cash / cheque / bank-transfer / credit forms + keep-balance + banners + summary
-│   ├── payment-method/              # Tender segmented control (CASH / CHEQUE / BANK_TRANSFER / CREDIT / MULTIPLE)
-│   └── recent-sale/                 # Sidebar of recent sales with reprint
-├── hooks/                           # usePosCart, usePosPageState, usePosBarcodeScan, usePaymentSubmit,
-│                                    # usePrintReceipt, usePosProductSearch, usePosProductUnits,
-│                                    # usePosProductInventory, usePosRecentSales, usePosInvoiceNumber,
-│                                    # usePosCustomerSearch, usePosSaleById, usePosCreateSale,
-│                                    # usePosVoidSale, usePosMarkPrinted
-├── lib/                             # cart-item-seed, line-total, multi-tender (mirror of backend math)
-└── types/                           # (note: domain types live under @/types/pos — this folder is for feature-private types only)
-```
-
-### Mandatory UI primitives (`components/ui/`)
-
-Use these instead of hand-rolled equivalents — see Rules.md §5:
-
-`Modal`, `Input`, `Button`, `Card`, `KpiCard`, `Pill`, `StatusPill`, `Avatar`, `Logo`, `Spark`, `PageHeader`, `Segmented`, `Stepper`, `EmptyState`, `Toolbar`, `ThemeToggle`, `ConfirmDialog`.
-
-### Frontend types — domain-folder + barrel pattern
+Every feature folder under `features/<feature>/` follows the same shape. Only
+include the subfolders a feature actually needs.
 
 ```
-frontend/src/types/
-├── index.ts                        # barrel of barrels — `export * from './<domain>'`
-├── accounting/
-│   ├── index.ts                    # barrel — re-exports only
-│   ├── expense.type.ts
-│   ├── ledger-entry.type.ts
-│   └── …
-├── admin/                          # 17 files
-├── analytics/                      # 4 files
-├── api/                            # 3 files
-├── auth/                           # 6 files
-├── branch/                         # 16 files
-├── customer-requests/              # 6 files
-├── inventory/                      # 4 files
-├── notifications/                  # 3 files
-├── pos/                            # 10 files
-├── product/                        # 3 files
-├── shop/                           # 5 files
-├── stock-transfers/                # 10 files
-├── ui/                             # 2 files
-└── user/                           # 4 files
+features/<feature>/
+  <Feature>Page.tsx   routable screen entry — present only if the feature owns a route
+  components/         presentational + composite components (incl. feature-owned modals)
+  hooks/              feature state + TanStack Query hooks   (+ __tests__/)
+  lib/                pure helpers: formatting, validation, math   (+ __tests__/)
+  types/              feature-LOCAL UI types only (NOT domain/server types)
+  index.ts            barrel — the feature's public surface and import contract
 ```
 
-15 domain folders, ~100 type files. **Always import from `@/types`** (the top-level barrel) — never reach into `@/types/<domain>/<file>` directly.
+Rules:
 
----
-
-## File-naming & one-thing-per-file rules
-
-These are **enforced**, not aspirational. Every PR must follow them.
-
-### Strict (one thing per file)
-
-| Artifact | Rule | Example |
-|---|---|---|
-| Service class | One per file | `pos.service.ts` |
-| Controller class | One per file | `pos.controller.ts` |
-| Repository class | One per file | `pos.repository.ts` |
-| Module class | One per file | `pos.module.ts` |
-| TypeORM entity | One per file | `entities/transaction.entity.ts` |
-| React component | One per file (.tsx) | `Modal.tsx`, `Button.tsx` |
-| React hook | One per file | `hooks/useAuth.ts` |
-| Interface / type | One per file (.type.ts) | `types/accounting/expense.type.ts` |
-| DTO class | One per file | `dto/create-expense.dto.ts` |
-
-### Accepted exceptions (do **not** split)
-
-- **Component + its `Props` interface** → same `.tsx`. The `Props` is part of the component's API.
-- **Compound UI components** that ship as a unit → e.g. `Card / CardHeader / CardTitle / CardContent / CardFooter` in `Card.tsx`.
-- **Parent DTO + child item DTO** → e.g. `CreateTransactionDto + TransactionItemDto` co-located when the child is only used as the parent's array element type.
-- **Hook + Provider** pair (split since lint-staged hook-refresh era) → `useConfirm.ts` (hook + context) + `ConfirmProvider.tsx` (component).
-- **Redux slice file** → slice + thunks + actions + selectors stay together (Toolkit convention).
-- **Class + a single helper interface** that the class returns or accepts → e.g. `AuthService + AuthResult`, `CloudinaryService + Options/Result`. One helper = OK; two or more = split into a `types/` folder.
-- **Utility-bundle files** (`lib/utils.ts`, `lib/exportUtils.ts`) → small pure helpers + the types they need.
-- **Routes / constants files** (`FRONTEND_ROUTES`, `APP_ROUTES`, `enums.ts`) → enum/const-table aggregates.
+- **The barrel is the contract.** Import a feature only via `@/features/<feature>`.
+  No deep cross-feature imports (`@/features/x/components/Y`) and no
+  page-imports-page. A feature's `index.ts` exports its `Page` plus any
+  components/hooks other features legitimately reuse.
+- **Domain/server types stay in `@/types`.** Only types that exist purely to
+  shape this feature's UI (form-error maps, row view-models) live in
+  `features/<feature>/types/`.
+- **Routable screens are `<Feature>Page.tsx`** and live in the feature, not in a
+  separate `pages/` tree. The central registry imports them from the barrel.
+- A feature must own at least real components or a screen. A folder that holds
+  only a tab-manager hook is **not** a feature — fold it into the owning
+  workspace feature or a shared `hooks/` helper.
 
 ### Naming
 
-- **Files holding a single type/interface:** `kebab-case.type.ts`. Example: `BranchPerformance` → `branch-performance.type.ts`.
-- **Frontend domain types live under** `frontend/src/types/<domain>/<name>.type.ts` with a `<domain>/index.ts` barrel.
-- **Backend module types live under** `modules/<feature>/types/<name>.type.ts` with a `types/index.ts` barrel.
-- **Re-export only through barrels** — `index.ts` files contain `export * from './…'` lines and nothing else. Never put logic in an `index.ts`.
+| Kind | Convention | Example |
+|------|-----------|---------|
+| Routable screen | `<Name>Page.tsx` | `PosPage.tsx`, `InventoryWorkspacePage.tsx` |
+| Tab body inside a workspace screen | `<Name>View.tsx` | `EmployeesView.tsx` |
+| Component | `PascalCase` noun | `TransferBoardTable.tsx` |
+| Hook | `useXxx.ts` (camelCase) | `useTransferBoardData.ts` |
+| Pure helper / type file | kebab-case | `format-time-ago.ts`, `sellable-unit-row.type.ts` |
+| Folder | kebab-case; keep a role prefix only for genuine role splits | `loyalty` + `admin-loyalty` |
+
+### Shared vs. feature-specific
+
+Code lives in `components/` (shared) **only** if it is genuinely cross-feature:
+the `ui/` primitives, `charts/`, `common/`, `notifications/`, `Scanner/`.
+Anything tied to one domain belongs in that feature's `components/`. Domain
+widgets must not accumulate under `components/<domain>/`.
 
 ---
 
-## Barrel pattern (canonical example)
+## Backend — `backend/src/` (summary)
 
-`backend/src/modules/accounting/types/index.ts`:
-
-```ts
-export * from './get-expenses-options.type';
-export * from './ledger-summary-raw.type';
-export * from './ledger-summary.type';
-// … one line per .type.ts file in the folder
-```
-
-`frontend/src/types/index.ts`:
-
-```ts
-/**
- * LedgerPro — type barrel.
- * Each domain folder has its own index.ts that re-exports per-file types.
- * One interface / type per file under <domain>/<kebab-name>.type.ts.
- */
-export * from './accounting'
-export * from './admin'
-// …one line per domain folder
-```
-
-Consumer code:
-
-```ts
-// ✅ Use the top-level barrel
-import type { IExpense, IBranchWithMeta } from '@/types';
-
-// ❌ Don't reach into the domain folder
-import type { IExpense } from '@/types/accounting/expense.type';
-```
-
-Why: the barrel is the contract. Reaching into domain files couples consumer code to the internal layout, which makes the next refactor painful.
+New modules use the **Repository Pattern**: a three-layer split of
+`repository ↔ service ↔ controller`, one class per file. Domain types live under
+`<module>/types/<name>.type.ts`. Controllers are thin and route via
+`APP_ROUTES`. See `rules.md` §8–§9 and `docs/architecture-backend.md`.

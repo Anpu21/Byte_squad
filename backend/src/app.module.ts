@@ -50,6 +50,8 @@ import { LedgerEntry } from '@accounting/entities/ledger-entry.entity';
 import { Expense } from '@accounting/entities/expense.entity';
 import { Notification } from '@notifications/entities/notification.entity';
 import { StockTransferRequest } from '@stock-transfers/entities/stock-transfer-request.entity';
+import { Shipment } from '@stock-transfers/entities/shipment.entity';
+import { ShipmentEvent } from '@stock-transfers/entities/shipment-event.entity';
 import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
 import { CustomerOrderItem } from '@/modules/customer-orders/entities/customer-order-item.entity';
 import { PayherePaymentAttempt } from '@/modules/customer-orders/entities/payhere-payment-attempt.entity';
@@ -102,6 +104,8 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
       Expense,
       Notification,
       StockTransferRequest,
+      Shipment,
+      ShipmentEvent,
       CustomerOrder,
       CustomerOrderItem,
       PayherePaymentAttempt,

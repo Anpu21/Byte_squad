@@ -70,7 +70,7 @@ export function ApproveTransferModal({
                         onChange={(e) =>
                             state.setApprovedQuantityStr(e.target.value)
                         }
-                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all"
+                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-all"
                     />
                     <p className="text-[11px] text-text-3 mt-1">
                         Requested: {transfer.requestedQuantity} unit(s)
@@ -106,7 +106,7 @@ export function ApproveTransferModal({
                         rows={2}
                         maxLength={500}
                         placeholder="e.g. Please ship before Friday — store running out."
-                        className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3 resize-none"
+                        className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3 resize-none"
                     />
                     <p className="text-[11px] text-text-3 mt-1">
                         Sent to both source and destination branch managers in

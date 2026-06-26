@@ -22,6 +22,7 @@ import type {
   BranchAnalyticsSection,
   BranchAnalyticsSettings,
   BranchAnalyticsTotals,
+  BranchAnalyticsTrend,
   BranchCustomerMetrics,
   BranchFinancialMetrics,
   BranchInventoryMetrics,
@@ -91,6 +92,12 @@ interface PaymentAggRaw {
   creditAmount: string | null;
 }
 
+interface DailyRevenueRaw {
+  day: string;
+  branchId: string;
+  revenue: string | null;
+}
+
 @Injectable()
 export class BranchAnalyticsRepository {
   constructor(
@@ -126,6 +133,11 @@ export class BranchAnalyticsRepository {
     return ids.map((id) => byId.get(id)).filter((row): row is Branch => !!row);
   }
 
+  /** All branches, name-sorted — the roster behind the comparison picker. */
+  async listBranches(): Promise<Branch[]> {
+    return this.branchRepo.find({ order: { name: 'ASC' } });
+  }
+
   async getComparison(
     params: ComparisonParams,
   ): Promise<BranchAnalyticsComparisonResponse> {
@@ -133,12 +145,106 @@ export class BranchAnalyticsRepository {
       params.branches.map((branch) => this.getBranchEntry(branch, params)),
     );
 
-    return {
+    const response: BranchAnalyticsComparisonResponse = {
       startDate: params.startDate.toISOString(),
       endDate: params.endDate.toISOString(),
       branches,
       totals: this.buildTotals(branches),
     };
+
+    if (params.sections.has('trend')) {
+      response.trend = await this.getDailyRevenueByBranch(
+        params.branches,
+        params.startDate,
+        params.endDate,
+      );
+    }
+
+    return response;
+  }
+
+  /**
+   * Daily revenue per branch across the range, for the Summary "Daily revenue"
+   * multi-line chart. One grouped query over `sales` mirroring the
+   * {@link getFinancialAndSales} filters, then assembled into a zero-filled
+   * `{ branches, days }` shape — every selected branch appears on every day so
+   * the chart legend and colours stay stable. `branches` order follows the
+   * requested order (preserving the branchId → colour index mapping).
+   */
+  private async getDailyRevenueByBranch(
+    branchEntities: Branch[],
+    startDate: Date,
+    endDate: Date,
+  ): Promise<BranchAnalyticsTrend> {
+    const branches = branchEntities.map((branch) => ({
+      branchId: branch.id,
+      branchName: branch.name,
+    }));
+
+    if (branches.length === 0) {
+      return { branches, days: [] };
+    }
+
+    const rows = await this.saleRepo
+      .createQueryBuilder('sale')
+      .select("to_char(DATE(sale.created_at), 'YYYY-MM-DD')", 'day')
+      .addSelect('sale.branch_id', 'branchId')
+      .addSelect('COALESCE(SUM(sale.total), 0)', 'revenue')
+      .where('sale.branch_id IN (:...branchIds)', {
+        branchIds: branches.map((branch) => branch.branchId),
+      })
+      .andWhere('sale.type = :type', { type: TransactionType.SALE })
+      .andWhere('sale.status != :voided', { voided: 'Voided' })
+      .andWhere('sale.created_at BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .groupBy('day')
+      .addGroupBy('sale.branch_id')
+      .orderBy('day', 'ASC')
+      .getRawMany<DailyRevenueRaw>();
+
+    // Seed every day in the range with a zero for every branch, then fill.
+    const byDay = new Map<string, Record<string, number>>();
+    for (const date of this.enumerateDays(startDate, endDate)) {
+      const seed: Record<string, number> = {};
+      for (const branch of branches) seed[branch.branchId] = 0;
+      byDay.set(date, seed);
+    }
+    for (const row of rows) {
+      const bucket = byDay.get(row.day);
+      if (bucket) {
+        bucket[row.branchId] =
+          Math.round(Number(row.revenue ?? 0) * 100) / 100;
+      }
+    }
+
+    return {
+      branches,
+      days: Array.from(byDay, ([date, byBranch]) => ({ date, byBranch })),
+    };
+  }
+
+  /** Inclusive list of `YYYY-MM-DD` day-strings from `start` to `end` (UTC). */
+  private enumerateDays(start: Date, end: Date): string[] {
+    const days: string[] = [];
+    const cursor = new Date(
+      Date.UTC(
+        start.getUTCFullYear(),
+        start.getUTCMonth(),
+        start.getUTCDate(),
+      ),
+    );
+    const last = Date.UTC(
+      end.getUTCFullYear(),
+      end.getUTCMonth(),
+      end.getUTCDate(),
+    );
+    while (cursor.getTime() <= last) {
+      days.push(cursor.toISOString().split('T')[0]);
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+    return days;
   }
 
   private async getBranchEntry(

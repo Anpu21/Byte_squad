@@ -16,8 +16,8 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const HEIGHT: Record<NonNullable<InputProps['sizeVariant']>, string> = {
-    md: 'h-[38px]',
-    lg: 'h-[42px]',
+    md: 'h-11',
+    lg: 'h-12',
 };
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -44,7 +44,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             : 'border-border-strong hover:border-text-3';
         const focusClass = error
             ? 'focus-within:border-danger focus-within:ring-[3px] focus-within:ring-danger/30'
-            : 'focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/30';
+            : 'focus-within:border-focus focus-within:ring-[3px] focus-within:ring-focus/25';
 
         const wrapperClass = cn(
             'flex items-center gap-2 px-3 bg-surface border rounded-md transition-colors',
@@ -58,7 +58,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             heightClass,
             error
                 ? 'border-danger focus:border-danger focus:ring-[3px] focus:ring-danger/30'
-                : 'border-border-strong hover:border-text-3 focus:border-primary focus:ring-[3px] focus:ring-primary/30',
+                : 'border-border-strong hover:border-text-3 focus:border-focus focus:ring-[3px] focus:ring-focus/25',
         );
 
         const innerInputClass =

@@ -1,4 +1,4 @@
-import { TrendingDown, Trophy } from 'lucide-react';
+import { LuTrendingDown as TrendingDown, LuTrophy as Trophy } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import Pill from '@/components/ui/Pill';
 import type { LeaderboardRow } from '../hooks/useBranchComparisonPage';
@@ -20,9 +20,14 @@ const METRIC_LABEL: Record<MetricKey, string> = {
 interface BranchLeaderboardProps {
     rows: LeaderboardRow[];
     metric: MetricKey;
+    branchColors?: Record<string, string>;
 }
 
-export function BranchLeaderboard({ rows, metric }: BranchLeaderboardProps) {
+export function BranchLeaderboard({
+    rows,
+    metric,
+    branchColors,
+}: BranchLeaderboardProps) {
     const mainLabel = METRIC_LABEL[metric];
     return (
         <Card className="mb-6 overflow-hidden">
@@ -38,7 +43,10 @@ export function BranchLeaderboard({ rows, metric }: BranchLeaderboardProps) {
                 </p>
             </div>
             <ul role="list" className="divide-y divide-border">
-                {rows.map((r) => (
+                {rows.map((r) => {
+                    const branchColor =
+                        branchColors?.[r.entry.branchId] ?? 'var(--primary)';
+                    return (
                     <li
                         key={r.entry.branchId}
                         className={`relative px-5 py-4 transition-colors hover:bg-surface-2/40 ${
@@ -61,6 +69,11 @@ export function BranchLeaderboard({ rows, metric }: BranchLeaderboardProps) {
 
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
+                                    <span
+                                        className="flex-shrink-0 w-2 h-2 rounded-full"
+                                        style={{ background: branchColor }}
+                                        aria-hidden="true"
+                                    />
                                     <p className="text-[13px] font-semibold text-text-1 truncate">
                                         {r.entry.branchName}
                                     </p>
@@ -75,13 +88,11 @@ export function BranchLeaderboard({ rows, metric }: BranchLeaderboardProps) {
                                     aria-hidden="true"
                                 >
                                     <div
-                                        className={`h-full rounded-full transition-[width] duration-500 ${
-                                            r.isLeader
-                                                ? 'bg-primary'
-                                                : 'bg-primary/55'
-                                        }`}
+                                        className="h-full rounded-full transition-[width] duration-500"
                                         style={{
                                             width: `${Math.max(2, r.shareOfLeader * 100)}%`,
+                                            background: branchColor,
+                                            opacity: r.isLeader ? 1 : 0.55,
                                         }}
                                     />
                                 </div>
@@ -129,7 +140,8 @@ export function BranchLeaderboard({ rows, metric }: BranchLeaderboardProps) {
                             </div>
                         </div>
                     </li>
-                ))}
+                    );
+                })}
             </ul>
         </Card>
     );

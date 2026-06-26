@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import QRCode from 'qrcode';
-import { ExternalLink, MapPin } from 'lucide-react';
+import { LuExternalLink as ExternalLink, LuMapPin as MapPin } from 'react-icons/lu';
 import Modal from '@/components/ui/Modal';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { CustomerOrderStatus, ICustomerOrder } from '@/types';
@@ -19,6 +19,7 @@ const STATUS_LABEL: Record<CustomerOrderStatus, string> = {
     pending: 'Awaiting pickup',
     accepted: 'Ready for pickup',
     completed: 'Picked up',
+    not_collected: 'Not collected',
     rejected: 'Rejected',
     cancelled: 'Cancelled',
     expired: 'Expired',
@@ -28,6 +29,7 @@ const STATUS_TONE: Record<CustomerOrderStatus, string> = {
     pending: 'bg-warning-soft text-warning border-warning/40',
     accepted: 'bg-primary-soft text-primary-soft-text border-primary/40',
     completed: 'bg-accent-soft text-accent-text border-accent/40',
+    not_collected: 'bg-danger-soft text-danger border-danger/40',
     rejected: 'bg-danger-soft text-danger border-danger/40',
     cancelled: 'bg-surface-2 text-text-2 border-border',
     expired: 'bg-surface-2 text-text-2 border-border',
@@ -132,7 +134,7 @@ export function OrderDetailsModal({
                     <Link
                         to={fullPagePath}
                         onClick={onClose}
-                        className="mt-4 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-text-2 hover:text-text-1 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20 rounded"
+                        className="mt-4 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-text-2 hover:text-text-1 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25 rounded"
                     >
                         Open full page <ExternalLink size={11} />
                     </Link>

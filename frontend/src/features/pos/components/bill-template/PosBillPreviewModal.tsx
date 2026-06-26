@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Printer } from 'lucide-react';
+import { LuPrinter as Printer } from 'react-icons/lu';
 import Modal from '@/components/ui/Modal';
 import type { ISale } from '@/types';
 import { usePrintReceipt } from '@/features/pos/hooks/usePrintReceipt';
@@ -70,7 +70,7 @@ export function PosBillPreviewModal({
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="inline-flex items-center justify-center h-9 px-3 rounded-md text-[13px] font-medium text-text-2 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+                                className="inline-flex items-center justify-center h-9 px-3 rounded-md text-[13px] font-medium text-text-2 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25"
                             >
                                 Close
                             </button>

@@ -10,7 +10,7 @@
 
 | Layer    | Technology                                                                                              |
 |----------|---------------------------------------------------------------------------------------------------------|
-| Frontend | React 19 · Vite 7 · TypeScript · Tailwind CSS 4 (`@theme` design tokens) · Geist + Geist Mono · Redux Toolkit · TanStack React Query · Recharts · socket.io-client · jsPDF · xlsx · react-hot-toast · lucide-react |
+| Frontend | React 19 · Vite 7 · TypeScript · Tailwind CSS 4 (`@theme` design tokens) · IBM Plex Sans + IBM Plex Mono · Redux Toolkit · TanStack React Query · Recharts · socket.io-client · jsPDF · xlsx · react-hot-toast · react-icons |
 | Backend  | NestJS 11 · TypeORM · Passport JWT · bcrypt · socket.io · Nodemailer                                    |
 | Database | PostgreSQL 16                                                                                           |
 | DevOps   | Docker Compose · GitHub Actions · pnpm 10.33.2                                                          |
@@ -31,7 +31,7 @@
 - **Email Notifications** — Welcome emails with auto-generated temp passwords for new users.
 - **Auto Seeding** — Idempotent seeder creates branches, users, supermarket products, inventory, transactions, expenses, and sample stock transfers on first boot.
 - **Reproducible Builds** — Exact-pinned dependency versions, `save-exact` `.npmrc`, and `pnpm-lock.yaml` checked in.
-- **Design System (May 2026 redesign)** — Sage/slate palette built on the brand color `#19183B`, full light + dark theme support with a one-click toggle, Geist + Geist Mono typography, and a tokenized component library (KPI cards, sparklines, status pills, segmented controls, page headers, and more).
+- **Design System (Ledger UI Kit)** — Built on the brand color `#19183B` with a clean accent (green success) / focus (purple) split, full light + dark theme support with a one-click toggle, IBM Plex Sans + IBM Plex Mono typography, and a tokenized component library (KPI cards, sparklines, status pills, segmented controls, page headers, and more).
 
 ---
 

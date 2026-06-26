@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { X } from 'lucide-react';
+import { LuX as X } from 'react-icons/lu';
 import Logo from '@/components/ui/Logo';
 import { Button } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';

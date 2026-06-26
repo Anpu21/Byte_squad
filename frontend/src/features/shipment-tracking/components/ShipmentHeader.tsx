@@ -1,4 +1,4 @@
-import { ArrowRight, Clock, Truck, User } from 'lucide-react';
+import { LuArrowRight as ArrowRight, LuClock as Clock, LuTruck as Truck, LuUser as User } from 'react-icons/lu';
 import type { IShipment } from '@/types';
 import ShipmentStatusPill from '@/components/transfers/ShipmentStatusPill';
 import { formatEta } from '@/features/shipment-tracking/lib/shipment-format';

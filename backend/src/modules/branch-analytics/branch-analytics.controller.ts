@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Roles } from '@common/decorators/roles.decorator';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -21,5 +21,10 @@ export class BranchAnalyticsController {
     @Body() dto: BranchAnalyticsComparisonDto,
   ) {
     return this.branchAnalytics.compareBranches(user, dto);
+  }
+
+  @Get(APP_ROUTES.BRANCH_ANALYTICS.BRANCHES)
+  listBranches() {
+    return this.branchAnalytics.listBranches();
   }
 }

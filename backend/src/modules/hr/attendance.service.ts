@@ -34,6 +34,25 @@ export interface AttendanceListResponse {
   total: number;
 }
 
+export interface TodayAttendancePendingEntry {
+  employeeId: string;
+  employeeCode: string;
+  fullName: string;
+  role: string;
+}
+
+export interface TodayAttendanceStatus {
+  /** YYYY-MM-DD for the branch's "today". */
+  date: string;
+  /** Active employees in scope. */
+  total: number;
+  /** Active employees with an attendance row already today. */
+  recorded: number;
+  pendingCount: number;
+  /** Active employees with nothing recorded today — the action list. */
+  pending: TodayAttendancePendingEntry[];
+}
+
 /**
  * Safety net for the late-grace lookup. Matches the
  * `payroll_settings.late_grace_minutes` seed in the BE-H1 migration so
@@ -74,6 +93,51 @@ export class AttendanceService {
       endDate: new Date(query.endDate),
     });
     return { rows, total: rows.length };
+  }
+
+  /**
+   * "Who hasn't been recorded today" for the actor's branch — the proactive
+   * signal a manager acts on (mark them, or chase a no-show). An employee is
+   * *pending* when there is no attendance row for today yet (neither a self
+   * check-in nor a manual mark). Branch-scoped exactly like `list`: a manager
+   * is pinned to their own branch; an admin may pass `branchId` or span all.
+   */
+  async todayStatus(
+    actor: AttendanceActor,
+    branchId?: string,
+  ): Promise<TodayAttendanceStatus> {
+    const scopedBranch =
+      actor.role === UserRole.ADMIN ? branchId : (actor.branchId ?? undefined);
+    const today = todayDate(new Date());
+    const [employeePage, rows] = await Promise.all([
+      this.employees.listForBranch({
+        branchId: scopedBranch,
+        status: 'Active',
+        limit: 200,
+        offset: 0,
+      }),
+      this.attendance.listForBranch({
+        branchId: scopedBranch,
+        startDate: today,
+        endDate: today,
+      }),
+    ]);
+    const markedIds = new Set(rows.map((r) => r.employeeId));
+    const pending = employeePage.rows
+      .filter((employee) => !markedIds.has(employee.id))
+      .map((employee) => ({
+        employeeId: employee.id,
+        employeeCode: employee.employeeCode,
+        fullName: employee.fullName,
+        role: employee.role,
+      }));
+    return {
+      date: today.toISOString().slice(0, 10),
+      total: employeePage.rows.length,
+      recorded: employeePage.rows.length - pending.length,
+      pendingCount: pending.length,
+      pending,
+    };
   }
 
   /**

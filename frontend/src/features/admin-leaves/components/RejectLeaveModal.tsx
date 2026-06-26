@@ -74,7 +74,7 @@ function RejectLeaveForm({ leave, onClose }: IRejectLeaveFormProps) {
                     Reason ({MIN_REASON}+ chars)
                 </span>
                 <textarea
-                    className="w-full min-h-[88px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors"
+                    className="w-full min-h-[88px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Required — visible to the employee."

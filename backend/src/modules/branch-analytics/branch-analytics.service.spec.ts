@@ -91,6 +91,7 @@ describe('BranchAnalyticsService', () => {
     const repoMock: Partial<jest.Mocked<BranchAnalyticsRepository>> = {
       findBranchesByIds: jest.fn(),
       getComparison: jest.fn().mockResolvedValue(makeResponse()),
+      listBranches: jest.fn(),
     };
     const loyaltySettingsMock: Partial<jest.Mocked<LoyaltySettingsService>> = {
       get: jest.fn().mockResolvedValue({
@@ -214,5 +215,46 @@ describe('BranchAnalyticsService', () => {
         },
       }),
     );
+  });
+
+  it('forwards the opt-in trend section to the repository', async () => {
+    repo.findBranchesByIds.mockResolvedValue([makeBranch('branch-1')]);
+
+    await service.compareBranches(ADMIN, {
+      branchIds: ['branch-1'],
+      startDate: '2026-06-01T00:00:00.000Z',
+      endDate: '2026-06-03T23:59:59.999Z',
+      sections: ['financial', 'sales', 'trend'],
+    });
+
+    const params = repo.getComparison.mock.calls[0][0];
+    expect(params.sections.has('trend')).toBe(true);
+  });
+
+  it('omits trend by default (table sub-tabs never pay for it)', async () => {
+    repo.findBranchesByIds.mockResolvedValue([makeBranch('branch-1')]);
+
+    await service.compareBranches(ADMIN, {
+      branchIds: ['branch-1'],
+      startDate: '2026-06-01T00:00:00.000Z',
+      endDate: '2026-06-03T23:59:59.999Z',
+    });
+
+    const params = repo.getComparison.mock.calls[0][0];
+    expect(params.sections.has('trend')).toBe(false);
+  });
+
+  it('lists every branch (id/name/isActive) for the comparison picker', async () => {
+    repo.listBranches.mockResolvedValue([
+      { id: 'branch-own', name: 'Main', isActive: true } as Branch,
+      { id: 'branch-peer', name: 'Downtown', isActive: false } as Branch,
+    ]);
+
+    const result = await service.listBranches();
+
+    expect(result).toEqual([
+      { id: 'branch-own', name: 'Main', isActive: true },
+      { id: 'branch-peer', name: 'Downtown', isActive: false },
+    ]);
   });
 });

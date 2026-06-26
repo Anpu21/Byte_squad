@@ -5,12 +5,13 @@ import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
+import { DataTable, type DataTableColumn } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { userService } from '@/services/user.service';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import type { SupplierPaymentMethod } from '@/types';
+import type { ISupplierPayment, SupplierPaymentMethod } from '@/types';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { useGrns } from '../../hooks/useGrns';
 import { usePayablesOutstanding } from '../../hooks/usePayablesOutstanding';
@@ -19,7 +20,7 @@ import { useCreateSupplierPayment } from '../../hooks/useCreateSupplierPayment';
 import { GrnPaymentPill } from '../grns/GrnPaymentPill';
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
 const OPENING_KEY = 'opening';
 
@@ -129,6 +130,54 @@ export function BillsPanel() {
             }
         }
     }
+
+    const paymentColumns: DataTableColumn<ISupplierPayment>[] = [
+        {
+            key: 'number',
+            header: '#',
+            render: (p) => (
+                <span className="text-[13px] text-text-1 mono">
+                    {p.paymentNumber}
+                </span>
+            ),
+        },
+        {
+            key: 'date',
+            header: 'Date',
+            render: (p) => (
+                <span className="text-[13px] text-text-2">{p.paidAt}</span>
+            ),
+        },
+        {
+            key: 'method',
+            header: 'Method',
+            render: (p) => (
+                <span className="text-[13px] text-text-2">{p.method}</span>
+            ),
+        },
+        {
+            key: 'amount',
+            header: 'Amount',
+            align: 'right',
+            numeric: true,
+            render: (p) => (
+                <span className="text-[13px] tabular-nums text-text-1">
+                    {formatCurrency(Number(p.amount))}
+                </span>
+            ),
+        },
+        {
+            key: 'settled',
+            header: 'Bills settled',
+            align: 'right',
+            numeric: true,
+            render: (p) => (
+                <span className="text-[13px] tabular-nums text-text-2">
+                    {p.allocations?.length ?? 0}
+                </span>
+            ),
+        },
+    ];
 
     return (
         <div className="space-y-4">
@@ -390,47 +439,12 @@ export function BillsPanel() {
                     <div className="px-4 py-3 border-b border-border text-[12px] uppercase tracking-wide text-text-3">
                         Recent payments
                     </div>
-                    <table className="w-full text-left">
-                        <thead className="bg-surface-2/60 border-b border-border">
-                            <tr className="text-[11px] uppercase tracking-wide text-text-3">
-                                <th className="px-3 py-2 font-medium">#</th>
-                                <th className="px-3 py-2 font-medium">Date</th>
-                                <th className="px-3 py-2 font-medium">
-                                    Method
-                                </th>
-                                <th className="px-3 py-2 font-medium text-right">
-                                    Amount
-                                </th>
-                                <th className="px-3 py-2 font-medium text-right">
-                                    Bills settled
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {(paymentsQuery.data?.rows ?? []).map((p) => (
-                                <tr
-                                    key={p.id}
-                                    className="border-b border-border last:border-b-0"
-                                >
-                                    <td className="px-3 py-2 text-[13px] text-text-1 mono">
-                                        {p.paymentNumber}
-                                    </td>
-                                    <td className="px-3 py-2 text-[13px] text-text-2">
-                                        {p.paidAt}
-                                    </td>
-                                    <td className="px-3 py-2 text-[13px] text-text-2">
-                                        {p.method}
-                                    </td>
-                                    <td className="px-3 py-2 text-right text-[13px] tabular-nums text-text-1">
-                                        {formatCurrency(Number(p.amount))}
-                                    </td>
-                                    <td className="px-3 py-2 text-right text-[13px] tabular-nums text-text-2">
-                                        {p.allocations?.length ?? 0}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <DataTable<ISupplierPayment>
+                        columns={paymentColumns}
+                        rows={paymentsQuery.data?.rows ?? []}
+                        getRowKey={(p) => p.id}
+                        zebra
+                    />
                 </Card>
             )}
         </div>

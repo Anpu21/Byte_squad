@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Edit3, Minus, RotateCcw, Sparkles } from 'lucide-react';
+import { LuPenLine as Edit3, LuMinus as Minus, LuRotateCcw as RotateCcw, LuSparkles as Sparkles } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import {
     LOYALTY_LEDGER_ENTRY_TYPE,

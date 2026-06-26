@@ -1,4 +1,4 @@
-import { Lightbulb } from 'lucide-react';
+import { LuLightbulb as Lightbulb } from 'react-icons/lu';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 
 const TIPS = [

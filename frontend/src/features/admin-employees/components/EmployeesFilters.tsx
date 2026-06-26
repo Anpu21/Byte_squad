@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Search, X } from 'lucide-react';
+import { LuSearch as Search, LuX as X } from 'react-icons/lu';
 import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';
 
@@ -16,7 +16,7 @@ interface IEmployeesFiltersProps {
 }
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
 const STATUS_OPTIONS: Array<{ value: EmployeeStatus; label: string }> = [
     { value: '', label: 'All statuses' },

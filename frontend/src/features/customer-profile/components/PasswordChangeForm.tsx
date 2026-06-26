@@ -1,4 +1,4 @@
-import { AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
+import { LuCircleAlert as AlertCircle, LuLoaderCircle as Loader2, LuShieldCheck as ShieldCheck } from 'react-icons/lu';
 import { ProfileField } from './ProfileField';
 import { PROFILE_INPUT_CLASS } from '../lib/input-classes';
 

@@ -1,12 +1,8 @@
-import type { ReactNode } from 'react';
+import { Outlet } from 'react-router-dom';
 import Logo from '@/components/ui/Logo';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
-interface AuthLayoutProps {
-    children: ReactNode;
-}
-
-export default function AuthLayout({ children }: AuthLayoutProps) {
+export default function AuthLayout() {
     return (
         <div className="min-h-screen flex bg-canvas text-text-1 font-sans overflow-hidden">
             <div className="flex-1 lg:flex-[0.6] flex items-center justify-center px-5 py-10 lg:p-10 bg-surface relative">
@@ -14,7 +10,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
                     <ThemeToggle />
                 </div>
                 <div className="w-full max-w-[440px] animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {children}
+                    <Outlet />
                 </div>
             </div>
 

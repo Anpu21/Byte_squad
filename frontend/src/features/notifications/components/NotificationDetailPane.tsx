@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowRightLeft, Check } from 'lucide-react';
+import { LuArrowRightLeft as ArrowRightLeft, LuCheck as Check } from 'react-icons/lu';
 import {
     timeAgo,
     typeLabel,

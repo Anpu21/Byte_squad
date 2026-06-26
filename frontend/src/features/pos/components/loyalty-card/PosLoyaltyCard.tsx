@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Award, X } from 'lucide-react';
+import { LuAward as Award, LuX as X } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import { usePosLoyaltyLookup } from '@/features/pos/hooks/usePosLoyaltyLookup';
 import { usePosLoyaltyEnroll } from '@/features/pos/hooks/usePosLoyaltyEnroll';
@@ -21,6 +21,8 @@ export interface IPosLoyaltyCardProps {
     onDetach: () => void;
     redeemPoints: number;
     onRedeemChange: (next: number) => void;
+    /** Server-mirrored redeem cap for this bill; clamps the redeem input. */
+    maxRedeemable?: number;
 }
 
 /**
@@ -38,6 +40,7 @@ export function PosLoyaltyCard({
     onDetach,
     redeemPoints,
     onRedeemChange,
+    maxRedeemable,
 }: IPosLoyaltyCardProps) {
     const [phoneRaw, setPhoneRaw] = useState('');
     const debouncedPhone = useDebouncedSanitisedPhone(phoneRaw);
@@ -107,6 +110,7 @@ export function PosLoyaltyCard({
                     owner={loyaltyOwner}
                     redeemPoints={redeemPoints}
                     onRedeemChange={onRedeemChange}
+                    maxRedeemable={maxRedeemable}
                 />
             ) : (
                 <PosLoyaltyPhoneField

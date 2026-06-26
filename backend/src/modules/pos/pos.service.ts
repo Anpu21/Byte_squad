@@ -21,6 +21,7 @@ import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { DiscountType } from '@common/enums/discount.enum';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
+import { PaymentMethod } from '@common/enums/payment-method';
 import { InvoiceNumberService } from '@pos/services/invoice-number.service';
 import { SaleRepository } from '@pos/sale.repository';
 import { UsersService } from '@users/users.service';
@@ -106,6 +107,9 @@ import {
   CashierPeriodStats,
   CashierTransactionRow,
   CashierTransactionsSummary,
+  PaymentMethodBreakdown,
+  RevenueByBranch,
+  DailyBreakdownByBranch,
 } from '@pos/types';
 
 // Re-export so existing consumers that imported these from '@pos/pos.service'
@@ -398,7 +402,13 @@ export class PosService {
     };
   }
 
-  async getAdminDashboard(): Promise<AdminDashboardData> {
+  async getAdminDashboard(actor: ActorPayload): Promise<AdminDashboardData> {
+    // The redesigned overview is admin-only, but MANAGER can still reach this
+    // endpoint, so scope the NEW per-branch aggregations to the actor's branch.
+    // The legacy today/week/month KPIs stay system-wide (pre-existing behaviour
+    // — out of scope to change here).
+    const scope = actor.role === UserRole.ADMIN ? null : actor.branchId;
+
     const now = new Date();
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
@@ -451,7 +461,9 @@ export class PosService {
       totalRevenue: Math.round(r.totalRevenue * 100) / 100,
     }));
 
-    const recentTransactions = await this.pos.findRecent(10);
+    // findRecentWithBranch eager-loads the `branch` relation so the redesigned
+    // Recent Transactions table can show the originating branch name.
+    const recentTransactions = await this.pos.findRecentWithBranch(10);
 
     const [activeProducts, lowStockItems, totalUsers, totalBranches] =
       await Promise.all([
@@ -460,6 +472,76 @@ export class PosService {
         this.pos.countAllUsers(),
         this.pos.countActiveBranches(),
       ]);
+
+    // ── ShopPOS redesign aggregations ──────────────────────────────────────
+    // Derived from the already-loaded week transactions so the payment-method
+    // and revenue-by-branch donut slices always reconcile with the week KPIs,
+    // and the daily trend reuses the same UTC-date buckets as `dailyBreakdown`.
+    const [branchRows, inventorySummary] = await Promise.all([
+      this.pos.listBranches(scope),
+      this.pos.inventorySummary(scope),
+    ]);
+    const branchNameById = new Map(branchRows.map((b) => [b.id, b.name]));
+    const scopedWeek = scope
+      ? weekTxns.filter((t) => t.branchId === scope)
+      : weekTxns;
+
+    const paymentMap = new Map<
+      PaymentMethod,
+      { total: number; count: number }
+    >();
+    const branchTotals = new Map<string, number>();
+    const trendByDay = new Map<string, Record<string, number>>();
+    for (const date of dailyMap.keys()) {
+      const seed: Record<string, number> = {};
+      for (const b of branchRows) seed[b.id] = 0;
+      trendByDay.set(date, seed);
+    }
+    let pendingOrders = 0;
+    for (const t of scopedWeek) {
+      const amount = Number(t.total);
+
+      const pm = paymentMap.get(t.paymentMethod) ?? { total: 0, count: 0 };
+      pm.total += amount;
+      pm.count += 1;
+      paymentMap.set(t.paymentMethod, pm);
+
+      branchTotals.set(
+        t.branchId,
+        (branchTotals.get(t.branchId) ?? 0) + amount,
+      );
+
+      const dayKey = new Date(t.createdAt).toISOString().split('T')[0];
+      const dayRec = trendByDay.get(dayKey);
+      if (dayRec) dayRec[t.branchId] = (dayRec[t.branchId] ?? 0) + amount;
+
+      if (t.paymentStatus !== 'Paid') pendingOrders += 1;
+    }
+
+    const salesByPaymentMethod: PaymentMethodBreakdown[] = Array.from(
+      paymentMap,
+      ([method, v]) => ({ method, total: round2(v.total), count: v.count }),
+    );
+    const revenueByBranch: RevenueByBranch[] = Array.from(
+      branchTotals,
+      ([branchId, total]) => ({
+        branchId,
+        branchName: branchNameById.get(branchId) ?? 'Unknown',
+        total: round2(total),
+      }),
+    ).sort((a, b) => b.total - a.total);
+    const dailyBreakdownByBranch: DailyBreakdownByBranch = {
+      branches: branchRows.map((b) => ({
+        branchId: b.id,
+        branchName: b.name,
+      })),
+      days: Array.from(trendByDay, ([date, byBranch]) => ({
+        date,
+        byBranch: Object.fromEntries(
+          Object.entries(byBranch).map(([k, v]) => [k, round2(v)]),
+        ),
+      })),
+    };
 
     return {
       today: {
@@ -484,6 +566,11 @@ export class PosService {
       dailyBreakdown,
       topProducts,
       recentTransactions,
+      salesByPaymentMethod,
+      revenueByBranch,
+      dailyBreakdownByBranch,
+      inventorySummary,
+      pendingOrders,
     };
   }
 

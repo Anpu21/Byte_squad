@@ -1,4 +1,4 @@
-import { Plus, Wallet } from 'lucide-react';
+import { LuPlus as Plus, LuWallet as Wallet } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';

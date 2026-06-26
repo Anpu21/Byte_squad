@@ -4,7 +4,7 @@ import type { UserFormState } from './user-form.helpers';
 import { STAFF_ROLES } from './user-form.helpers';
 
 const INPUT_CLASS =
-    'w-full h-9 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/25 transition-colors';
+    'w-full h-9 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/25 transition-colors';
 
 const LABEL_CLASS =
     'block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5';
@@ -154,7 +154,7 @@ export function UserFormFields({
                     value={form.address}
                     onChange={(e) => onChange('address', e.target.value)}
                     placeholder="Optional. Mailing or delivery address."
-                    className="w-full px-3 py-2 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/25 transition-colors resize-y"
+                    className="w-full px-3 py-2 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/25 transition-colors resize-y"
                 />
             </div>
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { LuTrash2 as Trash2 } from 'react-icons/lu';
 import type { ICartItem } from '@/features/pos/types/cart-item.type';
 import type { IProductUnitRow } from '@/types';
 import { formatCurrency } from '@/lib/utils';

@@ -7,7 +7,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import {
-  BRANCH_ANALYTICS_SECTIONS,
+  BRANCH_ANALYTICS_SECTION_VALUES,
   type BranchAnalyticsSection,
 } from '@/modules/branch-analytics/types';
 
@@ -27,6 +27,6 @@ export class BranchAnalyticsComparisonDto {
   @IsOptional()
   @IsArray()
   @ArrayMinSize(1)
-  @IsIn(BRANCH_ANALYTICS_SECTIONS, { each: true })
+  @IsIn(BRANCH_ANALYTICS_SECTION_VALUES, { each: true })
   sections?: BranchAnalyticsSection[];
 }

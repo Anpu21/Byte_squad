@@ -1,12 +1,52 @@
 import Card from '@/components/ui/Card';
-import EmptyState from '@/components/ui/EmptyState';
-import Pill from '@/components/ui/Pill';
+import {
+    DataTable,
+    EmptyState,
+    Pill,
+    type DataTableColumn,
+} from '@/components/ui';
 import { formatRevenue, formatTime } from '@/features/admin-dashboard/lib/format';
 import type { ISale } from '@/types';
 
 interface CashierRecentTransactionsProps {
     transactions: ISale[];
 }
+
+const columns: DataTableColumn<ISale>[] = [
+    {
+        key: 'txn',
+        header: 'Tx #',
+        numeric: true,
+        className: 'text-xs',
+        render: (txn) => txn.transactionNumber,
+    },
+    {
+        key: 'time',
+        header: 'Time',
+        className: 'mono text-xs text-text-2',
+        render: (txn) => formatTime(txn.createdAt),
+    },
+    {
+        key: 'items',
+        header: 'Items',
+        className: 'text-text-2',
+        render: (txn) =>
+            (txn as ISale & { items?: unknown[] }).items?.length ?? '—',
+    },
+    {
+        key: 'total',
+        header: 'Total',
+        align: 'right',
+        numeric: true,
+        className: 'font-semibold',
+        render: (txn) => formatRevenue(Number(txn.total)),
+    },
+    {
+        key: 'status',
+        header: 'Status',
+        render: () => <Pill tone="success">Completed</Pill>,
+    },
+];
 
 export function CashierRecentTransactions({
     transactions,
@@ -18,61 +58,15 @@ export function CashierRecentTransactions({
                     Recent transactions
                 </h3>
             </div>
-            <div className="overflow-auto max-h-[320px]">
-                {transactions.length > 0 ? (
-                    <table className="w-full">
-                        <thead>
-                            <tr className="text-[11px] uppercase tracking-[0.06em] text-text-3 bg-surface-2">
-                                <th className="px-5 py-2.5 text-left font-semibold">
-                                    Tx #
-                                </th>
-                                <th className="px-5 py-2.5 text-left font-semibold">
-                                    Time
-                                </th>
-                                <th className="px-5 py-2.5 text-left font-semibold">
-                                    Items
-                                </th>
-                                <th className="px-5 py-2.5 text-right font-semibold">
-                                    Total
-                                </th>
-                                <th className="px-5 py-2.5 text-left font-semibold">
-                                    Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {transactions.map((txn) => (
-                                <tr
-                                    key={txn.id}
-                                    className="border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors"
-                                >
-                                    <td className="px-5 py-3 mono text-xs text-text-1">
-                                        {txn.transactionNumber}
-                                    </td>
-                                    <td className="px-5 py-3 mono text-xs text-text-2">
-                                        {formatTime(txn.createdAt)}
-                                    </td>
-                                    <td className="px-5 py-3 text-[13px] text-text-2">
-                                        {(
-                                            txn as ISale & {
-                                                items?: unknown[];
-                                            }
-                                        ).items?.length ?? '—'}
-                                    </td>
-                                    <td className="px-5 py-3 mono text-[13px] font-semibold text-text-1 text-right">
-                                        {formatRevenue(Number(txn.total))}
-                                    </td>
-                                    <td className="px-5 py-3">
-                                        <Pill tone="success">Completed</Pill>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <EmptyState title="No transactions yet today" />
-                )}
-            </div>
+            <DataTable
+                columns={columns}
+                rows={transactions}
+                getRowKey={(txn) => txn.id}
+                zebra
+                stickyHeader
+                maxHeight="320px"
+                empty={<EmptyState title="No transactions yet today" />}
+            />
         </Card>
     );
 }

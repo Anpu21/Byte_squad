@@ -16,7 +16,7 @@ interface IMarkPaidModalProps {
 }
 
 const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20 transition-colors';
+    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
 
 /**
  * Wrapper that only mounts the form when a payroll row is selected,
@@ -48,13 +48,12 @@ function todayIso(): string {
 function MarkPaidForm({ payroll, onClose }: IFormProps) {
     const markPaid = useMarkPayrollPaid();
     const [paymentDate, setPaymentDate] = useState(todayIso);
-    const [paymentMethod, setPaymentMethod] =
-        useState<PaymentMethod>('Bank_Transfer');
-    const [bankRef, setBankRef] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash');
+    const [reference, setReference] = useState('');
 
-    const needsRef = paymentMethod === 'Bank_Transfer';
-    const canSubmit =
-        paymentDate.length > 0 && (!needsRef || bankRef.trim().length > 0);
+    // Card payments can carry an optional terminal / transfer reference.
+    const showReference = paymentMethod === 'Card';
+    const canSubmit = paymentDate.length > 0;
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -65,7 +64,10 @@ function MarkPaidForm({ payroll, onClose }: IFormProps) {
                 payload: {
                     paymentDate,
                     paymentMethod,
-                    bankReferenceNo: needsRef ? bankRef.trim() : undefined,
+                    paymentReference:
+                        showReference && reference.trim()
+                            ? reference.trim()
+                            : undefined,
                 },
             });
             toast.success('Marked as paid');
@@ -115,17 +117,20 @@ function MarkPaidForm({ payroll, onClose }: IFormProps) {
                     ))}
                 </select>
             </label>
-            {needsRef ? (
+            {showReference ? (
                 <label className="block space-y-1.5">
                     <span className="text-[11px] uppercase tracking-wide text-text-3">
-                        Bank reference no
+                        Card reference{' '}
+                        <span className="normal-case text-text-3">
+                            (optional)
+                        </span>
                     </span>
                     <input
                         className={`${INPUT_CLASS} w-full`}
-                        value={bankRef}
-                        onChange={(e) => setBankRef(e.target.value)}
+                        value={reference}
+                        onChange={(e) => setReference(e.target.value)}
                         maxLength={100}
-                        required
+                        placeholder="Terminal / transfer ref"
                     />
                 </label>
             ) : null}

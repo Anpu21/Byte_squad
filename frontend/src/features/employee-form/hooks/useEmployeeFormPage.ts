@@ -10,7 +10,7 @@ import { useEmployeePhotoUpload } from './useEmployeePhotoUpload';
 
 /**
  * Composes form state + loader + submit + photo upload into a
- * single bundle for `AdminEmployeeFormPage` to consume. Owns the
+ * single bundle for `EmployeeFormPage` to consume. Owns the
  * "managers are pinned to their own branch" rule by pre-populating
  * `branchId` for non-admins on the create flow.
  */

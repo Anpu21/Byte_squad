@@ -18,6 +18,8 @@ export interface ISalePayment {
   chequeAmount: number;
   bankTransferAmount: number;
   creditAmount: number;
+  /** Money value of redeemed loyalty points settling this invoice. */
+  loyaltyAmount: number;
   keepBalance: boolean;
   chequeNo: string | null;
   chequeDate: string | null;

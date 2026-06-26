@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Search, Trash2, Printer, History, CreditCard, type LucideIcon } from 'lucide-react';
+import { LuSearch as Search, LuTrash2 as Trash2, LuPrinter as Printer, LuHistory as History, LuCreditCard as CreditCard } from 'react-icons/lu';
+import { type IconType as LucideIcon } from 'react-icons';
 import { useConfirm } from '@/hooks/useConfirm';
 
 interface IPosActionButtonsProps {

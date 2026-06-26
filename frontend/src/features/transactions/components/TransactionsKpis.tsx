@@ -1,4 +1,4 @@
-import { Calendar, CalendarDays, TrendingUp } from 'lucide-react';
+import { LuCalendar as Calendar, LuCalendarDays as CalendarDays, LuTrendingUp as TrendingUp } from 'react-icons/lu';
 import KpiCard from '@/components/ui/KpiCard';
 import type { ICashierTransactionsSummary } from '@/types';
 import { formatRevenue } from '../lib/format';
@@ -16,6 +16,7 @@ export function TransactionsKpis({ data }: TransactionsKpisProps) {
                 delta={`${data?.today.transactionCount ?? 0} transactions`}
                 sparkData={[2, 3, 4, 5, 7, 6, 8]}
                 sparkColor="var(--accent)"
+                accent="primary"
                 icon={<Calendar size={14} />}
             />
             <KpiCard
@@ -23,6 +24,7 @@ export function TransactionsKpis({ data }: TransactionsKpisProps) {
                 value={formatRevenue(data?.month.totalSales ?? 0)}
                 delta={`${data?.month.transactionCount ?? 0} transactions`}
                 sparkData={[3, 4, 5, 7, 6, 8, 10]}
+                accent="accent"
                 icon={<CalendarDays size={14} />}
             />
             <KpiCard
@@ -31,6 +33,7 @@ export function TransactionsKpis({ data }: TransactionsKpisProps) {
                 delta={`${data?.year.transactionCount ?? 0} transactions`}
                 sparkData={[4, 5, 6, 7, 8, 9, 11]}
                 sparkColor="var(--brand-400)"
+                accent="accent"
                 icon={<TrendingUp size={14} />}
             />
         </div>

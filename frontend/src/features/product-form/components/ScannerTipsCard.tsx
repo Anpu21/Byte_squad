@@ -1,4 +1,4 @@
-import { Camera, Package, Scan } from 'lucide-react';
+import { LuCamera as Camera, LuPackage as Package, LuScan as Scan } from 'react-icons/lu';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 
 export function ScannerTipsCard() {

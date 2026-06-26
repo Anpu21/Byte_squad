@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Lock } from 'lucide-react';
+import { LuEye as Eye, LuEyeOff as EyeOff, LuLock as Lock } from 'react-icons/lu';
 import Input from '@/components/ui/Input';
 
 interface PasswordRevealFieldProps {

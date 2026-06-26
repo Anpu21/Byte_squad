@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { UserPlus } from 'lucide-react';
+import { LuUserPlus as UserPlus } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 

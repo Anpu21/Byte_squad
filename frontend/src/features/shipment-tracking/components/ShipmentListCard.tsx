@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Clock, User } from 'lucide-react';
+import { LuArrowRight as ArrowRight, LuClock as Clock, LuUser as User } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import type { IShipment } from '@/types';
 import ShipmentStatusPill from '@/components/transfers/ShipmentStatusPill';
