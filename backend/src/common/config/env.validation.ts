@@ -4,7 +4,6 @@ import {
   IsNumberString,
   IsOptional,
   IsString,
-  MinLength,
   validateSync,
 } from 'class-validator';
 
@@ -14,17 +13,13 @@ export enum NodeEnv {
   Production = 'production',
 }
 
-// The dev-only fallback secret shipped in jwt.config.ts. It must never be the
-// effective signing secret in production (blaxx nestjs-10 — no default secrets).
-const DEV_JWT_SECRET = 'ledgerpro-dev-secret-change-me';
-const MIN_PROD_SECRET_LEN = 32;
-
 /**
  * Known environment variables. Every field is optional so local dev still boots
- * from the in-code defaults (Postgres on localhost, dev JWT secret), but any
- * value that IS supplied must be well-formed — a malformed PORT or an unknown
- * NODE_ENV fails the boot instead of surfacing deep inside a request. Production
- * additionally requires real secrets (see {@link validateEnv}).
+ * from the in-code defaults (Postgres on localhost, an ephemeral RS256 dev
+ * keypair), but any value that IS supplied must be well-formed — a malformed
+ * PORT or an unknown NODE_ENV fails the boot instead of surfacing deep inside a
+ * request. Production additionally requires real secrets (see
+ * {@link validateEnv}).
  */
 class EnvironmentVariables {
   @IsOptional()
@@ -61,12 +56,31 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
-  @MinLength(16)
-  JWT_SECRET?: string;
+  JWT_PRIVATE_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  JWT_PUBLIC_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  JWT_KEY_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  JWT_ISSUER?: string;
+
+  @IsOptional()
+  @IsString()
+  JWT_AUDIENCE?: string;
 
   @IsOptional()
   @IsString()
   JWT_EXPIRES_IN?: string;
+
+  @IsOptional()
+  @IsString()
+  JWT_REFRESH_EXPIRES_IN?: string;
 
   @IsOptional()
   @IsString()
@@ -93,14 +107,14 @@ export function validateEnv(
   }
 
   if (parsed.NODE_ENV === NodeEnv.Production) {
-    const secret = parsed.JWT_SECRET;
-    if (
-      !secret ||
-      secret === DEV_JWT_SECRET ||
-      secret.length < MIN_PROD_SECRET_LEN
-    ) {
+    if (!parsed.JWT_PRIVATE_KEY) {
       throw new Error(
-        `JWT_SECRET must be a strong (>= ${MIN_PROD_SECRET_LEN} char) value in production; the dev default is not allowed.`,
+        'JWT_PRIVATE_KEY (RS256 PEM) must be set in production; the ephemeral dev keypair is not allowed.',
+      );
+    }
+    if (!parsed.JWT_KEY_ID) {
+      throw new Error(
+        'JWT_KEY_ID must be set in production so JWKS consumers can pin the signing key.',
       );
     }
     if (!parsed.CORS_ORIGIN) {

@@ -13,6 +13,13 @@ export const APP_ROUTES = {
     READY: 'ready',
   },
 
+  // Well-known — public JWKS for RS256 access-token verification by other
+  // services (e.g. the chatbot). Outside API_PREFIX so it sits at the
+  // conventional /.well-known/ path that JWKS clients expect.
+  WELL_KNOWN: {
+    JWKS: '.well-known/jwks.json',
+  },
+
   // Auth
   AUTH: {
     BASE: `${API_PREFIX}/auth`,
@@ -24,6 +31,7 @@ export const APP_ROUTES = {
     FORGOT_PASSWORD: 'forgot-password',
     RESET_PASSWORD: 'reset-password',
     REFRESH: 'refresh',
+    LOGOUT: 'logout',
   },
 
   // Users

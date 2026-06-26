@@ -21,7 +21,12 @@ import { ChangePasswordDto } from '@auth/dto/change-password.dto';
 import { ForgotPasswordDto } from '@auth/dto/forgot-password.dto';
 import { ResetPasswordDto } from '@auth/dto/reset-password.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
+import { User } from '@users/entities/user.entity';
 import { EmailService } from '@/modules/email/email.service';
+import {
+  RefreshTokenService,
+  RefreshTokenMeta,
+} from '@auth/refresh-token.service';
 
 const OTP_EXPIRES_IN_MINUTES = 10;
 
@@ -34,6 +39,7 @@ interface JwtPayload {
 
 export interface AuthResult {
   accessToken: string;
+  refreshToken: string;
   user: {
     id: string;
     email: string;
@@ -55,6 +61,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
+    private readonly refreshTokenService: RefreshTokenService,
   ) {}
 
   private isProduction(): boolean {
@@ -215,7 +222,10 @@ export class AuthService {
     return crypto.randomInt(100000, 1000000).toString();
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResult> {
+  async login(
+    loginDto: LoginDto,
+    meta: RefreshTokenMeta = {},
+  ): Promise<AuthResult> {
     try {
       this.logger.debug(`Attempting login for email: ${loginDto.email}`);
       const user = await this.usersService.findByEmail(loginDto.email);
@@ -262,32 +272,12 @@ export class AuthService {
         }
       }
 
-      const payload: JwtPayload = {
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        branchId: user.branchId,
-      };
-
-      this.logger.debug(`Signing JWT with payload: ${JSON.stringify(payload)}`);
-      const accessToken = await this.jwtService.signAsync(payload);
-      this.logger.debug(`JWT generated successfully`);
+      const accessToken = await this.signAccessToken(user);
+      const refreshToken = await this.refreshTokenService.issue(user.id, meta);
 
       await this.usersService.touchLastLogin(user.id);
 
-      return {
-        accessToken,
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-          branchId: user.branchId,
-          isFirstLogin: user.isFirstLogin,
-          isVerified: user.isVerified,
-        },
-      };
+      return this.buildAuthResult(accessToken, refreshToken, user);
     } catch (error: unknown) {
       if (
         error instanceof UnauthorizedException ||
@@ -302,6 +292,71 @@ export class AuthService {
       this.logger.error(`Login error for ${loginDto.email}: ${message}`, stack);
       throw error;
     }
+  }
+
+  /** Rotate a refresh token and mint a fresh access token. */
+  async refresh(
+    rawToken: string,
+    meta: RefreshTokenMeta = {},
+  ): Promise<AuthResult> {
+    const { userId, token: refreshToken } =
+      await this.refreshTokenService.rotate(rawToken, meta);
+
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    if (user.role === UserRole.CUSTOMER && !user.isVerified) {
+      throw new ForbiddenException(
+        'Please verify your email before logging in',
+      );
+    }
+
+    const accessToken = await this.signAccessToken(user);
+
+    return this.buildAuthResult(accessToken, refreshToken, user);
+  }
+
+  /** Revoke the presented refresh token's family (logout). */
+  async logout(rawToken: string): Promise<{ message: string }> {
+    await this.refreshTokenService.revoke(rawToken);
+    return { message: 'Logged out' };
+  }
+
+  private signAccessToken(user: {
+    id: string;
+    email: string;
+    role: UserRole;
+    branchId: string | null;
+  }): Promise<string> {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      branchId: user.branchId,
+    };
+    return this.jwtService.signAsync(payload);
+  }
+
+  private buildAuthResult(
+    accessToken: string,
+    refreshToken: string,
+    user: User,
+  ): AuthResult {
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        branchId: user.branchId,
+        isFirstLogin: user.isFirstLogin,
+        isVerified: user.isVerified,
+      },
+    };
   }
 
   async requestPasswordReset(

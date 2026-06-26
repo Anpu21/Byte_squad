@@ -24,27 +24,31 @@ describe('validateEnv', () => {
     );
   });
 
-  it('rejects a too-short JWT_SECRET when provided', () => {
-    expect(() => validateEnv({ JWT_SECRET: 'short' })).toThrow(
-      /Invalid environment configuration/,
-    );
-  });
-
-  it('refuses to boot production on the shipped dev secret', () => {
+  it('refuses to boot production without an RS256 signing key', () => {
     expect(() =>
       validateEnv({
         NODE_ENV: 'production',
-        JWT_SECRET: 'ledgerpro-dev-secret-change-me',
         CORS_ORIGIN: 'https://app.example.com',
       }),
-    ).toThrow(/JWT_SECRET must be a strong/);
+    ).toThrow(/JWT_PRIVATE_KEY/);
+  });
+
+  it('refuses to boot production without an explicit key id', () => {
+    expect(() =>
+      validateEnv({
+        NODE_ENV: 'production',
+        JWT_PRIVATE_KEY: 'pem-material',
+        CORS_ORIGIN: 'https://app.example.com',
+      }),
+    ).toThrow(/JWT_KEY_ID/);
   });
 
   it('refuses to boot production without an explicit CORS_ORIGIN', () => {
     expect(() =>
       validateEnv({
         NODE_ENV: 'production',
-        JWT_SECRET: 'a-genuinely-strong-production-secret-value-1234',
+        JWT_PRIVATE_KEY: 'pem-material',
+        JWT_KEY_ID: 'kid-2026-06',
       }),
     ).toThrow(/CORS_ORIGIN must be set/);
   });
@@ -53,7 +57,8 @@ describe('validateEnv', () => {
     expect(() =>
       validateEnv({
         NODE_ENV: 'production',
-        JWT_SECRET: 'a-genuinely-strong-production-secret-value-1234',
+        JWT_PRIVATE_KEY: 'pem-material',
+        JWT_KEY_ID: 'kid-2026-06',
         CORS_ORIGIN: 'https://app.example.com',
         DB_SYNC: 'true',
       }),
@@ -64,7 +69,8 @@ describe('validateEnv', () => {
     expect(() =>
       validateEnv({
         NODE_ENV: 'production',
-        JWT_SECRET: 'a-genuinely-strong-production-secret-value-1234',
+        JWT_PRIVATE_KEY: 'pem-material',
+        JWT_KEY_ID: 'kid-2026-06',
         CORS_ORIGIN: 'https://app.example.com',
       }),
     ).not.toThrow();
