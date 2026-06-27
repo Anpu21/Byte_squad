@@ -14,6 +14,10 @@ export interface ShiftLiveSummary {
   salesTotal: number;
   /** Refunds processed by this cashier in the window (assumed cash). */
   refundsTotal: number;
-  /** openingFloat + cash − refunds — what the drawer should hold. */
+  /** Cash paid into the drawer mid-shift (float top-ups). */
+  payIn: number;
+  /** Cash paid out of the drawer mid-shift (petty cash, supplier cash). */
+  payOut: number;
+  /** openingFloat + cash − refunds + payIn − payOut — what the drawer should hold. */
   expectedCash: number;
 }

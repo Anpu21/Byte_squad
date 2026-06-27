@@ -151,6 +151,24 @@ export class PosShift {
   })
   refundsTotal!: number | null;
 
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'total_pay_in',
+    nullable: true,
+  })
+  totalPayIn!: number | null;
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'total_pay_out',
+    nullable: true,
+  })
+  totalPayOut!: number | null;
+
   @Column({ type: 'text', nullable: true })
   notes!: string | null;
 

@@ -16,6 +16,7 @@ import { SalesReportsController } from '@pos/sales-reports.controller';
 import { SalesReportsService } from '@pos/sales-reports.service';
 import { SalesReportsRepository } from '@pos/sales-reports.repository';
 import { PosShift } from '@pos/entities/pos-shift.entity';
+import { PosCashMovement } from '@pos/entities/pos-cash-movement.entity';
 import { DiscountScheme } from '@pos/entities/discount-scheme.entity';
 import { PosRepository } from '@pos/pos.repository';
 import { SaleRepository } from '@pos/sale.repository';
@@ -49,6 +50,7 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
       InvoiceCounter,
       IdempotencyKey,
       PosShift,
+      PosCashMovement,
       DiscountScheme,
     ]),
     AccountingModule,
