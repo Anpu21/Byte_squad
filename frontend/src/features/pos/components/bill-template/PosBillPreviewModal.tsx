@@ -1,9 +1,13 @@
 import { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { LuPrinter as Printer } from 'react-icons/lu';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import { LuMail as Mail, LuPrinter as Printer } from 'react-icons/lu';
 import Modal from '@/components/ui/Modal';
 import type { ISale } from '@/types';
 import { usePrintReceipt } from '@/features/pos/hooks/usePrintReceipt';
+import { useEmailReceipt } from '@/features/pos/hooks/useEmailReceipt';
+import { buildReceiptPdf } from '@/features/pos/lib/build-receipt-pdf';
 import { PosBillTemplate } from './PosBillTemplate';
 
 interface IPosBillPreviewModalProps {
@@ -37,6 +41,7 @@ export function PosBillPreviewModal({
     businessAddress,
 }: IPosBillPreviewModalProps) {
     const { printingSale, printReceipt } = usePrintReceipt();
+    const emailReceipt = useEmailReceipt();
     const [isQueuing, setIsQueuing] = useState(false);
 
     const handlePrint = useCallback(async () => {
@@ -48,6 +53,27 @@ export function PosBillPreviewModal({
             setIsQueuing(false);
         }
     }, [printReceipt, sale]);
+
+    const handleEmail = useCallback(async () => {
+        if (!sale) return;
+        try {
+            const pdfBase64 = buildReceiptPdf(sale, {
+                name: businessName,
+                address: businessAddress,
+            });
+            await emailReceipt.mutateAsync({ saleId: sale.id, pdfBase64 });
+            toast.success('Receipt emailed to the customer');
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                const data = err.response?.data as
+                    | { message?: string }
+                    | undefined;
+                toast.error(data?.message ?? 'Could not email the receipt');
+            } else {
+                toast.error('Could not email the receipt');
+            }
+        }
+    }, [sale, businessName, businessAddress, emailReceipt]);
 
     return (
         <>
@@ -73,6 +99,24 @@ export function PosBillPreviewModal({
                                 className="inline-flex items-center justify-center h-9 px-3 rounded-md text-[13px] font-medium text-text-2 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25"
                             >
                                 Close
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleEmail}
+                                disabled={
+                                    emailReceipt.isPending || !sale.customerUserId
+                                }
+                                title={
+                                    sale.customerUserId
+                                        ? 'Email a PDF copy to the customer'
+                                        : 'No customer on file'
+                                }
+                                className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-md border border-border text-[13px] font-medium text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25 disabled:opacity-60 disabled:pointer-events-none"
+                            >
+                                <Mail size={14} aria-hidden />
+                                {emailReceipt.isPending
+                                    ? 'Emailing…'
+                                    : 'Email receipt'}
                             </button>
                             <button
                                 type="button"
