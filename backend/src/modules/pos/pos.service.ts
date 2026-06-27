@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { DataSource, DeepPartial, QueryFailedError } from 'typeorm';
 import { Sale } from '@pos/entities/sale.entity';
@@ -25,6 +27,8 @@ import { PaymentMethod } from '@common/enums/payment-method';
 import { InvoiceNumberService } from '@pos/services/invoice-number.service';
 import { SaleRepository } from '@pos/sale.repository';
 import { UsersService } from '@users/users.service';
+import { EmailService } from '@/modules/email/email.service';
+import { EmailReceiptDto } from '@pos/dto/email-receipt.dto';
 import type {
   SearchProductRow,
   ProductUnitRow,
@@ -137,6 +141,7 @@ export class PosService {
     private readonly invoiceNumbers: InvoiceNumberService,
     private readonly sales: SaleRepository,
     private readonly users: UsersService,
+    private readonly emailService: EmailService,
   ) {}
 
   // ── Cross-module pass-throughs (owner-service surface; blaxx nestjs-07) ──
@@ -873,6 +878,41 @@ export class PosService {
       throw new NotFoundException('Sale disappeared during print update');
     }
     return refreshed;
+  }
+
+  /**
+   * Email the customer a copy of their receipt with the client-rendered PDF
+   * attached. Branch-scoped like {@link markPrinted} (defensive 404 across
+   * branches). Requires the sale to have a customer with an email on file and
+   * email delivery to be configured.
+   */
+  async emailReceipt(
+    id: string,
+    dto: EmailReceiptDto,
+    actor: ActorPayload,
+  ): Promise<{ sent: boolean }> {
+    const sale = await this.sales.findOneById(id);
+    if (!sale) {
+      throw new NotFoundException('Sale not found');
+    }
+    if (actor.role !== UserRole.ADMIN && sale.branchId !== actor.branchId) {
+      throw new NotFoundException('Sale not found');
+    }
+    const email = sale.customer?.email;
+    if (!email) {
+      throw new BadRequestException('No email on file for this customer');
+    }
+    if (!this.emailService.isVerified()) {
+      throw new ServiceUnavailableException('Email delivery is not configured');
+    }
+    await this.emailService.sendReceiptEmail(
+      email,
+      sale.customer?.firstName ?? 'Customer',
+      sale.invoiceNumber,
+      Number(sale.total),
+      dto.pdfBase64,
+    );
+    return { sent: true };
   }
 }
 
