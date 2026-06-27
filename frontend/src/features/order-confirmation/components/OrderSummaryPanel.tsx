@@ -11,7 +11,7 @@ interface OrderSummaryPanelProps {
 
 export function OrderSummaryPanel({ order }: OrderSummaryPanelProps) {
     return (
-        <div className="bg-surface border border-border rounded-md p-6">
+        <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm-token">
             <div className="flex items-center justify-between mb-4">
                 <span
                     className={`text-[11px] uppercase tracking-widest px-2 py-1 rounded-full border ${STATUS_TONE[order.status]}`}
