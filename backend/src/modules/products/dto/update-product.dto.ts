@@ -6,11 +6,12 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   Max,
   Min,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { SellableUnitDto } from '@products/dto/sellable-unit.dto';
 import {
   SUPPORTED_BASE_UNITS,
@@ -25,6 +26,16 @@ export class UpdateProductDto {
   @IsString()
   @IsOptional()
   barcode?: string;
+
+  // Numeric PLU/item code for weighed products (embedded in scale barcodes).
+  // Empty string normalizes to undefined so the partial-unique index isn't hit.
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() || undefined : value,
+  )
+  @IsString()
+  @Matches(/^\d{1,16}$/, { message: 'pluCode must be 1-16 digits' })
+  pluCode?: string;
 
   @IsString()
   @IsOptional()

@@ -24,6 +24,12 @@ export class Product {
   @Column({ type: 'varchar', unique: true })
   barcode!: string;
 
+  // Short numeric item code embedded in retail-scale barcodes (EAN-13 `2`-prefix)
+  // for weigh-by-weight products. Nullable; partial-unique (see migration) so a
+  // scanned PLU resolves to exactly one product. Only kg/l products set it.
+  @Column({ type: 'varchar', length: 16, name: 'plu_code', nullable: true })
+  pluCode!: string | null;
+
   @Column({ type: 'varchar', nullable: true })
   description!: string | null;
 

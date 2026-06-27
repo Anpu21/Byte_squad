@@ -138,9 +138,10 @@ export class ProductsRepository {
     return this.repo
       .createQueryBuilder('p')
       .where('p.is_active = true')
-      .andWhere('(p.name ILIKE :pattern OR p.barcode ILIKE :pattern)', {
-        pattern: `${term}%`,
-      })
+      .andWhere(
+        '(p.name ILIKE :pattern OR p.barcode ILIKE :pattern OR p.plu_code = :term)',
+        { pattern: `${term}%`, term },
+      )
       .orderBy('p.name', 'ASC')
       .limit(limit)
       .getMany();
