@@ -6,9 +6,10 @@ interface ProductDetailActionsProps {
     qty: number;
     onQtyChange: (next: number) => void;
     step: number;
-    min: number;
     decimals: number;
     unitLabel: string;
+    /** False when the quantity is below the order minimum (e.g. 0) — Add/Buy off. */
+    canAdd: boolean;
     onAdd: () => void;
     onBuyNow: () => void;
     disabled: boolean;
@@ -18,9 +19,9 @@ export function ProductDetailActions({
     qty,
     onQtyChange,
     step,
-    min,
     decimals,
     unitLabel,
+    canAdd,
     onAdd,
     onBuyNow,
     disabled,
@@ -31,9 +32,10 @@ export function ProductDetailActions({
                 value={qty}
                 onChange={onQtyChange}
                 step={step}
-                min={min}
+                min={0}
                 decimals={decimals}
                 unitLabel={unitLabel}
+                dynamicStep
                 disabled={disabled}
                 ariaLabel="Quantity"
             />
@@ -42,7 +44,7 @@ export function ProductDetailActions({
                 variant="secondary"
                 size="lg"
                 onClick={onAdd}
-                disabled={disabled}
+                disabled={disabled || !canAdd}
                 className="flex-1"
             >
                 <ShoppingCart size={14} /> Add to cart
@@ -52,7 +54,7 @@ export function ProductDetailActions({
                 variant="primary"
                 size="lg"
                 onClick={onBuyNow}
-                disabled={disabled}
+                disabled={disabled || !canAdd}
                 className="flex-1"
             >
                 Buy now

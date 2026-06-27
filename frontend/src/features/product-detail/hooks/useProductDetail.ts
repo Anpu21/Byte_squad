@@ -144,9 +144,11 @@ export function useProductDetail() {
         qty,
         setQty,
         qtyStep: rules.step,
-        qtyMin: rules.min,
         qtyDecimals: rules.decimals,
         qtyUnitLabel,
+        // Stepper floors at 0 (a "cleared" state); the order minimum (rules.min)
+        // gates Add/Buy so a 0 / sub-minimum quantity can't be ordered.
+        canAdd: qty >= rules.min,
         units: product?.sellableUnits ?? [],
         // Effective unit id (falls back to base) so the unit <Select> stays controlled.
         selectedUnitId: selectedUnit?.id ?? null,

@@ -22,6 +22,11 @@ interface QuantityFieldProps {
     max?: number;
     disabled?: boolean;
     ariaLabel: string;
+    /**
+     * When true, the +/− step follows the last value the user typed (a held
+     * "increment"), falling back to `step` until they type. Default: fixed `step`.
+     */
+    dynamicStep?: boolean;
 }
 
 /** True when `raw` has no more fractional digits than `decimals` allows. */
@@ -54,9 +59,11 @@ export function QuantityField({
     max,
     disabled = false,
     ariaLabel,
+    dynamicStep = false,
 }: QuantityFieldProps) {
     const [buffer, setBuffer] = useState<string>(String(value));
     const [anchor, setAnchor] = useState<number>(value);
+    const [typedStep, setTypedStep] = useState<number | null>(null);
     if (value !== anchor) {
         setAnchor(value);
         setBuffer(String(value));
@@ -69,6 +76,12 @@ export function QuantityField({
         return max !== undefined ? Math.min(lower, max) : lower;
     };
 
+    // The +/− step follows the last typed value when dynamicStep is on, else the
+    // fixed `step` prop. Reading `typedStep ?? step` (rather than seeding state
+    // once) keeps it correct when `step` arrives after the product query resolves.
+    const effectiveStep =
+        dynamicStep && typedStep !== null ? typedStep : step;
+
     const commitTyped = (raw: string): void => {
         const parsed = parseFloat(raw);
         if (!Number.isFinite(parsed)) {
@@ -76,6 +89,7 @@ export function QuantityField({
             return;
         }
         const next = clamp(parsed);
+        if (dynamicStep && next > 0) setTypedStep(next);
         if (next !== value) onChange(next);
         else setBuffer(String(next));
     };
@@ -92,7 +106,7 @@ export function QuantityField({
         <div className="inline-flex items-center gap-1.5">
             <button
                 type="button"
-                onClick={() => stepBy(-step)}
+                onClick={() => stepBy(-effectiveStep)}
                 disabled={disabled || atMin}
                 aria-label="Decrease quantity"
                 className={BTN_CLASS}
@@ -127,7 +141,7 @@ export function QuantityField({
 
             <button
                 type="button"
-                onClick={() => stepBy(step)}
+                onClick={() => stepBy(effectiveStep)}
                 disabled={disabled || atMax}
                 aria-label="Increase quantity"
                 className={BTN_CLASS}

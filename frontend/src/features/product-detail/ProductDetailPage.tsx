@@ -112,9 +112,9 @@ export function ProductDetailPage() {
                         qty={p.qty}
                         onQtyChange={p.setQty}
                         step={p.qtyStep}
-                        min={p.qtyMin}
                         decimals={p.qtyDecimals}
                         unitLabel={p.qtyUnitLabel}
+                        canAdd={p.canAdd}
                         onAdd={p.handleAdd}
                         onBuyNow={p.handleBuyNow}
                         disabled={p.isOutEverywhere || p.product.stockStatus === 'out'}
@@ -136,7 +136,11 @@ export function ProductDetailPage() {
                 sellingPrice={p.unitPrice}
                 unitLabel={p.qtyUnitLabel}
                 onAdd={p.handleAdd}
-                disabled={p.isOutEverywhere || p.product.stockStatus === 'out'}
+                disabled={
+                    p.isOutEverywhere ||
+                    p.product.stockStatus === 'out' ||
+                    !p.canAdd
+                }
             />
         </div>
     );
