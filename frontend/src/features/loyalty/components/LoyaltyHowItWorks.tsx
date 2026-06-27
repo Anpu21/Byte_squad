@@ -12,7 +12,7 @@ export function LoyaltyHowItWorks() {
     const { data: settings } = useLoyaltySettings();
 
     return (
-        <section className="bg-surface border border-border rounded-md mb-6">
+        <section className="bg-surface border border-border rounded-2xl mb-6 shadow-sm-token overflow-hidden">
             <button
                 type="button"
                 onClick={() => setOpen((o) => !o)}

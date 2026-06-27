@@ -35,7 +35,7 @@ export function RewardsPage() {
         data.pointsBalance >= (settings?.minRedeemablePoints ?? 0);
 
     return (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-3xl mx-auto">
             <Link
                 to={FRONTEND_ROUTES.SHOP}
                 className="inline-flex items-center gap-1 text-sm text-text-2 hover:text-text-1 mb-4"
@@ -59,7 +59,7 @@ export function RewardsPage() {
             />
 
             {canRedeem && (
-                <div className="mb-6 flex items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary-soft/40 px-4 py-3">
+                <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary-soft/40 px-4 py-3">
                     <p className="text-sm text-text-1">
                         Redeem your points for up to{' '}
                         <span className="font-semibold">

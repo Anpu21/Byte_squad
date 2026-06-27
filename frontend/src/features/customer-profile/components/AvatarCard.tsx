@@ -29,7 +29,7 @@ export function AvatarCard({
 
     return (
         <aside className="lg:sticky lg:top-24 self-start">
-            <div className="bg-surface border border-border rounded-md p-6 flex flex-col items-center text-center">
+            <div className="bg-surface border border-border rounded-2xl p-6 flex flex-col items-center text-center shadow-sm-token">
                 <div className="relative mb-4">
                     <Avatar
                         name={displayName}

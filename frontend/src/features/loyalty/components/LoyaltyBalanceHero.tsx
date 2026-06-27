@@ -42,7 +42,7 @@ export function LoyaltyBalanceHero({
     const remaining = nextLabel ? Math.max(0, target - lifetimePointsEarned) : 0;
 
     return (
-        <section className="rounded-lg border border-warning/30 bg-gradient-to-br from-warning-soft to-surface p-6 md:p-8 mb-6">
+        <section className="rounded-2xl border border-warning/30 bg-gradient-to-br from-warning-soft to-surface p-6 md:p-8 mb-6 shadow-sm-token">
             <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-warning">
                 {tier === 'gold' ? (
                     <Crown size={14} aria-hidden="true" />
