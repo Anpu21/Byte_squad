@@ -4,7 +4,7 @@
 
 This document is a **prioritized menu** of functionality worth adding to LedgerPro. Each item lists what it is, the current gap (with code evidence), what it builds on, and a "Done when" acceptance line so it's ready to pick up and build. Supermarket floor-ops are ranked highest.
 
-**Legend** — Effort: **S** ≈ 1–2 days · **M** ≈ 3–5 days · **L** ≈ 1–2 weeks. Status: **Absent** (nothing exists) · **Partial** (groundwork or client-only code exists).
+**Legend** — Effort: **S** ≈ 1–2 days · **M** ≈ 3–5 days · **L** ≈ 1–2 weeks. Status: **Absent** (nothing exists) · **Partial** (groundwork or client-only code exists) · **✅ Built** (shipped — see git history on the feature branch).
 
 ---
 
@@ -26,12 +26,12 @@ This document is a **prioritized menu** of functionality worth adding to LedgerP
 
 | # | Feature | Tier | Status | Effort |
 |---|---------|------|--------|--------|
-| 1 | PLU / weigh-by-weight items | Floor ops | Partial | M |
-| 2 | Shelf-label, price-tag & batch-label printing | Floor ops | Partial | S |
-| 3 | Server-persisted held / suspended sales | Floor ops | Partial | M |
-| 4 | Discrete cash-drawer movements | Floor ops | Partial | S–M |
-| 5 | Receipt templates (PDF / email / thermal) | Floor ops | Partial | M |
-| 6 | Automatic reorder suggestions → draft PO | Inventory ops | Partial | M |
+| 1 | PLU / weigh-by-weight items | Floor ops | ✅ Built | M |
+| 2 | Shelf-label, price-tag & batch-label printing | Floor ops | ✅ Built | S |
+| 3 | Server-persisted held / suspended sales | Floor ops | ✅ Built | M |
+| 4 | Discrete cash-drawer movements | Floor ops | ✅ Built | S–M |
+| 5 | Receipt templates (PDF / email / thermal) | Floor ops | ✅ Built | M |
+| 6 | Automatic reorder suggestions → draft PO | Inventory ops | ✅ Built | M |
 | 7 | Item kits / bundles / combos | Inventory ops | Absent | M |
 | 8 | Accounts-receivable ageing & statements | Inventory ops | Partial | M |
 | 9 | Gift cards / vouchers | Storefront | Absent | L |
