@@ -1,6 +1,8 @@
 import api from './api';
 import type {
     IApiResponse,
+    ICashMovement,
+    ICashMovementPayload,
     ICurrentShiftResponse,
     IPosShift,
 } from '@/types';
@@ -32,6 +34,25 @@ export const shiftsService = {
         const response = await api.post<IApiResponse<IPosShift>>(
             '/pos/shifts/close',
             { countedCash, notes },
+        );
+        return response.data.data;
+    },
+
+    /** `POST /pos/shifts/movements` — record a drawer pay-in / pay-out. */
+    recordCashMovement: async (
+        payload: ICashMovementPayload,
+    ): Promise<ICurrentShiftResponse> => {
+        const response = await api.post<IApiResponse<ICurrentShiftResponse>>(
+            '/pos/shifts/movements',
+            payload,
+        );
+        return response.data.data;
+    },
+
+    /** `GET /pos/shifts/movements` — movements for the open shift. */
+    cashMovements: async (): Promise<ICashMovement[]> => {
+        const response = await api.get<IApiResponse<ICashMovement[]>>(
+            '/pos/shifts/movements',
         );
         return response.data.data;
     },

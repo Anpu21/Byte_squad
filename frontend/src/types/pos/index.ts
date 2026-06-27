@@ -48,6 +48,9 @@ export type {
     IReceiveCreditPaymentPayload,
 } from './receivable.type';
 export type {
+    CashMovementType,
+    ICashMovement,
+    ICashMovementPayload,
     ICurrentShiftResponse,
     IPosShift,
     IShiftLiveSummary,
