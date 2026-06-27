@@ -56,4 +56,19 @@ export class CustomerOrderItem {
     default: 0,
   })
   baseUnitQty!: number;
+
+  /**
+   * Fixed line total for a "buy by amount" loose order: the customer paid an
+   * exact cash amount (e.g. "1000 Rs of bananas"), so this overrides
+   * quantity × unitPriceSnapshot as the line's price. Null for normal
+   * by-weight / by-count lines.
+   */
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'fixed_price_override',
+    nullable: true,
+  })
+  fixedPriceOverride!: number | null;
 }
