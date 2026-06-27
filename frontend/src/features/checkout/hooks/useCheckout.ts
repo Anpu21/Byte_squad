@@ -80,6 +80,9 @@ export function useCheckout() {
                     branchId: i.branchId,
                     unitId: i.unitId ?? undefined,
                     quantity: i.quantity,
+                    // Firm cash for "buy by amount" lines; the server validates
+                    // it against quantity × unit price and charges it exactly.
+                    amount: i.amount ?? undefined,
                 })),
                 note: note.trim() || undefined,
                 paymentMode,

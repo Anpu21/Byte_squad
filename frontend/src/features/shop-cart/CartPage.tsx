@@ -53,7 +53,7 @@ export function CartPage() {
                         </div>
                         {group.items.map((item) => (
                             <CartItemRow
-                                key={`${item.productId}:${item.branchId}:${item.unitId ?? 'base'}`}
+                                key={`${item.productId}:${item.branchId}:${item.unitId ?? 'base'}:${item.amount != null ? 'amt' : 'wt'}`}
                                 item={item}
                                 onChangeQty={handleChangeQty}
                                 onRemove={handleRemove}

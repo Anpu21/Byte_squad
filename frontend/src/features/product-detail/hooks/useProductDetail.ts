@@ -10,8 +10,18 @@ import { selectActiveBranchId } from '@/store/selectors/shopBranch';
 import { useAuth } from '@/hooks/useAuth';
 import { queryKeys } from '@/lib/queryKeys';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import { qtyRules, formatQty } from '@/lib/unit-quantity';
+import {
+    qtyRules,
+    formatQty,
+    isFractionalUnit,
+    quantityForAmount,
+    amountForQuantity,
+    clampQty,
+} from '@/lib/unit-quantity';
 import type { IShopProduct, IShopSellableUnit } from '@/types';
+
+/** Weight ('By weight') vs cash ('By amount') entry for a loose product. */
+type EntryMode = 'weight' | 'amount';
 
 export function useProductDetail() {
     const { id } = useParams<{ id: string }>();
@@ -22,6 +32,8 @@ export function useProductDetail() {
     const branchId = activeBranchId ?? user?.branchId ?? null;
 
     const [qty, setQty] = useState(1);
+    const [amount, setAmount] = useState(0);
+    const [entryMode, setEntryMode] = useState<EntryMode>('weight');
     const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
 
     const branchesQuery = useQuery({
@@ -73,8 +85,33 @@ export function useProductDetail() {
 
     // Step / min / decimals come from the product's base unit (whole vs
     // fractional); the label shown is the chosen sellable unit's name.
-    const rules = qtyRules(product?.baseUnit ?? '');
+    const baseUnit = product?.baseUnit ?? '';
+    const rules = qtyRules(baseUnit);
     const qtyUnitLabel = selectedUnit?.name ?? product?.baseUnit ?? '';
+
+    // "Buy by amount" is loose-only (the backend rejects it for piece goods).
+    const isFractional = isFractionalUnit(baseUnit);
+    // Amount mode: shopper names the cash, we derive the weight to order. Weight
+    // mode: the inverse preview — what the chosen weight will cost.
+    const derivedQty = quantityForAmount(amount, unitPrice, baseUnit);
+    const previewAmount = amountForQuantity(qty, unitPrice);
+
+    // Switching modes seeds the counterpart from the current value so the
+    // handoff is continuous (5 kg ⇄ its cash, not a reset to 0).
+    const handleEntryModeChange = (mode: EntryMode): void => {
+        if (mode === entryMode) return;
+        if (mode === 'amount') setAmount(amountForQuantity(qty, unitPrice));
+        else setQty(clampQty(derivedQty, baseUnit));
+        setEntryMode(mode);
+    };
+
+    // In weight mode the order minimum gates on the typed quantity; in amount
+    // mode it gates on the *derived* weight (and a positive cash amount), since
+    // a tiny amount can imply a sub-minimum weight the API would reject.
+    const canAdd =
+        isFractional && entryMode === 'amount'
+            ? amount > 0 && derivedQty >= rules.min
+            : qty >= rules.min;
 
     const availableIds = product?.availableBranches.map((b) => b.id) ?? [];
     const isOutEverywhere =
@@ -95,6 +132,10 @@ export function useProductDetail() {
             toast.error('Out of stock at this branch');
             return false;
         }
+        // Amount lines carry the firm cash the customer named; the weight is the
+        // derived estimate. Weight lines carry no amount (priced by quantity).
+        const isAmountLine = isFractional && entryMode === 'amount';
+        const lineQty = isAmountLine ? derivedQty : qty;
         dispatch(
             addToCart({
                 productId: product.id,
@@ -106,10 +147,13 @@ export function useProductDetail() {
                 unitId: selectedUnit ? selectedUnit.id : null,
                 unitLabel: selectedUnit ? selectedUnit.name : product.baseUnit,
                 baseUnit: product.baseUnit,
-                quantity: qty,
+                quantity: lineQty,
+                amount: isAmountLine ? amount : null,
             }),
         );
-        toast.success(`${product.name} × ${formatQty(qty, qtyUnitLabel)} added`);
+        toast.success(
+            `${product.name} × ${formatQty(lineQty, qtyUnitLabel)} added`,
+        );
         return true;
     };
 
@@ -146,9 +190,18 @@ export function useProductDetail() {
         qtyStep: rules.step,
         qtyDecimals: rules.decimals,
         qtyUnitLabel,
+        // "Buy by amount" toggle + state (loose products only).
+        isFractional,
+        entryMode,
+        setEntryMode: handleEntryModeChange,
+        amount,
+        setAmount,
+        derivedQty,
+        previewAmount,
         // Stepper floors at 0 (a "cleared" state); the order minimum (rules.min)
-        // gates Add/Buy so a 0 / sub-minimum quantity can't be ordered.
-        canAdd: qty >= rules.min,
+        // gates Add/Buy so a 0 / sub-minimum quantity can't be ordered. In
+        // amount mode it gates on the derived weight + a positive amount.
+        canAdd,
         units: product?.sellableUnits ?? [],
         // Effective unit id (falls back to base) so the unit <Select> stays controlled.
         selectedUnitId: selectedUnit?.id ?? null,

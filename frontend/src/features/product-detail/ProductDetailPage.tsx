@@ -109,11 +109,18 @@ export function ProductDetailPage() {
                     )}
 
                     <ProductDetailActions
+                        entryMode={p.entryMode}
+                        onEntryModeChange={p.setEntryMode}
+                        isFractional={p.isFractional}
                         qty={p.qty}
                         onQtyChange={p.setQty}
                         step={p.qtyStep}
                         decimals={p.qtyDecimals}
                         unitLabel={p.qtyUnitLabel}
+                        amount={p.amount}
+                        onAmountChange={p.setAmount}
+                        derivedQty={p.derivedQty}
+                        previewAmount={p.previewAmount}
                         canAdd={p.canAdd}
                         onAdd={p.handleAdd}
                         onBuyNow={p.handleBuyNow}
