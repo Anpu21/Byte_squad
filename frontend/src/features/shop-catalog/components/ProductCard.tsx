@@ -65,6 +65,10 @@ export function ProductCard({
                 <div className="mt-4 flex items-center justify-between gap-2">
                     <p className="text-lg font-bold text-text-1 tabular-nums">
                         {formatCurrency(product.sellingPrice)}
+                        <span className="text-xs font-medium text-text-3">
+                            {' '}
+                            / {product.baseUnit}
+                        </span>
                     </p>
                     <button
                         type="button"

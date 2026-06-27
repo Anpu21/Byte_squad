@@ -1,11 +1,14 @@
 import { LuShoppingCart as ShoppingCart } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
-import { QtyStepper } from './QtyStepper';
+import { QuantityField } from '@/components/shop/QuantityField';
 
 interface ProductDetailActionsProps {
     qty: number;
-    onIncrement: () => void;
-    onDecrement: () => void;
+    onQtyChange: (next: number) => void;
+    step: number;
+    min: number;
+    decimals: number;
+    unitLabel: string;
     onAdd: () => void;
     onBuyNow: () => void;
     disabled: boolean;
@@ -13,18 +16,26 @@ interface ProductDetailActionsProps {
 
 export function ProductDetailActions({
     qty,
-    onIncrement,
-    onDecrement,
+    onQtyChange,
+    step,
+    min,
+    decimals,
+    unitLabel,
     onAdd,
     onBuyNow,
     disabled,
 }: ProductDetailActionsProps) {
     return (
         <div className="mt-8 flex items-center gap-3 flex-wrap">
-            <QtyStepper
-                qty={qty}
-                onIncrement={onIncrement}
-                onDecrement={onDecrement}
+            <QuantityField
+                value={qty}
+                onChange={onQtyChange}
+                step={step}
+                min={min}
+                decimals={decimals}
+                unitLabel={unitLabel}
+                disabled={disabled}
+                ariaLabel="Quantity"
             />
             <Button
                 type="button"
