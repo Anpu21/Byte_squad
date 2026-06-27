@@ -349,6 +349,10 @@ export const APP_ROUTES = {
       OUTSTANDING: 'outstanding',
       AGEING: 'ageing',
     },
+    REORDER: {
+      BASE: `${API_PREFIX}/purchases/reorder-suggestions`,
+      DRAFT: 'draft',
+    },
   },
 } as const;
 
