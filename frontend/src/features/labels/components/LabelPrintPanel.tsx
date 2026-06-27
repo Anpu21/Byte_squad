@@ -8,7 +8,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import Segmented from '@/components/ui/Segmented';
 import { inventoryService } from '@/services/inventory.service';
 import { queryKeys } from '@/lib/queryKeys';
-import { buildLabelSheetHtml } from '../lib/label-sheet-html';
+import { buildLabelSheetHtml, unitPriceSuffix } from '../lib/label-sheet-html';
 import type { ILabelItem, LabelLayout } from '../lib/label-sheet-html';
 import { usePrintLabelSheet } from '../hooks/usePrintLabelSheet';
 import { LabelProductTable } from './LabelProductTable';
@@ -103,13 +103,22 @@ export function LabelPrintPanel() {
         const labels: ILabelItem[] = [];
         for (const product of products) {
             const qty = quantities.get(product.id) ?? 0;
+            if (qty === 0) continue;
+            const suffix = unitPriceSuffix(product.baseUnit);
+            // Weighed items show their PLU; otherwise shelf-edge shows category.
+            const pluLine = product.pluCode
+                ? `PLU ${product.pluCode}`
+                : undefined;
+            const secondaryLine =
+                pluLine ??
+                (layout === 'shelf-edge' ? product.category : undefined);
             for (let i = 0; i < qty; i++) {
                 labels.push({
                     name: product.name,
                     barcode: product.barcode,
                     price: product.sellingPrice,
-                    secondaryLine:
-                        layout === 'shelf-edge' ? product.category : undefined,
+                    unitSuffix: suffix || undefined,
+                    secondaryLine,
                 });
             }
         }

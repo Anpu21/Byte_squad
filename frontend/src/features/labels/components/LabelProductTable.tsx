@@ -1,5 +1,6 @@
 import { formatCurrency } from '@/lib/utils';
 import type { IProduct } from '@/types';
+import { unitPriceSuffix } from '../lib/label-sheet-html';
 
 const QTY_INPUT_CLASS =
     'h-9 w-20 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 text-right outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
@@ -50,9 +51,17 @@ export function LabelProductTable({
                             </td>
                             <td className="px-3 py-2.5 text-[13px] text-text-2 tabular-nums">
                                 {p.barcode || '—'}
+                                {p.pluCode && (
+                                    <span className="block text-[11px] text-text-3">
+                                        PLU {p.pluCode}
+                                    </span>
+                                )}
                             </td>
                             <td className="px-3 py-2.5 text-[13px] text-text-1 text-right tabular-nums">
                                 {formatCurrency(p.sellingPrice)}
+                                <span className="text-text-3">
+                                    {unitPriceSuffix(p.baseUnit)}
+                                </span>
                             </td>
                             <td className="px-3 py-2.5 text-right">
                                 <input

@@ -9,12 +9,21 @@ export interface ILabelItem {
     name: string;
     barcode: string;
     price: number;
-    /** Optional small line under the name (e.g. category or pack size). */
+    /** Appended to the price, e.g. `/kg` for a weighed item. */
+    unitSuffix?: string;
+    /** Optional small line under the name (e.g. category, PLU, or pack size). */
     secondaryLine?: string;
     /** Batch number — printed as a caption when present (e.g. for a GRN). */
     batchNo?: string | null;
     /** Expiry date (`YYYY-MM-DD`) — printed beside the batch when present. */
     expiryDate?: string | null;
+}
+
+/** Per-unit price suffix for measure base units (`/kg`, `/l`); `''` otherwise. */
+export function unitPriceSuffix(baseUnit: string): string {
+    if (baseUnit === 'kg') return '/kg';
+    if (baseUnit === 'l') return '/l';
+    return '';
 }
 
 export interface IBuildLabelSheetOptions {
@@ -52,7 +61,7 @@ function labelCell(label: ILabelItem): string {
         '<div class="label">' +
         `<div class="name">${escapeHtml(label.name)}</div>` +
         secondary +
-        `<div class="price">${escapeHtml(formatCurrency(label.price))}</div>` +
+        `<div class="price">${escapeHtml(formatCurrency(label.price) + (label.unitSuffix ?? ''))}</div>` +
         batch +
         barcodeBlock +
         '</div>'

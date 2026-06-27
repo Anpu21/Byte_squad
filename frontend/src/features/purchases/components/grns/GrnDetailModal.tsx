@@ -9,7 +9,10 @@ import { DataTable, type DataTableColumn } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
-import { buildLabelSheetHtml } from '@/features/labels/lib/label-sheet-html';
+import {
+    buildLabelSheetHtml,
+    unitPriceSuffix,
+} from '@/features/labels/lib/label-sheet-html';
 import type { ILabelItem } from '@/features/labels/lib/label-sheet-html';
 import { usePrintLabelSheet } from '@/features/labels/hooks/usePrintLabelSheet';
 import type { IGrn } from '@/types';
@@ -87,13 +90,18 @@ export function GrnDetailModal({ grnId, onClose }: IGrnDetailModalProps) {
     function handlePrintLabels() {
         const items = grn?.items ?? [];
         if (items.length === 0) return;
-        const labels: ILabelItem[] = items.map((it) => ({
-            name: it.product?.name ?? it.productId,
-            barcode: it.product?.barcode ?? '',
-            price: Number(it.product?.sellingPrice ?? 0),
-            batchNo: it.batchNo,
-            expiryDate: it.expiryDate,
-        }));
+        const labels: ILabelItem[] = items.map((it) => {
+            const plu = it.product?.pluCode;
+            return {
+                name: it.product?.name ?? it.productId,
+                barcode: it.product?.barcode ?? '',
+                price: Number(it.product?.sellingPrice ?? 0),
+                unitSuffix: unitPriceSuffix(it.product?.baseUnit ?? '') || undefined,
+                secondaryLine: plu ? `PLU ${plu}` : undefined,
+                batchNo: it.batchNo,
+                expiryDate: it.expiryDate,
+            };
+        });
         printLabelSheet(buildLabelSheetHtml(labels));
         toast.success(
             `Sent ${labels.length} label${labels.length === 1 ? '' : 's'} to print`,
