@@ -4,6 +4,8 @@ export interface IProduct {
   id: string
   name: string
   barcode: string
+  /** Numeric PLU/item code for weighed products (embedded in scale barcodes). */
+  pluCode: string | null
   description: string | null
   category: string
   costPrice: number
