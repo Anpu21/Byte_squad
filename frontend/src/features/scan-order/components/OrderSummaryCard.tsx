@@ -2,6 +2,7 @@ import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import StatusPill from '@/components/ui/StatusPill';
 import { formatCurrency } from '@/lib/utils';
+import { orderItemLineTotal } from '@/lib/order-item-total';
 import type { ICustomerOrder } from '@/types';
 import type { Payment } from '../types/payment.type';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
@@ -56,9 +57,7 @@ export function OrderSummaryCard({
                                 {it.product?.name ?? 'Unknown'} × {it.quantity}
                             </span>
                             <span className="mono">
-                                {formatCurrency(
-                                    Number(it.unitPriceSnapshot) * it.quantity,
-                                )}
+                                {formatCurrency(orderItemLineTotal(it))}
                             </span>
                         </div>
                     ))}

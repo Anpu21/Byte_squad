@@ -2,7 +2,7 @@ import { LuSparkles as Sparkles } from 'react-icons/lu';
 
 export function LoyaltyEmpty() {
     return (
-        <div className="bg-surface border border-border rounded-md p-8 text-center">
+        <div className="bg-surface border border-border rounded-2xl p-8 text-center shadow-sm-token">
             <Sparkles
                 size={28}
                 className="mx-auto text-text-3"

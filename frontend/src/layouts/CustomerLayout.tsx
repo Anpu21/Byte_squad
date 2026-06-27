@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import {
     Link,
     Navigate,
@@ -9,7 +9,7 @@ import {
 } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useQuery } from '@tanstack/react-query';
-import { LuLogOut as LogOut, LuMapPin as MapPin, LuSearch as Search, LuScrollText as ScrollText, LuShoppingCart as ShoppingCart, LuSparkles as Sparkles, LuUser as User, LuUserRound as UserRound, LuX as X } from 'react-icons/lu';
+import { LuSearch as Search, LuShoppingCart as ShoppingCart, LuUser as User, LuX as X } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { toggleCartDrawer } from '@/store/slices/shopCartSlice';
@@ -20,8 +20,9 @@ import { profileService } from '@/services/profile.service';
 import { CartDrawer } from '@/components/shop/CartDrawer';
 import Logo from '@/components/ui/Logo';
 import ThemeToggle from '@/components/ui/ThemeToggle';
-import Avatar from '@/components/ui/Avatar';
-import { LoyaltyHeaderBadge } from '@/features/loyalty/components/LoyaltyHeaderBadge';
+import { StorefrontNav } from '@/layouts/components/StorefrontNav';
+import { StorefrontUserMenu } from '@/layouts/components/StorefrontUserMenu';
+import { cn } from '@/lib/utils';
 
 interface CustomerLayoutProps {
     /**
@@ -36,10 +37,8 @@ export default function CustomerLayout({
 }: CustomerLayoutProps) {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const cartCount = useAppSelector(selectShopCartItemCount);
-    const [menuOpen, setMenuOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
 
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -96,60 +95,7 @@ export default function CustomerLayout({
         enabled: isAuthenticated && user?.role === UserRole.CUSTOMER,
         staleTime: 60_000,
     });
-    const branchName = profile?.branch?.name ?? null;
     const avatarSrc = profile?.avatarUrl ?? user?.avatarUrl ?? undefined;
-
-    useEffect(() => {
-        if (!menuOpen) return;
-        const onMouse = (e: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-                setMenuOpen(false);
-            }
-        };
-        const getMenuItems = () =>
-            Array.from(
-                menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ??
-                    [],
-            );
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                setMenuOpen(false);
-                return;
-            }
-            const items = getMenuItems();
-            if (items.length === 0) return;
-            const currentIdx = items.findIndex((el) => el === document.activeElement);
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                const next = currentIdx < 0 ? 0 : (currentIdx + 1) % items.length;
-                items[next]?.focus();
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                const next =
-                    currentIdx <= 0 ? items.length - 1 : currentIdx - 1;
-                items[next]?.focus();
-            } else if (e.key === 'Home') {
-                e.preventDefault();
-                items[0]?.focus();
-            } else if (e.key === 'End') {
-                e.preventDefault();
-                items[items.length - 1]?.focus();
-            }
-        };
-        document.addEventListener('mousedown', onMouse);
-        document.addEventListener('keydown', onKey);
-        requestAnimationFrame(() => getMenuItems()[0]?.focus());
-        return () => {
-            document.removeEventListener('mousedown', onMouse);
-            document.removeEventListener('keydown', onKey);
-        };
-    }, [menuOpen]);
-
-    const handleLogout = () => {
-        logout();
-        setMenuOpen(false);
-        navigate(FRONTEND_ROUTES.LOGIN);
-    };
 
     if (
         !publicMode &&
@@ -168,42 +114,36 @@ export default function CustomerLayout({
             >
                 Skip to main content
             </a>
-            <header className="sticky top-0 z-20 bg-surface border-b border-border">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
-                    <Link to={FRONTEND_ROUTES.SHOP} className="flex-shrink-0">
-                        <Logo />
-                    </Link>
 
-                    <button
-                        type="button"
-                        onClick={() => navigate(FRONTEND_ROUTES.SHOP_PROFILE)}
-                        className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-soft text-primary-soft-text text-xs font-medium hover:opacity-90 transition-opacity max-w-[240px]"
-                        title={
-                            branchName
-                                ? 'Pickup branch — click to change in profile'
-                                : 'Open profile to set your pickup branch'
-                        }
+            <header className="sticky top-0 z-sticky bg-surface/90 backdrop-blur-md border-b border-border">
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-16 flex items-center gap-3 sm:gap-4">
+                    <Link
+                        to={FRONTEND_ROUTES.SHOP}
+                        className="flex items-center gap-2.5 flex-shrink-0"
+                        aria-label="Ledger Pro — shop home"
                     >
-                        <MapPin size={13} />
-                        <span className="truncate">
-                            {branchName ?? 'Set pickup branch'}
+                        <Logo size={38} label={false} />
+                        <span className="hidden sm:flex flex-col leading-tight">
+                            <span className="text-[15px] font-bold tracking-[-0.01em] text-text-1">
+                                Ledger Pro
+                            </span>
+                            <span className="text-[11px] font-medium text-text-3">
+                                Pickup &amp; rewards
+                            </span>
                         </span>
-                    </button>
+                    </Link>
 
                     <form
                         role="search"
                         onSubmit={handleSearchSubmit}
-                        className="hidden md:flex items-center flex-1 max-w-[420px] h-[36px] px-3 bg-surface-2 border border-border rounded-md gap-2 focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/20 transition-colors"
+                        className="hidden lg:flex items-center flex-1 max-w-[420px] h-[38px] px-3 bg-surface-2 border border-border rounded-lg gap-2 focus-within:border-focus focus-within:ring-[3px] focus-within:ring-focus/20 transition-colors"
                     >
-                        <Search
-                            size={14}
-                            className="text-text-3 flex-shrink-0"
-                        />
+                        <Search size={15} className="text-text-3 flex-shrink-0" />
                         <input
                             type="text"
                             value={searchDraft}
                             onChange={(e) => setSearchDraft(e.target.value)}
-                            placeholder="Search products…"
+                            placeholder="Search products, orders or codes"
                             aria-label="Search products"
                             className="flex-1 bg-transparent outline-none text-[13px] text-text-1 placeholder:text-text-3 min-w-0"
                         />
@@ -212,26 +152,19 @@ export default function CustomerLayout({
                                 type="button"
                                 onClick={handleSearchClear}
                                 aria-label="Clear search"
-                                className="p-0.5 rounded-sm text-text-3 hover:text-text-1 transition-colors focus:outline-none focus:ring-[2px] focus:ring-primary/30"
+                                className="p-0.5 rounded-sm text-text-3 hover:text-text-1 transition-colors focus:outline-none focus:ring-[2px] focus:ring-focus/30"
                             >
                                 <X size={12} />
                             </button>
                         )}
                     </form>
 
-                    <div className="flex items-center gap-1 ml-auto">
-                        {isAuthenticated && user && (
-                            <Link
-                                to={FRONTEND_ROUTES.SHOP_MY_ORDERS}
-                                className="hidden sm:inline-flex items-center gap-2 h-9 px-3 text-[13px] font-medium rounded-md bg-surface text-text-1 border border-border-strong hover:bg-surface-2 transition-colors"
-                            >
-                                <ScrollText size={14} />
-                                <span>My Orders</span>
-                            </Link>
-                        )}
-
-                        {isAuthenticated && user?.role === UserRole.CUSTOMER && (
-                            <LoyaltyHeaderBadge />
+                    <div className="flex items-center gap-1.5 ml-auto">
+                        {!publicMode && (
+                            <StorefrontNav
+                                variant="pills"
+                                className="hidden md:flex mr-1"
+                            />
                         )}
 
                         <ThemeToggle />
@@ -251,91 +184,39 @@ export default function CustomerLayout({
                         </button>
 
                         {isAuthenticated && user ? (
-                            <div className="relative" ref={menuRef}>
-                                <button
-                                    type="button"
-                                    onClick={() => setMenuOpen((s) => !s)}
-                                    className="p-1 rounded-full hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-primary/20"
-                                    aria-label="Open user menu"
-                                    aria-haspopup="menu"
-                                    aria-expanded={menuOpen}
-                                >
-                                    <Avatar
-                                        name={`${user.firstName} ${user.lastName}`}
-                                        src={avatarSrc}
-                                        size={32}
-                                    />
-                                </button>
-                                {menuOpen && (
-                                    <div
-                                        role="menu"
-                                        aria-label="User menu"
-                                        className="absolute right-0 mt-2 w-52 bg-surface border border-border rounded-md shadow-md-token overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 z-dropdown"
-                                    >
-                                        <div className="px-4 py-3 border-b border-border">
-                                            <p className="text-[13px] font-semibold text-text-1 truncate">
-                                                {user.firstName} {user.lastName}
-                                            </p>
-                                            <p className="text-[11px] text-text-2 truncate">
-                                                {user.email}
-                                            </p>
-                                        </div>
-                                        <Link
-                                            role="menuitem"
-                                            to={FRONTEND_ROUTES.SHOP_PROFILE}
-                                            className="flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:bg-surface-2"
-                                            onClick={() => setMenuOpen(false)}
-                                        >
-                                            <UserRound size={14} /> Profile
-                                        </Link>
-                                        <Link
-                                            role="menuitem"
-                                            to={FRONTEND_ROUTES.SHOP_MY_ORDERS}
-                                            className="flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:bg-surface-2"
-                                            onClick={() => setMenuOpen(false)}
-                                        >
-                                            <ScrollText size={14} /> My Orders
-                                        </Link>
-                                        <Link
-                                            role="menuitem"
-                                            to={FRONTEND_ROUTES.SHOP_REWARDS}
-                                            className="flex items-center gap-2 px-4 py-2 text-[13px] text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:bg-surface-2"
-                                            onClick={() => setMenuOpen(false)}
-                                        >
-                                            <Sparkles size={14} /> Rewards
-                                        </Link>
-                                        <button
-                                            role="menuitem"
-                                            type="button"
-                                            onClick={handleLogout}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-[13px] text-danger hover:bg-danger-soft transition-colors focus:outline-none focus:bg-danger-soft"
-                                        >
-                                            <LogOut size={14} /> Sign out
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                            <StorefrontUserMenu avatarSrc={avatarSrc} />
                         ) : (
                             <Link
                                 to={FRONTEND_ROUTES.LOGIN}
                                 className="inline-flex items-center gap-2 h-9 px-3.5 text-[13px] font-medium rounded-md bg-primary text-text-inv hover:bg-primary-hover transition-colors"
                             >
-                                <User size={14} /> Sign in
+                                <User size={14} />{' '}
+                                <span className="hidden sm:inline">Sign in</span>
                             </Link>
                         )}
                     </div>
                 </div>
             </header>
 
-            <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+            <main
+                id="main-content"
+                className={cn(
+                    'flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 py-8',
+                    !publicMode && 'pb-24 md:pb-8',
+                )}
+            >
                 <Outlet />
             </main>
 
             <footer className="border-t border-border">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 text-xs text-text-3">
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 text-xs text-text-3">
                     LedgerPro Shop — pickup at your nearest branch.
                 </div>
             </footer>
+
+            {!publicMode && (
+                <StorefrontNav variant="bottom" className="md:hidden" />
+            )}
 
             <CartDrawer />
         </div>

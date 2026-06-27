@@ -6,7 +6,8 @@ import {
     type ShopCartItem,
 } from '@/store/slices/shopCartSlice';
 import { formatCurrency } from '@/lib/utils';
-import { qtyRules } from '@/lib/unit-quantity';
+import { qtyRules, formatQty } from '@/lib/unit-quantity';
+import { shopLineTotal } from '@/store/selectors/shopCart';
 import { QuantityField } from '@/components/shop/QuantityField';
 import ProductImage from './ProductImage';
 
@@ -16,14 +17,18 @@ interface CartItemRowProps {
 
 export function CartItemRow({ item }: CartItemRowProps) {
     const dispatch = useAppDispatch();
+    // "Buy by amount" lines are charged a fixed cash sum; the weight is the
+    // estimate, shown read-only (edit = remove & re-add).
+    const isAmountLine = item.amount != null;
     const lineRef = {
         productId: item.productId,
         branchId: item.branchId,
         unitId: item.unitId,
+        byAmount: isAmountLine,
     };
     // Legacy persisted lines predate `baseUnit`; fall back to the unit label.
     const rules = qtyRules(item.baseUnit || item.unitLabel);
-    const lineTotal = item.sellingPrice * item.quantity;
+    const lineTotal = shopLineTotal(item);
 
     return (
         <li className="flex items-center gap-3 px-5 py-3">
@@ -40,17 +45,23 @@ export function CartItemRow({ item }: CartItemRowProps) {
                     {formatCurrency(item.sellingPrice)} / {item.unitLabel}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                    <QuantityField
-                        value={item.quantity}
-                        onChange={(quantity) =>
-                            dispatch(setQuantity({ ...lineRef, quantity }))
-                        }
-                        step={rules.step}
-                        min={rules.min}
-                        decimals={rules.decimals}
-                        unitLabel={item.unitLabel}
-                        ariaLabel={`Quantity of ${item.name}`}
-                    />
+                    {isAmountLine ? (
+                        <span className="text-xs text-text-2 tabular-nums">
+                            ≈ {formatQty(item.quantity, item.unitLabel)} · fixed
+                        </span>
+                    ) : (
+                        <QuantityField
+                            value={item.quantity}
+                            onChange={(quantity) =>
+                                dispatch(setQuantity({ ...lineRef, quantity }))
+                            }
+                            step={rules.step}
+                            min={rules.min}
+                            decimals={rules.decimals}
+                            unitLabel={item.unitLabel}
+                            ariaLabel={`Quantity of ${item.name}`}
+                        />
+                    )}
                     <span className="ml-auto text-xs font-bold text-text-1 tabular-nums">
                         {formatCurrency(lineTotal)}
                     </span>

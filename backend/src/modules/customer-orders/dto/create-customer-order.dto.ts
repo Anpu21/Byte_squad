@@ -24,6 +24,16 @@ export class CreateCustomerOrderItemDto {
   @IsNumber()
   @Min(0.001)
   quantity!: number;
+
+  /**
+   * "Buy by amount": the exact cash the customer wants to spend on this loose
+   * line. When set, the line is charged this amount; `quantity` is the derived
+   * weight. Server-validated against quantity × unit price.
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  amount?: number;
 }
 
 export class CreateCustomerOrderDto {

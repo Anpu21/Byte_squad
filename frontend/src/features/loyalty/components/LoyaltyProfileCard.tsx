@@ -22,7 +22,7 @@ export function LoyaltyProfileCard() {
               : 'Bronze';
 
     return (
-        <section className="bg-surface border border-border rounded-md p-5">
+        <section className="bg-surface border border-border rounded-2xl p-5 shadow-sm-token">
             <div className="flex items-center justify-between gap-4 mb-4">
                 <h2 className="text-base font-semibold text-text-1">
                     Loyalty rewards
@@ -36,7 +36,7 @@ export function LoyaltyProfileCard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-[200px_minmax(0,1fr)] gap-5">
-                <div className="bg-warning-soft text-warning rounded-md p-4 flex flex-col items-center justify-center text-center">
+                <div className="bg-warning-soft text-warning rounded-xl p-4 flex flex-col items-center justify-center text-center">
                     <Sparkles size={20} aria-hidden="true" />
                     <p className="text-2xl font-bold mt-2">
                         {data.pointsBalance}

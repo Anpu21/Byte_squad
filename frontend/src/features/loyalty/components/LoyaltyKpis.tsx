@@ -10,7 +10,7 @@ interface KpiProps {
 
 function Kpi({ label, value }: KpiProps) {
     return (
-        <div className="bg-surface border border-border rounded-md p-4">
+        <div className="bg-surface border border-border rounded-2xl p-4 shadow-sm-token">
             <p className="text-[11px] uppercase tracking-widest text-text-3">
                 {label}
             </p>

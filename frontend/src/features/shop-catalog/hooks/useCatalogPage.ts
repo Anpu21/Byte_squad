@@ -10,9 +10,11 @@ import { selectActiveBranchId } from '@/store/selectors/shopBranch';
 import { useAuth } from '@/hooks/useAuth';
 import { queryKeys } from '@/lib/queryKeys';
 import { useBuyAgain } from './useBuyAgain';
-import type { IShopProduct } from '@/types';
+import type { IShopProduct, ShopStockStatus } from '@/types';
 
 export type CatalogSort = 'name' | 'price_asc' | 'price_desc';
+
+const ALL_STOCK: ShopStockStatus[] = ['in', 'low', 'out'];
 
 function sortProducts(
     products: IShopProduct[],
@@ -38,16 +40,21 @@ export function useCatalogPage() {
     const search = searchParams.get('q') ?? '';
     const [category, setCategory] = useState('');
     const [sort, setSort] = useState<CatalogSort>('name');
+    // Client-side refinements over the server-filtered list (no extra query).
+    const [stock, setStock] = useState<ShopStockStatus[]>(ALL_STOCK);
+    const [maxPrice, setMaxPrice] = useState<number | null>(null);
 
-    const clearSearch = () => {
+    const setSearch = (value: string) =>
         setSearchParams(
             (prev) => {
-                prev.delete('q');
+                if (value) prev.set('q', value);
+                else prev.delete('q');
                 return prev;
             },
             { replace: true },
         );
-    };
+
+    const clearSearch = () => setSearch('');
 
     const branchesQuery = useQuery({
         queryKey: queryKeys.shop.branches(),
@@ -100,6 +107,31 @@ export function useCatalogPage() {
         () => sortProducts(productsQuery.data ?? [], sort),
         [productsQuery.data, sort],
     );
+
+    // Availability counts span the full server result; the slider ceiling is the
+    // dearest product, rounded up to a tidy step.
+    const stockCounts = useMemo(() => {
+        const counts: Record<ShopStockStatus, number> = { in: 0, low: 0, out: 0 };
+        for (const item of products) counts[item.stockStatus] += 1;
+        return counts;
+    }, [products]);
+
+    const priceCeiling = useMemo(() => {
+        if (products.length === 0) return 0;
+        const max = Math.max(...products.map((item) => item.sellingPrice));
+        return Math.ceil(max / 50) * 50;
+    }, [products]);
+
+    const visibleProducts = useMemo(
+        () =>
+            products.filter(
+                (item) =>
+                    stock.includes(item.stockStatus) &&
+                    (maxPrice == null || item.sellingPrice <= maxPrice),
+            ),
+        [products, stock, maxPrice],
+    );
+
     const recommendedProducts = useMemo(
         () => recommendedQuery.data ?? [],
         [recommendedQuery.data],
@@ -120,6 +152,26 @@ export function useCatalogPage() {
         () => branches.find((b) => b.id === branchId) ?? null,
         [branches, branchId],
     );
+
+    const toggleStock = (value: ShopStockStatus) =>
+        setStock((prev) =>
+            prev.includes(value)
+                ? prev.filter((s) => s !== value)
+                : [...prev, value],
+        );
+
+    const clearFilters = () => {
+        setCategory('');
+        setStock(ALL_STOCK);
+        setMaxPrice(null);
+        setSearch('');
+    };
+
+    const hasActiveFilters =
+        Boolean(search) ||
+        Boolean(category) ||
+        stock.length !== ALL_STOCK.length ||
+        maxPrice != null;
 
     // Free branch switching — keeps the cart so items can span branches.
     const handleBranchChange = (newId: string) => {
@@ -157,17 +209,27 @@ export function useCatalogPage() {
         branchesLoading: branchesQuery.isLoading,
         categories,
         products,
+        visibleProducts,
         recommendedProducts,
         buyAgainProducts,
-        productCount: products.length,
+        productCount: visibleProducts.length,
         isLoading: productsQuery.isLoading,
         currentBranch,
         search,
+        setSearch,
         clearSearch,
         category,
         setCategory,
         sort,
         setSort,
+        stock,
+        toggleStock,
+        stockCounts,
+        maxPrice,
+        setMaxPrice,
+        priceCeiling,
+        clearFilters,
+        hasActiveFilters,
         handleBranchChange,
         handleAdd,
     };

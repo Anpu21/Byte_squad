@@ -69,6 +69,7 @@ interface EffectiveOrderItem {
   quantity: number;
   baseUnitQty?: number;
   unitPriceSnapshot?: number;
+  fixedPriceOverride?: number | null;
 }
 
 @Injectable()
@@ -130,11 +131,7 @@ export class CustomerOrdersService {
 
     const itemEntities = await this.buildOrderItems(dto.items);
     const estimatedTotal = this.roundMoney(
-      itemEntities.reduce(
-        (sum, item) =>
-          sum + Number(item.unitPriceSnapshot) * Number(item.quantity),
-        0,
-      ),
+      itemEntities.reduce((sum, item) => sum + this.lineAmount(item), 0),
     );
     const paymentMode = dto.paymentMode ?? CustomerOrderPaymentMode.MANUAL;
     const paymentStatus =
@@ -293,10 +290,7 @@ export class CustomerOrdersService {
       }
       const itemEntities = await this.buildOrderItems(items);
       const estimatedTotal = this.roundMoney(
-        itemEntities.reduce(
-          (sum, it) => sum + Number(it.unitPriceSnapshot) * Number(it.quantity),
-          0,
-        ),
+        itemEntities.reduce((sum, it) => sum + this.lineAmount(it), 0),
       );
       const orderCode = await this.generateUniqueCode();
       const saved = await this.orders.createAndSave({
@@ -752,7 +746,12 @@ export class CustomerOrdersService {
   }
 
   private async buildOrderItems(
-    items: { productId: string; quantity: number; unitId?: string | null }[],
+    items: {
+      productId: string;
+      quantity: number;
+      unitId?: string | null;
+      amount?: number | null;
+    }[],
   ) {
     const productIds = items.map((i) => i.productId);
     const products = await this.products.findActiveByIdsWithUnits(productIds);
@@ -785,6 +784,32 @@ export class CustomerOrdersService {
           `${product.name} is sold in whole units; quantity ${baseUnitQty} is not allowed`,
         );
       }
+
+      // "Buy by amount": the customer named a cash figure and we derived the
+      // weight. Pin the line to that exact amount — but the server stays the
+      // price authority, so the amount must reconcile with quantity × unit
+      // price (within the weight-rounding gap) or a client could pay 1 Rs for
+      // 1000 kg. Amount selling is loose-only.
+      let fixedPriceOverride: number | null = null;
+      if (it.amount != null) {
+        if (product.baseUnit === 'unit') {
+          throw new BadRequestException(
+            `${product.name} is sold by the unit and cannot be bought by amount`,
+          );
+        }
+        if (it.amount <= 0) {
+          throw new BadRequestException('Amount must be greater than zero');
+        }
+        const expected = this.roundMoney(unitPrice * it.quantity);
+        const tolerance = Math.max(0.01, unitPrice * 0.001);
+        if (Math.abs(it.amount - expected) > tolerance) {
+          throw new BadRequestException(
+            `Amount ${it.amount} does not match ${it.quantity} × ${unitPrice} for ${product.name}`,
+          );
+        }
+        fixedPriceOverride = this.roundMoney(it.amount);
+      }
+
       return this.orders.buildItem({
         productId: product.id,
         quantity: it.quantity,
@@ -792,6 +817,7 @@ export class CustomerOrdersService {
         unitLabel: unit ? unit.name : product.baseUnit,
         baseUnitQty,
         unitPriceSnapshot: unitPrice,
+        fixedPriceOverride,
       });
     });
   }
@@ -820,6 +846,10 @@ export class CustomerOrdersService {
       quantity: Number(item.quantity),
       baseUnitQty: Number(item.baseUnitQty) || Number(item.quantity),
       unitPriceSnapshot: Number(item.unitPriceSnapshot),
+      fixedPriceOverride:
+        item.fixedPriceOverride != null
+          ? Number(item.fixedPriceOverride)
+          : null,
     }));
   }
 
@@ -851,7 +881,11 @@ export class CustomerOrdersService {
       // item overrides which carry no unit context.
       const unitPrice = it.unitPriceSnapshot ?? Number(product.sellingPrice);
       const baseUnitQty = it.baseUnitQty ?? it.quantity;
-      const lineTotal = this.roundMoney(unitPrice * it.quantity);
+      const lineTotal = this.roundMoney(
+        it.fixedPriceOverride != null
+          ? Number(it.fixedPriceOverride)
+          : unitPrice * it.quantity,
+      );
       subtotal += lineTotal;
       return {
         productId: product.id,
@@ -1038,6 +1072,21 @@ export class CustomerOrdersService {
 
   private roundMoney(value: number): number {
     return Math.round(value * 100) / 100;
+  }
+
+  /**
+   * Raw line value before the order-level round: a "buy by amount" loose line
+   * is charged its fixed override, every other line is unit price × quantity.
+   */
+  private lineAmount(item: {
+    fixedPriceOverride?: number | null;
+    unitPriceSnapshot?: number | null;
+    quantity: number;
+  }): number {
+    if (item.fixedPriceOverride != null) {
+      return Number(item.fixedPriceOverride);
+    }
+    return Number(item.unitPriceSnapshot ?? 0) * Number(item.quantity);
   }
 
   private round3(value: number): number {

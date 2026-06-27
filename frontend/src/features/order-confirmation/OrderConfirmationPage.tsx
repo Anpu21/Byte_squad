@@ -4,6 +4,7 @@ import { useOrderConfirmation } from '@/features/order-confirmation/hooks/useOrd
 import { QrCodeCard } from '@/features/order-confirmation/components/QrCodeCard';
 import { OrderSummaryPanel } from '@/features/order-confirmation/components/OrderSummaryPanel';
 import { OrderNotFound } from '@/features/order-confirmation/components/OrderNotFound';
+import { OrderStatusTimeline } from '@/features/my-orders/components/OrderStatusTimeline';
 import { PointsEarnedBanner } from '@/features/loyalty';
 
 export function OrderConfirmationPage() {
@@ -41,6 +42,10 @@ export function OrderConfirmationPage() {
             </div>
 
             {isCompleted && <PointsEarnedBanner pointsEarned={pointsEarned} />}
+
+            <div className="mb-6 rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-sm-token">
+                <OrderStatusTimeline status={p.order.status} />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <QrCodeCard

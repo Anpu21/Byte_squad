@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { LuPlus as Plus, LuStore as Store } from 'react-icons/lu';
+import { LuPlus as Plus, LuStore as Store, LuShoppingBag as ShoppingBag } from 'react-icons/lu';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { formatCurrency } from '@/lib/utils';
 import ProductImage from '@/components/shop/ProductImage';
@@ -25,7 +25,7 @@ export function ProductCard({
 
     return (
         <div
-            className={`bg-surface border border-border rounded-xl overflow-hidden shadow-sm-token hover:border-border-strong hover:shadow-md-token hover:-translate-y-0.5 transition-all duration-200 ${
+            className={`bg-surface border border-border rounded-2xl overflow-hidden shadow-sm-token hover:border-border-strong hover:shadow-md-token hover:-translate-y-0.5 transition-all duration-200 ${
                 out ? 'opacity-60' : ''
             }`}
         >
@@ -42,7 +42,13 @@ export function ProductCard({
                             ? 'w-full h-full object-cover grayscale'
                             : 'w-full h-full object-cover'
                     }
-                    fallback={<span className="text-text-3 text-xs">No image</span>}
+                    fallback={
+                        <ShoppingBag
+                            size={34}
+                            className="text-border-strong"
+                            aria-hidden="true"
+                        />
+                    }
                 />
                 <span
                     className={`absolute top-2 right-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-wider ${STOCK_PILL[product.stockStatus]}`}
