@@ -1,5 +1,6 @@
 import type { ICustomerOrder } from '@/types';
 import { formatCurrency } from '@/lib/utils';
+import { orderItemLineTotal } from '@/lib/order-item-total';
 
 interface ShopOrderItemsListProps {
     items: ICustomerOrder['items'];
@@ -36,14 +37,13 @@ export function ShopOrderItemsList({
                                     {item.product?.name ?? 'Item'}
                                 </p>
                                 <p className="text-[11px] text-text-3">
-                                    {formatCurrency(item.unitPriceSnapshot)} ×{' '}
-                                    {item.quantity}
+                                    {item.fixedPriceOverride != null
+                                        ? `${item.quantity} · fixed amount`
+                                        : `${formatCurrency(item.unitPriceSnapshot)} × ${item.quantity}`}
                                 </p>
                             </div>
                             <p className="text-[13px] font-medium text-text-1 tabular-nums whitespace-nowrap">
-                                {formatCurrency(
-                                    item.unitPriceSnapshot * item.quantity,
-                                )}
+                                {formatCurrency(orderItemLineTotal(item))}
                             </p>
                         </li>
                     ))}

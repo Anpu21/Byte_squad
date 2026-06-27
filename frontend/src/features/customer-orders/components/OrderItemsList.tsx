@@ -1,5 +1,6 @@
 import type { ICustomerOrder } from '@/types';
 import { formatCurrency } from '@/lib/utils';
+import { orderItemLineTotal } from '@/lib/order-item-total';
 
 interface OrderItemsListProps {
     items: ICustomerOrder['items'];
@@ -26,7 +27,7 @@ export function OrderItemsList({
             </p>
             <div className="border border-border rounded-md divide-y divide-border max-h-[260px] overflow-y-auto">
                 {items.map((item) => {
-                    const lineTotal = item.unitPriceSnapshot * item.quantity;
+                    const lineTotal = orderItemLineTotal(item);
                     return (
                         <div
                             key={item.id}
@@ -37,8 +38,9 @@ export function OrderItemsList({
                                     {item.product?.name ?? 'Item'}
                                 </p>
                                 <p className="text-[11px] text-text-3 mono">
-                                    {formatCurrency(item.unitPriceSnapshot)} ×{' '}
-                                    {item.quantity}
+                                    {item.fixedPriceOverride != null
+                                        ? `${item.quantity} · fixed amount`
+                                        : `${formatCurrency(item.unitPriceSnapshot)} × ${item.quantity}`}
                                 </p>
                             </div>
                             <p className="text-[13px] font-semibold text-text-1 tabular-nums whitespace-nowrap mono">
