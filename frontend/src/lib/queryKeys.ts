@@ -189,6 +189,11 @@ export const queryKeys = {
     },
     purchases: {
         all: () => ['purchases'] as const,
+        reorder: (params: {
+            branchId?: string;
+            leadDays?: number;
+            lookbackDays?: number;
+        }) => ['purchases', 'reorder', params] as const,
         suppliers: (params: {
             search?: string;
             status?: string;

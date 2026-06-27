@@ -87,6 +87,7 @@ export const SIDEBAR: NavEntry[] = [
             { key: 'grns', label: 'Goods receipts', Icon: ClipboardList },
             { key: 'new-grn', label: 'New GRN', Icon: PackagePlus },
             { key: 'orders', label: 'Purchase orders', Icon: FileText },
+            { key: 'reorder', label: 'Reorder', Icon: Sparkles },
             { key: 'bills', label: 'Bills & Payments', Icon: Wallet },
             { key: 'ageing', label: 'Ageing', Icon: CalendarClock },
             { key: 'suppliers', label: 'Suppliers', Icon: Building2 },

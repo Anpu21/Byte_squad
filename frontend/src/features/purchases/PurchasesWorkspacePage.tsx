@@ -10,6 +10,7 @@ import { SuppliersPanel } from '@/features/purchases/components/suppliers/Suppli
 import { GrnsPanel } from '@/features/purchases/components/grns/GrnsPanel';
 import { NewGrnPanel } from '@/features/purchases/components/new-grn/NewGrnPanel';
 import { OrdersPanel } from '@/features/purchases/components/orders/OrdersPanel';
+import { ReorderPanel } from '@/features/purchases/components/reorder/ReorderPanel';
 import { BillsPanel } from '@/features/purchases/components/bills/BillsPanel';
 import { AgeingPanel } from '@/features/purchases/components/ageing/AgeingPanel';
 
@@ -53,6 +54,9 @@ export function PurchasesWorkspacePage() {
                         setTab('new-grn');
                     }}
                 />
+            )}
+            {tab === 'reorder' && (
+                <ReorderPanel onDrafted={() => setTab('orders')} />
             )}
             {tab === 'bills' && <BillsPanel />}
             {tab === 'ageing' && <AgeingPanel />}
