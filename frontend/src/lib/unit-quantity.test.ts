@@ -20,8 +20,8 @@ describe('isFractionalUnit', () => {
 });
 
 describe('qtyRules', () => {
-    it('lets fractional units step by 0.25 down to 1 g/ml with 3 decimals', () => {
-        expect(qtyRules('kg')).toEqual({ step: 0.25, min: 0.001, decimals: 3 });
+    it('lets fractional units step by 0.25 with a 0.25 minimum and 3 decimals', () => {
+        expect(qtyRules('kg')).toEqual({ step: 0.25, min: 0.25, decimals: 3 });
     });
 
     it('keeps countable units whole', () => {
@@ -35,10 +35,10 @@ describe('clampQty', () => {
         expect(clampQty(0.25, 'kg')).toBe(0.25);
     });
 
-    it('floors fractional amounts to the 1 g/ml minimum', () => {
-        expect(clampQty(0, 'kg')).toBe(0.001);
-        expect(clampQty(-5, 'kg')).toBe(0.001);
-        expect(clampQty(0.0004, 'kg')).toBe(0.001);
+    it('floors fractional amounts to the 0.25 minimum', () => {
+        expect(clampQty(0, 'kg')).toBe(0.25);
+        expect(clampQty(-5, 'kg')).toBe(0.25);
+        expect(clampQty(0.1, 'kg')).toBe(0.25);
     });
 
     it('rounds fractional amounts to 3 decimals', () => {
@@ -51,7 +51,7 @@ describe('clampQty', () => {
     });
 
     it('returns the minimum for non-finite input', () => {
-        expect(clampQty(Number.NaN, 'kg')).toBe(0.001);
+        expect(clampQty(Number.NaN, 'kg')).toBe(0.25);
         expect(clampQty(Number.NaN, 'unit')).toBe(1);
     });
 });

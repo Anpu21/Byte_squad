@@ -8,13 +8,13 @@
  * `baseUnitQty` when `product.baseUnit === 'unit'` — so the UI never lets a
  * shopper build a cart the API would reject.
  *
- * Granularity (product decision): fractional units step by ¼ and accept any
- * amount down to 1 g / 1 ml; countable units step by 1.
+ * Granularity (product decision): fractional units step by ¼ and have a ¼
+ * minimum order — the step IS the floor, so the −/+ stepper can't dead-end on a
+ * sub-gram sliver and a typed-then-cleared field can't get stuck. Countable
+ * units step by 1.
  */
 
-/** Smallest typeable amount for a fractional unit (1 g / 1 ml). */
-const FRACTION_MIN = 0.001;
-/** +/- tap step for a fractional unit (¼ kg / ¼ l). */
+/** +/- tap step AND minimum order for a fractional unit (¼ kg / ¼ l). */
 const FRACTION_STEP = 0.25;
 /** Decimal places the backend persists (`numeric(12,3)`). */
 const FRACTION_DECIMALS = 3;
@@ -42,7 +42,7 @@ export function isFractionalUnit(baseUnit: string): boolean {
 /** Step / min / decimals for a unit, used to drive the quantity input. */
 export function qtyRules(baseUnit: string): QtyRules {
     return isFractionalUnit(baseUnit)
-        ? { step: FRACTION_STEP, min: FRACTION_MIN, decimals: FRACTION_DECIMALS }
+        ? { step: FRACTION_STEP, min: FRACTION_STEP, decimals: FRACTION_DECIMALS }
         : { step: 1, min: 1, decimals: 0 };
 }
 
