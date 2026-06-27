@@ -38,6 +38,12 @@ interface ProductDetailActionsProps {
 /** Quick-pick cash amounts for the "By amount" field. */
 const AMOUNT_PRESETS = [500, 1000, 2000, 5000];
 
+/** Quick-pick weights for the "By weight" stepper (kg / L). */
+const WEIGHT_PRESETS = [0.25, 0.5, 1, 2];
+
+const CHIP_CLASS =
+    'px-3 h-8 rounded-md bg-surface-2 text-xs font-medium text-text-2 hover:bg-primary-soft hover:text-text-1 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25';
+
 export function ProductDetailActions({
     entryMode,
     onEntryModeChange,
@@ -88,22 +94,39 @@ export function ProductDetailActions({
                     </p>
                 </div>
             ) : (
-                <div className="flex items-center gap-2 flex-wrap">
-                    <QuantityField
-                        value={qty}
-                        onChange={onQtyChange}
-                        step={step}
-                        min={0}
-                        decimals={decimals}
-                        unitLabel={unitLabel}
-                        dynamicStep
-                        disabled={disabled}
-                        ariaLabel="Quantity"
-                    />
-                    {isFractional && qty > 0 && (
-                        <span className="text-xs text-text-3 tabular-nums">
-                            ≈ pay {formatCurrency(previewAmount)}
-                        </span>
+                <div className="flex flex-col gap-2.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <QuantityField
+                            value={qty}
+                            onChange={onQtyChange}
+                            step={step}
+                            min={0}
+                            decimals={decimals}
+                            unitLabel={unitLabel}
+                            dynamicStep
+                            disabled={disabled}
+                            ariaLabel="Quantity"
+                        />
+                        {isFractional && qty > 0 && (
+                            <span className="text-xs text-text-3 tabular-nums">
+                                ≈ pay {formatCurrency(previewAmount)}
+                            </span>
+                        )}
+                    </div>
+                    {isFractional && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {WEIGHT_PRESETS.map((preset) => (
+                                <button
+                                    key={preset}
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => onQtyChange(preset)}
+                                    className={CHIP_CLASS}
+                                >
+                                    {formatQty(preset, unitLabel)}
+                                </button>
+                            ))}
+                        </div>
                     )}
                 </div>
             )}

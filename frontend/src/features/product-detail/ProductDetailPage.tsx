@@ -31,7 +31,7 @@ export function ProductDetailPage() {
     const hasUnitChoice = p.units.length > 1;
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
             <Link
                 to={FRONTEND_ROUTES.SHOP}
                 className="inline-flex items-center gap-1 text-sm text-text-2 hover:text-text-1 mb-6"
@@ -39,17 +39,17 @@ export function ProductDetailPage() {
                 <ChevronLeft size={14} /> Back to catalog
             </Link>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 items-start">
                 <ProductDetailImage
                     src={p.product.imageUrl}
                     alt={p.product.name}
                 />
 
                 <div>
-                    <p className="text-[11px] uppercase tracking-widest text-text-3">
+                    <p className="text-[11px] font-medium uppercase tracking-widest text-accent-text">
                         {p.product.category}
                     </p>
-                    <h1 className="text-2xl font-bold text-text-1 tracking-tight mt-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-text-1 tracking-tight mt-2">
                         {p.product.name}
                     </h1>
                     <p className="text-3xl font-bold text-text-1 tabular-nums mt-4">
