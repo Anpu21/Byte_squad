@@ -110,8 +110,11 @@ export function ProductDetailPage() {
 
                     <ProductDetailActions
                         qty={p.qty}
-                        onIncrement={p.increment}
-                        onDecrement={p.decrement}
+                        onQtyChange={p.setQty}
+                        step={p.qtyStep}
+                        decimals={p.qtyDecimals}
+                        unitLabel={p.qtyUnitLabel}
+                        canAdd={p.canAdd}
                         onAdd={p.handleAdd}
                         onBuyNow={p.handleBuyNow}
                         disabled={p.isOutEverywhere || p.product.stockStatus === 'out'}
@@ -131,8 +134,13 @@ export function ProductDetailPage() {
             <StickyAddToCartBar
                 name={p.product.name}
                 sellingPrice={p.unitPrice}
+                unitLabel={p.qtyUnitLabel}
                 onAdd={p.handleAdd}
-                disabled={p.isOutEverywhere || p.product.stockStatus === 'out'}
+                disabled={
+                    p.isOutEverywhere ||
+                    p.product.stockStatus === 'out' ||
+                    !p.canAdd
+                }
             />
         </div>
     );

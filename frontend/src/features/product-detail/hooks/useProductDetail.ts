@@ -10,6 +10,7 @@ import { selectActiveBranchId } from '@/store/selectors/shopBranch';
 import { useAuth } from '@/hooks/useAuth';
 import { queryKeys } from '@/lib/queryKeys';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import { qtyRules, formatQty } from '@/lib/unit-quantity';
 import type { IShopProduct, IShopSellableUnit } from '@/types';
 
 export function useProductDetail() {
@@ -70,6 +71,11 @@ export function useProductDetail() {
         ? selectedUnit.sellingPrice
         : (product?.sellingPrice ?? 0);
 
+    // Step / min / decimals come from the product's base unit (whole vs
+    // fractional); the label shown is the chosen sellable unit's name.
+    const rules = qtyRules(product?.baseUnit ?? '');
+    const qtyUnitLabel = selectedUnit?.name ?? product?.baseUnit ?? '';
+
     const availableIds = product?.availableBranches.map((b) => b.id) ?? [];
     const isOutEverywhere =
         !!product && product.stockStatus === 'out' && availableIds.length === 0;
@@ -99,10 +105,11 @@ export function useProductDetail() {
                 imageUrl: product.imageUrl,
                 unitId: selectedUnit ? selectedUnit.id : null,
                 unitLabel: selectedUnit ? selectedUnit.name : product.baseUnit,
+                baseUnit: product.baseUnit,
                 quantity: qty,
             }),
         );
-        toast.success(`${product.name} × ${qty} added`);
+        toast.success(`${product.name} × ${formatQty(qty, qtyUnitLabel)} added`);
         return true;
     };
 
@@ -125,6 +132,7 @@ export function useProductDetail() {
                 imageUrl: recommended.imageUrl,
                 unitId: base ? base.id : null,
                 unitLabel: base ? base.name : recommended.baseUnit,
+                baseUnit: recommended.baseUnit,
             }),
         );
         toast.success(`${recommended.name} added`);
@@ -134,8 +142,13 @@ export function useProductDetail() {
         product,
         isLoading,
         qty,
-        increment: () => setQty((q) => q + 1),
-        decrement: () => setQty((q) => Math.max(1, q - 1)),
+        setQty,
+        qtyStep: rules.step,
+        qtyDecimals: rules.decimals,
+        qtyUnitLabel,
+        // Stepper floors at 0 (a "cleared" state); the order minimum (rules.min)
+        // gates Add/Buy so a 0 / sub-minimum quantity can't be ordered.
+        canAdd: qty >= rules.min,
         units: product?.sellableUnits ?? [],
         // Effective unit id (falls back to base) so the unit <Select> stays controlled.
         selectedUnitId: selectedUnit?.id ?? null,

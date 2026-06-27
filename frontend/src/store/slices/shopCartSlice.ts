@@ -11,6 +11,8 @@ export interface ShopCartItem {
     /** Chosen sellable unit; null = the product base unit. */
     unitId: string | null;
     unitLabel: string;
+    /** Product base unit (kg / l / unit) — drives fractional vs whole qty. */
+    baseUnit: string;
     quantity: number;
 }
 
@@ -58,6 +60,7 @@ const shopCartSlice = createSlice({
                 imageUrl: string | null;
                 unitId: string | null;
                 unitLabel: string;
+                baseUnit: string;
                 quantity?: number;
             }>,
         ) {
@@ -78,6 +81,7 @@ const shopCartSlice = createSlice({
                     imageUrl: action.payload.imageUrl,
                     unitId: action.payload.unitId,
                     unitLabel: action.payload.unitLabel,
+                    baseUnit: action.payload.baseUnit,
                     quantity: qty,
                 });
             }

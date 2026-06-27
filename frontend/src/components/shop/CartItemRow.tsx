@@ -1,11 +1,13 @@
 import { useAppDispatch } from '@/store/hooks';
-import { LuMinus as Minus, LuPlus as Plus, LuTrash2 as Trash2 } from 'react-icons/lu';
+import { LuTrash2 as Trash2 } from 'react-icons/lu';
 import {
     removeFromCart,
     setQuantity,
     type ShopCartItem,
 } from '@/store/slices/shopCartSlice';
 import { formatCurrency } from '@/lib/utils';
+import { qtyRules } from '@/lib/unit-quantity';
+import { QuantityField } from '@/components/shop/QuantityField';
 import ProductImage from './ProductImage';
 
 interface CartItemRowProps {
@@ -19,6 +21,8 @@ export function CartItemRow({ item }: CartItemRowProps) {
         branchId: item.branchId,
         unitId: item.unitId,
     };
+    // Legacy persisted lines predate `baseUnit`; fall back to the unit label.
+    const rules = qtyRules(item.baseUnit || item.unitLabel);
     const lineTotal = item.sellingPrice * item.quantity;
 
     return (
@@ -36,43 +40,17 @@ export function CartItemRow({ item }: CartItemRowProps) {
                     {formatCurrency(item.sellingPrice)} / {item.unitLabel}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                    <button
-                        type="button"
-                        onClick={() =>
-                            dispatch(
-                                setQuantity({
-                                    ...lineRef,
-                                    quantity: item.quantity - 1,
-                                }),
-                            )
+                    <QuantityField
+                        value={item.quantity}
+                        onChange={(quantity) =>
+                            dispatch(setQuantity({ ...lineRef, quantity }))
                         }
-                        disabled={item.quantity <= 1}
-                        aria-label={`Decrease quantity of ${item.name}`}
-                        className="w-9 h-9 flex items-center justify-center rounded-md bg-surface-2 hover:bg-primary-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25"
-                    >
-                        <Minus size={14} />
-                    </button>
-                    <span
-                        className="text-sm font-semibold text-text-1 min-w-[2ch] text-center tabular-nums"
-                        aria-live="polite"
-                    >
-                        {item.quantity}
-                    </span>
-                    <button
-                        type="button"
-                        onClick={() =>
-                            dispatch(
-                                setQuantity({
-                                    ...lineRef,
-                                    quantity: item.quantity + 1,
-                                }),
-                            )
-                        }
-                        aria-label={`Increase quantity of ${item.name}`}
-                        className="w-9 h-9 flex items-center justify-center rounded-md bg-surface-2 hover:bg-primary-soft transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25"
-                    >
-                        <Plus size={14} />
-                    </button>
+                        step={rules.step}
+                        min={rules.min}
+                        decimals={rules.decimals}
+                        unitLabel={item.unitLabel}
+                        ariaLabel={`Quantity of ${item.name}`}
+                    />
                     <span className="ml-auto text-xs font-bold text-text-1 tabular-nums">
                         {formatCurrency(lineTotal)}
                     </span>
