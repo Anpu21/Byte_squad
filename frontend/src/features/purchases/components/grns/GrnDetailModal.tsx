@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LuPrinter as Printer } from 'react-icons/lu';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
@@ -8,6 +9,9 @@ import { DataTable, type DataTableColumn } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
+import { buildLabelSheetHtml } from '@/features/labels/lib/label-sheet-html';
+import type { ILabelItem } from '@/features/labels/lib/label-sheet-html';
+import { usePrintLabelSheet } from '@/features/labels/hooks/usePrintLabelSheet';
 import type { IGrn } from '@/types';
 import { useGrn } from '../../hooks/useGrn';
 import { useVoidGrn } from '../../hooks/useVoidGrn';
@@ -68,6 +72,7 @@ export function GrnDetailModal({ grnId, onClose }: IGrnDetailModalProps) {
     const isAdmin = user?.role === UserRole.ADMIN;
     const grnQuery = useGrn(grnId);
     const voidGrn = useVoidGrn();
+    const { printLabelSheet } = usePrintLabelSheet();
     const [voidReason, setVoidReason] = useState('');
     const [voiding, setVoiding] = useState(false);
 
@@ -77,6 +82,23 @@ export function GrnDetailModal({ grnId, onClose }: IGrnDetailModalProps) {
         !!grn &&
         grn.status === 'Received' &&
         Number(grn.paidAmount) === 0;
+
+    /** One price/barcode label per received line, carrying its batch & expiry. */
+    function handlePrintLabels() {
+        const items = grn?.items ?? [];
+        if (items.length === 0) return;
+        const labels: ILabelItem[] = items.map((it) => ({
+            name: it.product?.name ?? it.productId,
+            barcode: it.product?.barcode ?? '',
+            price: Number(it.product?.sellingPrice ?? 0),
+            batchNo: it.batchNo,
+            expiryDate: it.expiryDate,
+        }));
+        printLabelSheet(buildLabelSheetHtml(labels));
+        toast.success(
+            `Sent ${labels.length} label${labels.length === 1 ? '' : 's'} to print`,
+        );
+    }
 
     async function handleVoid() {
         if (!grn || voidReason.trim().length < 3) return;
@@ -126,6 +148,22 @@ export function GrnDetailModal({ grnId, onClose }: IGrnDetailModalProps) {
                                 ? ` · supplier inv ${grn.supplierInvoiceNo}`
                                 : ''}
                         </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-medium uppercase tracking-wide text-text-3">
+                            Received lines
+                        </span>
+                        {(grn.items?.length ?? 0) > 0 && (
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={handlePrintLabels}
+                            >
+                                <Printer size={14} aria-hidden />
+                                Print labels
+                            </Button>
+                        )}
                     </div>
 
                     <div className="border border-border rounded-md overflow-hidden">
