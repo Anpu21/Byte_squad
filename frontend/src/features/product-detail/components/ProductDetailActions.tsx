@@ -1,11 +1,15 @@
 import { LuShoppingCart as ShoppingCart } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
-import { QtyStepper } from './QtyStepper';
+import { QuantityField } from '@/components/shop/QuantityField';
 
 interface ProductDetailActionsProps {
     qty: number;
-    onIncrement: () => void;
-    onDecrement: () => void;
+    onQtyChange: (next: number) => void;
+    step: number;
+    decimals: number;
+    unitLabel: string;
+    /** False when the quantity is below the order minimum (e.g. 0) — Add/Buy off. */
+    canAdd: boolean;
     onAdd: () => void;
     onBuyNow: () => void;
     disabled: boolean;
@@ -13,25 +17,34 @@ interface ProductDetailActionsProps {
 
 export function ProductDetailActions({
     qty,
-    onIncrement,
-    onDecrement,
+    onQtyChange,
+    step,
+    decimals,
+    unitLabel,
+    canAdd,
     onAdd,
     onBuyNow,
     disabled,
 }: ProductDetailActionsProps) {
     return (
         <div className="mt-8 flex items-center gap-3 flex-wrap">
-            <QtyStepper
-                qty={qty}
-                onIncrement={onIncrement}
-                onDecrement={onDecrement}
+            <QuantityField
+                value={qty}
+                onChange={onQtyChange}
+                step={step}
+                min={0}
+                decimals={decimals}
+                unitLabel={unitLabel}
+                dynamicStep
+                disabled={disabled}
+                ariaLabel="Quantity"
             />
             <Button
                 type="button"
                 variant="secondary"
                 size="lg"
                 onClick={onAdd}
-                disabled={disabled}
+                disabled={disabled || !canAdd}
                 className="flex-1"
             >
                 <ShoppingCart size={14} /> Add to cart
@@ -41,7 +54,7 @@ export function ProductDetailActions({
                 variant="primary"
                 size="lg"
                 onClick={onBuyNow}
-                disabled={disabled}
+                disabled={disabled || !canAdd}
                 className="flex-1"
             >
                 Buy now

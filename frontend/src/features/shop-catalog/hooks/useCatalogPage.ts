@@ -144,6 +144,7 @@ export function useCatalogPage() {
                 imageUrl: product.imageUrl,
                 unitId: unit ? unit.id : null,
                 unitLabel: unit ? unit.name : product.baseUnit,
+                baseUnit: product.baseUnit,
             }),
         );
         toast.success(`${product.name} added`);

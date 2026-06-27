@@ -5,6 +5,7 @@ import { formatCurrency } from '@/lib/utils';
 interface StickyAddToCartBarProps {
     name: string;
     sellingPrice: number;
+    unitLabel: string;
     onAdd: () => void;
     disabled: boolean;
 }
@@ -12,6 +13,7 @@ interface StickyAddToCartBarProps {
 export function StickyAddToCartBar({
     name,
     sellingPrice,
+    unitLabel,
     onAdd,
     disabled,
 }: StickyAddToCartBarProps) {
@@ -21,6 +23,7 @@ export function StickyAddToCartBar({
                 <p className="text-xs text-text-3 truncate">{name}</p>
                 <p className="text-sm font-bold text-text-1 tabular-nums">
                     {formatCurrency(sellingPrice)}
+                    <span className="text-text-3 font-medium"> / {unitLabel}</span>
                 </p>
             </div>
             <Button
