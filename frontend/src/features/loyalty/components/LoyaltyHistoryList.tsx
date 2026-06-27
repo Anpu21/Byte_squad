@@ -37,7 +37,7 @@ export function LoyaltyHistoryList() {
     return (
         <section>
             <h2 className="text-sm font-semibold text-text-1 mb-3">Activity</h2>
-            <div className="bg-surface border border-border rounded-md px-4">
+            <div className="bg-surface border border-border rounded-2xl px-4 shadow-sm-token">
                 {entries.map((entry) => (
                     <LoyaltyHistoryRow key={entry.id} entry={entry} />
                 ))}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { customerOrdersService } from '@/services/customer-orders.service';
@@ -14,11 +14,29 @@ export function useMyOrdersPage() {
         queryFn: customerOrdersService.listMine,
     });
 
-    const [selectedOrderId, setSelectedOrderId] = useState<string | null>(
-        null,
-    );
+    // One card open at a time — the QR + breakdown reveal inline (no modal).
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const toggleExpanded = (id: string) =>
+        setExpandedId((cur) => (cur === id ? null : id));
 
-    const selectedOrder = orders.find((r) => r.id === selectedOrderId) ?? null;
+    // Active = still on the pickup path (placed or ready); reinforces the header
+    // badge + stat. "This month" sums what was spent in the current calendar month.
+    const activeCount = orders.filter(
+        (o) => o.status === 'pending' || o.status === 'accepted',
+    ).length;
+
+    const thisMonthTotal = useMemo(() => {
+        const now = new Date();
+        return orders
+            .filter((o) => {
+                const d = new Date(o.createdAt);
+                return (
+                    d.getFullYear() === now.getFullYear() &&
+                    d.getMonth() === now.getMonth()
+                );
+            })
+            .reduce((sum, o) => sum + (o.finalTotal ?? 0), 0);
+    }, [orders]);
 
     const onCancel = async (id: string) => {
         const ok = await confirm({
@@ -47,12 +65,12 @@ export function useMyOrdersPage() {
     };
 
     return {
-        requests: orders,
+        orders,
         isLoading,
-        selectedRequestId: selectedOrderId,
-        selectedRequest: selectedOrder,
-        openDetails: setSelectedOrderId,
-        closeDetails: () => setSelectedOrderId(null),
+        expandedId,
+        toggleExpanded,
+        activeCount,
+        thisMonthTotal,
         onCancel,
     };
 }

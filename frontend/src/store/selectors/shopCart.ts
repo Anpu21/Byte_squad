@@ -7,10 +7,20 @@ export const selectShopCartItems = (state: RootState) => state.shopCart.items;
 export const selectShopCartIsOpen = (state: RootState) =>
     state.shopCart.isCartOpen;
 
+/**
+ * Line total: a "buy by amount" line is its firm cash; every other line is
+ * unit price × quantity. Mirrors the backend's `fixedPriceOverride ?? …` and
+ * tolerates legacy persisted lines that predate `amount` (undefined → by qty).
+ */
+export function shopLineTotal(item: ShopCartItem): number {
+    return item.amount != null
+        ? item.amount
+        : item.sellingPrice * item.quantity;
+}
+
 export const selectShopCartTotal = createSelector(
     [selectShopCartItems],
-    (items) =>
-        items.reduce((sum, item) => sum + item.sellingPrice * item.quantity, 0),
+    (items) => items.reduce((sum, item) => sum + shopLineTotal(item), 0),
 );
 
 // Distinct line count (product + branch + unit). A clean badge value even when
@@ -45,7 +55,7 @@ export const selectShopCartGroups = createSelector(
                 subtotal: 0,
             };
             group.items.push(item);
-            group.subtotal += item.sellingPrice * item.quantity;
+            group.subtotal += shopLineTotal(item);
             groups.set(item.branchId, group);
         }
         return Array.from(groups.values());

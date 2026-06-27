@@ -18,7 +18,7 @@ export function StickyAddToCartBar({
     disabled,
 }: StickyAddToCartBarProps) {
     return (
-        <div className="sm:hidden fixed bottom-0 inset-x-0 z-sticky bg-surface border-t border-border px-4 py-3 flex items-center gap-4 shadow-md-token">
+        <div className="sm:hidden fixed bottom-14 inset-x-0 z-sticky bg-surface border-t border-border px-4 py-3 flex items-center gap-4 shadow-md-token">
             <div className="min-w-0 flex-1">
                 <p className="text-xs text-text-3 truncate">{name}</p>
                 <p className="text-sm font-bold text-text-1 tabular-nums">

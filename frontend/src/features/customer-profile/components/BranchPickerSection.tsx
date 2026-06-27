@@ -26,7 +26,7 @@ export function BranchPickerSection({
     onSave,
 }: BranchPickerSectionProps) {
     return (
-        <section className="bg-surface border border-border rounded-md overflow-hidden">
+        <section className="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm-token">
             <header className="px-6 py-4 border-b border-border flex items-center gap-2">
                 <MapPin size={15} className="text-text-2" />
                 <h2 className="text-sm font-semibold text-text-1">

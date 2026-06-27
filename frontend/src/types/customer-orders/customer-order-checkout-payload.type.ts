@@ -5,6 +5,12 @@ export interface ICheckoutItemPayload {
   branchId: string
   unitId?: string
   quantity: number
+  /**
+   * "Buy by amount": firm cash for a loose line (e.g. 1000 Rs of bananas).
+   * `quantity` is the derived weight; the server validates the two reconcile
+   * and charges this amount exactly. Omit for normal by-weight / by-count lines.
+   */
+  amount?: number
 }
 
 /**

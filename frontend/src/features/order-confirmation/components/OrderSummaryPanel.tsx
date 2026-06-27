@@ -1,5 +1,6 @@
 import { LuMapPin as MapPin, LuPackage as Package } from 'react-icons/lu';
 import { formatCurrency } from '@/lib/utils';
+import { orderItemLineTotal } from '@/lib/order-item-total';
 import type { ICustomerOrder } from '@/types';
 import { STATUS_LABEL, STATUS_TONE } from '../lib/status-style';
 import { PaymentStatusBadge } from '@/features/my-orders/components/PaymentStatusBadge';
@@ -10,7 +11,7 @@ interface OrderSummaryPanelProps {
 
 export function OrderSummaryPanel({ order }: OrderSummaryPanelProps) {
     return (
-        <div className="bg-surface border border-border rounded-md p-6">
+        <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm-token">
             <div className="flex items-center justify-between mb-4">
                 <span
                     className={`text-[11px] uppercase tracking-widest px-2 py-1 rounded-full border ${STATUS_TONE[order.status]}`}
@@ -53,11 +54,7 @@ export function OrderSummaryPanel({ order }: OrderSummaryPanelProps) {
                             <span className="truncate pr-2">
                                 {it.product?.name ?? 'Unknown'} × {it.quantity}
                             </span>
-                            <span>
-                                {formatCurrency(
-                                    it.unitPriceSnapshot * it.quantity,
-                                )}
-                            </span>
+                            <span>{formatCurrency(orderItemLineTotal(it))}</span>
                         </div>
                     ))}
                 </div>

@@ -67,6 +67,43 @@ export function clampQty(value: number, baseUnit: string): number {
 }
 
 /**
+ * Weight implied by a cash amount at a unit price, rounded to the unit's
+ * precision (nearest — the product decision): `1000 ÷ 170 → 5.882 kg`. Powers
+ * "buy by amount", where a shopper names the cash and we derive the weight.
+ *
+ * Deliberately does *not* floor to the order minimum: the derived weight has to
+ * reconcile with the entered amount (the backend accepts the line only when
+ * `|amount − weight × price|` is within the rounding gap), and flooring a tiny
+ * amount up to `min` would break that. The minimum is enforced separately by
+ * the caller's add gate. Returns `0` for non-finite input or a non-positive
+ * price (caller treats that as "nothing to add").
+ */
+export function quantityForAmount(
+    amount: number,
+    unitPrice: number,
+    baseUnit: string,
+): number {
+    if (
+        !Number.isFinite(amount) ||
+        !Number.isFinite(unitPrice) ||
+        unitPrice <= 0
+    ) {
+        return 0;
+    }
+    return roundTo(amount / unitPrice, qtyRules(baseUnit).decimals);
+}
+
+/**
+ * Cash a quantity costs at a unit price, rounded to 2 dp (money):
+ * `5.882 × 170 → 999.94`. The inverse of {@link quantityForAmount}; used to
+ * preview the spend in weight mode and to mirror the backend's line total.
+ */
+export function amountForQuantity(qty: number, unitPrice: number): number {
+    if (!Number.isFinite(qty) || !Number.isFinite(unitPrice)) return 0;
+    return roundTo(qty * unitPrice, 2);
+}
+
+/**
  * Human label for a quantity + unit, trailing zeros trimmed:
  * `1.5 → "1.5 kg"`, `2 → "2 kg"`, `0.25 → "0.25 kg"`.
  */

@@ -8,6 +8,7 @@ import {
 import { CustomerOrdersService } from './customer-orders.service';
 import { CustomerOrdersRepository } from './customer-orders.repository';
 import { CustomerOrder } from './entities/customer-order.entity';
+import { CustomerOrderItem } from './entities/customer-order-item.entity';
 import { CustomerOrderStatus } from '@common/enums/customer-order.enum';
 import { CustomerOrderPaymentStatus } from '@common/enums/customer-order-payment-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -27,6 +28,7 @@ import { PayhereService } from './payhere.service';
 describe('CustomerOrdersService', () => {
   let service: CustomerOrdersService;
   let repo: jest.Mocked<CustomerOrdersRepository>;
+  let products: { findActiveByIdsWithUnits: jest.Mock };
 
   beforeEach(async () => {
     const repoMock: Partial<jest.Mocked<CustomerOrdersRepository>> = {
@@ -53,7 +55,10 @@ describe('CustomerOrdersService', () => {
         { provide: CustomerOrdersRepository, useValue: repoMock },
         {
           provide: ProductsService,
-          useValue: { findActiveByIds: jest.fn() },
+          useValue: {
+            findActiveByIds: jest.fn(),
+            findActiveByIdsWithUnits: jest.fn(),
+          },
         },
         { provide: BranchesService, useValue: { findEntityById: jest.fn() } },
         {
@@ -109,6 +114,9 @@ describe('CustomerOrdersService', () => {
 
     service = module.get(CustomerOrdersService);
     repo = module.get(CustomerOrdersRepository);
+    products = module.get(ProductsService) as unknown as {
+      findActiveByIdsWithUnits: jest.Mock;
+    };
   });
 
   describe('listForStaff', () => {
@@ -230,6 +238,93 @@ describe('CustomerOrdersService', () => {
         CustomerOrderStatus.NOT_COLLECTED,
         undefined,
       );
+    });
+  });
+
+  describe('buildOrderItems — buy by amount', () => {
+    type BuiltItem = {
+      productId: string;
+      quantity: number;
+      unitPriceSnapshot: number;
+      fixedPriceOverride: number | null;
+    };
+
+    const callBuild = (
+      items: Array<{
+        productId: string;
+        quantity: number;
+        unitId?: string | null;
+        amount?: number | null;
+      }>,
+    ): Promise<BuiltItem[]> =>
+      (
+        service as unknown as {
+          buildOrderItems: (i: typeof items) => Promise<BuiltItem[]>;
+        }
+      ).buildOrderItems(items);
+
+    const lineAmount = (item: BuiltItem): number =>
+      (
+        service as unknown as { lineAmount: (i: BuiltItem) => number }
+      ).lineAmount(item);
+
+    // Bananas at 170/kg (loose) and a piece-sold widget at 50/unit.
+    const banana = {
+      id: 'p-banana',
+      name: 'Bananas',
+      baseUnit: 'kg',
+      sellingPrice: 170,
+      sellableUnits: [
+        { id: 'u-kg', name: 'kg', isBase: true, conversionToBase: 1, sellingPrice: 170 },
+      ],
+    };
+    const widget = {
+      id: 'p-widget',
+      name: 'Widget',
+      baseUnit: 'unit',
+      sellingPrice: 50,
+      sellableUnits: [
+        { id: 'u-pc', name: 'pc', isBase: true, conversionToBase: 1, sellingPrice: 50 },
+      ],
+    };
+
+    beforeEach(() => {
+      repo.buildItem.mockImplementation(
+        (partial) => partial as unknown as CustomerOrderItem,
+      );
+    });
+
+    it('pins the line total to the entered amount when it reconciles with weight × price', async () => {
+      products.findActiveByIdsWithUnits.mockResolvedValue([banana]);
+      // 1000 Rs of bananas at 170/kg ≈ 5.882 kg, which recomputes to 999.94;
+      // the override holds the line at the firm 1000.00 the customer asked for.
+      const [item] = await callBuild([
+        { productId: 'p-banana', quantity: 5.882, amount: 1000 },
+      ]);
+      expect(item.fixedPriceOverride).toBe(1000);
+      expect(lineAmount(item)).toBe(1000);
+    });
+
+    it('rejects an amount that does not reconcile with quantity × unit price', async () => {
+      products.findActiveByIdsWithUnits.mockResolvedValue([banana]);
+      // A client claiming 1000 Rs for just 1 kg of a 170/kg product.
+      await expect(
+        callBuild([{ productId: 'p-banana', quantity: 1, amount: 1000 }]),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects buying a piece-sold product by amount', async () => {
+      products.findActiveByIdsWithUnits.mockResolvedValue([widget]);
+      await expect(
+        callBuild([{ productId: 'p-widget', quantity: 1, amount: 50 }]),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('leaves fixedPriceOverride null for a normal by-weight line', async () => {
+      products.findActiveByIdsWithUnits.mockResolvedValue([banana]);
+      const [item] = await callBuild([{ productId: 'p-banana', quantity: 2 }]);
+      expect(item.fixedPriceOverride).toBeNull();
+      expect(lineAmount(item)).toBe(340);
     });
   });
 });
