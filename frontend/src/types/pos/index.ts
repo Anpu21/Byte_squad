@@ -56,6 +56,7 @@ export type {
     IShiftLiveSummary,
     ShiftStatus,
 } from './shift.type';
+export type { IHeldSale, IHeldSalePayload } from './held-sale.type';
 export type {
     DiscountSchemeScope,
     IDiscountScheme,
