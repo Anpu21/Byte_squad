@@ -132,6 +132,9 @@ export const APP_ROUTES = {
     SHIFTS_OPEN: 'shifts/open',
     SHIFTS_CLOSE: 'shifts/close',
     SHIFTS_MOVEMENTS: 'shifts/movements',
+    // Floor ops — server-persisted held / suspended sales.
+    HELD_SALES: 'held-sales',
+    HELD_SALE_BY_ID: 'held-sales/:id',
     // Phase 4 — automatic discount schemes (date-window / qty-slab rules).
     SCHEMES: 'schemes',
     SCHEMES_ACTIVE: 'schemes/active',
