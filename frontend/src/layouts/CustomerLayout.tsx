@@ -116,7 +116,7 @@ export default function CustomerLayout({
             </a>
 
             <header className="sticky top-0 z-sticky bg-surface/90 backdrop-blur-md border-b border-border">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3 sm:gap-4">
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-16 flex items-center gap-3 sm:gap-4">
                     <Link
                         to={FRONTEND_ROUTES.SHOP}
                         className="flex items-center gap-2.5 flex-shrink-0"
@@ -201,7 +201,7 @@ export default function CustomerLayout({
             <main
                 id="main-content"
                 className={cn(
-                    'flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8',
+                    'flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 py-8',
                     !publicMode && 'pb-24 md:pb-8',
                 )}
             >
@@ -209,7 +209,7 @@ export default function CustomerLayout({
             </main>
 
             <footer className="border-t border-border">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 text-xs text-text-3">
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 text-xs text-text-3">
                     LedgerPro Shop — pickup at your nearest branch.
                 </div>
             </footer>

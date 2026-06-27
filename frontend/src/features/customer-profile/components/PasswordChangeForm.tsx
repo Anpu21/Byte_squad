@@ -54,7 +54,7 @@ export function PasswordChangeForm({
                         placeholder="••••••••"
                     />
                 </ProfileField>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 gap-5">
                     <ProfileField label="New password" hint="At least 8 characters">
                         <input
                             type="password"
@@ -78,11 +78,11 @@ export function PasswordChangeForm({
                     </ProfileField>
                 </div>
             </div>
-            <footer className="px-6 py-4 border-t border-border bg-surface-2 flex justify-end">
+            <footer className="px-6 py-4 border-t border-border bg-surface-2">
                 <button
                     type="submit"
                     disabled={submitting}
-                    className="inline-flex items-center gap-2 h-9 px-4 rounded-md border border-border-strong bg-surface text-sm font-medium text-text-1 hover:bg-surface-2 transition-colors disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 h-10 px-4 rounded-lg bg-primary text-sm font-semibold text-text-inv hover:bg-primary-hover transition-colors disabled:opacity-60"
                 >
                     {submitting ? (
                         <>

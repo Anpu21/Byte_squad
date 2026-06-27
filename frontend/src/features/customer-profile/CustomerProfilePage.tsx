@@ -81,14 +81,27 @@ export function CustomerProfilePage() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
-                <AvatarCard
-                    displayName={displayName}
-                    email={profile?.email}
-                    avatarSrc={avatarSrc}
-                    isUploading={uploadAvatar.isPending}
-                    onUpload={(file) => uploadAvatar.mutate(file)}
-                />
+            <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6 items-start">
+                <div className="space-y-6">
+                    <AvatarCard
+                        displayName={displayName}
+                        email={profile?.email}
+                        avatarSrc={avatarSrc}
+                        isUploading={uploadAvatar.isPending}
+                        onUpload={(file) => uploadAvatar.mutate(file)}
+                    />
+                    <PasswordChangeForm
+                        currentPassword={password.currentPassword}
+                        setCurrentPassword={password.setCurrentPassword}
+                        newPassword={password.newPassword}
+                        setNewPassword={password.setNewPassword}
+                        confirmPassword={password.confirmPassword}
+                        setConfirmPassword={password.setConfirmPassword}
+                        error={password.error}
+                        submitting={password.submitting}
+                        onSubmit={password.submit}
+                    />
+                </div>
 
                 <div className="space-y-6">
                     <LoyaltyProfileCard />
@@ -112,17 +125,6 @@ export function CustomerProfilePage() {
                         setSelectedBranchId={branch.setSelectedBranchId}
                         isSaving={branch.updateBranchMutation.isPending}
                         onSave={(id) => branch.updateBranchMutation.mutate(id)}
-                    />
-                    <PasswordChangeForm
-                        currentPassword={password.currentPassword}
-                        setCurrentPassword={password.setCurrentPassword}
-                        newPassword={password.newPassword}
-                        setNewPassword={password.setNewPassword}
-                        confirmPassword={password.confirmPassword}
-                        setConfirmPassword={password.setConfirmPassword}
-                        error={password.error}
-                        submitting={password.submitting}
-                        onSubmit={password.submit}
                     />
                 </div>
             </div>

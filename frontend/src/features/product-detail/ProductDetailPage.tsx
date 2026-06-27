@@ -32,12 +32,14 @@ export function ProductDetailPage() {
 
     return (
         <div className="max-w-5xl mx-auto">
-            <Link
-                to={FRONTEND_ROUTES.SHOP}
-                className="inline-flex items-center gap-1 text-sm text-text-2 hover:text-text-1 mb-6"
-            >
-                <ChevronLeft size={14} /> Back to catalog
-            </Link>
+            <div className="flex justify-end mb-6">
+                <Link
+                    to={FRONTEND_ROUTES.SHOP}
+                    className="inline-flex items-center gap-1 text-sm text-text-2 hover:text-text-1"
+                >
+                    <ChevronLeft size={14} /> Back to catalog
+                </Link>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 items-start">
                 <ProductDetailImage
