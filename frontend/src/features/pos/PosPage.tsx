@@ -68,7 +68,8 @@ export function PosPage(): React.ReactElement {
     const loyaltySettingsQuery = usePosLoyaltySettings();
     const previewInvoiceNumber = invoiceNumberQuery.data?.invoiceNo ?? '';
     const handleScanHit = useCallback(
-        (row: ISearchProductRow) => guardedAddItem(toCartItemSeed(row)),
+        (row: ISearchProductRow, quantity?: number) =>
+            guardedAddItem(toCartItemSeed(row, { quantity })),
         [guardedAddItem],
     );
     const barcode = usePosBarcodeScan({

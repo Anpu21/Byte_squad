@@ -71,6 +71,25 @@ export function BasicsCard({
                     onOpenCamera={onOpenCamera}
                 />
 
+                {form.baseUnit !== 'unit' && (
+                    <FormField
+                        label="PLU code (scale barcodes)"
+                        htmlFor="product-plu"
+                        error={form.errors.pluCode}
+                    >
+                        <input
+                            id="product-plu"
+                            name="pluCode"
+                            inputMode="numeric"
+                            value={form.pluCode}
+                            onChange={(e) => form.setPluCode(e.target.value)}
+                            aria-invalid={Boolean(form.errors.pluCode)}
+                            className={inputClasses(Boolean(form.errors.pluCode))}
+                            placeholder="e.g. 00042"
+                        />
+                    </FormField>
+                )}
+
                 <FormField
                     label="Description (optional)"
                     htmlFor="product-description"

@@ -20,6 +20,8 @@ export interface ProductFormState
     setName: (value: string) => void;
     barcode: string;
     setBarcode: (value: string) => void;
+    pluCode: string;
+    setPluCode: (value: string) => void;
     description: string;
     setDescription: (value: string) => void;
     category: string;
@@ -43,6 +45,7 @@ export interface ProductFormState
 export function useProductFormState(): ProductFormState {
     const [name, setName] = useState('');
     const [barcode, setBarcode] = useState('');
+    const [pluCode, setPluCode] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
     const [costPrice, setCostPrice] = useState('');
@@ -73,6 +76,8 @@ export function useProductFormState(): ProductFormState {
         setName,
         barcode,
         setBarcode,
+        pluCode,
+        setPluCode,
         description,
         setDescription,
         category,

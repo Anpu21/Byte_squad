@@ -52,6 +52,8 @@ function makeForm(overrides: MakeFormOverrides = {}): ProductFormState {
         setName: vi.fn(),
         barcode: '8901234567890',
         setBarcode: vi.fn(),
+        pluCode: '',
+        setPluCode: vi.fn(),
         description: '',
         setDescription: vi.fn(),
         category: 'Grocery',
