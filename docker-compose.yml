@@ -16,6 +16,7 @@ services:
       - .env
     environment:
       - VITE_API_URL=${VITE_API_URL}
+      - VITE_SOCKET_URL=${VITE_SOCKET_URL:-http://localhost:3001}
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
       - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
     depends_on:
@@ -105,6 +106,37 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - ledgerpro-network
+
+  # Standalone realtime WebSocket service (separate repo ../ledgerpro-realtime).
+  # Verifies handshake JWTs against the backend's JWKS over the internal network
+  # and fans redis-published notifications/system events out to clients.
+  realtime:
+    build:
+      context: ../ledgerpro-realtime
+      target: development
+    container_name: ledgerpro-realtime
+    ports:
+      - "${REALTIME_PORT:-3001}:3001"
+    volumes:
+      - ../ledgerpro-realtime/src:/app/src
+      - ../ledgerpro-realtime/tsconfig-paths-bootstrap.js:/app/tsconfig-paths-bootstrap.js
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - REDIS_URL=redis://redis:6379
+      - REALTIME_REDIS_CHANNEL=ledgerpro:realtime
+      - JWKS_URI=http://backend:3000/.well-known/jwks.json
+      - JWT_ISSUER=ledgerpro-backend
+      - JWT_AUDIENCE=ledgerpro-api
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
     networks:
       - ledgerpro-network
 
