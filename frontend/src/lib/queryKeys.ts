@@ -175,6 +175,14 @@ export const queryKeys = {
         byCode: (code: string) =>
             ['customer-order-by-code', code] as const,
     },
+    customerGroups: {
+        all: () => ['customer-groups'] as const,
+        mine: () => ['customer-groups', 'mine'] as const,
+        detail: (id: string) => ['customer-groups', 'detail', id] as const,
+        cart: (id: string) => ['customer-groups', 'cart', id] as const,
+        analytics: (id: string, params: unknown) =>
+            ['customer-groups', 'analytics', id, params] as const,
+    },
     loyalty: {
         mine: () => ['loyalty', 'mine'] as const,
         history: (params: { limit?: number; offset?: number }) =>
