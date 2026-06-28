@@ -3,6 +3,7 @@ import { LuPlus as Plus, LuStore as Store, LuShoppingBag as ShoppingBag } from '
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { formatCurrency } from '@/lib/utils';
 import ProductImage from '@/components/shop/ProductImage';
+import { StarRating } from '@/components/ui';
 import type { IShopProduct } from '@/types';
 import { STOCK_LABEL, STOCK_PILL, STOCK_DOT } from '../lib/stock-style';
 
@@ -68,6 +69,15 @@ export function ProductCard({
                         {product.name}
                     </h3>
                 </Link>
+                {product.reviewCount > 0 && (
+                    <div className="mt-1.5">
+                        <StarRating
+                            value={product.aggregateRating}
+                            count={product.reviewCount}
+                            size={13}
+                        />
+                    </div>
+                )}
                 <div className="mt-4 flex items-center justify-between gap-2">
                     <p className="text-lg font-bold text-text-1 tabular-nums">
                         {formatCurrency(product.sellingPrice)}

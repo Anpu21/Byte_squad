@@ -8,6 +8,7 @@ import { ProductDetailImage } from '@/features/product-detail/components/Product
 import { ProductDetailActions } from '@/features/product-detail/components/ProductDetailActions';
 import { StickyAddToCartBar } from '@/features/product-detail/components/StickyAddToCartBar';
 import { RecommendedProductsSection } from '@/features/shop-catalog';
+import { ProductReviewsSection } from '@/features/product-reviews';
 
 export function ProductDetailPage() {
     const p = useProductDetail();
@@ -130,6 +131,8 @@ export function ProductDetailPage() {
                     />
                 </div>
             </div>
+
+            <ProductReviewsSection productId={p.product.id} />
 
             <div className="mt-10 pb-24 sm:pb-0">
                 <RecommendedProductsSection

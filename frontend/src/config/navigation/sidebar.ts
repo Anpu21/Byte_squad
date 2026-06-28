@@ -25,6 +25,7 @@ import {
     LuShoppingBag as ShoppingBag,
     LuShoppingCart as ShoppingCart,
     LuSparkles as Sparkles,
+    LuStar as Star,
     LuStore as Store,
     LuTags as Tags,
     LuTruck as Truck,
@@ -138,5 +139,6 @@ export const SIDEBAR: NavEntry[] = [
         ],
     },
     { id: 'audit', label: 'nav.auditLog', path: R.ADMIN_AUDIT, Icon: FileClock, roles: [ADMIN], group: 'System' },
+    { id: 'review-moderation', label: 'nav.reviews', path: R.ADMIN_REVIEWS, Icon: Star, roles: [ADMIN, MANAGER], group: 'System' },
     { id: 'notifications', label: 'nav.notifications', path: R.NOTIFICATIONS, Icon: Bell, roles: [ADMIN, MANAGER, CASHIER], group: 'System' },
 ];
