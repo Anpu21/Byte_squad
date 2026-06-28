@@ -49,6 +49,7 @@ export const APP_ROUTES = {
   PRODUCTS: {
     BASE: `${API_PREFIX}/products`,
     CATEGORIES: 'categories',
+    BRANDS: 'brands',
     BY_ID: ':id',
     BY_BARCODE: 'barcode/:barcode',
     IMAGE: ':id/image',
@@ -58,6 +59,17 @@ export const APP_ROUTES = {
   CATEGORIES: {
     BASE: `${API_PREFIX}/categories`,
     ANALYTICS: 'analytics',
+    BY_ID: ':id',
+    ARCHIVE: ':id/archive',
+  },
+
+  // Managed product brands (CRUD + brand sales analytics: leaderboard +
+  // per-brand product drill-down). Analytics routes are declared before BY_ID
+  // in the controller so `analytics/...` isn't captured by the `:id` param.
+  BRANDS: {
+    BASE: `${API_PREFIX}/brands`,
+    ANALYTICS_OVERVIEW: 'analytics/overview',
+    ANALYTICS_BRAND: 'analytics/:brandId',
     BY_ID: ':id',
     ARCHIVE: ':id/archive',
   },

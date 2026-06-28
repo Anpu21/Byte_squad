@@ -7,6 +7,8 @@ import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
 import { Category } from '@/modules/categories/entities/category.entity';
+import { Brand } from '@/modules/brands/entities/brand.entity';
+import { pickBrandColor } from '@/modules/brands/lib/brand-palette';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { defaultSellableUnitsFor } from '@products/lib/default-sellable-units';
 import { Inventory } from '@inventory/entities/inventory.entity';
@@ -104,6 +106,8 @@ export class AdminSeedService implements OnModuleInit {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(Brand)
+    private readonly brandRepository: Repository<Brand>,
     @InjectRepository(ProductSellableUnit)
     private readonly sellableUnitRepository: Repository<ProductSellableUnit>,
     @InjectRepository(Inventory)
@@ -333,7 +337,8 @@ export class AdminSeedService implements OnModuleInit {
 
     // 3. Products — supermarket catalogue (idempotent by barcode)
     const categoryMap = await this.ensureCategories(admin);
-    const products = await this.ensureProducts(categoryMap);
+    const brandMap = await this.ensureBrands(admin);
+    const products = await this.ensureProducts(categoryMap, brandMap);
 
     // 4. Inventory — vary distribution per branch so low-stock and out-of-stock
     //    states exist naturally for testing the transfer feature.
@@ -591,8 +596,46 @@ export class AdminSeedService implements OnModuleInit {
     return map;
   }
 
+  /**
+   * Ensure a managed Brand row exists for each distinct catalogue brand,
+   * returning a name→id map so products link via their FK. Loose goods carry no
+   * brand and are skipped. Idempotent (find-by-name); created rows get a stable
+   * palette colour + the seed admin as creator.
+   */
+  private async ensureBrands(admin: User): Promise<Map<string, string>> {
+    const map = new Map<string, string>();
+    const names = Array.from(
+      new Set(
+        SUPERMARKET_PRODUCTS.map((p) => p.brand).filter((b): b is string =>
+          Boolean(b),
+        ),
+      ),
+    );
+    let created = 0;
+    for (const [index, name] of names.entries()) {
+      let brand = await this.brandRepository.findOne({ where: { name } });
+      if (!brand) {
+        brand = await this.brandRepository.save(
+          this.brandRepository.create({
+            name,
+            color: pickBrandColor(index),
+            sortOrder: index,
+            createdByUserId: admin.id,
+          }),
+        );
+        created += 1;
+      }
+      map.set(name, brand.id);
+    }
+    if (created > 0) {
+      this.logger.log(`Brands seeded (${created} rows).`);
+    }
+    return map;
+  }
+
   private async ensureProducts(
     categoryMap: Map<string, string>,
+    brandMap: Map<string, string>,
   ): Promise<Product[]> {
     const products: Product[] = [];
     let createdCount = 0;
@@ -618,6 +661,8 @@ export class AdminSeedService implements OnModuleInit {
             ...p,
             isActive: true,
             categoryId: categoryMap.get(p.category) ?? null,
+            brand: p.brand ?? null,
+            brandId: p.brand ? (brandMap.get(p.brand) ?? null) : null,
           }),
         );
         createdCount++;
@@ -635,6 +680,16 @@ export class AdminSeedService implements OnModuleInit {
         if (product.categoryId !== desiredCategoryId) {
           patch.categoryId = desiredCategoryId;
           product.categoryId = desiredCategoryId;
+        }
+        const desiredBrand = p.brand ?? null;
+        if (product.brand !== desiredBrand) {
+          patch.brand = desiredBrand;
+          product.brand = desiredBrand;
+        }
+        const desiredBrandId = p.brand ? (brandMap.get(p.brand) ?? null) : null;
+        if (product.brandId !== desiredBrandId) {
+          patch.brandId = desiredBrandId;
+          product.brandId = desiredBrandId;
         }
         if (product.description !== p.description) {
           patch.description = p.description;
@@ -2246,7 +2301,8 @@ export class AdminSeedService implements OnModuleInit {
         destination: ctx.suburbanBranch,
         product: get('PNT-002'),
         qty: 50,
-        exceptionReason: 'Destination cold-room full — parcel returned to source',
+        exceptionReason:
+          'Destination cold-room full — parcel returned to source',
       },
       {
         status: ShipmentStatus.CANCELLED,

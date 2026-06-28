@@ -8,6 +8,8 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Product } from '@products/entities/product.entity';
 import { Category } from '@/modules/categories/entities/category.entity';
+import { Brand } from '@/modules/brands/entities/brand.entity';
+import { pickBrandColor } from '@/modules/brands/lib/brand-palette';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { ProductsRepository } from '@products/products.repository';
 import { CreateProductDto } from '@products/dto/create-product.dto';
@@ -92,11 +94,21 @@ export class ProductsService {
       createProductDto.categoryId,
       createProductDto.category,
     );
+    const brand = await this.resolveBrand(
+      createProductDto.brandId,
+      createProductDto.brand,
+    );
     return this.dataSource.transaction(async (manager) => {
       const { sellableUnits: _units, ...productInput } = createProductDto;
       void _units;
       const product = await this.products.createAndSave(
-        { ...productInput, categoryId: category.id, category: category.name },
+        {
+          ...productInput,
+          categoryId: category.id,
+          category: category.name,
+          brandId: brand?.id ?? null,
+          brand: brand?.name ?? null,
+        },
         manager,
       );
       const seeds = sellableUnits
@@ -196,6 +208,17 @@ export class ProductsService {
       existing.categoryId = category.id;
       existing.category = category.name;
     }
+    if (
+      updateProductDto.brandId !== undefined ||
+      updateProductDto.brand !== undefined
+    ) {
+      const brand = await this.resolveBrand(
+        updateProductDto.brandId,
+        updateProductDto.brand,
+      );
+      existing.brandId = brand?.id ?? null;
+      existing.brand = brand?.name ?? null;
+    }
 
     return this.dataSource.transaction(async (manager) => {
       const saved = await this.products.save(existing, manager);
@@ -224,6 +247,10 @@ export class ProductsService {
     return this.products.listDistinctActiveCategories();
   }
 
+  async getBrands(): Promise<string[]> {
+    return this.products.listDistinctActiveBrands();
+  }
+
   /**
    * Resolve the product's category from either the managed-category id
    * (preferred) or its name (the datalist product form sends the name).
@@ -245,6 +272,44 @@ export class ProductsService {
       throw new BadRequestException('A valid category is required');
     }
     return category;
+  }
+
+  /**
+   * Resolve the product's brand (optional). Prefer the managed-brand `brandId`;
+   * else match by name; else AUTO-CREATE a brand for a new name (the datalist
+   * product form lets managers type a brand that doesn't exist yet). Returns
+   * null when no brand input was supplied. Unlike {@link resolveCategory}
+   * (required, never creates), brand is optional and self-seeding.
+   */
+  private async resolveBrand(
+    brandId?: string,
+    brandName?: string,
+  ): Promise<Brand | null> {
+    const repo = this.dataSource.getRepository(Brand);
+    if (brandId) {
+      const byId = await repo.findOne({ where: { id: brandId } });
+      if (!byId) {
+        throw new BadRequestException('A valid brand is required');
+      }
+      return byId;
+    }
+    const name = brandName?.trim();
+    if (!name) {
+      return null;
+    }
+    const existing = await repo.findOne({ where: { name } });
+    if (existing) {
+      return existing;
+    }
+    const count = await repo.count();
+    return repo.save(
+      repo.create({
+        name,
+        color: pickBrandColor(count),
+        sortOrder: count,
+        createdByUserId: null,
+      }),
+    );
   }
 
   async remove(id: string): Promise<void> {

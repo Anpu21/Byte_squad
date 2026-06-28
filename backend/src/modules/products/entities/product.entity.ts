@@ -12,6 +12,7 @@ import { Inventory } from '@inventory/entities/inventory.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Category } from '@/modules/categories/entities/category.entity';
+import { Brand } from '@/modules/brands/entities/brand.entity';
 
 @Entity('products')
 export class Product {
@@ -48,6 +49,21 @@ export class Product {
   @ManyToOne(() => Category, { onDelete: 'RESTRICT', nullable: true })
   @JoinColumn({ name: 'category_id' })
   categoryRef!: Category | null;
+
+  // Denormalized mirror of `brandRef.name`, kept in sync by ProductsService.
+  // Optional — not every product belongs to a brand (loose produce, in-house
+  // bakery). Powers the brand sales-analytics leaderboard + drill-down.
+  @Column({ type: 'varchar', nullable: true })
+  brand!: string | null;
+
+  // Source of truth for the product's brand. Nullable; ProductsService resolves
+  // it from the managed brand id/name (auto-creating on a new name).
+  @Column({ type: 'uuid', name: 'brand_id', nullable: true })
+  brandId!: string | null;
+
+  @ManyToOne(() => Brand, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'brand_id' })
+  brandRef!: Brand | null;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, name: 'cost_price' })
   costPrice!: number;

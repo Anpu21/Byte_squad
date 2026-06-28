@@ -53,6 +53,18 @@ export class CreateProductDto {
   @IsOptional()
   categoryId?: string;
 
+  // Product brand (optional) — supply the managed-brand `brandId` (preferred) or
+  // its `brand` name (the datalist product form sends the name). The service
+  // resolves either to the FK, auto-creating the brand when the name is new, and
+  // keeps `product.brand` as a synced mirror.
+  @IsString()
+  @IsOptional()
+  brand?: string;
+
+  @IsUUID('4')
+  @IsOptional()
+  brandId?: string;
+
   @IsNumber()
   @Min(0)
   costPrice!: number;

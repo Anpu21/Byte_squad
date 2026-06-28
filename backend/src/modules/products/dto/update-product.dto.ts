@@ -49,6 +49,16 @@ export class UpdateProductDto {
   @IsOptional()
   categoryId?: string;
 
+  // Product brand (optional). Send `brandId` or the `brand` name; the service
+  // resolves/auto-creates the managed brand and keeps `product.brand` in sync.
+  @IsString()
+  @IsOptional()
+  brand?: string;
+
+  @IsUUID('4')
+  @IsOptional()
+  brandId?: string;
+
   @IsNumber()
   @Min(0)
   @IsOptional()

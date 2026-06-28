@@ -45,6 +45,11 @@ export class ProductsController {
     return this.productsService.getCategories();
   }
 
+  @Get(APP_ROUTES.PRODUCTS.BRANDS)
+  getBrands(): Promise<string[]> {
+    return this.productsService.getBrands();
+  }
+
   @Get(APP_ROUTES.PRODUCTS.BY_ID)
   findOne(@Param('id') id: string): Promise<Product | null> {
     return this.productsService.findById(id);
