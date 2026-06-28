@@ -200,6 +200,18 @@ export const APP_ROUTES = {
     BRANCHES: 'branches',
   },
 
+  // Product reviews & ratings — customer storefront surface (under shop/) +
+  // staff moderation (under admin/reviews).
+  REVIEWS: {
+    BASE: `${API_PREFIX}/shop`,
+    PRODUCT_REVIEWS: 'products/:productId/reviews',
+    REVIEW_BY_ID: 'reviews/:id',
+    ADMIN_BASE: `${API_PREFIX}/admin/reviews`,
+    ADMIN_REVIEW_BY_ID: ':id',
+    ADMIN_REVIEW_HIDE: ':id/hide',
+    ADMIN_REVIEW_UNHIDE: ':id/unhide',
+  },
+
   // Customer pickup orders (cart -> order -> QR -> fulfill at counter)
   CUSTOMER_ORDERS: {
     BASE: `${API_PREFIX}/customer-orders`,

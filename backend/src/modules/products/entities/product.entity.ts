@@ -85,6 +85,21 @@ export class Product {
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive!: boolean;
 
+  // Denormalized review aggregates, recomputed transactionally by
+  // ReviewsService on every review write so the shop catalog + product page
+  // render stars without a join. Source of truth = the product_reviews table.
+  @Column({
+    type: 'decimal',
+    precision: 3,
+    scale: 2,
+    name: 'avg_rating',
+    default: 0,
+  })
+  avgRating!: number;
+
+  @Column({ type: 'int', name: 'review_count', default: 0 })
+  reviewCount!: number;
+
   @OneToMany(() => Inventory, (inventory) => inventory.product)
   inventoryRecords!: Inventory[];
 
