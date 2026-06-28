@@ -5,17 +5,29 @@ import { CreditAccountTransaction } from '@/modules/credit-accounts/entities/cre
 import { CreditAccountsRepository } from '@/modules/credit-accounts/credit-accounts.repository';
 import { CreditAccountsService } from '@/modules/credit-accounts/credit-accounts.service';
 import { CreditAccountsController } from '@/modules/credit-accounts/credit-accounts.controller';
+import { CreditAccountTransactionsRepository } from '@/modules/credit-accounts/credit-account-transactions.repository';
+import { Sale } from '@pos/entities/sale.entity';
 import { NotificationsModule } from '@notifications/notifications.module';
 import { UsersModule } from '@users/users.module';
+import { AccountingModule } from '@accounting/accounting.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CreditAccount, CreditAccountTransaction]),
+    TypeOrmModule.forFeature([CreditAccount, CreditAccountTransaction, Sale]),
     NotificationsModule,
     UsersModule,
+    AccountingModule,
   ],
   controllers: [CreditAccountsController],
-  providers: [CreditAccountsRepository, CreditAccountsService],
-  exports: [CreditAccountsService, CreditAccountsRepository],
+  providers: [
+    CreditAccountsRepository,
+    CreditAccountTransactionsRepository,
+    CreditAccountsService,
+  ],
+  exports: [
+    CreditAccountsService,
+    CreditAccountsRepository,
+    CreditAccountTransactionsRepository,
+  ],
 })
 export class CreditAccountsModule {}

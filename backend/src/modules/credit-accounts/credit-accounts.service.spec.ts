@@ -3,15 +3,21 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { CreditAccountsService } from '@/modules/credit-accounts/credit-accounts.service';
 import { CreditAccountsRepository } from '@/modules/credit-accounts/credit-accounts.repository';
+import { CreditAccountTransactionsRepository } from '@/modules/credit-accounts/credit-account-transactions.repository';
 import { CreditAccount } from '@/modules/credit-accounts/entities/credit-account.entity';
+import { CreditAccountTransaction } from '@/modules/credit-accounts/entities/credit-account-transaction.entity';
+import type { CreditAccountAgeing } from '@/modules/credit-accounts/types';
 import { CreditAccountStatus } from '@common/enums/credit-account-status.enum';
 import { NotificationType } from '@common/enums/notification.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationsGateway } from '@notifications/notifications.gateway';
 import { UsersService } from '@users/users.service';
+import { AccountingService } from '@accounting/accounting.service';
+import { Sale } from '@pos/entities/sale.entity';
 import type { AuthUser } from '@common/types/auth-user.type';
 
 function makeAccount(overrides: Partial<CreditAccount> = {}): CreditAccount {
@@ -79,6 +85,25 @@ function makeService() {
     accountNoExists: jest.fn((): Promise<boolean> => Promise.resolve(false)),
     list: jest.fn((): Promise<CreditAccount[]> => Promise.resolve([])),
     search: jest.fn((): Promise<CreditAccount[]> => Promise.resolve([])),
+    ageingByAccounts: jest.fn(
+      (): Promise<Map<string, CreditAccountAgeing>> =>
+        Promise.resolve(new Map()),
+    ),
+    outstandingSales: jest.fn((): Promise<Sale[]> => Promise.resolve([])),
+  };
+  const transactions = {
+    create: jest.fn((): Promise<void> => Promise.resolve()),
+    findByAccountId: jest.fn(
+      (): Promise<CreditAccountTransaction[]> => Promise.resolve([]),
+    ),
+    findBySaleId: jest.fn(
+      (): Promise<CreditAccountTransaction[]> => Promise.resolve([]),
+    ),
+  };
+  const accounting = {
+    createLedgerEntryWithManager: jest.fn(
+      (): Promise<void> => Promise.resolve(),
+    ),
   };
   const notifications = {
     create: jest.fn((): Promise<void> => Promise.resolve()),
@@ -89,13 +114,26 @@ function makeService() {
       (): Promise<Array<{ id: string }>> => Promise.resolve([{ id: 'mgr-1' }]),
     ),
   };
+  const dataSource = { transaction: jest.fn() };
   const service = new CreditAccountsService(
     repo as unknown as CreditAccountsRepository,
+    transactions as unknown as CreditAccountTransactionsRepository,
+    accounting as unknown as AccountingService,
     notifications as unknown as NotificationsService,
     gateway as unknown as NotificationsGateway,
     users as unknown as UsersService,
+    dataSource as unknown as DataSource,
   );
-  return { service, repo, notifications, gateway, users };
+  return {
+    service,
+    repo,
+    transactions,
+    accounting,
+    notifications,
+    gateway,
+    users,
+    dataSource,
+  };
 }
 
 describe('CreditAccountsService', () => {
@@ -279,6 +317,87 @@ describe('CreditAccountsService', () => {
       ]);
       const result = await service.search({ q: 'asha' }, cashier);
       expect(result[0].availableCredit).toBe(3500);
+    });
+  });
+
+  describe('list (ageing)', () => {
+    it('merges ageing + availableCredit into each row', async () => {
+      const { service, repo } = makeService();
+      repo.list.mockResolvedValue([
+        makeAccount({
+          status: CreditAccountStatus.ACTIVE,
+          creditLimit: 5000,
+          currentBalance: 1500,
+        }),
+      ]);
+      repo.ageingByAccounts.mockResolvedValue(
+        new Map<string, CreditAccountAgeing>([
+          [
+            'acc-1',
+            {
+              notDue: 1000,
+              d1to30: 500,
+              d31to60: 0,
+              d61to90: 0,
+              d90plus: 0,
+              overdueTotal: 500,
+              outstandingTotal: 1500,
+            },
+          ],
+        ]),
+      );
+      const rows = await service.list({}, manager);
+      expect(rows[0].availableCredit).toBe(3500);
+      expect(rows[0].ageing.overdueTotal).toBe(500);
+    });
+  });
+
+  describe('getStatement', () => {
+    it('assembles balance, transactions, and flags overdue sales', async () => {
+      const { service, repo, transactions } = makeService();
+      repo.findById.mockResolvedValue(
+        makeAccount({
+          status: CreditAccountStatus.ACTIVE,
+          creditLimit: 5000,
+          currentBalance: 1500,
+        }),
+      );
+      transactions.findByAccountId.mockResolvedValue([
+        {
+          id: 't1',
+          transactionType: 'Credit_Taken',
+          amount: 1500,
+          runningBalance: 1500,
+          referenceNo: 'CR-INV-1',
+          notes: null,
+          saleId: 's1',
+          createdAt: new Date('2026-01-01T00:00:00Z'),
+        } as CreditAccountTransaction,
+      ]);
+      repo.outstandingSales.mockResolvedValue([
+        {
+          id: 's1',
+          invoiceNumber: 'INV-1',
+          total: 1500,
+          balanceDue: 1500,
+          dueDate: '2020-01-01',
+          createdAt: new Date('2019-12-01T00:00:00Z'),
+        } as Sale,
+      ]);
+      const statement = await service.getStatement('acc-1', manager);
+      expect(statement.availableCredit).toBe(3500);
+      expect(statement.transactions).toHaveLength(1);
+      expect(statement.outstandingSales[0].isOverdue).toBe(true);
+    });
+  });
+
+  describe('receivePayment', () => {
+    it('rejects a non-positive amount before opening a transaction', async () => {
+      const { service, dataSource } = makeService();
+      await expect(
+        service.receivePayment('acc-1', { amount: 0, method: 'Cash' }, manager),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
     });
   });
 });

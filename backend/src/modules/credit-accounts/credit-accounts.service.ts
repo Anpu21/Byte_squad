@@ -7,21 +7,40 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { DataSource } from 'typeorm';
 import { CreditAccount } from '@/modules/credit-accounts/entities/credit-account.entity';
+import { CreditAccountTransaction } from '@/modules/credit-accounts/entities/credit-account-transaction.entity';
 import { CreditAccountsRepository } from '@/modules/credit-accounts/credit-accounts.repository';
+import { CreditAccountTransactionsRepository } from '@/modules/credit-accounts/credit-account-transactions.repository';
 import { CreateCreditAccountRequestDto } from '@/modules/credit-accounts/dto/create-credit-account-request.dto';
 import { ApproveCreditAccountDto } from '@/modules/credit-accounts/dto/approve-credit-account.dto';
 import { RejectCreditAccountDto } from '@/modules/credit-accounts/dto/reject-credit-account.dto';
 import { UpdateCreditAccountDto } from '@/modules/credit-accounts/dto/update-credit-account.dto';
 import { ListCreditAccountsQueryDto } from '@/modules/credit-accounts/dto/list-credit-accounts-query.dto';
 import { SearchCreditAccountsQueryDto } from '@/modules/credit-accounts/dto/search-credit-accounts-query.dto';
-import type { CreditAccountSearchResult } from '@/modules/credit-accounts/types';
+import { ReceiveCreditAccountPaymentDto } from '@/modules/credit-accounts/dto/receive-credit-account-payment.dto';
+import {
+  allocateFifo,
+  overdueDays,
+} from '@/modules/credit-accounts/lib/credit-account-math';
+import type {
+  CreditAccountSearchResult,
+  CreditAccountRow,
+  CreditAccountAgeing,
+  CreditAccountStatement,
+  CreditAccountTransactionRow,
+  CreditAccountOutstandingSale,
+} from '@/modules/credit-accounts/types';
+import { Sale } from '@pos/entities/sale.entity';
 import { CreditAccountStatus } from '@common/enums/credit-account-status.enum';
 import { NotificationType } from '@common/enums/notification.enum';
+import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationsGateway } from '@notifications/notifications.gateway';
 import { UsersService } from '@users/users.service';
+import { AccountingService } from '@accounting/accounting.service';
+import { ACCOUNT_CODES } from '@accounting/types/account-code.type';
 import type { AuthUser } from '@common/types/auth-user.type';
 
 const round2 = (n: number): number => Math.round(n * 100) / 100;
@@ -34,9 +53,10 @@ interface NotifyPayload {
 
 /**
  * Customer store-credit ("khata") accounts: the enrollment → approval
- * lifecycle and the POS picker search. Repayments + ageing live in the
- * Phase-3 additions; POS charge/override in Phase 4. Accounts are
- * branch-owned, so non-admins are scoped to their own branch throughout.
+ * lifecycle, the manager listing with ageing, per-account statements, and
+ * repayments (FIFO settle + ledger posting). POS charge/override lands in
+ * Phase 4. Accounts are branch-owned, so non-admins are scoped to their own
+ * branch throughout.
  */
 @Injectable()
 export class CreditAccountsService {
@@ -44,9 +64,12 @@ export class CreditAccountsService {
 
   constructor(
     private readonly accounts: CreditAccountsRepository,
+    private readonly transactions: CreditAccountTransactionsRepository,
+    private readonly accounting: AccountingService,
     private readonly notificationsService: NotificationsService,
     private readonly notificationsGateway: NotificationsGateway,
     private readonly users: UsersService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /** Cashier submits the enrollment form → a PENDING account; managers notified. */
@@ -98,16 +121,23 @@ export class CreditAccountsService {
     return this.findOrThrow(saved.id);
   }
 
-  list(
+  async list(
     query: ListCreditAccountsQueryDto,
     actor: AuthUser,
-  ): Promise<CreditAccount[]> {
+  ): Promise<CreditAccountRow[]> {
     const branchId = this.resolveBranchScope(actor, query.branchId);
-    return this.accounts.list({
+    const accounts = await this.accounts.list({
       status: query.status,
       branchId,
       search: query.search?.trim() || undefined,
     });
+    if (accounts.length === 0) return [];
+    const ageing = await this.accounts.ageingByAccounts(
+      accounts.map((account) => account.id),
+    );
+    return accounts.map((account) =>
+      this.toRow(account, ageing.get(account.id)),
+    );
   }
 
   async getById(id: string, actor: AuthUser): Promise<CreditAccount> {
@@ -253,6 +283,132 @@ export class CreditAccountsService {
     return rows.map((account) => this.toSearchResult(account));
   }
 
+  /** Full statement: balance, ageing, ledger history, and unpaid bills. */
+  async getStatement(
+    id: string,
+    actor: AuthUser,
+  ): Promise<CreditAccountStatement> {
+    const account = await this.findOrThrow(id);
+    this.assertBranchAccess(actor, account);
+    const [transactions, outstanding, ageingMap] = await Promise.all([
+      this.transactions.findByAccountId(id),
+      this.accounts.outstandingSales(id),
+      this.accounts.ageingByAccounts([id]),
+    ]);
+    const asOf = new Date();
+    const creditLimit =
+      account.creditLimit === null ? null : Number(account.creditLimit);
+    const currentBalance = Number(account.currentBalance);
+    return {
+      id: account.id,
+      accountNo: account.accountNo,
+      holderName: account.holderName,
+      phone: account.phone,
+      nic: account.nic,
+      address: account.address,
+      branchId: account.branchId,
+      branchName: account.branch?.name ?? null,
+      status: account.status,
+      creditLimit,
+      creditTermDays:
+        account.creditTermDays === null ? null : Number(account.creditTermDays),
+      currentBalance,
+      availableCredit:
+        creditLimit === null ? null : round2(creditLimit - currentBalance),
+      ageing: ageingMap.get(id) ?? this.emptyAgeing(),
+      transactions: transactions.map((t) => this.toTransactionRow(t)),
+      outstandingSales: outstanding.map((s) => this.toOutstandingSale(s, asOf)),
+    };
+  }
+
+  /**
+   * Record a repayment: a Credit_Paid ledger row, balance ↓, FIFO settlement
+   * of unpaid credit sales (oldest-due first so ageing stays truthful), and a
+   * CREDIT accounting posting — all in one transaction with the account locked.
+   */
+  async receivePayment(
+    id: string,
+    dto: ReceiveCreditAccountPaymentDto,
+    actor: AuthUser,
+  ): Promise<CreditAccountStatement> {
+    const amount = round2(dto.amount);
+    if (amount <= 0) {
+      throw new BadRequestException('Payment amount must be greater than zero');
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const account = await manager
+        .getRepository(CreditAccount)
+        .createQueryBuilder('ca')
+        .setLock('pessimistic_write')
+        .where('ca.id = :id', { id })
+        .getOne();
+      if (!account) throw new NotFoundException('Credit account not found');
+      this.assertBranchAccess(actor, account);
+      if (
+        account.status === CreditAccountStatus.PENDING ||
+        account.status === CreditAccountStatus.REJECTED
+      ) {
+        throw new BadRequestException(
+          'Cannot record a payment on a non-approved account',
+        );
+      }
+
+      const newBalance = round2(Number(account.currentBalance) - amount);
+      const referenceNo = `CRPAY-${randomUUID().slice(0, 8).toUpperCase()}`;
+
+      await this.transactions.create(
+        {
+          creditAccountId: id,
+          saleId: null,
+          transactionType: 'Credit_Paid',
+          amount,
+          runningBalance: newBalance,
+          referenceNo,
+          notes: dto.notes?.trim() || `Credit payment via ${dto.method}`,
+        },
+        manager,
+      );
+      await manager
+        .getRepository(CreditAccount)
+        .update(id, { currentBalance: newBalance });
+
+      // FIFO-settle unpaid credit sales, oldest-due first.
+      const unpaid = await manager
+        .getRepository(Sale)
+        .createQueryBuilder('s')
+        .setLock('pessimistic_write')
+        .where('s.credit_account_id = :id', { id })
+        .andWhere("s.status = 'Active'")
+        .andWhere('s.balance_due > 0')
+        .orderBy('s.due_date', 'ASC', 'NULLS LAST')
+        .addOrderBy('s.created_at', 'ASC')
+        .getMany();
+      const allocations = allocateFifo(
+        unpaid.map((s) => ({ id: s.id, balanceDue: Number(s.balanceDue) })),
+        amount,
+      );
+      for (const alloc of allocations) {
+        await manager.getRepository(Sale).update(alloc.id, {
+          balanceDue: alloc.newDue,
+          paymentStatus: alloc.newDue <= 0 ? 'Paid' : 'Partially_Paid',
+        });
+      }
+
+      await this.accounting.createLedgerEntryWithManager(manager, {
+        branchId: account.branchId,
+        entryType: LedgerEntryType.CREDIT,
+        amount,
+        description: `Credit payment from ${account.holderName} (${dto.method})`,
+        referenceNumber: referenceNo,
+        accountCode:
+          dto.method === 'Cash' ? ACCOUNT_CODES.CASH : ACCOUNT_CODES.BANK,
+      });
+    });
+
+    return this.getStatement(id, actor);
+  }
+
   // ── Internals ──────────────────────────────────────────
 
   private toSearchResult(account: CreditAccount): CreditAccountSearchResult {
@@ -271,6 +427,94 @@ export class CreditAccountsService {
         creditLimit === null ? null : round2(creditLimit - currentBalance),
       creditTermDays:
         account.creditTermDays === null ? null : Number(account.creditTermDays),
+    };
+  }
+
+  private toRow(
+    account: CreditAccount,
+    ageing?: CreditAccountAgeing,
+  ): CreditAccountRow {
+    const creditLimit =
+      account.creditLimit === null ? null : Number(account.creditLimit);
+    const currentBalance = Number(account.currentBalance);
+    return {
+      id: account.id,
+      accountNo: account.accountNo,
+      holderName: account.holderName,
+      phone: account.phone,
+      nic: account.nic,
+      branchId: account.branchId,
+      branchName: account.branch?.name ?? null,
+      status: account.status,
+      creditLimit,
+      creditTermDays:
+        account.creditTermDays === null ? null : Number(account.creditTermDays),
+      currentBalance,
+      availableCredit:
+        creditLimit === null ? null : round2(creditLimit - currentBalance),
+      requestedCreditLimit:
+        account.requestedCreditLimit === null
+          ? null
+          : Number(account.requestedCreditLimit),
+      requestNote: account.requestNote,
+      approvalNote: account.approvalNote,
+      rejectionReason: account.rejectionReason,
+      requestedByUserId: account.requestedByUserId,
+      requestedByName: this.fullName(account.requestedBy),
+      reviewedByName: this.fullName(account.reviewedBy),
+      reviewedAt: account.reviewedAt ? account.reviewedAt.toISOString() : null,
+      createdAt: account.createdAt.toISOString(),
+      ageing: ageing ?? this.emptyAgeing(),
+    };
+  }
+
+  private fullName(
+    user: { firstName: string; lastName: string } | null | undefined,
+  ): string | null {
+    return user ? `${user.firstName} ${user.lastName}` : null;
+  }
+
+  private emptyAgeing(): CreditAccountAgeing {
+    return {
+      notDue: 0,
+      d1to30: 0,
+      d31to60: 0,
+      d61to90: 0,
+      d90plus: 0,
+      overdueTotal: 0,
+      outstandingTotal: 0,
+    };
+  }
+
+  private toTransactionRow(
+    t: CreditAccountTransaction,
+  ): CreditAccountTransactionRow {
+    return {
+      id: t.id,
+      transactionType: t.transactionType,
+      amount: Number(t.amount),
+      runningBalance: Number(t.runningBalance),
+      referenceNo: t.referenceNo,
+      notes: t.notes,
+      saleId: t.saleId,
+      createdAt: t.createdAt.toISOString(),
+    };
+  }
+
+  private toOutstandingSale(
+    sale: Sale,
+    asOf: Date,
+  ): CreditAccountOutstandingSale {
+    const days = overdueDays(sale.dueDate, asOf);
+    return {
+      saleId: sale.id,
+      invoiceNumber: sale.invoiceNumber,
+      total: Number(sale.total),
+      balanceDue: Number(sale.balanceDue),
+      dueDate: sale.dueDate,
+      createdAt: sale.createdAt.toISOString(),
+      overdueDays: days,
+      isOverdue: days > 0,
     };
   }
 

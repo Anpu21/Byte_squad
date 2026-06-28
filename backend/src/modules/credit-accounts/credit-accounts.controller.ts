@@ -16,7 +16,12 @@ import { UpdateCreditAccountDto } from '@/modules/credit-accounts/dto/update-cre
 import { ListCreditAccountsQueryDto } from '@/modules/credit-accounts/dto/list-credit-accounts-query.dto';
 import { SearchCreditAccountsQueryDto } from '@/modules/credit-accounts/dto/search-credit-accounts-query.dto';
 import { CreditAccount } from '@/modules/credit-accounts/entities/credit-account.entity';
-import type { CreditAccountSearchResult } from '@/modules/credit-accounts/types';
+import { ReceiveCreditAccountPaymentDto } from '@/modules/credit-accounts/dto/receive-credit-account-payment.dto';
+import type {
+  CreditAccountSearchResult,
+  CreditAccountRow,
+  CreditAccountStatement,
+} from '@/modules/credit-accounts/types';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -55,8 +60,17 @@ export class CreditAccountsController {
   list(
     @Query() query: ListCreditAccountsQueryDto,
     @CurrentUser() actor: AuthUser,
-  ): Promise<CreditAccount[]> {
+  ): Promise<CreditAccountRow[]> {
     return this.service.list(query, actor);
+  }
+
+  @Get(APP_ROUTES.CREDIT_ACCOUNTS.STATEMENT)
+  @Roles(UserRole.MANAGER, UserRole.ADMIN)
+  statement(
+    @Param('id') id: string,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<CreditAccountStatement> {
+    return this.service.getStatement(id, actor);
   }
 
   @Get(APP_ROUTES.CREDIT_ACCOUNTS.BY_ID)
@@ -104,6 +118,17 @@ export class CreditAccountsController {
     @CurrentUser() actor: AuthUser,
   ): Promise<CreditAccount> {
     return this.service.close(id, actor);
+  }
+
+  // Cashiers can settle at the counter; managers/admins too (branch-scoped).
+  @Post(APP_ROUTES.CREDIT_ACCOUNTS.PAYMENTS)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  receivePayment(
+    @Param('id') id: string,
+    @Body() dto: ReceiveCreditAccountPaymentDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<CreditAccountStatement> {
+    return this.service.receivePayment(id, dto, actor);
   }
 
   // `:id` (bare PATCH) is declared last so the action sub-paths win.
