@@ -34,10 +34,13 @@ import { tryCalculateMultiTender } from '@/features/pos/lib/multi-tender';
 import { createInitialTenderBag, resolveTenderInputs } from '@/features/pos/components/payment-forms/pos-payment-forms.helpers';
 import { PosCashTenderForm } from '@/features/pos/components/payment-forms/PosCashTenderForm';
 import { PosPaymentBanners } from '@/features/pos/components/payment-forms/PosPaymentBanners';
+import { PosCreditAccountCard } from '@/features/pos/components/credit-card/PosCreditAccountCard';
+import { PosCreditTenderPanel } from '@/features/pos/components/credit-card/PosCreditTenderPanel';
+import { PosManagerOverrideModal } from '@/features/pos/components/credit-card/PosManagerOverrideModal';
 import { applyCartDiscount } from '@/features/pos/components/invoice-total/pos-invoice-total.helpers';
 import { sizeLoyaltyRedeem } from '@/features/pos/lib/loyalty-redeem-value';
 import { toCartItemSeed } from '@/features/pos/lib/cart-item-seed';
-import type { ISale, ISearchProductRow } from '@/types';
+import type { ISale, ISearchProductRow, TPaymentMethod } from '@/types';
 
 /**
  * Cashier POS workspace. Pure composition: state lives in
@@ -118,11 +121,46 @@ export function PosPage(): React.ReactElement {
 
     const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
+    // Buy-on-credit: a khata account attached via the credit card unlocks the
+    // "On credit" tender. Detaching it falls the method back to Cash.
+    const creditAccount = state.creditAccount;
+    const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>('Cash');
+    const [showOverride, setShowOverride] = useState(false);
+    useEffect(() => {
+        if (!creditAccount && paymentMethod !== 'Cash') setPaymentMethod('Cash');
+    }, [creditAccount, paymentMethod]);
+    const onCredit = paymentMethod === 'Credit' && creditAccount !== null;
+
+    const bag = useMemo(
+        () => ({
+            ...createInitialTenderBag(payableByMoney),
+            cashTendered,
+            // On credit the whole gross invoice rides the khata; loyalty redeem
+            // is ignored — the credit account is the payer, not a money tender.
+            creditAmount: onCredit ? invoiceTotal : 0,
+        }),
+        [payableByMoney, cashTendered, onCredit, invoiceTotal],
+    );
+
     const tenderInputs = useMemo(
-        () => resolveTenderInputs('Cash', { ...createInitialTenderBag(payableByMoney), cashTendered }, payableByMoney),
-        [cashTendered, payableByMoney]
+        () =>
+            resolveTenderInputs(
+                paymentMethod,
+                bag,
+                onCredit ? invoiceTotal : payableByMoney,
+            ),
+        [paymentMethod, bag, onCredit, invoiceTotal, payableByMoney],
     );
     const calc = useMemo(() => tryCalculateMultiTender(tenderInputs), [tenderInputs]);
+
+    // Over-limit credit charges need a manager override token before they post.
+    const creditAvailable = creditAccount?.availableCredit ?? null;
+    const overLimit =
+        onCredit && creditAvailable !== null && invoiceTotal > creditAvailable;
+    const hasValidOverride =
+        state.creditOverride !== null &&
+        state.creditOverride.amount + 0.001 >= invoiceTotal;
+    const needsOverride = overLimit && !hasValidOverride;
 
     const handleSaleCreated = useCallback((sale: ISale) => {
         state.setLastSale(sale);
@@ -135,12 +173,18 @@ export function PosPage(): React.ReactElement {
     const submit = usePaymentSubmit({
         cart: cart.cart,
         cartDiscountPercentage: state.cartDiscountPercentage,
-        paymentMethod: 'Cash',
-        bag: { ...createInitialTenderBag(payableByMoney), cashTendered },
+        paymentMethod,
+        bag,
         tenderInputs,
         idempotencyKey,
-        loyaltyOwner: state.loyaltyOwner,
-        loyaltyRedeemPoints: loyaltyRedeem.cappedPoints,
+        // On credit the khata is the payer — drop loyalty so the payload never
+        // sends creditAccountId + customerUserId (the backend rejects that).
+        loyaltyOwner: onCredit ? null : state.loyaltyOwner,
+        loyaltyRedeemPoints: onCredit ? 0 : loyaltyRedeem.cappedPoints,
+        creditAccountId: onCredit && creditAccount ? creditAccount.id : null,
+        creditOverrideToken: onCredit
+            ? (state.creditOverride?.token ?? null)
+            : null,
         onSaleCreated: (sale) => {
             setIdempotencyKey(crypto.randomUUID());
             handleSaleCreated(sale);
@@ -155,7 +199,7 @@ export function PosPage(): React.ReactElement {
         calc !== null &&
         calc.paymentAmount === 0 &&
         loyaltyRedeem.redeemValue === 0;
-    const disableCharge = submit.isPending || hasError || isEmptyTender || cart.cart.length === 0;
+    const disableCharge = submit.isPending || hasError || isEmptyTender || cart.cart.length === 0 || needsOverride;
     const handlePrintLast = useCallback(() => {
         if (state.lastSale) void print.printReceipt(state.lastSale);
     }, [print, state.lastSale]);
@@ -274,6 +318,11 @@ export function PosPage(): React.ReactElement {
                         onRedeemChange={state.setLoyaltyRedeemPoints}
                         maxRedeemable={loyaltyRedeem.maxRedeemable}
                     />
+                    <PosCreditAccountCard
+                        creditAccount={state.creditAccount}
+                        onAttach={state.setCreditAccount}
+                        onDetach={() => state.setCreditAccount(null)}
+                    />
                     <PosBillLivePreview
                         cart={cart.cart} invoiceNumber={previewInvoiceNumber}
                         cartDiscountPercentage={state.cartDiscountPercentage}
@@ -283,12 +332,24 @@ export function PosPage(): React.ReactElement {
                     />
                     {cart.cart.length > 0 && (
                         <>
-                            <PosCashTenderForm
-                                invoiceTotal={payableByMoney}
-                                cashTendered={cashTendered}
-                                onCashTenderedChange={setCashTendered}
-                                loyaltyRedeemValue={loyaltyRedeem.redeemValue}
-                            />
+                            {creditAccount && (
+                                <PosCreditTenderPanel
+                                    method={paymentMethod}
+                                    onMethodChange={setPaymentMethod}
+                                    account={creditAccount}
+                                    amount={invoiceTotal}
+                                    override={state.creditOverride}
+                                    onRequestOverride={() => setShowOverride(true)}
+                                />
+                            )}
+                            {!onCredit && (
+                                <PosCashTenderForm
+                                    invoiceTotal={payableByMoney}
+                                    cashTendered={cashTendered}
+                                    onCashTenderedChange={setCashTendered}
+                                    loyaltyRedeemValue={loyaltyRedeem.redeemValue}
+                                />
+                            )}
                             <PosPaymentBanners
                                 hasMultiTenderError={hasError}
                                 mutationError={submit.error}
@@ -325,6 +386,17 @@ export function PosPage(): React.ReactElement {
                 isOpen={showReturn}
                 onClose={() => setShowReturn(false)}
             />
+            {creditAccount && (
+                <PosManagerOverrideModal
+                    isOpen={showOverride}
+                    onClose={() => setShowOverride(false)}
+                    account={creditAccount}
+                    amount={invoiceTotal}
+                    onAuthorized={(token, amount) =>
+                        state.setCreditOverride({ token, amount })
+                    }
+                />
+            )}
             <PosPrintHost sale={print.printingSale} />
         </div>
     );

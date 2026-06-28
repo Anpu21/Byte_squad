@@ -5,4 +5,5 @@ export enum NotificationType {
   ALERT = 'alert',
   STOCK_TRANSFER = 'stock_transfer',
   CUSTOMER_ORDER = 'customer_order',
+  CREDIT_ACCOUNT = 'credit_account',
 }

@@ -20,6 +20,7 @@ import { ProductsService } from '@products/products.service';
 import { AccountingService } from '@accounting/accounting.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
+import { CreditAccountsService } from '@/modules/credit-accounts/credit-accounts.service';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { Sale } from './entities/sale.entity';
@@ -309,6 +310,14 @@ function buildMocks(
     redeemForOrder,
     previewRedeemValue,
   };
+  const creditAccountsMock = {
+    prepareCharge: jest.fn().mockResolvedValue({
+      account: { id: 'acc-1', currentBalance: 0 },
+      dueDate: '2026-02-01',
+      overrideByUserId: null,
+    }),
+    commitChargeWithManager: jest.fn().mockResolvedValue(undefined),
+  };
 
   return Test.createTestingModule({
     providers: [
@@ -328,6 +337,7 @@ function buildMocks(
       { provide: AccountingService, useValue: accountingMock },
       { provide: LoyaltyService, useValue: loyaltyServiceMock },
       { provide: LoyaltyWalletService, useValue: loyaltyWalletServiceMock },
+      { provide: CreditAccountsService, useValue: creditAccountsMock },
       { provide: DataSource, useValue: dataSourceMock },
     ],
   })

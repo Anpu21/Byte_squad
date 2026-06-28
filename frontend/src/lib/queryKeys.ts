@@ -12,6 +12,7 @@ import type {
     IReturnsParams,
     IListTransfersParams,
     IListTransferHistoryParams,
+    ICreditAccountListParams,
 } from '@/types';
 
 export interface AdminInventoryMatrixFilters {
@@ -259,6 +260,15 @@ export const queryKeys = {
         list: () => ['receivables', 'list'] as const,
         statement: (userId: string) =>
             ['receivables', 'statement', userId] as const,
+    },
+    creditAccounts: {
+        all: () => ['credit-accounts'] as const,
+        list: (params: ICreditAccountListParams = {}) =>
+            ['credit-accounts', 'list', params] as const,
+        statement: (id: string) =>
+            ['credit-accounts', 'statement', id] as const,
+        search: (q: string, branchId?: string) =>
+            ['credit-accounts', 'search', q, branchId ?? null] as const,
     },
     shifts: {
         all: () => ['shifts'] as const,

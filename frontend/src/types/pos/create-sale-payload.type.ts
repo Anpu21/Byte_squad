@@ -17,6 +17,8 @@ export interface ICreateSalePaymentPayload {
   cashAmount?: number;
   chequeAmount?: number;
   bankTransferAmount?: number;
+  /** Portion of the sale funded by store credit (a khata "buy on credit"). */
+  creditAmount?: number;
   chequeNo?: string;
   chequeDate?: string;
   chequeBank?: string;
@@ -50,4 +52,11 @@ export interface ICreateSalePayload {
   loyaltyCustomerId?: string;
   /** Whole points to redeem against this sale. BE enforces the cap. */
   loyaltyRedeemPoints?: number;
+  /**
+   * Customer store-credit ("khata") account funding a buy-on-credit sale.
+   * Mutually exclusive with `customerUserId` (the BE rejects the combination).
+   */
+  creditAccountId?: string;
+  /** Short-lived manager-override token allowing an over-limit credit charge. */
+  creditOverrideToken?: string;
 }

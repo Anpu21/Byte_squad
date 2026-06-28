@@ -11,6 +11,7 @@ import { ProductsModule } from '@products/products.module';
 import { InventoryModule } from '@inventory/inventory.module';
 import { CategoriesModule } from '@/modules/categories/categories.module';
 import { BrandsModule } from '@/modules/brands/brands.module';
+import { CreditAccountsModule } from '@/modules/credit-accounts/credit-accounts.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { AccountsRepository } from '@accounting/accounts.repository';
@@ -39,6 +40,8 @@ import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
 import { Category } from '@/modules/categories/entities/category.entity';
 import { Brand } from '@/modules/brands/entities/brand.entity';
+import { CreditAccount } from '@/modules/credit-accounts/entities/credit-account.entity';
+import { CreditAccountTransaction } from '@/modules/credit-accounts/entities/credit-account-transaction.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { ProductBatch } from '@inventory/entities/product-batch.entity';
@@ -97,6 +100,8 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
       Product,
       Category,
       Brand,
+      CreditAccount,
+      CreditAccountTransaction,
       ProductSellableUnit,
       Inventory,
       ProductBatch,
@@ -139,6 +144,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     ProductsModule,
     CategoriesModule,
     BrandsModule,
+    CreditAccountsModule,
     InventoryModule,
     PosModule,
     AccountingModule,
