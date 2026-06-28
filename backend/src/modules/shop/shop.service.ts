@@ -64,6 +64,8 @@ export class ShopService {
         sellingPrice: Number(row.p_selling_price),
         imageUrl: row.p_image_url,
         baseUnit: row.p_base_unit,
+        aggregateRating: Number(row.p_avg_rating ?? 0),
+        reviewCount: Number(row.p_review_count ?? 0),
         sellableUnits: unitsByProduct.get(row.p_id) ?? [],
         stockStatus,
         availableBranches:
@@ -140,6 +142,8 @@ export class ShopService {
       sellingPrice: Number(product.sellingPrice),
       imageUrl: product.imageUrl,
       baseUnit: product.baseUnit,
+      aggregateRating: Number(product.avgRating ?? 0),
+      reviewCount: Number(product.reviewCount ?? 0),
       sellableUnits: (product.sellableUnits ?? [])
         .slice()
         .sort((a, b) => a.displayOrder - b.displayOrder)

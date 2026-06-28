@@ -17,6 +17,8 @@ export interface ProductWithStockRow {
   p_selling_price: string;
   p_image_url: string | null;
   p_base_unit: string;
+  p_avg_rating: string | null;
+  p_review_count: number | null;
   inv_quantity: number | null;
   inv_low_stock_threshold: number | null;
 }
@@ -81,6 +83,8 @@ export class ShopReadRepository {
         'p.selling_price AS p_selling_price',
         'p.image_url AS p_image_url',
         'p.base_unit AS p_base_unit',
+        'p.avg_rating AS p_avg_rating',
+        'p.review_count AS p_review_count',
         'inv.quantity AS inv_quantity',
         'inv.low_stock_threshold AS inv_low_stock_threshold',
       ])
