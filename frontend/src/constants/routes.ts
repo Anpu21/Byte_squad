@@ -31,6 +31,9 @@ export const FRONTEND_ROUTES = {
     RETURNS: '/inventory/returns',
     RETURN_NEW: '/inventory/returns/new',
 
+    // Brand sales analytics (admin + manager) — leaderboard + per-brand drill-down
+    BRAND_ANALYTICS: '/analytics/brands',
+
     // Purchases (suppliers + goods receipts)
     PURCHASES: '/purchases',
 

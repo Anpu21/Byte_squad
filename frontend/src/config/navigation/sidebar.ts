@@ -28,6 +28,7 @@ import {
     LuStar as Star,
     LuStore as Store,
     LuTags as Tags,
+    LuTrophy as Trophy,
     LuTruck as Truck,
     LuUndo2 as Undo2,
     LuUsers as Users,
@@ -94,6 +95,7 @@ export const SIDEBAR: NavEntry[] = [
             { key: 'suppliers', label: 'Suppliers', Icon: Building2 },
         ],
     },
+    { id: 'brand-analytics', label: 'nav.brandAnalysis', path: R.BRAND_ANALYTICS, Icon: Trophy, roles: [ADMIN, MANAGER], group: 'Inventory' },
 
     // ── Finance ──
     {

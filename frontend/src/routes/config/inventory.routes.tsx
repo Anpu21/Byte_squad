@@ -8,6 +8,7 @@ import { PurchasesWorkspacePage } from '@/features/purchases';
 import { StockAdjustmentNewPage } from '@/features/stock-adjustments';
 import { ReturnNewPage } from '@/features/returns';
 import { ProductFormPage } from '@/features/product-form';
+import { BrandAnalyticsPage } from '@/features/brand-analytics';
 
 /** Inventory + purchases — wrapped by `DashboardLayout` in the aggregator. */
 export const inventoryRoutes = (
@@ -22,6 +23,11 @@ export const inventoryRoutes = (
                 path={FRONTEND_ROUTES.PURCHASES}
                 element={<PurchasesWorkspacePage />}
                 handle={{ crumbs: ['Inventory', 'Purchases'] }}
+            />
+            <Route
+                path={FRONTEND_ROUTES.BRAND_ANALYTICS}
+                element={<BrandAnalyticsPage />}
+                handle={{ crumbs: ['Inventory', 'Brand analysis'] }}
             />
             <Route
                 path={FRONTEND_ROUTES.INVENTORY_EXPIRY}
