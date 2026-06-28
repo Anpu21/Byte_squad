@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ExtractJwt, Strategy, StrategyOptions } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserRole } from '@/common/enums/user-roles.enums';
+import { getJwtKeyConfig } from '@common/config/jwt.config';
 
 interface JwtPayload {
   sub: string;
@@ -21,16 +22,16 @@ interface ValidatedUser {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {
-    const secretOrKey = configService.get<string>(
-      'JWT_SECRET',
-      'ledgerpro-dev-secret-change-me',
-    );
-
-    super({
+    const keys = getJwtKeyConfig(configService);
+    const options: StrategyOptions = {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey,
-    });
+      secretOrKey: keys.publicKey,
+      algorithms: [keys.algorithm],
+      issuer: keys.issuer,
+      audience: keys.audience,
+    };
+    super(options);
   }
 
   validate(payload: JwtPayload): ValidatedUser {
