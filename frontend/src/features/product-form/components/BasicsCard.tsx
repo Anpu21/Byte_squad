@@ -7,6 +7,7 @@ import type { ProductFormState } from '../hooks/useProductFormState';
 interface BasicsCardProps {
     form: ProductFormState;
     categories: string[];
+    brands: string[];
     isEditMode: boolean;
     onLookupBarcode: (barcode: string) => void;
     onOpenCamera: () => void;
@@ -15,6 +16,7 @@ interface BasicsCardProps {
 export function BasicsCard({
     form,
     categories,
+    brands,
     isEditMode,
     onLookupBarcode,
     onOpenCamera,
@@ -60,6 +62,23 @@ export function BasicsCard({
                     <datalist id="category-list">
                         {categories.map((cat) => (
                             <option key={cat} value={cat} />
+                        ))}
+                    </datalist>
+                </FormField>
+
+                <FormField label="Brand (optional)" htmlFor="product-brand">
+                    <input
+                        id="product-brand"
+                        name="brand"
+                        value={form.brand}
+                        onChange={(e) => form.setBrand(e.target.value)}
+                        list="brand-list"
+                        className={inputClasses(false)}
+                        placeholder="Select or type a brand"
+                    />
+                    <datalist id="brand-list">
+                        {brands.map((b) => (
+                            <option key={b} value={b} />
                         ))}
                     </datalist>
                 </FormField>

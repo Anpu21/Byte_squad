@@ -26,6 +26,8 @@ export interface ProductFormState
     setDescription: (value: string) => void;
     category: string;
     setCategory: (value: string) => void;
+    brand: string;
+    setBrand: (value: string) => void;
     costPrice: string;
     setCostPrice: (value: string) => void;
     sellingPrice: string;
@@ -48,6 +50,7 @@ export function useProductFormState(): ProductFormState {
     const [pluCode, setPluCode] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
+    const [brand, setBrand] = useState('');
     const [costPrice, setCostPrice] = useState('');
     const [sellingPrice, setSellingPrice] = useState('');
     const [initialStock, setInitialStock] = useState('');
@@ -82,6 +85,8 @@ export function useProductFormState(): ProductFormState {
         setDescription,
         category,
         setCategory,
+        brand,
+        setBrand,
         costPrice,
         setCostPrice,
         sellingPrice,

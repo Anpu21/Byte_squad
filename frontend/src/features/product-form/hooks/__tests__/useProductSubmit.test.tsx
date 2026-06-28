@@ -58,6 +58,8 @@ function makeForm(overrides: MakeFormOverrides = {}): ProductFormState {
         setDescription: vi.fn(),
         category: 'Grocery',
         setCategory: vi.fn(),
+        brand: '',
+        setBrand: vi.fn(),
         costPrice: overrides.costPrice ?? '100',
         setCostPrice: vi.fn(),
         sellingPrice: overrides.sellingPrice ?? '150',

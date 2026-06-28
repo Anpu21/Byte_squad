@@ -74,6 +74,7 @@ export const queryKeys = {
     inventory: {
         all: () => ['inventory'] as const,
         categories: () => ['inventory', 'categories'] as const,
+        brands: () => ['inventory', 'brands'] as const,
         byBranch: (branchId: string, params?: IInventoryParams) =>
             ['inventory', 'by-branch', branchId, params ?? {}] as const,
     },
@@ -83,6 +84,15 @@ export const queryKeys = {
             ['categories', 'list', includeInactive] as const,
         analytics: (params: unknown) =>
             ['categories', 'analytics', params] as const,
+    },
+    brands: {
+        all: () => ['brands'] as const,
+        list: (includeInactive: boolean) =>
+            ['brands', 'list', includeInactive] as const,
+        overview: (params: unknown) =>
+            ['brands', 'analytics', 'overview', params] as const,
+        drilldown: (brandId: string, params: unknown) =>
+            ['brands', 'analytics', brandId, params] as const,
     },
     expiry: {
         report: (params?: IExpiryReportParams) =>

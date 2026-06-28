@@ -27,6 +27,7 @@ function baseProduct(overrides: Partial<IProduct> = {}): IProduct {
         pluCode: null,
         description: null,
         category: 'grains',
+        brand: null,
         costPrice: 150,
         sellingPrice: 200,
         imageUrl: null,

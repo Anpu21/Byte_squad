@@ -30,6 +30,7 @@ export interface IProductPayload {
   pluCode?: string | null
   description?: string
   category: string
+  brand?: string
   costPrice: number
   sellingPrice: number
   imageUrl?: string

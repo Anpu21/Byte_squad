@@ -8,6 +8,7 @@ export interface IProduct {
   pluCode: string | null
   description: string | null
   category: string
+  brand: string | null
   costPrice: number
   sellingPrice: number
   imageUrl: string | null
