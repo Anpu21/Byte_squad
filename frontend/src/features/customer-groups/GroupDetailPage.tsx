@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button'
 import Pill from '@/components/ui/Pill'
 import EmptyState from '@/components/ui/EmptyState'
 import { useGroupDetailPage } from '@/features/customer-groups/hooks/useGroupDetailPage'
+import { GroupCartPanel } from '@/features/customer-groups/components/GroupCartPanel'
 import { GroupMembersCard } from '@/features/customer-groups/components/GroupMembersCard'
 import { ShareCodeCard } from '@/features/customer-groups/components/ShareCodeCard'
 import { GroupSettingsModal } from '@/features/customer-groups/components/GroupSettingsModal'
@@ -100,7 +101,7 @@ export function GroupDetailPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          {/* Phase 7 inserts the shared cart panel above the members list. */}
+          <GroupCartPanel groupId={group.id} groupName={group.name} />
           <GroupMembersCard
             members={group.members}
             isOwner={p.isOwner}

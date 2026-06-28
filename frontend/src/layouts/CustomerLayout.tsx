@@ -22,6 +22,7 @@ import Logo from '@/components/ui/Logo';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { StorefrontNav } from '@/layouts/components/StorefrontNav';
 import { StorefrontUserMenu } from '@/layouts/components/StorefrontUserMenu';
+import { ShopContextBanner } from '@/features/customer-groups/components/ShopContextBanner';
 import { cn } from '@/lib/utils';
 
 interface CustomerLayoutProps {
@@ -197,6 +198,8 @@ export default function CustomerLayout({
                     </div>
                 </div>
             </header>
+
+            {!publicMode && <ShopContextBanner />}
 
             <main
                 id="main-content"

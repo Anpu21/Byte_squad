@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FRONTEND_ROUTES } from '@/constants/routes'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { selectShopContext } from '@/store/selectors/shopContext'
+import { clearShopContext } from '@/store/slices/shopContextSlice'
 import { useAuth } from '@/hooks/useAuth'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useGroup } from '@/features/customer-groups/hooks/useGroup'
@@ -14,6 +17,8 @@ export function useGroupDetailPage(groupId: string | undefined) {
   const navigate = useNavigate()
   const confirm = useConfirm()
   const { user } = useAuth()
+  const dispatch = useAppDispatch()
+  const shopContext = useAppSelector(selectShopContext)
 
   const { data: group, isLoading, isError } = useGroup(groupId)
   const leaveGroup = useLeaveGroup()
@@ -26,6 +31,11 @@ export function useGroupDetailPage(groupId: string | undefined) {
   const id = groupId ?? ''
   const isOwner = group?.myRole === 'owner'
 
+  // If the user was shopping for this group, drop that context on the way out.
+  const clearContextIfActive = () => {
+    if (shopContext.groupId === id) dispatch(clearShopContext())
+  }
+
   const onLeave = async () => {
     const ok = await confirm({
       title: 'Leave this group?',
@@ -37,6 +47,7 @@ export function useGroupDetailPage(groupId: string | undefined) {
     if (!ok) return
     try {
       await leaveGroup.mutateAsync(id)
+      clearContextIfActive()
       toast.success('You left the group')
       navigate(FRONTEND_ROUTES.SHOP_GROUPS)
     } catch {
@@ -98,6 +109,7 @@ export function useGroupDetailPage(groupId: string | undefined) {
     if (!ok) return
     try {
       await updateGroup.mutateAsync({ id, payload: { status: 'archived' } })
+      clearContextIfActive()
       toast.success('Group archived')
       setSettingsOpen(false)
       navigate(FRONTEND_ROUTES.SHOP_GROUPS)
