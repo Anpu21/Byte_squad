@@ -40,7 +40,9 @@ export function ProductGrid({
     }
 
     return (
-        <div className="grid gap-5 grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
+        // Same card size as the "Recommended for you" row: 2 cols on mobile,
+        // 4 from sm up (both grids share this content column's width).
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
             {products.map((product) => (
                 <ProductCard
                     key={product.id}
