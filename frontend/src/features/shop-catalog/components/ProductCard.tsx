@@ -26,7 +26,7 @@ export function ProductCard({
 
     return (
         <div
-            className={`bg-surface border border-border rounded-2xl overflow-hidden shadow-sm-token hover:border-border-strong hover:shadow-md-token hover:-translate-y-0.5 transition-all duration-200 ${
+            className={`flex h-full flex-col bg-surface border border-border rounded-2xl overflow-hidden shadow-sm-token hover:border-border-strong hover:shadow-md-token hover:-translate-y-0.5 transition-all duration-200 ${
                 out ? 'opacity-60' : ''
             }`}
         >
@@ -60,7 +60,7 @@ export function ProductCard({
                     {STOCK_LABEL[product.stockStatus]}
                 </span>
             </Link>
-            <div className="p-5">
+            <div className="p-5 flex flex-1 flex-col">
                 <p className="text-[11px] text-accent-text uppercase tracking-widest font-medium">
                     {product.category}
                 </p>
@@ -78,7 +78,33 @@ export function ProductCard({
                         />
                     </div>
                 )}
-                <div className="mt-4 flex items-center justify-between gap-2">
+                {out && product.availableBranches.length > 0 && (
+                    <div className="mt-3 flex items-center gap-1.5 overflow-hidden">
+                        <Store
+                            size={11}
+                            className="shrink-0 text-text-3"
+                            aria-hidden="true"
+                        />
+                        <div className="flex items-center gap-1 overflow-hidden">
+                            {product.availableBranches.slice(0, 2).map((b) => (
+                                <button
+                                    key={b.id}
+                                    type="button"
+                                    onClick={() => onBranchSelect(b.id)}
+                                    className="shrink-0 max-w-[88px] truncate rounded-full border border-accent/40 bg-accent-soft px-1.5 py-0.5 text-[10px] font-semibold text-accent-text"
+                                >
+                                    {b.name}
+                                </button>
+                            ))}
+                            {product.availableBranches.length > 2 && (
+                                <span className="shrink-0 text-[10px] text-text-3">
+                                    +{product.availableBranches.length - 2}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
+                <div className="mt-auto pt-4 flex items-center justify-between gap-2">
                     <p className="text-lg font-bold text-text-1 tabular-nums">
                         {formatCurrency(product.sellingPrice)}
                         <span className="text-xs font-medium text-text-3">
@@ -105,25 +131,6 @@ export function ProductCard({
                         )}
                     </button>
                 </div>
-                {out && product.availableBranches.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-border">
-                        <p className="text-[10px] uppercase tracking-widest text-text-3 mb-1.5 flex items-center gap-1">
-                            <Store size={10} /> Available at
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                            {product.availableBranches.map((b) => (
-                                <button
-                                    key={b.id}
-                                    type="button"
-                                    onClick={() => onBranchSelect(b.id)}
-                                    className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-accent-soft text-accent-text border border-accent/40 hover:bg-accent-soft transition-colors"
-                                >
-                                    {b.name}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
