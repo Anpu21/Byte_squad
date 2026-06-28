@@ -58,6 +58,9 @@ import { ShipmentEvent } from '@stock-transfers/entities/shipment-event.entity';
 import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
 import { CustomerOrderItem } from '@/modules/customer-orders/entities/customer-order-item.entity';
 import { PayherePaymentAttempt } from '@/modules/customer-orders/entities/payhere-payment-attempt.entity';
+import { CustomerGroup } from '@/modules/customer-groups/entities/customer-group.entity';
+import { CustomerGroupMember } from '@/modules/customer-groups/entities/customer-group-member.entity';
+import { GroupCartItem } from '@/modules/customer-groups/entities/group-cart-item.entity';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
 import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
@@ -113,6 +116,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
       CustomerOrder,
       CustomerOrderItem,
       PayherePaymentAttempt,
+      CustomerGroup,
+      CustomerGroupMember,
+      GroupCartItem,
       LoyaltyAccount,
       LoyaltyCustomer,
       LoyaltyLedgerEntry,
