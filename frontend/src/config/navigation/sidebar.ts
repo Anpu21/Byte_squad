@@ -17,6 +17,7 @@ import {
     LuGitCompareArrows as GitCompareArrows,
     LuHandCoins as HandCoins,
     LuHouse as Home,
+    LuNotebookTabs as NotebookTabs,
     LuPackagePlus as PackagePlus,
     LuPiggyBank as PiggyBank,
     LuReceipt as Receipt,
@@ -107,6 +108,14 @@ export const SIDEBAR: NavEntry[] = [
             { key: 'reports', label: 'Financial reports', Icon: Scale, roles: [ADMIN] },
             { key: 'expenses', label: 'Expenses', Icon: Wallet, roles: [ADMIN, MANAGER] },
             { key: 'profit-loss', label: 'Profit & Loss', Icon: PiggyBank, roles: [ADMIN] },
+        ],
+    },
+    {
+        id: 'credit-accounts', label: 'nav.storeCredit', path: R.CREDIT_ACCOUNTS, Icon: NotebookTabs,
+        roles: [ADMIN, MANAGER], group: 'Finance',
+        tabs: [
+            { key: 'approvals', label: 'Approvals', Icon: BadgeCheck },
+            { key: 'accounts', label: 'Accounts', Icon: HandCoins },
         ],
     },
     { id: 'reports', label: 'nav.reports', path: R.REPORTS, Icon: BarChart3, roles: [ADMIN, MANAGER], group: 'Finance' },

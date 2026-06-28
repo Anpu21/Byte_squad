@@ -54,6 +54,9 @@ export const FRONTEND_ROUTES = {
     EXPENSES: '/accounting/expenses',
     PROFIT_LOSS: '/accounting/profit-loss',
 
+    // Customer store credit ("khata") — walk-in buy-now-pay-later accounts
+    CREDIT_ACCOUNTS: '/credit-accounts',
+
     // Users
     USER_MANAGEMENT: '/users',
     PROFILE: '/profile',
