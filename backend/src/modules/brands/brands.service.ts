@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,8 +9,48 @@ import { Brand } from '@/modules/brands/entities/brand.entity';
 import { BrandRepository } from '@/modules/brands/brands.repository';
 import { CreateBrandDto } from '@/modules/brands/dto/create-brand.dto';
 import { UpdateBrandDto } from '@/modules/brands/dto/update-brand.dto';
+import { BrandAnalyticsQueryDto } from '@/modules/brands/dto/brand-analytics-query.dto';
 import { pickBrandColor } from '@/modules/brands/lib/brand-palette';
+import { UserRole } from '@common/enums/user-roles.enums';
 import type { AuthUser } from '@common/types/auth-user.type';
+import type {
+  BrandOverviewResponse,
+  BrandDrilldownResponse,
+  BrandTrendPoint,
+} from '@/modules/brands/types';
+
+/** One-decimal percentage of part/whole (0 when whole is 0). */
+function percent(part: number, whole: number): number {
+  return whole > 0 ? Math.round((part / whole) * 1000) / 10 : 0;
+}
+
+/**
+ * Fill missing days in [start, end] with zero points so the trend line is
+ * continuous. Days are keyed by UTC YYYY-MM-DD to match the repository's
+ * TO_CHAR(created_at) buckets (timestamps are stored in UTC).
+ */
+function zeroFillTrend(
+  rows: BrandTrendPoint[],
+  start: Date,
+  end: Date,
+): BrandTrendPoint[] {
+  const byDate = new Map(rows.map((r) => [r.date, r]));
+  const out: BrandTrendPoint[] = [];
+  const cursor = new Date(
+    Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()),
+  );
+  const last = Date.UTC(
+    end.getUTCFullYear(),
+    end.getUTCMonth(),
+    end.getUTCDate(),
+  );
+  while (cursor.getTime() <= last) {
+    const key = cursor.toISOString().slice(0, 10);
+    out.push(byDate.get(key) ?? { date: key, revenue: 0, units: 0 });
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return out;
+}
 
 @Injectable()
 export class BrandsService {
@@ -90,5 +131,116 @@ export class BrandsService {
     }
     brand.isActive = false;
     return this.brands.save(brand);
+  }
+
+  // ── Analytics ──────────────────────────────────────────
+
+  /** Brand leaderboard: every brand ranked by revenue, with margin + share. */
+  async getOverview(
+    actor: AuthUser,
+    query: BrandAnalyticsQueryDto,
+  ): Promise<BrandOverviewResponse> {
+    const { startDate, endDate } = this.parseRange(query);
+    const branchId = this.resolveAnalyticsBranch(actor, query.branchId);
+    const rows = await this.brands.leaderboard({
+      branchId,
+      startDate,
+      endDate,
+    });
+
+    const totalRevenue = rows.reduce((s, r) => s + r.revenue, 0);
+    const totalUnits = rows.reduce((s, r) => s + r.units, 0);
+    const totalProfit = rows.reduce((s, r) => s + r.profit, 0);
+    const totalTransactions = rows.reduce((s, r) => s + r.transactions, 0);
+
+    return {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      branchId,
+      totalRevenue,
+      totalUnits,
+      totalProfit,
+      totalTransactions,
+      marginPct: percent(totalProfit, totalRevenue),
+      rows: rows.map((r) => ({
+        ...r,
+        marginPct: percent(r.profit, r.revenue),
+        sharePct: percent(r.revenue, totalRevenue),
+      })),
+    };
+  }
+
+  /** One brand's drill-down: KPIs, per-product breakdown, daily revenue trend. */
+  async getBrandAnalytics(
+    actor: AuthUser,
+    brandId: string,
+    query: BrandAnalyticsQueryDto,
+  ): Promise<BrandDrilldownResponse> {
+    const { startDate, endDate } = this.parseRange(query);
+    const branchId = this.resolveAnalyticsBranch(actor, query.branchId);
+    const brand = await this.brands.findById(brandId);
+    if (!brand) {
+      throw new NotFoundException(`Brand "${brandId}" not found`);
+    }
+
+    const params = { branchId, startDate, endDate };
+    const [summary, products, trendRows] = await Promise.all([
+      this.brands.brandSummary(params, brandId),
+      this.brands.productsForBrand(params, brandId),
+      this.brands.brandTrend(params, brandId),
+    ]);
+
+    return {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      branchId,
+      brand: { id: brand.id, name: brand.name, color: brand.color },
+      totalRevenue: summary.revenue,
+      totalUnits: summary.units,
+      totalProfit: summary.profit,
+      totalTransactions: summary.transactions,
+      marginPct: percent(summary.profit, summary.revenue),
+      products: products.map((p) => ({
+        ...p,
+        marginPct: percent(p.profit, p.revenue),
+        sharePct: percent(p.revenue, summary.revenue),
+      })),
+      trend: zeroFillTrend(trendRows, startDate, endDate),
+    };
+  }
+
+  private parseRange(query: BrandAnalyticsQueryDto): {
+    startDate: Date;
+    endDate: Date;
+  } {
+    const startDate = new Date(query.startDate);
+    const endDate = new Date(query.endDate);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      throw new BadRequestException('Invalid date range');
+    }
+    if (startDate > endDate) {
+      throw new BadRequestException('startDate must be before endDate');
+    }
+    return { startDate, endDate };
+  }
+
+  /**
+   * Admin → optional branch filter (null = all branches). Manager → forced to
+   * their own branch; requesting another branch is rejected.
+   */
+  private resolveAnalyticsBranch(
+    actor: AuthUser,
+    requested?: string,
+  ): string | null {
+    if (actor.role === UserRole.ADMIN) {
+      return requested ?? null;
+    }
+    if (!actor.branchId) {
+      throw new ForbiddenException('You are not assigned to a branch');
+    }
+    if (requested && requested !== actor.branchId) {
+      throw new ForbiddenException('Cannot access another branch');
+    }
+    return actor.branchId;
   }
 }

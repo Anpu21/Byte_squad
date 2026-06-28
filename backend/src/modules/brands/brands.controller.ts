@@ -11,7 +11,12 @@ import {
 import { BrandsService } from '@/modules/brands/brands.service';
 import { CreateBrandDto } from '@/modules/brands/dto/create-brand.dto';
 import { UpdateBrandDto } from '@/modules/brands/dto/update-brand.dto';
+import { BrandAnalyticsQueryDto } from '@/modules/brands/dto/brand-analytics-query.dto';
 import { Brand } from '@/modules/brands/entities/brand.entity';
+import type {
+  BrandOverviewResponse,
+  BrandDrilldownResponse,
+} from '@/modules/brands/types';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -29,6 +34,27 @@ export class BrandsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   list(@Query('includeInactive') includeInactive?: string): Promise<Brand[]> {
     return this.service.list(includeInactive === 'true');
+  }
+
+  // Analytics routes are declared before `:id` so `analytics/...` isn't
+  // captured by the param route (overview before :brandId for the same reason).
+  @Get(APP_ROUTES.BRANDS.ANALYTICS_OVERVIEW)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  overview(
+    @Query() query: BrandAnalyticsQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<BrandOverviewResponse> {
+    return this.service.getOverview(actor, query);
+  }
+
+  @Get(APP_ROUTES.BRANDS.ANALYTICS_BRAND)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  brandAnalytics(
+    @Param('brandId') brandId: string,
+    @Query() query: BrandAnalyticsQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<BrandDrilldownResponse> {
+    return this.service.getBrandAnalytics(actor, brandId, query);
   }
 
   @Post()
