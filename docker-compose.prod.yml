@@ -38,6 +38,9 @@ services:
         # Migrations must apply cleanly before the app serves traffic; a failed
         # migration aborts `compose up`, so the old container keeps running.
         condition: service_completed_successfully
+      redis:
+        # The RealtimePublisher needs the event bus up before it serves traffic.
+        condition: service_healthy
     env_file: .env
     ports:
       # Bind to localhost only — a reverse proxy (nginx/Caddy) terminates TLS
@@ -58,6 +61,31 @@ services:
       start_period: 20s
     networks: [ledgerpro-network]
 
+  # Event bus for the realtime service + socket.io Redis adapter backing store.
+  # Internal-only (no published port). The backend PUBLISHes notification
+  # envelopes here; the ledgerpro-realtime stack SUBSCRIBEs over the shared
+  # network. Requires REDIS_URL=redis://redis:6379 in .env.
+  redis:
+    image: redis:7-alpine
+    container_name: ledgerpro-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [ledgerpro-network]
+
+volumes:
+  redisdata:
+
 networks:
+  # EXTERNAL + shared with the realtime stack (ledgerpro-realtime) so both reach
+  # redis:6379 and realtime resolves backend:3000 for JWKS. Create it once:
+  #   docker network create ledgerpro-network
+  # (the deploy job also creates it idempotently).
   ledgerpro-network:
-    driver: bridge
+    external: true
