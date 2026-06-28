@@ -238,6 +238,23 @@ export const APP_ROUTES = {
     PAYHERE_NOTIFY: 'payhere/notify',
   },
 
+  // Customer shopping groups ("shop together"): groups + shared cart + group
+  // purchase analytics. Static segments (mine/join) are declared before BY_ID in
+  // the controller so they aren't captured by the `:id` param.
+  CUSTOMER_GROUPS: {
+    BASE: `${API_PREFIX}/customer-groups`,
+    MINE: 'mine',
+    JOIN: 'join',
+    BY_ID: ':id',
+    REGENERATE_CODE: ':id/regenerate-code',
+    LEAVE: ':id/leave',
+    MEMBER: ':id/members/:userId',
+    CART: ':id/cart',
+    CART_ITEM: ':id/cart/:itemId',
+    CHECKOUT: ':id/checkout',
+    ANALYTICS: ':id/analytics',
+  },
+
   // Customer loyalty
   LOYALTY: {
     BASE: `${API_PREFIX}/loyalty`,

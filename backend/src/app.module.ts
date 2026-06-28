@@ -19,6 +19,7 @@ import { AdminPortalModule } from '@admin-portal/admin-portal.module';
 import { BranchAnalyticsModule } from '@/modules/branch-analytics/branch-analytics.module';
 import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
 import { CustomerOrdersModule } from '@/modules/customer-orders/customer-orders.module';
+import { CustomerGroupsModule } from '@/modules/customer-groups/customer-groups.module';
 import { ShopModule } from '@/modules/shop/shop.module';
 import { ReviewsModule } from '@/modules/reviews/reviews.module';
 import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
@@ -146,6 +147,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     BranchAnalyticsModule,
     StockTransfersModule,
     CustomerOrdersModule,
+    CustomerGroupsModule,
     ShopModule,
     ReviewsModule,
     LoyaltyModule,
