@@ -5,9 +5,12 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { DataSource, EntityManager } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
 import { CreditAccount } from '@/modules/credit-accounts/entities/credit-account.entity';
 import { CreditAccountTransaction } from '@/modules/credit-accounts/entities/credit-account-transaction.entity';
 import { CreditAccountsRepository } from '@/modules/credit-accounts/credit-accounts.repository';
@@ -19,7 +22,9 @@ import { UpdateCreditAccountDto } from '@/modules/credit-accounts/dto/update-cre
 import { ListCreditAccountsQueryDto } from '@/modules/credit-accounts/dto/list-credit-accounts-query.dto';
 import { SearchCreditAccountsQueryDto } from '@/modules/credit-accounts/dto/search-credit-accounts-query.dto';
 import { ReceiveCreditAccountPaymentDto } from '@/modules/credit-accounts/dto/receive-credit-account-payment.dto';
+import { AuthorizeOverrideDto } from '@/modules/credit-accounts/dto/authorize-override.dto';
 import {
+  addDaysUtc,
   allocateFifo,
   overdueDays,
 } from '@/modules/credit-accounts/lib/credit-account-math';
@@ -30,8 +35,10 @@ import type {
   CreditAccountStatement,
   CreditAccountTransactionRow,
   CreditAccountOutstandingSale,
+  CreditOverrideAuthorization,
 } from '@/modules/credit-accounts/types';
 import { Sale } from '@pos/entities/sale.entity';
+import { assertWithinCreditLimit } from '@pos/lib/credit-limit';
 import { CreditAccountStatus } from '@common/enums/credit-account-status.enum';
 import { NotificationType } from '@common/enums/notification.enum';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
@@ -49,6 +56,20 @@ interface NotifyPayload {
   title: string;
   message: string;
   metadata: Record<string, unknown>;
+}
+
+interface OverrideTokenPayload {
+  scope: string;
+  accountId: string;
+  cap: number;
+  sub: string;
+}
+
+/** Validated, locked context handed from {@link prepareCharge} to commit. */
+export interface CreditChargeContext {
+  account: CreditAccount;
+  dueDate: string;
+  overrideByUserId: string | null;
 }
 
 /**
@@ -70,6 +91,7 @@ export class CreditAccountsService {
     private readonly notificationsGateway: NotificationsGateway,
     private readonly users: UsersService,
     private readonly dataSource: DataSource,
+    private readonly jwtService: JwtService,
   ) {}
 
   /** Cashier submits the enrollment form → a PENDING account; managers notified. */
@@ -409,7 +431,201 @@ export class CreditAccountsService {
     return this.getStatement(id, actor);
   }
 
+  /** Validate a manager's credentials and mint a short-lived over-limit token. */
+  async authorizeOverride(
+    dto: AuthorizeOverrideDto,
+    actor: AuthUser,
+  ): Promise<CreditOverrideAuthorization> {
+    const account = await this.findOrThrow(dto.creditAccountId);
+    this.assertBranchAccess(actor, account);
+
+    const manager = await this.users.findByEmail(
+      dto.email.trim().toLowerCase(),
+    );
+    const passwordOk = manager
+      ? await bcrypt.compare(dto.password, manager.passwordHash)
+      : false;
+    if (!manager || !passwordOk) {
+      throw new UnauthorizedException('Invalid manager credentials');
+    }
+    if (manager.role !== UserRole.MANAGER && manager.role !== UserRole.ADMIN) {
+      throw new ForbiddenException(
+        'Only a manager or admin can authorize an over-limit charge',
+      );
+    }
+    if (
+      manager.role === UserRole.MANAGER &&
+      manager.branchId !== account.branchId
+    ) {
+      throw new ForbiddenException('Manager is not assigned to this branch');
+    }
+
+    const token = await this.jwtService.signAsync({
+      scope: 'credit_override',
+      accountId: account.id,
+      cap: round2(dto.amount),
+      sub: manager.id,
+    });
+    return {
+      token,
+      authorizedBy: `${manager.firstName} ${manager.lastName}`,
+      expiresInSeconds: 300,
+    };
+  }
+
+  /**
+   * POS charge step 1 (before the sale insert): lock the account, assert it is
+   * ACTIVE + in-branch, enforce the credit limit (or accept a valid override
+   * token), and compute the repayment due date. No mutation yet.
+   */
+  async prepareCharge(
+    manager: EntityManager,
+    params: {
+      creditAccountId: string;
+      actor: AuthUser;
+      amount: number;
+      overrideToken?: string;
+    },
+  ): Promise<CreditChargeContext> {
+    const account = await manager
+      .getRepository(CreditAccount)
+      .createQueryBuilder('ca')
+      .setLock('pessimistic_write')
+      .where('ca.id = :id', { id: params.creditAccountId })
+      .getOne();
+    if (!account) throw new NotFoundException('Credit account not found');
+    this.assertBranchAccess(params.actor, account);
+    if (account.status !== CreditAccountStatus.ACTIVE) {
+      throw new BadRequestException(
+        `Credit account is ${account.status.toLowerCase()} — cannot buy on credit`,
+      );
+    }
+
+    const amount = round2(params.amount);
+    const currentBalance = Number(account.currentBalance);
+    const limit =
+      account.creditLimit === null ? null : Number(account.creditLimit);
+    let overrideByUserId: string | null = null;
+    if (limit !== null && round2(currentBalance + amount) > limit) {
+      if (!params.overrideToken) {
+        // No override supplied → enforce the limit (throws ConflictException).
+        assertWithinCreditLimit(limit, currentBalance, amount);
+      }
+      overrideByUserId = await this.verifyOverrideToken(
+        params.overrideToken ?? '',
+        account.id,
+        amount,
+      );
+    }
+
+    const dueDate = addDaysUtc(new Date(), account.creditTermDays ?? 0);
+    return { account, dueDate, overrideByUserId };
+  }
+
+  /**
+   * POS charge step 2 (after the sale insert): append the Credit_Taken ledger
+   * row and advance the account balance, using the account locked in
+   * {@link prepareCharge} within the same transaction.
+   */
+  async commitChargeWithManager(
+    manager: EntityManager,
+    params: {
+      context: CreditChargeContext;
+      saleId: string;
+      invoiceNumber: string;
+      amount: number;
+    },
+  ): Promise<void> {
+    const { account } = params.context;
+    const amount = round2(params.amount);
+    const newBalance = round2(Number(account.currentBalance) + amount);
+    await this.transactions.create(
+      {
+        creditAccountId: account.id,
+        saleId: params.saleId,
+        transactionType: 'Credit_Taken',
+        amount,
+        runningBalance: newBalance,
+        referenceNo: `CR-${params.invoiceNumber}`,
+        notes: `Credit taken for invoice ${params.invoiceNumber}`,
+      },
+      manager,
+    );
+    await manager
+      .getRepository(CreditAccount)
+      .update(account.id, { currentBalance: newBalance });
+  }
+
+  /**
+   * Void reversal: for a credit-account sale, write reversing ledger rows and
+   * move the account balance back. No-op for non-credit-account sales.
+   */
+  async reverseChargeForSale(
+    manager: EntityManager,
+    sale: Sale,
+  ): Promise<void> {
+    if (!sale.creditAccountId) return;
+    const original = await this.transactions.findBySaleId(sale.id);
+    if (original.length === 0) return;
+    const account = await manager
+      .getRepository(CreditAccount)
+      .createQueryBuilder('ca')
+      .setLock('pessimistic_write')
+      .where('ca.id = :id', { id: sale.creditAccountId })
+      .getOne();
+    let runningBalance = account ? Number(account.currentBalance) : 0;
+    for (const txn of original) {
+      const amount = Number(txn.amount);
+      const reverseType: 'Credit_Taken' | 'Credit_Paid' =
+        txn.transactionType === 'Credit_Taken' ? 'Credit_Paid' : 'Credit_Taken';
+      const delta = txn.transactionType === 'Credit_Taken' ? -amount : amount;
+      runningBalance = round2(runningBalance + delta);
+      await this.transactions.create(
+        {
+          creditAccountId: txn.creditAccountId,
+          saleId: sale.id,
+          transactionType: reverseType,
+          amount,
+          runningBalance,
+          referenceNo: `VOID-${sale.invoiceNumber}-${txn.id.slice(0, 6)}`,
+          notes: `Reverse ${txn.transactionType} from voided invoice ${sale.invoiceNumber}`,
+        },
+        manager,
+      );
+    }
+    if (account) {
+      await manager
+        .getRepository(CreditAccount)
+        .update(account.id, { currentBalance: runningBalance });
+    }
+  }
+
   // ── Internals ──────────────────────────────────────────
+
+  private async verifyOverrideToken(
+    token: string,
+    accountId: string,
+    amount: number,
+  ): Promise<string> {
+    let payload: OverrideTokenPayload;
+    try {
+      payload = await this.jwtService.verifyAsync<OverrideTokenPayload>(token);
+    } catch {
+      throw new UnauthorizedException(
+        'Override authorization is invalid or has expired',
+      );
+    }
+    if (
+      payload.scope !== 'credit_override' ||
+      payload.accountId !== accountId ||
+      Number(payload.cap) < round2(amount)
+    ) {
+      throw new ForbiddenException(
+        'Override authorization does not match this charge',
+      );
+    }
+    return payload.sub;
+  }
 
   private toSearchResult(account: CreditAccount): CreditAccountSearchResult {
     const creditLimit =

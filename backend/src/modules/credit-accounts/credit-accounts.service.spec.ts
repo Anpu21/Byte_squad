@@ -2,8 +2,11 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 import { CreditAccountsService } from '@/modules/credit-accounts/credit-accounts.service';
 import { CreditAccountsRepository } from '@/modules/credit-accounts/credit-accounts.repository';
 import { CreditAccountTransactionsRepository } from '@/modules/credit-accounts/credit-account-transactions.repository';
@@ -16,9 +19,28 @@ import { UserRole } from '@common/enums/user-roles.enums';
 import { NotificationsService } from '@notifications/notifications.service';
 import { NotificationsGateway } from '@notifications/notifications.gateway';
 import { UsersService } from '@users/users.service';
+import { User } from '@users/entities/user.entity';
 import { AccountingService } from '@accounting/accounting.service';
 import { Sale } from '@pos/entities/sale.entity';
 import type { AuthUser } from '@common/types/auth-user.type';
+
+jest.mock('bcrypt', () => ({
+  compare: jest.fn((): Promise<boolean> => Promise.resolve(true)),
+}));
+const compareMock = bcrypt.compare as unknown as jest.Mock;
+
+function makeUser(overrides: Partial<User> = {}): User {
+  return {
+    id: 'mgr-1',
+    email: 'm@x.io',
+    passwordHash: 'hash',
+    firstName: 'Mala',
+    lastName: 'Manager',
+    role: UserRole.MANAGER,
+    branchId: 'branch-1',
+    ...overrides,
+  } as User;
+}
 
 function makeAccount(overrides: Partial<CreditAccount> = {}): CreditAccount {
   return {
@@ -113,6 +135,13 @@ function makeService() {
     findManagersAndAdminsForBranches: jest.fn(
       (): Promise<Array<{ id: string }>> => Promise.resolve([{ id: 'mgr-1' }]),
     ),
+    findByEmail: jest.fn((): Promise<User | null> => Promise.resolve(null)),
+  };
+  const jwt = {
+    signAsync: jest.fn(
+      (): Promise<string> => Promise.resolve('override-token'),
+    ),
+    verifyAsync: jest.fn(),
   };
   const dataSource = { transaction: jest.fn() };
   const service = new CreditAccountsService(
@@ -123,6 +152,7 @@ function makeService() {
     gateway as unknown as NotificationsGateway,
     users as unknown as UsersService,
     dataSource as unknown as DataSource,
+    jwt as unknown as JwtService,
   );
   return {
     service,
@@ -132,6 +162,7 @@ function makeService() {
     notifications,
     gateway,
     users,
+    jwt,
     dataSource,
   };
 }
@@ -181,6 +212,68 @@ describe('CreditAccountsService', () => {
       await expect(
         service.request({ holderName: 'Asha', phone: '0771234567' }, admin),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  describe('authorizeOverride', () => {
+    const dto = {
+      email: 'm@x.io',
+      password: 'pw',
+      creditAccountId: 'acc-1',
+      amount: 500,
+    };
+
+    it('rejects when no user matches the email', async () => {
+      const { service, repo, users } = makeService();
+      repo.findById.mockResolvedValue(
+        makeAccount({ status: CreditAccountStatus.ACTIVE }),
+      );
+      users.findByEmail.mockResolvedValue(null);
+      await expect(
+        service.authorizeOverride(dto, cashier),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it('rejects a wrong password', async () => {
+      const { service, repo, users } = makeService();
+      repo.findById.mockResolvedValue(
+        makeAccount({ status: CreditAccountStatus.ACTIVE }),
+      );
+      users.findByEmail.mockResolvedValue(makeUser());
+      compareMock.mockResolvedValueOnce(false);
+      await expect(
+        service.authorizeOverride(dto, cashier),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it('rejects credentials that belong to a cashier', async () => {
+      const { service, repo, users } = makeService();
+      repo.findById.mockResolvedValue(
+        makeAccount({ status: CreditAccountStatus.ACTIVE }),
+      );
+      users.findByEmail.mockResolvedValue(makeUser({ role: UserRole.CASHIER }));
+      await expect(
+        service.authorizeOverride(dto, cashier),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('mints a scoped token for a valid branch manager', async () => {
+      const { service, repo, users, jwt } = makeService();
+      repo.findById.mockResolvedValue(
+        makeAccount({ status: CreditAccountStatus.ACTIVE }),
+      );
+      users.findByEmail.mockResolvedValue(makeUser());
+      const result = await service.authorizeOverride(dto, cashier);
+      expect(result.token).toBe('override-token');
+      expect(result.authorizedBy).toBe('Mala Manager');
+      expect(jwt.signAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          scope: 'credit_override',
+          accountId: 'acc-1',
+          cap: 500,
+          sub: 'mgr-1',
+        }),
+      );
     });
   });
 

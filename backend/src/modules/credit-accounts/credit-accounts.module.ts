@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { CreditAccount } from '@/modules/credit-accounts/entities/credit-account.entity';
 import { CreditAccountTransaction } from '@/modules/credit-accounts/entities/credit-account-transaction.entity';
 import { CreditAccountsRepository } from '@/modules/credit-accounts/credit-accounts.repository';
@@ -17,6 +19,16 @@ import { AccountingModule } from '@accounting/accounting.module';
     NotificationsModule,
     UsersModule,
     AccountingModule,
+    // Dedicated short-lived signer for the manager over-limit override token —
+    // same secret as auth, but a 5-minute expiry scoped to this purpose.
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret:
+          config.get<string>('JWT_SECRET') ?? 'ledgerpro-dev-secret-change-me',
+        signOptions: { expiresIn: '5m' },
+      }),
+    }),
   ],
   controllers: [CreditAccountsController],
   providers: [

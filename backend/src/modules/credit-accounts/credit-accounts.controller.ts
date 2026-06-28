@@ -17,10 +17,12 @@ import { ListCreditAccountsQueryDto } from '@/modules/credit-accounts/dto/list-c
 import { SearchCreditAccountsQueryDto } from '@/modules/credit-accounts/dto/search-credit-accounts-query.dto';
 import { CreditAccount } from '@/modules/credit-accounts/entities/credit-account.entity';
 import { ReceiveCreditAccountPaymentDto } from '@/modules/credit-accounts/dto/receive-credit-account-payment.dto';
+import { AuthorizeOverrideDto } from '@/modules/credit-accounts/dto/authorize-override.dto';
 import type {
   CreditAccountSearchResult,
   CreditAccountRow,
   CreditAccountStatement,
+  CreditOverrideAuthorization,
 } from '@/modules/credit-accounts/types';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -43,6 +45,16 @@ export class CreditAccountsController {
     @CurrentUser() actor: AuthUser,
   ): Promise<CreditAccount> {
     return this.service.request(dto, actor);
+  }
+
+  // Step-up: a manager authorizes an over-limit credit charge at the counter.
+  @Post(APP_ROUTES.CREDIT_ACCOUNTS.AUTHORIZE_OVERRIDE)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  authorizeOverride(
+    @Body() dto: AuthorizeOverrideDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<CreditOverrideAuthorization> {
+    return this.service.authorizeOverride(dto, actor);
   }
 
   // `search` is declared before `:id` so the literal path isn't param-captured.

@@ -43,6 +43,7 @@ import { ProductsModule } from '@products/products.module';
 import { UsersModule } from '@users/users.module';
 import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
 import { EmailModule } from '@/modules/email/email.module';
+import { CreditAccountsModule } from '@/modules/credit-accounts/credit-accounts.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { EmailModule } from '@/modules/email/email.module';
     UsersModule,
     LoyaltyModule,
     EmailModule,
+    CreditAccountsModule,
   ],
   controllers: [
     PosController,

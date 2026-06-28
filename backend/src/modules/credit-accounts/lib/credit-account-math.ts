@@ -50,3 +50,12 @@ export function overdueDays(dueDate: string | null, asOf: Date): number {
   const days = Math.floor((today - due) / 86_400_000);
   return days > 0 ? days : 0;
 }
+
+/** The repayment due date `termDays` after `asOf`, as a `YYYY-MM-DD` string. */
+export function addDaysUtc(asOf: Date, days: number): string {
+  const d = new Date(
+    Date.UTC(asOf.getUTCFullYear(), asOf.getUTCMonth(), asOf.getUTCDate()),
+  );
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
