@@ -131,6 +131,9 @@ export const FRONTEND_ROUTES = {
     SHOP_MY_ORDERS_LEGACY: '/shop/my-requests',
     SHOP_PROFILE: '/shop/profile',
     SHOP_REWARDS: '/shop/rewards',
+    SHOP_GROUPS: '/shop/groups',
+    SHOP_GROUP_DETAIL: '/shop/groups/:id',
+    SHOP_GROUP_ANALYTICS: '/shop/groups/:id/analytics',
 
     // Cashier scan + shared customer orders view
     SCAN_ORDER: '/pos/scan-order',
