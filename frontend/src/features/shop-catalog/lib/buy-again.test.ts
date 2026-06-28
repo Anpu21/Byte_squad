@@ -18,6 +18,8 @@ function product(
         sellableUnits: [],
         stockStatus,
         availableBranches: [],
+        aggregateRating: 0,
+        reviewCount: 0,
     };
 }
 
