@@ -45,6 +45,7 @@ export { default as EmptyState } from './EmptyState';
 export { default as Skeleton, SkeletonText } from './Skeleton';
 
 // Status & identity
+export { StarRating } from './StarRating';
 export { default as Pill, type PillTone } from './Pill';
 export { default as StatusPill } from './StatusPill';
 export { default as Avatar } from './Avatar';

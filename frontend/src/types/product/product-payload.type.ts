@@ -26,8 +26,11 @@ export type TProductBaseUnit =
 export interface IProductPayload {
   name: string
   barcode: string
+  /** Numeric PLU/item code for weighed products; omit/null when not weighed. */
+  pluCode?: string | null
   description?: string
   category: string
+  brand?: string
   costPrice: number
   sellingPrice: number
   imageUrl?: string

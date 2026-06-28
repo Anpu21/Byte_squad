@@ -1,6 +1,7 @@
 export interface ProductFormErrors {
     name?: string;
     barcode?: string;
+    pluCode?: string;
     category?: string;
     costPrice?: string;
     sellingPrice?: string;

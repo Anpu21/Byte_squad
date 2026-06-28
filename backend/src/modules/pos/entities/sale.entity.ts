@@ -178,6 +178,22 @@ export class Sale {
   @Column({ type: 'uuid', name: 'loyalty_customer_id', nullable: true })
   loyaltyCustomerId!: string | null;
 
+  // Customer store-credit ("khata") link. Scalar-only (no relation) so the POS
+  // entity stays decoupled from the credit-accounts module — same approach as
+  // `loyaltyCustomerId`. Set when a sale is charged to a credit account.
+  @Column({ type: 'uuid', name: 'credit_account_id', nullable: true })
+  creditAccountId!: string | null;
+
+  // Repayment due date for a credit-account sale: saleDate + account term days.
+  // Drives the receivables ageing/overdue buckets. NULL for non-credit sales.
+  @Column({ type: 'date', name: 'due_date', nullable: true })
+  dueDate!: string | null;
+
+  // Manager/admin who authorized an over-limit credit charge at the counter
+  // (the step-up override). NULL when the sale was within the credit limit.
+  @Column({ type: 'uuid', name: 'credit_override_by_user_id', nullable: true })
+  creditOverrideByUserId!: string | null;
+
   @Column({
     type: 'varchar',
     length: 255,

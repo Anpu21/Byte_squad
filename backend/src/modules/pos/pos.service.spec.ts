@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { PosService } from './pos.service';
@@ -11,6 +15,7 @@ import { InventoryService } from '@inventory/inventory.service';
 import { ProductsService } from '@products/products.service';
 import { InvoiceNumberService } from './services/invoice-number.service';
 import { UsersService } from '@users/users.service';
+import { EmailService } from '@/modules/email/email.service';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Sale } from './entities/sale.entity';
@@ -168,6 +173,7 @@ describe('PosService — Phase 4 read endpoints', () => {
   let invoiceNumbers: jest.Mocked<InvoiceNumberService>;
   let salesRepo: jest.Mocked<SaleRepository>;
   let usersRepo: jest.Mocked<UsersService>;
+  let emailService: jest.Mocked<EmailService>;
 
   beforeEach(async () => {
     const posRepoMock: Partial<jest.Mocked<PosRepository>> = {
@@ -206,6 +212,13 @@ describe('PosService — Phase 4 read endpoints', () => {
         { provide: InvoiceNumberService, useValue: invoiceNumbersMock },
         { provide: SaleRepository, useValue: salesRepoMock },
         { provide: UsersService, useValue: usersRepoMock },
+        {
+          provide: EmailService,
+          useValue: {
+            isVerified: jest.fn().mockReturnValue(true),
+            sendReceiptEmail: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -216,6 +229,7 @@ describe('PosService — Phase 4 read endpoints', () => {
     invoiceNumbers = module.get(InvoiceNumberService);
     salesRepo = module.get(SaleRepository);
     usersRepo = module.get(UsersService);
+    emailService = module.get(EmailService);
   });
 
   // -------------------------------------------------------------------
@@ -669,6 +683,85 @@ describe('PosService — Phase 4 read endpoints', () => {
         service.markPrinted('missing', makeCashier()),
       ).rejects.toBeInstanceOf(NotFoundException);
       expect(salesRepo.markPrinted).not.toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // emailReceipt — email a PDF copy of the receipt to the customer
+  // -------------------------------------------------------------------
+  describe('emailReceipt', () => {
+    const PDF = 'JVBERi0xLjQK';
+
+    it('emails the receipt to the customer and reports sent', async () => {
+      const sale = makeSale({
+        id: 'sale-1',
+        branchId: 'branch-A',
+        invoiceNumber: 'INV-2026-000009',
+        total: 1150,
+        customerUserId: 'cust-1',
+        customer: {
+          email: 'nadia@example.com',
+          firstName: 'Nadia',
+        } as unknown as Sale['customer'],
+      });
+      salesRepo.findOneById.mockResolvedValue(sale);
+
+      const result = await service.emailReceipt(
+        'sale-1',
+        { pdfBase64: PDF },
+        makeCashier(),
+      );
+
+      expect(emailService.sendReceiptEmail).toHaveBeenCalledWith(
+        'nadia@example.com',
+        'Nadia',
+        'INV-2026-000009',
+        1150,
+        PDF,
+      );
+      expect(result).toEqual({ sent: true });
+    });
+
+    it('rejects when the sale has no customer email', async () => {
+      salesRepo.findOneById.mockResolvedValue(
+        makeSale({ id: 'sale-1', branchId: 'branch-A', customer: null }),
+      );
+      await expect(
+        service.emailReceipt('sale-1', { pdfBase64: PDF }, makeCashier()),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(emailService.sendReceiptEmail).not.toHaveBeenCalled();
+    });
+
+    it('503s when email delivery is not configured', async () => {
+      salesRepo.findOneById.mockResolvedValue(
+        makeSale({
+          id: 'sale-1',
+          branchId: 'branch-A',
+          customer: {
+            email: 'x@y.com',
+            firstName: 'X',
+          } as unknown as Sale['customer'],
+        }),
+      );
+      emailService.isVerified.mockReturnValueOnce(false);
+      await expect(
+        service.emailReceipt('sale-1', { pdfBase64: PDF }, makeCashier()),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
+      expect(emailService.sendReceiptEmail).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException across branches for a cashier', async () => {
+      salesRepo.findOneById.mockResolvedValue(
+        makeSale({ id: 'sale-x', branchId: 'branch-B' }),
+      );
+      await expect(
+        service.emailReceipt(
+          'sale-x',
+          { pdfBase64: PDF },
+          makeCashier({ branchId: 'branch-A' }),
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(emailService.sendReceiptEmail).not.toHaveBeenCalled();
     });
   });
 

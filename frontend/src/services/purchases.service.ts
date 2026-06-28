@@ -13,6 +13,7 @@ import type {
     IPurchaseOrdersListResponse,
     IPurchaseReturn,
     IPurchaseReturnPayload,
+    IReorderSuggestionsReport,
     ISupplierPayment,
     ISupplierPaymentPayload,
     ISupplierPaymentsListResponse,
@@ -146,6 +147,32 @@ export const purchasesService = {
     cancelOrder: async (id: string): Promise<IPurchaseOrder> => {
         const response = await api.patch<IApiResponse<IPurchaseOrder>>(
             `/purchases/orders/${id}/cancel`,
+        );
+        return response.data.data;
+    },
+
+    /** `GET /purchases/reorder-suggestions` — per-supplier reorder report. */
+    reorderSuggestions: async (
+        query: {
+            branchId?: string;
+            leadDays?: number;
+            lookbackDays?: number;
+        } = {},
+    ): Promise<IReorderSuggestionsReport> => {
+        const response = await api.get<IApiResponse<IReorderSuggestionsReport>>(
+            '/purchases/reorder-suggestions',
+            { params: query },
+        );
+        return response.data.data;
+    },
+
+    /** `POST /purchases/reorder-suggestions/draft` — draft one PO per supplier. */
+    draftReorders: async (
+        orders: IPurchaseOrderPayload[],
+    ): Promise<IPurchaseOrder[]> => {
+        const response = await api.post<IApiResponse<IPurchaseOrder[]>>(
+            '/purchases/reorder-suggestions/draft',
+            { orders },
         );
         return response.data.data;
     },

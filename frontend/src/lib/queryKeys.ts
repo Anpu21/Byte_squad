@@ -12,6 +12,7 @@ import type {
     IReturnsParams,
     IListTransfersParams,
     IListTransferHistoryParams,
+    ICreditAccountListParams,
 } from '@/types';
 
 export interface AdminInventoryMatrixFilters {
@@ -74,6 +75,7 @@ export const queryKeys = {
     inventory: {
         all: () => ['inventory'] as const,
         categories: () => ['inventory', 'categories'] as const,
+        brands: () => ['inventory', 'brands'] as const,
         byBranch: (branchId: string, params?: IInventoryParams) =>
             ['inventory', 'by-branch', branchId, params ?? {}] as const,
     },
@@ -83,6 +85,15 @@ export const queryKeys = {
             ['categories', 'list', includeInactive] as const,
         analytics: (params: unknown) =>
             ['categories', 'analytics', params] as const,
+    },
+    brands: {
+        all: () => ['brands'] as const,
+        list: (includeInactive: boolean) =>
+            ['brands', 'list', includeInactive] as const,
+        overview: (params: unknown) =>
+            ['brands', 'analytics', 'overview', params] as const,
+        drilldown: (brandId: string, params: unknown) =>
+            ['brands', 'analytics', brandId, params] as const,
     },
     expiry: {
         report: (params?: IExpiryReportParams) =>
@@ -134,6 +145,14 @@ export const queryKeys = {
         publicProduct: (id: string, branchId: string | null) =>
             ['shop', 'public-product', id, branchId] as const,
     },
+    reviews: {
+        forProduct: (productId: string, params: unknown) =>
+            ['reviews', 'product', productId, params] as const,
+        byProduct: (productId: string) =>
+            ['reviews', 'product', productId] as const,
+        moderation: (params: unknown) =>
+            ['reviews', 'moderation', params] as const,
+    },
     profile: {
         self: () => ['profile'] as const,
     },
@@ -156,6 +175,14 @@ export const queryKeys = {
         my: () => ['my-customer-orders'] as const,
         byCode: (code: string) =>
             ['customer-order-by-code', code] as const,
+    },
+    customerGroups: {
+        all: () => ['customer-groups'] as const,
+        mine: () => ['customer-groups', 'mine'] as const,
+        detail: (id: string) => ['customer-groups', 'detail', id] as const,
+        cart: (id: string) => ['customer-groups', 'cart', id] as const,
+        analytics: (id: string, params: unknown) =>
+            ['customer-groups', 'analytics', id, params] as const,
     },
     loyalty: {
         mine: () => ['loyalty', 'mine'] as const,
@@ -189,6 +216,11 @@ export const queryKeys = {
     },
     purchases: {
         all: () => ['purchases'] as const,
+        reorder: (params: {
+            branchId?: string;
+            leadDays?: number;
+            lookbackDays?: number;
+        }) => ['purchases', 'reorder', params] as const,
         suppliers: (params: {
             search?: string;
             status?: string;
@@ -229,9 +261,21 @@ export const queryKeys = {
         statement: (userId: string) =>
             ['receivables', 'statement', userId] as const,
     },
+    creditAccounts: {
+        all: () => ['credit-accounts'] as const,
+        list: (params: ICreditAccountListParams = {}) =>
+            ['credit-accounts', 'list', params] as const,
+        statement: (id: string) =>
+            ['credit-accounts', 'statement', id] as const,
+        search: (q: string, branchId?: string) =>
+            ['credit-accounts', 'search', q, branchId ?? null] as const,
+    },
     shifts: {
         all: () => ['shifts'] as const,
         current: () => ['shifts', 'current'] as const,
+    },
+    heldSales: {
+        all: () => ['held-sales'] as const,
     },
     audit: {
         logs: (params: Record<string, string | number | undefined>) =>

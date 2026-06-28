@@ -48,11 +48,15 @@ export type {
     IReceiveCreditPaymentPayload,
 } from './receivable.type';
 export type {
+    CashMovementType,
+    ICashMovement,
+    ICashMovementPayload,
     ICurrentShiftResponse,
     IPosShift,
     IShiftLiveSummary,
     ShiftStatus,
 } from './shift.type';
+export type { IHeldSale, IHeldSalePayload } from './held-sale.type';
 export type {
     DiscountSchemeScope,
     IDiscountScheme,

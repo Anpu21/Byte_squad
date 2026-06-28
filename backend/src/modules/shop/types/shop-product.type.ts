@@ -13,4 +13,7 @@ export interface ShopProduct {
   sellableUnits: ShopSellableUnit[];
   stockStatus: StockStatus;
   availableBranches: ShopProductBranchRef[];
+  /** Average of visible reviews (0 when none); 0.00–5.00. */
+  aggregateRating: number;
+  reviewCount: number;
 }

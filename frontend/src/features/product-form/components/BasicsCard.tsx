@@ -7,6 +7,7 @@ import type { ProductFormState } from '../hooks/useProductFormState';
 interface BasicsCardProps {
     form: ProductFormState;
     categories: string[];
+    brands: string[];
     isEditMode: boolean;
     onLookupBarcode: (barcode: string) => void;
     onOpenCamera: () => void;
@@ -15,6 +16,7 @@ interface BasicsCardProps {
 export function BasicsCard({
     form,
     categories,
+    brands,
     isEditMode,
     onLookupBarcode,
     onOpenCamera,
@@ -64,12 +66,48 @@ export function BasicsCard({
                     </datalist>
                 </FormField>
 
+                <FormField label="Brand (optional)" htmlFor="product-brand">
+                    <input
+                        id="product-brand"
+                        name="brand"
+                        value={form.brand}
+                        onChange={(e) => form.setBrand(e.target.value)}
+                        list="brand-list"
+                        className={inputClasses(false)}
+                        placeholder="Select or type a brand"
+                    />
+                    <datalist id="brand-list">
+                        {brands.map((b) => (
+                            <option key={b} value={b} />
+                        ))}
+                    </datalist>
+                </FormField>
+
                 <BarcodeInput
                     form={form}
                     isEditMode={isEditMode}
                     onLookup={onLookupBarcode}
                     onOpenCamera={onOpenCamera}
                 />
+
+                {form.baseUnit !== 'unit' && (
+                    <FormField
+                        label="PLU code (scale barcodes)"
+                        htmlFor="product-plu"
+                        error={form.errors.pluCode}
+                    >
+                        <input
+                            id="product-plu"
+                            name="pluCode"
+                            inputMode="numeric"
+                            value={form.pluCode}
+                            onChange={(e) => form.setPluCode(e.target.value)}
+                            aria-invalid={Boolean(form.errors.pluCode)}
+                            className={inputClasses(Boolean(form.errors.pluCode))}
+                            placeholder="e.g. 00042"
+                        />
+                    </FormField>
+                )}
 
                 <FormField
                     label="Description (optional)"

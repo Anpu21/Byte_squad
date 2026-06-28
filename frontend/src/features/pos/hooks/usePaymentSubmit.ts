@@ -23,6 +23,14 @@ interface IUsePaymentSubmitArgs {
     loyaltyOwner: IPosLoyaltyOwner | null;
     /** Whole points to redeem against this sale; 0 disables redemption. */
     loyaltyRedeemPoints: number;
+    /**
+     * Khata account funding a buy-on-credit sale; null/omitted for money
+     * tenders. Optional so the legacy `PosPaymentForms` modal (cash-only) can
+     * omit it — the inline `PosPage` checkout always passes it.
+     */
+    creditAccountId?: string | null;
+    /** Manager override token for an over-limit credit charge; null otherwise. */
+    creditOverrideToken?: string | null;
     onSaleCreated: (sale: ISale) => void;
     onClose: () => void;
 }

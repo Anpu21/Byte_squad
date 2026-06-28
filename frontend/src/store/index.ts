@@ -15,6 +15,7 @@ import authReducer from './slices/authSlice';
 import shopCartReducer from './slices/shopCartSlice';
 import shopBranchReducer from './slices/shopBranchSlice';
 import adminContextReducer from './slices/adminContextSlice';
+import shopContextReducer from './slices/shopContextSlice';
 import { migrateLegacyPersistedState } from './migrations';
 
 migrateLegacyPersistedState();
@@ -24,6 +25,7 @@ const rootReducer = combineReducers({
     auth: authReducer,
     shopCart: shopCartReducer,
     shopBranch: shopBranchReducer,
+    shopContext: shopContextReducer,
     adminContext: adminContextReducer,
 });
 
@@ -34,7 +36,13 @@ const persistedReducer = persistReducer(
         storage,
         // POS `cart` is intentionally session-scoped — the register clears
         // on reload. Only persist auth / shopCart / adminContext.
-        whitelist: ['auth', 'shopCart', 'shopBranch', 'adminContext'],
+        whitelist: [
+            'auth',
+            'shopCart',
+            'shopBranch',
+            'shopContext',
+            'adminContext',
+        ],
     },
     rootReducer,
 );

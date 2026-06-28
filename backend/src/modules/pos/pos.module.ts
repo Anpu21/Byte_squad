@@ -9,6 +9,9 @@ import { ReceivablesService } from '@pos/receivables.service';
 import { ShiftsController } from '@pos/shifts.controller';
 import { ShiftsService } from '@pos/shifts.service';
 import { ShiftsRepository } from '@pos/shifts.repository';
+import { HeldSalesController } from '@pos/held-sales.controller';
+import { HeldSalesService } from '@pos/held-sales.service';
+import { HeldSalesRepository } from '@pos/held-sales.repository';
 import { DiscountSchemesController } from '@pos/discount-schemes.controller';
 import { DiscountSchemesService } from '@pos/discount-schemes.service';
 import { DiscountSchemesRepository } from '@pos/discount-schemes.repository';
@@ -16,6 +19,8 @@ import { SalesReportsController } from '@pos/sales-reports.controller';
 import { SalesReportsService } from '@pos/sales-reports.service';
 import { SalesReportsRepository } from '@pos/sales-reports.repository';
 import { PosShift } from '@pos/entities/pos-shift.entity';
+import { PosCashMovement } from '@pos/entities/pos-cash-movement.entity';
+import { HeldSale } from '@pos/entities/held-sale.entity';
 import { DiscountScheme } from '@pos/entities/discount-scheme.entity';
 import { PosRepository } from '@pos/pos.repository';
 import { SaleRepository } from '@pos/sale.repository';
@@ -37,6 +42,8 @@ import { InventoryModule } from '@inventory/inventory.module';
 import { ProductsModule } from '@products/products.module';
 import { UsersModule } from '@users/users.module';
 import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
+import { EmailModule } from '@/modules/email/email.module';
+import { CreditAccountsModule } from '@/modules/credit-accounts/credit-accounts.module';
 
 @Module({
   imports: [
@@ -49,6 +56,8 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
       InvoiceCounter,
       IdempotencyKey,
       PosShift,
+      PosCashMovement,
+      HeldSale,
       DiscountScheme,
     ]),
     AccountingModule,
@@ -56,11 +65,14 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
     ProductsModule,
     UsersModule,
     LoyaltyModule,
+    EmailModule,
+    CreditAccountsModule,
   ],
   controllers: [
     PosController,
     ReceivablesController,
     ShiftsController,
+    HeldSalesController,
     DiscountSchemesController,
     SalesReportsController,
   ],
@@ -71,6 +83,8 @@ import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
     ReceivablesService,
     ShiftsService,
     ShiftsRepository,
+    HeldSalesService,
+    HeldSalesRepository,
     DiscountSchemesService,
     DiscountSchemesRepository,
     SalesReportsService,

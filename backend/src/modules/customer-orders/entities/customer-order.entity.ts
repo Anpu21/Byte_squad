@@ -22,6 +22,7 @@ import { PayherePaymentAttempt } from '@/modules/customer-orders/entities/payher
 @Index(['userId'])
 @Index(['status'])
 @Index(['groupCode'])
+@Index(['customerGroupId'])
 export class CustomerOrder {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -36,6 +37,16 @@ export class CustomerOrder {
    */
   @Column({ type: 'varchar', name: 'group_code', nullable: true })
   groupCode!: string | null;
+
+  /**
+   * Links this order to the CustomerGroup whose shared cart produced it (a
+   * "shop together" group checkout) so the group's analytics can roll it up.
+   * Scalar-only (no relation) to avoid a customer-orders → customer-groups
+   * import cycle — the FK lives in the DB. DISTINCT from `groupCode`, which only
+   * batches one multi-branch checkout for a single PayHere payment.
+   */
+  @Column({ type: 'uuid', name: 'customer_group_id', nullable: true })
+  customerGroupId!: string | null;
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
   userId!: string | null;

@@ -28,8 +28,10 @@ export function useProductLoader({
         const product = query.data;
         form.setName(product.name);
         form.setBarcode(product.barcode);
+        form.setPluCode(product.pluCode ?? '');
         form.setDescription(product.description || '');
         form.setCategory(product.category);
+        form.setBrand(product.brand ?? '');
         form.setCostPrice(String(product.costPrice));
         form.setSellingPrice(String(product.sellingPrice));
         setImageUrl(product.imageUrl);

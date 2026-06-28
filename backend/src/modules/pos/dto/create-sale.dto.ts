@@ -161,6 +161,24 @@ export class CreateSaleDto {
   loyaltyCustomerId?: string;
 
   /**
+   * Customer store-credit ("khata") account funding the credit portion of
+   * this sale (mutually exclusive with `customerUserId`). The credit-accounts
+   * service validates status + limit and stamps the sale's due date.
+   */
+  @IsOptional()
+  @IsUUID()
+  creditAccountId?: string;
+
+  /**
+   * Short-lived manager-override token (from POST /credit-accounts/
+   * authorize-override) that permits an over-limit credit charge. Verified
+   * server-side; ignored when the charge is within the account's limit.
+   */
+  @IsOptional()
+  @IsString()
+  creditOverrideToken?: string;
+
+  /**
    * Points the cashier wants to redeem against this sale. Capped server-
    * side by the redeem-cap-percent setting + available balance; the
    * wallet service throws BadRequestException if the cap is breached.

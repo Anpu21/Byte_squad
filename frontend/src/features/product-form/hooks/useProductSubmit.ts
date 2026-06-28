@@ -101,8 +101,10 @@ export function useProductSubmit({
         const payload = {
             name: form.name.trim(),
             barcode: form.barcode.trim(),
+            pluCode: form.pluCode.trim() || undefined,
             description: form.description.trim() || undefined,
             category: form.category.trim(),
+            brand: form.brand.trim() || undefined,
             costPrice: normalizedCostPrice,
             sellingPrice: normalizedSellingPrice,
             baseUnit: form.baseUnit,

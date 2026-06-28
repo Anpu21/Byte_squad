@@ -7,9 +7,11 @@ import { shopProductsService } from '@/services/shop-products.service';
 import { addToCart } from '@/store/slices/shopCartSlice';
 import { setActiveBranch } from '@/store/slices/shopBranchSlice';
 import { selectActiveBranchId } from '@/store/selectors/shopBranch';
+import { selectShopContext } from '@/store/selectors/shopContext';
 import { useAuth } from '@/hooks/useAuth';
 import { queryKeys } from '@/lib/queryKeys';
 import { FRONTEND_ROUTES } from '@/constants/routes';
+import { useAddGroupCartItem } from '@/features/customer-groups/hooks/useAddGroupCartItem';
 import {
     qtyRules,
     formatQty,
@@ -30,6 +32,8 @@ export function useProductDetail() {
     const { user } = useAuth();
     const activeBranchId = useAppSelector(selectActiveBranchId);
     const branchId = activeBranchId ?? user?.branchId ?? null;
+    const shopContext = useAppSelector(selectShopContext);
+    const addGroupItem = useAddGroupCartItem();
 
     const [qty, setQty] = useState(1);
     const [amount, setAmount] = useState(0);
@@ -136,6 +140,25 @@ export function useProductDetail() {
         // derived estimate. Weight lines carry no amount (priced by quantity).
         const isAmountLine = isFractional && entryMode === 'amount';
         const lineQty = isAmountLine ? derivedQty : qty;
+        if (shopContext.mode === 'group' && shopContext.groupId) {
+            try {
+                await addGroupItem.mutateAsync({
+                    id: shopContext.groupId,
+                    payload: {
+                        productId: product.id,
+                        branchId,
+                        unitId: selectedUnit?.id ?? undefined,
+                        quantity: lineQty,
+                        amount: isAmountLine ? amount : undefined,
+                    },
+                });
+                toast.success(`Added to ${shopContext.groupName ?? 'group'}`);
+                return true;
+            } catch {
+                toast.error('Could not add to the group cart');
+                return false;
+            }
+        }
         dispatch(
             addToCart({
                 productId: product.id,
@@ -159,13 +182,45 @@ export function useProductDetail() {
 
     const handleBuyNow = async () => {
         const added = await handleAdd();
-        if (added) navigate(FRONTEND_ROUTES.SHOP_CART);
+        if (!added) return;
+        if (shopContext.mode === 'group' && shopContext.groupId) {
+            navigate(
+                FRONTEND_ROUTES.SHOP_GROUP_DETAIL.replace(
+                    ':id',
+                    shopContext.groupId,
+                ),
+            );
+        } else {
+            navigate(FRONTEND_ROUTES.SHOP_CART);
+        }
     };
 
     const handleAddRecommended = (recommended: IShopProduct) => {
         if (recommended.stockStatus === 'out' || !branchId) return;
         const base =
             recommended.sellableUnits.find((u) => u.isBase) ?? null;
+        if (shopContext.mode === 'group' && shopContext.groupId) {
+            addGroupItem.mutate(
+                {
+                    id: shopContext.groupId,
+                    payload: {
+                        productId: recommended.id,
+                        branchId,
+                        unitId: base?.id ?? undefined,
+                        quantity: 1,
+                    },
+                },
+                {
+                    onSuccess: () =>
+                        toast.success(
+                            `Added to ${shopContext.groupName ?? 'group'}`,
+                        ),
+                    onError: () =>
+                        toast.error('Could not add to the group cart'),
+                },
+            );
+            return;
+        }
         dispatch(
             addToCart({
                 productId: recommended.id,

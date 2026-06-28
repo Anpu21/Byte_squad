@@ -4,6 +4,7 @@ import type { TBaseUnitFe } from './sellable-units';
 export interface ProductFormValues {
     name: string;
     barcode: string;
+    pluCode: string;
     category: string;
     costPrice: string;
     sellingPrice: string;
@@ -24,6 +25,8 @@ export function validateProductForm(
     const errors: ProductFormErrors = {};
     if (!values.name.trim()) errors.name = 'Product name is required';
     if (!values.barcode.trim()) errors.barcode = 'Barcode is required';
+    if (values.pluCode.trim() && !/^\d{1,16}$/.test(values.pluCode.trim()))
+        errors.pluCode = 'PLU must be 1–16 digits';
     if (!values.category.trim()) errors.category = 'Category is required';
 
     const cost = parseFloat(values.costPrice);
@@ -61,6 +64,7 @@ const FIELD_FOCUS_ORDER: (keyof ProductFormErrors)[] = [
     'name',
     'category',
     'barcode',
+    'pluCode',
     'sellingPrice',
     'costPrice',
     'initialStock',

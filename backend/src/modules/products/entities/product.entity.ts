@@ -12,6 +12,7 @@ import { Inventory } from '@inventory/entities/inventory.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Category } from '@/modules/categories/entities/category.entity';
+import { Brand } from '@/modules/brands/entities/brand.entity';
 
 @Entity('products')
 export class Product {
@@ -23,6 +24,12 @@ export class Product {
 
   @Column({ type: 'varchar', unique: true })
   barcode!: string;
+
+  // Short numeric item code embedded in retail-scale barcodes (EAN-13 `2`-prefix)
+  // for weigh-by-weight products. Nullable; partial-unique (see migration) so a
+  // scanned PLU resolves to exactly one product. Only kg/l products set it.
+  @Column({ type: 'varchar', length: 16, name: 'plu_code', nullable: true })
+  pluCode!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
   description!: string | null;
@@ -42,6 +49,21 @@ export class Product {
   @ManyToOne(() => Category, { onDelete: 'RESTRICT', nullable: true })
   @JoinColumn({ name: 'category_id' })
   categoryRef!: Category | null;
+
+  // Denormalized mirror of `brandRef.name`, kept in sync by ProductsService.
+  // Optional — not every product belongs to a brand (loose produce, in-house
+  // bakery). Powers the brand sales-analytics leaderboard + drill-down.
+  @Column({ type: 'varchar', nullable: true })
+  brand!: string | null;
+
+  // Source of truth for the product's brand. Nullable; ProductsService resolves
+  // it from the managed brand id/name (auto-creating on a new name).
+  @Column({ type: 'uuid', name: 'brand_id', nullable: true })
+  brandId!: string | null;
+
+  @ManyToOne(() => Brand, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'brand_id' })
+  brandRef!: Brand | null;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, name: 'cost_price' })
   costPrice!: number;
@@ -78,6 +100,21 @@ export class Product {
 
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive!: boolean;
+
+  // Denormalized review aggregates, recomputed transactionally by
+  // ReviewsService on every review write so the shop catalog + product page
+  // render stars without a join. Source of truth = the product_reviews table.
+  @Column({
+    type: 'decimal',
+    precision: 3,
+    scale: 2,
+    name: 'avg_rating',
+    default: 0,
+  })
+  avgRating!: number;
+
+  @Column({ type: 'int', name: 'review_count', default: 0 })
+  reviewCount!: number;
 
   @OneToMany(() => Inventory, (inventory) => inventory.product)
   inventoryRecords!: Inventory[];
