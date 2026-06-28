@@ -10,7 +10,7 @@ import { StockTransfersRepository } from './stock-transfers.repository';
 import { EmployeesRepository } from '@/modules/hr/employees.repository';
 import { UsersService } from '@users/users.service';
 import { NotificationsService } from '@notifications/notifications.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { StockTransferRequest } from './entities/stock-transfer-request.entity';
 import { Employee } from '@/modules/hr/entities/employee.entity';
 import { TransferStatus } from '@common/enums/transfer-status.enum';
@@ -85,7 +85,7 @@ describe('ShipmentsService', () => {
         findManagersAndAdminsForBranches: jest.fn().mockResolvedValue([]),
       } as unknown as UsersService,
       { create: jest.fn() } as unknown as NotificationsService,
-      { sendToUser: jest.fn() } as unknown as NotificationsGateway,
+      { toUser: jest.fn() } as unknown as RealtimePublisher,
       { transaction: jest.fn() } as never,
     );
   });

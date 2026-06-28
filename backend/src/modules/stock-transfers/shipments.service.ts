@@ -27,7 +27,7 @@ import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { NotificationType } from '@common/enums/notification.enum';
 import { NotificationsService } from '@notifications/notifications.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 
 interface ActorContext {
   id: string;
@@ -55,7 +55,7 @@ export class ShipmentsService {
     private readonly employees: EmployeesRepository,
     private readonly users: UsersService,
     private readonly notificationsService: NotificationsService,
-    private readonly notificationsGateway: NotificationsGateway,
+    private readonly realtime: RealtimePublisher,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -742,7 +742,7 @@ export class ShipmentsService {
             type: NotificationType.STOCK_TRANSFER,
             metadata: { event: payload.event, shipmentId },
           });
-          this.notificationsGateway.sendToUser(userId, {
+          this.realtime.toUser(userId, {
             userId,
             title: payload.title,
             message: payload.message,

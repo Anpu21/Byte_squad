@@ -3,7 +3,7 @@ import {
   CreateCheckoutResult,
   CustomerOrdersService,
 } from '@/modules/customer-orders/customer-orders.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { GroupCartRepository } from '@/modules/customer-groups/group-cart.repository';
 import { CustomerGroupsService } from '@/modules/customer-groups/customer-groups.service';
 import { CheckoutGroupCartDto } from '@/modules/customer-groups/dto/checkout-group-cart.dto';
@@ -21,7 +21,7 @@ export class GroupCheckoutService {
     private readonly groups: CustomerGroupsService,
     private readonly cart: GroupCartRepository,
     private readonly customerOrders: CustomerOrdersService,
-    private readonly gateway: NotificationsGateway,
+    private readonly realtime: RealtimePublisher,
   ) {}
 
   async checkout(
@@ -57,7 +57,7 @@ export class GroupCheckoutService {
     // cancels the orders (existing logic) but the cart is already empty, exactly
     // like the personal storefront cart after checkout.
     await this.cart.clear(groupId);
-    this.gateway.broadcast('group-cart:changed', { groupId });
+    this.realtime.toGroup(groupId, 'group-cart:changed', { groupId });
 
     return result;
   }

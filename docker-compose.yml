@@ -48,6 +48,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
       - CORS_ORIGIN=${CORS_ORIGIN}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - MAIL_HOST=${MAIL_HOST}
       - MAIL_PORT=${MAIL_PORT}
       - MAIL_USERNAME=${MAIL_USERNAME}
@@ -66,6 +67,8 @@ services:
       - PAYHERE_CANCEL_URL=${PAYHERE_CANCEL_URL}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - ledgerpro-network
@@ -89,9 +92,26 @@ services:
     networks:
       - ledgerpro-network
 
+  # Event bus for realtime fan-out to the ledgerpro-realtime service, and the
+  # socket.io Redis adapter backing store. Internal-only (no published port).
+  redis:
+    image: redis:7-alpine
+    container_name: ledgerpro-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ledgerpro-network
+
 # ── Volumes ──────────────────────────────────────────────
 volumes:
   pgdata:
+  redisdata:
 
 # ── Networks ─────────────────────────────────────────────
 networks:

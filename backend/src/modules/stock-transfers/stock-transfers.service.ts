@@ -31,7 +31,7 @@ import { TransferStatus } from '@common/enums/transfer-status.enum';
 import { NotificationType } from '@common/enums/notification.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { NotificationsService } from '@notifications/notifications.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 
 interface ActorContext {
   id: string;
@@ -73,7 +73,7 @@ export class StockTransfersService {
     private readonly inventory: InventoryService,
     private readonly users: UsersService,
     private readonly notificationsService: NotificationsService,
-    private readonly notificationsGateway: NotificationsGateway,
+    private readonly realtime: RealtimePublisher,
     // Service-level transactions still need a DataSource — repos run in
     // the OUTER transaction's EntityManager via manager.getRepository().
     private readonly dataSource: DataSource,
@@ -1030,7 +1030,7 @@ export class StockTransfersService {
         type: NotificationType.STOCK_TRANSFER,
         metadata: payload.metadata,
       });
-      this.notificationsGateway.sendToUser(userId, {
+      this.realtime.toUser(userId, {
         userId,
         title: payload.title,
         message: payload.message,

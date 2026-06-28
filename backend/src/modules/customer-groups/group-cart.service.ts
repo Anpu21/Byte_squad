@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { Product } from '@products/entities/product.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { GroupCartItem } from '@/modules/customer-groups/entities/group-cart-item.entity';
@@ -33,7 +33,7 @@ export class GroupCartService {
     private readonly cart: GroupCartRepository,
     private readonly products: ProductsService,
     private readonly branches: BranchesService,
-    private readonly gateway: NotificationsGateway,
+    private readonly realtime: RealtimePublisher,
   ) {}
 
   async getCart(groupId: string, userId: string): Promise<GroupCartView> {
@@ -273,7 +273,7 @@ export class GroupCartService {
 
   private emitChanged(groupId: string): void {
     // Best-effort live nudge — every member's open cart refetches on match.
-    this.gateway.broadcast('group-cart:changed', { groupId });
+    this.realtime.toGroup(groupId, 'group-cart:changed', { groupId });
   }
 
   private round2(value: number): number {

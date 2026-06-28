@@ -17,7 +17,7 @@ import { CreditAccountStatus } from '@common/enums/credit-account-status.enum';
 import { NotificationType } from '@common/enums/notification.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { NotificationsService } from '@notifications/notifications.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { UsersService } from '@users/users.service';
 import { User } from '@users/entities/user.entity';
 import { AccountingService } from '@accounting/accounting.service';
@@ -130,7 +130,7 @@ function makeService() {
   const notifications = {
     create: jest.fn((): Promise<void> => Promise.resolve()),
   };
-  const gateway = { sendToUser: jest.fn() };
+  const realtime = { toUser: jest.fn() };
   const users = {
     findManagersAndAdminsForBranches: jest.fn(
       (): Promise<Array<{ id: string }>> => Promise.resolve([{ id: 'mgr-1' }]),
@@ -149,7 +149,7 @@ function makeService() {
     transactions as unknown as CreditAccountTransactionsRepository,
     accounting as unknown as AccountingService,
     notifications as unknown as NotificationsService,
-    gateway as unknown as NotificationsGateway,
+    realtime as unknown as RealtimePublisher,
     users as unknown as UsersService,
     dataSource as unknown as DataSource,
     jwt as unknown as JwtService,
@@ -160,7 +160,7 @@ function makeService() {
     transactions,
     accounting,
     notifications,
-    gateway,
+    realtime,
     users,
     jwt,
     dataSource,

@@ -9,7 +9,7 @@ import { GroupCartRepository } from '@/modules/customer-groups/group-cart.reposi
 import { CustomerGroupsService } from '@/modules/customer-groups/customer-groups.service';
 import { ProductsService } from '@products/products.service';
 import { BranchesService } from '@branches/branches.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { Product } from '@products/entities/product.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { GroupCartItem } from '@/modules/customer-groups/entities/group-cart-item.entity';
@@ -86,7 +86,7 @@ describe('GroupCartService', () => {
   };
   let products: { findActiveByIdsWithUnits: jest.Mock };
   let branches: { findEntityById: jest.Mock };
-  let gateway: { broadcast: jest.Mock };
+  let realtime: { toGroup: jest.Mock };
 
   beforeEach(async () => {
     groups = { assertMembership: jest.fn().mockResolvedValue(undefined) };
@@ -104,7 +104,7 @@ describe('GroupCartService', () => {
       findActiveByIdsWithUnits: jest.fn().mockResolvedValue([product()]),
     };
     branches = { findEntityById: jest.fn().mockResolvedValue(branch()) };
-    gateway = { broadcast: jest.fn() };
+    realtime = { toGroup: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -113,7 +113,7 @@ describe('GroupCartService', () => {
         { provide: GroupCartRepository, useValue: cart },
         { provide: ProductsService, useValue: products },
         { provide: BranchesService, useValue: branches },
-        { provide: NotificationsGateway, useValue: gateway },
+        { provide: RealtimePublisher, useValue: realtime },
       ],
     }).compile();
     service = moduleRef.get(GroupCartService);
@@ -137,7 +137,7 @@ describe('GroupCartService', () => {
           addedByUserId: 'u-member',
         }),
       );
-      expect(gateway.broadcast).toHaveBeenCalledWith('group-cart:changed', {
+      expect(realtime.toGroup).toHaveBeenCalledWith('g1', 'group-cart:changed', {
         groupId: 'g1',
       });
     });
@@ -227,7 +227,7 @@ describe('GroupCartService', () => {
       expect(cart.saveItem).toHaveBeenCalledWith(
         expect.objectContaining({ quantity: 4 }),
       );
-      expect(gateway.broadcast).toHaveBeenCalled();
+      expect(realtime.toGroup).toHaveBeenCalled();
     });
 
     it('404s when the item is missing or belongs to another group', async () => {
@@ -243,7 +243,7 @@ describe('GroupCartService', () => {
       cart.findById.mockResolvedValue(cartItem());
       await service.removeItem('g1', 'i1', member);
       expect(cart.deleteItem).toHaveBeenCalledWith('i1');
-      expect(gateway.broadcast).toHaveBeenCalled();
+      expect(realtime.toGroup).toHaveBeenCalled();
     });
   });
 
@@ -251,7 +251,7 @@ describe('GroupCartService', () => {
     it('clears the cart and broadcasts', async () => {
       await service.clearCart('g1', member);
       expect(cart.clear).toHaveBeenCalledWith('g1');
-      expect(gateway.broadcast).toHaveBeenCalled();
+      expect(realtime.toGroup).toHaveBeenCalled();
     });
   });
 

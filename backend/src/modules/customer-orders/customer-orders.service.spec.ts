@@ -22,7 +22,7 @@ import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { NotificationsService } from '@notifications/notifications.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { PayhereService } from './payhere.service';
 
 describe('CustomerOrdersService', () => {
@@ -95,7 +95,7 @@ describe('CustomerOrdersService', () => {
           },
         },
         { provide: NotificationsService, useValue: { create: jest.fn() } },
-        { provide: NotificationsGateway, useValue: { broadcast: jest.fn() } },
+        { provide: RealtimePublisher, useValue: { broadcast: jest.fn() } },
         {
           provide: CloudinaryService,
           useValue: { uploadBuffer: jest.fn() },
