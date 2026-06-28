@@ -11,6 +11,7 @@ import { ProductsModule } from '@products/products.module';
 import { InventoryModule } from '@inventory/inventory.module';
 import { CategoriesModule } from '@/modules/categories/categories.module';
 import { BrandsModule } from '@/modules/brands/brands.module';
+import { CreditAccountsModule } from '@/modules/credit-accounts/credit-accounts.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { AccountsRepository } from '@accounting/accounts.repository';
@@ -136,6 +137,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     ProductsModule,
     CategoriesModule,
     BrandsModule,
+    CreditAccountsModule,
     InventoryModule,
     PosModule,
     AccountingModule,

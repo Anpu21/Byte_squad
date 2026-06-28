@@ -74,6 +74,23 @@ export const APP_ROUTES = {
     ARCHIVE: ':id/archive',
   },
 
+  // Customer store-credit accounts (khata / loan-book): enrollment request →
+  // manager approval (limit + term) → buy-on-credit at POS → repayments.
+  // `search` / `authorize-override` are declared before `:id` in the controller
+  // so the literal paths aren't captured by the `:id` param route.
+  CREDIT_ACCOUNTS: {
+    BASE: `${API_PREFIX}/credit-accounts`,
+    SEARCH: 'search',
+    AUTHORIZE_OVERRIDE: 'authorize-override',
+    BY_ID: ':id',
+    APPROVE: ':id/approve',
+    REJECT: ':id/reject',
+    SUSPEND: ':id/suspend',
+    CLOSE: ':id/close',
+    STATEMENT: ':id/statement',
+    PAYMENTS: ':id/payments',
+  },
+
   // Inventory
   INVENTORY: {
     BASE: `${API_PREFIX}/inventory`,
