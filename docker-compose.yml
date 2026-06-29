@@ -132,6 +132,7 @@ services:
       - JWKS_URI=http://backend:3000/.well-known/jwks.json
       - JWT_ISSUER=ledgerpro-backend
       - JWT_AUDIENCE=ledgerpro-api
+      - BACKEND_BASE_URL=http://backend:3000
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USERNAME=${DB_USERNAME}
