@@ -209,6 +209,13 @@ export const APP_ROUTES = {
     MARK_ALL_READ: 'read-all',
   },
 
+  // Chat — stateless attachment upload only (conversations + messages live in
+  // the realtime service). Bytes go to Cloudinary; realtime stores the metadata.
+  CHAT: {
+    BASE: `${API_PREFIX}/chat`,
+    ATTACHMENTS: 'attachments',
+  },
+
   // Admin Portal (system-wide endpoints — admin role only)
   ADMIN_PORTAL: {
     BASE: `${API_PREFIX}/admin`,

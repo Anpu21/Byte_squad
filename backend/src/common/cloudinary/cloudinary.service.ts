@@ -133,6 +133,37 @@ export class CloudinaryService {
     return { url: result.secure_url, publicId: result.public_id };
   }
 
+  /**
+   * Upload an arbitrary file (image OR document) for chat attachments. Uses
+   * resource_type 'auto' so PDFs/Office docs upload as raw files — uploadImage
+   * is image-only — and skips the image transformation pipeline.
+   */
+  async uploadAttachment(
+    file: Express.Multer.File,
+    opts: CloudinaryUploadOptions,
+  ): Promise<CloudinaryUploadResult> {
+    if (!this.enabled) {
+      throw new ServiceUnavailableException('File uploads are not configured');
+    }
+
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: opts.folder,
+          public_id: opts.publicId,
+          overwrite: true,
+          resource_type: 'auto',
+        },
+        (error, result?: UploadApiResponse) => {
+          if (error) return reject(toError(error, 'Cloudinary upload failed'));
+          if (!result) return reject(new Error('No result from Cloudinary'));
+          resolve({ url: result.secure_url, publicId: result.public_id });
+        },
+      );
+      Readable.from(file.buffer).pipe(uploadStream);
+    });
+  }
+
   async deleteImage(publicId: string): Promise<void> {
     if (!this.enabled) return;
     try {

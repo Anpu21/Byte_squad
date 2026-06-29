@@ -22,6 +22,7 @@ import { BranchAnalyticsModule } from '@/modules/branch-analytics/branch-analyti
 import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
 import { CustomerOrdersModule } from '@/modules/customer-orders/customer-orders.module';
 import { CustomerGroupsModule } from '@/modules/customer-groups/customer-groups.module';
+import { ChatModule } from '@/modules/chat/chat.module';
 import { ShopModule } from '@/modules/shop/shop.module';
 import { ReviewsModule } from '@/modules/reviews/reviews.module';
 import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
@@ -156,6 +157,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     StockTransfersModule,
     CustomerOrdersModule,
     CustomerGroupsModule,
+    ChatModule,
     ShopModule,
     ReviewsModule,
     LoyaltyModule,
