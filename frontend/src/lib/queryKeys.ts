@@ -184,6 +184,12 @@ export const queryKeys = {
         analytics: (id: string, params: unknown) =>
             ['customer-groups', 'analytics', id, params] as const,
     },
+    chat: {
+        conversation: (groupId: string) =>
+            ['chat', 'conversation', groupId] as const,
+        history: (conversationId: string) =>
+            ['chat', 'history', conversationId] as const,
+    },
     loyalty: {
         mine: () => ['loyalty', 'mine'] as const,
         history: (params: { limit?: number; offset?: number }) =>

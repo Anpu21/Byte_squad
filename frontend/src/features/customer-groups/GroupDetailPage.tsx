@@ -13,6 +13,7 @@ import { useGroupDetailPage } from '@/features/customer-groups/hooks/useGroupDet
 import { GroupCartPanel } from '@/features/customer-groups/components/GroupCartPanel'
 import { GroupMembersCard } from '@/features/customer-groups/components/GroupMembersCard'
 import { ShareCodeCard } from '@/features/customer-groups/components/ShareCodeCard'
+import { GroupChatPanel } from '@/features/customer-groups/components/GroupChatPanel'
 import { GroupSettingsModal } from '@/features/customer-groups/components/GroupSettingsModal'
 
 export function GroupDetailPage() {
@@ -116,6 +117,13 @@ export function GroupDetailPage() {
             onRegenerate={p.onRegenerateCode}
             regenerating={p.regenerating}
           />
+          {p.currentUserId && (
+            <GroupChatPanel
+              groupId={group.id}
+              members={group.members}
+              currentUserId={p.currentUserId}
+            />
+          )}
         </div>
       </div>
 
