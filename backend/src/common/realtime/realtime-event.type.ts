@@ -40,3 +40,24 @@ export function targetRoom(target: RealtimeTarget): string | null {
       return null;
   }
 }
+
+// --- Chat control channel (separate from the passthrough event channel) ------
+
+/**
+ * Dedicated channel for chat CONTROL actions (membership revocation). Kept off
+ * REALTIME_CHANNEL so the realtime relay never sees control traffic. Mirrored by
+ * the realtime repo's `chat-control` Zod schema.
+ */
+export const CHAT_CONTROL_CHANNEL = 'ledgerpro:chat-control';
+
+export type ChatRevokeTarget =
+  | { kind: 'user'; userId: string }
+  | { kind: 'all' };
+
+/** Backend → realtime chat-control message (revoke one member or all members). */
+export interface ChatControlMessage {
+  v: 1;
+  action: 'revoke';
+  groupId: string;
+  target: ChatRevokeTarget;
+}

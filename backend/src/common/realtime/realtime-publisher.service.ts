@@ -3,7 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import type { Redis } from 'ioredis';
 import { REDIS_PUBLISHER } from '@common/realtime/realtime.constants';
 import {
+  CHAT_CONTROL_CHANNEL,
   REALTIME_CHANNEL,
+  type ChatControlMessage,
+  type ChatRevokeTarget,
   type RealtimeEnvelope,
   type RealtimeTarget,
 } from '@common/realtime/realtime-event.type';
@@ -64,6 +67,29 @@ export class RealtimePublisher {
   /** Scope an event to a branch's room. */
   toBranch(branchId: string, event: string, payload: unknown): void {
     this.publish({ type: 'branch', id: branchId }, event, payload);
+  }
+
+  /**
+   * Revoke a user (kind:'user') or every member (kind:'all', on group archive)
+   * from a group's chat. Published on the dedicated control channel; the realtime
+   * chat-control consumer prunes the participant row(s) and kicks live sockets.
+   */
+  revokeGroupChat(groupId: string, target: ChatRevokeTarget): void {
+    if (!this.redis) {
+      return;
+    }
+    const message: ChatControlMessage = {
+      v: 1,
+      action: 'revoke',
+      groupId,
+      target,
+    };
+    void this.redis
+      .publish(CHAT_CONTROL_CHANNEL, JSON.stringify(message))
+      .catch((err: unknown) => {
+        const m = err instanceof Error ? err.message : 'unknown';
+        this.logger.warn(`Redis publish failed for chat revoke: ${m}`);
+      });
   }
 
   private publish(

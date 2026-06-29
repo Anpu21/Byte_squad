@@ -15,6 +15,7 @@ interface UseGroupChat {
   sendMessage: (body: string, attachments?: IChatAttachment[]) => void
   isLoading: boolean
   isError: boolean
+  isRevoked: boolean
 }
 
 /**
@@ -53,6 +54,7 @@ export function useGroupChat(
 
   // Live + optimistic messages only (history is merged in at render).
   const [liveMessages, setLiveMessages] = useState<IChatMessageView[]>([])
+  const [isRevoked, setIsRevoked] = useState(false)
   const seenIds = useRef<Set<string>>(new Set())
 
   // 3) Join the conversation room + receive live messages. No setState runs in
@@ -89,9 +91,17 @@ export function useGroupChat(
     }
     socket.on('chat:message', onMessage)
 
+    // The server kicks us from the room and signals teardown when our group
+    // membership is revoked; lock the thread so it can't keep posting.
+    const onRevoked = (data: { conversationId: string }) => {
+      if (data.conversationId === conversationId) setIsRevoked(true)
+    }
+    socket.on('chat:revoked', onRevoked)
+
     return () => {
       socket.off('connect', join)
       socket.off('chat:message', onMessage)
+      socket.off('chat:revoked', onRevoked)
     }
   }, [conversationId])
 
@@ -162,5 +172,6 @@ export function useGroupChat(
     sendMessage,
     isLoading: openQuery.isLoading || historyQuery.isLoading,
     isError: openQuery.isError,
+    isRevoked,
   }
 }

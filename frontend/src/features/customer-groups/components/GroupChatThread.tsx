@@ -33,7 +33,7 @@ interface Props {
 
 /** Message list + composer (text + file uploads). Fills its container's height. */
 export function GroupChatThread({ groupId, members, currentUserId }: Props) {
-  const { messages, sendMessage, isLoading, isError } = useGroupChat(
+  const { messages, sendMessage, isLoading, isError, isRevoked } = useGroupChat(
     groupId,
     currentUserId,
   )
@@ -73,7 +73,7 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
   }
 
   const submit = () => {
-    if (!text.trim() && pending.length === 0) return
+    if (isRevoked || (!text.trim() && pending.length === 0)) return
     sendMessage(text, pending)
     setText('')
     setPending([])
@@ -142,7 +142,9 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          disabled={upload.isPending || pending.length >= MAX_ATTACHMENTS}
+          disabled={
+            isRevoked || upload.isPending || pending.length >= MAX_ATTACHMENTS
+          }
           className="shrink-0 rounded-lg p-2 text-text-3 transition-colors hover:bg-surface-2 hover:text-text-1 disabled:opacity-40"
           aria-label="Attach a file"
         >
@@ -162,13 +164,18 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
             }
           }}
           rows={1}
-          placeholder="Message the group…"
-          className="max-h-28 min-h-[2.5rem] flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-1 placeholder:text-text-3 focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/20"
+          disabled={isRevoked}
+          placeholder={
+            isRevoked
+              ? "You're no longer a member of this group"
+              : 'Message the group…'
+          }
+          className="max-h-28 min-h-[2.5rem] flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-1 placeholder:text-text-3 focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/20 disabled:opacity-60"
         />
         <button
           type="button"
           onClick={submit}
-          disabled={!text.trim() && pending.length === 0}
+          disabled={isRevoked || (!text.trim() && pending.length === 0)}
           className="shrink-0 rounded-lg bg-primary p-2.5 text-white transition-opacity hover:opacity-90 disabled:opacity-40"
           aria-label="Send message"
         >

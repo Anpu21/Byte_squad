@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button'
 import Pill from '@/components/ui/Pill'
 import EmptyState from '@/components/ui/EmptyState'
 import { useGroupDetailPage } from '@/features/customer-groups/hooks/useGroupDetailPage'
+import { useGroupRevocation } from '@/features/customer-groups/hooks/useGroupRevocation'
 import { GroupCartPanel } from '@/features/customer-groups/components/GroupCartPanel'
 import { GroupMembersCard } from '@/features/customer-groups/components/GroupMembersCard'
 import { ShareCodeCard } from '@/features/customer-groups/components/ShareCodeCard'
@@ -19,6 +20,7 @@ import { GroupSettingsModal } from '@/features/customer-groups/components/GroupS
 export function GroupDetailPage() {
   const { id } = useParams<{ id: string }>()
   const p = useGroupDetailPage(id)
+  useGroupRevocation(id)
 
   if (p.isLoading) {
     return (
