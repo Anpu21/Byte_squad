@@ -24,8 +24,8 @@ import { ReviewItemView, ReviewListView } from './types';
 
 /**
  * Customer-facing reviews: read a product's reviews + aggregate, and
- * post/edit/delete your own. Only verified buyers may post (enforced in the
- * service). Mounted under the storefront, CUSTOMER role only.
+ * post/edit/delete your own (one per product). Mounted under the storefront,
+ * CUSTOMER role only.
  */
 @Controller(APP_ROUTES.REVIEWS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
