@@ -13,6 +13,8 @@ interface UseGroupChat {
   conversationId: string | undefined
   messages: IChatMessageView[]
   sendMessage: (body: string, attachments?: IChatAttachment[]) => void
+  sendEdit: (messageId: string, body: string) => void
+  sendDelete: (messageId: string) => void
   isLoading: boolean
   isError: boolean
   isRevoked: boolean
@@ -55,6 +57,9 @@ export function useGroupChat(
   // Live + optimistic messages only (history is merged in at render).
   const [liveMessages, setLiveMessages] = useState<IChatMessageView[]>([])
   const [isRevoked, setIsRevoked] = useState(false)
+  // Edited/deleted versions, keyed by message id — applied over history+live at
+  // render so an edit to a history message lands without mutating the query cache.
+  const [edits, setEdits] = useState<Record<string, IChatMessage>>({})
   const seenIds = useRef<Set<string>>(new Set())
 
   // 3) Join the conversation room + receive live messages. No setState runs in
@@ -98,10 +103,20 @@ export function useGroupChat(
     }
     socket.on('chat:revoked', onRevoked)
 
+    // A sender edited/deleted a message — record the new version to overlay.
+    const onEdited = (msg: IChatMessage) => {
+      if (msg.conversationId !== conversationId) return
+      setEdits((prev) => ({ ...prev, [msg.id]: msg }))
+    }
+    socket.on('chat:message-updated', onEdited)
+    socket.on('chat:message-deleted', onEdited)
+
     return () => {
       socket.off('connect', join)
       socket.off('chat:message', onMessage)
       socket.off('chat:revoked', onRevoked)
+      socket.off('chat:message-updated', onEdited)
+      socket.off('chat:message-deleted', onEdited)
     }
   }, [conversationId])
 
@@ -114,8 +129,11 @@ export function useGroupChat(
       .map((m) => ({ ...m, status: 'sent' as const }))
     const historyIds = new Set(history.map((m) => m.id))
     const extra = liveMessages.filter((m) => !historyIds.has(m.id))
-    return [...history, ...extra]
-  }, [historyQuery.data, liveMessages])
+    return [...history, ...extra].map((m) => {
+      const edit = edits[m.id]
+      return edit ? { ...m, ...edit, status: m.status } : m
+    })
+  }, [historyQuery.data, liveMessages, edits])
 
   const sendMessage = useCallback(
     (body: string, attachments: IChatAttachment[] = []) => {
@@ -166,10 +184,22 @@ export function useGroupChat(
     [conversationId, currentUserId],
   )
 
+  const sendEdit = useCallback((messageId: string, body: string) => {
+    const trimmed = body.trim()
+    if (!trimmed) return
+    getChatSocket().emit('chat:edit', { messageId, body: trimmed })
+  }, [])
+
+  const sendDelete = useCallback((messageId: string) => {
+    getChatSocket().emit('chat:delete', { messageId })
+  }, [])
+
   return {
     conversationId,
     messages,
     sendMessage,
+    sendEdit,
+    sendDelete,
     isLoading: openQuery.isLoading || historyQuery.isLoading,
     isError: openQuery.isError,
     isRevoked,

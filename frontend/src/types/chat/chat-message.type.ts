@@ -8,6 +8,10 @@ export interface IChatMessage {
   body: string
   attachments: IChatAttachment[]
   createdAt: string
+  /** Set when the sender has edited the text. */
+  editedAt?: string | null
+  /** Set when the message was deleted (body blanked, attachments dropped). */
+  deletedAt?: string | null
 }
 
 /** Delivery state for an optimistically-rendered outgoing message. */

@@ -9,22 +9,12 @@ import toast from 'react-hot-toast'
 import { useGroupChat } from '@/features/customer-groups/hooks/useGroupChat'
 import { useChatPresence } from '@/features/customer-groups/hooks/useChatPresence'
 import { useUploadChatAttachment } from '@/features/customer-groups/hooks/useUploadChatAttachment'
-import type {
-  IChatAttachment,
-  IChatMessageView,
-  ICustomerGroupMemberView,
-} from '@/types'
+import { GroupChatMessage } from '@/features/customer-groups/components/GroupChatMessage'
+import { useConfirm } from '@/hooks/useConfirm'
+import type { IChatAttachment, ICustomerGroupMemberView } from '@/types'
 
 const ACCEPT = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt'
 const MAX_ATTACHMENTS = 5
-
-const isImage = (mime: string) => mime.startsWith('image/')
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
 
 interface Props {
   groupId: string
@@ -38,6 +28,8 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
     conversationId,
     messages,
     sendMessage,
+    sendEdit,
+    sendDelete,
     isLoading,
     isError,
     isRevoked,
@@ -46,6 +38,7 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
     conversationId,
     currentUserId,
   )
+  const confirm = useConfirm()
   const upload = useUploadChatAttachment(groupId)
   const [text, setText] = useState('')
   const [pending, setPending] = useState<IChatAttachment[]>([])
@@ -129,6 +122,16 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
     setPending([])
   }
 
+  const handleDelete = async (messageId: string) => {
+    const ok = await confirm({
+      title: 'Delete message?',
+      body: 'This removes the message for everyone in the group.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    })
+    if (ok) sendDelete(messageId)
+  }
+
   return (
     <div className="flex h-full flex-col">
       <div
@@ -149,12 +152,14 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
           </p>
         )}
         {messages.map((m) => (
-          <MessageBubble
+          <GroupChatMessage
             key={m.tempId ?? m.id}
             message={m}
             mine={m.senderId === currentUserId}
             senderName={nameFor(m.senderId)}
             seenByLabel={m.id === lastMineId ? seenByLabel : null}
+            onEdit={sendEdit}
+            onDelete={handleDelete}
           />
         ))}
       </div>
@@ -246,98 +251,5 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
         </button>
       </div>
     </div>
-  )
-}
-
-function MessageBubble({
-  message,
-  mine,
-  senderName,
-  seenByLabel,
-}: {
-  message: IChatMessageView
-  mine: boolean
-  senderName: string
-  seenByLabel: string | null
-}) {
-  return (
-    <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
-      {!mine && (
-        <span className="mb-0.5 px-1 text-[11px] font-medium text-text-3">
-          {senderName}
-        </span>
-      )}
-      <div
-        className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-          mine
-            ? 'rounded-br-sm bg-primary text-white'
-            : 'rounded-bl-sm bg-surface-2 text-text-1'
-        } ${message.status === 'sending' ? 'opacity-70' : ''}`}
-      >
-        {message.attachments.length > 0 && (
-          <div className="mb-1 space-y-1.5">
-            {message.attachments.map((a) => (
-              <Attachment key={a.id ?? a.url} attachment={a} mine={mine} />
-            ))}
-          </div>
-        )}
-        {message.body && (
-          <p className="whitespace-pre-wrap break-words">{message.body}</p>
-        )}
-      </div>
-      {message.status === 'failed' && (
-        <span className="mt-0.5 px-1 text-[11px] text-danger">
-          Failed to send
-        </span>
-      )}
-      {seenByLabel && (
-        <span className="mt-0.5 px-1 text-[11px] text-text-3">
-          {seenByLabel}
-        </span>
-      )}
-    </div>
-  )
-}
-
-function Attachment({
-  attachment,
-  mine,
-}: {
-  attachment: IChatAttachment
-  mine: boolean
-}) {
-  if (isImage(attachment.mimeType)) {
-    return (
-      <a
-        href={attachment.url}
-        target="_blank"
-        rel="noreferrer"
-        className="block"
-      >
-        <img
-          src={attachment.url}
-          alt={attachment.fileName}
-          className="max-h-48 w-auto rounded-lg border border-black/5 object-cover"
-        />
-      </a>
-    )
-  }
-  return (
-    <a
-      href={attachment.url}
-      target="_blank"
-      rel="noreferrer"
-      className={`inline-flex max-w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${
-        mine
-          ? 'bg-white/15 text-white'
-          : 'border border-border bg-surface text-text-1'
-      }`}
-    >
-      <FileIcon size={14} className="shrink-0" />
-      <span className="truncate">{attachment.fileName}</span>
-      <span className={mine ? 'text-white/70' : 'text-text-3'}>
-        {formatSize(attachment.size)}
-      </span>
-    </a>
   )
 }
