@@ -10,6 +10,7 @@ import { useGroupChat } from '@/features/customer-groups/hooks/useGroupChat'
 import { useChatPresence } from '@/features/customer-groups/hooks/useChatPresence'
 import { useUploadChatAttachment } from '@/features/customer-groups/hooks/useUploadChatAttachment'
 import { GroupChatMessage } from '@/features/customer-groups/components/GroupChatMessage'
+import { countUnread } from '@/features/customer-groups/lib/group-chat-unread'
 import { useConfirm } from '@/hooks/useConfirm'
 import type { IChatAttachment, ICustomerGroupMemberView } from '@/types'
 
@@ -20,10 +21,20 @@ interface Props {
   groupId: string
   members: ICustomerGroupMemberView[]
   currentUserId: string
+  /** Whether the Chat tab is visible — gates read receipts + unread counting. */
+  isActive: boolean
+  /** Reports unread (new non-own messages received while hidden) to the page. */
+  onUnreadChange: (count: number) => void
 }
 
 /** Message list + composer (text + file uploads). Fills its container's height. */
-export function GroupChatThread({ groupId, members, currentUserId }: Props) {
+export function GroupChatThread({
+  groupId,
+  members,
+  currentUserId,
+  isActive,
+  onUnreadChange,
+}: Props) {
   const {
     conversationId,
     messages,
@@ -44,6 +55,8 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
   const [pending, setPending] = useState<IChatAttachment[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  // Count of messages already "seen"; null until history first loads.
+  const seenCountRef = useRef<number | null>(null)
 
   const nameFor = useMemo(() => {
     const map = new Map(members.map((m) => [m.userId, m.name]))
@@ -56,11 +69,30 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
     if (el) el.scrollTop = el.scrollHeight
   }, [messages])
 
-  // Mark the thread read whenever new messages land while it's open.
+  // Read receipts + unread badge. The history present when the user arrives is
+  // the "seen" baseline, so it never counts as unread. While the tab is visible
+  // we mark the thread read and keep the badge at zero; while it's hidden we
+  // count new messages from other members.
   useEffect(() => {
-    if (isRevoked || messages.length === 0) return
-    markRead()
-  }, [messages, isRevoked, markRead])
+    if (isLoading) return
+    const seen = seenCountRef.current ?? messages.length
+    if (isActive) {
+      if (!isRevoked && messages.length > 0) markRead()
+      seenCountRef.current = messages.length
+      onUnreadChange(0)
+      return
+    }
+    seenCountRef.current = seen
+    onUnreadChange(countUnread(messages, currentUserId, seen))
+  }, [
+    isActive,
+    isLoading,
+    messages,
+    isRevoked,
+    currentUserId,
+    markRead,
+    onUnreadChange,
+  ])
 
   // The most recent delivered message the current user authored — read receipts
   // ("seen by …") attach to it.

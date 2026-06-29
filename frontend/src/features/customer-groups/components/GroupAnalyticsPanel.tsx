@@ -1,6 +1,4 @@
-import { Link } from 'react-router-dom'
 import {
-  LuArrowLeft as ArrowLeft,
   LuCoins as Coins,
   LuReceipt as Receipt,
   LuCalculator as Calculator,
@@ -9,12 +7,7 @@ import {
 import BarChart from '@/components/charts/BarChart'
 import AreaChart from '@/components/charts/AreaChart'
 import DonutChart from '@/components/charts/DonutChart'
-import {
-  DataTable,
-  EmptyState,
-  KpiCard,
-  type DataTableColumn,
-} from '@/components/ui'
+import { DataTable, EmptyState, KpiCard } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import { useGroupAnalyticsPage } from '@/features/customer-groups/hooks/useGroupAnalyticsPage'
 import {
@@ -22,6 +15,10 @@ import {
   toProductBars,
   toTrendSeries,
 } from '@/features/customer-groups/lib/group-analytics-charts'
+import {
+  memberColumns,
+  productColumns,
+} from '@/features/customer-groups/components/group-analytics-columns'
 import type { IGroupMemberSpendRow, IGroupProductSpendRow } from '@/types'
 
 const dateInputClass =
@@ -31,7 +28,12 @@ function ChartMessage({ children }: { children: string }) {
   return <p className="py-10 text-center text-sm text-text-3">{children}</p>
 }
 
-export function GroupAnalyticsPage() {
+/**
+ * Group analytics body — KPIs, spend charts, and member/product tables for a
+ * date range. Rendered inside the group detail page's Analytics tab; reads the
+ * group id from the route via `useGroupAnalyticsPage`.
+ */
+export function GroupAnalyticsPanel() {
   const p = useGroupAnalyticsPage()
   const data = p.data
 
@@ -39,84 +41,12 @@ export function GroupAnalyticsPage() {
   const productBars = toProductBars(data?.byProduct ?? [])
   const trend = toTrendSeries(data?.trend ?? [])
 
-  const memberColumns: DataTableColumn<IGroupMemberSpendRow>[] = [
-    {
-      key: 'member',
-      header: 'Member',
-      className: 'font-medium text-text-1',
-      render: (r) => r.name,
-    },
-    {
-      key: 'orders',
-      header: 'Orders',
-      align: 'right',
-      numeric: true,
-      render: (r) => r.orders,
-    },
-    {
-      key: 'spend',
-      header: 'Spent',
-      align: 'right',
-      numeric: true,
-      render: (r) => formatCurrency(r.spend),
-    },
-    {
-      key: 'share',
-      header: 'Share',
-      align: 'right',
-      numeric: true,
-      render: (r) => `${r.sharePct}%`,
-    },
-  ]
-
-  const productColumns: DataTableColumn<IGroupProductSpendRow>[] = [
-    {
-      key: 'product',
-      header: 'Product',
-      className: 'font-medium text-text-1',
-      render: (r) => r.productName,
-    },
-    {
-      key: 'units',
-      header: 'Units',
-      align: 'right',
-      numeric: true,
-      render: (r) => Math.round(r.units),
-    },
-    {
-      key: 'revenue',
-      header: 'Spent',
-      align: 'right',
-      numeric: true,
-      render: (r) => formatCurrency(r.revenue),
-    },
-    {
-      key: 'share',
-      header: 'Share',
-      align: 'right',
-      numeric: true,
-      render: (r) => `${r.sharePct}%`,
-    },
-  ]
-
   return (
-    <div className="mx-auto max-w-5xl">
-      <Link
-        to={p.detailPath}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-text-2 transition-colors hover:text-text-1"
-      >
-        <ArrowLeft size={16} /> {p.group?.name ?? 'Group'}
-      </Link>
-
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-1 sm:text-3xl">
-            Group analytics
-          </h1>
-          <p className="mt-1.5 text-sm text-text-2">
-            What your group buys together, and who&apos;s spending.
-          </p>
-        </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <p className="text-sm text-text-2">
+          What your group buys together, and who&apos;s spending.
+        </p>
         <div className="flex items-end gap-2">
           <label className="flex flex-col gap-1 text-xs font-medium text-text-2">
             From

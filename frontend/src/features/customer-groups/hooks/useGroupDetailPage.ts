@@ -7,6 +7,11 @@ import { selectShopContext } from '@/store/selectors/shopContext'
 import { clearShopContext } from '@/store/slices/shopContextSlice'
 import { useAuth } from '@/hooks/useAuth'
 import { useConfirm } from '@/hooks/useConfirm'
+import { useTabParam } from '@/hooks/useTabParam'
+import {
+  GROUP_TAB_KEYS,
+  type GroupTab,
+} from '@/features/customer-groups/components/group-detail-tabs'
 import { useGroup } from '@/features/customer-groups/hooks/useGroup'
 import { useLeaveGroup } from '@/features/customer-groups/hooks/useLeaveGroup'
 import { useRemoveGroupMember } from '@/features/customer-groups/hooks/useRemoveGroupMember'
@@ -27,6 +32,11 @@ export function useGroupDetailPage(groupId: string | undefined) {
   const updateGroup = useUpdateGroup()
 
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const { tab, setTab } = useTabParam<GroupTab>({
+    valid: GROUP_TAB_KEYS,
+    fallback: 'cart',
+  })
+  const [chatUnread, setChatUnread] = useState(0)
 
   const id = groupId ?? ''
   const isOwner = group?.myRole === 'owner'
@@ -135,7 +145,10 @@ export function useGroupDetailPage(groupId: string | undefined) {
     onRename,
     onArchive,
     saving: updateGroup.isPending,
-    analyticsPath: FRONTEND_ROUTES.SHOP_GROUP_ANALYTICS.replace(':id', id),
     groupsPath: FRONTEND_ROUTES.SHOP_GROUPS,
+    tab,
+    setTab,
+    chatUnread,
+    setChatUnread,
   }
 }

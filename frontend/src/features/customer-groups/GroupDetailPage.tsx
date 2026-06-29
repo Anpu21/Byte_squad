@@ -1,20 +1,21 @@
 import { Link, useParams } from 'react-router-dom'
 import {
-  LuArrowLeft as ArrowLeft,
-  LuTrendingUp as TrendingUp,
+  LuUsers as Users,
   LuSettings as Settings,
   LuLogOut as LogOut,
-  LuUsers as Users,
 } from 'react-icons/lu'
 import Button from '@/components/ui/Button'
-import Pill from '@/components/ui/Pill'
 import EmptyState from '@/components/ui/EmptyState'
+import { Tabs } from '@/components/ui'
 import { useGroupDetailPage } from '@/features/customer-groups/hooks/useGroupDetailPage'
 import { useGroupRevocation } from '@/features/customer-groups/hooks/useGroupRevocation'
+import { GROUP_TABS } from '@/features/customer-groups/components/group-detail-tabs'
+import { GroupDetailHeader } from '@/features/customer-groups/components/GroupDetailHeader'
 import { GroupCartPanel } from '@/features/customer-groups/components/GroupCartPanel'
 import { GroupMembersCard } from '@/features/customer-groups/components/GroupMembersCard'
 import { ShareCodeCard } from '@/features/customer-groups/components/ShareCodeCard'
 import { GroupChatPanel } from '@/features/customer-groups/components/GroupChatPanel'
+import { GroupAnalyticsPanel } from '@/features/customer-groups/components/GroupAnalyticsPanel'
 import { GroupSettingsModal } from '@/features/customer-groups/components/GroupSettingsModal'
 
 export function GroupDetailPage() {
@@ -50,83 +51,108 @@ export function GroupDetailPage() {
   const group = p.group
   const isArchived = group.status === 'archived'
 
+  // Inject the live unread count onto the Chat tab.
+  const tabs = GROUP_TABS.map((t) =>
+    t.key === 'chat' && p.chatUnread > 0 ? { ...t, badge: p.chatUnread } : t,
+  )
+
   return (
     <div className="mx-auto max-w-5xl">
-      <Link
-        to={p.groupsPath}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-text-2 transition-colors hover:text-text-1"
-      >
-        <ArrowLeft size={16} /> All groups
-      </Link>
-
-      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-2xl font-bold tracking-tight text-text-1 sm:text-3xl">
-              {group.name}
-            </h1>
-            <Pill tone={p.isOwner ? 'primary' : 'neutral'}>
-              {p.isOwner ? 'Owner' : 'Member'}
-            </Pill>
-            {isArchived && (
-              <Pill tone="neutral" dot>
-                Archived
-              </Pill>
+      <GroupDetailHeader
+        name={group.name}
+        isOwner={p.isOwner}
+        isArchived={isArchived}
+        memberCount={group.memberCount}
+        groupsPath={p.groupsPath}
+        rightSlot={
+          <>
+            {p.isOwner ? (
+              <Button variant="secondary" onClick={p.openSettings}>
+                <Settings size={16} /> Settings
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                onClick={p.onLeave}
+                disabled={p.leaving}
+              >
+                <LogOut size={16} /> Leave
+              </Button>
             )}
-          </div>
-          <p className="mt-1.5 flex items-center gap-1.5 text-sm text-text-2">
-            <Users size={15} className="text-text-3" aria-hidden="true" />
-            {group.memberCount}{' '}
-            {group.memberCount === 1 ? 'member' : 'members'}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          <Link to={p.analyticsPath}>
-            <Button variant="outline">
-              <TrendingUp size={16} /> Analytics
-            </Button>
-          </Link>
-          {p.isOwner ? (
-            <Button variant="secondary" onClick={p.openSettings}>
-              <Settings size={16} /> Settings
-            </Button>
-          ) : (
-            <Button
-              variant="secondary"
-              onClick={p.onLeave}
-              disabled={p.leaving}
-            >
-              <LogOut size={16} /> Leave
-            </Button>
-          )}
-        </div>
-      </div>
+            <Tabs
+              tabs={tabs}
+              active={p.tab}
+              onChange={p.setTab}
+              variant="pill"
+              idBase="group"
+              ariaLabel="Group sections"
+            />
+          </>
+        }
+      />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="mt-6">
+        {/* Cart — kept mounted (live cart-sync) and hidden when inactive. */}
+        <div
+          role="tabpanel"
+          id="group-panel-cart"
+          aria-labelledby="group-tab-cart"
+          hidden={p.tab !== 'cart'}
+        >
           <GroupCartPanel groupId={group.id} groupName={group.name} />
-          <GroupMembersCard
-            members={group.members}
-            isOwner={p.isOwner}
-            currentUserId={p.currentUserId}
-            onRemove={p.onRemoveMember}
-          />
         </div>
-        <div className="space-y-6">
-          <ShareCodeCard
-            joinCode={group.joinCode}
-            isOwner={p.isOwner}
-            onRegenerate={p.onRegenerateCode}
-            regenerating={p.regenerating}
-          />
-          {p.currentUserId && (
+
+        {/* Chat — kept mounted (live socket + unread badge), hidden when inactive. */}
+        {p.currentUserId && (
+          <div
+            role="tabpanel"
+            id="group-panel-chat"
+            aria-labelledby="group-tab-chat"
+            hidden={p.tab !== 'chat'}
+          >
             <GroupChatPanel
               groupId={group.id}
               members={group.members}
               currentUserId={p.currentUserId}
+              isActive={p.tab === 'chat'}
+              onUnreadChange={p.setChatUnread}
             />
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Members / Invite / Analytics — mounted lazily on first visit. */}
+        {p.tab === 'members' && (
+          <div role="tabpanel" id="group-panel-members" aria-labelledby="group-tab-members">
+            <GroupMembersCard
+              members={group.members}
+              isOwner={p.isOwner}
+              currentUserId={p.currentUserId}
+              onRemove={p.onRemoveMember}
+            />
+          </div>
+        )}
+
+        {p.tab === 'invite' && (
+          <div
+            role="tabpanel"
+            id="group-panel-invite"
+            aria-labelledby="group-tab-invite"
+            className="max-w-md"
+          >
+            <ShareCodeCard
+              joinCode={group.joinCode}
+              isOwner={p.isOwner}
+              onRegenerate={p.onRegenerateCode}
+              regenerating={p.regenerating}
+            />
+          </div>
+        )}
+
+        {p.tab === 'analytics' && (
+          <div role="tabpanel" id="group-panel-analytics" aria-labelledby="group-tab-analytics">
+            <GroupAnalyticsPanel />
+          </div>
+        )}
       </div>
 
       {p.isOwner && (
