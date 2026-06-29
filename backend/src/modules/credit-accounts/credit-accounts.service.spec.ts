@@ -482,6 +482,28 @@ describe('CreditAccountsService', () => {
       expect(statement.transactions).toHaveLength(1);
       expect(statement.outstandingSales[0].isOverdue).toBe(true);
     });
+
+    it('allows a cashier to read a statement for their own branch', async () => {
+      const { service, repo } = makeService();
+      repo.findById.mockResolvedValue(
+        makeAccount({
+          status: CreditAccountStatus.ACTIVE,
+          creditLimit: 5000,
+          currentBalance: 1000,
+        }),
+      );
+      const statement = await service.getStatement('acc-1', cashier);
+      expect(statement.id).toBe('acc-1');
+      expect(statement.availableCredit).toBe(4000);
+    });
+
+    it('forbids a cashier reading another branch statement', async () => {
+      const { service, repo } = makeService();
+      repo.findById.mockResolvedValue(makeAccount({ branchId: 'branch-2' }));
+      await expect(
+        service.getStatement('acc-1', cashier),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
   });
 
   describe('receivePayment', () => {
