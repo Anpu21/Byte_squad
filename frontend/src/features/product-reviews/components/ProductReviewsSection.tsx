@@ -119,10 +119,6 @@ export function ProductReviewsSection({ productId }: { productId: string }) {
                         submitting={createReview.isPending}
                         onSubmit={handleCreate}
                     />
-                ) : !eligibility.hasPurchased ? (
-                    <p className="rounded-xl border border-border bg-surface-2 px-4 py-3 text-[13px] text-text-3">
-                        Only verified buyers can review this product.
-                    </p>
                 ) : null}
             </div>
 

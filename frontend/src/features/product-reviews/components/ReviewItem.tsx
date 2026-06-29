@@ -1,4 +1,3 @@
-import { LuBadgeCheck } from 'react-icons/lu';
 import { StarRating } from '@/components/ui';
 import type { IProductReview } from '@/types';
 
@@ -20,12 +19,6 @@ export function ReviewItem({ review }: { review: IProductReview }) {
                     <span className="text-[13px] font-medium text-text-1">
                         {review.reviewerName}
                     </span>
-                    {review.isVerifiedPurchase && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-accent-text">
-                            <LuBadgeCheck size={12} aria-hidden="true" />
-                            Verified purchase
-                        </span>
-                    )}
                 </div>
                 <span className="whitespace-nowrap text-[11px] text-text-3">
                     {formatDate(review.createdAt)}
