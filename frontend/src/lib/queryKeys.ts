@@ -189,6 +189,8 @@ export const queryKeys = {
             ['chat', 'conversation', groupId] as const,
         history: (conversationId: string) =>
             ['chat', 'history', conversationId] as const,
+        participants: (conversationId: string) =>
+            ['chat', 'participants', conversationId] as const,
     },
     loyalty: {
         mine: () => ['loyalty', 'mine'] as const,

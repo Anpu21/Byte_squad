@@ -5,6 +5,7 @@ import type {
   IChatAttachment,
   IChatConversation,
   IChatMessage,
+  IChatParticipantRead,
 } from '@/types'
 
 interface HistoryParams {
@@ -22,6 +23,19 @@ export const chatService = {
   ): Promise<IChatConversation> => {
     const res = await realtimeApi.post<IChatConversation>(
       `/chat/groups/${groupId}/open`,
+    )
+    return res.data
+  },
+
+  /**
+   * Participants of a conversation with their `lastReadAt` cursors — seeds the
+   * read-receipt state (realtime returns the entity array directly).
+   */
+  getParticipants: async (
+    conversationId: string,
+  ): Promise<IChatParticipantRead[]> => {
+    const res = await realtimeApi.get<IChatParticipantRead[]>(
+      `/chat/conversations/${conversationId}/participants`,
     )
     return res.data
   },

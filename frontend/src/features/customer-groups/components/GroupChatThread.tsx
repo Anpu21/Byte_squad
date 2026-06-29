@@ -7,6 +7,7 @@ import {
 } from 'react-icons/lu'
 import toast from 'react-hot-toast'
 import { useGroupChat } from '@/features/customer-groups/hooks/useGroupChat'
+import { useChatPresence } from '@/features/customer-groups/hooks/useChatPresence'
 import { useUploadChatAttachment } from '@/features/customer-groups/hooks/useUploadChatAttachment'
 import type {
   IChatAttachment,
@@ -33,8 +34,16 @@ interface Props {
 
 /** Message list + composer (text + file uploads). Fills its container's height. */
 export function GroupChatThread({ groupId, members, currentUserId }: Props) {
-  const { messages, sendMessage, isLoading, isError, isRevoked } = useGroupChat(
-    groupId,
+  const {
+    conversationId,
+    messages,
+    sendMessage,
+    isLoading,
+    isError,
+    isRevoked,
+  } = useGroupChat(groupId, currentUserId)
+  const { typingUserIds, readState, notifyTyping, markRead } = useChatPresence(
+    conversationId,
     currentUserId,
   )
   const upload = useUploadChatAttachment(groupId)
@@ -53,6 +62,47 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [messages])
+
+  // Mark the thread read whenever new messages land while it's open.
+  useEffect(() => {
+    if (isRevoked || messages.length === 0) return
+    markRead()
+  }, [messages, isRevoked, markRead])
+
+  // The most recent delivered message the current user authored — read receipts
+  // ("seen by …") attach to it.
+  const lastMineId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i]
+      if (m.senderId === currentUserId && m.status === 'sent') return m.id
+    }
+    return null
+  }, [messages, currentUserId])
+
+  const seenByLabel = useMemo(() => {
+    if (!lastMineId) return null
+    const msg = messages.find((m) => m.id === lastMineId)
+    if (!msg) return null
+    const names = members
+      .filter((m) => m.userId !== currentUserId)
+      .filter((m) => {
+        const at = readState[m.userId]
+        return at ? Date.parse(at) >= Date.parse(msg.createdAt) : false
+      })
+      .map((m) => m.name)
+    if (names.length === 0) return null
+    if (names.length === 1) return `Seen by ${names[0]}`
+    if (names.length === 2) return `Seen by ${names[0]} and ${names[1]}`
+    return `Seen by ${names.length} members`
+  }, [lastMineId, messages, members, readState, currentUserId])
+
+  const typingLabel = useMemo(() => {
+    const names = typingUserIds.map(nameFor)
+    if (names.length === 0) return null
+    if (names.length === 1) return `${names[0]} is typing…`
+    if (names.length === 2) return `${names[0]} and ${names[1]} are typing…`
+    return 'Several people are typing…'
+  }, [typingUserIds, nameFor])
 
   const pickFiles = async (files: FileList | null) => {
     if (!files?.length) return
@@ -104,9 +154,19 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
             message={m}
             mine={m.senderId === currentUserId}
             senderName={nameFor(m.senderId)}
+            seenByLabel={m.id === lastMineId ? seenByLabel : null}
           />
         ))}
       </div>
+
+      {typingLabel && (
+        <p
+          className="px-1 pt-1 text-[11px] italic text-text-3"
+          aria-live="polite"
+        >
+          {typingLabel}
+        </p>
+      )}
 
       {pending.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
@@ -156,7 +216,10 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
         </button>
         <textarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value)
+            notifyTyping()
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault()
@@ -190,10 +253,12 @@ function MessageBubble({
   message,
   mine,
   senderName,
+  seenByLabel,
 }: {
   message: IChatMessageView
   mine: boolean
   senderName: string
+  seenByLabel: string | null
 }) {
   return (
     <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
@@ -223,6 +288,11 @@ function MessageBubble({
       {message.status === 'failed' && (
         <span className="mt-0.5 px-1 text-[11px] text-danger">
           Failed to send
+        </span>
+      )}
+      {seenByLabel && (
+        <span className="mt-0.5 px-1 text-[11px] text-text-3">
+          {seenByLabel}
         </span>
       )}
     </div>
