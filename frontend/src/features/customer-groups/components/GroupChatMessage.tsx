@@ -180,6 +180,8 @@ function Attachment({
   attachment: IChatAttachment
   mine: boolean
 }) {
+  const [thumbFailed, setThumbFailed] = useState(false)
+
   if (isImage(attachment.mimeType)) {
     return (
       <a
@@ -196,6 +198,35 @@ function Attachment({
       </a>
     )
   }
+
+  // A document with a derived page-1 preview (PDFs): show it, captioned with the
+  // file name, falling back to the chip if the preview can't load.
+  if (attachment.thumbnailUrl && !thumbFailed) {
+    return (
+      <a
+        href={attachment.url}
+        target="_blank"
+        rel="noreferrer"
+        className="block max-w-[12rem] overflow-hidden rounded-lg border border-black/5"
+      >
+        <img
+          src={attachment.thumbnailUrl}
+          alt={attachment.fileName}
+          onError={() => setThumbFailed(true)}
+          className="max-h-48 w-full bg-white object-cover"
+        />
+        <span
+          className={`flex items-center gap-1 px-2 py-1 text-[11px] ${
+            mine ? 'bg-white/15 text-white' : 'bg-surface text-text-1'
+          }`}
+        >
+          <FileIcon size={11} className="shrink-0" />
+          <span className="truncate">{attachment.fileName}</span>
+        </span>
+      </a>
+    )
+  }
+
   return (
     <a
       href={attachment.url}

@@ -165,6 +165,7 @@ export function useGroupChat(
             mimeType: a.mimeType,
             fileName: a.fileName,
             size: a.size,
+            ...(a.thumbnailUrl ? { thumbnailUrl: a.thumbnailUrl } : {}),
           })),
         },
         (ack: { ok?: boolean; id?: string }) => {

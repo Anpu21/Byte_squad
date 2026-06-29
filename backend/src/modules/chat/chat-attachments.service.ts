@@ -25,13 +25,15 @@ export class ChatAttachmentsService {
     // Only a member of the target group may upload into its chat. Assert before
     // spending a Cloudinary upload (404 unknown group / 403 non-member).
     await this.customerGroups.assertMembership(groupId, userId);
-    const { url, publicId } = await this.cloudinary.uploadAttachment(file, {
-      folder: CHAT_ATTACHMENT_FOLDER,
-      publicId: `${userId}-${randomUUID()}`,
-    });
+    const { url, publicId, thumbnailUrl } =
+      await this.cloudinary.uploadAttachment(file, {
+        folder: CHAT_ATTACHMENT_FOLDER,
+        publicId: `${userId}-${randomUUID()}`,
+      });
     return {
       url,
       publicId,
+      thumbnailUrl,
       mimeType: file.mimetype,
       fileName: file.originalname,
       size: file.size,

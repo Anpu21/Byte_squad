@@ -5,6 +5,8 @@
 export interface ChatAttachmentUpload {
   url: string;
   publicId: string;
+  /** Page-1 preview (JPG) for documents that support it (PDFs); else absent. */
+  thumbnailUrl?: string;
   mimeType: string;
   fileName: string;
   size: number;
