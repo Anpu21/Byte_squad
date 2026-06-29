@@ -41,11 +41,15 @@ export const chatService = {
   /**
    * Upload a file to the BACKEND (Cloudinary), which returns the metadata the
    * client then attaches to a realtime chat message. Uses the backend `api`
-   * (enveloped response), not the realtime client.
+   * (enveloped response), not the realtime client. Gated to members of `groupId`.
    */
-  uploadAttachment: async (file: File): Promise<IChatAttachment> => {
+  uploadAttachment: async (
+    file: File,
+    groupId: string,
+  ): Promise<IChatAttachment> => {
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('groupId', groupId)
     const res = await api.post<IApiResponse<IChatAttachment>>(
       '/chat/attachments',
       formData,

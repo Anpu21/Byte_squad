@@ -37,7 +37,7 @@ export function GroupChatThread({ groupId, members, currentUserId }: Props) {
     groupId,
     currentUserId,
   )
-  const upload = useUploadChatAttachment()
+  const upload = useUploadChatAttachment(groupId)
   const [text, setText] = useState('')
   const [pending, setPending] = useState<IChatAttachment[]>([])
   const fileRef = useRef<HTMLInputElement>(null)

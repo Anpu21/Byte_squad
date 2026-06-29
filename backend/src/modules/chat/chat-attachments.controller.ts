@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   FileTypeValidator,
   MaxFileSizeValidator,
   ParseFilePipe,
+  ParseUUIDPipe,
   Post,
   UploadedFile,
   UseGuards,
@@ -25,8 +27,8 @@ import type { ChatAttachmentUpload } from '@/modules/chat/types/chat-attachment-
 /**
  * Stateless upload endpoint for chat attachments. The bytes go to Cloudinary and
  * the returned metadata is attached to a message by the realtime chat service
- * (which owns the attachment record). Customer-only for v1 (group chat); the
- * realtime message post is itself membership-gated, so a stray upload is inert.
+ * (which owns the attachment record). Customer-only and gated to members of the
+ * target group, so a non-member can't even spend an upload.
  */
 @Controller(APP_ROUTES.CHAT.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -38,6 +40,7 @@ export class ChatAttachmentsController {
   @UseInterceptors(FileInterceptor('file'))
   upload(
     @CurrentUser('id') userId: string,
+    @Body('groupId', ParseUUIDPipe) groupId: string,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -54,6 +57,6 @@ export class ChatAttachmentsController {
     )
     file: Express.Multer.File,
   ): Promise<ChatAttachmentUpload> {
-    return this.attachments.upload(file, userId);
+    return this.attachments.upload(file, userId, groupId);
   }
 }
