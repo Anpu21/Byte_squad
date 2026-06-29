@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
+import type { RouteObject } from 'react-router-dom';
 import { routes } from '../routes.config';
+
+/** Flatten every `path` in the nested route tree, deepest paths included. */
+function collectPaths(rs: RouteObject[]): string[] {
+    return rs.flatMap((r) => [
+        ...(r.path ? [r.path] : []),
+        ...(r.children ? collectPaths(r.children) : []),
+    ]);
+}
 
 /**
  * Smoke test: `createRoutesFromElements` runs at import time and throws if any
@@ -17,5 +26,9 @@ describe('routes.config', () => {
         expect(root.children?.length).toBeGreaterThan(0);
         const paths = (root.children ?? []).map((r) => r.path);
         expect(paths).toContain('*');
+    });
+
+    it('mounts the cashier store-credit route', () => {
+        expect(collectPaths(routes).join(',')).toContain('store-credit');
     });
 });
