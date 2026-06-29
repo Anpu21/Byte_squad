@@ -132,11 +132,20 @@ services:
       - JWKS_URI=http://backend:3000/.well-known/jwks.json
       - JWT_ISSUER=ledgerpro-backend
       - JWT_AUDIENCE=ledgerpro-api
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${CHAT_DB_NAME:-chat}
+      - DB_SYNC=true
+      - DB_LOGGING=false
     depends_on:
       redis:
         condition: service_healthy
       backend:
         condition: service_started
+      postgres:
+        condition: service_healthy
     networks:
       - ledgerpro-network
 
