@@ -6,19 +6,17 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
-import { NotificationsModule } from '@notifications/notifications.module';
 import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { REDIS_PUBLISHER } from '@common/realtime/realtime.constants';
 
 /**
  * Global so every domain service can inject {@link RealtimePublisher} without
- * per-module wiring. Imports NotificationsModule for the legacy in-process
- * gateway the publisher dual-emits through (removed at cutover). The Redis
- * client resolves to null when REDIS_URL is unset.
+ * per-module wiring. The publisher is Redis-only — it PUBLISHes envelopes the
+ * ledgerpro-realtime service delivers. The Redis client resolves to null when
+ * REDIS_URL is unset.
  */
 @Global()
 @Module({
-  imports: [NotificationsModule],
   providers: [
     {
       provide: REDIS_PUBLISHER,

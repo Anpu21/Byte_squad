@@ -1,6 +1,5 @@
 import type { ConfigService } from '@nestjs/config';
 import type { Redis } from 'ioredis';
-import type { NotificationsGateway } from '@notifications/notifications.gateway';
 import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import {
   REALTIME_CHANNEL,
@@ -15,22 +14,17 @@ function envelopeFrom(publish: jest.Mock): RealtimeEnvelope {
 
 describe('RealtimePublisher', () => {
   function setup(withRedis = true) {
-    const gateway = { sendToUser: jest.fn(), broadcast: jest.fn() };
     const publish = jest.fn().mockResolvedValue(1);
     const redis = withRedis ? ({ publish } as unknown as Redis) : null;
     const config = {
       get: (_key: string, fallback: string) => fallback,
     } as unknown as ConfigService;
-    const publisher = new RealtimePublisher(
-      gateway as unknown as NotificationsGateway,
-      redis,
-      config,
-    );
-    return { publisher, gateway, publish };
+    const publisher = new RealtimePublisher(redis, config);
+    return { publisher, publish };
   }
 
-  it('toUser dual-emits: in-process gateway AND a user-targeted Redis envelope', () => {
-    const { publisher, gateway, publish } = setup();
+  it('toUser publishes a user-targeted Redis envelope', () => {
+    const { publisher, publish } = setup();
     const payload = {
       userId: 'u1',
       title: 'T',
@@ -39,7 +33,6 @@ describe('RealtimePublisher', () => {
     };
     publisher.toUser('u1', payload);
 
-    expect(gateway.sendToUser).toHaveBeenCalledWith('u1', payload);
     expect(envelopeFrom(publish)).toEqual({
       v: 1,
       target: { type: 'user', id: 'u1' },
@@ -49,13 +42,10 @@ describe('RealtimePublisher', () => {
     });
   });
 
-  it('broadcast dual-emits with a broadcast target', () => {
-    const { publisher, gateway, publish } = setup();
+  it('broadcast publishes a broadcast-targeted envelope', () => {
+    const { publisher, publish } = setup();
     publisher.broadcast('customer-order:created', { id: 'o1' });
 
-    expect(gateway.broadcast).toHaveBeenCalledWith('customer-order:created', {
-      id: 'o1',
-    });
     expect(envelopeFrom(publish).target).toEqual({ type: 'broadcast' });
   });
 
@@ -68,11 +58,10 @@ describe('RealtimePublisher', () => {
     expect(envelope.event).toBe('group-cart:changed');
   });
 
-  it('still emits in-process when Redis is disabled (null client)', () => {
-    const { publisher, gateway, publish } = setup(false);
-    publisher.broadcast('x', {});
+  it('no-ops without throwing when Redis is disabled (null client)', () => {
+    const { publisher, publish } = setup(false);
 
-    expect(gateway.broadcast).toHaveBeenCalled();
+    expect(() => publisher.broadcast('x', {})).not.toThrow();
     expect(publish).not.toHaveBeenCalled();
   });
 });
