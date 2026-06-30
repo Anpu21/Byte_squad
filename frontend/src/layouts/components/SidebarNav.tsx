@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useActiveSection } from '@/hooks/useActiveSection';
+import { useSidebarBadges } from '@/hooks/useSidebarBadges';
 import { type NavGroup } from '@/config/navigation';
 import Avatar from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
@@ -63,6 +64,7 @@ export function SidebarNav({
     const { user } = useAuth();
     const location = useLocation();
     const { group, itemId } = useActiveSection();
+    const badges = useSidebarBadges(user?.role as UserRole | undefined);
 
     // Shared expand state for the panel + the collapsed flyout (single persister).
     const [expanded, setExpanded] = useState<Set<string>>(() => {
@@ -141,6 +143,7 @@ export function SidebarNav({
                         unreadCount={unreadCount}
                         expanded={expanded}
                         onToggleSection={toggleSection}
+                        badges={badges}
                         onNavigate={onNavigate}
                     />
 
@@ -186,6 +189,7 @@ export function SidebarNav({
                                 unreadCount={unreadCount}
                                 expanded={expanded}
                                 onToggleSection={toggleSection}
+                                badges={badges}
                                 onNavigate={() => {
                                     setFlyout(null);
                                     onNavigate?.();
