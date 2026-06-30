@@ -1,23 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LuChevronRight as ChevronRight, LuLogOut as LogOut, LuMenu as MenuIcon, LuSearch as Search, LuUserCog as UserCog } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
 import { FRONTEND_ROUTES } from '@/constants/routes';
-import { UserRole } from '@/constants/enums';
-import {
-    getSidebarSections,
-    GROUP_LABEL_KEY,
-    resolveNavPath,
-} from '@/config/navigation';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import Avatar from '@/components/ui/Avatar';
-import Logo from '@/components/ui/Logo';
-import { NAV_ICON, ICON, Tooltip, CommandPalette } from '@/components/ui';
+import { ICON, CommandPalette } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { SidebarNav } from '@/layouts/components/SidebarNav';
 
 export default function DashboardLayout() {
     const { t } = useTranslation('common');
@@ -30,15 +24,8 @@ export default function DashboardLayout() {
     const [profileOpen, setProfileOpen] = useState(false);
     const [paletteOpen, setPaletteOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
-    const location = useLocation();
     const navigate = useNavigate();
     const crumbs = useBreadcrumbs();
-    const isExpanded = sidebarOpen || mobileNavOpen;
-
-    const { groups, items: sidebarItems } = getSidebarSections();
-    const filteredNavItems = sidebarItems.filter((item) =>
-        user ? item.roles.includes(user.role as UserRole) : false,
-    );
 
     // Remember the collapsed/expanded sidebar preference across sessions.
     useEffect(() => {
@@ -127,138 +114,20 @@ export default function DashboardLayout() {
             )}
             <aside
                 className={cn(
-                    'bg-surface border-r border-border flex flex-col flex-shrink-0 z-40',
+                    'bg-surface flex flex-shrink-0 z-40',
                     'fixed inset-y-0 left-0 w-[var(--nav-drawer-w)] transition-transform duration-200',
                     mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
                     'md:relative md:translate-x-0 md:transition-[width] md:w-auto',
                     sidebarOpen
-                        ? 'md:w-[var(--nav-sidebar-w)]'
+                        ? 'md:w-[calc(var(--nav-rail-w)+var(--nav-panel-w))]'
                         : 'md:w-[var(--nav-rail-w)]',
                 )}
             >
-                <div className="h-16 flex items-center px-4 border-b border-border">
-                    {isExpanded ? (
-                        <Logo size={28} />
-                    ) : (
-                        <Logo size={28} label={false} />
-                    )}
-                </div>
-
-                <nav
-                    aria-label={t('shell.primaryNav')}
-                    className="flex-1 px-3 py-3 overflow-y-auto"
-                >
-                    {groups.map((group) => {
-                        const items = filteredNavItems.filter((i) => i.group === group);
-                        if (items.length === 0) return null;
-                        return (
-                            <div
-                                key={group}
-                                className={cn(
-                                    'mb-2',
-                                    // Collapsed rail hides group labels — keep grouping legible
-                                    // with a hairline between groups (not above the first one).
-                                    !isExpanded &&
-                                        '[&:not(:first-child)]:mt-1 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-border [&:not(:first-child)]:pt-2',
-                                )}
-                            >
-                                {isExpanded && (
-                                    <div className="text-[11px] font-semibold tracking-[0.08em] uppercase text-text-3 px-3 pt-5 pb-1.5">
-                                        {t(GROUP_LABEL_KEY[group])}
-                                    </div>
-                                )}
-                                <div className="space-y-0.5">
-                                    {items.map((item) => {
-                                        const itemPath = resolveNavPath(item, user?.role);
-                                        const isActive = location.pathname === itemPath;
-                                        const Icon = item.Icon;
-                                        return (
-                                            <Tooltip
-                                                key={item.id}
-                                                label={t(item.label)}
-                                                disabled={isExpanded}
-                                            >
-                                            <Link
-                                                to={itemPath}
-                                                aria-label={!isExpanded ? t(item.label) : undefined}
-                                                aria-current={isActive ? 'page' : undefined}
-                                                onClick={() => setMobileNavOpen(false)}
-                                                className={cn(
-                                                    'group flex items-center gap-2.5 h-[var(--nav-row-h)] px-3 rounded-md text-[length:var(--nav-label-size)] transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
-                                                    isActive
-                                                        ? 'bg-surface-2 text-text-1 font-semibold'
-                                                        : 'font-medium text-text-2 hover:bg-surface-2 hover:text-text-1',
-                                                    !isExpanded && 'justify-center px-0',
-                                                )}
-                                            >
-                                                <Icon
-                                                    size={NAV_ICON}
-                                                    strokeWidth={2}
-                                                    aria-hidden
-                                                    className={cn(
-                                                        'flex-shrink-0 transition-colors',
-                                                        isActive
-                                                            ? 'text-primary'
-                                                            : 'text-text-3 group-hover:text-text-2',
-                                                    )}
-                                                />
-                                                {isExpanded && (
-                                                    <>
-                                                        <span className="flex-1 truncate">{t(item.label)}</span>
-                                                        {itemPath === FRONTEND_ROUTES.NOTIFICATIONS &&
-                                                            unreadCount > 0 && (
-                                                                <span
-                                                                    className="ml-auto text-[10px] font-bold bg-primary text-text-inv rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1"
-                                                                    aria-label={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}
-                                                                >
-                                                                    {unreadCount > 99 ? '99+' : unreadCount}
-                                                                </span>
-                                                            )}
-                                                    </>
-                                                )}
-                                            </Link>
-                                            </Tooltip>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </nav>
-
-                {user && (
-                    <div className="p-3 border-t border-border">
-                        <Link
-                            to={FRONTEND_ROUTES.PROFILE}
-                            onClick={() => setMobileNavOpen(false)}
-                            className={cn(
-                                'flex items-center gap-2 p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
-                                location.pathname === FRONTEND_ROUTES.PROFILE
-                                    ? 'bg-surface-2'
-                                    : 'hover:bg-surface-2',
-                                !isExpanded && 'justify-center',
-                            )}
-                        >
-                            <Avatar
-                                name={`${user.firstName} ${user.lastName}`}
-                                size={32}
-                            />
-                            {isExpanded && (
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-[13px] font-semibold text-text-1 truncate">
-                                        {user.firstName} {user.lastName}
-                                    </p>
-                                    <p className="text-[11px] text-text-2 capitalize truncate">
-                                        {user.role.toLowerCase()} · {t('shell.profile')}
-                                    </p>
-                                </div>
-                            )}
-                            {isExpanded && (
-                                <ChevronRight size={14} className="text-text-3" />
-                            )}
-                        </Link>
-                    </div>
-                )}
+                <SidebarNav
+                    collapsed={!sidebarOpen}
+                    unreadCount={unreadCount}
+                    onNavigate={() => setMobileNavOpen(false)}
+                />
             </aside>
 
             <div className="flex-1 flex flex-col min-w-0">
