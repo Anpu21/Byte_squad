@@ -14,6 +14,30 @@ import { NAV_ICON } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { SidebarPanelTabs } from './SidebarPanelTabs';
 
+const EXPANDED_KEY = 'nav:expanded';
+
+function readExpanded(): Set<string> {
+    try {
+        const raw = localStorage.getItem(EXPANDED_KEY);
+        const parsed: unknown = raw ? JSON.parse(raw) : [];
+        return new Set(
+            Array.isArray(parsed)
+                ? parsed.filter((x): x is string => typeof x === 'string')
+                : [],
+        );
+    } catch {
+        return new Set();
+    }
+}
+
+function writeExpanded(ids: Set<string>): void {
+    try {
+        localStorage.setItem(EXPANDED_KEY, JSON.stringify([...ids]));
+    } catch {
+        // localStorage unavailable / quota — non-fatal.
+    }
+}
+
 interface SidebarPanelProps {
     group: NavGroup;
     activeItemId: string | null;
@@ -37,9 +61,11 @@ export function SidebarPanel({
 }: SidebarPanelProps) {
     const { t } = useTranslation('common');
     const items = getGroupItems(group, role);
-    const [expanded, setExpanded] = useState<Set<string>>(
-        () => new Set(activeItemId ? [activeItemId] : []),
-    );
+    const [expanded, setExpanded] = useState<Set<string>>(() => {
+        const stored = readExpanded();
+        if (activeItemId) stored.add(activeItemId);
+        return stored;
+    });
 
     // Auto-expand the active tabbed item as the route changes (without collapsing
     // anything the user opened manually).
@@ -49,6 +75,11 @@ export function SidebarPanel({
             prev.has(activeItemId) ? prev : new Set(prev).add(activeItemId),
         );
     }, [activeItemId]);
+
+    // Remember which sections are open across reloads.
+    useEffect(() => {
+        writeExpanded(expanded);
+    }, [expanded]);
 
     const toggle = (id: string) =>
         setExpanded((prev) => {
