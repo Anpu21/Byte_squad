@@ -24,10 +24,7 @@ export function CustomerOrdersHeader({
     return (
         <div className="flex items-start justify-between gap-3 mb-6">
             <div className="min-w-0">
-                <h1 className="text-2xl font-bold text-text-1 tracking-tight">
-                    Customer Orders
-                </h1>
-                <p className="text-sm text-text-2 mt-1">{subtitle}</p>
+                <p className="text-sm text-text-2">{subtitle}</p>
                 {!isAdmin && userBranchId && (
                     <p className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-text-2 bg-surface-2 border border-border rounded-full px-2.5 py-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-accent" />
