@@ -122,13 +122,7 @@ export function PayrollView({ showHeader = true }: PayrollViewProps) {
         <>
             {showHeader && (
                 <PageHeader
-                    eyebrow="People"
-                    title="Payroll"
-                    subtitle={`${periodLabel}. ${
-                        canManage
-                            ? 'Generate the monthly run, approve rows, mark them paid, and export the payroll CSV.'
-                            : "Review your branch's payroll for the period and export the CSV."
-                    }`}
+                    subtitle={periodLabel}
                     actions={
                         canExport ? (
                             <div className="flex gap-2">
