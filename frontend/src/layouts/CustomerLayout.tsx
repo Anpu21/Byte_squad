@@ -118,26 +118,28 @@ export default function CustomerLayout({
 
             <header className="sticky top-0 z-sticky bg-surface/90 backdrop-blur-md border-b border-border">
                 <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-16 flex items-center gap-3 sm:gap-4">
-                    <Link
-                        to={FRONTEND_ROUTES.SHOP}
-                        className="flex items-center gap-2.5 flex-shrink-0"
-                        aria-label="Ledger Pro — shop home"
-                    >
-                        <Logo size={38} label={false} />
-                        <span className="hidden sm:flex flex-col leading-tight">
-                            <span className="text-[15px] font-bold tracking-[-0.01em] text-text-1">
-                                Ledger Pro
+                    <div className="flex flex-1 items-center min-w-0">
+                        <Link
+                            to={FRONTEND_ROUTES.SHOP}
+                            className="flex items-center gap-2.5 flex-shrink-0"
+                            aria-label="Ledger Pro — shop home"
+                        >
+                            <Logo size={38} label={false} />
+                            <span className="hidden sm:flex flex-col leading-tight">
+                                <span className="text-[15px] font-bold tracking-[-0.01em] text-text-1">
+                                    Ledger Pro
+                                </span>
+                                <span className="text-[11px] font-medium text-text-3">
+                                    Pickup &amp; rewards
+                                </span>
                             </span>
-                            <span className="text-[11px] font-medium text-text-3">
-                                Pickup &amp; rewards
-                            </span>
-                        </span>
-                    </Link>
+                        </Link>
+                    </div>
 
                     <form
                         role="search"
                         onSubmit={handleSearchSubmit}
-                        className="hidden lg:flex items-center flex-1 max-w-[420px] h-[38px] px-3 bg-surface-2 border border-border-strong rounded-[var(--radius-field)] gap-2 focus-within:border-focus focus-within:ring-[3px] focus-within:ring-focus/25 transition-[border-color,box-shadow] duration-150 ease-out"
+                        className="hidden lg:flex items-center flex-none w-[420px] max-w-full h-[38px] px-3 bg-surface-2 border border-border-strong rounded-[var(--radius-field)] gap-2 focus-within:border-focus focus-within:ring-[3px] focus-within:ring-focus/25 transition-[border-color,box-shadow] duration-150 ease-out"
                     >
                         <Search size={15} className="text-text-3 flex-shrink-0" />
                         <input
@@ -160,7 +162,7 @@ export default function CustomerLayout({
                         )}
                     </form>
 
-                    <div className="flex items-center gap-1.5 ml-auto">
+                    <div className="flex flex-1 items-center justify-end gap-1.5 min-w-0">
                         {!publicMode && (
                             <StorefrontNav
                                 variant="pills"
