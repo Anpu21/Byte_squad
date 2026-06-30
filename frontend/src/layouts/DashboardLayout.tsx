@@ -318,7 +318,7 @@ export default function DashboardLayout() {
                         onClick={() => setPaletteOpen(true)}
                         aria-label={t('shell.commandPalette')}
                         aria-keyshortcuts="Meta+K Control+K"
-                        className="hidden sm:flex items-center gap-2 h-9 w-[360px] max-w-full pl-2.5 pr-2 rounded-md border border-border bg-surface-2 text-text-3 hover:text-text-2 hover:border-border-strong transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
+                        className="hidden sm:flex items-center gap-2 h-10 w-[460px] max-w-full pl-3 pr-2 rounded-md border border-border bg-surface-2 text-text-3 hover:text-text-2 hover:border-border-strong transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
                     >
                         <Search size={ICON.md} aria-hidden />
                         <span className="text-sm">{t('shell.searchPlaceholder')}</span>
