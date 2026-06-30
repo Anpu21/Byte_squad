@@ -64,7 +64,7 @@ export function ProductReviewsSection({ productId }: { productId: string }) {
                 Ratings &amp; reviews
             </h2>
 
-            <div className="mt-5 rounded-2xl border border-border bg-surface p-5">
+            <div className="mt-5 rounded-2xl border border-border bg-surface p-5 sm:p-6">
                 <ReviewSummary summary={summary} />
             </div>
 

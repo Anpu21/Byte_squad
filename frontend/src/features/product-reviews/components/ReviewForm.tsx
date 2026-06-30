@@ -36,14 +36,14 @@ export function ReviewForm({
             }}
             className="space-y-3 rounded-xl border border-border bg-surface p-4"
         >
-            <div className="flex items-center gap-3">
-                <span className="text-[13px] font-medium text-text-2">
+            <div className="space-y-1.5">
+                <span className="block text-[13px] font-medium text-text-2">
                     Your rating
                 </span>
                 <StarRating
                     value={rating}
                     readOnly={false}
-                    size={22}
+                    size={26}
                     onChange={setRating}
                 />
             </div>
