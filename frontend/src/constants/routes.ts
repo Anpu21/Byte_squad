@@ -31,6 +31,9 @@ export const FRONTEND_ROUTES = {
     RETURNS: '/inventory/returns',
     RETURN_NEW: '/inventory/returns/new',
 
+    // Brand sales analytics (admin + manager) — leaderboard + per-brand drill-down
+    BRAND_ANALYTICS: '/analytics/brands',
+
     // Purchases (suppliers + goods receipts)
     PURCHASES: '/purchases',
 
@@ -50,6 +53,9 @@ export const FRONTEND_ROUTES = {
     FINANCIAL_REPORTS: '/accounting/reports',
     EXPENSES: '/accounting/expenses',
     PROFIT_LOSS: '/accounting/profit-loss',
+
+    // Customer store credit ("khata") — walk-in buy-now-pay-later accounts
+    CREDIT_ACCOUNTS: '/credit-accounts',
 
     // Users
     USER_MANAGEMENT: '/users',
@@ -74,6 +80,9 @@ export const FRONTEND_ROUTES = {
     // Admin / manager — unified HR workspace (Employees / Attendance / Leaves / Payroll tabs)
     ADMIN_HR: '/admin/hr',
     ADMIN_AUDIT: '/admin/audit',
+
+    // Admin / manager — customer review moderation
+    ADMIN_REVIEWS: '/admin/reviews',
 
     // Admin / manager — automatic POS discount schemes
     ADMIN_SCHEMES: '/admin/schemes',
@@ -125,6 +134,9 @@ export const FRONTEND_ROUTES = {
     SHOP_MY_ORDERS_LEGACY: '/shop/my-requests',
     SHOP_PROFILE: '/shop/profile',
     SHOP_REWARDS: '/shop/rewards',
+    SHOP_GROUPS: '/shop/groups',
+    SHOP_GROUP_DETAIL: '/shop/groups/:id',
+    SHOP_GROUP_ANALYTICS: '/shop/groups/:id/analytics',
 
     // Cashier scan + shared customer orders view
     SCAN_ORDER: '/pos/scan-order',

@@ -100,6 +100,18 @@ export const posService = {
     return response.data.data;
   },
 
+  /** Email the customer a PDF copy of the receipt (rendered client-side). */
+  emailReceipt: async (
+    saleId: string,
+    pdfBase64: string,
+  ): Promise<{ sent: boolean }> => {
+    const response = await api.post<IApiResponse<{ sent: boolean }>>(
+      `/pos/sales/${saleId}/email-receipt`,
+      { pdfBase64 },
+    );
+    return response.data.data;
+  },
+
   findSaleById: async (saleId: string): Promise<ISale | null> => {
     const response = await api.get<IApiResponse<ISale | null>>(
       `/pos/transactions/${saleId}`,

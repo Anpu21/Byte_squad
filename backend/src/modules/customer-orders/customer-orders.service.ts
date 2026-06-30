@@ -255,6 +255,7 @@ export class CustomerOrdersService {
   async createCheckout(
     dto: CheckoutCustomerOrderDto,
     userId: string,
+    opts: { customerGroupId?: string } = {},
   ): Promise<CreateCheckoutResult> {
     const user = await this.users.findEntityById(userId);
     if (!user) {
@@ -297,6 +298,10 @@ export class CustomerOrdersService {
         orderCode,
         groupCode,
         userId,
+        // Stamp the customer group (when this checkout came from a group's
+        // shared cart) so the group's analytics can roll the order up. Distinct
+        // from groupCode, which only batches this multi-branch checkout.
+        customerGroupId: opts.customerGroupId ?? null,
         branchId,
         status: CustomerOrderStatus.PENDING,
         estimatedTotal,

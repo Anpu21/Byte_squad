@@ -12,6 +12,7 @@ import { AdminLoyaltyPage, ManagerLoyaltyPage } from '@/features/admin-loyalty';
 import { BranchHubPage } from '@/features/branch-hub';
 import { AdminHrPage } from '@/features/admin-hr';
 import { EmployeeFormPage } from '@/features/employee-form';
+import { ReviewModerationPage } from '@/features/admin-reviews';
 
 /**
  * People & org — notifications, profile, users, loyalty, branches, HR.
@@ -58,6 +59,11 @@ export const peopleRoutes = (
         </Route>
 
         <Route element={<RequireRole roles={[UserRole.ADMIN, UserRole.MANAGER]} />}>
+            <Route
+                path={FRONTEND_ROUTES.ADMIN_REVIEWS}
+                element={<ReviewModerationPage />}
+                handle={{ crumbs: ['Storefront', 'Reviews'] }}
+            />
             <Route
                 path={FRONTEND_ROUTES.BRANCHES}
                 element={<BranchHubPage />}

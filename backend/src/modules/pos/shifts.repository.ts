@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, DeepPartial, Repository } from 'typeorm';
 import { PosShift } from '@pos/entities/pos-shift.entity';
+import { PosCashMovement } from '@pos/entities/pos-cash-movement.entity';
 import type { ShiftStatus } from '@pos/types/shift-status.type';
 
 export interface ListShiftsOptions {
@@ -33,9 +34,11 @@ export interface TenderTotalsRaw {
 @Injectable()
 export class ShiftsRepository {
   private readonly shifts: Repository<PosShift>;
+  private readonly movements: Repository<PosCashMovement>;
 
   constructor(private readonly dataSource: DataSource) {
     this.shifts = dataSource.getRepository(PosShift);
+    this.movements = dataSource.getRepository(PosCashMovement);
   }
 
   async findOpenForCashier(cashierId: string): Promise<PosShift | null> {
@@ -167,5 +170,38 @@ export class ShiftsRepository {
       [cashierId, branchId, start, end],
     );
     return Number(raw[0]?.total ?? 0);
+  }
+
+  async insertMovement(
+    partial: DeepPartial<PosCashMovement>,
+  ): Promise<PosCashMovement> {
+    return this.movements.save(this.movements.create(partial));
+  }
+
+  async listMovementsForShift(shiftId: string): Promise<PosCashMovement[]> {
+    return this.movements.find({
+      where: { shiftId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async movementTotalsForShift(
+    shiftId: string,
+  ): Promise<{ payIn: number; payOut: number }> {
+    const raw: Array<{ pay_in: string; pay_out: string }> =
+      await this.dataSource.query(
+        `
+      SELECT
+        COALESCE(SUM(CASE WHEN type = 'PayIn' THEN amount ELSE 0 END), 0) AS pay_in,
+        COALESCE(SUM(CASE WHEN type = 'PayOut' THEN amount ELSE 0 END), 0) AS pay_out
+      FROM pos_cash_movements
+      WHERE shift_id = $1
+      `,
+        [shiftId],
+      );
+    return {
+      payIn: Number(raw[0]?.pay_in ?? 0),
+      payOut: Number(raw[0]?.pay_out ?? 0),
+    };
   }
 }

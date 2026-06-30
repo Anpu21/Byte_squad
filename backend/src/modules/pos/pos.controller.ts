@@ -19,6 +19,7 @@ import { CreateSaleDto } from '@pos/dto/create-sale.dto';
 import { SearchProductsQueryDto } from '@pos/dto/search-products-query.dto';
 import { SearchCustomersQueryDto } from '@pos/dto/search-customers-query.dto';
 import { VoidSaleDto } from '@pos/dto/void-sale.dto';
+import { EmailReceiptDto } from '@pos/dto/email-receipt.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -227,6 +228,22 @@ export class PosController {
     @CurrentUser() actor: ActorPayload,
   ): Promise<Sale> {
     return this.posService.markPrinted(id, actor);
+  }
+
+  /**
+   * `POST /pos/sales/:id/email-receipt` — email the customer a PDF copy of
+   * the receipt (rendered client-side). Branch-scoped for non-admins; 400 if
+   * the sale has no customer email on file.
+   */
+  @Post(APP_ROUTES.POS.SALE_EMAIL_RECEIPT)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  emailReceipt(
+    @Param('id') id: string,
+    @Body() dto: EmailReceiptDto,
+    @CurrentUser() actor: ActorPayload,
+  ): Promise<{ sent: boolean }> {
+    return this.posService.emailReceipt(id, dto, actor);
   }
 
   /**

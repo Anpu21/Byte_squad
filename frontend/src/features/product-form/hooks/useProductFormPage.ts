@@ -43,6 +43,12 @@ export function useProductFormPage() {
         staleTime: 10 * 60_000,
     });
 
+    const brandsQuery = useQuery({
+        queryKey: queryKeys.inventory.brands(),
+        queryFn: inventoryService.getBrands,
+        staleTime: 10 * 60_000,
+    });
+
     const [showCameraScanner, setShowCameraScanner] = useState(false);
 
     useScanDetection({
@@ -59,6 +65,7 @@ export function useProductFormPage() {
         form,
         image,
         categories: categoriesQuery.data ?? [],
+        brands: brandsQuery.data ?? [],
         lookupBarcode,
         priceDerived,
         isSubmitting: submit.isSubmitting,

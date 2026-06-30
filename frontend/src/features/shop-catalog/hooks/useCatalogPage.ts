@@ -7,9 +7,11 @@ import { shopProductsService } from '@/services/shop-products.service';
 import { addToCart } from '@/store/slices/shopCartSlice';
 import { setActiveBranch } from '@/store/slices/shopBranchSlice';
 import { selectActiveBranchId } from '@/store/selectors/shopBranch';
+import { selectShopContext } from '@/store/selectors/shopContext';
 import { useAuth } from '@/hooks/useAuth';
 import { queryKeys } from '@/lib/queryKeys';
 import { useBuyAgain } from './useBuyAgain';
+import { useAddGroupCartItem } from '@/features/customer-groups/hooks/useAddGroupCartItem';
 import type { IShopProduct, ShopStockStatus } from '@/types';
 
 export type CatalogSort = 'name' | 'price_asc' | 'price_desc';
@@ -35,6 +37,8 @@ export function useCatalogPage() {
     const dispatch = useAppDispatch();
     const { user } = useAuth();
     const activeBranchId = useAppSelector(selectActiveBranchId);
+    const shopContext = useAppSelector(selectShopContext);
+    const addGroupItem = useAddGroupCartItem();
 
     const [searchParams, setSearchParams] = useSearchParams();
     const search = searchParams.get('q') ?? '';
@@ -186,6 +190,30 @@ export function useCatalogPage() {
             (unitId
                 ? product.sellableUnits.find((u) => u.id === unitId)
                 : product.sellableUnits.find((u) => u.isBase)) ?? null;
+        // In group mode, adds feed the group's shared cart (server-persisted,
+        // live-synced) instead of the personal Redux cart.
+        if (shopContext.mode === 'group' && shopContext.groupId) {
+            addGroupItem.mutate(
+                {
+                    id: shopContext.groupId,
+                    payload: {
+                        productId: product.id,
+                        branchId,
+                        unitId: unit?.id ?? undefined,
+                        quantity: 1,
+                    },
+                },
+                {
+                    onSuccess: () =>
+                        toast.success(
+                            `Added to ${shopContext.groupName ?? 'group'}`,
+                        ),
+                    onError: () =>
+                        toast.error('Could not add to the group cart'),
+                },
+            );
+            return;
+        }
         dispatch(
             addToCart({
                 productId: product.id,

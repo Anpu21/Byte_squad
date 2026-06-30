@@ -8,6 +8,7 @@ import { formatCurrency } from '@/lib/utils';
 import type { IPosShift, IShiftLiveSummary } from '@/types';
 import { useShiftMutations } from '../../hooks/useShiftMutations';
 import { PosShiftZPrint } from './PosShiftZPrint';
+import { PosShiftSummary } from './PosShiftSummary';
 
 const INPUT_CLASS =
     'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
@@ -17,15 +18,6 @@ interface IPosShiftCloseModalProps {
     onClose: () => void;
     shift: IPosShift;
     live: IShiftLiveSummary | null;
-}
-
-function SummaryRow({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="flex items-center justify-between text-[13px] text-text-2">
-            <span>{label}</span>
-            <span className="tabular-nums text-text-1">{value}</span>
-        </div>
-    );
 }
 
 /**
@@ -94,80 +86,11 @@ export function PosShiftCloseModal({
                 closeOnBackdrop={false}
             >
                 <div className="space-y-4">
-                    <div className="space-y-1.5 p-3 rounded-md border border-border bg-surface-2/40">
-                        <SummaryRow
-                            label="Sales"
-                            value={`${showResult ? (summary.salesCount ?? 0) : (live?.salesCount ?? 0)} · ${formatCurrency(Number(showResult ? (summary.salesTotal ?? 0) : (live?.salesTotal ?? 0)))}`}
-                        />
-                        <SummaryRow
-                            label="Cash takings"
-                            value={formatCurrency(
-                                Number(
-                                    showResult
-                                        ? (summary.totalCash ?? 0)
-                                        : (live?.cash ?? 0),
-                                ),
-                            )}
-                        />
-                        <SummaryRow
-                            label="Card / Mobile"
-                            value={formatCurrency(
-                                Number(
-                                    showResult
-                                        ? (summary.totalElectronic ?? 0)
-                                        : (live?.electronic ?? 0),
-                                ),
-                            )}
-                        />
-                        <SummaryRow
-                            label="Cheque / Bank / Credit"
-                            value={formatCurrency(
-                                Number(
-                                    showResult
-                                        ? (summary.totalCheque ?? 0)
-                                        : (live?.cheque ?? 0),
-                                ) +
-                                    Number(
-                                        showResult
-                                            ? (summary.totalBank ?? 0)
-                                            : (live?.bank ?? 0),
-                                    ) +
-                                    Number(
-                                        showResult
-                                            ? (summary.totalCredit ?? 0)
-                                            : (live?.credit ?? 0),
-                                    ),
-                            )}
-                        />
-                        <SummaryRow
-                            label="Refunds"
-                            value={formatCurrency(
-                                Number(
-                                    showResult
-                                        ? (summary.refundsTotal ?? 0)
-                                        : (live?.refundsTotal ?? 0),
-                                ),
-                            )}
-                        />
-                        <div className="pt-1.5 border-t border-border">
-                            <SummaryRow
-                                label="Opening float"
-                                value={formatCurrency(
-                                    Number(summary.openingFloat),
-                                )}
-                            />
-                            <SummaryRow
-                                label="Expected cash in drawer"
-                                value={formatCurrency(
-                                    Number(
-                                        showResult
-                                            ? (summary.expectedCash ?? 0)
-                                            : (live?.expectedCash ?? 0),
-                                    ),
-                                )}
-                            />
-                        </div>
-                    </div>
+                    <PosShiftSummary
+                        summary={summary}
+                        live={live}
+                        showResult={showResult}
+                    />
 
                     {!showResult ? (
                         <>

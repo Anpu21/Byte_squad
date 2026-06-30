@@ -46,6 +46,7 @@ export class EmailService {
     subject: string,
     html: string,
     label: string,
+    attachments?: Array<{ filename: string; content: string }>,
   ): Promise<void> {
     if (!this.resend) {
       throw new ServiceUnavailableException('Email service is not configured');
@@ -55,6 +56,7 @@ export class EmailService {
       to,
       subject,
       html,
+      ...(attachments?.length ? { attachments } : {}),
     });
     if (error) {
       this.logger.error(`Failed to send ${label} to ${to}: ${error.message}`);
@@ -255,5 +257,61 @@ export class EmailService {
     `;
 
     await this.dispatch(to, subject, html, 'Password reset email');
+  }
+
+  /**
+   * Email a customer a copy of their sale receipt with the rendered PDF
+   * attached. The body shows the headline figures so the email is useful
+   * even before the attachment is opened.
+   */
+  async sendReceiptEmail(
+    to: string,
+    firstName: string,
+    invoiceNumber: string,
+    total: number,
+    pdfBase64: string,
+  ): Promise<void> {
+    const subject = `Your receipt — ${invoiceNumber}`;
+    const formattedTotal = `LKR ${total.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+    const html = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #0a0a0a; border: 1px solid #222; border-radius: 12px; overflow: hidden;">
+        <div style="background: #111; padding: 32px 32px 24px; border-bottom: 1px solid #222;">
+          <h1 style="color: #fff; font-size: 22px; margin: 0; font-weight: 700;">LedgerPro</h1>
+        </div>
+        <div style="padding: 32px;">
+          <p style="color: #e2e8f0; font-size: 15px; margin: 0 0 20px;">
+            Hi <strong>${firstName}</strong>,
+          </p>
+          <p style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+            Thank you for shopping with us. Your receipt is attached as a PDF.
+          </p>
+
+          <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 20px; margin: 0 0 24px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 0;">Invoice</td>
+                <td style="color: #fff; font-size: 14px; font-weight: 600; text-align: right; padding: 4px 0; font-family: monospace;">${invoiceNumber}</td>
+              </tr>
+              <tr>
+                <td style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 0;">Total</td>
+                <td style="color: #fff; font-size: 14px; font-weight: 600; text-align: right; padding: 4px 0;">${formattedTotal}</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="color: #475569; font-size: 12px; margin: 0; line-height: 1.5;">
+            This is a copy of an in-store purchase. If you did not make this purchase, please contact the store.
+          </p>
+        </div>
+      </div>
+    `;
+
+    await this.dispatch(to, subject, html, 'Receipt email', [
+      { filename: `receipt-${invoiceNumber}.pdf`, content: pdfBase64 },
+    ]);
   }
 }

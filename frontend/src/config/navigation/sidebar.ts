@@ -17,6 +17,7 @@ import {
     LuGitCompareArrows as GitCompareArrows,
     LuHandCoins as HandCoins,
     LuHouse as Home,
+    LuNotebookTabs as NotebookTabs,
     LuPackagePlus as PackagePlus,
     LuPiggyBank as PiggyBank,
     LuReceipt as Receipt,
@@ -25,8 +26,10 @@ import {
     LuShoppingBag as ShoppingBag,
     LuShoppingCart as ShoppingCart,
     LuSparkles as Sparkles,
+    LuStar as Star,
     LuStore as Store,
     LuTags as Tags,
+    LuTrophy as Trophy,
     LuTruck as Truck,
     LuUndo2 as Undo2,
     LuUsers as Users,
@@ -87,11 +90,13 @@ export const SIDEBAR: NavEntry[] = [
             { key: 'grns', label: 'Goods receipts', Icon: ClipboardList },
             { key: 'new-grn', label: 'New GRN', Icon: PackagePlus },
             { key: 'orders', label: 'Purchase orders', Icon: FileText },
+            { key: 'reorder', label: 'Reorder', Icon: Sparkles },
             { key: 'bills', label: 'Bills & Payments', Icon: Wallet },
             { key: 'ageing', label: 'Ageing', Icon: CalendarClock },
             { key: 'suppliers', label: 'Suppliers', Icon: Building2 },
         ],
     },
+    { id: 'brand-analytics', label: 'nav.brandAnalysis', path: R.BRAND_ANALYTICS, Icon: Trophy, roles: [ADMIN, MANAGER], group: 'Inventory' },
 
     // ── Finance ──
     {
@@ -103,6 +108,14 @@ export const SIDEBAR: NavEntry[] = [
             { key: 'reports', label: 'Financial reports', Icon: Scale, roles: [ADMIN] },
             { key: 'expenses', label: 'Expenses', Icon: Wallet, roles: [ADMIN, MANAGER] },
             { key: 'profit-loss', label: 'Profit & Loss', Icon: PiggyBank, roles: [ADMIN] },
+        ],
+    },
+    {
+        id: 'credit-accounts', label: 'nav.storeCredit', path: R.CREDIT_ACCOUNTS, Icon: NotebookTabs,
+        roles: [ADMIN, MANAGER], group: 'Finance',
+        tabs: [
+            { key: 'approvals', label: 'Approvals', Icon: BadgeCheck },
+            { key: 'accounts', label: 'Accounts', Icon: HandCoins },
         ],
     },
     { id: 'reports', label: 'nav.reports', path: R.REPORTS, Icon: BarChart3, roles: [ADMIN, MANAGER], group: 'Finance' },
@@ -137,5 +150,6 @@ export const SIDEBAR: NavEntry[] = [
         ],
     },
     { id: 'audit', label: 'nav.auditLog', path: R.ADMIN_AUDIT, Icon: FileClock, roles: [ADMIN], group: 'System' },
+    { id: 'review-moderation', label: 'nav.reviews', path: R.ADMIN_REVIEWS, Icon: Star, roles: [ADMIN, MANAGER], group: 'System' },
     { id: 'notifications', label: 'nav.notifications', path: R.NOTIFICATIONS, Icon: Bell, roles: [ADMIN, MANAGER, CASHIER], group: 'System' },
 ];

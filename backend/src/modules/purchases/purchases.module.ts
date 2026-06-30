@@ -27,6 +27,9 @@ import { SupplierPaymentsController } from '@/modules/purchases/supplier-payment
 import { PayablesReportsRepository } from '@/modules/purchases/payables-reports.repository';
 import { PayablesReportsService } from '@/modules/purchases/payables-reports.service';
 import { PurchasesReportsController } from '@/modules/purchases/purchases-reports.controller';
+import { ReorderSuggestionsRepository } from '@/modules/purchases/reorder-suggestions.repository';
+import { ReorderSuggestionsService } from '@/modules/purchases/reorder-suggestions.service';
+import { ReorderSuggestionsController } from '@/modules/purchases/reorder-suggestions.controller';
 
 /**
  * Purchases module — the BUSY-style procurement cycle: GRN purchase
@@ -64,6 +67,8 @@ import { PurchasesReportsController } from '@/modules/purchases/purchases-report
     PurchaseOrdersService,
     PurchaseReturnsRepository,
     PurchaseReturnsService,
+    ReorderSuggestionsRepository,
+    ReorderSuggestionsService,
   ],
   controllers: [
     GrnsController,
@@ -71,6 +76,7 @@ import { PurchasesReportsController } from '@/modules/purchases/purchases-report
     PurchasesReportsController,
     PurchaseOrdersController,
     PurchaseReturnsController,
+    ReorderSuggestionsController,
   ],
   exports: [
     PurchaseDocNumberService,

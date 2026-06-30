@@ -15,6 +15,7 @@ import { CreditTransactionRepository } from '@pos/credit-transaction.repository'
 import { StockMovementRepository } from '@pos/stock-movement.repository';
 import { AccountingService } from '@accounting/accounting.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
+import { CreditAccountsService } from '@/modules/credit-accounts/credit-accounts.service';
 
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
@@ -52,6 +53,7 @@ export class PosVoidService {
     private readonly stockMovements: StockMovementRepository,
     private readonly accounting: AccountingService,
     private readonly loyaltyWallet: LoyaltyWalletService,
+    private readonly creditAccounts: CreditAccountsService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -92,6 +94,7 @@ export class PosVoidService {
       await this.restockInventory(manager, existing);
       await this.recordVoidStockMovements(manager, existing, actor.id, reason);
       await this.reverseCreditTransactions(manager, existing);
+      await this.creditAccounts.reverseChargeForSale(manager, existing);
       await this.reverseLoyalty(manager, existing);
       await this.writeVoidLedgerEntry(manager, existing, reason);
       await this.payments.voidBySaleId(existing.id, manager);

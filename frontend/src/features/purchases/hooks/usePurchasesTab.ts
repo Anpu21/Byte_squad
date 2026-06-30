@@ -4,6 +4,7 @@ export const PURCHASES_TABS = [
     'grns',
     'new-grn',
     'orders',
+    'reorder',
     'bills',
     'ageing',
     'suppliers',

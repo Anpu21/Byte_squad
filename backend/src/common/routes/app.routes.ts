@@ -49,6 +49,7 @@ export const APP_ROUTES = {
   PRODUCTS: {
     BASE: `${API_PREFIX}/products`,
     CATEGORIES: 'categories',
+    BRANDS: 'brands',
     BY_ID: ':id',
     BY_BARCODE: 'barcode/:barcode',
     IMAGE: ':id/image',
@@ -60,6 +61,34 @@ export const APP_ROUTES = {
     ANALYTICS: 'analytics',
     BY_ID: ':id',
     ARCHIVE: ':id/archive',
+  },
+
+  // Managed product brands (CRUD + brand sales analytics: leaderboard +
+  // per-brand product drill-down). Analytics routes are declared before BY_ID
+  // in the controller so `analytics/...` isn't captured by the `:id` param.
+  BRANDS: {
+    BASE: `${API_PREFIX}/brands`,
+    ANALYTICS_OVERVIEW: 'analytics/overview',
+    ANALYTICS_BRAND: 'analytics/:brandId',
+    BY_ID: ':id',
+    ARCHIVE: ':id/archive',
+  },
+
+  // Customer store-credit accounts (khata / loan-book): enrollment request →
+  // manager approval (limit + term) → buy-on-credit at POS → repayments.
+  // `search` / `authorize-override` are declared before `:id` in the controller
+  // so the literal paths aren't captured by the `:id` param route.
+  CREDIT_ACCOUNTS: {
+    BASE: `${API_PREFIX}/credit-accounts`,
+    SEARCH: 'search',
+    AUTHORIZE_OVERRIDE: 'authorize-override',
+    BY_ID: ':id',
+    APPROVE: ':id/approve',
+    REJECT: ':id/reject',
+    SUSPEND: ':id/suspend',
+    CLOSE: ':id/close',
+    STATEMENT: ':id/statement',
+    PAYMENTS: ':id/payments',
   },
 
   // Inventory
@@ -120,6 +149,7 @@ export const APP_ROUTES = {
     SALES: 'sales',
     SALE_BY_ID: 'sales/:id',
     SALE_PRINT: 'sales/:id/print',
+    SALE_EMAIL_RECEIPT: 'sales/:id/email-receipt',
     SALE_VOID: 'sales/:id/void',
     // Phase 2 — customer receivables (AR mirror of supplier payables).
     RECEIVABLES: 'receivables',
@@ -131,6 +161,10 @@ export const APP_ROUTES = {
     SHIFTS_CURRENT: 'shifts/current',
     SHIFTS_OPEN: 'shifts/open',
     SHIFTS_CLOSE: 'shifts/close',
+    SHIFTS_MOVEMENTS: 'shifts/movements',
+    // Floor ops — server-persisted held / suspended sales.
+    HELD_SALES: 'held-sales',
+    HELD_SALE_BY_ID: 'held-sales/:id',
     // Phase 4 — automatic discount schemes (date-window / qty-slab rules).
     SCHEMES: 'schemes',
     SCHEMES_ACTIVE: 'schemes/active',
@@ -195,6 +229,18 @@ export const APP_ROUTES = {
     BRANCHES: 'branches',
   },
 
+  // Product reviews & ratings — customer storefront surface (under shop/) +
+  // staff moderation (under admin/reviews).
+  REVIEWS: {
+    BASE: `${API_PREFIX}/shop`,
+    PRODUCT_REVIEWS: 'products/:productId/reviews',
+    REVIEW_BY_ID: 'reviews/:id',
+    ADMIN_BASE: `${API_PREFIX}/admin/reviews`,
+    ADMIN_REVIEW_BY_ID: ':id',
+    ADMIN_REVIEW_HIDE: ':id/hide',
+    ADMIN_REVIEW_UNHIDE: ':id/unhide',
+  },
+
   // Customer pickup orders (cart -> order -> QR -> fulfill at counter)
   CUSTOMER_ORDERS: {
     BASE: `${API_PREFIX}/customer-orders`,
@@ -207,6 +253,23 @@ export const APP_ROUTES = {
     NOT_COLLECTED: ':id/not-collected',
     FULFILL: 'code/:code/fulfill',
     PAYHERE_NOTIFY: 'payhere/notify',
+  },
+
+  // Customer shopping groups ("shop together"): groups + shared cart + group
+  // purchase analytics. Static segments (mine/join) are declared before BY_ID in
+  // the controller so they aren't captured by the `:id` param.
+  CUSTOMER_GROUPS: {
+    BASE: `${API_PREFIX}/customer-groups`,
+    MINE: 'mine',
+    JOIN: 'join',
+    BY_ID: ':id',
+    REGENERATE_CODE: ':id/regenerate-code',
+    LEAVE: ':id/leave',
+    MEMBER: ':id/members/:userId',
+    CART: ':id/cart',
+    CART_ITEM: ':id/cart/:itemId',
+    CHECKOUT: ':id/checkout',
+    ANALYTICS: ':id/analytics',
   },
 
   // Customer loyalty
@@ -343,6 +406,10 @@ export const APP_ROUTES = {
       BASE: `${API_PREFIX}/purchases/reports`,
       OUTSTANDING: 'outstanding',
       AGEING: 'ageing',
+    },
+    REORDER: {
+      BASE: `${API_PREFIX}/purchases/reorder-suggestions`,
+      DRAFT: 'draft',
     },
   },
 } as const;

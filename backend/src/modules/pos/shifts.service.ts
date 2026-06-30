@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -6,9 +7,11 @@ import {
 } from '@nestjs/common';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { PosShift } from '@pos/entities/pos-shift.entity';
+import { PosCashMovement } from '@pos/entities/pos-cash-movement.entity';
 import { ShiftsRepository } from '@pos/shifts.repository';
 import { OpenShiftDto } from '@pos/dto/open-shift.dto';
 import { CloseShiftDto } from '@pos/dto/close-shift.dto';
+import { RecordCashMovementDto } from '@pos/dto/record-cash-movement.dto';
 import { ListShiftsQueryDto } from '@pos/dto/list-shifts-query.dto';
 import type { ShiftLiveSummary } from '@pos/types/shift-live-summary.type';
 
@@ -67,6 +70,48 @@ export class ShiftsService {
     return { shift, live };
   }
 
+  /**
+   * Record a mid-shift cash drawer movement (pay-in / pay-out) against the
+   * acting cashier's open shift and return the refreshed drawer summary. A
+   * pay-out cannot exceed the cash currently in the drawer.
+   */
+  async recordMovement(
+    dto: RecordCashMovementDto,
+    actor: ShiftsActor,
+  ): Promise<CurrentShiftResponse> {
+    const shift = await this.shifts.findOpenForCashier(actor.id);
+    if (!shift) {
+      throw new NotFoundException(
+        'No open shift — open one before recording cash movements',
+      );
+    }
+    const amount = round2(dto.amount);
+    if (dto.type === 'PayOut') {
+      const live = await this.computeWindow(shift, new Date());
+      if (amount > live.expectedCash) {
+        throw new BadRequestException(
+          'Pay-out exceeds the cash currently in the drawer',
+        );
+      }
+    }
+    await this.shifts.insertMovement({
+      shiftId: shift.id,
+      branchId: shift.branchId,
+      cashierId: shift.cashierId,
+      type: dto.type,
+      amount,
+      reason: dto.reason ?? null,
+    });
+    return this.current(actor);
+  }
+
+  /** Cash movements recorded against the acting cashier's open shift. */
+  async listMovements(actor: ShiftsActor): Promise<PosCashMovement[]> {
+    const shift = await this.shifts.findOpenForCashier(actor.id);
+    if (!shift) return [];
+    return this.shifts.listMovementsForShift(shift.id);
+  }
+
   async close(dto: CloseShiftDto, actor: ShiftsActor): Promise<PosShift> {
     const shift = await this.shifts.findOpenForCashier(actor.id);
     if (!shift) {
@@ -91,6 +136,8 @@ export class ShiftsService {
       salesCount: live.salesCount,
       salesTotal: live.salesTotal,
       refundsTotal: live.refundsTotal,
+      totalPayIn: live.payIn,
+      totalPayOut: live.payOut,
       notes: dto.notes ?? null,
     });
 
@@ -123,7 +170,7 @@ export class ShiftsService {
     shift: PosShift,
     end: Date,
   ): Promise<ShiftLiveSummary> {
-    const [tenders, sales, refundsTotal] = await Promise.all([
+    const [tenders, sales, refundsTotal, movements] = await Promise.all([
       this.shifts.tenderTotalsForWindow(
         shift.cashierId,
         shift.branchId,
@@ -142,9 +189,14 @@ export class ShiftsService {
         shift.openedAt,
         end,
       ),
+      this.shifts.movementTotalsForShift(shift.id),
     ]);
     const expectedCash = round2(
-      Number(shift.openingFloat) + tenders.cash - refundsTotal,
+      Number(shift.openingFloat) +
+        tenders.cash -
+        refundsTotal +
+        movements.payIn -
+        movements.payOut,
     );
     return {
       cash: tenders.cash,
@@ -155,6 +207,8 @@ export class ShiftsService {
       salesCount: sales.salesCount,
       salesTotal: sales.salesTotal,
       refundsTotal,
+      payIn: movements.payIn,
+      payOut: movements.payOut,
       expectedCash,
     };
   }

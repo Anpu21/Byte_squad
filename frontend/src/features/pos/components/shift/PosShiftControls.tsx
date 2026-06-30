@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { LuClock3 as Clock3, LuLock as Lock } from 'react-icons/lu';
+import {
+    LuClock3 as Clock3,
+    LuCoins as Coins,
+    LuLock as Lock,
+} from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrentShift } from '../../hooks/useCurrentShift';
 import { useShiftMutations } from '../../hooks/useShiftMutations';
 import { PosShiftCloseModal } from './PosShiftCloseModal';
+import { PosCashMovementModal } from './PosCashMovementModal';
 
 const INPUT_CLASS =
     'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
@@ -22,6 +27,7 @@ export function PosShiftControls() {
     const { open } = useShiftMutations();
     const [showOpen, setShowOpen] = useState(false);
     const [showClose, setShowClose] = useState(false);
+    const [showMovement, setShowMovement] = useState(false);
     const [float, setFloat] = useState('');
 
     const shift = currentQuery.data?.shift ?? null;
@@ -56,15 +62,25 @@ export function PosShiftControls() {
     return (
         <>
             {shift ? (
-                <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => setShowClose(true)}
-                    title={`Opened ${new Date(shift.openedAt).toLocaleTimeString()} · float ${formatCurrency(Number(shift.openingFloat))}`}
-                >
-                    <Lock size={14} aria-hidden />
-                    Close shift
-                </Button>
+                <>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowMovement(true)}
+                    >
+                        <Coins size={14} aria-hidden />
+                        Cash in/out
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setShowClose(true)}
+                        title={`Opened ${new Date(shift.openedAt).toLocaleTimeString()} · float ${formatCurrency(Number(shift.openingFloat))}`}
+                    >
+                        <Lock size={14} aria-hidden />
+                        Close shift
+                    </Button>
+                </>
             ) : (
                 <Button
                     size="sm"
@@ -124,6 +140,14 @@ export function PosShiftControls() {
                     isOpen={showClose}
                     onClose={() => setShowClose(false)}
                     shift={shift}
+                    live={live}
+                />
+            )}
+
+            {shift && (
+                <PosCashMovementModal
+                    isOpen={showMovement}
+                    onClose={() => setShowMovement(false)}
                     live={live}
                 />
             )}

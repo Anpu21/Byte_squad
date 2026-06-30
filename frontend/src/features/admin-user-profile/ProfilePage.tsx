@@ -24,7 +24,7 @@ export function ProfilePage() {
     }
 
     return (
-        <div className="max-w-5xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-text-1 tracking-tight">
                     {t('title')}

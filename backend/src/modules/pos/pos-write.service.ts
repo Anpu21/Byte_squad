@@ -27,6 +27,7 @@ import { AccountingService } from '@accounting/accounting.service';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import type { LoyaltyOwner } from '@/modules/loyalty/types';
+import { CreditAccountsService } from '@/modules/credit-accounts/credit-accounts.service';
 
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { assertWithinCreditLimit } from '@pos/lib/credit-limit';
@@ -146,6 +147,7 @@ export class PosWriteService {
     private readonly accounting: AccountingService,
     private readonly loyalty: LoyaltyService,
     private readonly loyaltyWallet: LoyaltyWalletService,
+    private readonly creditAccounts: CreditAccountsService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -193,6 +195,13 @@ export class PosWriteService {
     if (dto.customerUserId && dto.loyaltyCustomerId) {
       throw new BadRequestException(
         'Provide either customerUserId or loyaltyCustomerId, not both',
+      );
+    }
+    // A credit-account ("khata") sale and a User-credit sale are different
+    // ledgers; the customer who owes must be unambiguous.
+    if (dto.creditAccountId && dto.customerUserId) {
+      throw new BadRequestException(
+        'Provide either customerUserId or creditAccountId, not both',
       );
     }
 
@@ -323,6 +332,19 @@ export class PosWriteService {
           manager,
         );
 
+        // 6b-credit. Validate + lock the khata account BEFORE the sale row so
+        // its repayment due date can be stamped on the sale. Enforces ACTIVE +
+        // branch + credit limit (or a valid manager override token).
+        const creditCtx =
+          dto.creditAccountId && tender.creditTaken > 0
+            ? await this.creditAccounts.prepareCharge(manager, {
+                creditAccountId: dto.creditAccountId,
+                actor,
+                amount: tender.creditTaken,
+                overrideToken: dto.creditOverrideToken,
+              })
+            : null;
+
         // 6c. Sale row
         const sale = await this.sales.create(
           {
@@ -330,6 +352,9 @@ export class PosWriteService {
             cashierId: actor.id,
             customerUserId: dto.customerUserId ?? null,
             loyaltyCustomerId: dto.loyaltyCustomerId ?? null,
+            creditAccountId: creditCtx?.account.id ?? null,
+            dueDate: creditCtx?.dueDate ?? null,
+            creditOverrideByUserId: creditCtx?.overrideByUserId ?? null,
             invoiceNumber,
             transactionNumber: `TXN-${Date.now()}-${randomSuffix()}`,
             type: TransactionType.SALE,
@@ -402,6 +427,17 @@ export class PosWriteService {
             dto.customerUserId,
             tender,
           );
+        }
+
+        // 6f-credit. Khata account charge (parallel to the User-credit path):
+        // append the Credit_Taken row + advance the account balance.
+        if (creditCtx) {
+          await this.creditAccounts.commitChargeWithManager(manager, {
+            context: creditCtx,
+            saleId: sale.id,
+            invoiceNumber: sale.invoiceNumber,
+            amount: tender.creditTaken,
+          });
         }
 
         // 6g. Stock movements (one row per item) — reads balanceAfter from

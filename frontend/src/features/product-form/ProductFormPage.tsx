@@ -43,6 +43,7 @@ export function ProductFormPage() {
                     <BasicsCard
                         form={form}
                         categories={p.categories}
+                        brands={p.brands}
                         isEditMode={p.isEditMode}
                         onLookupBarcode={p.lookupBarcode}
                         onOpenCamera={() => p.setShowCameraScanner(true)}

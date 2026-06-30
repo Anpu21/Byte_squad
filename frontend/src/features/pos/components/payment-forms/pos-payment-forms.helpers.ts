@@ -11,12 +11,13 @@ import type {
 /**
  * Local state slot for the cashier's in-progress multi-tender bag.
  * Lives only inside `PosPaymentForms` — the values are flattened into
- * `ICreateSalePaymentPayload` at submit time. The Credit tender and the
- * keep-balance toggle were removed with the customer-picker, so neither
- * field appears here.
+ * `ICreateSalePaymentPayload` at submit time. `creditAmount` is the
+ * buy-on-credit (khata) portion; it's only non-zero when a credit account
+ * is attached and the cashier picks the Credit method.
  */
 export interface ITenderBag {
     cashTendered: number;
+    creditAmount: number;
     chequeAmount: number;
     chequeNo: string;
     chequeDate: string;
@@ -58,7 +59,12 @@ export function resolveTenderInputs(
             cashTendered: bag.cashTendered,
         };
     }
-    if (method === 'Card' || method === 'Mobile' || method === 'Credit') {
+    if (method === 'Credit') {
+        // Buy-on-credit: the whole invoice rides the customer's khata. The
+        // backend posts a Credit_Taken row and advances the account balance.
+        return { ...baseline, creditAmount: bag.creditAmount };
+    }
+    if (method === 'Card' || method === 'Mobile') {
         return {
             ...baseline,
             cashAmount: invoiceTotal,
@@ -79,6 +85,7 @@ export function resolveTenderInputs(
 export function createInitialTenderBag(invoiceTotal: number): ITenderBag {
     return {
         cashTendered: invoiceTotal,
+        creditAmount: 0,
         chequeAmount: 0,
         chequeNo: '',
         chequeDate: '',
@@ -103,6 +110,10 @@ interface IBuildPayloadArgs {
     loyaltyOwner?: IPosLoyaltyOwner | null;
     /** Whole-point redeem amount; ignored when 0 or no owner is attached. */
     loyaltyRedeemPoints?: number;
+    /** Khata account funding a buy-on-credit sale (paymentMethod === 'Credit'). */
+    creditAccountId?: string | null;
+    /** Short-lived manager override token for an over-limit credit charge. */
+    creditOverrideToken?: string | null;
 }
 
 /**
@@ -127,6 +138,8 @@ export function buildSalePayload({
     cashAmount,
     loyaltyOwner,
     loyaltyRedeemPoints,
+    creditAccountId,
+    creditOverrideToken,
 }: IBuildPayloadArgs): ICreateSalePayload {
     const items: ICreateSaleItemPayload[] = cart.map((row) => ({
         productId: row.productId,
@@ -143,6 +156,19 @@ export function buildSalePayload({
         paymentAmount,
         ...buildPaymentTender(paymentMethod, bag, cashAmount),
     };
+
+    // Buy-on-credit owns the customer identity for the sale: the khata account
+    // is the payer, so we send `creditAccountId` (+ optional override token) and
+    // omit the loyalty owner — the BE rejects creditAccountId + customerUserId.
+    if (paymentMethod === 'Credit' && creditAccountId) {
+        return {
+            cartDiscountPercentage,
+            items,
+            payment,
+            creditAccountId,
+            ...(creditOverrideToken ? { creditOverrideToken } : {}),
+        };
+    }
 
     return {
         cartDiscountPercentage,
@@ -180,7 +206,12 @@ function buildPaymentTender(
     bag: ITenderBag,
     cashAmount: number,
 ): Partial<ICreateSalePaymentPayload> {
-    if (method === 'Card' || method === 'Mobile' || method === 'Credit') {
+    if (method === 'Credit') {
+        // Buy-on-credit: send the credit amount so the backend records the
+        // Credit_Taken ledger row and advances the khata balance.
+        return bag.creditAmount > 0 ? { creditAmount: bag.creditAmount } : {};
+    }
+    if (method === 'Card' || method === 'Mobile') {
         // External tender: send no cash/cheque/bank fields. The backend
         // stores the method label and treats `paymentAmount` as the
         // settled total. The cashier verifies receipt externally.

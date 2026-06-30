@@ -123,6 +123,18 @@ export class ProductsRepository {
     return rows.map((r) => r.category);
   }
 
+  async listDistinctActiveBrands(): Promise<string[]> {
+    const rows = await this.repo
+      .createQueryBuilder('product')
+      .select('product.brand', 'brand')
+      .where('product.is_active = :isActive', { isActive: true })
+      .andWhere('product.brand IS NOT NULL')
+      .distinct(true)
+      .orderBy('product.brand', 'ASC')
+      .getRawMany<{ brand: string }>();
+    return rows.map((r) => r.brand);
+  }
+
   async setActive(id: string, isActive: boolean): Promise<void> {
     await this.repo.update(id, { isActive });
   }
@@ -138,9 +150,10 @@ export class ProductsRepository {
     return this.repo
       .createQueryBuilder('p')
       .where('p.is_active = true')
-      .andWhere('(p.name ILIKE :pattern OR p.barcode ILIKE :pattern)', {
-        pattern: `${term}%`,
-      })
+      .andWhere(
+        '(p.name ILIKE :pattern OR p.barcode ILIKE :pattern OR p.plu_code = :term)',
+        { pattern: `${term}%`, term },
+      )
       .orderBy('p.name', 'ASC')
       .limit(limit)
       .getMany();

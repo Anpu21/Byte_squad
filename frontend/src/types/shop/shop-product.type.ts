@@ -13,4 +13,6 @@ export interface IShopProduct {
   sellableUnits: IShopSellableUnit[]
   stockStatus: ShopStockStatus
   availableBranches: IShopProductBranchRef[]
+  aggregateRating: number
+  reviewCount: number
 }

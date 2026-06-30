@@ -18,6 +18,7 @@ import { dashboardRoutes } from './config/dashboard.routes';
 import { inventoryRoutes } from './config/inventory.routes';
 import { salesRoutes } from './config/sales.routes';
 import { accountingRoutes } from './config/accounting.routes';
+import { creditAccountsRoutes } from './config/credit-accounts.routes';
 import { peopleRoutes } from './config/people.routes';
 import { transfersRoutes } from './config/transfers.routes';
 import {
@@ -88,6 +89,7 @@ export const routes = createRoutesFromElements(
                 {inventoryRoutes}
                 {salesRoutes}
                 {accountingRoutes}
+                {creditAccountsRoutes}
                 {peopleRoutes}
                 {transfersRoutes}
             </Route>

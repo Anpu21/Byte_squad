@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test } from '@nestjs/testing';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
@@ -49,6 +50,9 @@ describe('ShiftsService', () => {
             tenderTotalsForWindow: jest.fn(),
             salesTotalsForWindow: jest.fn(),
             refundsForWindow: jest.fn(),
+            insertMovement: jest.fn(),
+            listMovementsForShift: jest.fn(),
+            movementTotalsForShift: jest.fn(),
           },
         },
       ],
@@ -70,6 +74,7 @@ describe('ShiftsService', () => {
       salesTotal: 60000,
     });
     repo.refundsForWindow.mockResolvedValue(1500);
+    repo.movementTotalsForShift.mockResolvedValue({ payIn: 0, payOut: 0 });
   }
 
   describe('open', () => {
@@ -145,6 +150,8 @@ describe('ShiftsService', () => {
           salesCount: 37,
           salesTotal: 60000,
           refundsTotal: 1500,
+          totalPayIn: 0,
+          totalPayOut: 0,
         }),
       );
     });
@@ -153,6 +160,46 @@ describe('ShiftsService', () => {
       repo.findOpenForCashier.mockResolvedValue(null);
       await expect(
         service.close({ countedCash: 100 }, CASHIER),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('recordMovement', () => {
+    it('records a rounded pay-in and returns the refreshed drawer', async () => {
+      repo.findOpenForCashier.mockResolvedValue(makeShift());
+      primeWindow();
+      repo.movementTotalsForShift.mockResolvedValue({ payIn: 1000, payOut: 0 });
+      const result = await service.recordMovement(
+        { type: 'PayIn', amount: 1000.005, reason: 'Float top-up' },
+        CASHIER,
+      );
+      expect(repo.insertMovement).toHaveBeenCalledWith(
+        expect.objectContaining({
+          shiftId: SHIFT_ID,
+          branchId: BRANCH_A,
+          cashierId: CASHIER.id,
+          type: 'PayIn',
+          amount: 1000.01,
+          reason: 'Float top-up',
+        }),
+      );
+      // 5000 float + 42000 cash − 1500 refunds + 1000 pay-in
+      expect(result.live?.expectedCash).toBe(46500);
+    });
+
+    it('rejects a pay-out larger than the cash in the drawer', async () => {
+      repo.findOpenForCashier.mockResolvedValue(makeShift());
+      primeWindow(); // drawer holds 45500
+      await expect(
+        service.recordMovement({ type: 'PayOut', amount: 99999 }, CASHIER),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repo.insertMovement).not.toHaveBeenCalled();
+    });
+
+    it('404s when no shift is open', async () => {
+      repo.findOpenForCashier.mockResolvedValue(null);
+      await expect(
+        service.recordMovement({ type: 'PayIn', amount: 100 }, CASHIER),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
   });

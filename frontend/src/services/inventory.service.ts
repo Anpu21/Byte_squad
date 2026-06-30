@@ -95,6 +95,11 @@ export const inventoryService = {
     return response.data.data
   },
 
+  getBrands: async (): Promise<string[]> => {
+    const response = await api.get<IApiResponse<string[]>>('/products/brands')
+    return response.data.data
+  },
+
   // ── Phase C1 — batch/expiry tracking ──
 
   // Receive a goods batch with an expiry date (bumps inventory + appends a

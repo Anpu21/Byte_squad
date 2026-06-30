@@ -10,6 +10,8 @@ import { BranchesModule } from '@branches/branches.module';
 import { ProductsModule } from '@products/products.module';
 import { InventoryModule } from '@inventory/inventory.module';
 import { CategoriesModule } from '@/modules/categories/categories.module';
+import { BrandsModule } from '@/modules/brands/brands.module';
+import { CreditAccountsModule } from '@/modules/credit-accounts/credit-accounts.module';
 import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { AccountsRepository } from '@accounting/accounts.repository';
@@ -18,7 +20,9 @@ import { AdminPortalModule } from '@admin-portal/admin-portal.module';
 import { BranchAnalyticsModule } from '@/modules/branch-analytics/branch-analytics.module';
 import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
 import { CustomerOrdersModule } from '@/modules/customer-orders/customer-orders.module';
+import { CustomerGroupsModule } from '@/modules/customer-groups/customer-groups.module';
 import { ShopModule } from '@/modules/shop/shop.module';
+import { ReviewsModule } from '@/modules/reviews/reviews.module';
 import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
 import { HrModule } from '@/modules/hr/hr.module';
 import { SuppliersModule } from '@/modules/suppliers/suppliers.module';
@@ -35,6 +39,9 @@ import { User } from '@users/entities/user.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Product } from '@products/entities/product.entity';
 import { Category } from '@/modules/categories/entities/category.entity';
+import { Brand } from '@/modules/brands/entities/brand.entity';
+import { CreditAccount } from '@/modules/credit-accounts/entities/credit-account.entity';
+import { CreditAccountTransaction } from '@/modules/credit-accounts/entities/credit-account-transaction.entity';
 import { ProductSellableUnit } from '@products/entities/product-sellable-unit.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { ProductBatch } from '@inventory/entities/product-batch.entity';
@@ -55,6 +62,9 @@ import { ShipmentEvent } from '@stock-transfers/entities/shipment-event.entity';
 import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
 import { CustomerOrderItem } from '@/modules/customer-orders/entities/customer-order-item.entity';
 import { PayherePaymentAttempt } from '@/modules/customer-orders/entities/payhere-payment-attempt.entity';
+import { CustomerGroup } from '@/modules/customer-groups/entities/customer-group.entity';
+import { CustomerGroupMember } from '@/modules/customer-groups/entities/customer-group-member.entity';
+import { GroupCartItem } from '@/modules/customer-groups/entities/group-cart-item.entity';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
 import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
@@ -89,6 +99,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
       Branch,
       Product,
       Category,
+      Brand,
+      CreditAccount,
+      CreditAccountTransaction,
       ProductSellableUnit,
       Inventory,
       ProductBatch,
@@ -109,6 +122,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
       CustomerOrder,
       CustomerOrderItem,
       PayherePaymentAttempt,
+      CustomerGroup,
+      CustomerGroupMember,
+      GroupCartItem,
       LoyaltyAccount,
       LoyaltyCustomer,
       LoyaltyLedgerEntry,
@@ -127,6 +143,8 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     BranchesModule,
     ProductsModule,
     CategoriesModule,
+    BrandsModule,
+    CreditAccountsModule,
     InventoryModule,
     PosModule,
     AccountingModule,
@@ -135,7 +153,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     BranchAnalyticsModule,
     StockTransfersModule,
     CustomerOrdersModule,
+    CustomerGroupsModule,
     ShopModule,
+    ReviewsModule,
     LoyaltyModule,
     HrModule,
     SuppliersModule,

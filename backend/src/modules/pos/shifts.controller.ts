@@ -12,8 +12,10 @@ import {
   type ShiftsListResponse,
 } from '@pos/shifts.service';
 import { PosShift } from '@pos/entities/pos-shift.entity';
+import { PosCashMovement } from '@pos/entities/pos-cash-movement.entity';
 import { OpenShiftDto } from '@pos/dto/open-shift.dto';
 import { CloseShiftDto } from '@pos/dto/close-shift.dto';
+import { RecordCashMovementDto } from '@pos/dto/record-cash-movement.dto';
 import { ListShiftsQueryDto } from '@pos/dto/list-shifts-query.dto';
 
 @Controller(APP_ROUTES.POS.BASE)
@@ -44,6 +46,23 @@ export class ShiftsController {
     @CurrentUser() actor: ShiftsActor,
   ): Promise<PosShift> {
     return this.shifts.close(dto, actor);
+  }
+
+  /** Record a mid-shift cash drawer movement; returns the refreshed summary. */
+  @Post(APP_ROUTES.POS.SHIFTS_MOVEMENTS)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  recordMovement(
+    @Body() dto: RecordCashMovementDto,
+    @CurrentUser() actor: ShiftsActor,
+  ): Promise<CurrentShiftResponse> {
+    return this.shifts.recordMovement(dto, actor);
+  }
+
+  /** Cash movements for the acting cashier's open shift. */
+  @Get(APP_ROUTES.POS.SHIFTS_MOVEMENTS)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  listMovements(@CurrentUser() actor: ShiftsActor): Promise<PosCashMovement[]> {
+    return this.shifts.listMovements(actor);
   }
 
   /** Shift register for back-office review (branch-pinned for managers). */

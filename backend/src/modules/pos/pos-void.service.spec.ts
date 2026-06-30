@@ -11,6 +11,7 @@ import { CreditTransactionRepository } from './credit-transaction.repository';
 import { StockMovementRepository } from './stock-movement.repository';
 import { AccountingService } from '@accounting/accounting.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
+import { CreditAccountsService } from '@/modules/credit-accounts/credit-accounts.service';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { Sale } from './entities/sale.entity';
 import type { ActorPayload } from './pos-write.service';
@@ -200,6 +201,9 @@ function buildVoidMocks(opts: {
       .fn()
       .mockResolvedValue({ earnedReversed: 0, redeemedRestored: 0 }),
   };
+  const creditAccountsMock = {
+    reverseChargeForSale: jest.fn().mockResolvedValue(undefined),
+  };
 
   return Test.createTestingModule({
     providers: [
@@ -210,6 +214,7 @@ function buildVoidMocks(opts: {
       { provide: StockMovementRepository, useValue: stockMovementsRepoMock },
       { provide: AccountingService, useValue: accountingMock },
       { provide: LoyaltyWalletService, useValue: loyaltyWalletMock },
+      { provide: CreditAccountsService, useValue: creditAccountsMock },
       { provide: DataSource, useValue: dataSourceMock },
     ],
   })

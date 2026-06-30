@@ -51,6 +51,9 @@ export function PosHeldBillsModal({
                                     {bill.items.length} item
                                     {bill.items.length === 1 ? '' : 's'} ·{' '}
                                     {new Date(bill.heldAt).toLocaleTimeString()}
+                                    {bill.heldByName
+                                        ? ` · ${bill.heldByName}`
+                                        : ''}
                                 </p>
                             </div>
                             <span className="text-[13px] font-semibold tabular-nums text-text-1">

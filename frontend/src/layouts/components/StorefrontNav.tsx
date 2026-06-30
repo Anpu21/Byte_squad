@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
     LuStore as Store,
+    LuUsers as Users,
     LuScrollText as ScrollText,
     LuSparkles as Sparkles,
 } from 'react-icons/lu';
@@ -22,6 +23,7 @@ interface NavTab {
     isActive: (pathname: string) => boolean;
 }
 
+const isGroups = (p: string) => p.startsWith(FRONTEND_ROUTES.SHOP_GROUPS);
 const isOrders = (p: string) => p.startsWith(FRONTEND_ROUTES.SHOP_MY_ORDERS);
 const isRewards = (p: string) => p.startsWith(FRONTEND_ROUTES.SHOP_REWARDS);
 const isProfile = (p: string) => p.startsWith(FRONTEND_ROUTES.SHOP_PROFILE);
@@ -31,13 +33,20 @@ const TABS: NavTab[] = [
         label: 'Shop',
         to: FRONTEND_ROUTES.SHOP,
         Icon: Store,
-        // Active anywhere under /shop that isn't Orders, Rewards or Profile
-        // (covers the catalog, product detail, cart and checkout).
+        // Active anywhere under /shop that isn't Groups, Orders, Rewards or
+        // Profile (covers the catalog, product detail, cart and checkout).
         isActive: (p) =>
             p.startsWith(FRONTEND_ROUTES.SHOP) &&
+            !isGroups(p) &&
             !isOrders(p) &&
             !isRewards(p) &&
             !isProfile(p),
+    },
+    {
+        label: 'Groups',
+        to: FRONTEND_ROUTES.SHOP_GROUPS,
+        Icon: Users,
+        isActive: isGroups,
     },
     {
         label: 'Orders',

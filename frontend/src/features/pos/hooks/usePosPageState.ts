@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
-import type { ISale } from '@/types';
+import type { ISale, ICreditAccountSearchResult } from '@/types';
 import { useLoyaltyAttach, type IPosLoyaltyOwner } from './useLoyaltyAttach';
+import { useCreditAttach, type IPosCreditOverride } from './useCreditAttach';
 
 interface IUsePosPageStateReturn {
     cartDiscountPercentage: number;
@@ -22,6 +23,10 @@ interface IUsePosPageStateReturn {
     setLoyaltyOwner: (owner: IPosLoyaltyOwner | null) => void;
     loyaltyRedeemPoints: number;
     setLoyaltyRedeemPoints: (next: number) => void;
+    creditAccount: ICreditAccountSearchResult | null;
+    setCreditAccount: (account: ICreditAccountSearchResult | null) => void;
+    creditOverride: IPosCreditOverride | null;
+    setCreditOverride: (override: IPosCreditOverride | null) => void;
 }
 
 /**
@@ -39,12 +44,14 @@ export function usePosPageState(): IUsePosPageStateReturn {
     const [lastSale, setLastSale] = useState<ISale | null>(null);
     const searchInputRef = useRef<HTMLInputElement | null>(null);
     const loyalty = useLoyaltyAttach();
+    const credit = useCreditAttach();
 
     const focusSearch = useCallback(() => searchInputRef.current?.focus(), []);
     const resetAfterCheckout = useCallback(() => {
         setCartDiscountPercentage(0);
         loyalty.resetLoyalty();
-    }, [loyalty]);
+        credit.resetCredit();
+    }, [loyalty, credit]);
     return {
         cartDiscountPercentage, setCartDiscountPercentage,
         showPayment, showRecent,
@@ -58,5 +65,9 @@ export function usePosPageState(): IUsePosPageStateReturn {
         setLoyaltyOwner: loyalty.setLoyaltyOwner,
         loyaltyRedeemPoints: loyalty.loyaltyRedeemPoints,
         setLoyaltyRedeemPoints: loyalty.setLoyaltyRedeemPoints,
+        creditAccount: credit.creditAccount,
+        setCreditAccount: credit.setCreditAccount,
+        creditOverride: credit.creditOverride,
+        setCreditOverride: credit.setCreditOverride,
     };
 }

@@ -16,6 +16,11 @@ import { PayhereGatewayPage } from '@/features/payhere-gateway';
 import { MyOrdersPage } from '@/features/my-orders';
 import { CustomerProfilePage } from '@/features/customer-profile';
 import { RewardsPage } from '@/features/loyalty';
+import {
+    GroupsPage,
+    GroupDetailPage,
+    GroupAnalyticsPage,
+} from '@/features/customer-groups';
 
 /**
  * Storefront — login required, CUSTOMER only. Nested under `ProtectedRoute` in
@@ -63,6 +68,21 @@ export const customerProtectedRoutes = (
             <Route
                 path={FRONTEND_ROUTES.SHOP_REWARDS}
                 element={<RewardsPage />}
+            />
+            <Route
+                path={FRONTEND_ROUTES.SHOP_GROUPS}
+                element={<GroupsPage />}
+                handle={{ crumbs: ['Shop', 'Groups'] }}
+            />
+            <Route
+                path={FRONTEND_ROUTES.SHOP_GROUP_DETAIL}
+                element={<GroupDetailPage />}
+                handle={{ crumbs: ['Shop', 'Group'] }}
+            />
+            <Route
+                path={FRONTEND_ROUTES.SHOP_GROUP_ANALYTICS}
+                element={<GroupAnalyticsPage />}
+                handle={{ crumbs: ['Shop', 'Group', 'Analytics'] }}
             />
         </Route>
         <Route element={<CustomerLayout publicMode />}>

@@ -1,12 +1,17 @@
 import { useCallback, useState } from 'react';
 import { useScanDetection } from '@/hooks/useScanDetection';
 import { posService } from '@/services/pos.service';
+import { parseWeightBarcode } from '@/features/pos/lib/parse-weight-barcode';
 import type { ISearchProductRow } from '@/types';
 
 const STATUS_CLEAR_MS = 2000;
 
 interface IUsePosBarcodeScanOptions {
-    onProductFound: (row: ISearchProductRow) => void;
+    /**
+     * Called with the resolved product row. `quantityOverride` carries a weight
+     * (kg) decoded from a scale's weight-embedded barcode, if any.
+     */
+    onProductFound: (row: ISearchProductRow, quantityOverride?: number) => void;
     enabled: boolean;
 }
 
@@ -42,11 +47,19 @@ export function usePosBarcodeScan({
         async (barcode: string): Promise<void> => {
             setScanStatus('Scanning…');
             try {
-                const rows = await posService.searchProducts(barcode, 1);
+                // A weight-embedded scale barcode resolves the product by its
+                // PLU and seeds the line with the decoded weight.
+                const weighed = parseWeightBarcode(barcode);
+                const term = weighed ? weighed.pluCode : barcode;
+                const rows = await posService.searchProducts(term, 1);
                 const match = rows[0] ?? null;
                 if (match) {
-                    onProductFound(match);
-                    setScanStatus(`Added: ${match.productName}`);
+                    onProductFound(match, weighed?.weightKg);
+                    setScanStatus(
+                        weighed
+                            ? `Added: ${match.productName} (${weighed.weightKg} kg)`
+                            : `Added: ${match.productName}`,
+                    );
                 } else {
                     setScanStatus(`Not found: ${barcode}`);
                 }
