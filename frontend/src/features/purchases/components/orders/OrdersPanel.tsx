@@ -7,26 +7,16 @@ import {
     Card,
     DataTable,
     EmptyState,
-    Pill,
     FIELD_SHELL,
     FIELD_BORDER,
-    type DataTableColumn,
-    type PillTone,
 } from '@/components/ui';
-import { formatCurrency } from '@/lib/utils';
 import type { IPurchaseOrder, PurchaseOrderStatus } from '@/types';
 import { usePurchaseOrders } from '../../hooks/usePurchaseOrders';
 import { usePurchaseOrderMutations } from '../../hooks/usePurchaseOrderMutations';
 import { OrderFormModal } from './OrderFormModal';
+import { buildOrdersPanelColumns } from './orders-panel-columns';
 
 const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
-
-const STATUS_TONE: Record<PurchaseOrderStatus, PillTone> = {
-    Draft: 'neutral',
-    Sent: 'info',
-    Received: 'success',
-    Cancelled: 'danger',
-};
 
 interface IOrdersPanelProps {
     /** Hands the order to the New GRN tab pre-filled for receiving. */
@@ -65,103 +55,19 @@ export function OrdersPanel({ onReceive }: IOrdersPanelProps) {
         }
     }
 
-    const columns: DataTableColumn<IPurchaseOrder>[] = [
-        {
-            key: 'poNumber',
-            header: 'PO #',
-            className: 'font-medium mono',
-            render: (order) => order.poNumber,
-        },
-        {
-            key: 'supplier',
-            header: 'Supplier',
-            render: (order) => order.supplier?.name ?? '—',
-        },
-        {
-            key: 'branch',
-            header: 'Branch',
-            className: 'text-text-2',
-            render: (order) => order.branch?.name ?? '—',
-        },
-        {
-            key: 'expected',
-            header: 'Expected',
-            className: 'text-text-2 whitespace-nowrap',
-            render: (order) => order.expectedDate ?? '—',
-        },
-        {
-            key: 'items',
-            header: 'Items',
-            align: 'right',
-            numeric: true,
-            className: 'text-text-2',
-            render: (order) => order.items?.length ?? 0,
-        },
-        {
-            key: 'value',
-            header: 'Value',
-            align: 'right',
-            numeric: true,
-            render: (order) => formatCurrency(Number(order.totalValue)),
-        },
-        {
-            key: 'status',
-            header: 'Status',
-            render: (order) => (
-                <Pill tone={STATUS_TONE[order.status]}>{order.status}</Pill>
+    const columns = buildOrdersPanelColumns({
+        onReceive,
+        onSend: (order) =>
+            void run(
+                send.mutateAsync(order.id),
+                `${order.poNumber} marked Sent`,
             ),
-        },
-        {
-            key: 'actions',
-            header: 'Actions',
-            align: 'right',
-            render: (order) => {
-                const isOpen =
-                    order.status === 'Draft' || order.status === 'Sent';
-                return (
-                    <div className="inline-flex gap-1.5">
-                        {order.status === 'Draft' && (
-                            <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() =>
-                                    void run(
-                                        send.mutateAsync(order.id),
-                                        `${order.poNumber} marked Sent`,
-                                    )
-                                }
-                            >
-                                Send
-                            </Button>
-                        )}
-                        {isOpen && (
-                            <Button
-                                size="sm"
-                                variant="primary"
-                                onClick={() => onReceive(order)}
-                            >
-                                Receive
-                            </Button>
-                        )}
-                        {isOpen && (
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() =>
-                                    void run(
-                                        cancel.mutateAsync(order.id),
-                                        `${order.poNumber} cancelled`,
-                                    )
-                                }
-                            >
-                                Cancel
-                            </Button>
-                        )}
-                    </div>
-                );
-            },
-        },
-    ];
+        onCancel: (order) =>
+            void run(
+                cancel.mutateAsync(order.id),
+                `${order.poNumber} cancelled`,
+            ),
+    });
 
     return (
         <>

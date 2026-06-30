@@ -1,11 +1,5 @@
+import { LuInbox as Inbox } from 'react-icons/lu';
 import {
-    LuBan as Ban,
-    LuCheck as Check,
-    LuEye as Eye,
-    LuInbox as Inbox,
-} from 'react-icons/lu';
-import {
-    Button,
     DataTable,
     EmptyState,
     StatusPill,
@@ -16,11 +10,9 @@ import { formatCurrency } from '@/lib/utils';
 import type { CustomerOrderStatus, ICustomerOrder } from '@/types';
 import { PaymentStatusBadge } from '@/features/my-orders/components/PaymentStatusBadge';
 import { formatOrderDateTime } from '../lib/date-helpers';
-import {
-    STAFF_ORDER_STATUS_LABEL,
-    isAwaitingCollection,
-} from '../lib/order-status';
+import { STAFF_ORDER_STATUS_LABEL } from '../lib/order-status';
 import { CustomerOrdersFilter } from './CustomerOrdersFilter';
+import { CustomerOrdersTableActions } from './customer-orders-table-actions';
 
 interface CustomerOrdersTableProps {
     requests: ICustomerOrder[];
@@ -123,55 +115,16 @@ export function CustomerOrdersTable({
             header: '',
             align: 'right',
             headerClassName: 'w-44',
-            render: (req) => {
-                const awaiting = isAwaitingCollection(req.status);
-                // Online pre-paid orders collect in one click; pay-at-pickup
-                // orders take payment at the POS (onCollect routes there).
-                // Online-but-unpaid orders aren't collectable yet, so no Collect
-                // action is offered.
-                const onlinePaid =
-                    req.paymentMode === 'online' &&
-                    req.paymentStatus === 'paid';
-                const canCollect = onlinePaid || req.paymentMode === 'manual';
-
-                return (
-                    <div className="flex justify-end items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => onView(req.id)}
-                            aria-label={`View pickup order ${req.orderCode}`}
-                            className="inline-flex items-center gap-1 text-[12px] font-medium text-text-2 hover:text-text-1 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25 rounded px-2 py-1"
-                        >
-                            <Eye size={12} />
-                            View
-                        </button>
-                        {awaiting && canManage(req.branchId) && (
-                            <>
-                                {canCollect && (
-                                    <Button
-                                        variant="primary"
-                                        size="sm"
-                                        onClick={() => onCollect(req)}
-                                        disabled={actionPending}
-                                    >
-                                        <Check size={12} />
-                                        Collect
-                                    </Button>
-                                )}
-                                <Button
-                                    variant="danger"
-                                    size="sm"
-                                    onClick={() => onMarkNotCollected(req.id)}
-                                    disabled={actionPending}
-                                >
-                                    <Ban size={12} />
-                                    Not collected
-                                </Button>
-                            </>
-                        )}
-                    </div>
-                );
-            },
+            render: (req) => (
+                <CustomerOrdersTableActions
+                    order={req}
+                    actionPending={actionPending}
+                    canManage={canManage}
+                    onView={onView}
+                    onCollect={onCollect}
+                    onMarkNotCollected={onMarkNotCollected}
+                />
+            ),
         },
     ];
 
