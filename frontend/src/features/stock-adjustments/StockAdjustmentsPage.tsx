@@ -27,7 +27,6 @@ export function StockAdjustmentsPage() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <PageHeader
-        title="Stock adjustments"
         subtitle={`${p.total} adjustment(s)`}
         actions={
           <>

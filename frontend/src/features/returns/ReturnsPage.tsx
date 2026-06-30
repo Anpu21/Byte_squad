@@ -13,7 +13,6 @@ export function ReturnsPage() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <PageHeader
-        title="Returns"
         subtitle={`${p.total} return(s)`}
         actions={
           <Link to={FRONTEND_ROUTES.RETURN_NEW}>

@@ -23,7 +23,6 @@ export function ExpiryReportPage() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <PageHeader
-        title="Expiry tracking"
         subtitle={`${p.total} batch(es) expiring within ${p.withinDays} days`}
         actions={
           <>
