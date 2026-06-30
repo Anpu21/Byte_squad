@@ -341,6 +341,13 @@ textarea:-webkit-autofill:focus {
 @keyframes lp-twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1); } }
 @keyframes lp-cheerpop { 0% { transform: scale(1); } 45% { transform: scale(1.18); } 100% { transform: scale(1); } }
 
+/* Auth brand scene — day (sun) in light theme, night (moon) in dark theme. Both
+   render; the inactive one is hidden (and its CSS animations paused) via the
+   global `data-theme` attribute, since useTheme() isn't shared across components. */
+.auth-scene-night { display: none; }
+[data-theme="dark"] .auth-scene-day { display: none; }
+[data-theme="dark"] .auth-scene-night { display: block; }
+
 /*
  * Honor user's reduced-motion preference globally.
  * Tailwind 4 emits animations through `animate-in`, `slide-in-*`, `fade-in`,
