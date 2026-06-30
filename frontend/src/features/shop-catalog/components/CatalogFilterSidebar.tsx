@@ -7,17 +7,9 @@ import {
 } from 'react-icons/lu';
 import { Select } from '@/components/ui/Select';
 import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import type { IShopBranch, ShopStockStatus } from '@/types';
 import { STOCK_LABEL } from '../lib/stock-style';
-import type { CatalogSort } from '../hooks/useCatalogPage';
-
-const SORT_OPTIONS: { label: string; value: CatalogSort }[] = [
-    { label: 'Name (A–Z)', value: 'name' },
-    { label: 'Price: Low → High', value: 'price_asc' },
-    { label: 'Price: High → Low', value: 'price_desc' },
-];
-
 const STOCK_ORDER: ShopStockStatus[] = ['in', 'low', 'out'];
 
 interface CatalogFilterSidebarProps {
@@ -29,14 +21,9 @@ interface CatalogFilterSidebarProps {
     stock: ShopStockStatus[];
     stockCounts: Record<ShopStockStatus, number>;
     onToggleStock: (value: ShopStockStatus) => void;
-    maxPrice: number | null;
-    priceCeiling: number;
-    onMaxPrice: (value: number | null) => void;
     branches: IShopBranch[];
     activeBranchId: string | null;
     onBranch: (id: string) => void;
-    sort: CatalogSort;
-    onSort: (value: CatalogSort) => void;
     onClear: () => void;
     hasActiveFilters: boolean;
     className?: string;
@@ -62,21 +49,15 @@ export function CatalogFilterSidebar({
     stock,
     stockCounts,
     onToggleStock,
-    maxPrice,
-    priceCeiling,
-    onMaxPrice,
     branches,
     activeBranchId,
     onBranch,
-    sort,
-    onSort,
     onClear,
     hasActiveFilters,
     className,
 }: CatalogFilterSidebarProps) {
     const [open, setOpen] = useState(false);
     const categoryOptions = [{ label: 'All categories', value: '' }, ...categories.map((c) => ({ label: c, value: c }))];
-    const sliderValue = maxPrice ?? priceCeiling;
 
     return (
         <aside
@@ -185,30 +166,6 @@ export function CatalogFilterSidebar({
                     </div>
                 </Section>
 
-                {priceCeiling > 0 && (
-                    <Section label="Max price">
-                        <input
-                            type="range"
-                            min={0}
-                            max={priceCeiling}
-                            step={50}
-                            value={sliderValue}
-                            onChange={(e) => {
-                                const v = Number(e.target.value);
-                                onMaxPrice(v >= priceCeiling ? null : v);
-                            }}
-                            aria-label="Maximum price"
-                            className="w-full cursor-pointer accent-primary"
-                        />
-                        <p className="mt-2 text-[13px] font-medium text-text-2">
-                            Up to{' '}
-                            <span className="font-semibold text-text-1">
-                                {formatCurrency(sliderValue)}
-                            </span>
-                        </p>
-                    </Section>
-                )}
-
                 {branches.length > 0 && (
                     <Section label="Shopping at">
                         <Select
@@ -223,16 +180,6 @@ export function CatalogFilterSidebar({
                         />
                     </Section>
                 )}
-
-                <Section label="Sort by">
-                    <Select
-                        aria-label="Sort products"
-                        value={sort}
-                        onChange={(v) => onSort(v as CatalogSort)}
-                        options={SORT_OPTIONS}
-                        className="w-full"
-                    />
-                </Section>
 
                 <button
                     type="button"
