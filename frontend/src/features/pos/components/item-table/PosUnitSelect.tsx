@@ -46,7 +46,7 @@ export function PosUnitSelect({
             className={cn(
                 FIELD_SHELL,
                 FIELD_BORDER,
-                'h-8 px-2 text-[12px]',
+                'field-select h-8 px-2 text-[12px]',
                 className,
             )}
         >

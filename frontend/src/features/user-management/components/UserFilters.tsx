@@ -50,7 +50,7 @@ export function UserFilters({
                         aria-label="Role filter"
                         value={roleFilter}
                         onChange={(e) => setRoleFilter(e.target.value)}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                     >
                         <option value="all">All roles</option>
                         <option value={UserRole.ADMIN}>Admin</option>
@@ -62,7 +62,7 @@ export function UserFilters({
                         aria-label="Branch filter"
                         value={branchFilter}
                         onChange={(e) => setBranchFilter(e.target.value)}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                     >
                         <option value="all">All branches</option>
                         {branches.map((branch) => (

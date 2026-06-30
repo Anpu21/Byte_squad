@@ -213,7 +213,7 @@ export function CustomerStatementModal({
                             />
                         </label>
                         <select
-                            className={INPUT_CLASS}
+                            className={`${INPUT_CLASS} field-select`}
                             value={method}
                             onChange={(e) =>
                                 setMethod(
@@ -228,7 +228,7 @@ export function CustomerStatementModal({
                         </select>
                         {isAdmin && (
                             <select
-                                className={INPUT_CLASS}
+                                className={`${INPUT_CLASS} field-select`}
                                 value={branchId}
                                 onChange={(e) => setBranchId(e.target.value)}
                                 aria-label="Receiving branch"

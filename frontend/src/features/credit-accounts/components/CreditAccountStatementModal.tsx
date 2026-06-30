@@ -281,7 +281,7 @@ export function CreditAccountStatementModal({
                 />
               </label>
               <select
-                className={INPUT_CLASS}
+                className={`${INPUT_CLASS} field-select`}
                 value={method}
                 onChange={(e) =>
                   setMethod(e.target.value as CreditAccountPaymentMethod)

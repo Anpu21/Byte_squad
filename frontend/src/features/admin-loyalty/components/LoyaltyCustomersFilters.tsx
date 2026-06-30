@@ -86,7 +86,7 @@ export function LoyaltyCustomersFilters({
                     value={branchId}
                     onChange={(e) => onBranchIdChange(e.target.value)}
                     aria-label="Filter by branch"
-                    className={`${INPUT_CLASS} w-40`}
+                    className={`${INPUT_CLASS} field-select w-40`}
                 >
                     <option value="">All branches</option>
                     {branches.map((b) => (
@@ -106,7 +106,7 @@ export function LoyaltyCustomersFilters({
                     value={activeSince}
                     onChange={(e) => onActiveSinceChange(e.target.value)}
                     aria-label="Filter by activity date"
-                    className={`${INPUT_CLASS} w-40`}
+                    className={`${INPUT_CLASS} w-40${(activeSince) ? '' : ' date-empty'}`}
                 />
                 {activeSince && (
                     <button

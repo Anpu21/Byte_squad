@@ -44,7 +44,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                                 e.target.value as LedgerAccountType,
                             )
                         }
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                     >
                         <option value="all">All accounts</option>
                         <option value="assets">Assets</option>
@@ -59,7 +59,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                                 e.target.value as LedgerEntryType,
                             )
                         }
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                     >
                         <option value="all">All types</option>
                         <option value="credit">Credit</option>
@@ -73,7 +73,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                                 e.target.value as LedgerTimePeriod,
                             )
                         }
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                     >
                         <option value="">All time</option>
                         <option value="this_month">This month</option>
@@ -88,7 +88,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                             filters.setStartDate(e.target.value);
                             filters.setTimePeriod('');
                         }}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS}${(filters.startDate) ? '' : ' date-empty'}`}
                     />
                     <span className="text-text-3 text-sm">to</span>
                     <input
@@ -99,7 +99,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                             filters.setEndDate(e.target.value);
                             filters.setTimePeriod('');
                         }}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS}${(filters.endDate) ? '' : ' date-empty'}`}
                     />
                 </div>
             </div>

@@ -92,7 +92,7 @@ function MarkPaidForm({ payroll, onClose }: IFormProps) {
                     Payment date
                 </span>
                 <input
-                    className={`${INPUT_CLASS} w-full`}
+                    className={`${INPUT_CLASS} w-full${(paymentDate) ? '' : ' date-empty'}`}
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
@@ -104,7 +104,7 @@ function MarkPaidForm({ payroll, onClose }: IFormProps) {
                     Method
                 </span>
                 <select
-                    className={`${INPUT_CLASS} w-full`}
+                    className={`${INPUT_CLASS} field-select w-full`}
                     value={paymentMethod}
                     onChange={(e) =>
                         setPaymentMethod(e.target.value as PaymentMethod)

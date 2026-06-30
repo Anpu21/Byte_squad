@@ -48,7 +48,7 @@ export function LeavesFilters({
                     Status
                 </span>
                 <select
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS} field-select`}
                     value={status}
                     onChange={(e) =>
                         onStatusChange(e.target.value as '' | LeaveStatus)
@@ -68,7 +68,7 @@ export function LeavesFilters({
                         Branch
                     </span>
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={branchId}
                         onChange={(e) => onBranchIdChange(e.target.value)}
                     >
@@ -86,7 +86,7 @@ export function LeavesFilters({
                     Employee
                 </span>
                 <select
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS} field-select`}
                     value={employeeId}
                     onChange={(e) => onEmployeeIdChange(e.target.value)}
                 >

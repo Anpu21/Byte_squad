@@ -39,7 +39,7 @@ export function AdminTransferBranchPickers({
                         id="transfer-source"
                         value={sourceBranchId}
                         onChange={(e) => onSourceChange(e.target.value)}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                         disabled={isLoading || branches.length === 0}
                     >
                         <option value="">Pick source branch…</option>
@@ -74,7 +74,7 @@ export function AdminTransferBranchPickers({
                         id="transfer-destination"
                         value={destinationBranchId}
                         onChange={(e) => onDestinationChange(e.target.value)}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                         disabled={isLoading || branches.length === 0}
                     >
                         <option value="">Pick destination branch…</option>

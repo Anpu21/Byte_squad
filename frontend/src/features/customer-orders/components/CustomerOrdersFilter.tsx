@@ -53,7 +53,7 @@ export function CustomerOrdersFilter({
                         e.target.value as CustomerOrderStatus | '',
                     )
                 }
-                className={`${INPUT_CLASS} sm:w-44`}
+                className={`${INPUT_CLASS} field-select sm:w-44`}
             >
                 <option value="">All statuses</option>
                 {STATUSES.map((s) => (

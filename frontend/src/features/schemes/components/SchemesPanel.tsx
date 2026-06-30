@@ -70,7 +70,7 @@ export function SchemesPanel() {
             <Card className="overflow-hidden">
                 <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border">
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={statusFilter}
                         onChange={(e) =>
                             setStatusFilter(

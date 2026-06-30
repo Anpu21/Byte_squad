@@ -155,7 +155,7 @@ export function AuditLogPage() {
             <Card className="overflow-hidden">
                 <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border">
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={method}
                         onChange={(e) => {
                             setMethod(e.target.value);
@@ -180,7 +180,7 @@ export function AuditLogPage() {
                         aria-label="Search path"
                     />
                     <input
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(startDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={startDate}
                         onChange={(e) => {
@@ -191,7 +191,7 @@ export function AuditLogPage() {
                     />
                     <span className="text-text-3 text-sm">→</span>
                     <input
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(endDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={endDate}
                         onChange={(e) => {

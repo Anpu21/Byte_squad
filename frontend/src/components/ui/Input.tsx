@@ -53,6 +53,18 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         const inputId = id || uniqueId;
         const floating = !!label;
         const errorId = error ? `${inputId}-error` : undefined;
+        // Native date/time fields can't take a text placeholder — the browser
+        // shows "mm/dd/yyyy" in full text colour, so an empty field reads as
+        // filled. While a *controlled* value is still empty we mute that hint so
+        // it reads like a placeholder (see `.date-empty` in index.css). Skipped
+        // for uncontrolled/RHF inputs (value undefined) where we can't tell.
+        const dateLike =
+            props.type === 'date' ||
+            props.type === 'datetime-local' ||
+            props.type === 'month' ||
+            props.type === 'week' ||
+            props.type === 'time';
+        const isDateEmpty = dateLike && props.value === '';
 
         return (
             <div className="w-full">
@@ -75,6 +87,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                             leftIcon ? 'pl-9' : 'pl-3',
                             rightSlot ? 'pr-10' : 'pr-3',
                             error ? FIELD_ERROR : FIELD_BORDER,
+                            isDateEmpty && 'date-empty',
                             className,
                         )}
                         placeholder={floating ? ' ' : placeholder}

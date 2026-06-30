@@ -146,7 +146,7 @@ export function LabelPrintPanel() {
                         />
                     </div>
                     <select
-                        className={`${INPUT_CLASS} max-w-[12rem]`}
+                        className={`${INPUT_CLASS} field-select max-w-[12rem]`}
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
                         aria-label="Filter by category"

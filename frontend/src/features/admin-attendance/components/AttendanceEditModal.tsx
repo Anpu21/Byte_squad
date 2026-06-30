@@ -158,7 +158,7 @@ export function AttendanceEditModal({
                             setStatus(e.target.value as AttendanceStatus)
                         }
                         aria-label="Attendance status"
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                     >
                         {STATUS_OPTIONS.map((opt) => (
                             <option key={opt.value} value={opt.value}>

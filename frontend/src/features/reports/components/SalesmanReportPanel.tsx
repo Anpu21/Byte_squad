@@ -108,7 +108,7 @@ export function SalesmanReportPanel() {
                 <label className="flex items-center gap-1.5 text-[12px] text-text-3">
                     From
                     <input
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(startDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
@@ -118,7 +118,7 @@ export function SalesmanReportPanel() {
                 <label className="flex items-center gap-1.5 text-[12px] text-text-3">
                     To
                     <input
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(endDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
@@ -127,7 +127,7 @@ export function SalesmanReportPanel() {
                 </label>
                 {isAdmin && (
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={branchId}
                         onChange={(e) => setBranchId(e.target.value)}
                         aria-label="Filter by branch"

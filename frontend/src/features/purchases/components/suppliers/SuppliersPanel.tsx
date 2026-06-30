@@ -58,7 +58,7 @@ export function SuppliersPanel() {
                         />
                     </div>
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={status}
                         onChange={(e) =>
                             setStatus(e.target.value as '' | SupplierStatus)

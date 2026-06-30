@@ -78,7 +78,7 @@ export function TransferHistoryFilters({
                         value={filters.from}
                         max={filters.to || undefined}
                         onChange={(e) => actions.setFrom(e.target.value)}
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(filters.from) ? '' : ' date-empty'}`}
                     />
                 </div>
                 <div>
@@ -94,7 +94,7 @@ export function TransferHistoryFilters({
                         value={filters.to}
                         min={filters.from || undefined}
                         onChange={(e) => actions.setTo(e.target.value)}
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(filters.to) ? '' : ' date-empty'}`}
                     />
                 </div>
                 <div>
@@ -120,7 +120,7 @@ export function TransferHistoryFilters({
                             id="th-branch"
                             value={filters.branchId}
                             onChange={(e) => actions.setBranchId(e.target.value)}
-                            className={INPUT_CLASS}
+                            className={`${INPUT_CLASS} field-select`}
                         >
                             <option value="">All branches</option>
                             {branches.map((b) => (

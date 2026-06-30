@@ -52,3 +52,22 @@ export function fieldClass(opts?: {
         className,
     );
 }
+
+/**
+ * Sharp native-`<select>` field: the shared shell + `field-select` (appearance-
+ * none + a themed chevron, defined in index.css). The caller supplies the label
+ * and a height (h-9/h-11) via `className`. For a richer dropdown use the `Select`
+ * primitive instead.
+ */
+export function selectFieldClass(opts?: {
+    error?: boolean;
+    className?: string;
+}): string {
+    const { error, className } = opts ?? {};
+    return cn(
+        FIELD_SHELL,
+        error ? FIELD_ERROR : FIELD_BORDER,
+        'field-select pl-3',
+        className,
+    );
+}

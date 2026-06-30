@@ -216,7 +216,7 @@ export function NewGrnPanel({
                             Supplier
                         </span>
                         <select
-                            className={`${INPUT_CLASS} w-full`}
+                            className={`${INPUT_CLASS} field-select w-full`}
                             value={supplierId}
                             onChange={(e) => setSupplierId(e.target.value)}
                             disabled={prefillOrder !== null}
@@ -240,7 +240,7 @@ export function NewGrnPanel({
                                 Receiving branch
                             </span>
                             <select
-                                className={`${INPUT_CLASS} w-full`}
+                                className={`${INPUT_CLASS} field-select w-full`}
                                 value={branchId}
                                 onChange={(e) => setBranchId(e.target.value)}
                                 disabled={prefillOrder !== null}
@@ -266,7 +266,7 @@ export function NewGrnPanel({
                             GRN date
                         </span>
                         <input
-                            className={`${INPUT_CLASS} w-full`}
+                            className={`${INPUT_CLASS} w-full${(grnDate) ? '' : ' date-empty'}`}
                             type="date"
                             value={grnDate}
                             onChange={(e) => setGrnDate(e.target.value)}
@@ -321,7 +321,7 @@ export function NewGrnPanel({
                                 >
                                     <td className="px-2 py-1.5">
                                         <select
-                                            className={`${INPUT_CLASS} w-full h-8`}
+                                            className={`${INPUT_CLASS} field-select w-full h-8`}
                                             value={line.productId}
                                             onChange={(e) =>
                                                 pickProduct(
@@ -388,7 +388,7 @@ export function NewGrnPanel({
                                     </td>
                                     <td className="px-2 py-1.5">
                                         <input
-                                            className={`${INPUT_CLASS} w-full h-8`}
+                                            className={`${INPUT_CLASS} w-full h-8${(line.expiryDate) ? '' : ' date-empty'}`}
                                             type="date"
                                             value={line.expiryDate}
                                             onChange={(e) =>

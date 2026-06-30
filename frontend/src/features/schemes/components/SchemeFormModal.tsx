@@ -168,7 +168,7 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
                             Branch
                         </span>
                         <select
-                            className={`${INPUT_CLASS} w-full`}
+                            className={`${INPUT_CLASS} field-select w-full`}
                             value={branchId}
                             onChange={(e) => setBranchId(e.target.value)}
                         >
@@ -186,7 +186,7 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
                         Applies to
                     </span>
                     <select
-                        className={`${INPUT_CLASS} w-full`}
+                        className={`${INPUT_CLASS} field-select w-full`}
                         value={scope}
                         onChange={(e) =>
                             setScope(e.target.value as DiscountSchemeScope)
@@ -202,7 +202,7 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
                             Product
                         </span>
                         <select
-                            className={`${INPUT_CLASS} w-full`}
+                            className={`${INPUT_CLASS} field-select w-full`}
                             value={productId}
                             onChange={(e) => setProductId(e.target.value)}
                             required
@@ -225,7 +225,7 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
                             Category
                         </span>
                         <select
-                            className={`${INPUT_CLASS} w-full`}
+                            className={`${INPUT_CLASS} field-select w-full`}
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
                             required
@@ -279,7 +279,7 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
                         Starts
                     </span>
                     <input
-                        className={`${INPUT_CLASS} w-full`}
+                        className={`${INPUT_CLASS} w-full${(startDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
@@ -291,7 +291,7 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
                         Ends
                     </span>
                     <input
-                        className={`${INPUT_CLASS} w-full`}
+                        className={`${INPUT_CLASS} w-full${(endDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
@@ -304,7 +304,7 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
                             Status
                         </span>
                         <select
-                            className={`${INPUT_CLASS} w-full`}
+                            className={`${INPUT_CLASS} field-select w-full`}
                             value={isActive ? 'active' : 'paused'}
                             onChange={(e) =>
                                 setIsActive(e.target.value === 'active')

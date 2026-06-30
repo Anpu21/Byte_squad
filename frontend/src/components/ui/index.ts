@@ -13,6 +13,7 @@ export {
     FIELD_HEIGHT,
     FIELD_SHAKE,
     fieldClass,
+    selectFieldClass,
     type FieldSize,
 } from './field-styles';
 export { default as Segmented } from './Segmented';

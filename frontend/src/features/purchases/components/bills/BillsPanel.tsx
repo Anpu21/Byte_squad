@@ -188,7 +188,7 @@ export function BillsPanel() {
                                 Supplier
                             </span>
                             <select
-                                className={`${INPUT_CLASS} min-w-[220px]`}
+                                className={`${INPUT_CLASS} field-select min-w-[220px]`}
                                 value={supplierId}
                                 onChange={(e) => setSupplier(e.target.value)}
                             >
@@ -210,7 +210,7 @@ export function BillsPanel() {
                                     Paying branch
                                 </span>
                                 <select
-                                    className={INPUT_CLASS}
+                                    className={`${INPUT_CLASS} field-select`}
                                     value={branchId}
                                     onChange={(e) =>
                                         setBranchId(e.target.value)
@@ -232,7 +232,7 @@ export function BillsPanel() {
                                 Method
                             </span>
                             <select
-                                className={INPUT_CLASS}
+                                className={`${INPUT_CLASS} field-select`}
                                 value={method}
                                 onChange={(e) =>
                                     setMethod(
@@ -249,7 +249,7 @@ export function BillsPanel() {
                                 Paid date
                             </span>
                             <input
-                                className={INPUT_CLASS}
+                                className={`${INPUT_CLASS}${(paidAt) ? '' : ' date-empty'}`}
                                 type="date"
                                 value={paidAt}
                                 onChange={(e) => setPaidAt(e.target.value)}

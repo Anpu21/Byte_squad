@@ -46,7 +46,7 @@ export function ProfitLossHeader({
                     type="date"
                     value={startDate}
                     onChange={(e) => onStartChange(e.target.value)}
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS}${(startDate) ? '' : ' date-empty'}`}
                 />
                 <span className="text-text-3 text-sm">to</span>
                 <label htmlFor="pl-end" className="sr-only">
@@ -57,7 +57,7 @@ export function ProfitLossHeader({
                     type="date"
                     value={endDate}
                     onChange={(e) => onEndChange(e.target.value)}
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS}${(endDate) ? '' : ' date-empty'}`}
                 />
             </div>
         </div>

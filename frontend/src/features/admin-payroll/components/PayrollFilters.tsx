@@ -46,7 +46,7 @@ export function PayrollFilters({
                     Period
                 </span>
                 <input
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS}${(monthValue) ? '' : ' date-empty'}`}
                     type="month"
                     value={monthValue}
                     onChange={(e) => onMonthChange(e.target.value)}
@@ -57,7 +57,7 @@ export function PayrollFilters({
                     Status
                 </span>
                 <select
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS} field-select`}
                     value={status}
                     onChange={(e) =>
                         onStatusChange(e.target.value as '' | PayrollStatus)
@@ -77,7 +77,7 @@ export function PayrollFilters({
                         Branch
                     </span>
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={branchId}
                         onChange={(e) => onBranchIdChange(e.target.value)}
                     >

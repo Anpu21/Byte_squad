@@ -113,7 +113,7 @@ export function UserFormFields({
                         onChange={(e) =>
                             onChange('role', e.target.value as UserRole)
                         }
-                        className={`${INPUT_CLASS} cursor-pointer`}
+                        className={`${INPUT_CLASS} field-select cursor-pointer`}
                     >
                         {roleOptions.map((role) => (
                             <option key={role} value={role}>
@@ -131,7 +131,7 @@ export function UserFormFields({
                         value={form.branchId}
                         onChange={(e) => onChange('branchId', e.target.value)}
                         required={!isCustomer}
-                        className={`${INPUT_CLASS} cursor-pointer`}
+                        className={`${INPUT_CLASS} field-select cursor-pointer`}
                     >
                         {isCustomer && (
                             <option value="">(No branch)</option>

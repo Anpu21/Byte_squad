@@ -207,7 +207,7 @@ export function BranchComparisonFilters({
                 type="date"
                 value={filters.startDate}
                 onChange={(e) => actions.setStartDate(e.target.value)}
-                className={INPUT_CLASS}
+                className={`${INPUT_CLASS}${(filters.startDate) ? '' : ' date-empty'}`}
               />
             </div>
             <div>
@@ -222,7 +222,7 @@ export function BranchComparisonFilters({
                 type="date"
                 value={filters.endDate}
                 onChange={(e) => actions.setEndDate(e.target.value)}
-                className={INPUT_CLASS}
+                className={`${INPUT_CLASS}${(filters.endDate) ? '' : ' date-empty'}`}
               />
             </div>
           </div>

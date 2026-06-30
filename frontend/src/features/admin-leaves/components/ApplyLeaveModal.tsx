@@ -123,7 +123,7 @@ function ApplyLeaveForm({
                             Employee
                         </span>
                         <select
-                            className={`${INPUT_CLASS} w-full`}
+                            className={`${INPUT_CLASS} field-select w-full`}
                             value={employeeId}
                             onChange={(e) => setEmployeeId(e.target.value)}
                             required
@@ -142,7 +142,7 @@ function ApplyLeaveForm({
                         Leave type
                     </span>
                     <select
-                        className={`${INPUT_CLASS} w-full`}
+                        className={`${INPUT_CLASS} field-select w-full`}
                         value={leaveType}
                         onChange={(e) =>
                             setLeaveType(e.target.value as LeaveType)
@@ -160,7 +160,7 @@ function ApplyLeaveForm({
                         Start date
                     </span>
                     <input
-                        className={`${INPUT_CLASS} w-full`}
+                        className={`${INPUT_CLASS} w-full${(startDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
@@ -172,7 +172,7 @@ function ApplyLeaveForm({
                         End date
                     </span>
                     <input
-                        className={`${INPUT_CLASS} w-full`}
+                        className={`${INPUT_CLASS} w-full${(endDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}

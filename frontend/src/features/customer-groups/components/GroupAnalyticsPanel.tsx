@@ -54,7 +54,7 @@ export function GroupAnalyticsPanel() {
               value={p.startDate}
               max={p.endDate}
               onChange={(e) => p.setStartDate(e.target.value)}
-              className={dateInputClass}
+              className={`${dateInputClass}${(p.startDate) ? '' : ' date-empty'}`}
             />
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium text-text-2">
@@ -65,7 +65,7 @@ export function GroupAnalyticsPanel() {
               min={p.startDate}
               max={p.maxDate}
               onChange={(e) => p.setEndDate(e.target.value)}
-              className={dateInputClass}
+              className={`${dateInputClass}${(p.endDate) ? '' : ' date-empty'}`}
             />
           </label>
         </div>

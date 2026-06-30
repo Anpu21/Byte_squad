@@ -148,7 +148,7 @@ function OrderForm({ onClose }: { onClose: () => void }) {
                         Supplier
                     </span>
                     <select
-                        className={`${INPUT_CLASS} w-full`}
+                        className={`${INPUT_CLASS} field-select w-full`}
                         value={supplierId}
                         onChange={(e) => setSupplierId(e.target.value)}
                         required
@@ -171,7 +171,7 @@ function OrderForm({ onClose }: { onClose: () => void }) {
                             Branch
                         </span>
                         <select
-                            className={`${INPUT_CLASS} w-full`}
+                            className={`${INPUT_CLASS} field-select w-full`}
                             value={branchId}
                             onChange={(e) => setBranchId(e.target.value)}
                             required
@@ -194,7 +194,7 @@ function OrderForm({ onClose }: { onClose: () => void }) {
                         Expected delivery
                     </span>
                     <input
-                        className={`${INPUT_CLASS} w-full`}
+                        className={`${INPUT_CLASS} w-full${(expectedDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={expectedDate}
                         onChange={(e) => setExpectedDate(e.target.value)}
@@ -227,7 +227,7 @@ function OrderForm({ onClose }: { onClose: () => void }) {
                             >
                                 <td className="px-2 py-1.5">
                                     <select
-                                        className={`${INPUT_CLASS} w-full h-8`}
+                                        className={`${INPUT_CLASS} field-select w-full h-8`}
                                         value={line.productId}
                                         onChange={(e) => {
                                             const product = productById.get(

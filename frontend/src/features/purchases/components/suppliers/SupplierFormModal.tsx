@@ -213,7 +213,7 @@ function SupplierForm({ onClose, supplier }: ISupplierFormProps) {
                             Status
                         </span>
                         <select
-                            className={`${INPUT_CLASS} w-full`}
+                            className={`${INPUT_CLASS} field-select w-full`}
                             value={status}
                             onChange={(e) =>
                                 setStatus(e.target.value as SupplierStatus)

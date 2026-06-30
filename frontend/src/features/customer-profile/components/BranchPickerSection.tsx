@@ -73,7 +73,7 @@ export function BranchPickerSection({
                             value={selectedBranchId}
                             onChange={(e) => setSelectedBranchId(e.target.value)}
                             disabled={branchesLoading || isSaving}
-                            className={cn(FIELD_SHELL, FIELD_BORDER, 'w-full h-[38px] px-3')}
+                            className={cn(FIELD_SHELL, FIELD_BORDER, 'field-select w-full h-[38px] px-3')}
                         >
                             {branchesLoading ? (
                                 <option value="">Loading branches…</option>

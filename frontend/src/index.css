@@ -81,6 +81,9 @@
 }
 
 :root {
+  /* Theme the native form-control chrome (date-picker icon + popup, number
+     spinners, native scrollbars) to match the palette. */
+  color-scheme: light;
   /* Ledger UI Kit — direction A (Crisp), light. */
   --canvas: #EDF3F0;
   --surface: #FFFFFF;
@@ -144,6 +147,7 @@
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
   /* Ledger UI Kit — warm "espresso" (editorial), dark. Paired with the original
      indigo light theme above (light reverted, dark kept warm). */
   --canvas: #15120D;
@@ -270,6 +274,43 @@ textarea:-webkit-autofill:focus {
   80% { transform: translateX(3px); }
 }
 .field-error-shake { animation: field-shake 0.35s ease-in-out; }
+
+/*
+ * Native <select> custom chevron. `.field-select` drops the OS arrow and paints
+ * a lucide-style chevron (matching the Select primitive) as a themed background
+ * SVG. Plain/unlayered CSS so `padding-right` beats the field's `px-3`. The data
+ * URI can't use currentColor, so the chevron colour is baked per theme (--text-3).
+ */
+.field-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23708993' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 14px 14px;
+  padding-right: 2.25rem;
+}
+[data-theme="dark"] .field-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23978D78' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Native date/time picker indicator — coloured by color-scheme; add affordance. */
+::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Placeholder treatment for an empty native date/time field: mute the
+   "mm/dd/yyyy" hint so it reads like a placeholder until a value is chosen.
+   The Input primitive adds `.date-empty` only while a controlled value is "". */
+.date-empty::-webkit-datetime-edit {
+  color: var(--text-3);
+}
 
 /*
  * Honor user's reduced-motion preference globally.

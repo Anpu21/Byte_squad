@@ -150,7 +150,7 @@ export function JournalVoucherModal({
                             Branch
                         </span>
                         <select
-                            className={`${INPUT_CLASS} w-full`}
+                            className={`${INPUT_CLASS} field-select w-full`}
                             value={branchId}
                             onChange={(e) => setBranchId(e.target.value)}
                             required
@@ -172,7 +172,7 @@ export function JournalVoucherModal({
                             Entry date
                         </span>
                         <input
-                            className={`${INPUT_CLASS} w-full`}
+                            className={`${INPUT_CLASS} w-full${(entryDate) ? '' : ' date-empty'}`}
                             type="date"
                             value={entryDate}
                             onChange={(e) => setEntryDate(e.target.value)}
@@ -221,7 +221,7 @@ export function JournalVoucherModal({
                                 >
                                     <td className="px-2 py-1.5">
                                         <select
-                                            className={`${INPUT_CLASS} w-full h-8`}
+                                            className={`${INPUT_CLASS} field-select w-full h-8`}
                                             value={line.accountId}
                                             onChange={(e) =>
                                                 patchLine(line.key, {
@@ -249,7 +249,7 @@ export function JournalVoucherModal({
                                     </td>
                                     <td className="px-2 py-1.5">
                                         <select
-                                            className={`${INPUT_CLASS} w-full h-8`}
+                                            className={`${INPUT_CLASS} field-select w-full h-8`}
                                             value={line.entryType}
                                             onChange={(e) =>
                                                 patchLine(line.key, {

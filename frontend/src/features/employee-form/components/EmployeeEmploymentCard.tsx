@@ -44,7 +44,7 @@ export function EmployeeEmploymentCard({ form }: EmployeeEmploymentCardProps) {
                         value={form.branchId}
                         onChange={(e) => form.setBranchId(e.target.value)}
                         aria-invalid={Boolean(form.errors.branchId)}
-                        className={inputClasses(Boolean(form.errors.branchId))}
+                        className={`${inputClasses(Boolean(form.errors.branchId))} field-select`}
                         disabled={!isAdmin}
                     >
                         <option value="">Select a branch</option>
@@ -92,7 +92,7 @@ export function EmployeeEmploymentCard({ form }: EmployeeEmploymentCardProps) {
                                 e.target.value as EmployeeTypeField,
                             )
                         }
-                        className={inputClasses(false)}
+                        className={`${inputClasses(false)} field-select`}
                     >
                         <option value="Permanent">Permanent</option>
                         <option value="Contract">Contract</option>
@@ -113,7 +113,7 @@ export function EmployeeEmploymentCard({ form }: EmployeeEmploymentCardProps) {
                                 e.target.value as EmployeeStatusField,
                             )
                         }
-                        className={inputClasses(false)}
+                        className={`${inputClasses(false)} field-select`}
                     >
                         <option value="Active">Active</option>
                         <option value="OnLeave">On leave</option>
@@ -134,7 +134,7 @@ export function EmployeeEmploymentCard({ form }: EmployeeEmploymentCardProps) {
                         value={form.hireDate}
                         onChange={(e) => form.setHireDate(e.target.value)}
                         aria-invalid={Boolean(form.errors.hireDate)}
-                        className={inputClasses(Boolean(form.errors.hireDate))}
+                        className={`${inputClasses(Boolean(form.errors.hireDate))}${(form.hireDate) ? '' : ' date-empty'}`}
                     />
                 </EmployeeFormField>
 
@@ -149,7 +149,7 @@ export function EmployeeEmploymentCard({ form }: EmployeeEmploymentCardProps) {
                         onChange={(e) =>
                             form.setConfirmationDate(e.target.value)
                         }
-                        className={inputClasses(false)}
+                        className={`${inputClasses(false)}${(form.confirmationDate) ? '' : ' date-empty'}`}
                     />
                 </EmployeeFormField>
 
@@ -164,7 +164,7 @@ export function EmployeeEmploymentCard({ form }: EmployeeEmploymentCardProps) {
                         onChange={(e) =>
                             form.setWorkingHoursStart(e.target.value)
                         }
-                        className={inputClasses(false)}
+                        className={`${inputClasses(false)}${(form.workingHoursStart) ? '' : ' date-empty'}`}
                     />
                 </EmployeeFormField>
 
@@ -179,7 +179,7 @@ export function EmployeeEmploymentCard({ form }: EmployeeEmploymentCardProps) {
                         onChange={(e) =>
                             form.setWorkingHoursEnd(e.target.value)
                         }
-                        className={inputClasses(false)}
+                        className={`${inputClasses(false)}${(form.workingHoursEnd) ? '' : ' date-empty'}`}
                     />
                 </EmployeeFormField>
             </CardContent>

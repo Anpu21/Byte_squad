@@ -37,7 +37,7 @@ export function GrnsPanel() {
             <Card className="overflow-hidden">
                 <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border">
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={supplierId}
                         onChange={(e) => setSupplierId(e.target.value)}
                         aria-label="Filter by supplier"
@@ -50,7 +50,7 @@ export function GrnsPanel() {
                         ))}
                     </select>
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={status}
                         onChange={(e) =>
                             setStatus(e.target.value as '' | GrnStatus)
@@ -62,7 +62,7 @@ export function GrnsPanel() {
                         <option value="Voided">Voided</option>
                     </select>
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={paymentStatus}
                         onChange={(e) =>
                             setPaymentStatus(

@@ -93,7 +93,7 @@ export function AddExpenseModal({
                                     branchId: e.target.value || undefined,
                                 })
                             }
-                            className={fieldClass}
+                            className={`${fieldClass} field-select`}
                         >
                             <option value="">Select branch</option>
                             {branches.map((b) => (
@@ -114,7 +114,7 @@ export function AddExpenseModal({
                         onChange={(e) =>
                             setForm({ ...form, category: e.target.value })
                         }
-                        className={fieldClass}
+                        className={`${fieldClass} field-select`}
                     >
                         <option value="">Select category</option>
                         {EXPENSE_CATEGORIES.map((c) => (
@@ -176,7 +176,7 @@ export function AddExpenseModal({
                                 expenseDate: e.target.value,
                             })
                         }
-                        className={fieldClass}
+                        className={`${fieldClass}${(form.expenseDate) ? '' : ' date-empty'}`}
                     />
                 </div>
 

@@ -320,7 +320,7 @@ export function FinancialReportsPage({
                 <Card className="overflow-hidden">
                     <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border">
                         <input
-                            className={INPUT_CLASS}
+                            className={`${INPUT_CLASS}${(startDate) ? '' : ' date-empty'}`}
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
@@ -328,7 +328,7 @@ export function FinancialReportsPage({
                         />
                         <span className="text-text-3 text-sm">→</span>
                         <input
-                            className={INPUT_CLASS}
+                            className={`${INPUT_CLASS}${(endDate) ? '' : ' date-empty'}`}
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
@@ -378,7 +378,7 @@ export function FinancialReportsPage({
                             As of
                         </label>
                         <input
-                            className={INPUT_CLASS}
+                            className={`${INPUT_CLASS}${(asOf) ? '' : ' date-empty'}`}
                             type="date"
                             value={asOf}
                             onChange={(e) => setAsOf(e.target.value)}
@@ -455,7 +455,7 @@ export function FinancialReportsPage({
                 <Card className="overflow-hidden">
                     <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border">
                         <input
-                            className={INPUT_CLASS}
+                            className={`${INPUT_CLASS}${(day) ? '' : ' date-empty'}`}
                             type="date"
                             value={day}
                             onChange={(e) => setDay(e.target.value)}

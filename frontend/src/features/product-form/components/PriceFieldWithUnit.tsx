@@ -137,7 +137,7 @@ export function PriceFieldWithUnit({
                     className={cn(
                         FIELD_SHELL,
                         FIELD_BORDER,
-                        'h-[38px] min-w-[64px] px-2',
+                        'field-select h-[38px] min-w-[64px] px-2',
                     )}
                 >
                     {units.map((row) => (

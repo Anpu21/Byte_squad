@@ -81,7 +81,7 @@ export function AdjustmentForm() {
             Product
           </label>
           <select
-            className={SELECT_CLASS}
+            className={`${SELECT_CLASS} field-select`}
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
           >
@@ -102,7 +102,7 @@ export function AdjustmentForm() {
               Branch
             </label>
             <select
-              className={SELECT_CLASS}
+              className={`${SELECT_CLASS} field-select`}
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
             >
@@ -125,7 +125,7 @@ export function AdjustmentForm() {
             Reason
           </label>
           <select
-            className={SELECT_CLASS}
+            className={`${SELECT_CLASS} field-select`}
             value={reason}
             onChange={(e) =>
               setReason(e.target.value as IStockAdjustmentReason)

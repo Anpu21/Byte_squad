@@ -85,7 +85,7 @@ export function EmployeesFilters({
                         value={branchId}
                         onChange={(e) => onBranchIdChange(e.target.value)}
                         aria-label="Filter by branch"
-                        className={`${INPUT_CLASS} w-40`}
+                        className={`${INPUT_CLASS} field-select w-40`}
                     >
                         <option value="">All branches</option>
                         {branches.map((b) => (
@@ -107,7 +107,7 @@ export function EmployeesFilters({
                         onStatusChange(e.target.value as EmployeeStatus)
                     }
                     aria-label="Filter by status"
-                    className={`${INPUT_CLASS} w-36`}
+                    className={`${INPUT_CLASS} field-select w-36`}
                 >
                     {STATUS_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>

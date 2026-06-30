@@ -75,7 +75,7 @@ export function ReceiveBatchModal({
             Product
           </label>
           <select
-            className={SELECT_CLASS}
+            className={`${SELECT_CLASS} field-select`}
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
           >
@@ -96,7 +96,7 @@ export function ReceiveBatchModal({
               Branch
             </label>
             <select
-              className={SELECT_CLASS}
+              className={`${SELECT_CLASS} field-select`}
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
             >

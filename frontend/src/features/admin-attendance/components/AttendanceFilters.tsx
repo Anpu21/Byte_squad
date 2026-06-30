@@ -92,7 +92,7 @@ export function AttendanceFilters({
                     value={selectedDate}
                     onChange={(e) => onDateChange(e.target.value)}
                     aria-label="Pick attendance day"
-                    className={`${INPUT_CLASS} w-44`}
+                    className={`${INPUT_CLASS} w-44${(selectedDate) ? '' : ' date-empty'}`}
                 />
                 <button
                     type="button"
@@ -123,7 +123,7 @@ export function AttendanceFilters({
                         value={branchId}
                         onChange={(e) => onBranchIdChange(e.target.value)}
                         aria-label="Filter by branch"
-                        className={`${INPUT_CLASS} w-44`}
+                        className={`${INPUT_CLASS} field-select w-44`}
                     >
                         <option value="">All branches</option>
                         {branches.map((b) => (
@@ -144,7 +144,7 @@ export function AttendanceFilters({
                         value={roleFilter}
                         onChange={(e) => onRoleChange(e.target.value)}
                         aria-label="Filter by role"
-                        className={`${INPUT_CLASS} w-44`}
+                        className={`${INPUT_CLASS} field-select w-44`}
                     >
                         <option value="">All roles</option>
                         {roleOptions.map((r) => (

@@ -184,7 +184,7 @@ export function ReviewModerationPage() {
             <Card className="overflow-hidden">
                 <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={status}
                         onChange={(e) => {
                             setStatus(e.target.value as '' | ReviewStatus);
