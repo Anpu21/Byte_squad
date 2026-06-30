@@ -25,10 +25,7 @@ export function ProfitLossHeader({
     return (
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
             <div>
-                <h1 className="text-2xl font-bold text-text-1 tracking-tight">
-                    Profit &amp; Loss
-                </h1>
-                <p className="text-xs text-text-2 mt-1">
+                <p className="text-xs text-text-2">
                     {formatDateRangeLabel(startDate, endDate)}
                 </p>
             </div>

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import Card from '@/components/ui/Card';
-import PageHeader from '@/components/ui/PageHeader';
 import { useReceivables } from '@/features/receivables/hooks/useReceivables';
 import { ReceivablesTable } from '@/features/receivables/components/ReceivablesTable';
 import { CustomerStatementModal } from '@/features/receivables/components/CustomerStatementModal';
@@ -18,11 +17,6 @@ export function ReceivablesPage() {
 
     return (
         <div>
-            <PageHeader
-                eyebrow="Accounting"
-                title="Receivables"
-                subtitle="Customer credit balances, ageing, statements, and repayments."
-            />
             <Card className="overflow-hidden">
                 <ReceivablesTable
                     rows={receivablesQuery.data ?? []}
