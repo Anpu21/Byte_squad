@@ -11,6 +11,7 @@ import {
 } from '@/components/ui';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { UserRole } from '@/constants/enums';
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination';
 import { useAuth } from '@/hooks/useAuth';
 import type { IEmployee } from '@/types';
 import { useEmployees } from '../hooks/useEmployees';
@@ -19,7 +20,6 @@ import { EmployeeStatusBadge } from './EmployeeStatusBadge';
 
 type EmployeeStatus = 'Active' | 'Resigned' | 'Terminated' | 'OnLeave' | '';
 
-const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 250;
 
 function formatHireDate(iso: string): string {
@@ -65,12 +65,13 @@ export function EmployeesTable() {
         search: search || undefined,
         branchId: branchId || undefined,
         status: status || undefined,
-        limit: PAGE_SIZE,
+        limit: DEFAULT_PAGE_SIZE,
         offset,
     });
 
     const rows = data?.rows ?? [];
     const total = data?.total ?? 0;
+    const page = Math.floor(offset / DEFAULT_PAGE_SIZE) + 1;
     const hasAnyFilter = Boolean(search || branchId || status);
 
     function goToEmployee(id: string) {
@@ -181,17 +182,15 @@ export function EmployeesTable() {
                     />
                 }
                 footer={
-                    total > PAGE_SIZE ? (
+                    total > 0 ? (
                         <Pagination
-                            offset={offset}
-                            pageCount={rows.length}
+                            page={page}
+                            pageSize={DEFAULT_PAGE_SIZE}
                             total={total}
-                            limit={PAGE_SIZE}
                             unit="employees"
-                            onPrev={() =>
-                                setOffset((o) => Math.max(0, o - PAGE_SIZE))
+                            onPageChange={(p) =>
+                                setOffset((p - 1) * DEFAULT_PAGE_SIZE)
                             }
-                            onNext={() => setOffset((o) => o + PAGE_SIZE)}
                         />
                     ) : null
                 }
