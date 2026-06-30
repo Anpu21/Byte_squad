@@ -127,27 +127,13 @@ export function CatalogFilterSidebar({
                 </div>
 
                 <Section label="Category">
-                    <div className="flex flex-col gap-0.5">
-                        {categoryOptions.map((opt) => {
-                            const active = category === opt.value;
-                            return (
-                                <button
-                                    key={opt.value || 'all'}
-                                    type="button"
-                                    onClick={() => onCategory(opt.value)}
-                                    aria-pressed={active}
-                                    className={cn(
-                                        'rounded-md px-3 py-2 text-left text-[13px] font-medium transition-colors',
-                                        active
-                                            ? 'bg-primary text-text-inv'
-                                            : 'text-text-2 hover:bg-surface-hover hover:text-text-1',
-                                    )}
-                                >
-                                    {opt.label}
-                                </button>
-                            );
-                        })}
-                    </div>
+                    <Select
+                        aria-label="Filter by category"
+                        value={category}
+                        onChange={onCategory}
+                        options={categoryOptions}
+                        className="w-full"
+                    />
                 </Section>
 
                 <Section label="Availability">
