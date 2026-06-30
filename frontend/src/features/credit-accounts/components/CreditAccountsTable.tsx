@@ -110,6 +110,7 @@ export function CreditAccountsTable({
       getRowKey={(r) => r.id}
       isLoading={isLoading}
       zebra
+      clientPaginate={{ unit: 'accounts' }}
       empty={
         <EmptyState
           title="No credit accounts yet"

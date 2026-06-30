@@ -116,6 +116,7 @@ export function ReceivablesTable({
             getRowKey={(r) => r.userId}
             isLoading={isLoading}
             zebra
+            clientPaginate={{ unit: 'customers' }}
             empty={
                 <EmptyState
                     title="No receivables"

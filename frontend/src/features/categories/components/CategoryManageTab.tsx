@@ -116,6 +116,7 @@ export function CategoryManageTab({ isAdmin }: CategoryManageTabProps) {
                     getRowKey={(category) => category.id}
                     isLoading={isLoading}
                     zebra
+                    clientPaginate={{ unit: 'categories' }}
                     empty={<EmptyState title="No categories yet" />}
                 />
             </div>

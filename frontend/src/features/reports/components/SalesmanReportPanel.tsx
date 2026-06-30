@@ -159,6 +159,7 @@ export function SalesmanReportPanel() {
                 getRowKey={(row) => row.cashierId}
                 isLoading={reportQuery.isLoading}
                 zebra
+                clientPaginate={{ unit: 'cashiers' }}
                 empty={
                     <EmptyState
                         title="No sales in this window"

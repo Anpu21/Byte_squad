@@ -1,7 +1,9 @@
 import { formatCurrency } from '@/lib/utils';
 import type { IProduct } from '@/types';
 import { unitPriceSuffix } from '../lib/label-sheet-html';
-import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
+import { FIELD_SHELL, FIELD_BORDER, Pagination } from '@/components/ui';
+import { usePagination } from '@/hooks/usePagination';
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination';
 
 const QTY_INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 w-20 px-3 text-right`;
 
@@ -22,6 +24,8 @@ export function LabelProductTable({
     max,
     onQtyChange,
 }: ILabelProductTableProps) {
+    const { page, setPage, pageRows, total } = usePagination(rows);
+
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -38,7 +42,7 @@ export function LabelProductTable({
                     </tr>
                 </thead>
                 <tbody>
-                    {rows.map((p) => (
+                    {pageRows.map((p) => (
                         <tr
                             key={p.id}
                             className="border-b border-border hover:bg-surface-2/40 transition-colors"
@@ -81,6 +85,15 @@ export function LabelProductTable({
                     ))}
                 </tbody>
             </table>
+            {total > 0 && (
+                <Pagination
+                    page={page}
+                    pageSize={DEFAULT_PAGE_SIZE}
+                    total={total}
+                    onPageChange={setPage}
+                    unit="products"
+                />
+            )}
         </div>
     );
 }

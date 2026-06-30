@@ -199,6 +199,7 @@ export function OrdersPanel({ onReceive }: IOrdersPanelProps) {
                     getRowKey={(order) => order.id}
                     isLoading={ordersQuery.isLoading}
                     zebra
+                    clientPaginate={{ unit: 'orders' }}
                     empty={
                         <EmptyState
                             title="No purchase orders"

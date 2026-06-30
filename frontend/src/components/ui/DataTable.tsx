@@ -9,6 +9,9 @@ import Table, {
     type CellAlign,
 } from './Table';
 import Skeleton from './Skeleton';
+import Pagination from './Pagination';
+import { usePagination } from '@/hooks/usePagination';
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination';
 
 export interface DataTableColumn<T> {
     /** Stable id; also the sort key when `sortable` is set. */
@@ -58,6 +61,12 @@ interface DataTableProps<T> {
     footer?: ReactNode;
     /** A <tr> rendered inside a <tfoot> (column-aligned totals row). */
     footerRow?: ReactNode;
+    /**
+     * Enable built-in client-side pagination: slices `rows` into pages of
+     * `pageSize` (default 10) and renders a `<Pagination/>` footer. For
+     * server-paginated data, pass pre-sliced `rows` + a manual `footer` instead.
+     */
+    clientPaginate?: boolean | { pageSize?: number; unit?: string };
 }
 
 /**
@@ -84,7 +93,28 @@ export default function DataTable<T>({
     containerClassName,
     footer,
     footerRow,
+    clientPaginate,
 }: DataTableProps<T>) {
+    const paginate: { pageSize?: number; unit?: string } | null = clientPaginate
+        ? typeof clientPaginate === 'object'
+            ? clientPaginate
+            : {}
+        : null;
+    const pageSize = paginate?.pageSize ?? DEFAULT_PAGE_SIZE;
+    const pagination = usePagination(rows, pageSize);
+    const visibleRows = paginate ? pagination.pageRows : rows;
+    const resolvedFooter =
+        footer ??
+        (paginate && pagination.total > 0 ? (
+            <Pagination
+                page={pagination.page}
+                pageSize={pageSize}
+                total={pagination.total}
+                onPageChange={pagination.setPage}
+                unit={paginate.unit ?? 'items'}
+            />
+        ) : null);
+
     function toggleSort(key: string) {
         if (!onSortChange) return;
         const dir: SortState['dir'] =
@@ -104,7 +134,7 @@ export default function DataTable<T>({
         return (
             <div className={className}>
                 {empty}
-                {footer}
+                {resolvedFooter}
             </div>
         );
     }
@@ -164,7 +194,7 @@ export default function DataTable<T>({
                                   ))}
                               </TableRow>
                           ))
-                        : rows.map((row, i) => (
+                        : visibleRows.map((row, i) => (
                               <TableRow
                                   key={getRowKey(row, i)}
                                   className={cn(
@@ -205,7 +235,7 @@ export default function DataTable<T>({
                     </tfoot>
                 )}
             </Table>
-            {footer}
+            {resolvedFooter}
         </div>
     );
 }

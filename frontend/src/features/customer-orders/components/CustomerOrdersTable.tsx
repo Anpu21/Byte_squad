@@ -204,6 +204,7 @@ export function CustomerOrdersTable({
                     stickyHeader
                     zebra
                     maxHeight="640px"
+                    clientPaginate={{ unit: 'orders' }}
                     empty={
                         <EmptyState
                             icon={<Inbox size={20} />}
