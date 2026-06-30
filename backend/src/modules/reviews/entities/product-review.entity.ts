@@ -16,11 +16,11 @@ import { ProductReviewStatus } from '@common/enums/product-review.enum';
 /**
  * A customer's 1–5★ rating + optional written review of a product. Exactly one
  * row per (product, customer) — editing replaces it, it never duplicates
- * (enforced by the unique index). Only verified buyers may create one (gated in
- * ReviewsService); `isVerifiedPurchase` snapshots that at write time. Staff
- * moderation soft-hides a row (`status='hidden'`) so it drops out of the public
- * list + aggregate while the unique key still blocks the author from re-posting
- * to evade a takedown.
+ * (enforced by the unique index). Any signed-in customer may create one;
+ * `isVerifiedPurchase` snapshots whether they had actually bought it at write
+ * time. Staff moderation soft-hides a row (`status='hidden'`) so it drops out
+ * of the public list + aggregate while the unique key still blocks the author
+ * from re-posting to evade a takedown.
  */
 @Entity('product_reviews')
 @Index(['productId', 'userId'], { unique: true })
