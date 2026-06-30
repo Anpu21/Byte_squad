@@ -35,6 +35,7 @@ export function PurchasesWorkspacePage() {
             active={tab}
             onTabChange={setTab}
             tabsAriaLabel="Purchases workspace views"
+            chromeless
         >
             {tab === 'grns' && <GrnsPanel />}
             {tab === 'new-grn' && (

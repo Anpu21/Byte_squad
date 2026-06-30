@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { LuChevronDown as ChevronDown } from 'react-icons/lu';
 import { UserRole } from '@/constants/enums';
 import {
     GROUP_LABEL_KEY,
@@ -10,6 +12,7 @@ import {
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { NAV_ICON } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { SidebarPanelTabs } from './SidebarPanelTabs';
 
 interface SidebarPanelProps {
     group: NavGroup;
@@ -21,7 +24,9 @@ interface SidebarPanelProps {
 
 /**
  * The contextual secondary panel of the two-tier sidebar — the active group's
- * role-filtered items as a vertical list, headed by the group label.
+ * role-filtered items as a vertical list, headed by the group label. Items that
+ * are tabbed workspaces carry a chevron to expand/collapse their sub-tabs
+ * (rendered by {@link SidebarPanelTabs}); the active item auto-expands.
  */
 export function SidebarPanel({
     group,
@@ -32,6 +37,26 @@ export function SidebarPanel({
 }: SidebarPanelProps) {
     const { t } = useTranslation('common');
     const items = getGroupItems(group, role);
+    const [expanded, setExpanded] = useState<Set<string>>(
+        () => new Set(activeItemId ? [activeItemId] : []),
+    );
+
+    // Auto-expand the active tabbed item as the route changes (without collapsing
+    // anything the user opened manually).
+    useEffect(() => {
+        if (!activeItemId) return;
+        setExpanded((prev) =>
+            prev.has(activeItemId) ? prev : new Set(prev).add(activeItemId),
+        );
+    }, [activeItemId]);
+
+    const toggle = (id: string) =>
+        setExpanded((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
 
     return (
         <nav
@@ -46,42 +71,87 @@ export function SidebarPanel({
                     const itemPath = resolveNavPath(item, role);
                     const active = item.id === activeItemId;
                     const Icon = item.Icon;
+                    const hasTabs = Boolean(item.tabs?.length);
+                    const isOpen = hasTabs && expanded.has(item.id);
                     const showBadge =
                         itemPath === FRONTEND_ROUTES.NOTIFICATIONS && unreadCount > 0;
+                    const subId = `subnav-${item.id}`;
                     return (
                         <li key={item.id}>
-                            <Link
-                                to={itemPath}
-                                onClick={onNavigate}
-                                aria-current={active ? 'page' : undefined}
+                            <div
                                 className={cn(
-                                    'group flex h-[var(--nav-row-h)] items-center gap-2.5 rounded-md px-3 text-[length:var(--nav-label-size)] transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
-                                    active
-                                        ? 'bg-surface-2 text-text-1 font-semibold'
-                                        : 'font-medium text-text-2 hover:bg-surface-2 hover:text-text-1',
+                                    'group flex items-center rounded-md transition-colors',
+                                    active ? 'bg-surface-2' : 'hover:bg-surface-2',
                                 )}
                             >
-                                <Icon
-                                    size={NAV_ICON}
-                                    strokeWidth={2}
-                                    aria-hidden
-                                    className={cn(
-                                        'flex-shrink-0 transition-colors',
-                                        active
-                                            ? 'text-primary'
-                                            : 'text-text-3 group-hover:text-text-2',
-                                    )}
-                                />
-                                <span className="flex-1 truncate">{t(item.label)}</span>
-                                {showBadge && (
+                                <Link
+                                    to={itemPath}
+                                    onClick={onNavigate}
+                                    aria-current={active ? 'page' : undefined}
+                                    className="flex h-[var(--nav-row-h)] min-w-0 flex-1 items-center gap-2.5 rounded-md px-3 text-[length:var(--nav-label-size)] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
+                                >
+                                    <Icon
+                                        size={NAV_ICON}
+                                        strokeWidth={2}
+                                        aria-hidden
+                                        className={cn(
+                                            'flex-shrink-0 transition-colors',
+                                            active
+                                                ? 'text-primary'
+                                                : 'text-text-3 group-hover:text-text-2',
+                                        )}
+                                    />
                                     <span
-                                        className="ml-auto inline-flex h-[var(--nav-badge-size)] min-w-[var(--nav-badge-size)] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-text-inv"
-                                        aria-label={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}
+                                        className={cn(
+                                            'flex-1 truncate',
+                                            active
+                                                ? 'font-semibold text-text-1'
+                                                : 'font-medium text-text-2',
+                                        )}
                                     >
-                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                        {t(item.label)}
                                     </span>
+                                    {showBadge && (
+                                        <span
+                                            className="inline-flex h-[var(--nav-badge-size)] min-w-[var(--nav-badge-size)] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-text-inv"
+                                            aria-label={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}
+                                        >
+                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                        </span>
+                                    )}
+                                </Link>
+                                {hasTabs && (
+                                    <button
+                                        type="button"
+                                        onClick={() => toggle(item.id)}
+                                        aria-expanded={isOpen}
+                                        aria-controls={subId}
+                                        aria-label={t(
+                                            isOpen
+                                                ? 'shell.collapseSection'
+                                                : 'shell.expandSection',
+                                        )}
+                                        className="mr-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-text-3 transition-colors hover:text-text-1 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
+                                    >
+                                        <ChevronDown
+                                            size={14}
+                                            className={cn(
+                                                'transition-transform',
+                                                isOpen && 'rotate-180',
+                                            )}
+                                        />
+                                    </button>
                                 )}
-                            </Link>
+                            </div>
+                            {isOpen && (
+                                <SidebarPanelTabs
+                                    id={subId}
+                                    entry={item}
+                                    role={role}
+                                    isActive={active}
+                                    onNavigate={onNavigate}
+                                />
+                            )}
                         </li>
                     );
                 })}

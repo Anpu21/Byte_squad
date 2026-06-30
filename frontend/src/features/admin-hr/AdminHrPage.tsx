@@ -24,6 +24,7 @@ export function AdminHrPage() {
             active={tab}
             onTabChange={setTab}
             tabsAriaLabel="HR workspace views"
+            chromeless
         >
             {tab === 'employees' && <EmployeesView />}
             {tab === 'attendance' && <AttendanceView />}

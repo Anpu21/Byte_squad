@@ -72,4 +72,27 @@ describe('WorkspacePage', () => {
             screen.getByRole('tablist', { name: 'Workspace views' }),
         ).toBeInTheDocument();
     });
+
+    it('keeps the header + content but drops the tab band when chromeless', () => {
+        render(
+            <WorkspacePage
+                title="My workspace"
+                tabs={TABS}
+                active="a"
+                onTabChange={() => {}}
+                tabsAriaLabel="Workspace views"
+                chromeless
+            >
+                <div>Alpha content</div>
+            </WorkspacePage>,
+        );
+        expect(
+            screen.getByRole('heading', { name: 'My workspace' }),
+        ).toBeInTheDocument();
+        expect(screen.getByText('Alpha content')).toBeInTheDocument();
+        // the in-page tab band is gone — the sub-tabs live in the sidebar panel now
+        expect(
+            screen.queryByRole('tablist', { name: 'Workspace views' }),
+        ).not.toBeInTheDocument();
+    });
 });

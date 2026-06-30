@@ -33,6 +33,7 @@ export function SalesPage() {
             active={tab}
             onTabChange={setTab}
             tabsAriaLabel="Sales workspace views"
+            chromeless
         >
             {tab === 'transactions' && <TransactionsPage />}
             {tab === 'orders' && <CustomerOrdersPage />}

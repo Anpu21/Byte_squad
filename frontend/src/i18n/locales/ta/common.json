@@ -55,6 +55,8 @@
     "logout": "வெளியேறு",
     "primaryNav": "முதன்மை வழிசெலுத்தல்",
     "secondaryNav": "இரண்டாம் நிலை வழிசெலுத்தல்",
+    "expandSection": "துணைப் பக்கங்களை விரிவாக்கு",
+    "collapseSection": "துணைப் பக்கங்களைச் சுருக்கு",
     "commandPalette": "கட்டளை பலகம்",
     "searchPlaceholder": "தேடு அல்லது செல்…",
     "noResults": "பொருத்தம் இல்லை"

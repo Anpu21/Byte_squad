@@ -55,6 +55,8 @@
     "logout": "Logout",
     "primaryNav": "Primary navigation",
     "secondaryNav": "Secondary navigation",
+    "expandSection": "Expand sub-pages",
+    "collapseSection": "Collapse sub-pages",
     "commandPalette": "Command palette",
     "searchPlaceholder": "Search or jump to…",
     "noResults": "No matches"

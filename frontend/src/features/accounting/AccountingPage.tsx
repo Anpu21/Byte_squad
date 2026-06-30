@@ -32,6 +32,7 @@ export function AccountingPage() {
             active={tab}
             onTabChange={setTab}
             tabsAriaLabel="Accounting workspace views"
+            chromeless
         >
             {tab === 'ledger' && <LedgerPage />}
             {tab === 'receivables' && <ReceivablesPage />}

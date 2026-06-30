@@ -49,6 +49,7 @@ export function CreditAccountsPage() {
       active={tab}
       onTabChange={setTab}
       tabsAriaLabel="Credit accounts workspace views"
+      chromeless
     >
       {tab === 'approvals' && (
         <Card className="overflow-hidden">

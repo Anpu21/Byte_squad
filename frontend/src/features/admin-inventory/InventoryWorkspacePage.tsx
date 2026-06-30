@@ -37,6 +37,7 @@ export function InventoryWorkspacePage() {
             active={tab}
             onTabChange={setTab}
             tabsAriaLabel="Inventory workspace views"
+            chromeless
         >
             {tab === 'list' && <InventoryByRole />}
             {tab === 'expiry' && <ExpiryReportPage />}
