@@ -6,4 +6,4 @@ import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
  * this is the shared field shell (crisp border, sharp radius, animated focus
  * ring) at the compact h-10 height these forms use.
  */
-export const PROFILE_INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-10 px-3`;
+export const PROFILE_INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full h-10 px-3`;

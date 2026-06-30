@@ -34,7 +34,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                         aria-invalid={!!error}
                         aria-describedby={errorId}
                         className={cn(
-                            'peer min-h-[88px] resize-y px-3 py-2.5 leading-relaxed',
+                            'peer w-full min-h-[88px] resize-y px-3 py-2.5 leading-relaxed',
                             FIELD_SHELL,
                             error ? FIELD_ERROR : FIELD_BORDER,
                             className,

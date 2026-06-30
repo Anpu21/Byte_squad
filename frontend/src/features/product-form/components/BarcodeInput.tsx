@@ -1,5 +1,7 @@
 import { LuCamera as Camera } from 'react-icons/lu';
+import { cn } from '@/lib/utils';
 import Pill from '@/components/ui/Pill';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { FormField } from './FormField';
 import type { ProductFormState } from '../hooks/useProductFormState';
 import { BARCODE_MIN_LOOKUP_LENGTH } from '../lib/constants';
@@ -24,7 +26,7 @@ export function BarcodeInput({
         ? 'border-danger'
         : statusGood
           ? 'border-accent'
-          : 'border-border-strong hover:border-text-3 focus:border-focus focus:ring-[3px] focus:ring-primary/30';
+          : FIELD_BORDER;
 
     return (
         <FormField label="Barcode / SKU" error={error}>
@@ -40,7 +42,11 @@ export function BarcodeInput({
                                 onLookup(form.barcode.trim());
                             }
                         }}
-                        className={`w-full h-[38px] px-3 pr-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors mono ${borderClass}`}
+                        className={cn(
+                            FIELD_SHELL,
+                            'w-full h-[38px] px-3 mono',
+                            borderClass,
+                        )}
                         placeholder="Scan or type barcode"
                     />
                 </div>

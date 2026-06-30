@@ -11,9 +11,9 @@ import { cn } from '@/lib/utils';
  * field language stays consistent and drifts in one place only.
  */
 
-/** Box + type + motion. No padding and no border color — callers add those. */
+/** Box + type + motion. No width, padding, or border color — callers add those. */
 export const FIELD_SHELL =
-    'w-full bg-surface border rounded-[var(--radius-field)] text-[13px] text-text-1 outline-none ' +
+    'bg-surface border rounded-[var(--radius-field)] text-[13px] text-text-1 outline-none ' +
     'transition-[border-color,box-shadow,background-color] duration-150 ease-out ' +
     'placeholder:text-text-3 disabled:opacity-50 disabled:cursor-not-allowed';
 
@@ -45,6 +45,7 @@ export function fieldClass(opts?: {
     const { error, size = 'md', className } = opts ?? {};
     return cn(
         FIELD_SHELL,
+        'w-full',
         FIELD_HEIGHT[size],
         'px-3',
         error ? FIELD_ERROR : FIELD_BORDER,

@@ -69,7 +69,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                         aria-invalid={!!error}
                         aria-describedby={errorId}
                         className={cn(
-                            'peer',
+                            'peer w-full',
                             FIELD_SHELL,
                             FIELD_HEIGHT[sizeVariant],
                             leftIcon ? 'pl-9' : 'pl-3',
