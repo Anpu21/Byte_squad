@@ -11,6 +11,8 @@ import { useGroupDetailPage } from '@/features/customer-groups/hooks/useGroupDet
 import { useGroupRevocation } from '@/features/customer-groups/hooks/useGroupRevocation'
 import { GROUP_TABS } from '@/features/customer-groups/components/group-detail-tabs'
 import { GroupDetailHeader } from '@/features/customer-groups/components/GroupDetailHeader'
+import { GroupHeroLedger } from '@/features/customer-groups/components/GroupHeroLedger'
+import { GroupOverviewPanel } from '@/features/customer-groups/components/GroupOverviewPanel'
 import { GroupCartPanel } from '@/features/customer-groups/components/GroupCartPanel'
 import { GroupMembersCard } from '@/features/customer-groups/components/GroupMembersCard'
 import { ShareCodeCard } from '@/features/customer-groups/components/ShareCodeCard'
@@ -65,33 +67,56 @@ export function GroupDetailPage() {
         memberCount={group.memberCount}
         groupsPath={p.groupsPath}
         rightSlot={
-          <>
-            {p.isOwner ? (
-              <Button variant="secondary" onClick={p.openSettings}>
-                <Settings size={16} /> Settings
-              </Button>
-            ) : (
-              <Button
-                variant="secondary"
-                onClick={p.onLeave}
-                disabled={p.leaving}
-              >
-                <LogOut size={16} /> Leave
-              </Button>
-            )}
-            <Tabs
-              tabs={tabs}
-              active={p.tab}
-              onChange={p.setTab}
-              variant="pill"
-              idBase="group"
-              ariaLabel="Group sections"
-            />
-          </>
+          p.isOwner ? (
+            <Button variant="secondary" onClick={p.openSettings}>
+              <Settings size={16} /> Settings
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              onClick={p.onLeave}
+              disabled={p.leaving}
+            >
+              <LogOut size={16} /> Leave
+            </Button>
+          )
         }
       />
 
+      {/* Hero ledger — group spend at a glance. */}
+      <div className="mt-5">
+        <GroupHeroLedger groupId={group.id} memberCount={group.memberCount} />
+      </div>
+
+      {/* Sub-nav. */}
       <div className="mt-6">
+        <Tabs
+          tabs={tabs}
+          active={p.tab}
+          onChange={p.setTab}
+          variant="underline"
+          idBase="group"
+          ariaLabel="Group sections"
+        />
+      </div>
+
+      <div className="mt-6">
+        {/* Overview — the landing dashboard (default tab). */}
+        {p.tab === 'overview' && (
+          <div
+            role="tabpanel"
+            id="group-panel-overview"
+            aria-labelledby="group-tab-overview"
+          >
+            <GroupOverviewPanel
+              groupId={group.id}
+              members={group.members}
+              joinCode={group.joinCode}
+              chatUnread={p.chatUnread}
+              onTab={p.setTab}
+            />
+          </div>
+        )}
         {/* Cart — kept mounted (live cart-sync) and hidden when inactive. */}
         <div
           role="tabpanel"

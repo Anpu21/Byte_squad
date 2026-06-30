@@ -48,20 +48,27 @@ describe('countUnread', () => {
 })
 
 describe('GROUP_TABS', () => {
-  it('renders all five group sections and reports the selected tab', async () => {
+  it('renders all six group sections and reports the selected tab', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
       <Tabs
         tabs={GROUP_TABS}
-        active="cart"
+        active="overview"
         onChange={onChange}
         variant="underline"
         ariaLabel="Group sections"
       />,
     )
 
-    for (const label of ['Cart', 'Chat', 'Members', 'Invite', 'Analytics']) {
+    for (const label of [
+      'Overview',
+      'Cart',
+      'Chat',
+      'Members',
+      'Invite',
+      'Analytics',
+    ]) {
       expect(screen.getByRole('tab', { name: label })).toBeInTheDocument()
     }
 

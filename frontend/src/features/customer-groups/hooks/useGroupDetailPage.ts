@@ -34,7 +34,7 @@ export function useGroupDetailPage(groupId: string | undefined) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const { tab, setTab } = useTabParam<GroupTab>({
     valid: GROUP_TAB_KEYS,
-    fallback: 'cart',
+    fallback: 'overview',
   })
   const [chatUnread, setChatUnread] = useState(0)
 
