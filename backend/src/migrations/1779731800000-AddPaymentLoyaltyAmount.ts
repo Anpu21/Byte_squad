@@ -10,11 +10,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Additive and reversible. The `NOT NULL DEFAULT 0` keeps every existing
  * payment row valid without a backfill.
  */
-export class AddPaymentLoyaltyAmount1779731800000
-  implements MigrationInterface
-{
+export class AddPaymentLoyaltyAmount1779731800000 implements MigrationInterface {
   name = 'AddPaymentLoyaltyAmount1779731800000';
-  private readonly logger = new Logger(AddPaymentLoyaltyAmount1779731800000.name);
+  private readonly logger = new Logger(
+    AddPaymentLoyaltyAmount1779731800000.name,
+  );
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

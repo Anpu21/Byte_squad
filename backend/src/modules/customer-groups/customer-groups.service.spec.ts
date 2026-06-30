@@ -110,7 +110,10 @@ describe('CustomerGroupsService', () => {
       providers: [
         CustomerGroupsService,
         { provide: CustomerGroupsRepository, useValue: repo },
-        { provide: RealtimePublisher, useValue: { revokeGroupChat: jest.fn() } },
+        {
+          provide: RealtimePublisher,
+          useValue: { revokeGroupChat: jest.fn() },
+        },
       ],
     }).compile();
     service = moduleRef.get(CustomerGroupsService);

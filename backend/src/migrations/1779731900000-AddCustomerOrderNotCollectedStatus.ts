@@ -8,9 +8,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Postgres can't drop an enum value, so `down` is a no-op — the value simply
  * stays available, which is harmless.
  */
-export class AddCustomerOrderNotCollectedStatus1779731900000
-  implements MigrationInterface
-{
+export class AddCustomerOrderNotCollectedStatus1779731900000 implements MigrationInterface {
   public async up(qr: QueryRunner): Promise<void> {
     await qr.query(`
       ALTER TYPE customer_orders_status_enum

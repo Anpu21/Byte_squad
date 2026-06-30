@@ -137,9 +137,13 @@ describe('GroupCartService', () => {
           addedByUserId: 'u-member',
         }),
       );
-      expect(realtime.toGroup).toHaveBeenCalledWith('g1', 'group-cart:changed', {
-        groupId: 'g1',
-      });
+      expect(realtime.toGroup).toHaveBeenCalledWith(
+        'g1',
+        'group-cart:changed',
+        {
+          groupId: 'g1',
+        },
+      );
     });
 
     it('merges into an existing same-line by summing quantity', async () => {

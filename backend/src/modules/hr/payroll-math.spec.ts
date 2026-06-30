@@ -429,7 +429,9 @@ describe('payroll-math', () => {
           paymentDate: null,
         },
       ]);
-      expect(out).toContain('EMP002,John Roe,2026-12,50000,46000,Cash,Approved,');
+      expect(out).toContain(
+        'EMP002,John Roe,2026-12,50000,46000,Cash,Approved,',
+      );
     });
   });
 });

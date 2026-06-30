@@ -19,7 +19,9 @@ export interface ResolvedPagination {
  * (defaulting to DEFAULT_PAGE_SIZE, capped at MAX_PAGE_SIZE). Use this when you
  * need the resolved numbers before building a query.
  */
-export function resolvePagination(params: PaginationParams): ResolvedPagination {
+export function resolvePagination(
+  params: PaginationParams,
+): ResolvedPagination {
   const page = Math.max(1, Math.floor(params.page ?? 1));
   const limit = Math.min(
     Math.max(1, Math.floor(params.limit ?? DEFAULT_PAGE_SIZE)),

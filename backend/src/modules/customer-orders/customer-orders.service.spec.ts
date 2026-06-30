@@ -114,9 +114,7 @@ describe('CustomerOrdersService', () => {
 
     service = module.get(CustomerOrdersService);
     repo = module.get(CustomerOrdersRepository);
-    products = module.get(ProductsService) as unknown as {
-      findActiveByIdsWithUnits: jest.Mock;
-    };
+    products = module.get(ProductsService);
   });
 
   describe('listForStaff', () => {
@@ -275,7 +273,13 @@ describe('CustomerOrdersService', () => {
       baseUnit: 'kg',
       sellingPrice: 170,
       sellableUnits: [
-        { id: 'u-kg', name: 'kg', isBase: true, conversionToBase: 1, sellingPrice: 170 },
+        {
+          id: 'u-kg',
+          name: 'kg',
+          isBase: true,
+          conversionToBase: 1,
+          sellingPrice: 170,
+        },
       ],
     };
     const widget = {
@@ -284,7 +288,13 @@ describe('CustomerOrdersService', () => {
       baseUnit: 'unit',
       sellingPrice: 50,
       sellableUnits: [
-        { id: 'u-pc', name: 'pc', isBase: true, conversionToBase: 1, sellingPrice: 50 },
+        {
+          id: 'u-pc',
+          name: 'pc',
+          isBase: true,
+          conversionToBase: 1,
+          sellingPrice: 50,
+        },
       ],
     };
 

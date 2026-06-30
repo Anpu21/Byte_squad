@@ -56,7 +56,11 @@ export class LoyaltyWalletService {
     owner: LoyaltyOwner | null;
     itemsSubtotal: number;
     requestedPoints: number;
-  }): Promise<{ cappedPoints: number; redeemValue: number; pointValue: number }> {
+  }): Promise<{
+    cappedPoints: number;
+    redeemValue: number;
+    pointValue: number;
+  }> {
     const pointValue = await this.loyaltyService.getPointValue();
     const requested = Math.floor(params.requestedPoints);
     if (!params.owner || requested <= 0) {
