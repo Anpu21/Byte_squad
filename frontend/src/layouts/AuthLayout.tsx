@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import Logo from '@/components/ui/Logo';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import AuthBrandScene from '@/components/auth/AuthBrandScene';
 
@@ -80,8 +81,9 @@ export default function AuthLayout() {
                 </div>
             </section>
 
-            {/* ── Brand panel (desktop) ───────────────────────────────────── */}
-            <section className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-text-inv lg:flex lg:flex-1">
+            {/* ── Brand panel (desktop) — follows the theme (dark↔light) so it
+                stays cohesive with the form panel and the day/night scene. ──── */}
+            <section className="relative hidden flex-col justify-between overflow-hidden border-l border-border bg-canvas p-10 text-text-1 lg:flex lg:flex-1">
                 {/* Drifting dot grid. */}
                 <div
                     className="pointer-events-none absolute inset-0 opacity-[0.08]"
@@ -94,19 +96,13 @@ export default function AuthLayout() {
                     aria-hidden="true"
                 />
 
-                {/* Inverted brand lockup (the shared Logo's box is bg-primary →
-                    invisible here, so render an inverted mark). */}
+                {/* Brand lockup — the panel now follows the theme, so the shared
+                    Logo (bg-primary box) reads correctly on it. */}
                 <div
-                    className="relative inline-flex items-center gap-2.5"
+                    className="relative"
                     style={{ animation: 'lp-rise .6s ease .3s both' }}
                 >
-                    <div
-                        className="mono inline-flex h-8 w-8 items-center justify-center rounded-md bg-[var(--text-inv)] text-[15px] font-bold text-[var(--primary)]"
-                        aria-hidden="true"
-                    >
-                        L
-                    </div>
-                    <span className="font-semibold tracking-[-0.01em]">Ledger Pro</span>
+                    <Logo />
                 </div>
 
                 {/* Greeting + storefront scene. */}
@@ -115,7 +111,7 @@ export default function AuthLayout() {
                         className="w-full max-w-[372px]"
                         style={{ animation: 'lp-rise .8s cubic-bezier(.22,1,.36,1) .42s both' }}
                     >
-                        <div className="mb-3 ml-2 font-display text-[28px] font-semibold leading-tight tracking-[-0.012em] text-text-inv">
+                        <div className="mb-3 ml-2 font-display text-[28px] font-semibold leading-tight tracking-[-0.012em] text-text-1">
                             {greetingForNow()}
                         </div>
                         <AuthBrandScene />
@@ -131,7 +127,7 @@ export default function AuthLayout() {
                         The calmest way to run your shop.
                     </h2>
                     <p
-                        className="mt-4 text-[13px] tracking-[0.02em] text-text-inv/70"
+                        className="mt-4 text-[13px] tracking-[0.02em] text-text-3"
                         style={{ animation: 'lp-rise .6s ease .86s both' }}
                     >
                         POS · Inventory · Accounting
