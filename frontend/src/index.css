@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -6,6 +6,8 @@
      fallback so `lang="ta"` content renders without tofu. Tamil is LTR. */
   --font-sans: 'IBM Plex Sans', 'Noto Sans Tamil', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  /* Editorial serif for auth / marketing hero headings (Ledger Pro login). */
+  --font-display: 'Newsreader', 'IBM Plex Sans', ui-serif, Georgia, serif;
 
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
@@ -311,6 +313,33 @@ textarea:-webkit-autofill:focus {
 .date-empty::-webkit-datetime-edit {
   color: var(--text-3);
 }
+
+/* ── Auth (Ledger Pro login/register) animations ──────────────────────────
+   Entrance, ambient, and interaction keyframes for the split-screen auth
+   shell + its storefront brand scene. Consumed via inline `animation:` on
+   AuthLayout, AuthBrandScene, and AuthSubmitButton. All are neutralized by the
+   reduced-motion guard below (wildcard selector). `lp-` = Ledger Pro. */
+@keyframes lp-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes lp-pop { 0% { opacity: 0; transform: scale(.82); } 60% { opacity: 1; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes lp-clip { from { opacity: 0; clip-path: inset(0 0 102% 0); transform: translateY(6px); } to { opacity: 1; clip-path: inset(0 0 -4% 0); transform: none; } }
+@keyframes lp-bar { 0%, 100% { transform: scaleY(.4); } 50% { transform: scaleY(1); } }
+@keyframes lp-dots { 0%, 80%, 100% { transform: translateY(0); opacity: .35; } 40% { transform: translateY(-6px); opacity: 1; } }
+@keyframes lp-glow { 0%, 100% { opacity: .5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.14); } }
+@keyframes lp-drift { from { background-position: 0 0; } to { background-position: 48px 48px; } }
+@keyframes lp-sheen { 0% { transform: translateX(-160%) skewX(-18deg); } 55%, 100% { transform: translateX(420%) skewX(-18deg); } }
+@keyframes lp-coin { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
+@keyframes lp-burst { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--tx, 0), var(--ty, 0)) scale(.25); opacity: 0; } }
+@keyframes lp-sunrise { from { opacity: 0; transform: translateY(58px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes lp-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes lp-rays { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes lp-pulse { 0%, 100% { opacity: .4; } 50% { opacity: .82; } }
+@keyframes lp-swing { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes lp-cloud { from { transform: translateX(-90px); } to { transform: translateX(400px); } }
+@keyframes lp-bird { 0% { transform: translate(-60px, 10px); } 50% { transform: translate(170px, -8px); } 100% { transform: translate(410px, 8px); } }
+@keyframes lp-flap { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.6); } }
+@keyframes lp-leaf { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes lp-twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes lp-cheerpop { 0% { transform: scale(1); } 45% { transform: scale(1.18); } 100% { transform: scale(1); } }
 
 /*
  * Honor user's reduced-motion preference globally.
