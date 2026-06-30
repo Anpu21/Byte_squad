@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { LuLayers as Layers, LuCirclePause as PauseCircle, LuUndo2 as Undo2 } from 'react-icons/lu';
+import { LuLayers as Layers, LuCirclePause as PauseCircle, LuUndo2 as Undo2, LuNotebookTabs as NotebookTabs } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
+import { FRONTEND_ROUTES } from '@/constants/routes';
 import {
     usePosCart,
     type SchemeDiscountResolver,
@@ -50,6 +52,7 @@ import type { ISale, ISearchProductRow, TPaymentMethod } from '@/types';
  * mounted, so an in-progress cart survives the toggle.
  */
 export function PosPage(): React.ReactElement {
+    const navigate = useNavigate();
     const [mode, setMode] = useState<PosMode>('billing');
     const schemesQuery = useActiveSchemes(mode === 'billing');
     const schemeResolver = useMemo<SchemeDiscountResolver | undefined>(() => {
@@ -281,6 +284,15 @@ export function PosPage(): React.ReactElement {
                         >
                             <Undo2 size={14} aria-hidden />
                             Return
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => navigate(FRONTEND_ROUTES.STORE_CREDIT)}
+                            title="Look up a store-credit customer or take a repayment"
+                        >
+                            <NotebookTabs size={14} aria-hidden />
+                            Store credit
                         </Button>
                         <PosShiftControls />
                     </div>

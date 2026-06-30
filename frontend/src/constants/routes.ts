@@ -57,6 +57,10 @@ export const FRONTEND_ROUTES = {
     // Customer store credit ("khata") — walk-in buy-now-pay-later accounts
     CREDIT_ACCOUNTS: '/credit-accounts',
 
+    // Cashier-facing store credit — counter lookup + repayments (scoped slice
+    // of the admin/manager CREDIT_ACCOUNTS hub)
+    STORE_CREDIT: '/store-credit',
+
     // Users
     USER_MANAGEMENT: '/users',
     PROFILE: '/profile',
