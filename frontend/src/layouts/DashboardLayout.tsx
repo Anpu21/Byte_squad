@@ -263,6 +263,8 @@ export default function DashboardLayout() {
 
             <div className="flex-1 flex flex-col min-w-0">
                 <header className="h-14 border-b border-border bg-surface flex items-center px-4 gap-3 sticky top-0 z-20">
+                    {/* Left: sidebar toggle + breadcrumbs (equal flex column). */}
+                    <div className="flex flex-1 items-center gap-3 min-w-0">
                     <button
                         onClick={() => {
                             if (window.matchMedia('(max-width: 767px)').matches) {
@@ -308,21 +310,25 @@ export default function DashboardLayout() {
                             {crumbs[crumbs.length - 1]}
                         </span>
                     )}
+                    </div>
 
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
-                        <button
-                            type="button"
-                            onClick={() => setPaletteOpen(true)}
-                            aria-label={t('shell.commandPalette')}
-                            aria-keyshortcuts="Meta+K Control+K"
-                            className="hidden sm:flex items-center gap-2 h-9 pl-2.5 pr-2 rounded-md border border-border bg-surface-2 text-text-3 hover:text-text-2 hover:border-border-strong transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
-                        >
-                            <Search size={ICON.md} aria-hidden />
-                            <span className="text-sm">{t('shell.searchPlaceholder')}</span>
-                            <kbd className="ml-3 text-[11px] font-medium text-text-3 bg-surface border border-border rounded px-1.5 py-0.5 leading-none">
-                                ⌘K
-                            </kbd>
-                        </button>
+                    {/* Center: command-palette search, centered by equal side columns. */}
+                    <button
+                        type="button"
+                        onClick={() => setPaletteOpen(true)}
+                        aria-label={t('shell.commandPalette')}
+                        aria-keyshortcuts="Meta+K Control+K"
+                        className="hidden sm:flex items-center gap-2 h-9 w-[360px] max-w-full pl-2.5 pr-2 rounded-md border border-border bg-surface-2 text-text-3 hover:text-text-2 hover:border-border-strong transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
+                    >
+                        <Search size={ICON.md} aria-hidden />
+                        <span className="text-sm">{t('shell.searchPlaceholder')}</span>
+                        <kbd className="ml-auto text-[11px] font-medium text-text-3 bg-surface border border-border rounded px-1.5 py-0.5 leading-none">
+                            ⌘K
+                        </kbd>
+                    </button>
+
+                    {/* Right: mobile search + actions (equal flex column). */}
+                    <div className="flex flex-1 items-center justify-end gap-2 min-w-0">
                         <button
                             type="button"
                             onClick={() => setPaletteOpen(true)}
