@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -67,18 +67,15 @@ export function SidebarNav({
     const badges = useSidebarBadges(user?.role as UserRole | undefined);
 
     // Shared expand state for the panel + the collapsed flyout (single persister).
-    const [expanded, setExpanded] = useState<Set<string>>(() => {
-        const stored = readExpanded();
-        if (itemId) stored.add(itemId);
-        return stored;
-    });
-    useEffect(() => {
-        if (!itemId) return;
-        setExpanded((prev) => (prev.has(itemId) ? prev : new Set(prev).add(itemId)));
-    }, [itemId]);
+    const [expanded, setExpanded] = useState<Set<string>>(readExpanded);
     useEffect(() => {
         writeExpanded(expanded);
     }, [expanded]);
+    // The active section is always shown expanded; explicit toggles persist for the rest.
+    const effectiveExpanded = useMemo(
+        () => (itemId ? new Set(expanded).add(itemId) : expanded),
+        [expanded, itemId],
+    );
     const toggleSection = useCallback((id: string) => {
         setExpanded((prev) => {
             const next = new Set(prev);
@@ -110,9 +107,12 @@ export function SidebarNav({
         [cancelHide, scheduleHide],
     );
     useEffect(() => () => window.clearTimeout(hideTimer.current), []);
-    useEffect(() => {
-        if (!collapsed) setFlyout(null);
-    }, [collapsed]);
+    // Collapsing/expanding the rail dismisses any open flyout (the only runtime
+    // mutator of `collapsed`, so clearing it here covers every transition).
+    const handleToggleCollapsed = useCallback(() => {
+        setFlyout(null);
+        onToggleCollapsed?.();
+    }, [onToggleCollapsed]);
 
     if (!user) return null;
     const role = user.role as UserRole;
@@ -124,7 +124,7 @@ export function SidebarNav({
                 role={role}
                 activeGroup={group}
                 collapsed={collapsed}
-                onToggleCollapsed={onToggleCollapsed}
+                onToggleCollapsed={handleToggleCollapsed}
                 onHoverGroup={handleHoverGroup}
                 onNavigate={onNavigate}
             />
@@ -141,7 +141,7 @@ export function SidebarNav({
                         activeItemId={itemId}
                         role={role}
                         unreadCount={unreadCount}
-                        expanded={expanded}
+                        expanded={effectiveExpanded}
                         onToggleSection={toggleSection}
                         badges={badges}
                         onNavigate={onNavigate}
@@ -187,7 +187,7 @@ export function SidebarNav({
                                 activeItemId={itemId}
                                 role={role}
                                 unreadCount={unreadCount}
-                                expanded={expanded}
+                                expanded={effectiveExpanded}
                                 onToggleSection={toggleSection}
                                 badges={badges}
                                 onNavigate={() => {

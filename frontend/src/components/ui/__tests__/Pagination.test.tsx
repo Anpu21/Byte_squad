@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPageWindow } from '../Pagination';
+import { buildPageWindow } from '../pagination-window';
 
 describe('buildPageWindow', () => {
     it('lists every page when they fit within the window', () => {

@@ -12,26 +12,23 @@ describe('ChatAttachmentsService', () => {
   } as Express.Multer.File;
 
   it('asserts membership, uploads via Cloudinary, and returns metadata from the file', async () => {
-    const cloudinary = {
-      uploadAttachment: jest.fn().mockResolvedValue({
-        url: 'https://cdn.example.com/x.pdf',
-        publicId: 'ledgerpro/chat-attachments/user-1-abc',
-      }),
-    } as unknown as CloudinaryService;
+    const uploadAttachment = jest.fn().mockResolvedValue({
+      url: 'https://cdn.example.com/x.pdf',
+      publicId: 'ledgerpro/chat-attachments/user-1-abc',
+    });
+    const cloudinary = { uploadAttachment } as unknown as CloudinaryService;
+    const assertMembership = jest
+      .fn()
+      .mockResolvedValue({ group: {}, membership: {} });
     const customerGroups = {
-      assertMembership: jest
-        .fn()
-        .mockResolvedValue({ group: {}, membership: {} }),
+      assertMembership,
     } as unknown as CustomerGroupsService;
     const service = new ChatAttachmentsService(cloudinary, customerGroups);
 
     const result = await service.upload(file, 'user-1', 'group-1');
 
-    expect(customerGroups.assertMembership).toHaveBeenCalledWith(
-      'group-1',
-      'user-1',
-    );
-    expect(cloudinary.uploadAttachment).toHaveBeenCalledWith(
+    expect(assertMembership).toHaveBeenCalledWith('group-1', 'user-1');
+    expect(uploadAttachment).toHaveBeenCalledWith(
       file,
       expect.objectContaining({ folder: 'ledgerpro/chat-attachments' }),
     );
@@ -45,19 +42,19 @@ describe('ChatAttachmentsService', () => {
   });
 
   it('rejects a non-member without spending a Cloudinary upload', async () => {
-    const cloudinary = {
-      uploadAttachment: jest.fn(),
-    } as unknown as CloudinaryService;
+    const uploadAttachment = jest.fn();
+    const cloudinary = { uploadAttachment } as unknown as CloudinaryService;
+    const assertMembership = jest
+      .fn()
+      .mockRejectedValue(new ForbiddenException('not a member'));
     const customerGroups = {
-      assertMembership: jest
-        .fn()
-        .mockRejectedValue(new ForbiddenException('not a member')),
+      assertMembership,
     } as unknown as CustomerGroupsService;
     const service = new ChatAttachmentsService(cloudinary, customerGroups);
 
     await expect(
       service.upload(file, 'intruder', 'group-1'),
     ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(cloudinary.uploadAttachment).not.toHaveBeenCalled();
+    expect(uploadAttachment).not.toHaveBeenCalled();
   });
 });

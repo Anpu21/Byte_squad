@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -66,7 +66,7 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
         scheme?.scope ?? 'Product',
     );
     const [productId, setProductId] = useState(scheme?.productId ?? '');
-    const [productInput, setProductInput] = useState('');
+    const [productDraft, setProductDraft] = useState<string | null>(null);
     const [category, setCategory] = useState(scheme?.category ?? '');
     const [minQty, setMinQty] = useState(String(Number(scheme?.minQty ?? 0)));
     const [discountPercentage, setDiscountPercentage] = useState(
@@ -96,16 +96,14 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
     // what the user types resolves to the matching product id, so the scheme still
     // stores an id and the POS can apply the discount.
     const products = productsQuery.data ?? [];
-    useEffect(() => {
-        if (!scheme?.productId) return;
-        const match = (productsQuery.data ?? []).find(
-            (p) => p.id === scheme.productId,
-        );
-        if (match) setProductInput((cur) => cur || match.name);
-    }, [productsQuery.data, scheme?.productId]);
+    // Free-text product box: what the user types (`productDraft`) wins; until they
+    // type, show the saved product's name resolved from `productId` (derived, so no
+    // state-sync effect is needed).
+    const matchedName = products.find((p) => p.id === productId)?.name ?? '';
+    const productInput = productDraft ?? matchedName;
 
     function onProductInput(value: string) {
-        setProductInput(value);
+        setProductDraft(value);
         const match = products.find((p) => p.name === value);
         setProductId(match?.id ?? '');
     }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
@@ -7,8 +7,8 @@ import { getActiveSection, getVisibleGroups, type NavGroup } from '@/config/navi
 /**
  * Resolves the current route to its two-tier nav section: the active `group`
  * (drives the rail) and `itemId` (drives the panel). On routes owned by no
- * sidebar item (e.g. `/profile`) it keeps the last resolved group so the panel
- * stays stable, falling back to the first visible group on first paint.
+ * sidebar item (e.g. `/profile`) it falls back to the first visible group so the
+ * rail still shows a sensible active state.
  */
 export function useActiveSection(): { group: NavGroup | null; itemId: string | null } {
     const { pathname } = useLocation();
@@ -20,12 +20,9 @@ export function useActiveSection(): { group: NavGroup | null; itemId: string | n
         [pathname, role],
     );
 
-    const lastGroup = useRef<NavGroup | null>(null);
-    useEffect(() => {
-        if (section) lastGroup.current = section.group;
-    }, [section]);
-
     if (section) return { group: section.group, itemId: section.item.id };
-    const fallback = lastGroup.current ?? (role ? getVisibleGroups(role)[0] ?? null : null);
-    return { group: fallback, itemId: null };
+    return {
+        group: role ? (getVisibleGroups(role)[0] ?? null) : null,
+        itemId: null,
+    };
 }
