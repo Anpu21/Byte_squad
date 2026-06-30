@@ -42,13 +42,15 @@
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
 
-  --color-brand-900: #19183B;
-  --color-brand-700: #2C2A55;
-  --color-brand-500: #4A487A;
-  --color-brand-400: #708993;
-  --color-brand-300: #A1C2BD;
-  --color-brand-100: #C8DDD8;
-  --color-brand-50:  #E7F2EF;
+  /* Per-theme brand ramp — resolves via --brand-* in :root / [data-theme=dark]
+     so light stays indigo while dark uses the warm ramp. */
+  --color-brand-900: var(--brand-900);
+  --color-brand-700: var(--brand-700);
+  --color-brand-500: var(--brand-500);
+  --color-brand-400: var(--brand-400);
+  --color-brand-300: var(--brand-300);
+  --color-brand-100: var(--brand-100);
+  --color-brand-50:  var(--brand-50);
 
   --radius-sm: 9px;
   --radius-md: 9px;
@@ -112,6 +114,15 @@
   --info: #3A57A8;
   --info-soft: #E8EDFB;
 
+  /* Brand ramp (indigo) — light. */
+  --brand-900: #19183B;
+  --brand-700: #2C2A55;
+  --brand-500: #4A487A;
+  --brand-400: #708993;
+  --brand-300: #A1C2BD;
+  --brand-100: #C8DDD8;
+  --brand-50:  #E7F2EF;
+
   --shadow-xs: 0 1px 2px rgba(25,24,59,.05);
   --shadow-sm: 0 1px 2px rgba(25,24,59,.05), 0 2px 8px -2px rgba(25,24,59,.06);
   --shadow-md: 0 10px 32px -10px rgba(25,24,59,.16), 0 2px 6px rgba(25,24,59,.05);
@@ -130,46 +141,56 @@
 }
 
 [data-theme="dark"] {
-  /* Ledger UI Kit — direction A (Crisp), dark. */
-  --canvas: #0C0B1F;
-  --surface: #16153A;
-  --surface-2: #1F1D47;
-  --surface-3: #2C2A55;
-  --surface-accent: rgba(161, 194, 189, .08);
-  --surface-hover: #262458;
-  --border: #2C2A55;
-  --border-strong: #3A3768;
+  /* Ledger UI Kit — warm "espresso" (editorial), dark. Paired with the original
+     indigo light theme above (light reverted, dark kept warm). */
+  --canvas: #15120D;
+  --surface: #1F1B14;
+  --surface-2: #241F17;
+  --surface-3: #2C261C;
+  --surface-accent: rgba(199, 148, 184, .08);
+  --surface-hover: #2A241B;
+  --border: #322B20;
+  --border-strong: #41382A;
 
-  --text-1: #EAF3F0;
-  --text-2: #A1C2BD;
-  --text-3: #7E94A0;
-  --text-inv: #10122B;
+  --text-1: #F2EBDB;
+  --text-2: #B6AC98;
+  --text-3: #978D78;
+  --text-inv: #15120D;
 
-  --primary: #A1C2BD;
-  --primary-hover: #C8DDD8;
-  --primary-soft: rgba(161,194,189,.12);
-  --primary-soft-text: #C8DDD8;
+  --primary: #F2EBDB;
+  --primary-hover: #FFFFFF;
+  --primary-soft: rgba(242,235,219,.12);
+  --primary-soft-text: #F2EBDB;
 
-  --accent: #56D49B;
-  --accent-soft: rgba(86,212,155,.13);
-  --accent-text: #56D49B;
+  --accent: #5FB98A;
+  --accent-soft: rgba(95,185,138,.14);
+  --accent-text: #5FB98A;
 
-  --focus: #A1C2BD;
-  --focus-soft: rgba(161,194,189,.14);
+  --focus: #C794B8;
+  --focus-soft: rgba(199,148,184,.16);
 
-  --warning: #E6BC57;
-  --warning-soft: rgba(230,188,87,.13);
-  --danger: #F0837F;
-  --danger-soft: rgba(240,131,127,.13);
+  --warning: #E0A93E;
+  --warning-soft: rgba(224,169,62,.14);
+  --danger: #E0735A;
+  --danger-soft: rgba(224,115,90,.15);
   --info: #9FB4F0;
   --info-soft: rgba(159,180,240,.13);
+
+  /* Brand ramp (warm) — dark. */
+  --brand-900: #221C14;
+  --brand-700: #3A3024;
+  --brand-500: #5C5343;
+  --brand-400: #948A75;
+  --brand-300: #B6AC98;
+  --brand-100: #E7DECD;
+  --brand-50:  #F4EDDF;
 
   --shadow-xs: 0 1px 2px rgba(0,0,0,.5);
   --shadow-sm: 0 1px 2px rgba(0,0,0,.5);
   --shadow-md: 0 12px 36px -12px rgba(0,0,0,.7);
   --shadow-lg: 0 18px 40px rgba(0,0,0,.6);
-  --ring: 0 0 0 3px rgba(161,194,189,.28);
-  --overlay: rgba(8, 7, 24, 0.7);
+  --ring: 0 0 0 3px rgba(199,148,184,.30);
+  --overlay: rgba(8, 6, 3, 0.72);
 }
 
 html, body {
