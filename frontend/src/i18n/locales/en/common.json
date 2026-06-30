@@ -54,6 +54,7 @@
     "profile": "Profile",
     "logout": "Logout",
     "primaryNav": "Primary navigation",
+    "secondaryNav": "Secondary navigation",
     "commandPalette": "Command palette",
     "searchPlaceholder": "Search or jump to…",
     "noResults": "No matches"

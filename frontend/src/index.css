@@ -68,6 +68,8 @@
   --nav-sidebar-w: 256px;
   --nav-rail-w: 64px;
   --nav-drawer-w: 288px;
+  --nav-panel-w: 224px;          /* two-tier secondary panel (rail 64 + panel 224 = drawer 288) */
+  --nav-subtab-indent: 28px;     /* nested sub-tab row indent in the panel */
   --nav-row-h: 40px;
   --nav-label-size: 13px;
   --nav-badge-size: 18px;
