@@ -28,9 +28,6 @@ export function PurchasesWorkspacePage() {
 
     return (
         <WorkspacePage
-            eyebrow="Inventory"
-            title="Purchases"
-            subtitle="Suppliers and goods receipts — where stock and cost enter the system."
             tabs={tabs}
             active={tab}
             onTabChange={setTab}

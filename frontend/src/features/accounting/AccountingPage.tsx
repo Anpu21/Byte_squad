@@ -25,9 +25,6 @@ export function AccountingPage() {
 
     return (
         <WorkspacePage
-            eyebrow="Finance"
-            title="Accounting"
-            subtitle="Ledger, receivables, expenses, and the P&L — the books behind every branch."
             tabs={tabs}
             active={tab}
             onTabChange={setTab}

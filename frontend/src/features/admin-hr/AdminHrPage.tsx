@@ -17,9 +17,6 @@ export function AdminHrPage() {
 
     return (
         <WorkspacePage
-            eyebrow="People"
-            title="Human resources"
-            subtitle="Employees, attendance, leave, and payroll — your team in one place."
             tabs={tabs}
             active={tab}
             onTabChange={setTab}

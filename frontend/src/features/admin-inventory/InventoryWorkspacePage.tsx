@@ -30,9 +30,6 @@ export function InventoryWorkspacePage() {
 
     return (
         <WorkspacePage
-            eyebrow="Operations"
-            title="Inventory"
-            subtitle="Stock on hand, expiry, adjustments, returns, transfers, categories, and labels."
             tabs={tabs}
             active={tab}
             onTabChange={setTab}

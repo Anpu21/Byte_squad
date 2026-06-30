@@ -42,9 +42,6 @@ export function CreditAccountsPage() {
 
   return (
     <WorkspacePage
-      eyebrow="Finance"
-      title="Store credit"
-      subtitle="Walk-in customer credit accounts (khata) — approvals, balances, ageing, and repayments."
       tabs={tabs}
       active={tab}
       onTabChange={setTab}
