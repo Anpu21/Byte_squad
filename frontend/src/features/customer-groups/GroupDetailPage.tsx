@@ -35,7 +35,7 @@ export function GroupDetailPage() {
 
   if (p.isError || !p.group) {
     return (
-      <div className="mx-auto max-w-5xl">
+      <div>
         <EmptyState
           icon={<Users size={26} />}
           title="Group not available"
@@ -59,7 +59,7 @@ export function GroupDetailPage() {
   )
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div>
       <GroupDetailHeader
         name={group.name}
         isOwner={p.isOwner}
