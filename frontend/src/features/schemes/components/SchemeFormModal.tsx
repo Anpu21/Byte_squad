@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -66,6 +66,7 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
         scheme?.scope ?? 'Product',
     );
     const [productId, setProductId] = useState(scheme?.productId ?? '');
+    const [productInput, setProductInput] = useState('');
     const [category, setCategory] = useState(scheme?.category ?? '');
     const [minQty, setMinQty] = useState(String(Number(scheme?.minQty ?? 0)));
     const [discountPercentage, setDiscountPercentage] = useState(
@@ -90,6 +91,24 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
         queryFn: userService.getBranches,
         enabled: isAdmin,
     });
+
+    // The Product field is a free-text box with product suggestions (datalist);
+    // what the user types resolves to the matching product id, so the scheme still
+    // stores an id and the POS can apply the discount.
+    const products = productsQuery.data ?? [];
+    useEffect(() => {
+        if (!scheme?.productId) return;
+        const match = (productsQuery.data ?? []).find(
+            (p) => p.id === scheme.productId,
+        );
+        if (match) setProductInput((cur) => cur || match.name);
+    }, [productsQuery.data, scheme?.productId]);
+
+    function onProductInput(value: string) {
+        setProductInput(value);
+        const match = products.find((p) => p.name === value);
+        setProductId(match?.id ?? '');
+    }
 
     const minQtyNum = Number(minQty);
     const pctNum = Number(discountPercentage);
@@ -201,23 +220,24 @@ function SchemeForm({ onClose, scheme }: ISchemeFormProps) {
                         <span className="text-[11px] uppercase tracking-wide text-text-3">
                             Product
                         </span>
-                        <select
-                            className={`${INPUT_CLASS} field-select w-full`}
-                            value={productId}
-                            onChange={(e) => setProductId(e.target.value)}
-                            required
-                        >
-                            <option value="" disabled>
-                                {productsQuery.isLoading
+                        <input
+                            className={`${INPUT_CLASS} w-full`}
+                            list="scheme-product-options"
+                            value={productInput}
+                            onChange={(e) => onProductInput(e.target.value)}
+                            placeholder={
+                                productsQuery.isLoading
                                     ? 'Loading products…'
-                                    : 'Pick a product'}
-                            </option>
-                            {(productsQuery.data ?? []).map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.name}
-                                </option>
+                                    : 'Type a product name'
+                            }
+                            autoComplete="off"
+                            required
+                        />
+                        <datalist id="scheme-product-options">
+                            {products.map((p) => (
+                                <option key={p.id} value={p.name} />
                             ))}
-                        </select>
+                        </datalist>
                     </label>
                 ) : (
                     <label className="block space-y-1.5">
