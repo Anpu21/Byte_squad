@@ -137,7 +137,7 @@ export default function CustomerLayout({
                     <form
                         role="search"
                         onSubmit={handleSearchSubmit}
-                        className="hidden lg:flex items-center flex-1 max-w-[420px] h-[38px] px-3 bg-surface-2 border border-border rounded-lg gap-2 focus-within:border-focus focus-within:ring-[3px] focus-within:ring-focus/20 transition-colors"
+                        className="hidden lg:flex items-center flex-1 max-w-[420px] h-[38px] px-3 bg-surface-2 border border-border-strong rounded-[var(--radius-field)] gap-2 focus-within:border-focus focus-within:ring-[3px] focus-within:ring-focus/25 transition-[border-color,box-shadow] duration-150 ease-out"
                     >
                         <Search size={15} className="text-text-3 flex-shrink-0" />
                         <input

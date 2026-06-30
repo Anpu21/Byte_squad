@@ -7,7 +7,7 @@ import {
 import BarChart from '@/components/charts/BarChart'
 import AreaChart from '@/components/charts/AreaChart'
 import DonutChart from '@/components/charts/DonutChart'
-import { DataTable, EmptyState, KpiCard } from '@/components/ui'
+import { DataTable, EmptyState, KpiCard, FIELD_SHELL, FIELD_BORDER } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import { useGroupAnalyticsPage } from '@/features/customer-groups/hooks/useGroupAnalyticsPage'
 import {
@@ -21,8 +21,7 @@ import {
 } from '@/features/customer-groups/components/group-analytics-columns'
 import type { IGroupMemberSpendRow, IGroupProductSpendRow } from '@/types'
 
-const dateInputClass =
-  'h-10 rounded-md border border-border-strong bg-surface px-3 text-[13px] text-text-1 outline-none transition-colors focus:border-focus focus:ring-[3px] focus:ring-focus/25'
+const dateInputClass = `${FIELD_SHELL} ${FIELD_BORDER} h-10 px-3`
 
 function ChartMessage({ children }: { children: string }) {
   return <p className="py-10 text-center text-sm text-text-3">{children}</p>

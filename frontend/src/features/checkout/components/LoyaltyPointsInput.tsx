@@ -1,4 +1,6 @@
 import { LuSparkles as Sparkles } from 'react-icons/lu';
+import { cn } from '@/lib/utils';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
 interface LoyaltyPointsInputProps {
     value: number;
@@ -43,7 +45,11 @@ export function LoyaltyPointsInput({
                         if (Number.isNaN(next)) return;
                         onChange(Math.max(0, Math.min(next, maxRedeemable)));
                     }}
-                    className="flex-1 h-10 bg-surface border border-border rounded-md px-3 text-sm text-text-1 tabular-nums mono focus:outline-none focus:border-focus disabled:opacity-50"
+                    className={cn(
+                        FIELD_SHELL,
+                        FIELD_BORDER,
+                        'h-10 flex-1 px-3 tabular-nums mono',
+                    )}
                 />
                 <button
                     type="button"
