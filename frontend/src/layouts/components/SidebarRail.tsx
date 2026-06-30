@@ -1,6 +1,10 @@
 import { useRef, type KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import {
+    LuPanelLeftClose as PanelLeftClose,
+    LuPanelLeftOpen as PanelLeftOpen,
+} from 'react-icons/lu';
 import { UserRole } from '@/constants/enums';
 import {
     GROUP_ICON,
@@ -17,15 +21,24 @@ import { cn } from '@/lib/utils';
 interface SidebarRailProps {
     role: UserRole;
     activeGroup: NavGroup | null;
+    collapsed: boolean;
+    onToggleCollapsed?: () => void;
     onNavigate?: () => void;
 }
 
 /**
- * The thin icon rail of the two-tier sidebar — one icon per visible nav group.
- * Clicking a group lands on its first role-allowed item; the panel follows the
- * route. Roving tabindex + vertical arrow keys move focus between groups.
+ * The thin icon rail of the two-tier sidebar — one icon per visible nav group,
+ * an active-group accent bar, and a desktop collapse/expand toggle pinned at the
+ * bottom. Clicking a group lands on its first role-allowed item; the panel
+ * follows the route. Roving tabindex + vertical arrow keys move focus.
  */
-export function SidebarRail({ role, activeGroup, onNavigate }: SidebarRailProps) {
+export function SidebarRail({
+    role,
+    activeGroup,
+    collapsed,
+    onToggleCollapsed,
+    onNavigate,
+}: SidebarRailProps) {
     const { t } = useTranslation('common');
     const groups = getVisibleGroups(role);
     const links = useRef<(HTMLAnchorElement | null)[]>([]);
@@ -44,7 +57,7 @@ export function SidebarRail({ role, activeGroup, onNavigate }: SidebarRailProps)
         links.current[next]?.focus();
     };
 
-    // Only one rail link is in the tab order (roving tabindex); the active group,
+    // Only one rail link is in the tab order (roving tabindex): the active group,
     // or the first when none is active.
     const focusIndex = Math.max(0, groups.indexOf(activeGroup as NavGroup));
 
@@ -80,18 +93,53 @@ export function SidebarRail({ role, activeGroup, onNavigate }: SidebarRailProps)
                                 aria-current={active ? 'page' : undefined}
                                 tabIndex={i === focusIndex ? 0 : -1}
                                 className={cn(
-                                    'flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
+                                    'relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25',
                                     active
                                         ? 'bg-surface-2 text-primary'
                                         : 'text-text-3 hover:bg-surface-2 hover:text-text-1',
                                 )}
                             >
+                                {active && (
+                                    <span
+                                        className="absolute -left-2 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-primary"
+                                        aria-hidden
+                                    />
+                                )}
                                 <Icon size={NAV_ICON} strokeWidth={2} aria-hidden />
                             </Link>
                         </Tooltip>
                     );
                 })}
             </nav>
+
+            {onToggleCollapsed && (
+                <div className="mt-auto hidden pt-2 md:block">
+                    <Tooltip
+                        label={
+                            collapsed
+                                ? t('shell.expandSidebar')
+                                : t('shell.collapseSidebar')
+                        }
+                    >
+                        <button
+                            type="button"
+                            onClick={onToggleCollapsed}
+                            aria-label={
+                                collapsed
+                                    ? t('shell.expandSidebar')
+                                    : t('shell.collapseSidebar')
+                            }
+                            className="flex h-10 w-10 items-center justify-center rounded-lg text-text-3 transition-colors hover:bg-surface-2 hover:text-text-1 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25"
+                        >
+                            {collapsed ? (
+                                <PanelLeftOpen size={NAV_ICON} aria-hidden />
+                            ) : (
+                                <PanelLeftClose size={NAV_ICON} aria-hidden />
+                            )}
+                        </button>
+                    </Tooltip>
+                </div>
+            )}
         </div>
     );
 }

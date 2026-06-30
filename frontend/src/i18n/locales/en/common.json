@@ -50,6 +50,8 @@
   "shell": {
     "skipToMain": "Skip to main content",
     "toggleSidebar": "Toggle sidebar",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
     "openUserMenu": "Open user menu",
     "profile": "Profile",
     "logout": "Logout",

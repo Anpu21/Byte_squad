@@ -13,6 +13,8 @@ import { SidebarPanel } from './SidebarPanel';
 interface SidebarNavProps {
     /** Desktop-collapsed (rail only). The panel still shows in the mobile drawer. */
     collapsed: boolean;
+    /** Toggle the desktop collapse (rail-only ↔ rail+panel). */
+    onToggleCollapsed?: () => void;
     unreadCount: number;
     onNavigate?: () => void;
 }
@@ -23,7 +25,12 @@ interface SidebarNavProps {
  * contextual panel + the profile footer. The active group is derived from the
  * route via `useActiveSection`.
  */
-export function SidebarNav({ collapsed, unreadCount, onNavigate }: SidebarNavProps) {
+export function SidebarNav({
+    collapsed,
+    onToggleCollapsed,
+    unreadCount,
+    onNavigate,
+}: SidebarNavProps) {
     const { t } = useTranslation('common');
     const { user } = useAuth();
     const location = useLocation();
@@ -35,7 +42,13 @@ export function SidebarNav({ collapsed, unreadCount, onNavigate }: SidebarNavPro
 
     return (
         <div className="flex h-full min-h-0 w-full">
-            <SidebarRail role={role} activeGroup={group} onNavigate={onNavigate} />
+            <SidebarRail
+                role={role}
+                activeGroup={group}
+                collapsed={collapsed}
+                onToggleCollapsed={onToggleCollapsed}
+                onNavigate={onNavigate}
+            />
 
             {group && (
                 <div

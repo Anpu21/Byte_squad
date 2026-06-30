@@ -125,6 +125,7 @@ export default function DashboardLayout() {
             >
                 <SidebarNav
                     collapsed={!sidebarOpen}
+                    onToggleCollapsed={() => setSidebarOpen((s) => !s)}
                     unreadCount={unreadCount}
                     onNavigate={() => setMobileNavOpen(false)}
                 />
