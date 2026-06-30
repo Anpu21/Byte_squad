@@ -2,6 +2,7 @@ import type { ChangeEvent } from 'react';
 import { usePosProductUnits } from '@/features/pos/hooks/usePosProductUnits';
 import type { IProductUnitRow } from '@/types';
 import { cn } from '@/lib/utils';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
 interface IPosUnitSelectProps {
     productId: string | null;
@@ -43,7 +44,9 @@ export function PosUnitSelect({
             disabled={disabled || isLoading || !productId}
             aria-label="Unit"
             className={cn(
-                'h-8 px-2 text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none focus:border-focus focus:ring-[2px] focus:ring-primary/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+                FIELD_SHELL,
+                FIELD_BORDER,
+                'h-8 px-2 text-[12px]',
                 className,
             )}
         >

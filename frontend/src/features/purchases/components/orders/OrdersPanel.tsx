@@ -8,6 +8,8 @@ import {
     DataTable,
     EmptyState,
     Pill,
+    FIELD_SHELL,
+    FIELD_BORDER,
     type DataTableColumn,
     type PillTone,
 } from '@/components/ui';
@@ -17,8 +19,7 @@ import { usePurchaseOrders } from '../../hooks/usePurchaseOrders';
 import { usePurchaseOrderMutations } from '../../hooks/usePurchaseOrderMutations';
 import { OrderFormModal } from './OrderFormModal';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 const STATUS_TONE: Record<PurchaseOrderStatus, PillTone> = {
     Draft: 'neutral',

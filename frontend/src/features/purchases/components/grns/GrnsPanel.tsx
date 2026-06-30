@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import Card from '@/components/ui/Card';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { GrnPaymentStatus, GrnStatus, IGrn } from '@/types';
 import { useGrns } from '../../hooks/useGrns';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { GrnsTable } from './GrnsTable';
 import { GrnDetailModal } from './GrnDetailModal';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 /**
  * Goods-receipts register: filter by supplier / status / payment state,
