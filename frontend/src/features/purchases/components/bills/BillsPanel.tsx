@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
-import { DataTable, type DataTableColumn } from '@/components/ui';
+import { DataTable, type DataTableColumn, FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { userService } from '@/services/user.service';
 import { queryKeys } from '@/lib/queryKeys';
@@ -19,8 +19,7 @@ import { useSupplierPayments } from '../../hooks/useSupplierPayments';
 import { useCreateSupplierPayment } from '../../hooks/useCreateSupplierPayment';
 import { GrnPaymentPill } from '../grns/GrnPaymentPill';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 const OPENING_KEY = 'opening';
 

@@ -1,9 +1,9 @@
 import { formatCurrency } from '@/lib/utils';
 import type { IProduct } from '@/types';
 import { unitPriceSuffix } from '../lib/label-sheet-html';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
-const QTY_INPUT_CLASS =
-    'h-9 w-20 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 text-right outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const QTY_INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 w-20 px-3 text-right`;
 
 interface ILabelProductTableProps {
     rows: IProduct[];

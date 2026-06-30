@@ -2,6 +2,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { IPayroll, PaymentMethod } from '@/types';
 import { useMarkPayrollPaid } from '../hooks/usePayrollMutations';
 import {
@@ -15,8 +16,7 @@ interface IMarkPaidModalProps {
     onClose: () => void;
 }
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 /**
  * Wrapper that only mounts the form when a payroll row is selected,

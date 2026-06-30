@@ -7,6 +7,7 @@ import {
     useState,
 } from 'react';
 import { LuCamera as Camera, LuPlus as Plus } from 'react-icons/lu';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { useInventoryByBranchQuery } from '@/hooks/useInventoryByBranchQuery';
 import type { IProduct } from '@/types';
 
@@ -153,7 +154,7 @@ export function AdminTransferCartAddRow({
                         aria-autocomplete="list"
                         aria-expanded={showDropdown}
                         disabled={!sourceBranchId}
-                        className="flex-1 min-w-0 h-8 px-2 bg-canvas border border-border rounded-md text-[12px] text-text-1 outline-none focus:border-focus focus:ring-[2px] focus:ring-primary/30 transition-all placeholder:text-text-3 disabled:opacity-60 disabled:cursor-not-allowed"
+                        className={`${FIELD_SHELL} ${FIELD_BORDER} flex-1 min-w-0 h-8 px-2`}
                     />
                     <button
                         type="button"

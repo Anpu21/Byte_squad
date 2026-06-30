@@ -9,6 +9,8 @@ import Pill from '@/components/ui/Pill';
 import {
     DataTable,
     EmptyState,
+    FIELD_SHELL,
+    FIELD_BORDER,
     WorkspacePage,
     type DataTableColumn,
 } from '@/components/ui';
@@ -37,8 +39,7 @@ const MONTH_NAMES = [
     'December',
 ];
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 const REPORT_TABS = [
     'trial-balance',

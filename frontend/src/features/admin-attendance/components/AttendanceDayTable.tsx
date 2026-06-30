@@ -3,6 +3,8 @@ import toast from 'react-hot-toast';
 import { LuCircleCheckBig as CheckCircle2, LuPencil as Pencil } from 'react-icons/lu';
 import Avatar from '@/components/ui/Avatar';
 import EmptyState from '@/components/ui/EmptyState';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
+import { cn } from '@/lib/utils';
 import type {
     AttendanceStatus,
     IAttendance,
@@ -59,7 +61,7 @@ function HoursCell({
             }}
             aria-label="Hours"
             placeholder="—"
-            className="w-16 h-7 px-2 text-right text-[12px] tabular-nums bg-surface border border-border rounded outline-none focus:border-focus focus:ring-[2px] focus:ring-primary/30 transition-colors disabled:opacity-60"
+            className={cn(FIELD_SHELL, FIELD_BORDER, 'w-16 h-7 px-2 text-[12px] text-right tabular-nums')}
         />
     );
 }

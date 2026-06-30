@@ -1,4 +1,5 @@
 import Modal from '@/components/ui/Modal';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { IStockTransferRequest } from '@/types';
 import type { ApproveModalState } from '../hooks/useApproveTransferModal';
 import { SourceOptionsTable } from './SourceOptionsTable';
@@ -70,7 +71,7 @@ export function ApproveTransferModal({
                         onChange={(e) =>
                             state.setApprovedQuantityStr(e.target.value)
                         }
-                        className="w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-all"
+                        className={`${FIELD_SHELL} ${FIELD_BORDER} w-full h-11 px-4`}
                     />
                     <p className="text-[11px] text-text-3 mt-1">
                         Requested: {transfer.requestedQuantity} unit(s)
@@ -106,7 +107,7 @@ export function ApproveTransferModal({
                         rows={2}
                         maxLength={500}
                         placeholder="e.g. Please ship before Friday — store running out."
-                        className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3 resize-none"
+                        className={`${FIELD_SHELL} ${FIELD_BORDER} w-full px-4 py-3 resize-none`}
                     />
                     <p className="text-[11px] text-text-3 mt-1">
                         Sent to both source and destination branch managers in

@@ -3,6 +3,7 @@ import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';
 import type { PayrollStatus } from '@/types';
 import { PAYROLL_STATUSES } from '../lib/payroll-formatting';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
 interface IPayrollFiltersProps {
     monthValue: string;
@@ -14,8 +15,7 @@ interface IPayrollFiltersProps {
     canPickBranch: boolean;
 }
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 /**
  * Filter chip row for the payroll table. Month picker drives both

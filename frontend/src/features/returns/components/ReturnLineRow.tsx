@@ -1,5 +1,6 @@
 import type { IReturnableLine } from '@/types'
 import type { LineDraft } from '../hooks/useReturnWorkflow'
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui'
 
 interface ReturnLineRowProps {
   line: IReturnableLine
@@ -7,8 +8,7 @@ interface ReturnLineRowProps {
   onChange: (patch: Partial<LineDraft>) => void
 }
 
-const QTY_CLASS =
-  'w-20 h-[34px] px-2 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 text-right outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 num disabled:opacity-50'
+const QTY_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-20 h-[34px] px-2 text-right num`
 
 export function ReturnLineRow({ line, draft, onChange }: ReturnLineRowProps) {
   const good = draft?.good ?? ''

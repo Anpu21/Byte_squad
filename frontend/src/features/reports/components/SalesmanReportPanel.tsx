@@ -6,6 +6,8 @@ import {
     Card,
     DataTable,
     EmptyState,
+    FIELD_SHELL,
+    FIELD_BORDER,
     type DataTableColumn,
 } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,8 +19,7 @@ import type { ISalesmanReportRow } from '@/types';
 import { useSalesmanReport } from '../hooks/useSalesmanReport';
 import { downloadSalesmanCsv } from '../lib/salesman-csv';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 function isoDaysAgo(days: number): string {
     return new Date(Date.now() - days * 24 * 60 * 60 * 1000)

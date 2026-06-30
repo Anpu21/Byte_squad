@@ -1,10 +1,10 @@
 import type { TransferStatus } from '@/constants/enums';
 import type { IBranchWithMeta, IProduct } from '@/types';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { HISTORY_STATUSES } from '../lib/statuses';
 import { ProductTypeahead } from './ProductTypeahead';
 
-const INPUT_CLASS =
-    'w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-all';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full h-10 px-3`;
 
 export interface TransferHistoryFilterValues {
     selectedStatuses: TransferStatus[];

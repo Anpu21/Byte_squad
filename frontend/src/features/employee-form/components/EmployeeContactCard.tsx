@@ -1,4 +1,5 @@
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { EmployeeFormField } from './EmployeeFormField';
 import { inputClasses } from '../lib/input-classes';
 import type { EmployeeFormState } from '../hooks/useEmployeeFormState';
@@ -75,7 +76,7 @@ export function EmployeeContactCard({ form }: EmployeeContactCardProps) {
                             form.setPermanentAddress(e.target.value)
                         }
                         rows={2}
-                        className="w-full px-3 py-2 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 placeholder:text-text-3 resize-none transition-colors"
+                        className={`${FIELD_SHELL} ${FIELD_BORDER} w-full px-3 py-2 resize-none`}
                     />
                 </EmployeeFormField>
 
@@ -91,7 +92,7 @@ export function EmployeeContactCard({ form }: EmployeeContactCardProps) {
                             form.setCurrentAddress(e.target.value)
                         }
                         rows={2}
-                        className="w-full px-3 py-2 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 placeholder:text-text-3 resize-none transition-colors"
+                        className={`${FIELD_SHELL} ${FIELD_BORDER} w-full px-3 py-2 resize-none`}
                     />
                 </EmployeeFormField>
 

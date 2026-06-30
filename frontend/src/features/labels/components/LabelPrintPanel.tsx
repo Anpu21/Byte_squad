@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 import Segmented from '@/components/ui/Segmented';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { inventoryService } from '@/services/inventory.service';
 import { queryKeys } from '@/lib/queryKeys';
 import { buildLabelSheetHtml, unitPriceSuffix } from '../lib/label-sheet-html';
@@ -13,8 +14,7 @@ import type { ILabelItem, LabelLayout } from '../lib/label-sheet-html';
 import { usePrintLabelSheet } from '../hooks/usePrintLabelSheet';
 import { LabelProductTable } from './LabelProductTable';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 const MAX_PER_PRODUCT = 99;
 

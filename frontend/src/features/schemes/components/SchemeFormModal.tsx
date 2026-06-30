@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useQuery } from '@tanstack/react-query';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import type {
@@ -24,8 +25,7 @@ interface ISchemeFormModalProps {
     scheme?: IDiscountScheme | null;
 }
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 /**
  * Outer shell mounts the form only while open so each open starts with

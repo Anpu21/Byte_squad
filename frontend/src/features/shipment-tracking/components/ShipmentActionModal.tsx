@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { hrService } from '@/services/hr.service';
 import type { IShipment } from '@/types';
 import { useShipmentActions } from '@/features/shipment-tracking/hooks/useShipmentActions';
@@ -15,8 +16,7 @@ const TITLES: Record<Mode, string> = {
     cancel: 'Cancel shipment',
 };
 
-const FIELD =
-    'w-full bg-surface border border-border rounded-md px-3 py-2 text-sm text-text-1 focus:outline-none focus:ring-[3px] focus:ring-focus/25';
+const FIELD = `${FIELD_SHELL} ${FIELD_BORDER} w-full px-3 py-2`;
 
 interface Props {
     mode: Mode;

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { LuPlus as Plus, LuTrash2 as Trash2 } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { inventoryService } from '@/services/inventory.service';
 import { userService } from '@/services/user.service';
@@ -14,8 +15,7 @@ import { UserRole } from '@/constants/enums';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { usePurchaseOrderMutations } from '../../hooks/usePurchaseOrderMutations';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 interface IOrderLineDraft {
     key: number;
@@ -345,7 +345,7 @@ function OrderForm({ onClose }: { onClose: () => void }) {
                     Notes (optional)
                 </span>
                 <textarea
-                    className="w-full min-h-[56px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors"
+                    className={`${FIELD_SHELL} ${FIELD_BORDER} w-full min-h-[56px] px-3 py-2`}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     maxLength={1000}

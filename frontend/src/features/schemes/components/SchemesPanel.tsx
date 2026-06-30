@@ -3,6 +3,7 @@ import { LuPlus as Plus } from 'react-icons/lu';
 import { useQuery } from '@tanstack/react-query';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import type { IDiscountScheme } from '@/types';
@@ -13,8 +14,7 @@ import { useSchemes } from '../hooks/useSchemes';
 import { SchemesTable } from './SchemesTable';
 import { SchemeFormModal } from './SchemeFormModal';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 /**
  * Discount-schemes workspace: status filter + list + create/edit modal.

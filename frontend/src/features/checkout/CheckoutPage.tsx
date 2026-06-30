@@ -1,9 +1,9 @@
 import { Navigate } from 'react-router-dom';
 import { useCheckout } from '@/features/checkout/hooks/useCheckout';
 import { LoyaltyPointsInput } from '@/features/checkout/components/LoyaltyPointsInput';
-import { Button } from '@/components/ui';
+import { Button, FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import Segmented from '@/components/ui/Segmented';
-import { formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { shopLineTotal } from '@/store/selectors/shopCart';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 
@@ -77,7 +77,7 @@ export function CheckoutPage() {
                             onChange={(e) => p.setNote(e.target.value)}
                             rows={2}
                             placeholder="Any pickup instructions"
-                            className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-text-1 focus:outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/20 resize-none"
+                            className={cn(FIELD_SHELL, FIELD_BORDER, 'w-full px-3 py-2.5 resize-none')}
                         />
                     </div>
                 </div>

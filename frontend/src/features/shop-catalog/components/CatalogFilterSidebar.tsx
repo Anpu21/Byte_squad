@@ -6,6 +6,7 @@ import {
     LuStore as Store,
 } from 'react-icons/lu';
 import { Select } from '@/components/ui/Select';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { cn, formatCurrency } from '@/lib/utils';
 import type { IShopBranch, ShopStockStatus } from '@/types';
 import { STOCK_LABEL } from '../lib/stock-style';
@@ -121,7 +122,7 @@ export function CatalogFilterSidebar({
                         onChange={(e) => onSearch(e.target.value)}
                         placeholder="Filter products"
                         aria-label="Filter products"
-                        className="w-full rounded-lg border border-border bg-surface-2 py-2.5 pl-9 pr-3 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus:border-focus focus:ring-[3px] focus:ring-focus/20"
+                        className={`${FIELD_SHELL} ${FIELD_BORDER} w-full py-2.5 pl-9 pr-3`}
                     />
                 </div>
 

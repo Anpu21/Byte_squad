@@ -1,9 +1,9 @@
 import Segmented from '@/components/ui/Segmented';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { formatDateRangeLabel } from '../lib/format';
 import { PERIOD_OPTIONS, type PeriodKey } from '../lib/period';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border-strong text-text-1 text-sm rounded-md outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 interface ProfitLossHeaderProps {
     startDate: string;

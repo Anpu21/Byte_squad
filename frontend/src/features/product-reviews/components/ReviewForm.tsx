@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Button, StarRating } from '@/components/ui';
+import { Button, FIELD_SHELL, FIELD_BORDER, StarRating } from '@/components/ui';
 import type { ICreateReviewPayload, IProductReview } from '@/types';
 
-const INPUT_CLASS =
-    'w-full px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full px-3 py-2`;
 
 interface ReviewFormProps {
     initial?: IProductReview | null;

@@ -6,6 +6,8 @@ import {
   LuFile as FileIcon,
 } from 'react-icons/lu'
 import toast from 'react-hot-toast'
+import { cn } from '@/lib/utils'
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui'
 import { useGroupChat } from '@/features/customer-groups/hooks/useGroupChat'
 import { useChatPresence } from '@/features/customer-groups/hooks/useChatPresence'
 import { useUploadChatAttachment } from '@/features/customer-groups/hooks/useUploadChatAttachment'
@@ -270,7 +272,11 @@ export function GroupChatThread({
               ? "You're no longer a member of this group"
               : 'Message the group…'
           }
-          className="max-h-28 min-h-[2.5rem] flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-1 placeholder:text-text-3 focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/20 disabled:opacity-60"
+          className={cn(
+            FIELD_SHELL,
+            FIELD_BORDER,
+            'max-h-28 min-h-[2.5rem] flex-1 resize-none px-3 py-2',
+          )}
         />
         <button
           type="button"

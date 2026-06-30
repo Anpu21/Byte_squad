@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { IEmployee, LeaveType } from '@/types';
 import { useApplyLeave } from '../hooks/useApplyLeave';
 import { LEAVE_TYPES, inclusiveDays } from '../lib/leave-formatting';
@@ -18,8 +19,7 @@ interface IApplyLeaveModalProps {
     hideEmployee?: boolean;
 }
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 /**
  * Outer shell mounts the form only while open so each open starts
@@ -203,7 +203,7 @@ function ApplyLeaveForm({
                     Reason (optional)
                 </span>
                 <textarea
-                    className="w-full min-h-[72px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors"
+                    className={`${FIELD_SHELL} ${FIELD_BORDER} w-full min-h-[72px] px-3 py-2`}
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     maxLength={1000}

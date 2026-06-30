@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';
 import { formatIsoDate, shiftIsoDate } from '../lib/attendance-grid-helpers';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
 interface IAttendanceFiltersProps {
     viewMode: 'day' | 'week';
@@ -17,8 +18,7 @@ interface IAttendanceFiltersProps {
     onRoleChange: (role: string) => void;
 }
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 const ICON_BUTTON_CLASS =
     'h-9 w-9 inline-flex items-center justify-center bg-surface border border-border rounded-md text-text-2 hover:text-text-1 hover:bg-surface-2 transition-colors focus:outline-none focus:ring-[3px] focus:ring-focus/25';

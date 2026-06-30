@@ -1,4 +1,5 @@
-import { formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { PosCartNumericCell } from '@/features/pos/components/item-table/PosCartNumericCell';
 
 interface IPosCashTenderFormProps {
@@ -50,7 +51,7 @@ export function PosCashTenderForm({
                     onCommit={onCashTenderedChange}
                     min={0}
                     ariaLabel="Cash tendered"
-                    className="w-full h-[42px] px-3 bg-surface border border-border-strong rounded-md text-[14px] text-text-1 tabular-nums outline-none transition-colors focus:border-focus focus:ring-[3px] focus:ring-primary/30"
+                    className={cn(FIELD_SHELL, FIELD_BORDER, 'w-full h-[42px] px-3 text-[14px] tabular-nums')}
                 />
                 <p className="mt-1.5 text-[11px] text-text-3">
                     Enter what the customer handed over, including any

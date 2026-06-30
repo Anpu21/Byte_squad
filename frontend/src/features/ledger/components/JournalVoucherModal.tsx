@@ -5,13 +5,13 @@ import toast from 'react-hot-toast';
 import { LuPlus as Plus, LuTrash2 as Trash2 } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { accountingService } from '@/services/accounting.service';
 import { userService } from '@/services/user.service';
 import { queryKeys } from '@/lib/queryKeys';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 interface IJournalLineDraft {
     key: number;

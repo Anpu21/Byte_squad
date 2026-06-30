@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Pill from '@/components/ui/Pill';
-import { DataTable, EmptyState, type DataTableColumn } from '@/components/ui';
+import { DataTable, EmptyState, FIELD_SHELL, FIELD_BORDER, type DataTableColumn } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { useConfirm } from '@/hooks/useConfirm';
 import type {
@@ -19,8 +19,7 @@ import { useUpdateCreditAccount } from '../hooks/useUpdateCreditAccount';
 import { useSuspendCreditAccount } from '../hooks/useSuspendCreditAccount';
 import { useCloseCreditAccount } from '../hooks/useCloseCreditAccount';
 
-const INPUT_CLASS =
-  'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', {

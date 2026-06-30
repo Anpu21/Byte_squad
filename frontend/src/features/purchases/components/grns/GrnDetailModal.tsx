@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Pill from '@/components/ui/Pill';
-import { DataTable, type DataTableColumn } from '@/components/ui';
+import { DataTable, type DataTableColumn, FIELD_SHELL, FIELD_ERROR } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
@@ -240,7 +240,7 @@ export function GrnDetailModal({ grnId, onClose }: IGrnDetailModalProps) {
                                 already sold.
                             </p>
                             <textarea
-                                className="w-full min-h-[56px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-danger focus:ring-[3px] focus:ring-danger/20"
+                                className={`${FIELD_SHELL} ${FIELD_ERROR} w-full min-h-[56px] px-3 py-2`}
                                 placeholder="Reason (required)"
                                 value={voidReason}
                                 onChange={(e) => setVoidReason(e.target.value)}

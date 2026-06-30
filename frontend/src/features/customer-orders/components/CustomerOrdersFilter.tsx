@@ -1,9 +1,9 @@
 import { LuSearch as Search } from 'react-icons/lu';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { CustomerOrderStatus } from '@/types';
 import { STAFF_ORDER_STATUS_LABEL } from '../lib/order-status';
 
-const INPUT_CLASS =
-    'w-full h-10 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-2 focus:ring-focus/25 transition-colors placeholder:text-text-3';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full h-10 px-3`;
 
 // Collection-oriented filter set; the legacy accepted/rejected states are no
 // longer produced, so they aren't offered as filters.
@@ -42,7 +42,7 @@ export function CustomerOrdersFilter({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search code or guest name…"
-                    className={`${INPUT_CLASS} pl-9`}
+                    className={`${FIELD_SHELL} ${FIELD_BORDER} w-full h-10 pl-9 pr-3`}
                 />
             </div>
             <select

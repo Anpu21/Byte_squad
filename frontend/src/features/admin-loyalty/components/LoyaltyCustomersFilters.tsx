@@ -3,6 +3,7 @@ import { LuSearch as Search, LuX as X } from 'react-icons/lu';
 import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';
 import { isPartialDecimal } from '@/lib/numeric-input';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
 interface ILoyaltyCustomersFiltersProps {
     searchDraft: string;
@@ -16,8 +17,7 @@ interface ILoyaltyCustomersFiltersProps {
     onPointsRangeChange: (min: string, max: string) => void;
 }
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 /**
  * Filter chip row that drives `useLoyaltyCustomers`. Each chip is

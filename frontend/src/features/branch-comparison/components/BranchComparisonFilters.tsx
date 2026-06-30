@@ -1,5 +1,6 @@
 import { LuCircleAlert as AlertCircle, LuCheckCheck as CheckCheck, LuLoaderCircle as Loader2, LuRefreshCw as RefreshCw, LuX as X } from 'react-icons/lu';
 import Card from "@/components/ui/Card";
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { IBranchAnalyticsBranchOption } from "@/types";
 import {
   PRESET_LABELS,
@@ -34,8 +35,7 @@ interface BranchComparisonFiltersProps {
   branchColors?: Record<string, string>;
 }
 
-const INPUT_CLASS =
-  "w-full h-9 px-3 bg-surface border border-border-strong rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-colors";
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full h-9 px-3`;
 
 export function BranchComparisonFilters({
   branches,
