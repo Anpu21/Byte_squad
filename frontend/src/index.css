@@ -56,6 +56,9 @@
   --radius-md: 9px;
   --radius-lg: 12px;
 
+  /* Form fields — sharper than the card radius for a crisp, technical feel. */
+  --radius-field: 5px;
+
   /* Navigation metrics — single source for sidebar / header / sub-nav sizing.
      Consume via Tailwind arbitrary syntax: w-[var(--nav-sidebar-w)],
      h-[var(--nav-row-h)], text-[length:var(--nav-label-size)]. react-icons take
@@ -256,6 +259,17 @@ textarea:-webkit-autofill:focus {
 }
 .animate-float { animation: float-slow 6s ease-in-out infinite; }
 .animate-float-delayed { animation: float-delayed 7s ease-in-out infinite 1s; }
+
+/* Form-field error shake — one-shot when validation fails. Neutralized by the
+   reduced-motion guard below (wildcard selector). */
+@keyframes field-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+.field-error-shake { animation: field-shake 0.35s ease-in-out; }
 
 /*
  * Honor user's reduced-motion preference globally.
