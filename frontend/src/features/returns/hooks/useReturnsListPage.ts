@@ -3,8 +3,9 @@ import { useQuery } from '@tanstack/react-query'
 import { returnsService } from '@/services/returns.service'
 import { queryKeys } from '@/lib/queryKeys'
 import type { IReturnsParams } from '@/types'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 
-const PAGE_LIMIT = 20
+const PAGE_LIMIT = DEFAULT_PAGE_SIZE
 
 export function useReturnsListPage() {
   const [page, setPage] = useState(1)

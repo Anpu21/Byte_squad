@@ -5,7 +5,7 @@ import { InventoryFilterRail } from '@/features/inventory-list/components/Invent
 import { InventoryHeroKpi } from '@/features/inventory-list/components/InventoryHeroKpi';
 import { ActiveFilterChips } from '@/features/inventory-list/components/ActiveFilterChips';
 import { InventoryList } from '@/features/inventory-list/components/InventoryList';
-import { InventoryPagination } from '@/features/inventory-list/components/InventoryPagination';
+import Pagination from '@/components/ui/Pagination';
 
 export function InventoryListPage() {
     const p = useInventoryListPage();
@@ -57,12 +57,12 @@ export function InventoryListPage() {
                         onDelete={p.deleteProduct}
                     />
 
-                    <InventoryPagination
+                    <Pagination
                         page={inv.page}
-                        totalPages={inv.totalPages}
+                        pageSize={INVENTORY_PAGE_LIMIT}
                         total={inv.total}
-                        limit={INVENTORY_PAGE_LIMIT}
                         onPageChange={inv.setPage}
+                        unit="products"
                     />
                 </div>
             </div>

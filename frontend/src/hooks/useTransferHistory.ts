@@ -3,13 +3,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { stockTransfersService } from '@/services/stock-transfers.service';
 import { queryKeys } from '@/lib/queryKeys';
 import type { IListTransferHistoryParams } from '@/types';
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination';
 
 interface UseTransferHistoryOptions {
     initialFilters?: IListTransferHistoryParams;
     autoFetch?: boolean;
 }
 
-const PAGE_LIMIT = 20;
+const PAGE_LIMIT = DEFAULT_PAGE_SIZE;
 
 export function useTransferHistory({
     initialFilters,
@@ -48,6 +49,7 @@ export function useTransferHistory({
         items: query.data?.items ?? [],
         total: query.data?.total ?? 0,
         totalPages: query.data?.totalPages ?? 0,
+        limit: PAGE_LIMIT,
         page,
         setPage,
         filters,

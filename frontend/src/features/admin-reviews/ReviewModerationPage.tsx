@@ -12,12 +12,14 @@ import {
 } from '@/components/ui';
 import Card from '@/components/ui/Card';
 import PageHeader from '@/components/ui/PageHeader';
+import Pagination from '@/components/ui/Pagination';
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useReviewModeration } from '@/features/product-reviews/hooks/useReviewModeration';
 import type { IModerationReview, ReviewStatus } from '@/types';
 
 const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
-const PAGE_SIZE = 20;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 const statusTone: Record<ReviewStatus, PillTone> = {
     visible: 'success',
@@ -42,7 +44,6 @@ export function ReviewModerationPage() {
 
     const rows = list.data?.rows ?? [];
     const total = list.data?.total ?? 0;
-    const pageCount = Math.max(Math.ceil(total / PAGE_SIZE), 1);
 
     const onHide = async (r: IModerationReview) => {
         const ok = await confirm({
@@ -148,30 +149,14 @@ export function ReviewModerationPage() {
     ];
 
     const pager =
-        total > PAGE_SIZE ? (
-            <div className="flex items-center justify-between border-t border-border p-3">
-                <span className="text-xs text-text-3">
-                    Page {page + 1} of {pageCount}
-                </span>
-                <div className="flex gap-1.5">
-                    <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={page === 0}
-                        onClick={() => setPage((p) => p - 1)}
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={page + 1 >= pageCount}
-                        onClick={() => setPage((p) => p + 1)}
-                    >
-                        Next
-                    </Button>
-                </div>
-            </div>
+        total > 0 ? (
+            <Pagination
+                page={page + 1}
+                pageSize={PAGE_SIZE}
+                total={total}
+                onPageChange={(next) => setPage(next - 1)}
+                unit="reviews"
+            />
         ) : undefined;
 
     return (

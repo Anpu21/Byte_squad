@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-    Button,
     DataTable,
     EmptyState,
     FIELD_SHELL,
@@ -12,13 +11,15 @@ import {
 } from '@/components/ui';
 import Card from '@/components/ui/Card';
 import PageHeader from '@/components/ui/PageHeader';
+import Pagination from '@/components/ui/Pagination';
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination';
 import { auditService } from '@/services/audit.service';
 import { queryKeys } from '@/lib/queryKeys';
 import type { IAuditLog } from '@/types';
 
 const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 function methodTone(method: string): PillTone {
     switch (method) {
@@ -67,7 +68,6 @@ export function AuditLogPage() {
 
     const rows = logsQuery.data?.rows ?? [];
     const total = logsQuery.data?.total ?? 0;
-    const pageCount = Math.max(Math.ceil(total / PAGE_SIZE), 1);
 
     const columns: DataTableColumn<IAuditLog>[] = [
         {
@@ -119,30 +119,14 @@ export function AuditLogPage() {
     ];
 
     const pager =
-        total > PAGE_SIZE ? (
-            <div className="flex items-center justify-between p-3 border-t border-border">
-                <span className="text-xs text-text-3">
-                    Page {page + 1} of {pageCount}
-                </span>
-                <div className="flex gap-1.5">
-                    <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={page === 0}
-                        onClick={() => setPage((p) => p - 1)}
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={page + 1 >= pageCount}
-                        onClick={() => setPage((p) => p + 1)}
-                    >
-                        Next
-                    </Button>
-                </div>
-            </div>
+        total > 0 ? (
+            <Pagination
+                page={page + 1}
+                pageSize={PAGE_SIZE}
+                total={total}
+                onPageChange={(next) => setPage(next - 1)}
+                unit="entries"
+            />
         ) : undefined;
 
     return (
