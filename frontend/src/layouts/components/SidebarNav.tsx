@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LuChevronRight as ChevronRight } from 'react-icons/lu';
@@ -5,10 +7,35 @@ import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useActiveSection } from '@/hooks/useActiveSection';
+import { type NavGroup } from '@/config/navigation';
 import Avatar from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
 import { SidebarRail } from './SidebarRail';
 import { SidebarPanel } from './SidebarPanel';
+
+const EXPANDED_KEY = 'nav:expanded';
+
+function readExpanded(): Set<string> {
+    try {
+        const raw = localStorage.getItem(EXPANDED_KEY);
+        const parsed: unknown = raw ? JSON.parse(raw) : [];
+        return new Set(
+            Array.isArray(parsed)
+                ? parsed.filter((x): x is string => typeof x === 'string')
+                : [],
+        );
+    } catch {
+        return new Set();
+    }
+}
+
+function writeExpanded(ids: Set<string>): void {
+    try {
+        localStorage.setItem(EXPANDED_KEY, JSON.stringify([...ids]));
+    } catch {
+        // localStorage unavailable / quota — non-fatal.
+    }
+}
 
 interface SidebarNavProps {
     /** Desktop-collapsed (rail only). The panel still shows in the mobile drawer. */
@@ -22,8 +49,9 @@ interface SidebarNavProps {
 /**
  * The two-tier sidebar dropped into DashboardLayout's `<aside>` (which owns the
  * width / collapse / drawer state): a group icon rail + the active group's
- * contextual panel + the profile footer. The active group is derived from the
- * route via `useActiveSection`.
+ * contextual panel + the profile footer. When collapsed, hovering a rail group
+ * pops its panel out as a floating flyout. Expand state is held here so the panel
+ * and the flyout share one source of truth (and one localStorage writer).
  */
 export function SidebarNav({
     collapsed,
@@ -36,6 +64,54 @@ export function SidebarNav({
     const location = useLocation();
     const { group, itemId } = useActiveSection();
 
+    // Shared expand state for the panel + the collapsed flyout (single persister).
+    const [expanded, setExpanded] = useState<Set<string>>(() => {
+        const stored = readExpanded();
+        if (itemId) stored.add(itemId);
+        return stored;
+    });
+    useEffect(() => {
+        if (!itemId) return;
+        setExpanded((prev) => (prev.has(itemId) ? prev : new Set(prev).add(itemId)));
+    }, [itemId]);
+    useEffect(() => {
+        writeExpanded(expanded);
+    }, [expanded]);
+    const toggleSection = useCallback((id: string) => {
+        setExpanded((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }, []);
+
+    // Hover flyout (collapsed only): a floating copy of the panel for a group.
+    const [flyout, setFlyout] = useState<{ group: NavGroup; top: number } | null>(
+        null,
+    );
+    const hideTimer = useRef<number | undefined>(undefined);
+    const cancelHide = useCallback(() => window.clearTimeout(hideTimer.current), []);
+    const scheduleHide = useCallback(() => {
+        window.clearTimeout(hideTimer.current);
+        hideTimer.current = window.setTimeout(() => setFlyout(null), 140);
+    }, []);
+    const handleHoverGroup = useCallback(
+        (next: { group: NavGroup; top: number } | null) => {
+            if (!next) {
+                scheduleHide();
+                return;
+            }
+            cancelHide();
+            setFlyout(next);
+        },
+        [cancelHide, scheduleHide],
+    );
+    useEffect(() => () => window.clearTimeout(hideTimer.current), []);
+    useEffect(() => {
+        if (!collapsed) setFlyout(null);
+    }, [collapsed]);
+
     if (!user) return null;
     const role = user.role as UserRole;
     const onProfile = location.pathname === FRONTEND_ROUTES.PROFILE;
@@ -47,6 +123,7 @@ export function SidebarNav({
                 activeGroup={group}
                 collapsed={collapsed}
                 onToggleCollapsed={onToggleCollapsed}
+                onHoverGroup={handleHoverGroup}
                 onNavigate={onNavigate}
             />
 
@@ -62,6 +139,8 @@ export function SidebarNav({
                         activeItemId={itemId}
                         role={role}
                         unreadCount={unreadCount}
+                        expanded={expanded}
+                        onToggleSection={toggleSection}
                         onNavigate={onNavigate}
                     />
 
@@ -89,6 +168,33 @@ export function SidebarNav({
                     </div>
                 </div>
             )}
+
+            {collapsed &&
+                flyout &&
+                createPortal(
+                    <div
+                        className="fixed z-dropdown"
+                        style={{ top: flyout.top, left: 'calc(var(--nav-rail-w) + 6px)' }}
+                        onMouseEnter={cancelHide}
+                        onMouseLeave={scheduleHide}
+                    >
+                        <div className="flex max-h-[80vh] w-[var(--nav-panel-w)] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-lg-token animate-in fade-in slide-in-from-left-1 duration-100">
+                            <SidebarPanel
+                                group={flyout.group}
+                                activeItemId={itemId}
+                                role={role}
+                                unreadCount={unreadCount}
+                                expanded={expanded}
+                                onToggleSection={toggleSection}
+                                onNavigate={() => {
+                                    setFlyout(null);
+                                    onNavigate?.();
+                                }}
+                            />
+                        </div>
+                    </div>,
+                    document.body,
+                )}
         </div>
     );
 }

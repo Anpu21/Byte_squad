@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LuChevronDown as ChevronDown } from 'react-icons/lu';
@@ -14,35 +13,16 @@ import { NAV_ICON } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { SidebarPanelTabs } from './SidebarPanelTabs';
 
-const EXPANDED_KEY = 'nav:expanded';
-
-function readExpanded(): Set<string> {
-    try {
-        const raw = localStorage.getItem(EXPANDED_KEY);
-        const parsed: unknown = raw ? JSON.parse(raw) : [];
-        return new Set(
-            Array.isArray(parsed)
-                ? parsed.filter((x): x is string => typeof x === 'string')
-                : [],
-        );
-    } catch {
-        return new Set();
-    }
-}
-
-function writeExpanded(ids: Set<string>): void {
-    try {
-        localStorage.setItem(EXPANDED_KEY, JSON.stringify([...ids]));
-    } catch {
-        // localStorage unavailable / quota — non-fatal.
-    }
-}
-
 interface SidebarPanelProps {
     group: NavGroup;
     activeItemId: string | null;
     role: UserRole;
     unreadCount: number;
+    /** Ids of tabbed items whose sub-tabs are expanded — shared by panel + flyout. */
+    expanded: Set<string>;
+    onToggleSection: (id: string) => void;
+    /** Per-item live counts (sidebar item id → count); rendered as a pill. */
+    badges?: Record<string, number>;
     onNavigate?: () => void;
 }
 
@@ -50,44 +30,21 @@ interface SidebarPanelProps {
  * The contextual secondary panel of the two-tier sidebar — the active group's
  * role-filtered items as a vertical list, headed by the group label. Items that
  * are tabbed workspaces carry a chevron to expand/collapse their sub-tabs
- * (rendered by {@link SidebarPanelTabs}); the active item auto-expands.
+ * ({@link SidebarPanelTabs}). Expand state is owned by the parent so the panel and
+ * the collapsed-rail flyout stay in sync.
  */
 export function SidebarPanel({
     group,
     activeItemId,
     role,
     unreadCount,
+    expanded,
+    onToggleSection,
+    badges,
     onNavigate,
 }: SidebarPanelProps) {
     const { t } = useTranslation('common');
     const items = getGroupItems(group, role);
-    const [expanded, setExpanded] = useState<Set<string>>(() => {
-        const stored = readExpanded();
-        if (activeItemId) stored.add(activeItemId);
-        return stored;
-    });
-
-    // Auto-expand the active tabbed item as the route changes (without collapsing
-    // anything the user opened manually).
-    useEffect(() => {
-        if (!activeItemId) return;
-        setExpanded((prev) =>
-            prev.has(activeItemId) ? prev : new Set(prev).add(activeItemId),
-        );
-    }, [activeItemId]);
-
-    // Remember which sections are open across reloads.
-    useEffect(() => {
-        writeExpanded(expanded);
-    }, [expanded]);
-
-    const toggle = (id: string) =>
-        setExpanded((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            return next;
-        });
 
     return (
         <nav
@@ -104,8 +61,11 @@ export function SidebarPanel({
                     const Icon = item.Icon;
                     const hasTabs = Boolean(item.tabs?.length);
                     const isOpen = hasTabs && expanded.has(item.id);
-                    const showBadge =
-                        itemPath === FRONTEND_ROUTES.NOTIFICATIONS && unreadCount > 0;
+                    const isNotifications =
+                        itemPath === FRONTEND_ROUTES.NOTIFICATIONS;
+                    const count = isNotifications
+                        ? unreadCount
+                        : (badges?.[item.id] ?? 0);
                     const subId = `subnav-${item.id}`;
                     return (
                         <li key={item.id}>
@@ -142,19 +102,28 @@ export function SidebarPanel({
                                     >
                                         {t(item.label)}
                                     </span>
-                                    {showBadge && (
+                                    {count > 0 && (
                                         <span
-                                            className="inline-flex h-[var(--nav-badge-size)] min-w-[var(--nav-badge-size)] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-text-inv"
-                                            aria-label={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}
+                                            className={cn(
+                                                'inline-flex h-[var(--nav-badge-size)] min-w-[var(--nav-badge-size)] items-center justify-center rounded-full px-1 text-[10px] font-bold',
+                                                isNotifications
+                                                    ? 'bg-primary text-text-inv'
+                                                    : 'bg-accent-soft text-accent-text',
+                                            )}
+                                            aria-label={
+                                                isNotifications
+                                                    ? `${count} unread notification${count === 1 ? '' : 's'}`
+                                                    : `${count} pending`
+                                            }
                                         >
-                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                            {count > 99 ? '99+' : count}
                                         </span>
                                     )}
                                 </Link>
                                 {hasTabs && (
                                     <button
                                         type="button"
-                                        onClick={() => toggle(item.id)}
+                                        onClick={() => onToggleSection(item.id)}
                                         aria-expanded={isOpen}
                                         aria-controls={subId}
                                         aria-label={t(

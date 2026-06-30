@@ -23,6 +23,8 @@ interface SidebarRailProps {
     activeGroup: NavGroup | null;
     collapsed: boolean;
     onToggleCollapsed?: () => void;
+    /** Report the hovered/focused group (collapsed only) for the flyout; null clears. */
+    onHoverGroup?: (next: { group: NavGroup; top: number } | null) => void;
     onNavigate?: () => void;
 }
 
@@ -37,6 +39,7 @@ export function SidebarRail({
     activeGroup,
     collapsed,
     onToggleCollapsed,
+    onHoverGroup,
     onNavigate,
 }: SidebarRailProps) {
     const { t } = useTranslation('common');
@@ -81,7 +84,7 @@ export function SidebarRail({
                     const label = t(GROUP_LABEL_KEY[group]);
                     const active = group === activeGroup;
                     return (
-                        <Tooltip key={group} label={label}>
+                        <Tooltip key={group} label={label} disabled={collapsed}>
                             <Link
                                 ref={(el) => {
                                     links.current[i] = el;
@@ -89,6 +92,22 @@ export function SidebarRail({
                                 to={resolveNavPath(getGroupItems(group, role)[0], role)}
                                 onClick={onNavigate}
                                 onKeyDown={(e) => onKeyDown(e, i)}
+                                onMouseEnter={(e) =>
+                                    collapsed &&
+                                    onHoverGroup?.({
+                                        group,
+                                        top: e.currentTarget.getBoundingClientRect().top,
+                                    })
+                                }
+                                onMouseLeave={() => collapsed && onHoverGroup?.(null)}
+                                onFocus={(e) =>
+                                    collapsed &&
+                                    onHoverGroup?.({
+                                        group,
+                                        top: e.currentTarget.getBoundingClientRect().top,
+                                    })
+                                }
+                                onBlur={() => collapsed && onHoverGroup?.(null)}
                                 aria-label={label}
                                 aria-current={active ? 'page' : undefined}
                                 tabIndex={i === focusIndex ? 0 : -1}
