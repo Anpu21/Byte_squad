@@ -23,31 +23,33 @@ export function GroupHeroLedger({ groupId, memberCount }: Props) {
   const dash = (v: string) => (isLoading ? '—' : v)
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <KpiCard
-        label="Total spent"
-        accent="accent"
-        icon={<Coins className="h-4 w-4" />}
-        value={dash(formatCurrency(data?.totalSpend ?? 0))}
-      />
-      <KpiCard
-        label="Orders"
-        accent="primary"
-        icon={<Receipt className="h-4 w-4" />}
-        value={dash(String(data?.orderCount ?? 0))}
-      />
-      <KpiCard
-        label="Avg order"
-        accent="info"
-        icon={<Calculator className="h-4 w-4" />}
-        value={dash(formatCurrency(data?.avgOrderValue ?? 0))}
-      />
-      <KpiCard
-        label="Members"
-        accent="warning"
-        icon={<Users className="h-4 w-4" />}
-        value={String(memberCount)}
-      />
-    </div>
+    <section className="rounded-2xl border border-border-strong bg-surface-2 p-3 sm:p-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <KpiCard
+          label="Total spent"
+          accent="accent"
+          icon={<Coins className="h-4 w-4" />}
+          value={dash(formatCurrency(data?.totalSpend ?? 0))}
+        />
+        <KpiCard
+          label="Orders"
+          accent="primary"
+          icon={<Receipt className="h-4 w-4" />}
+          value={dash(String(data?.orderCount ?? 0))}
+        />
+        <KpiCard
+          label="Avg order"
+          accent="info"
+          icon={<Calculator className="h-4 w-4" />}
+          value={dash(formatCurrency(data?.avgOrderValue ?? 0))}
+        />
+        <KpiCard
+          label="Members"
+          accent="warning"
+          icon={<Users className="h-4 w-4" />}
+          value={String(memberCount)}
+        />
+      </div>
+    </section>
   )
 }

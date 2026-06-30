@@ -107,7 +107,11 @@ export function GroupDetailPage() {
             role="tabpanel"
             id="group-panel-overview"
             aria-labelledby="group-tab-overview"
+            className="space-y-4"
           >
+            <p className="text-sm text-text-2">
+              Everything your group is doing, at a glance.
+            </p>
             <GroupOverviewPanel
               groupId={group.id}
               members={group.members}
