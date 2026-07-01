@@ -40,7 +40,12 @@ describe('sizeLoyaltyRedeem', () => {
                 itemsSubtotal: 1000,
                 settings: settings(),
             }),
-        ).toEqual({ cappedPoints: 0, redeemValue: 0, maxRedeemable: 0 });
+        ).toEqual({
+            cappedPoints: 0,
+            redeemValue: 0,
+            maxRedeemable: 0,
+            disabledReason: null,
+        });
     });
 
     it('caps on the subtotal percentage and prices at the point value', () => {
@@ -91,7 +96,7 @@ describe('sizeLoyaltyRedeem', () => {
         expect(result.cappedPoints).toBe(50);
     });
 
-    it('returns a zero cap when the balance is below the minimum', () => {
+    it('returns a zero cap + reason when the balance is below the minimum', () => {
         const result = sizeLoyaltyRedeem({
             owner: owner({ pointsBalance: 80 }),
             requestedPoints: 50,
@@ -101,6 +106,40 @@ describe('sizeLoyaltyRedeem', () => {
         expect(result.maxRedeemable).toBe(0);
         expect(result.cappedPoints).toBe(0);
         expect(result.redeemValue).toBe(0);
+        expect(result.disabledReason).toMatch(/Needs 100\+ points/);
+    });
+
+    it('explains an empty cart when the balance qualifies but no items exist', () => {
+        const result = sizeLoyaltyRedeem({
+            owner: owner({ pointsBalance: 500 }),
+            requestedPoints: 100,
+            itemsSubtotal: 0,
+            settings: settings(),
+        });
+        expect(result.maxRedeemable).toBe(0);
+        expect(result.disabledReason).toMatch(/Add items/);
+    });
+
+    it('explains a bill too small for the redeem-cap percentage', () => {
+        const result = sizeLoyaltyRedeem({
+            owner: owner({ pointsBalance: 500 }),
+            requestedPoints: 100,
+            itemsSubtotal: 4, // floor(4 * 20% / 1) = 0
+            settings: settings(),
+        });
+        expect(result.maxRedeemable).toBe(0);
+        expect(result.disabledReason).toMatch(/too small/);
+    });
+
+    it('has no reason when redemption is available', () => {
+        const result = sizeLoyaltyRedeem({
+            owner: owner({ pointsBalance: 500 }),
+            requestedPoints: 100,
+            itemsSubtotal: 1000,
+            settings: settings(),
+        });
+        expect(result.maxRedeemable).toBeGreaterThan(0);
+        expect(result.disabledReason).toBeNull();
     });
 
     it('falls back to a balance-only cap when settings are unavailable', () => {
