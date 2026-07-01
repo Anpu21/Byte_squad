@@ -310,6 +310,7 @@ export const APP_ROUTES = {
     LOOKUP: 'lookup',
     ENROLL: 'enroll',
     CUSTOMERS: 'customers',
+    CUSTOMER_BY_ID: 'customers/:id',
     CUSTOMER_HISTORY: 'customers/:id/history',
     ADMIN_BASE: `${API_PREFIX}/admin/loyalty`,
     ADMIN_SETTINGS: 'settings',

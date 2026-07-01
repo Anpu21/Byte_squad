@@ -42,6 +42,13 @@ export interface ICustomerProfileUpdate {
   status?: CustomerStatus
 }
 
+/** Edits to a walk-in loyalty record (name/phone) via the loyalty module. */
+export interface IWalkInUpdate {
+  firstName?: string
+  lastName?: string
+  phone?: string
+}
+
 export interface ICustomerProfileDetail {
   customerKey: string
   displayName: string

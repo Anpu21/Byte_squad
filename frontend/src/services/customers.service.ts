@@ -6,6 +6,7 @@ import type {
   ICustomerProfileUpdate,
   ICustomersListRequest,
   ICustomersListResponse,
+  IWalkInUpdate,
 } from '@/types'
 
 export const customerService = {
@@ -43,5 +44,13 @@ export const customerService = {
       { params: branchId ? { branchId } : undefined },
     )
     return response.data.data
+  },
+
+  // Edits a walk-in loyalty record (name/phone) via the loyalty module.
+  updateWalkIn: async (
+    loyaltyId: string,
+    payload: IWalkInUpdate,
+  ): Promise<void> => {
+    await api.patch(`/loyalty/customers/${loyaltyId}`, payload)
   },
 }

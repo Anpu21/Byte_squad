@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { LuArrowLeft as ArrowLeft } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuPencil as Pencil } from "react-icons/lu";
 import { FRONTEND_ROUTES } from "@/constants/routes";
+import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
 import type { CustomerType } from "@/types";
@@ -8,6 +10,7 @@ import { useCustomerDetail } from "./hooks/useCustomerDetail";
 import { CustomerKpiStrip } from "./components/CustomerKpiStrip";
 import { CustomerIdentityCard } from "./components/CustomerIdentityCard";
 import { CustomerManageCard } from "./components/CustomerManageCard";
+import { CustomerEditWalkInModal } from "./components/CustomerEditWalkInModal";
 import { CustomerRecentActivity } from "./components/CustomerRecentActivity";
 
 const TYPE_LABEL: Record<CustomerType, string> = {
@@ -19,6 +22,17 @@ const TYPE_LABEL: Record<CustomerType, string> = {
 export function CustomerDetailPage() {
   const { key = "" } = useParams();
   const { data, isLoading, isError } = useCustomerDetail(key);
+  const [editOpen, setEditOpen] = useState(false);
+
+  // A pure single walk-in (loyalty only, no registered account) can have its
+  // name/phone edited via the loyalty module.
+  const walkInId =
+    data &&
+    data.types.includes("walk-in") &&
+    data.ids.userIds.length === 0 &&
+    data.ids.loyaltyIds.length === 1
+      ? data.ids.loyaltyIds[0]
+      : null;
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -65,7 +79,26 @@ export function CustomerDetailPage() {
             >
               {data.status === "blocked" ? "Blocked" : "Active"}
             </span>
+            {walkInId && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setEditOpen(true)}
+                className="ml-auto"
+              >
+                <Pencil size={13} /> Edit details
+              </Button>
+            )}
           </header>
+
+          {walkInId && (
+            <CustomerEditWalkInModal
+              isOpen={editOpen}
+              onClose={() => setEditOpen(false)}
+              profile={data}
+              loyaltyId={walkInId}
+            />
+          )}
 
           <div className="mb-5">
             <CustomerKpiStrip kpis={data.kpis} />

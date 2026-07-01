@@ -32,4 +32,12 @@ export class LoyaltyCustomersRepository {
   }): Promise<LoyaltyCustomer> {
     return this.repo.save(this.repo.create(input));
   }
+
+  async update(
+    id: string,
+    patch: Partial<Pick<LoyaltyCustomer, 'phone' | 'firstName' | 'lastName'>>,
+  ): Promise<LoyaltyCustomer | null> {
+    await this.repo.update(id, patch);
+    return this.findById(id);
+  }
 }
