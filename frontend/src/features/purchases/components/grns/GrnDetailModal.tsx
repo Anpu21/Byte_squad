@@ -1,11 +1,9 @@
-import { useState } from 'react';
 import { LuPrinter as Printer } from 'react-icons/lu';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Pill from '@/components/ui/Pill';
-import { DataTable, type DataTableColumn, FIELD_SHELL, FIELD_ERROR } from '@/components/ui';
+import { DataTable } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
@@ -17,48 +15,10 @@ import type { ILabelItem } from '@/features/labels/lib/label-sheet-html';
 import { usePrintLabelSheet } from '@/features/labels/hooks/usePrintLabelSheet';
 import type { IGrn } from '@/types';
 import { useGrn } from '../../hooks/useGrn';
-import { useVoidGrn } from '../../hooks/useVoidGrn';
 import { GrnPaymentPill } from './GrnPaymentPill';
 import { GrnReturnSection } from './GrnReturnSection';
-
-type GrnLine = NonNullable<IGrn['items']>[number];
-
-const GRN_LINE_COLUMNS: DataTableColumn<GrnLine>[] = [
-    {
-        key: 'item',
-        header: 'Item',
-        render: (it) => it.product?.name ?? it.productId,
-    },
-    {
-        key: 'qty',
-        header: 'Qty',
-        align: 'right',
-        numeric: true,
-        render: (it) => Number(it.quantity),
-    },
-    {
-        key: 'unitCost',
-        header: 'Unit cost',
-        align: 'right',
-        numeric: true,
-        className: 'text-text-2',
-        render: (it) => formatCurrency(Number(it.unitCost)),
-    },
-    {
-        key: 'batch',
-        header: 'Batch / expiry',
-        className: 'text-[12px] text-text-3',
-        render: (it) =>
-            `${it.batchNo ?? '—'}${it.expiryDate ? ` · exp ${it.expiryDate}` : ''}`,
-    },
-    {
-        key: 'amount',
-        header: 'Amount',
-        align: 'right',
-        numeric: true,
-        render: (it) => formatCurrency(Number(it.lineTotal)),
-    },
-];
+import { GRN_LINE_COLUMNS } from './grn-line-columns';
+import { GrnVoidSection } from './GrnVoidSection';
 
 interface IGrnDetailModalProps {
     grnId: string | null;
@@ -74,10 +34,7 @@ export function GrnDetailModal({ grnId, onClose }: IGrnDetailModalProps) {
     const { user } = useAuth();
     const isAdmin = user?.role === UserRole.ADMIN;
     const grnQuery = useGrn(grnId);
-    const voidGrn = useVoidGrn();
     const { printLabelSheet } = usePrintLabelSheet();
-    const [voidReason, setVoidReason] = useState('');
-    const [voiding, setVoiding] = useState(false);
 
     const grn: IGrn | undefined = grnQuery.data;
     const canVoid =
@@ -106,29 +63,6 @@ export function GrnDetailModal({ grnId, onClose }: IGrnDetailModalProps) {
         toast.success(
             `Sent ${labels.length} label${labels.length === 1 ? '' : 's'} to print`,
         );
-    }
-
-    async function handleVoid() {
-        if (!grn || voidReason.trim().length < 3) return;
-        try {
-            await voidGrn.mutateAsync({
-                id: grn.id,
-                reason: voidReason.trim(),
-            });
-            toast.success(`${grn.grnNumber} voided`);
-            setVoiding(false);
-            setVoidReason('');
-            onClose();
-        } catch (err: unknown) {
-            if (axios.isAxiosError(err)) {
-                const data = err.response?.data as
-                    | { message?: string }
-                    | undefined;
-                toast.error(data?.message ?? 'Could not void GRN');
-            } else {
-                toast.error('Could not void GRN');
-            }
-        }
     }
 
     return (
@@ -220,57 +154,11 @@ export function GrnDetailModal({ grnId, onClose }: IGrnDetailModalProps) {
 
                     <GrnReturnSection grn={grn} onReturned={onClose} />
 
-                    {canVoid && !voiding && (
-                        <div className="flex justify-end">
-                            <Button
-                                variant="danger"
-                                size="sm"
-                                onClick={() => setVoiding(true)}
-                            >
-                                Void GRN
-                            </Button>
-                        </div>
-                    )}
-
-                    {canVoid && voiding && (
-                        <div className="space-y-2 p-3 rounded-md border border-danger/40 bg-danger-soft/40">
-                            <p className="text-xs text-text-2">
-                                Voiding reverses the received stock and the
-                                ledger posting. Refused if the goods were
-                                already sold.
-                            </p>
-                            <textarea
-                                className={`${FIELD_SHELL} ${FIELD_ERROR} w-full min-h-[56px] px-3 py-2`}
-                                placeholder="Reason (required)"
-                                value={voidReason}
-                                onChange={(e) => setVoidReason(e.target.value)}
-                                maxLength={500}
-                            />
-                            <div className="flex justify-end gap-2">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setVoiding(false)}
-                                    disabled={voidGrn.isPending}
-                                >
-                                    Keep GRN
-                                </Button>
-                                <Button
-                                    variant="danger"
-                                    size="sm"
-                                    onClick={() => void handleVoid()}
-                                    disabled={
-                                        voidGrn.isPending ||
-                                        voidReason.trim().length < 3
-                                    }
-                                >
-                                    {voidGrn.isPending
-                                        ? 'Voiding…'
-                                        : 'Confirm void'}
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                    <GrnVoidSection
+                        grn={grn}
+                        canVoid={canVoid}
+                        onClose={onClose}
+                    />
                 </div>
             )}
         </Modal>
