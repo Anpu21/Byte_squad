@@ -99,6 +99,19 @@ export const APP_ROUTES = {
     PAYMENTS: ':id/payments',
   },
 
+  // Customer hub — unified directory / 360 profile / analytics over the
+  // phone-stitched customer identity (registered user + walk-in + khata).
+  CUSTOMERS: {
+    BASE: `${API_PREFIX}/customers`,
+    ANALYTICS: 'analytics',
+    BY_KEY: ':key',
+    TAGS: ':key/tags',
+    NOTES: ':key/notes',
+    SEGMENT: ':key/segment',
+    STATUS: ':key/status',
+    LINK: ':key/link',
+  },
+
   // Inventory
   INVENTORY: {
     BASE: `${API_PREFIX}/inventory`,

@@ -21,6 +21,7 @@ import { chat } from './chat';
 import { creditAccounts } from './credit-accounts';
 import { customerGroups } from './customer-groups';
 import { customerOrders } from './customer-orders';
+import { customers } from './customers';
 import { expenses } from './expenses';
 import { expiry } from './expiry';
 import { heldSales } from './held-sales';
@@ -71,6 +72,7 @@ export const queryKeys = {
     users,
     customerOrders,
     customerGroups,
+    customers,
     chat,
     loyalty,
     hr,
