@@ -2,9 +2,10 @@ import { UserRole } from '@/constants/enums';
 import type { IBranch } from '@/types';
 import type { UserFormState } from './user-form.helpers';
 import { STAFF_ROLES } from './user-form.helpers';
+import { FIELD_SHELL, FIELD_BORDER, FIELD_ERROR } from '@/components/ui';
+import { cn } from '@/lib/utils';
 
-const INPUT_CLASS =
-    'w-full h-9 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full h-9 px-3`;
 
 const LABEL_CLASS =
     'block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5';
@@ -91,7 +92,7 @@ export function UserFormFields({
                         onChange={(e) => onChange('phone', e.target.value)}
                         placeholder="+94 77 123 4567"
                         aria-invalid={!!phoneError}
-                        className={`${INPUT_CLASS} ${phoneError ? 'border-danger focus:border-danger focus:ring-danger/25' : ''}`}
+                        className={cn(FIELD_SHELL, phoneError ? FIELD_ERROR : FIELD_BORDER, 'w-full h-9 px-3')}
                     />
                     {phoneError && (
                         <p className="mt-1 text-[11px] text-danger">
@@ -112,7 +113,7 @@ export function UserFormFields({
                         onChange={(e) =>
                             onChange('role', e.target.value as UserRole)
                         }
-                        className={`${INPUT_CLASS} cursor-pointer`}
+                        className={`${INPUT_CLASS} field-select cursor-pointer`}
                     >
                         {roleOptions.map((role) => (
                             <option key={role} value={role}>
@@ -130,7 +131,7 @@ export function UserFormFields({
                         value={form.branchId}
                         onChange={(e) => onChange('branchId', e.target.value)}
                         required={!isCustomer}
-                        className={`${INPUT_CLASS} cursor-pointer`}
+                        className={`${INPUT_CLASS} field-select cursor-pointer`}
                     >
                         {isCustomer && (
                             <option value="">(No branch)</option>
@@ -154,7 +155,7 @@ export function UserFormFields({
                     value={form.address}
                     onChange={(e) => onChange('address', e.target.value)}
                     placeholder="Optional. Mailing or delivery address."
-                    className="w-full px-3 py-2 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/25 transition-colors resize-y"
+                    className={`${FIELD_SHELL} ${FIELD_BORDER} w-full px-3 py-2 resize-y`}
                 />
             </div>
         </div>

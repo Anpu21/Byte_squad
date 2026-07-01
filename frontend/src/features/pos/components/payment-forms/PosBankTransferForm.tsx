@@ -1,4 +1,6 @@
 import Input from '@/components/ui/Input';
+import { cn } from '@/lib/utils';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { PosCartNumericCell } from '@/features/pos/components/item-table/PosCartNumericCell';
 
 export interface IPosBankTransferFormValues {
@@ -33,7 +35,7 @@ export function PosBankTransferForm({
                     }
                     min={0}
                     ariaLabel="Bank transfer amount"
-                    className="w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 tabular-nums outline-none transition-colors focus:border-focus focus:ring-[3px] focus:ring-primary/30"
+                    className={cn(FIELD_SHELL, FIELD_BORDER, 'w-full h-[38px] px-3 tabular-nums')}
                 />
             </div>
 

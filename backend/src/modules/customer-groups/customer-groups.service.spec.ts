@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { CustomerGroupsService } from '@/modules/customer-groups/customer-groups.service';
 import { CustomerGroupsRepository } from '@/modules/customer-groups/customer-groups.repository';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { CustomerGroup } from '@/modules/customer-groups/entities/customer-group.entity';
 import { CustomerGroupMember } from '@/modules/customer-groups/entities/customer-group-member.entity';
 import { CustomerGroupStatus } from '@common/enums/customer-group-status.enum';
@@ -109,6 +110,10 @@ describe('CustomerGroupsService', () => {
       providers: [
         CustomerGroupsService,
         { provide: CustomerGroupsRepository, useValue: repo },
+        {
+          provide: RealtimePublisher,
+          useValue: { revokeGroupChat: jest.fn() },
+        },
       ],
     }).compile();
     service = moduleRef.get(CustomerGroupsService);

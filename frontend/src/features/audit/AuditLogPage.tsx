@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-    Button,
     DataTable,
     EmptyState,
+    FIELD_SHELL,
+    FIELD_BORDER,
     Pill,
     type DataTableColumn,
     type PillTone,
 } from '@/components/ui';
 import Card from '@/components/ui/Card';
 import PageHeader from '@/components/ui/PageHeader';
+import Pagination from '@/components/ui/Pagination';
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination';
 import { auditService } from '@/services/audit.service';
 import { queryKeys } from '@/lib/queryKeys';
 import type { IAuditLog } from '@/types';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 function methodTone(method: string): PillTone {
     switch (method) {
@@ -66,7 +68,6 @@ export function AuditLogPage() {
 
     const rows = logsQuery.data?.rows ?? [];
     const total = logsQuery.data?.total ?? 0;
-    const pageCount = Math.max(Math.ceil(total / PAGE_SIZE), 1);
 
     const columns: DataTableColumn<IAuditLog>[] = [
         {
@@ -118,30 +119,14 @@ export function AuditLogPage() {
     ];
 
     const pager =
-        total > PAGE_SIZE ? (
-            <div className="flex items-center justify-between p-3 border-t border-border">
-                <span className="text-xs text-text-3">
-                    Page {page + 1} of {pageCount}
-                </span>
-                <div className="flex gap-1.5">
-                    <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={page === 0}
-                        onClick={() => setPage((p) => p - 1)}
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={page + 1 >= pageCount}
-                        onClick={() => setPage((p) => p + 1)}
-                    >
-                        Next
-                    </Button>
-                </div>
-            </div>
+        total > 0 ? (
+            <Pagination
+                page={page + 1}
+                pageSize={PAGE_SIZE}
+                total={total}
+                onPageChange={(next) => setPage(next - 1)}
+                unit="entries"
+            />
         ) : undefined;
 
     return (
@@ -154,7 +139,7 @@ export function AuditLogPage() {
             <Card className="overflow-hidden">
                 <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border">
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={method}
                         onChange={(e) => {
                             setMethod(e.target.value);
@@ -179,7 +164,7 @@ export function AuditLogPage() {
                         aria-label="Search path"
                     />
                     <input
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(startDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={startDate}
                         onChange={(e) => {
@@ -190,7 +175,7 @@ export function AuditLogPage() {
                     />
                     <span className="text-text-3 text-sm">→</span>
                     <input
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(endDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={endDate}
                         onChange={(e) => {

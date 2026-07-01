@@ -19,6 +19,7 @@ import { inventoryRoutes } from './config/inventory.routes';
 import { salesRoutes } from './config/sales.routes';
 import { accountingRoutes } from './config/accounting.routes';
 import { creditAccountsRoutes } from './config/credit-accounts.routes';
+import { storeCreditRoutes } from './config/store-credit.routes';
 import { peopleRoutes } from './config/people.routes';
 import { transfersRoutes } from './config/transfers.routes';
 import {
@@ -90,6 +91,7 @@ export const routes = createRoutesFromElements(
                 {salesRoutes}
                 {accountingRoutes}
                 {creditAccountsRoutes}
+                {storeCreditRoutes}
                 {peopleRoutes}
                 {transfersRoutes}
             </Route>

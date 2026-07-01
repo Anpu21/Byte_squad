@@ -1,5 +1,6 @@
 import { LuSearch as Search } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { LedgerFiltersState } from '../hooks/useLedgerFilters';
 import type {
     LedgerAccountType,
@@ -7,8 +8,7 @@ import type {
     LedgerTimePeriod,
 } from '../types/filters.type';
 
-const SELECT_CLASS =
-    'h-9 px-3 bg-surface border border-border-strong text-text-1 text-sm rounded-md outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-colors';
+const SELECT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 interface LedgerFiltersProps {
     filters: LedgerFiltersState;
@@ -32,7 +32,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                         value={filters.search}
                         onChange={(e) => filters.setSearch(e.target.value)}
                         placeholder="Search description or reference…"
-                        className="w-full h-9 pl-9 pr-3 bg-surface border border-border-strong rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 placeholder:text-text-3 transition-colors"
+                        className={`${FIELD_SHELL} ${FIELD_BORDER} w-full h-9 pl-9 pr-3`}
                     />
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -44,7 +44,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                                 e.target.value as LedgerAccountType,
                             )
                         }
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                     >
                         <option value="all">All accounts</option>
                         <option value="assets">Assets</option>
@@ -59,7 +59,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                                 e.target.value as LedgerEntryType,
                             )
                         }
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                     >
                         <option value="all">All types</option>
                         <option value="credit">Credit</option>
@@ -73,7 +73,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                                 e.target.value as LedgerTimePeriod,
                             )
                         }
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                     >
                         <option value="">All time</option>
                         <option value="this_month">This month</option>
@@ -88,7 +88,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                             filters.setStartDate(e.target.value);
                             filters.setTimePeriod('');
                         }}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS}${(filters.startDate) ? '' : ' date-empty'}`}
                     />
                     <span className="text-text-3 text-sm">to</span>
                     <input
@@ -99,7 +99,7 @@ export function LedgerFilters({ filters }: LedgerFiltersProps) {
                             filters.setEndDate(e.target.value);
                             filters.setTimePeriod('');
                         }}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS}${(filters.endDate) ? '' : ' date-empty'}`}
                     />
                 </div>
             </div>

@@ -22,7 +22,7 @@ import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltyWalletService } from '@/modules/loyalty/loyalty-wallet.service';
 import { CloudinaryService } from '@common/cloudinary/cloudinary.service';
 import { NotificationsService } from '@notifications/notifications.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { PayhereService } from './payhere.service';
 
 describe('CustomerOrdersService', () => {
@@ -95,7 +95,7 @@ describe('CustomerOrdersService', () => {
           },
         },
         { provide: NotificationsService, useValue: { create: jest.fn() } },
-        { provide: NotificationsGateway, useValue: { broadcast: jest.fn() } },
+        { provide: RealtimePublisher, useValue: { broadcast: jest.fn() } },
         {
           provide: CloudinaryService,
           useValue: { uploadBuffer: jest.fn() },
@@ -114,9 +114,7 @@ describe('CustomerOrdersService', () => {
 
     service = module.get(CustomerOrdersService);
     repo = module.get(CustomerOrdersRepository);
-    products = module.get(ProductsService) as unknown as {
-      findActiveByIdsWithUnits: jest.Mock;
-    };
+    products = module.get(ProductsService);
   });
 
   describe('listForStaff', () => {
@@ -275,7 +273,13 @@ describe('CustomerOrdersService', () => {
       baseUnit: 'kg',
       sellingPrice: 170,
       sellableUnits: [
-        { id: 'u-kg', name: 'kg', isBase: true, conversionToBase: 1, sellingPrice: 170 },
+        {
+          id: 'u-kg',
+          name: 'kg',
+          isBase: true,
+          conversionToBase: 1,
+          sellingPrice: 170,
+        },
       ],
     };
     const widget = {
@@ -284,7 +288,13 @@ describe('CustomerOrdersService', () => {
       baseUnit: 'unit',
       sellingPrice: 50,
       sellableUnits: [
-        { id: 'u-pc', name: 'pc', isBase: true, conversionToBase: 1, sellingPrice: 50 },
+        {
+          id: 'u-pc',
+          name: 'pc',
+          isBase: true,
+          conversionToBase: 1,
+          sellingPrice: 50,
+        },
       ],
     };
 

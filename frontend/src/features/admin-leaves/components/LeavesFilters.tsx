@@ -3,6 +3,7 @@ import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';
 import type { IEmployee, LeaveStatus } from '@/types';
 import { LEAVE_STATUSES } from '../lib/leave-formatting';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
 interface ILeavesFiltersProps {
     branchId: string;
@@ -15,8 +16,7 @@ interface ILeavesFiltersProps {
     employees: IEmployee[];
 }
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 /**
  * Filter row for the leaves list. Branch select is hidden for
@@ -48,7 +48,7 @@ export function LeavesFilters({
                     Status
                 </span>
                 <select
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS} field-select`}
                     value={status}
                     onChange={(e) =>
                         onStatusChange(e.target.value as '' | LeaveStatus)
@@ -68,7 +68,7 @@ export function LeavesFilters({
                         Branch
                     </span>
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={branchId}
                         onChange={(e) => onBranchIdChange(e.target.value)}
                     >
@@ -86,7 +86,7 @@ export function LeavesFilters({
                     Employee
                 </span>
                 <select
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS} field-select`}
                     value={employeeId}
                     onChange={(e) => onEmployeeIdChange(e.target.value)}
                 >

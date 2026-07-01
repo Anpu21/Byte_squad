@@ -3,7 +3,7 @@ import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
 import BarChart from '@/components/charts/BarChart'
 import ExportMenu from '@/components/common/ExportMenu'
-import { DataTable, type DataTableColumn } from '@/components/ui'
+import { DataTable } from '@/components/ui'
 import { Select } from '@/components/ui/Select'
 import Input from '@/components/ui/Input'
 import { adminService } from '@/services/admin.service'
@@ -12,50 +12,13 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTransferAnalyticsQuery } from '../hooks/useTransferAnalyticsQuery'
 import { exportTransferHistory } from '../lib/export-transfers'
 import type { ExportFormat } from '@/lib/exportUtils'
-import type { ITransferAnalyticsResponse } from '@/types'
-
-type TopProduct = ITransferAnalyticsResponse['topProducts'][number]
-
-const TOP_PRODUCT_COLUMNS: DataTableColumn<TopProduct>[] = [
-  {
-    key: 'productName',
-    header: 'Top products',
-    className: 'font-medium text-text-1',
-    render: (p) => p.productName,
-  },
-  {
-    key: 'transfers',
-    header: 'Transfers',
-    align: 'right',
-    numeric: true,
-    render: (p) => p.transfers,
-  },
-  {
-    key: 'units',
-    header: 'Units',
-    align: 'right',
-    numeric: true,
-    render: (p) => p.units,
-  },
-]
-
-function daysAgoIso(days: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  return d.toISOString().slice(0, 10)
-}
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
-const STATUS_META: Record<string, { label: string; cls: string }> = {
-  pending: { label: 'Pending', cls: 'text-warning' },
-  approved: { label: 'Approved', cls: 'text-info' },
-  in_transit: { label: 'In transit', cls: 'text-primary' },
-  completed: { label: 'Completed', cls: 'text-accent' },
-  rejected: { label: 'Rejected', cls: 'text-text-3' },
-  cancelled: { label: 'Cancelled', cls: 'text-text-3' },
-}
+import {
+  TOP_PRODUCT_COLUMNS,
+  STATUS_META,
+  daysAgoIso,
+  todayIso,
+} from './transfer-report.lib'
+import { TransferReportKpi } from './TransferReportKpi'
 
 interface TransferReportProps {
   isAdmin: boolean
@@ -100,6 +63,22 @@ export function TransferReport({ isAdmin }: TransferReportProps) {
     : 'My branch'
   const rangeLabel = `${startDate} → ${endDate}`
   const hasData = (kpis?.total ?? 0) > 0
+
+  const kpiItems = [
+    { label: 'Transfers', value: String(kpis?.total ?? 0) },
+    { label: 'Completed', value: String(kpis?.completed ?? 0) },
+    { label: 'In transit', value: String(kpis?.inTransit ?? 0) },
+    { label: 'Pending', value: String(kpis?.pending ?? 0) },
+    {
+      label: 'Avg approval',
+      value: kpis?.avgApprovalHours != null ? `${kpis.avgApprovalHours}h` : '—',
+    },
+    {
+      label: 'Avg fulfilment',
+      value:
+        kpis?.avgFulfilmentHours != null ? `${kpis.avgFulfilmentHours}h` : '—',
+    },
+  ]
 
   const handleExport = async (format: ExportFormat) => {
     if (!hasData) return
@@ -178,20 +157,9 @@ export function TransferReport({ isAdmin }: TransferReportProps) {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Kpi label="Transfers" value={String(kpis?.total ?? 0)} />
-        <Kpi label="Completed" value={String(kpis?.completed ?? 0)} />
-        <Kpi label="In transit" value={String(kpis?.inTransit ?? 0)} />
-        <Kpi label="Pending" value={String(kpis?.pending ?? 0)} />
-        <Kpi
-          label="Avg approval"
-          value={kpis?.avgApprovalHours != null ? `${kpis.avgApprovalHours}h` : '—'}
-        />
-        <Kpi
-          label="Avg fulfilment"
-          value={
-            kpis?.avgFulfilmentHours != null ? `${kpis.avgFulfilmentHours}h` : '—'
-          }
-        />
+        {kpiItems.map((k) => (
+          <TransferReportKpi key={k.label} label={k.label} value={k.value} />
+        ))}
       </div>
 
       <div className="border border-border rounded-xl p-4 bg-surface">
@@ -236,17 +204,6 @@ export function TransferReport({ isAdmin }: TransferReportProps) {
           zebra
         />
       )}
-    </div>
-  )
-}
-
-function Kpi({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border border-border rounded-xl p-3 bg-surface">
-      <p className="text-[11px] uppercase tracking-wide text-text-3 font-semibold">
-        {label}
-      </p>
-      <p className="text-lg font-bold text-text-1 mt-0.5">{value}</p>
     </div>
   )
 }

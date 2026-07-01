@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Logo from '@/components/ui/Logo';
+import AuthSubmitButton from '@/components/auth/AuthSubmitButton';
 import OnboardingStepper from '@/components/auth/OnboardingStepper';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useSignupForm } from '@/features/signup/hooks/useSignupForm';
@@ -17,10 +17,10 @@ export function SignupPage() {
             <div className="mt-7">
                 <OnboardingStepper currentStep={1} />
             </div>
-            <h1 className="text-[28px] font-bold tracking-[-0.02em] text-text-1 leading-tight">
+            <h1 className="font-display text-[30px] font-semibold leading-[1.06] tracking-[-0.012em] text-text-1 sm:text-[34px]">
                 Create your account
             </h1>
-            <p className="text-xs text-text-2 mt-1.5 mb-7">
+            <p className="mb-7 mt-2 text-sm text-text-3">
                 We&apos;ll email you a verification code to finish setup.
             </p>
 
@@ -80,20 +80,17 @@ export function SignupPage() {
                     clearError={p.clearError}
                 />
 
-                <Button
-                    type="submit"
-                    size="lg"
-                    disabled={p.submitting}
-                    className="w-full mt-2"
-                >
-                    {p.submitting ? 'Creating account…' : 'Create account'}
-                </Button>
+                <AuthSubmitButton
+                    phase={p.submitting ? 'loading' : 'idle'}
+                    idleLabel="Create account"
+                    className="mt-2"
+                />
 
-                <p className="text-center text-xs text-text-2 mt-2">
+                <p className="mt-2 text-center text-[13px] text-text-2">
                     Already have an account?{' '}
                     <Link
                         to={FRONTEND_ROUTES.LOGIN}
-                        className="text-primary font-medium hover:opacity-80 transition-opacity"
+                        className="font-semibold text-primary transition-colors hover:text-accent"
                     >
                         Sign in
                     </Link>

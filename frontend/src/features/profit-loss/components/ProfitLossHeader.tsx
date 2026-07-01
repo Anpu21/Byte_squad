@@ -1,9 +1,9 @@
 import Segmented from '@/components/ui/Segmented';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { formatDateRangeLabel } from '../lib/format';
 import { PERIOD_OPTIONS, type PeriodKey } from '../lib/period';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border-strong text-text-1 text-sm rounded-md outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 interface ProfitLossHeaderProps {
     startDate: string;
@@ -25,10 +25,7 @@ export function ProfitLossHeader({
     return (
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
             <div>
-                <h1 className="text-2xl font-bold text-text-1 tracking-tight">
-                    Profit &amp; Loss
-                </h1>
-                <p className="text-xs text-text-2 mt-1">
+                <p className="text-xs text-text-2">
                     {formatDateRangeLabel(startDate, endDate)}
                 </p>
             </div>
@@ -46,7 +43,7 @@ export function ProfitLossHeader({
                     type="date"
                     value={startDate}
                     onChange={(e) => onStartChange(e.target.value)}
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS}${(startDate) ? '' : ' date-empty'}`}
                 />
                 <span className="text-text-3 text-sm">to</span>
                 <label htmlFor="pl-end" className="sr-only">
@@ -57,7 +54,7 @@ export function ProfitLossHeader({
                     type="date"
                     value={endDate}
                     onChange={(e) => onEndChange(e.target.value)}
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS}${(endDate) ? '' : ' date-empty'}`}
                 />
             </div>
         </div>

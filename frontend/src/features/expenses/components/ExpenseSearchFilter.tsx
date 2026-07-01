@@ -1,4 +1,6 @@
 import { LuSearch as Search } from 'react-icons/lu';
+import { cn } from '@/lib/utils';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
 interface ExpenseSearchFilterProps {
     value: string;
@@ -28,7 +30,7 @@ export function ExpenseSearchFilter({
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder="Description or category"
-                    className="w-full h-9 pl-9 pr-3 bg-canvas border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/25 placeholder:text-text-3 transition-colors"
+                    className={cn(FIELD_SHELL, FIELD_BORDER, 'w-full h-9 pl-9 pr-3')}
                 />
             </div>
         </div>

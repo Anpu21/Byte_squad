@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { UsersService } from '@users/users.service';
 import { EmailService } from '@/modules/email/email.service';
+import { RefreshTokenService } from './refresh-token.service';
 import { User } from '@users/entities/user.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 
@@ -26,10 +27,12 @@ const mockedCompare = bcrypt.compare as jest.MockedFunction<
 describe('AuthService', () => {
   let service: AuthService;
   let users: jest.Mocked<UsersService>;
+  let refreshTokens: jest.Mocked<RefreshTokenService>;
 
   beforeEach(async () => {
     const usersMock: Partial<jest.Mocked<UsersService>> = {
       findByEmail: jest.fn(),
+      findById: jest.fn(),
       findByIdWithPassword: jest.fn(),
       createCustomerAccount: jest.fn(),
       removeByIdInternal: jest.fn(),
@@ -59,11 +62,20 @@ describe('AuthService', () => {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue('development') },
         },
+        {
+          provide: RefreshTokenService,
+          useValue: {
+            issue: jest.fn().mockResolvedValue('refresh-raw'),
+            rotate: jest.fn(),
+            revoke: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get(AuthService);
     users = module.get(UsersService);
+    refreshTokens = module.get(RefreshTokenService);
   });
 
   describe('signup', () => {
@@ -122,6 +134,59 @@ describe('AuthService', () => {
       await expect(
         service.login({ email: 'c@x.com', password: 'pw' }),
       ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('issues access + refresh tokens on success', async () => {
+      users.findByEmail.mockResolvedValue({
+        id: 'u',
+        email: 'm@x.com',
+        passwordHash: 'h',
+        role: UserRole.MANAGER,
+        branchId: 'b',
+        isFirstLogin: false,
+        isVerified: true,
+        firstName: 'M',
+        lastName: 'X',
+      } as User);
+      mockedCompare.mockResolvedValueOnce(true as never);
+
+      const result = await service.login({ email: 'm@x.com', password: 'pw' });
+
+      expect(result.accessToken).toBe('jwt-token');
+      expect(result.refreshToken).toBe('refresh-raw');
+      expect(refreshTokens.issue).toHaveBeenCalledWith('u', expect.any(Object));
+    });
+  });
+
+  describe('refresh', () => {
+    it('rotates the token and mints a fresh access token', async () => {
+      refreshTokens.rotate.mockResolvedValue({
+        userId: 'u',
+        token: 'new-refresh',
+      });
+      users.findById.mockResolvedValue({
+        id: 'u',
+        email: 'm@x.com',
+        role: UserRole.MANAGER,
+        branchId: 'b',
+        isFirstLogin: false,
+        isVerified: true,
+        firstName: 'M',
+        lastName: 'X',
+      } as User);
+
+      const result = await service.refresh('old-refresh');
+
+      expect(result.accessToken).toBe('jwt-token');
+      expect(result.refreshToken).toBe('new-refresh');
+    });
+
+    it('rejects when the user no longer exists', async () => {
+      refreshTokens.rotate.mockResolvedValue({ userId: 'gone', token: 't' });
+      users.findById.mockResolvedValue(null);
+      await expect(service.refresh('x')).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
     });
   });
 

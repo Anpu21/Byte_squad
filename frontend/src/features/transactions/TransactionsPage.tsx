@@ -22,12 +22,7 @@ export function TransactionsPage() {
     return (
         <div className="animate-in fade-in duration-500">
             <div className="flex items-start justify-between gap-3 mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-text-1 tracking-tight">
-                        Transactions
-                    </h1>
-                    <p className="text-sm text-text-2 mt-1">{p.subtitle}</p>
-                </div>
+                <p className="text-sm text-text-2">{p.subtitle}</p>
                 <Button
                     variant="secondary"
                     onClick={() =>

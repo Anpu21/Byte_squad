@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type {
     AttendanceStatus,
     IAttendance,
@@ -29,8 +30,7 @@ const DAY_LABEL_FORMATTER = new Intl.DateTimeFormat('en-GB', {
     year: 'numeric',
 });
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 function defaultStatusFor(existing: IAttendance | null): AttendanceStatus {
     // 7-day shop: no weekend default — unmarked days start at Absent.
@@ -158,7 +158,7 @@ export function AttendanceEditModal({
                             setStatus(e.target.value as AttendanceStatus)
                         }
                         aria-label="Attendance status"
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                     >
                         {STATUS_OPTIONS.map((opt) => (
                             <option key={opt.value} value={opt.value}>

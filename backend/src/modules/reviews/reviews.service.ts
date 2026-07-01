@@ -30,11 +30,12 @@ export interface ReviewActor {
 }
 
 /**
- * Verified-buyers-only gate. Flip to `false` to let any signed-in customer
- * review — `isVerifiedPurchase` is computed and stored on every review either
- * way, so the "Verified Purchase" badge keeps working.
+ * Purchase gate for posting a review. `false` lets any signed-in customer review
+ * any active product; `true` restricts posting to verified buyers.
+ * `isVerifiedPurchase` is computed and stored on every review either way, so
+ * flipping this is non-destructive — the value stays accurate in the DB.
  */
-const REVIEW_REQUIRES_PURCHASE = true;
+const REVIEW_REQUIRES_PURCHASE = false;
 
 const LIST_DEFAULT_LIMIT = 10;
 const LIST_MAX_LIMIT = 50;
@@ -42,9 +43,10 @@ const MODERATION_DEFAULT_LIMIT = 20;
 const MODERATION_MAX_LIMIT = 100;
 
 /**
- * Product reviews & ratings. Customers post/edit/delete their own review of a
- * product they purchased; the product's aggregate is recomputed on every write
- * (in the repository, transactionally). Staff moderate via soft-hide or delete.
+ * Product reviews & ratings. Any signed-in customer posts/edits/deletes their
+ * own review of an active product (one per product); the product's aggregate is
+ * recomputed on every write (in the repository, transactionally). Staff moderate
+ * via soft-hide or delete.
  */
 @Injectable()
 export class ReviewsService {

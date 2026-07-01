@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface PageHeaderProps {
-    title: ReactNode;
+    title?: ReactNode;
     subtitle?: ReactNode;
     actions?: ReactNode;
     eyebrow?: ReactNode;
@@ -27,9 +27,11 @@ export default function PageHeader({
                 {eyebrow && (
                     <div className="text-xs text-text-2 mb-1">{eyebrow}</div>
                 )}
-                <h1 className="text-2xl font-bold text-text-1 tracking-[-0.02em]">
-                    {title}
-                </h1>
+                {title != null && (
+                    <h1 className="text-2xl font-bold text-text-1 tracking-[-0.02em]">
+                        {title}
+                    </h1>
+                )}
                 {subtitle && (
                     <div className="text-xs text-text-2 mt-1">{subtitle}</div>
                 )}

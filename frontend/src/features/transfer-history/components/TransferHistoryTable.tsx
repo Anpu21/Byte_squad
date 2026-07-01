@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     DataTable,
     EmptyState,
+    Pagination,
     type DataTableColumn,
 } from '@/components/ui';
 import TransferStatusPill from '@/components/transfers/TransferStatusPill';
@@ -16,7 +17,8 @@ interface TransferHistoryTableProps {
     hasActiveFilters: boolean;
     onClearFilters: () => void;
     page: number;
-    totalPages: number;
+    total: number;
+    pageSize: number;
     onPageChange: (page: number) => void;
 }
 
@@ -84,7 +86,8 @@ export function TransferHistoryTable({
     hasActiveFilters,
     onClearFilters,
     page,
-    totalPages,
+    total,
+    pageSize,
     onPageChange,
 }: TransferHistoryTableProps) {
     const navigate = useNavigate();
@@ -120,30 +123,14 @@ export function TransferHistoryTable({
                     />
                 }
                 footer={
-                    !isLoading && items.length > 0 && totalPages > 1 ? (
-                        <div className="p-4 border-t border-border flex items-center justify-between text-xs text-text-3 bg-surface-2">
-                            <span>
-                                Page {page} of {totalPages}
-                            </span>
-                            <div className="flex items-center gap-1">
-                                <button
-                                    type="button"
-                                    onClick={() => onPageChange(page - 1)}
-                                    disabled={page === 1}
-                                    className="px-3 py-1.5 rounded-lg border border-border hover:bg-surface hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Previous
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onPageChange(page + 1)}
-                                    disabled={page === totalPages}
-                                    className="px-3 py-1.5 rounded-lg border border-border hover:bg-surface hover:text-text-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
+                    !isLoading && items.length > 0 ? (
+                        <Pagination
+                            page={page}
+                            pageSize={pageSize}
+                            total={total}
+                            onPageChange={onPageChange}
+                            unit="transfers"
+                        />
                     ) : null
                 }
             />

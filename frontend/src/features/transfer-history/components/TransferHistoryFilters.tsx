@@ -1,10 +1,10 @@
 import type { TransferStatus } from '@/constants/enums';
 import type { IBranchWithMeta, IProduct } from '@/types';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { HISTORY_STATUSES } from '../lib/statuses';
 import { ProductTypeahead } from './ProductTypeahead';
 
-const INPUT_CLASS =
-    'w-full h-10 px-3 bg-canvas border border-border rounded-lg text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-all';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full h-10 px-3`;
 
 export interface TransferHistoryFilterValues {
     selectedStatuses: TransferStatus[];
@@ -78,7 +78,7 @@ export function TransferHistoryFilters({
                         value={filters.from}
                         max={filters.to || undefined}
                         onChange={(e) => actions.setFrom(e.target.value)}
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(filters.from) ? '' : ' date-empty'}`}
                     />
                 </div>
                 <div>
@@ -94,7 +94,7 @@ export function TransferHistoryFilters({
                         value={filters.to}
                         min={filters.from || undefined}
                         onChange={(e) => actions.setTo(e.target.value)}
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(filters.to) ? '' : ' date-empty'}`}
                     />
                 </div>
                 <div>
@@ -120,7 +120,7 @@ export function TransferHistoryFilters({
                             id="th-branch"
                             value={filters.branchId}
                             onChange={(e) => actions.setBranchId(e.target.value)}
-                            className={INPUT_CLASS}
+                            className={`${INPUT_CLASS} field-select`}
                         >
                             <option value="">All branches</option>
                             {branches.map((b) => (

@@ -11,7 +11,6 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
 import { UsersService } from '@users/users.service';
 import { LoginDto } from '@auth/dto/login.dto';
 import { SignupDto } from '@auth/dto/signup.dto';
@@ -22,30 +21,20 @@ import { ForgotPasswordDto } from '@auth/dto/forgot-password.dto';
 import { ResetPasswordDto } from '@auth/dto/reset-password.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { EmailService } from '@/modules/email/email.service';
+import {
+  RefreshTokenService,
+  RefreshTokenMeta,
+} from '@auth/refresh-token.service';
+import {
+  OTP_EXPIRES_IN_MINUTES,
+  buildAuthResult,
+  buildJwtPayload,
+  generateOtp,
+  otpExpiresAt,
+  type AuthResult,
+} from '@auth/lib/auth-tokens.lib';
 
-const OTP_EXPIRES_IN_MINUTES = 10;
-
-interface JwtPayload {
-  sub: string;
-  email: string;
-  role: UserRole;
-  branchId: string | null;
-}
-
-export interface AuthResult {
-  accessToken: string;
-  user: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: UserRole;
-    branchId: string | null;
-    isFirstLogin: boolean;
-    isVerified: boolean;
-    language: string;
-  };
-}
+export type { AuthResult } from '@auth/lib/auth-tokens.lib';
 
 @Injectable()
 export class AuthService {
@@ -56,6 +45,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
+    private readonly refreshTokenService: RefreshTokenService,
   ) {}
 
   private isProduction(): boolean {
@@ -74,10 +64,8 @@ export class AuthService {
     }
 
     const passwordHash = await this.hashPassword(dto.password);
-    const otpCode = this.generateOtp();
-    const otpExpiresAt = new Date(
-      Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
-    );
+    const otpCode = generateOtp();
+    const otpExpiry = otpExpiresAt();
 
     const saved = await this.usersService.createCustomerAccount({
       email: dto.email.toLowerCase(),
@@ -86,7 +74,7 @@ export class AuthService {
       lastName: dto.lastName,
       phone: dto.phone ?? null,
       otpCode,
-      otpExpiresAt,
+      otpExpiresAt: otpExpiry,
     });
     this.logger.log(`Customer signup: ${saved.email}`);
 
@@ -168,11 +156,9 @@ export class AuthService {
       throw new BadRequestException('Account already verified');
     }
 
-    const otpCode = this.generateOtp();
-    const otpExpiresAt = new Date(
-      Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
-    );
-    await this.usersService.setOtp(user.id, otpCode, otpExpiresAt);
+    const otpCode = generateOtp();
+    const otpExpiry = otpExpiresAt();
+    await this.usersService.setOtp(user.id, otpCode, otpExpiry);
 
     if (!this.isProduction()) {
       this.logger.warn(
@@ -212,11 +198,10 @@ export class AuthService {
     return { message: 'Verification code sent' };
   }
 
-  private generateOtp(): string {
-    return crypto.randomInt(100000, 1000000).toString();
-  }
-
-  async login(loginDto: LoginDto): Promise<AuthResult> {
+  async login(
+    loginDto: LoginDto,
+    meta: RefreshTokenMeta = {},
+  ): Promise<AuthResult> {
     try {
       this.logger.debug(`Attempting login for email: ${loginDto.email}`);
       const user = await this.usersService.findByEmail(loginDto.email);
@@ -263,33 +248,12 @@ export class AuthService {
         }
       }
 
-      const payload: JwtPayload = {
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        branchId: user.branchId,
-      };
-
-      this.logger.debug(`Signing JWT with payload: ${JSON.stringify(payload)}`);
-      const accessToken = await this.jwtService.signAsync(payload);
-      this.logger.debug(`JWT generated successfully`);
+      const accessToken = await this.signAccessToken(user);
+      const refreshToken = await this.refreshTokenService.issue(user.id, meta);
 
       await this.usersService.touchLastLogin(user.id);
 
-      return {
-        accessToken,
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-          branchId: user.branchId,
-          isFirstLogin: user.isFirstLogin,
-          isVerified: user.isVerified,
-          language: user.language,
-        },
-      };
+      return buildAuthResult(accessToken, refreshToken, user);
     } catch (error: unknown) {
       if (
         error instanceof UnauthorizedException ||
@@ -304,6 +268,44 @@ export class AuthService {
       this.logger.error(`Login error for ${loginDto.email}: ${message}`, stack);
       throw error;
     }
+  }
+
+  /** Rotate a refresh token and mint a fresh access token. */
+  async refresh(
+    rawToken: string,
+    meta: RefreshTokenMeta = {},
+  ): Promise<AuthResult> {
+    const { userId, token: refreshToken } =
+      await this.refreshTokenService.rotate(rawToken, meta);
+
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    if (user.role === UserRole.CUSTOMER && !user.isVerified) {
+      throw new ForbiddenException(
+        'Please verify your email before logging in',
+      );
+    }
+
+    const accessToken = await this.signAccessToken(user);
+
+    return buildAuthResult(accessToken, refreshToken, user);
+  }
+
+  /** Revoke the presented refresh token's family (logout). */
+  async logout(rawToken: string): Promise<{ message: string }> {
+    await this.refreshTokenService.revoke(rawToken);
+    return { message: 'Logged out' };
+  }
+
+  private signAccessToken(user: {
+    id: string;
+    email: string;
+    role: UserRole;
+    branchId: string | null;
+  }): Promise<string> {
+    return this.jwtService.signAsync(buildJwtPayload(user));
   }
 
   async requestPasswordReset(
@@ -323,11 +325,9 @@ export class AuthService {
       return genericResponse;
     }
 
-    const otpCode = this.generateOtp();
-    const otpExpiresAt = new Date(
-      Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
-    );
-    await this.usersService.setOtp(user.id, otpCode, otpExpiresAt);
+    const otpCode = generateOtp();
+    const otpExpiry = otpExpiresAt();
+    await this.usersService.setOtp(user.id, otpCode, otpExpiry);
 
     const isProd = this.isProduction();
     if (!isProd) {

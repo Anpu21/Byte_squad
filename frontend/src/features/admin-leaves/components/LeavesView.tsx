@@ -73,13 +73,6 @@ export function LeavesView({ showHeader = true }: LeavesViewProps) {
         <>
             {showHeader && (
                 <PageHeader
-                    eyebrow="People"
-                    title="Leaves"
-                    subtitle={
-                        canModerate
-                            ? 'Approve, reject, or cancel team leave requests. Annual balances adjust atomically on approve / cancel.'
-                            : 'Apply for and review your own leaves. Pending requests can still be cancelled.'
-                    }
                     actions={
                         <Button
                             variant="primary"

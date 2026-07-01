@@ -26,13 +26,11 @@ export function SalesPage() {
 
     return (
         <WorkspacePage
-            eyebrow="Revenue"
-            title="Sales"
-            subtitle="Transactions, customer orders, and schemes — everything that crosses the counter."
             tabs={tabs}
             active={tab}
             onTabChange={setTab}
             tabsAriaLabel="Sales workspace views"
+            chromeless
         >
             {tab === 'transactions' && <TransactionsPage />}
             {tab === 'orders' && <CustomerOrdersPage />}

@@ -12,7 +12,7 @@ import { ProductBatchRepository } from '@inventory/product-batch.repository';
 import { ProductsService } from '@products/products.service';
 import { UsersService } from '@users/users.service';
 import { NotificationsService } from '@notifications/notifications.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { NotificationType } from '@common/enums/notification.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { AuthUser } from '@common/types/auth-user.type';
@@ -42,7 +42,7 @@ export class ExpiryService {
     private readonly products: ProductsService,
     private readonly users: UsersService,
     private readonly notifications: NotificationsService,
-    private readonly gateway: NotificationsGateway,
+    private readonly realtime: RealtimePublisher,
   ) {}
 
   /**
@@ -213,7 +213,7 @@ export class ExpiryService {
           type: NotificationType.EXPIRY_ALERT,
           metadata: { branchId: bId, count },
         });
-        this.gateway.sendToUser(userId, {
+        this.realtime.toUser(userId, {
           userId,
           title,
           message,

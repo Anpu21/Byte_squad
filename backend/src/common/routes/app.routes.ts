@@ -13,6 +13,13 @@ export const APP_ROUTES = {
     READY: 'ready',
   },
 
+  // Well-known — public JWKS for RS256 access-token verification by other
+  // services (e.g. the chatbot). Outside API_PREFIX so it sits at the
+  // conventional /.well-known/ path that JWKS clients expect.
+  WELL_KNOWN: {
+    JWKS: '.well-known/jwks.json',
+  },
+
   // Auth
   AUTH: {
     BASE: `${API_PREFIX}/auth`,
@@ -24,6 +31,7 @@ export const APP_ROUTES = {
     FORGOT_PASSWORD: 'forgot-password',
     RESET_PASSWORD: 'reset-password',
     REFRESH: 'refresh',
+    LOGOUT: 'logout',
   },
 
   // Users
@@ -199,6 +207,13 @@ export const APP_ROUTES = {
     BY_ID: ':id',
     MARK_READ: ':id/read',
     MARK_ALL_READ: 'read-all',
+  },
+
+  // Chat — stateless attachment upload only (conversations + messages live in
+  // the realtime service). Bytes go to Cloudinary; realtime stores the metadata.
+  CHAT: {
+    BASE: `${API_PREFIX}/chat`,
+    ATTACHMENTS: 'attachments',
   },
 
   // Admin Portal (system-wide endpoints — admin role only)

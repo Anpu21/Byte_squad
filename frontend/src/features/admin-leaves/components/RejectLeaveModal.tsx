@@ -2,6 +2,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { ILeave } from '@/types';
 import { useRejectLeave } from '../hooks/useRejectLeave';
 import { formatLeaveType } from '../lib/leave-formatting';
@@ -74,7 +75,7 @@ function RejectLeaveForm({ leave, onClose }: IRejectLeaveFormProps) {
                     Reason ({MIN_REASON}+ chars)
                 </span>
                 <textarea
-                    className="w-full min-h-[88px] px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors"
+                    className={`${FIELD_SHELL} ${FIELD_BORDER} w-full min-h-[88px] px-3 py-2`}
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Required — visible to the employee."

@@ -6,26 +6,21 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 import Segmented from '@/components/ui/Segmented';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { inventoryService } from '@/services/inventory.service';
 import { queryKeys } from '@/lib/queryKeys';
-import { buildLabelSheetHtml, unitPriceSuffix } from '../lib/label-sheet-html';
-import type { ILabelItem, LabelLayout } from '../lib/label-sheet-html';
+import { buildLabelSheetHtml } from '../lib/label-sheet-html';
+import type { LabelLayout } from '../lib/label-sheet-html';
+import {
+    MAX_PER_PRODUCT,
+    LAYOUT_OPTIONS,
+    clampQty,
+    buildPrintLabels,
+} from '../lib/label-print';
 import { usePrintLabelSheet } from '../hooks/usePrintLabelSheet';
 import { LabelProductTable } from './LabelProductTable';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
-
-const MAX_PER_PRODUCT = 99;
-
-const LAYOUT_OPTIONS: { label: string; value: LabelLayout }[] = [
-    { label: 'Price tag', value: 'price-tag' },
-    { label: 'Shelf edge', value: 'shelf-edge' },
-];
-
-function clampQty(raw: string): number {
-    return Math.min(MAX_PER_PRODUCT, Math.max(0, Math.floor(Number(raw) || 0)));
-}
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 /**
  * Barcode label printing: filter by category, pick a layout, set how many
@@ -100,28 +95,7 @@ export function LabelPrintPanel() {
     }
 
     function handlePrint() {
-        const labels: ILabelItem[] = [];
-        for (const product of products) {
-            const qty = quantities.get(product.id) ?? 0;
-            if (qty === 0) continue;
-            const suffix = unitPriceSuffix(product.baseUnit);
-            // Weighed items show their PLU; otherwise shelf-edge shows category.
-            const pluLine = product.pluCode
-                ? `PLU ${product.pluCode}`
-                : undefined;
-            const secondaryLine =
-                pluLine ??
-                (layout === 'shelf-edge' ? product.category : undefined);
-            for (let i = 0; i < qty; i++) {
-                labels.push({
-                    name: product.name,
-                    barcode: product.barcode,
-                    price: product.sellingPrice,
-                    unitSuffix: suffix || undefined,
-                    secondaryLine,
-                });
-            }
-        }
+        const labels = buildPrintLabels(products, quantities, layout);
         if (labels.length === 0) return;
         printLabelSheet(buildLabelSheetHtml(labels, { layout }));
         toast.success(`Sent ${labels.length} labels to print`);
@@ -146,7 +120,7 @@ export function LabelPrintPanel() {
                         />
                     </div>
                     <select
-                        className={`${INPUT_CLASS} max-w-[12rem]`}
+                        className={`${INPUT_CLASS} field-select max-w-[12rem]`}
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
                         aria-label="Filter by category"

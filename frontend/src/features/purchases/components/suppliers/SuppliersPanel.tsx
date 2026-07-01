@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { LuPlus as Plus, LuSearch as Search } from 'react-icons/lu';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { ISupplier, SupplierStatus } from '@/types';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { SuppliersTable } from './SuppliersTable';
 import { SupplierFormModal } from './SupplierFormModal';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 /**
  * Suppliers tab of the Purchases workspace: search + status filter +
@@ -58,7 +58,7 @@ export function SuppliersPanel() {
                         />
                     </div>
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={status}
                         onChange={(e) =>
                             setStatus(e.target.value as '' | SupplierStatus)

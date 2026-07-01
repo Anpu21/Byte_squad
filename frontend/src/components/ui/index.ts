@@ -4,7 +4,18 @@
 // Actions & inputs
 export { default as Button } from './Button';
 export { default as Input, type InputProps } from './Input';
+export { default as Textarea, type TextareaProps } from './Textarea';
 export { Select, type SelectOption } from './Select';
+export {
+    FIELD_SHELL,
+    FIELD_BORDER,
+    FIELD_ERROR,
+    FIELD_HEIGHT,
+    FIELD_SHAKE,
+    fieldClass,
+    selectFieldClass,
+    type FieldSize,
+} from './field-styles';
 export { default as Segmented } from './Segmented';
 export { default as Stepper } from './Stepper';
 

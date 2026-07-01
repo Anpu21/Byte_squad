@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui'
 import { inventoryService } from '@/services/inventory.service'
 import { userService } from '@/services/user.service'
 import { queryKeys } from '@/lib/queryKeys'
@@ -17,8 +18,7 @@ interface ReceiveBatchModalProps {
   role?: UserRole
 }
 
-const SELECT_CLASS =
-  'w-full h-[38px] px-3 bg-surface border border-border-strong rounded-md text-[13px] text-text-1 outline-none transition-colors hover:border-text-3 focus:border-focus focus:ring-[3px] focus:ring-primary/30'
+const SELECT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full h-[38px] px-3`
 
 export function ReceiveBatchModal({
   isOpen,
@@ -75,7 +75,7 @@ export function ReceiveBatchModal({
             Product
           </label>
           <select
-            className={SELECT_CLASS}
+            className={`${SELECT_CLASS} field-select`}
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
           >
@@ -96,7 +96,7 @@ export function ReceiveBatchModal({
               Branch
             </label>
             <select
-              className={SELECT_CLASS}
+              className={`${SELECT_CLASS} field-select`}
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
             >

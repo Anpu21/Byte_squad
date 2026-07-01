@@ -1,0 +1,74 @@
+import api from './api'
+import realtimeApi from './realtime-api'
+import type {
+  IApiResponse,
+  IChatAttachment,
+  IChatConversation,
+  IChatMessage,
+  IChatParticipantRead,
+} from '@/types'
+
+interface HistoryParams {
+  limit?: number
+  before?: string
+}
+
+export const chatService = {
+  /**
+   * Open (find-or-create) the chat for a customer-group. The realtime service
+   * verifies membership against the backend, so a non-member gets 403.
+   */
+  openGroupConversation: async (
+    groupId: string,
+  ): Promise<IChatConversation> => {
+    const res = await realtimeApi.post<IChatConversation>(
+      `/chat/groups/${groupId}/open`,
+    )
+    return res.data
+  },
+
+  /**
+   * Participants of a conversation with their `lastReadAt` cursors — seeds the
+   * read-receipt state (realtime returns the entity array directly).
+   */
+  getParticipants: async (
+    conversationId: string,
+  ): Promise<IChatParticipantRead[]> => {
+    const res = await realtimeApi.get<IChatParticipantRead[]>(
+      `/chat/conversations/${conversationId}/participants`,
+    )
+    return res.data
+  },
+
+  /** Newest-first page of history (realtime returns the entity array directly). */
+  getHistory: async (
+    conversationId: string,
+    params?: HistoryParams,
+  ): Promise<IChatMessage[]> => {
+    const res = await realtimeApi.get<IChatMessage[]>(
+      `/chat/conversations/${conversationId}/messages`,
+      { params },
+    )
+    return res.data
+  },
+
+  /**
+   * Upload a file to the BACKEND (Cloudinary), which returns the metadata the
+   * client then attaches to a realtime chat message. Uses the backend `api`
+   * (enveloped response), not the realtime client. Gated to members of `groupId`.
+   */
+  uploadAttachment: async (
+    file: File,
+    groupId: string,
+  ): Promise<IChatAttachment> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('groupId', groupId)
+    const res = await api.post<IApiResponse<IChatAttachment>>(
+      '/chat/attachments',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+    return res.data.data
+  },
+}

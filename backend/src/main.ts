@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { AppModule } from '@/app.module.js';
@@ -31,7 +31,7 @@ async function bootstrap() {
 
   // Global filters and interceptors
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
 
   // Graceful shutdown: on SIGTERM/SIGINT, drain in-flight requests and let
   // TypeORM close its pool (onModuleDestroy) for zero-downtime deploys.

@@ -134,11 +134,7 @@ export function AttendanceView({ showHeader = true }: AttendanceViewProps) {
     return (
         <>
             {showHeader && (
-                <PageHeader
-                    eyebrow="People"
-                    title="Attendance"
-                    subtitle={subtitle}
-                />
+                <PageHeader subtitle={subtitle} />
             )}
             <Card className="overflow-hidden">
                 <AttendanceFilters

@@ -3,6 +3,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { ICreditAccountRow } from '@/types';
 import { useRejectCreditAccount } from '../hooks/useRejectCreditAccount';
 
@@ -68,7 +69,7 @@ function RejectForm({
           Reason for rejection
         </span>
         <textarea
-          className="w-full px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors placeholder:text-text-3 resize-none"
+          className={`${FIELD_SHELL} ${FIELD_BORDER} w-full px-3 py-2 resize-none`}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={3}

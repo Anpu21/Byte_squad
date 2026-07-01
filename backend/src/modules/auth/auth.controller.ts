@@ -5,6 +5,8 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Headers,
+  Ip,
 } from '@nestjs/common';
 import { AuthService } from '@auth/auth.service';
 import { LoginDto } from '@auth/dto/login.dto';
@@ -14,6 +16,7 @@ import { ResendOtpDto } from '@auth/dto/resend-otp.dto';
 import { ChangePasswordDto } from '@auth/dto/change-password.dto';
 import { ForgotPasswordDto } from '@auth/dto/forgot-password.dto';
 import { ResetPasswordDto } from '@auth/dto/reset-password.dto';
+import { RefreshTokenDto } from '@auth/dto/refresh-token.dto';
 import { APP_ROUTES } from '@common/routes/app.routes';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
@@ -29,8 +32,36 @@ export class AuthController {
   @Public()
   @Post(APP_ROUTES.AUTH.LOGIN)
   @HttpCode(HttpStatus.OK)
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  login(
+    @Body() loginDto: LoginDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent?: string,
+  ) {
+    return this.authService.login(loginDto, {
+      ip,
+      userAgent: userAgent ?? null,
+    });
+  }
+
+  @Public()
+  @Post(APP_ROUTES.AUTH.REFRESH)
+  @HttpCode(HttpStatus.OK)
+  refresh(
+    @Body() dto: RefreshTokenDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent?: string,
+  ) {
+    return this.authService.refresh(dto.refreshToken, {
+      ip,
+      userAgent: userAgent ?? null,
+    });
+  }
+
+  @Public()
+  @Post(APP_ROUTES.AUTH.LOGOUT)
+  @HttpCode(HttpStatus.OK)
+  logout(@Body() dto: RefreshTokenDto) {
+    return this.authService.logout(dto.refreshToken);
   }
 
   @Public()

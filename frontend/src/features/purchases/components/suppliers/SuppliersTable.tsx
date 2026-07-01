@@ -78,6 +78,7 @@ export function SuppliersTable({ rows, isLoading, onEdit }: ISuppliersTableProps
             getRowKey={(s) => s.id}
             isLoading={isLoading}
             zebra
+            clientPaginate={{ unit: 'suppliers' }}
             empty={
                 <EmptyState
                     title="No suppliers yet"

@@ -15,9 +15,6 @@ export function EmployeesView({ showHeader = true }: EmployeesViewProps) {
         <>
             {showHeader && (
                 <PageHeader
-                    eyebrow="People"
-                    title="Employees"
-                    subtitle="Manage the HR roster — identity, employment terms, payroll details, and lifecycle status."
                     actions={
                         <Button
                             type="button"

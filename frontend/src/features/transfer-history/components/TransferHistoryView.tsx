@@ -50,7 +50,8 @@ export function TransferHistoryView({ showHeader = true }: TransferHistoryViewPr
                 hasActiveFilters={f.hasActiveFilters}
                 onClearFilters={f.clearFilters}
                 page={th.page}
-                totalPages={th.totalPages}
+                total={th.total}
+                pageSize={th.limit}
                 onPageChange={th.setPage}
             />
         </div>

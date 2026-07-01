@@ -4,6 +4,8 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
 import { FRONTEND_ROUTES } from '@/constants/routes'
+import Pagination from '@/components/ui/Pagination'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { useReturnsListPage } from '@/features/returns/hooks/useReturnsListPage'
 import { ReturnsTable } from '@/features/returns/components/ReturnsTable'
 
@@ -13,7 +15,6 @@ export function ReturnsPage() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <PageHeader
-        title="Returns"
         subtitle={`${p.total} return(s)`}
         actions={
           <Link to={FRONTEND_ROUTES.RETURN_NEW}>
@@ -33,30 +34,14 @@ export function ReturnsPage() {
 
       <Card className="overflow-hidden">
         <ReturnsTable rows={p.rows} isLoading={p.isLoading} />
-        {!p.isLoading && p.rows.length > 0 && p.totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-border text-xs text-text-2">
-            <span>
-              Page {p.page} of {p.totalPages}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={p.page <= 1}
-                onClick={() => p.setPage(p.page - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={p.page >= p.totalPages}
-                onClick={() => p.setPage(p.page + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+        {!p.isLoading && p.rows.length > 0 && (
+          <Pagination
+            page={p.page}
+            pageSize={DEFAULT_PAGE_SIZE}
+            total={p.total}
+            onPageChange={p.setPage}
+            unit="returns"
+          />
         )}
       </Card>
     </div>

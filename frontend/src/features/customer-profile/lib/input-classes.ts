@@ -1,2 +1,9 @@
-export const PROFILE_INPUT_CLASS =
-    'w-full h-10 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors placeholder:text-text-3 disabled:bg-surface-2';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
+
+/**
+ * Sharp field styling for the customer-profile forms. The visible label is
+ * supplied by the surrounding <ProfileField>, so there's no floating label —
+ * this is the shared field shell (crisp border, sharp radius, animated focus
+ * ring) at the compact h-10 height these forms use.
+ */
+export const PROFILE_INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full h-10 px-3`;

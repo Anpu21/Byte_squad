@@ -4,10 +4,14 @@ import { queryKeys } from '@/lib/queryKeys';
 import type { ICreditAccountListParams } from '@/types';
 
 /** `GET /credit-accounts` — manager list (balances + ageing), filterable. */
-export function useCreditAccounts(params: ICreditAccountListParams = {}) {
+export function useCreditAccounts(
+  params: ICreditAccountListParams = {},
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: queryKeys.creditAccounts.list(params),
     queryFn: () => creditAccountsService.list(params),
     staleTime: 15_000,
+    enabled: options?.enabled,
   });
 }

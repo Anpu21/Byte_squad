@@ -136,6 +136,7 @@ export function BranchTable({
                 getRowKey={(b) => b.id}
                 isLoading={isLoading}
                 zebra
+                clientPaginate={{ unit: 'branches' }}
                 empty={<EmptyState title="No branches yet" />}
             />
         </div>

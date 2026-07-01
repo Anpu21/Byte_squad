@@ -1,5 +1,6 @@
 import { LuPercent as Percent } from 'react-icons/lu';
-import { formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { PosCartNumericCell } from '@/features/pos/components/item-table/PosCartNumericCell';
 import { applyCartDiscount } from './pos-invoice-total.helpers';
 
@@ -65,7 +66,7 @@ export function PosInvoiceTotal({
                             min={0}
                             max={100}
                             ariaLabel="Cart discount percentage"
-                            className="w-20 h-8 pl-2 pr-7 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-focus focus:ring-[2px] focus:ring-primary/30"
+                            className={cn(FIELD_SHELL, FIELD_BORDER, 'w-20 h-8 pl-2 pr-7 text-right text-[12px] tabular-nums')}
                         />
                         <Percent
                             size={12}

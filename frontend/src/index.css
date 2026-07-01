@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -6,6 +6,8 @@
      fallback so `lang="ta"` content renders without tofu. Tamil is LTR. */
   --font-sans: 'IBM Plex Sans', 'Noto Sans Tamil', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  /* Editorial serif for auth / marketing hero headings (Ledger Pro login). */
+  --font-display: 'Newsreader', 'IBM Plex Sans', ui-serif, Georgia, serif;
 
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
@@ -42,17 +44,22 @@
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
 
-  --color-brand-900: #19183B;
-  --color-brand-700: #2C2A55;
-  --color-brand-500: #4A487A;
-  --color-brand-400: #708993;
-  --color-brand-300: #A1C2BD;
-  --color-brand-100: #C8DDD8;
-  --color-brand-50:  #E7F2EF;
+  /* Per-theme brand ramp — resolves via --brand-* in :root / [data-theme=dark]
+     so light stays indigo while dark uses the warm ramp. */
+  --color-brand-900: var(--brand-900);
+  --color-brand-700: var(--brand-700);
+  --color-brand-500: var(--brand-500);
+  --color-brand-400: var(--brand-400);
+  --color-brand-300: var(--brand-300);
+  --color-brand-100: var(--brand-100);
+  --color-brand-50:  var(--brand-50);
 
   --radius-sm: 9px;
   --radius-md: 9px;
   --radius-lg: 12px;
+
+  /* Form fields — sharper than the card radius for a crisp, technical feel. */
+  --radius-field: 5px;
 
   /* Navigation metrics — single source for sidebar / header / sub-nav sizing.
      Consume via Tailwind arbitrary syntax: w-[var(--nav-sidebar-w)],
@@ -61,6 +68,8 @@
   --nav-sidebar-w: 256px;
   --nav-rail-w: 64px;
   --nav-drawer-w: 288px;
+  --nav-panel-w: 224px;          /* two-tier secondary panel (rail 64 + panel 224 = drawer 288) */
+  --nav-subtab-indent: 28px;     /* nested sub-tab row indent in the panel */
   --nav-row-h: 40px;
   --nav-label-size: 13px;
   --nav-badge-size: 18px;
@@ -76,6 +85,9 @@
 }
 
 :root {
+  /* Theme the native form-control chrome (date-picker icon + popup, number
+     spinners, native scrollbars) to match the palette. */
+  color-scheme: light;
   /* Ledger UI Kit — direction A (Crisp), light. */
   --canvas: #EDF3F0;
   --surface: #FFFFFF;
@@ -112,6 +124,15 @@
   --info: #3A57A8;
   --info-soft: #E8EDFB;
 
+  /* Brand ramp (indigo) — light. */
+  --brand-900: #19183B;
+  --brand-700: #2C2A55;
+  --brand-500: #4A487A;
+  --brand-400: #708993;
+  --brand-300: #A1C2BD;
+  --brand-100: #C8DDD8;
+  --brand-50:  #E7F2EF;
+
   --shadow-xs: 0 1px 2px rgba(25,24,59,.05);
   --shadow-sm: 0 1px 2px rgba(25,24,59,.05), 0 2px 8px -2px rgba(25,24,59,.06);
   --shadow-md: 0 10px 32px -10px rgba(25,24,59,.16), 0 2px 6px rgba(25,24,59,.05);
@@ -130,46 +151,57 @@
 }
 
 [data-theme="dark"] {
-  /* Ledger UI Kit — direction A (Crisp), dark. */
-  --canvas: #0C0B1F;
-  --surface: #16153A;
-  --surface-2: #1F1D47;
-  --surface-3: #2C2A55;
-  --surface-accent: rgba(161, 194, 189, .08);
-  --surface-hover: #262458;
-  --border: #2C2A55;
-  --border-strong: #3A3768;
+  color-scheme: dark;
+  /* Ledger UI Kit — warm "espresso" (editorial), dark. Paired with the original
+     indigo light theme above (light reverted, dark kept warm). */
+  --canvas: #15120D;
+  --surface: #1F1B14;
+  --surface-2: #241F17;
+  --surface-3: #2C261C;
+  --surface-accent: rgba(199, 148, 184, .08);
+  --surface-hover: #2A241B;
+  --border: #322B20;
+  --border-strong: #41382A;
 
-  --text-1: #EAF3F0;
-  --text-2: #A1C2BD;
-  --text-3: #7E94A0;
-  --text-inv: #10122B;
+  --text-1: #F2EBDB;
+  --text-2: #B6AC98;
+  --text-3: #978D78;
+  --text-inv: #15120D;
 
-  --primary: #A1C2BD;
-  --primary-hover: #C8DDD8;
-  --primary-soft: rgba(161,194,189,.12);
-  --primary-soft-text: #C8DDD8;
+  --primary: #F2EBDB;
+  --primary-hover: #FFFFFF;
+  --primary-soft: rgba(242,235,219,.12);
+  --primary-soft-text: #F2EBDB;
 
-  --accent: #56D49B;
-  --accent-soft: rgba(86,212,155,.13);
-  --accent-text: #56D49B;
+  --accent: #5FB98A;
+  --accent-soft: rgba(95,185,138,.14);
+  --accent-text: #5FB98A;
 
-  --focus: #A1C2BD;
-  --focus-soft: rgba(161,194,189,.14);
+  --focus: #C794B8;
+  --focus-soft: rgba(199,148,184,.16);
 
-  --warning: #E6BC57;
-  --warning-soft: rgba(230,188,87,.13);
-  --danger: #F0837F;
-  --danger-soft: rgba(240,131,127,.13);
+  --warning: #E0A93E;
+  --warning-soft: rgba(224,169,62,.14);
+  --danger: #E0735A;
+  --danger-soft: rgba(224,115,90,.15);
   --info: #9FB4F0;
   --info-soft: rgba(159,180,240,.13);
+
+  /* Brand ramp (warm) — dark. */
+  --brand-900: #221C14;
+  --brand-700: #3A3024;
+  --brand-500: #5C5343;
+  --brand-400: #948A75;
+  --brand-300: #B6AC98;
+  --brand-100: #E7DECD;
+  --brand-50:  #F4EDDF;
 
   --shadow-xs: 0 1px 2px rgba(0,0,0,.5);
   --shadow-sm: 0 1px 2px rgba(0,0,0,.5);
   --shadow-md: 0 12px 36px -12px rgba(0,0,0,.7);
   --shadow-lg: 0 18px 40px rgba(0,0,0,.6);
-  --ring: 0 0 0 3px rgba(161,194,189,.28);
-  --overlay: rgba(8, 7, 24, 0.7);
+  --ring: 0 0 0 3px rgba(199,148,184,.30);
+  --overlay: rgba(8, 6, 3, 0.72);
 }
 
 html, body {
@@ -235,6 +267,88 @@ textarea:-webkit-autofill:focus {
 }
 .animate-float { animation: float-slow 6s ease-in-out infinite; }
 .animate-float-delayed { animation: float-delayed 7s ease-in-out infinite 1s; }
+
+/* Form-field error shake — one-shot when validation fails. Neutralized by the
+   reduced-motion guard below (wildcard selector). */
+@keyframes field-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+.field-error-shake { animation: field-shake 0.35s ease-in-out; }
+
+/*
+ * Native <select> custom chevron. `.field-select` drops the OS arrow and paints
+ * a lucide-style chevron (matching the Select primitive) as a themed background
+ * SVG. Plain/unlayered CSS so `padding-right` beats the field's `px-3`. The data
+ * URI can't use currentColor, so the chevron colour is baked per theme (--text-3).
+ */
+.field-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23708993' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 14px 14px;
+  padding-right: 2.25rem;
+}
+[data-theme="dark"] .field-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23978D78' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Native date/time picker indicator — coloured by color-scheme; add affordance. */
+::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Placeholder treatment for an empty native date/time field: mute the
+   "mm/dd/yyyy" hint so it reads like a placeholder until a value is chosen.
+   The Input primitive adds `.date-empty` only while a controlled value is "". */
+.date-empty::-webkit-datetime-edit {
+  color: var(--text-3);
+}
+
+/* ── Auth (Ledger Pro login/register) animations ──────────────────────────
+   Entrance, ambient, and interaction keyframes for the split-screen auth
+   shell + its storefront brand scene. Consumed via inline `animation:` on
+   AuthLayout, AuthBrandScene, and AuthSubmitButton. All are neutralized by the
+   reduced-motion guard below (wildcard selector). `lp-` = Ledger Pro. */
+@keyframes lp-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes lp-pop { 0% { opacity: 0; transform: scale(.82); } 60% { opacity: 1; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes lp-clip { from { opacity: 0; clip-path: inset(0 0 102% 0); transform: translateY(6px); } to { opacity: 1; clip-path: inset(0 0 -4% 0); transform: none; } }
+@keyframes lp-bar { 0%, 100% { transform: scaleY(.4); } 50% { transform: scaleY(1); } }
+@keyframes lp-dots { 0%, 80%, 100% { transform: translateY(0); opacity: .35; } 40% { transform: translateY(-6px); opacity: 1; } }
+@keyframes lp-glow { 0%, 100% { opacity: .5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.14); } }
+@keyframes lp-drift { from { background-position: 0 0; } to { background-position: 48px 48px; } }
+@keyframes lp-sheen { 0% { transform: translateX(-160%) skewX(-18deg); } 55%, 100% { transform: translateX(420%) skewX(-18deg); } }
+@keyframes lp-coin { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
+@keyframes lp-burst { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--tx, 0), var(--ty, 0)) scale(.25); opacity: 0; } }
+@keyframes lp-sunrise { from { opacity: 0; transform: translateY(58px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes lp-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes lp-rays { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes lp-pulse { 0%, 100% { opacity: .4; } 50% { opacity: .82; } }
+@keyframes lp-swing { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes lp-cloud { from { transform: translateX(-90px); } to { transform: translateX(400px); } }
+@keyframes lp-bird { 0% { transform: translate(-60px, 10px); } 50% { transform: translate(170px, -8px); } 100% { transform: translate(410px, 8px); } }
+@keyframes lp-flap { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.6); } }
+@keyframes lp-leaf { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes lp-twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes lp-cheerpop { 0% { transform: scale(1); } 45% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+/* Auth brand scene — day (sun) in light theme, night (moon) in dark theme. Both
+   render; the inactive one is hidden (and its CSS animations paused) via the
+   global `data-theme` attribute, since useTheme() isn't shared across components. */
+.auth-scene-night { display: none; }
+[data-theme="dark"] .auth-scene-day { display: none; }
+[data-theme="dark"] .auth-scene-night { display: block; }
 
 /*
  * Honor user's reduced-motion preference globally.

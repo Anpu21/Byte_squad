@@ -6,17 +6,10 @@ import {
     LuStore as Store,
 } from 'react-icons/lu';
 import { Select } from '@/components/ui/Select';
-import { cn, formatCurrency } from '@/lib/utils';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
+import { cn } from '@/lib/utils';
 import type { IShopBranch, ShopStockStatus } from '@/types';
 import { STOCK_LABEL } from '../lib/stock-style';
-import type { CatalogSort } from '../hooks/useCatalogPage';
-
-const SORT_OPTIONS: { label: string; value: CatalogSort }[] = [
-    { label: 'Name (A–Z)', value: 'name' },
-    { label: 'Price: Low → High', value: 'price_asc' },
-    { label: 'Price: High → Low', value: 'price_desc' },
-];
-
 const STOCK_ORDER: ShopStockStatus[] = ['in', 'low', 'out'];
 
 interface CatalogFilterSidebarProps {
@@ -28,14 +21,9 @@ interface CatalogFilterSidebarProps {
     stock: ShopStockStatus[];
     stockCounts: Record<ShopStockStatus, number>;
     onToggleStock: (value: ShopStockStatus) => void;
-    maxPrice: number | null;
-    priceCeiling: number;
-    onMaxPrice: (value: number | null) => void;
     branches: IShopBranch[];
     activeBranchId: string | null;
     onBranch: (id: string) => void;
-    sort: CatalogSort;
-    onSort: (value: CatalogSort) => void;
     onClear: () => void;
     hasActiveFilters: boolean;
     className?: string;
@@ -61,21 +49,15 @@ export function CatalogFilterSidebar({
     stock,
     stockCounts,
     onToggleStock,
-    maxPrice,
-    priceCeiling,
-    onMaxPrice,
     branches,
     activeBranchId,
     onBranch,
-    sort,
-    onSort,
     onClear,
     hasActiveFilters,
     className,
 }: CatalogFilterSidebarProps) {
     const [open, setOpen] = useState(false);
     const categoryOptions = [{ label: 'All categories', value: '' }, ...categories.map((c) => ({ label: c, value: c }))];
-    const sliderValue = maxPrice ?? priceCeiling;
 
     return (
         <aside
@@ -121,32 +103,18 @@ export function CatalogFilterSidebar({
                         onChange={(e) => onSearch(e.target.value)}
                         placeholder="Filter products"
                         aria-label="Filter products"
-                        className="w-full rounded-lg border border-border bg-surface-2 py-2.5 pl-9 pr-3 text-[13px] text-text-1 outline-none placeholder:text-text-3 focus:border-focus focus:ring-[3px] focus:ring-focus/20"
+                        className={`${FIELD_SHELL} ${FIELD_BORDER} w-full py-2.5 pl-9 pr-3`}
                     />
                 </div>
 
                 <Section label="Category">
-                    <div className="flex flex-col gap-0.5">
-                        {categoryOptions.map((opt) => {
-                            const active = category === opt.value;
-                            return (
-                                <button
-                                    key={opt.value || 'all'}
-                                    type="button"
-                                    onClick={() => onCategory(opt.value)}
-                                    aria-pressed={active}
-                                    className={cn(
-                                        'rounded-md px-3 py-2 text-left text-[13px] font-medium transition-colors',
-                                        active
-                                            ? 'bg-primary text-text-inv'
-                                            : 'text-text-2 hover:bg-surface-hover hover:text-text-1',
-                                    )}
-                                >
-                                    {opt.label}
-                                </button>
-                            );
-                        })}
-                    </div>
+                    <Select
+                        aria-label="Filter by category"
+                        value={category}
+                        onChange={onCategory}
+                        options={categoryOptions}
+                        className="w-full"
+                    />
                 </Section>
 
                 <Section label="Availability">
@@ -198,30 +166,6 @@ export function CatalogFilterSidebar({
                     </div>
                 </Section>
 
-                {priceCeiling > 0 && (
-                    <Section label="Max price">
-                        <input
-                            type="range"
-                            min={0}
-                            max={priceCeiling}
-                            step={50}
-                            value={sliderValue}
-                            onChange={(e) => {
-                                const v = Number(e.target.value);
-                                onMaxPrice(v >= priceCeiling ? null : v);
-                            }}
-                            aria-label="Maximum price"
-                            className="w-full cursor-pointer accent-primary"
-                        />
-                        <p className="mt-2 text-[13px] font-medium text-text-2">
-                            Up to{' '}
-                            <span className="font-semibold text-text-1">
-                                {formatCurrency(sliderValue)}
-                            </span>
-                        </p>
-                    </Section>
-                )}
-
                 {branches.length > 0 && (
                     <Section label="Shopping at">
                         <Select
@@ -236,16 +180,6 @@ export function CatalogFilterSidebar({
                         />
                     </Section>
                 )}
-
-                <Section label="Sort by">
-                    <Select
-                        aria-label="Sort products"
-                        value={sort}
-                        onChange={(v) => onSort(v as CatalogSort)}
-                        options={SORT_OPTIONS}
-                        className="w-full"
-                    />
-                </Section>
 
                 <button
                     type="button"

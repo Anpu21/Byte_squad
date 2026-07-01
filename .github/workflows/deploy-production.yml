@@ -138,6 +138,8 @@ jobs:
           script: |
             set -euo pipefail
             cd ~/ledgerpro
+            # Shared with the realtime stack; idempotent so first deploy self-heals.
+            docker network create ledgerpro-network 2>/dev/null || true
             echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
             export IMAGE_TAG
             docker compose -f docker-compose.prod.yml pull

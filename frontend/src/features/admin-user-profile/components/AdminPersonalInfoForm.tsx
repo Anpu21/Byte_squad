@@ -1,3 +1,5 @@
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
+
 interface AdminPersonalInfoFormProps {
     firstName: string;
     setFirstName: (v: string) => void;
@@ -9,10 +11,8 @@ interface AdminPersonalInfoFormProps {
     onSave: () => void;
 }
 
-const INPUT_CLASS =
-    'w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-all';
-const DISABLED_INPUT_CLASS =
-    'w-full h-11 px-4 bg-canvas border border-border rounded-xl text-sm text-text-3 outline-none cursor-not-allowed';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full h-11 px-4`;
+const DISABLED_INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full h-11 px-4`;
 const LABEL_CLASS =
     'block text-[11px] font-semibold text-text-2 mb-2 uppercase tracking-[1px]';
 

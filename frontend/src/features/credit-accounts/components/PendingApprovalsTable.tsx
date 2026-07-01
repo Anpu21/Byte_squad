@@ -94,6 +94,7 @@ export function PendingApprovalsTable({
       getRowKey={(r) => r.id}
       isLoading={isLoading}
       zebra
+      clientPaginate={{ unit: 'requests' }}
       empty={
         <EmptyState
           title="No pending requests"

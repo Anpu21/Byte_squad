@@ -1,10 +1,10 @@
 import { LuSearch as Search } from 'react-icons/lu';
 import Card from '@/components/ui/Card';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { UserRole } from '@/constants/enums';
 import type { IBranch } from '@/types';
 
-const SELECT_CLASS =
-    'h-9 bg-canvas border border-border text-text-1 text-sm rounded-md px-3 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/25 cursor-pointer transition-colors';
+const SELECT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3 cursor-pointer`;
 
 interface UserFiltersProps {
     branches: IBranch[];
@@ -42,7 +42,7 @@ export function UserFilters({
                         placeholder="Search name or email…"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full h-9 pl-9 pr-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/25 placeholder:text-text-3 transition-colors"
+                        className={`${FIELD_SHELL} ${FIELD_BORDER} w-full h-9 pl-9 pr-3`}
                     />
                 </div>
                 <div className="flex items-center gap-3">
@@ -50,7 +50,7 @@ export function UserFilters({
                         aria-label="Role filter"
                         value={roleFilter}
                         onChange={(e) => setRoleFilter(e.target.value)}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                     >
                         <option value="all">All roles</option>
                         <option value={UserRole.ADMIN}>Admin</option>
@@ -62,7 +62,7 @@ export function UserFilters({
                         aria-label="Branch filter"
                         value={branchFilter}
                         onChange={(e) => setBranchFilter(e.target.value)}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                     >
                         <option value="all">All branches</option>
                         {branches.map((branch) => (

@@ -1,4 +1,5 @@
 import { LuSearch as Search } from 'react-icons/lu';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
 interface FilterSearchProps {
     value: string;
@@ -25,7 +26,7 @@ export function FilterSearch({ value, onChange }: FilterSearchProps) {
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder="Name or barcode"
-                    className="w-full h-9 pl-9 pr-3 bg-canvas border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/25 placeholder:text-text-3 transition-colors"
+                    className={`${FIELD_SHELL} ${FIELD_BORDER} w-full h-9 pl-9 pr-3`}
                 />
             </div>
         </div>

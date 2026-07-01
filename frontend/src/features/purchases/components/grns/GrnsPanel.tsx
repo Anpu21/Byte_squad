@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import Card from '@/components/ui/Card';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { GrnPaymentStatus, GrnStatus, IGrn } from '@/types';
 import { useGrns } from '../../hooks/useGrns';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { GrnsTable } from './GrnsTable';
 import { GrnDetailModal } from './GrnDetailModal';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 /**
  * Goods-receipts register: filter by supplier / status / payment state,
@@ -37,7 +37,7 @@ export function GrnsPanel() {
             <Card className="overflow-hidden">
                 <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border">
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={supplierId}
                         onChange={(e) => setSupplierId(e.target.value)}
                         aria-label="Filter by supplier"
@@ -50,7 +50,7 @@ export function GrnsPanel() {
                         ))}
                     </select>
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={status}
                         onChange={(e) =>
                             setStatus(e.target.value as '' | GrnStatus)
@@ -62,7 +62,7 @@ export function GrnsPanel() {
                         <option value="Voided">Voided</option>
                     </select>
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={paymentStatus}
                         onChange={(e) =>
                             setPaymentStatus(

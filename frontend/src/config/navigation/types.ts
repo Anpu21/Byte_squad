@@ -39,5 +39,7 @@ export interface NavEntry {
     roles: UserRole[];
     group: NavGroup;
     pathByRole?: Partial<Record<UserRole, string>>;
+    /** Query param this hub's sub-tabs use in the panel (default `tab`). */
+    tabParam?: string;
     tabs?: NavTab[];
 }

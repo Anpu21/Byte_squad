@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Button, StarRating } from '@/components/ui';
+import { Button, FIELD_SHELL, FIELD_BORDER, StarRating } from '@/components/ui';
 import type { ICreateReviewPayload, IProductReview } from '@/types';
 
-const INPUT_CLASS =
-    'w-full px-3 py-2 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full px-3 py-2`;
 
 interface ReviewFormProps {
     initial?: IProductReview | null;
@@ -37,14 +36,14 @@ export function ReviewForm({
             }}
             className="space-y-3 rounded-xl border border-border bg-surface p-4"
         >
-            <div className="flex items-center gap-3">
-                <span className="text-[13px] font-medium text-text-2">
+            <div className="space-y-1.5">
+                <span className="block text-[13px] font-medium text-text-2">
                     Your rating
                 </span>
                 <StarRating
                     value={rating}
                     readOnly={false}
-                    size={22}
+                    size={26}
                     onChange={setRating}
                 />
             </div>

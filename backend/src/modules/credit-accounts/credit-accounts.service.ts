@@ -44,7 +44,7 @@ import { NotificationType } from '@common/enums/notification.enum';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { NotificationsService } from '@notifications/notifications.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { UsersService } from '@users/users.service';
 import { AccountingService } from '@accounting/accounting.service';
 import { ACCOUNT_CODES } from '@accounting/types/account-code.type';
@@ -88,7 +88,7 @@ export class CreditAccountsService {
     private readonly transactions: CreditAccountTransactionsRepository,
     private readonly accounting: AccountingService,
     private readonly notificationsService: NotificationsService,
-    private readonly notificationsGateway: NotificationsGateway,
+    private readonly realtime: RealtimePublisher,
     private readonly users: UsersService,
     private readonly dataSource: DataSource,
     private readonly jwtService: JwtService,
@@ -816,7 +816,7 @@ export class CreditAccountsService {
         type: NotificationType.CREDIT_ACCOUNT,
         metadata: payload.metadata,
       });
-      this.notificationsGateway.sendToUser(userId, {
+      this.realtime.toUser(userId, {
         userId,
         title: payload.title,
         message: payload.message,

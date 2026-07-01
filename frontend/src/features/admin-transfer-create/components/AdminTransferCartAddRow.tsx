@@ -7,8 +7,10 @@ import {
     useState,
 } from 'react';
 import { LuCamera as Camera, LuPlus as Plus } from 'react-icons/lu';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { useInventoryByBranchQuery } from '@/hooks/useInventoryByBranchQuery';
 import type { IProduct } from '@/types';
+import { TransferProductSuggestions } from './TransferProductSuggestions';
 
 interface AdminTransferCartAddRowProps {
     sourceBranchId: string;
@@ -153,7 +155,7 @@ export function AdminTransferCartAddRow({
                         aria-autocomplete="list"
                         aria-expanded={showDropdown}
                         disabled={!sourceBranchId}
-                        className="flex-1 min-w-0 h-8 px-2 bg-canvas border border-border rounded-md text-[12px] text-text-1 outline-none focus:border-focus focus:ring-[2px] focus:ring-primary/30 transition-all placeholder:text-text-3 disabled:opacity-60 disabled:cursor-not-allowed"
+                        className={`${FIELD_SHELL} ${FIELD_BORDER} flex-1 min-w-0 h-8 px-2`}
                     />
                     <button
                         type="button"
@@ -168,51 +170,14 @@ export function AdminTransferCartAddRow({
                 </div>
 
                 {showDropdown && (
-                    <div
-                        role="listbox"
-                        aria-label="Product suggestions"
-                        className="absolute left-0 right-0 bottom-full mb-1 z-dropdown bg-surface border border-border rounded-md shadow-md-token min-w-[280px] max-h-[260px] overflow-y-auto"
-                    >
-                        {results.length === 0 ? (
-                            <div className="px-3 py-3 text-[12px] text-text-3 text-center">
-                                {inventoryQuery.isFetching
-                                    ? 'Searching…'
-                                    : `No products found for "${trimmed}"`}
-                            </div>
-                        ) : (
-                            results.map((row, idx) => {
-                                const active = idx === safeActiveIdx;
-                                return (
-                                    <button
-                                        type="button"
-                                        key={row.product.id}
-                                        role="option"
-                                        aria-selected={active}
-                                        onMouseEnter={() => setActiveIdx(idx)}
-                                        onClick={() => commit(row.product)}
-                                        className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors focus:outline-none ${
-                                            active
-                                                ? 'bg-primary-soft'
-                                                : 'hover:bg-surface-2'
-                                        }`}
-                                    >
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-[13px] font-medium text-text-1 truncate">
-                                                {row.product.name}
-                                            </p>
-                                            <p className="text-[11px] text-text-3 mono truncate">
-                                                {row.product.barcode ||
-                                                    row.product.id.slice(0, 12)}
-                                            </p>
-                                        </div>
-                                        <span className="text-[11px] text-text-2 mono flex-shrink-0 tabular-nums">
-                                            {row.quantity} in stock
-                                        </span>
-                                    </button>
-                                );
-                            })
-                        )}
-                    </div>
+                    <TransferProductSuggestions
+                        results={results}
+                        activeIdx={safeActiveIdx}
+                        isFetching={inventoryQuery.isFetching}
+                        query={trimmed}
+                        onHover={setActiveIdx}
+                        onPick={commit}
+                    />
                 )}
             </td>
             <td className="px-2 py-2" aria-hidden />

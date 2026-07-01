@@ -4,7 +4,7 @@ import { GroupCheckoutService } from '@/modules/customer-groups/group-checkout.s
 import { GroupCartRepository } from '@/modules/customer-groups/group-cart.repository';
 import { CustomerGroupsService } from '@/modules/customer-groups/customer-groups.service';
 import { CustomerOrdersService } from '@/modules/customer-orders/customer-orders.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { GroupCartItem } from '@/modules/customer-groups/entities/group-cart-item.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { AuthUser } from '@common/types/auth-user.type';
@@ -35,7 +35,7 @@ describe('GroupCheckoutService', () => {
   let groups: { assertMembership: jest.Mock };
   let cart: { listItems: jest.Mock; clear: jest.Mock };
   let customerOrders: { createCheckout: jest.Mock };
-  let gateway: { broadcast: jest.Mock };
+  let realtime: { toGroup: jest.Mock };
 
   beforeEach(async () => {
     groups = { assertMembership: jest.fn().mockResolvedValue(undefined) };
@@ -48,7 +48,7 @@ describe('GroupCheckoutService', () => {
         .fn()
         .mockResolvedValue({ groupCode: 'GRP-1', orders: [], payment: null }),
     };
-    gateway = { broadcast: jest.fn() };
+    realtime = { toGroup: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -56,7 +56,7 @@ describe('GroupCheckoutService', () => {
         { provide: CustomerGroupsService, useValue: groups },
         { provide: GroupCartRepository, useValue: cart },
         { provide: CustomerOrdersService, useValue: customerOrders },
-        { provide: NotificationsGateway, useValue: gateway },
+        { provide: RealtimePublisher, useValue: realtime },
       ],
     }).compile();
     service = moduleRef.get(GroupCheckoutService);
@@ -78,7 +78,7 @@ describe('GroupCheckoutService', () => {
       { customerGroupId: 'g1' },
     );
     expect(cart.clear).toHaveBeenCalledWith('g1');
-    expect(gateway.broadcast).toHaveBeenCalledWith('group-cart:changed', {
+    expect(realtime.toGroup).toHaveBeenCalledWith('g1', 'group-cart:changed', {
       groupId: 'g1',
     });
     expect(res.groupCode).toBe('GRP-1');

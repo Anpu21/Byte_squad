@@ -5,6 +5,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import Segmented from '@/components/ui/Segmented'
 import { useAuth } from '@/hooks/useAuth'
 import { UserRole } from '@/constants/enums'
+import Pagination from '@/components/ui/Pagination'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { useExpiryReportPage } from '@/features/inventory-expiry/hooks/useExpiryReportPage'
 import { ExpiryTable } from '@/features/inventory-expiry/components/ExpiryTable'
 import { ReceiveBatchModal } from '@/features/inventory-expiry/components/ReceiveBatchModal'
@@ -23,7 +25,6 @@ export function ExpiryReportPage() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <PageHeader
-        title="Expiry tracking"
         subtitle={`${p.total} batch(es) expiring within ${p.withinDays} days`}
         actions={
           <>
@@ -58,30 +59,14 @@ export function ExpiryReportPage() {
 
       <Card className="overflow-hidden">
         <ExpiryTable rows={p.rows} isLoading={p.isLoading} />
-        {!p.isLoading && p.rows.length > 0 && p.totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-border text-xs text-text-2">
-            <span>
-              Page {p.page} of {p.totalPages}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={p.page <= 1}
-                onClick={() => p.setPage(p.page - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={p.page >= p.totalPages}
-                onClick={() => p.setPage(p.page + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+        {!p.isLoading && p.rows.length > 0 && (
+          <Pagination
+            page={p.page}
+            pageSize={DEFAULT_PAGE_SIZE}
+            total={p.total}
+            onPageChange={p.setPage}
+            unit="batches"
+          />
         )}
       </Card>
 
