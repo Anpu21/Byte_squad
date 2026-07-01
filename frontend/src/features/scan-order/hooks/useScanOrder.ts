@@ -2,9 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { customerOrdersService } from '@/services/customer-orders.service';
-import { formatCurrency } from '@/lib/utils';
 import type { ICustomerOrder } from '@/types';
-import type { Payment } from '../types/payment.type';
+import { useOrderFulfillment } from './useOrderFulfillment';
 
 interface UseScanOrderOptions {
     /** Called after a successful fulfillment — e.g. flip the POS back to billing. */
@@ -12,17 +11,29 @@ interface UseScanOrderOptions {
 }
 
 /**
- * Scan-and-pick state: order lookup by code, payment method choice, and
- * fulfillment. Host-agnostic — the POS "Scan Pickup" mode passes `onDone`
- * to return to billing once the pickup is confirmed.
+ * Scan-and-pick state: order lookup by code plus fulfillment. Fulfillment logic
+ * lives in the shared `useOrderFulfillment` hook; this hook adds the code-lookup
+ * layer. Host-agnostic — the POS "Scan Pickup" mode passes `onDone` to return to
+ * billing once the pickup is confirmed.
  */
 export function useScanOrder({ onDone }: UseScanOrderOptions = {}) {
     const manualInputRef = useRef<HTMLInputElement>(null);
     const [order, setOrder] = useState<ICustomerOrder | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<Payment>('cash');
     const [loading, setLoading] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
     const [manualCode, setManualCode] = useState('');
+
+    const reset = useCallback(() => {
+        setOrder(null);
+        setManualCode('');
+    }, []);
+
+    const fulfillment = useOrderFulfillment({
+        order,
+        onFulfilled: () => {
+            reset();
+            onDone?.();
+        },
+    });
 
     useEffect(() => {
         manualInputRef.current?.focus();
@@ -52,68 +63,21 @@ export function useScanOrder({ onDone }: UseScanOrderOptions = {}) {
         void lookup(manualCode);
     };
 
-    const handleConfirm = async () => {
-        if (!order) return;
-        setSubmitting(true);
-        try {
-            await customerOrdersService.fulfill(
-                order.orderCode,
-                requiresPayment ? { paymentMethod } : {},
-            );
-            toast.success(
-                requiresPayment
-                    ? `Charged ${formatCurrency(Number(order.finalTotal))} via ${paymentMethod}`
-                    : 'Pickup confirmed',
-            );
-            reset();
-            onDone?.();
-        } catch (err: unknown) {
-            if (axios.isAxiosError(err)) {
-                const data = err.response?.data as
-                    | { message?: string }
-                    | undefined;
-                toast.error(data?.message ?? 'Could not complete pickup');
-            } else {
-                toast.error('Could not complete pickup');
-            }
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const reset = () => {
-        setOrder(null);
-        setManualCode('');
-    };
-
-    const isOpen =
-        order?.status === 'pending' || order?.status === 'accepted';
-    const requiresPayment =
-        !!order &&
-        order.paymentMode === 'manual' &&
-        order.paymentStatus !== 'paid';
-    const isOnlineBlocked =
-        !!order &&
-        order.paymentMode === 'online' &&
-        order.paymentStatus !== 'paid';
-    const isFulfillable =
-        !!order && isOpen && !isOnlineBlocked;
-
     return {
         request: order,
-        paymentMethod,
-        setPaymentMethod,
+        paymentMethod: fulfillment.paymentMethod,
+        setPaymentMethod: fulfillment.setPaymentMethod,
         loading,
-        submitting,
+        submitting: fulfillment.submitting,
         manualCode,
         setManualCode,
         manualInputRef,
         lookup,
         handleManualSubmit,
-        handleConfirm,
+        handleConfirm: fulfillment.handleConfirm,
         reset,
-        isFulfillable,
-        requiresPayment,
-        isOnlineBlocked,
+        isFulfillable: fulfillment.isFulfillable,
+        requiresPayment: fulfillment.requiresPayment,
+        isOnlineBlocked: fulfillment.isOnlineBlocked,
     };
 }
