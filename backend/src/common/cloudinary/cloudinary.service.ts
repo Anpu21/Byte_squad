@@ -24,6 +24,8 @@ export interface CloudinaryUploadOptions {
 export interface CloudinaryUploadResult {
   url: string;
   publicId: string;
+  /** Page-1 preview (JPG) for documents that support it (PDFs); else absent. */
+  thumbnailUrl?: string;
 }
 
 @Injectable()
@@ -131,6 +133,58 @@ export class CloudinaryService {
       transformation: [{ quality: 'auto', fetch_format: 'auto' }],
     });
     return { url: result.secure_url, publicId: result.public_id };
+  }
+
+  /**
+   * Upload an arbitrary file (image OR document) for chat attachments. PDFs
+   * upload as `image` so Cloudinary can render a page-1 preview (a JPG, always
+   * deliverable regardless of PDF-delivery settings); images are detected as
+   * `image` under `auto` anyway. Other documents (docx/xlsx/…) stay `auto`
+   * (→ raw) and get no thumbnail — the client falls back to a file chip.
+   */
+  async uploadAttachment(
+    file: Express.Multer.File,
+    opts: CloudinaryUploadOptions,
+  ): Promise<CloudinaryUploadResult> {
+    if (!this.enabled) {
+      throw new ServiceUnavailableException('File uploads are not configured');
+    }
+
+    const isPdf = file.mimetype === 'application/pdf';
+    const resourceType: 'image' | 'auto' = isPdf ? 'image' : 'auto';
+
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: opts.folder,
+          public_id: opts.publicId,
+          overwrite: true,
+          resource_type: resourceType,
+        },
+        (error, result?: UploadApiResponse) => {
+          if (error) return reject(toError(error, 'Cloudinary upload failed'));
+          if (!result) return reject(new Error('No result from Cloudinary'));
+          resolve({
+            url: result.secure_url,
+            publicId: result.public_id,
+            thumbnailUrl: isPdf
+              ? this.pdfPageThumbnail(result.public_id)
+              : undefined,
+          });
+        },
+      );
+      Readable.from(file.buffer).pipe(uploadStream);
+    });
+  }
+
+  /** Page-1 JPG preview URL for a PDF stored as a Cloudinary image asset. */
+  private pdfPageThumbnail(publicId: string): string {
+    return cloudinary.url(publicId, {
+      resource_type: 'image',
+      secure: true,
+      format: 'jpg',
+      transformation: [{ page: 1, width: 400, crop: 'limit', quality: 'auto' }],
+    });
   }
 
   async deleteImage(publicId: string): Promise<void> {

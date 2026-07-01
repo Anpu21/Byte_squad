@@ -5,21 +5,35 @@ import {
     type ReactNode,
 } from 'react';
 import { cn } from '@/lib/utils';
+import {
+    FIELD_SHELL,
+    FIELD_BORDER,
+    FIELD_ERROR,
+    FIELD_HEIGHT,
+    FIELD_SHAKE,
+} from './field-styles';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
     leftIcon?: ReactNode;
     rightSlot?: ReactNode;
-    /** md = 38px (default), lg = 42px */
+    /** md = 44px (default), lg = 48px */
     sizeVariant?: 'md' | 'lg';
 }
 
-const HEIGHT: Record<NonNullable<InputProps['sizeVariant']>, string> = {
-    md: 'h-11',
-    lg: 'h-12',
-};
-
+/**
+ * Sharp, motion-aware text field.
+ *
+ * When a `label` is provided it becomes a floating label: it rests inside the
+ * field and rises onto the top border (shrinking) once the field is focused or
+ * filled. This is CSS-only — driven by `peer` + a `placeholder=" "` sentinel +
+ * `:placeholder-shown` — so it works with controlled / react-hook-form inputs
+ * and keeps a real `<label htmlFor>` for accessibility.
+ *
+ * Without a `label` it renders as a plain sharp field with its own placeholder
+ * (used for search / icon fields like the POS item search).
+ */
 const Input = forwardRef<HTMLInputElement, InputProps>(
     (
         {
@@ -30,83 +44,86 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             sizeVariant = 'md',
             className,
             id,
+            placeholder,
             ...props
         },
         ref,
     ) => {
         const uniqueId = useId();
         const inputId = id || uniqueId;
-        const hasAdornments = !!leftIcon || !!rightSlot;
-        const heightClass = HEIGHT[sizeVariant];
-
-        const borderClass = error
-            ? 'border-danger'
-            : 'border-border-strong hover:border-text-3';
-        const focusClass = error
-            ? 'focus-within:border-danger focus-within:ring-[3px] focus-within:ring-danger/30'
-            : 'focus-within:border-focus focus-within:ring-[3px] focus-within:ring-focus/25';
-
-        const wrapperClass = cn(
-            'flex items-center gap-2 px-3 bg-surface border rounded-md transition-colors',
-            heightClass,
-            borderClass,
-            focusClass,
-        );
-
-        const standaloneInputClass = cn(
-            'w-full px-3 bg-surface border rounded-md text-[13px] text-text-1 outline-none transition-colors duration-150 placeholder:text-text-3 disabled:opacity-50 disabled:cursor-not-allowed',
-            heightClass,
-            error
-                ? 'border-danger focus:border-danger focus:ring-[3px] focus:ring-danger/30'
-                : 'border-border-strong hover:border-text-3 focus:border-focus focus:ring-[3px] focus:ring-focus/25',
-        );
-
-        const innerInputClass =
-            'flex-1 bg-transparent outline-none text-[13px] text-text-1 placeholder:text-text-3 disabled:opacity-50 disabled:cursor-not-allowed min-w-0';
+        const floating = !!label;
+        const errorId = error ? `${inputId}-error` : undefined;
+        // Native date/time fields can't take a text placeholder — the browser
+        // shows "mm/dd/yyyy" in full text colour, so an empty field reads as
+        // filled. While a *controlled* value is still empty we mute that hint so
+        // it reads like a placeholder (see `.date-empty` in index.css). Skipped
+        // for uncontrolled/RHF inputs (value undefined) where we can't tell.
+        const dateLike =
+            props.type === 'date' ||
+            props.type === 'datetime-local' ||
+            props.type === 'month' ||
+            props.type === 'week' ||
+            props.type === 'time';
+        const isDateEmpty = dateLike && props.value === '';
 
         return (
             <div className="w-full">
-                {label && (
-                    <label
-                        htmlFor={inputId}
-                        className="block text-xs font-medium text-text-2 mb-1.5"
-                    >
-                        {label}
-                    </label>
-                )}
+                <div className={cn('relative', error && FIELD_SHAKE)}>
+                    {leftIcon && (
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 inline-flex items-center text-text-3">
+                            {leftIcon}
+                        </span>
+                    )}
 
-                {hasAdornments ? (
-                    <div className={wrapperClass}>
-                        {leftIcon && (
-                            <span className="text-text-3 flex-shrink-0 inline-flex items-center">
-                                {leftIcon}
-                            </span>
-                        )}
-                        <input
-                            ref={ref}
-                            id={inputId}
-                            aria-invalid={!!error}
-                            className={cn(innerInputClass, className)}
-                            {...props}
-                        />
-                        {rightSlot && (
-                            <span className="flex-shrink-0 inline-flex items-center">
-                                {rightSlot}
-                            </span>
-                        )}
-                    </div>
-                ) : (
                     <input
                         ref={ref}
                         id={inputId}
                         aria-invalid={!!error}
-                        className={cn(standaloneInputClass, className)}
+                        aria-describedby={errorId}
+                        className={cn(
+                            'peer w-full',
+                            FIELD_SHELL,
+                            FIELD_HEIGHT[sizeVariant],
+                            leftIcon ? 'pl-9' : 'pl-3',
+                            rightSlot ? 'pr-10' : 'pr-3',
+                            error ? FIELD_ERROR : FIELD_BORDER,
+                            isDateEmpty && 'date-empty',
+                            className,
+                        )}
+                        placeholder={floating ? ' ' : placeholder}
                         {...props}
                     />
-                )}
+
+                    {floating && (
+                        <label
+                            htmlFor={inputId}
+                            className={cn(
+                                'pointer-events-none absolute top-1/2 z-[1] -translate-y-1/2 bg-surface px-1 text-[13px] font-normal text-text-3 transition-all duration-150 ease-out',
+                                leftIcon ? 'left-8' : 'left-2.5',
+                                // Floated (focused or filled): rise onto the top border, shrink.
+                                'peer-focus:top-0 peer-focus:left-2.5 peer-focus:text-[11px] peer-focus:font-medium',
+                                'peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:left-2.5 peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:font-medium',
+                                error
+                                    ? 'text-danger peer-focus:text-danger'
+                                    : 'peer-focus:text-focus',
+                            )}
+                        >
+                            {label}
+                        </label>
+                    )}
+
+                    {rightSlot && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center">
+                            {rightSlot}
+                        </span>
+                    )}
+                </div>
 
                 {error && (
-                    <p className="mt-1.5 text-xs text-danger flex items-center gap-1.5 font-medium animate-in fade-in slide-in-from-top-1 duration-200">
+                    <p
+                        id={errorId}
+                        className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-danger animate-in fade-in slide-in-from-top-1 duration-200"
+                    >
                         <svg
                             width="13"
                             height="13"
@@ -116,6 +133,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
+                            aria-hidden="true"
                         >
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="8" x2="12" y2="12"></line>

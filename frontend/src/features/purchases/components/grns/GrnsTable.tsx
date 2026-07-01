@@ -90,6 +90,7 @@ export function GrnsTable({ rows, isLoading, onView }: IGrnsTableProps) {
             getRowKey={(g) => g.id}
             isLoading={isLoading}
             zebra
+            clientPaginate={{ unit: 'GRNs' }}
             empty={
                 <EmptyState
                     title="No goods receipts yet"

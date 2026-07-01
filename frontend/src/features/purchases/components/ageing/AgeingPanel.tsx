@@ -130,6 +130,7 @@ export function AgeingPanel() {
                     getRowKey={(r) => r.supplierId}
                     isLoading={outstandingQuery.isLoading}
                     zebra
+                    clientPaginate={{ unit: 'suppliers' }}
                     empty={
                         <EmptyState
                             title="Nothing outstanding"
@@ -149,6 +150,7 @@ export function AgeingPanel() {
                     getRowKey={(r) => r.supplierId}
                     isLoading={ageingQuery.isLoading}
                     zebra
+                    clientPaginate={{ unit: 'suppliers' }}
                     empty={
                         <EmptyState
                             title="No unpaid bills"

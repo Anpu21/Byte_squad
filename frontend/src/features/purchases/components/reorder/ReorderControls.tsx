@@ -1,7 +1,6 @@
-import { Select } from '@/components/ui';
+import { Select, FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
-const NUM_INPUT =
-    'h-9 w-24 px-2 bg-surface border border-border rounded-md text-[13px] text-text-1 text-right outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const NUM_INPUT = `${FIELD_SHELL} ${FIELD_BORDER} h-9 w-24 px-2 text-right`;
 
 interface IReorderControlsProps {
     leadDays: number;

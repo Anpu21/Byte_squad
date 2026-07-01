@@ -76,8 +76,10 @@ export class CreditAccountsController {
     return this.service.list(query, actor);
   }
 
+  // Cashiers read statements at the counter (repayment screen); branch-scoped
+  // by `assertBranchAccess` in the service, same as managers/admins.
   @Get(APP_ROUTES.CREDIT_ACCOUNTS.STATEMENT)
-  @Roles(UserRole.MANAGER, UserRole.ADMIN)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
   statement(
     @Param('id') id: string,
     @CurrentUser() actor: AuthUser,

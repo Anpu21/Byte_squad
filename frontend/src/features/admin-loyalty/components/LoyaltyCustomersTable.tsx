@@ -3,8 +3,10 @@ import Card from '@/components/ui/Card';
 import {
     DataTable,
     EmptyState,
+    Pagination,
     type DataTableColumn,
 } from '@/components/ui';
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination';
 import type { ILoyaltyCustomerRow } from '@/types';
 import { useLoyaltyCustomers } from '../hooks/useLoyaltyCustomers';
 import { LoyaltyCustomersFilters } from './LoyaltyCustomersFilters';
@@ -15,7 +17,7 @@ interface LoyaltyCustomersTableProps {
     onSelectCustomer: (row: ILoyaltyCustomerRow) => void;
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 const SEARCH_DEBOUNCE_MS = 250;
 
 function formatLastActivity(iso: string | null): string {
@@ -89,8 +91,7 @@ export function LoyaltyCustomersTable({
 
     const rows = data?.rows ?? [];
     const total = data?.total ?? 0;
-    const pageStart = total === 0 ? 0 : offset + 1;
-    const pageEnd = Math.min(total, offset + rows.length);
+    const page = Math.floor(offset / PAGE_SIZE) + 1;
 
     const columns: DataTableColumn<ILoyaltyCustomerRow>[] = [
         {
@@ -162,14 +163,6 @@ export function LoyaltyCustomersTable({
                 maxPoints={maxPoints}
                 onPointsRangeChange={handlePointsRangeChange}
             />
-            <div className="px-5 py-2 border-b border-border bg-surface-2/30 flex items-center justify-end">
-                <p className="text-[11px] text-text-3 tabular-nums">
-                    {total === 0
-                        ? 'No customers'
-                        : `${pageStart}–${pageEnd} of ${total}`}
-                </p>
-            </div>
-
             <DataTable
                 columns={columns}
                 rows={rows}
@@ -195,27 +188,14 @@ export function LoyaltyCustomersTable({
                     />
                 }
                 footer={
-                    total > PAGE_SIZE ? (
-                        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border bg-surface-2/30">
-                            <button
-                                type="button"
-                                disabled={offset === 0}
-                                onClick={() =>
-                                    setOffset((o) => Math.max(0, o - PAGE_SIZE))
-                                }
-                                className="h-8 px-3 rounded-md border border-border text-[12px] font-semibold text-text-1 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-surface-2"
-                            >
-                                Previous
-                            </button>
-                            <button
-                                type="button"
-                                disabled={offset + PAGE_SIZE >= total}
-                                onClick={() => setOffset((o) => o + PAGE_SIZE)}
-                                className="h-8 px-3 rounded-md border border-border text-[12px] font-semibold text-text-1 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-surface-2"
-                            >
-                                Next
-                            </button>
-                        </div>
+                    total > 0 ? (
+                        <Pagination
+                            page={page}
+                            pageSize={PAGE_SIZE}
+                            total={total}
+                            onPageChange={(p) => setOffset((p - 1) * PAGE_SIZE)}
+                            unit="customers"
+                        />
                     ) : undefined
                 }
             />

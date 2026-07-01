@@ -9,7 +9,7 @@ import { JournalVoucherModal } from '@/features/ledger/components/JournalVoucher
 import { LedgerSummaryCards } from '@/features/ledger/components/LedgerSummaryCards';
 import { LedgerFilters } from '@/features/ledger/components/LedgerFilters';
 import { LedgerTable } from '@/features/ledger/components/LedgerTable';
-import { LedgerPagination } from '@/features/ledger/components/LedgerPagination';
+import Pagination from '@/components/ui/Pagination';
 
 export function LedgerPage() {
     const p = useLedgerPage();
@@ -59,12 +59,12 @@ export function LedgerPage() {
                     hasFilters={hasFilters}
                 />
                 {!p.isLoading && p.entries.length > 0 && (
-                    <LedgerPagination
+                    <Pagination
                         page={filters.page}
-                        totalPages={p.totalPages}
+                        pageSize={p.limit}
                         total={p.total}
-                        limit={p.limit}
                         onPageChange={filters.setPage}
+                        unit="entries"
                     />
                 )}
             </Card>

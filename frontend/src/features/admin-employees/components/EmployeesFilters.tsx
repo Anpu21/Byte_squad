@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { LuSearch as Search, LuX as X } from 'react-icons/lu';
 import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/lib/queryKeys';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
 type EmployeeStatus = 'Active' | 'Resigned' | 'Terminated' | 'OnLeave' | '';
 
@@ -15,8 +16,7 @@ interface IEmployeesFiltersProps {
     canPickBranch: boolean;
 }
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 const STATUS_OPTIONS: Array<{ value: EmployeeStatus; label: string }> = [
     { value: '', label: 'All statuses' },
@@ -85,7 +85,7 @@ export function EmployeesFilters({
                         value={branchId}
                         onChange={(e) => onBranchIdChange(e.target.value)}
                         aria-label="Filter by branch"
-                        className={`${INPUT_CLASS} w-40`}
+                        className={`${INPUT_CLASS} field-select w-40`}
                     >
                         <option value="">All branches</option>
                         {branches.map((b) => (
@@ -107,7 +107,7 @@ export function EmployeesFilters({
                         onStatusChange(e.target.value as EmployeeStatus)
                     }
                     aria-label="Filter by status"
-                    className={`${INPUT_CLASS} w-36`}
+                    className={`${INPUT_CLASS} field-select w-36`}
                 >
                     {STATUS_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>

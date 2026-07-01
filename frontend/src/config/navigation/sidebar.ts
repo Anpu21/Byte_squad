@@ -64,6 +64,7 @@ export const SIDEBAR: NavEntry[] = [
             { key: 'salesman', label: 'Salesman report', Icon: BarChart3, roles: [ADMIN, MANAGER] },
         ],
     },
+    { id: 'cashier-store-credit', label: 'nav.storeCredit', path: R.STORE_CREDIT, Icon: NotebookTabs, roles: [CASHIER], group: 'Sales' },
 
     // ── Fulfillment ──
     { id: 'my-deliveries', label: 'nav.myDeliveries', path: R.SHIPMENTS, Icon: Truck, roles: [WORKER], group: 'Fulfillment' },

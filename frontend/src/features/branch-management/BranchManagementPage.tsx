@@ -20,11 +20,7 @@ export function BranchManagementPage({
             {embedded ? (
                 <div className="flex justify-end mb-4">{createButton}</div>
             ) : (
-                <PageHeader
-                    title="Branch Management"
-                    subtitle="Create, edit, and manage all branches"
-                    actions={createButton}
-                />
+                <PageHeader actions={createButton} />
             )}
 
             <BranchTable

@@ -6,6 +6,8 @@ import {
     Card,
     DataTable,
     EmptyState,
+    FIELD_SHELL,
+    FIELD_BORDER,
     type DataTableColumn,
 } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,8 +19,7 @@ import type { ISalesmanReportRow } from '@/types';
 import { useSalesmanReport } from '../hooks/useSalesmanReport';
 import { downloadSalesmanCsv } from '../lib/salesman-csv';
 
-const INPUT_CLASS =
-    'h-9 px-3 bg-surface border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-focus/25 transition-colors';
+const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 
 function isoDaysAgo(days: number): string {
     return new Date(Date.now() - days * 24 * 60 * 60 * 1000)
@@ -107,7 +108,7 @@ export function SalesmanReportPanel() {
                 <label className="flex items-center gap-1.5 text-[12px] text-text-3">
                     From
                     <input
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(startDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
@@ -117,7 +118,7 @@ export function SalesmanReportPanel() {
                 <label className="flex items-center gap-1.5 text-[12px] text-text-3">
                     To
                     <input
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS}${(endDate) ? '' : ' date-empty'}`}
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
@@ -126,7 +127,7 @@ export function SalesmanReportPanel() {
                 </label>
                 {isAdmin && (
                     <select
-                        className={INPUT_CLASS}
+                        className={`${INPUT_CLASS} field-select`}
                         value={branchId}
                         onChange={(e) => setBranchId(e.target.value)}
                         aria-label="Filter by branch"
@@ -158,6 +159,7 @@ export function SalesmanReportPanel() {
                 getRowKey={(row) => row.cashierId}
                 isLoading={reportQuery.isLoading}
                 zebra
+                clientPaginate={{ unit: 'cashiers' }}
                 empty={
                     <EmptyState
                         title="No sales in this window"

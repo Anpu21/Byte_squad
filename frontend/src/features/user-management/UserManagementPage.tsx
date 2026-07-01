@@ -29,7 +29,6 @@ export function UserManagementPage() {
 
             <UserTable
                 users={p.filteredUsers}
-                totalCount={p.users.length}
                 isLoading={p.isLoading}
                 hasFilters={p.hasFilters}
                 openMenuId={p.openMenuId}

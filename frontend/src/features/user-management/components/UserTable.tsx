@@ -8,7 +8,6 @@ import { UserActionsMenu } from './UserActionsMenu';
 
 interface UserTableProps {
     users: IUser[];
-    totalCount: number;
     isLoading: boolean;
     hasFilters: boolean;
     openMenuId: string | null;
@@ -21,7 +20,6 @@ interface UserTableProps {
 
 export function UserTable({
     users,
-    totalCount,
     isLoading,
     hasFilters,
     openMenuId,
@@ -122,17 +120,11 @@ export function UserTable({
                 stickyHeader
                 zebra
                 maxHeight="calc(100vh - 320px)"
+                clientPaginate={{ unit: 'users' }}
                 empty={
                     <EmptyState
                         title={hasFilters ? 'No users match your filters' : 'No users found'}
                     />
-                }
-                footer={
-                    <div className="px-5 py-3 border-t border-border flex items-center justify-between text-xs text-text-3 bg-surface-2">
-                        <span>
-                            Showing {users.length} of {totalCount} users
-                        </span>
-                    </div>
                 }
             />
         </Card>

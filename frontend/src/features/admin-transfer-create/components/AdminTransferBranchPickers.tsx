@@ -1,8 +1,8 @@
 import { LuArrowLeftRight as ArrowLeftRight } from 'react-icons/lu';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import type { IBranch } from '@/types';
 
-const SELECT_CLASS =
-    'w-full h-9 px-3 bg-canvas border border-border rounded-md text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/25 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+const SELECT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} w-full h-9 px-3 cursor-pointer`;
 
 const LABEL_CLASS =
     'block text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5';
@@ -39,7 +39,7 @@ export function AdminTransferBranchPickers({
                         id="transfer-source"
                         value={sourceBranchId}
                         onChange={(e) => onSourceChange(e.target.value)}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                         disabled={isLoading || branches.length === 0}
                     >
                         <option value="">Pick source branch…</option>
@@ -74,7 +74,7 @@ export function AdminTransferBranchPickers({
                         id="transfer-destination"
                         value={destinationBranchId}
                         onChange={(e) => onDestinationChange(e.target.value)}
-                        className={SELECT_CLASS}
+                        className={`${SELECT_CLASS} field-select`}
                         disabled={isLoading || branches.length === 0}
                     >
                         <option value="">Pick destination branch…</option>

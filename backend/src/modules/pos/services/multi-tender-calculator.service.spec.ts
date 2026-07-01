@@ -227,11 +227,7 @@ describe('MultiTenderCalculatorService', () => {
 
   it('money overpay alongside loyalty throws without keepBalance', () => {
     expect(() =>
-      svc.calculate(
-        1000,
-        payment({ cashAmount: 900, cashTendered: 900 }),
-        200,
-      ),
+      svc.calculate(1000, payment({ cashAmount: 900, cashTendered: 900 }), 200),
     ).toThrow(BadRequestException);
   });
 });

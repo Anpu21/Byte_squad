@@ -62,7 +62,7 @@ export function SellableUnitsCard({ form, isEditMode }: SellableUnitsCardProps) 
                         id="product-base-unit"
                         value={form.baseUnit}
                         onChange={handleBaseUnitChange}
-                        className={inputClasses(false, 'w-40')}
+                        className={`${inputClasses(false, 'w-40')} field-select`}
                     >
                         {SUPPORTED_BASE_UNITS_FE.map((u) => (
                             <option key={u} value={u}>

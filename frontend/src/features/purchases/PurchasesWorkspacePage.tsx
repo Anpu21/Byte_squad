@@ -28,13 +28,11 @@ export function PurchasesWorkspacePage() {
 
     return (
         <WorkspacePage
-            eyebrow="Inventory"
-            title="Purchases"
-            subtitle="Suppliers and goods receipts — where stock and cost enter the system."
             tabs={tabs}
             active={tab}
             onTabChange={setTab}
             tabsAriaLabel="Purchases workspace views"
+            chromeless
         >
             {tab === 'grns' && <GrnsPanel />}
             {tab === 'new-grn' && (

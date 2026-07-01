@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { accountingService } from '@/services/accounting.service';
 import { queryKeys } from '@/lib/queryKeys';
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination';
 
-export const LEDGER_PAGE_LIMIT = 20;
+export const LEDGER_PAGE_LIMIT = DEFAULT_PAGE_SIZE;
 
 interface UseLedgerQueryArgs {
     entryType: string;

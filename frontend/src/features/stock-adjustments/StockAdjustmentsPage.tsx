@@ -7,6 +7,8 @@ import Segmented from '@/components/ui/Segmented'
 import { useAuth } from '@/hooks/useAuth'
 import { UserRole } from '@/constants/enums'
 import { FRONTEND_ROUTES } from '@/constants/routes'
+import Pagination from '@/components/ui/Pagination'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { useStockAdjustmentsPage } from '@/features/stock-adjustments/hooks/useStockAdjustmentsPage'
 import { AdjustmentsTable } from '@/features/stock-adjustments/components/AdjustmentsTable'
 import type { IStockAdjustmentStatus } from '@/types'
@@ -27,7 +29,6 @@ export function StockAdjustmentsPage() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <PageHeader
-        title="Stock adjustments"
         subtitle={`${p.total} adjustment(s)`}
         actions={
           <>
@@ -61,30 +62,14 @@ export function StockAdjustmentsPage() {
           onApprove={p.onApprove}
           onReverse={p.onReverse}
         />
-        {!p.isLoading && p.rows.length > 0 && p.totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-border text-xs text-text-2">
-            <span>
-              Page {p.page} of {p.totalPages}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={p.page <= 1}
-                onClick={() => p.setPage(p.page - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={p.page >= p.totalPages}
-                onClick={() => p.setPage(p.page + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+        {!p.isLoading && p.rows.length > 0 && (
+          <Pagination
+            page={p.page}
+            pageSize={DEFAULT_PAGE_SIZE}
+            total={p.total}
+            onPageChange={p.setPage}
+            unit="adjustments"
+          />
         )}
       </Card>
     </div>

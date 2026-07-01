@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 import { PosCartNumericCell } from '@/features/pos/components/item-table/PosCartNumericCell';
 import type { IPosLoyaltyOwner } from '@/features/pos/hooks/useLoyaltyAttach';
 
@@ -63,7 +65,7 @@ export function PosLoyaltyHitBody({
                         min={0}
                         max={redeemCap}
                         ariaLabel="Redeem points"
-                        className="w-24 h-8 px-2 text-right text-[12px] text-text-1 bg-surface border border-border-strong rounded-md outline-none tabular-nums focus:border-focus focus:ring-[2px] focus:ring-primary/30"
+                        className={cn(FIELD_SHELL, FIELD_BORDER, 'w-24 h-8 px-2 text-right text-[12px] tabular-nums')}
                     />
                     <span className="mt-1 text-[10px] text-text-3">
                         Redeem up to {redeemCap.toLocaleString()}

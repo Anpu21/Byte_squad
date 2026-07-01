@@ -2,43 +2,30 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import toast from 'react-hot-toast';
 import { shopProductsService } from '@/services/shop-products.service';
-import { addToCart } from '@/store/slices/shopCartSlice';
 import { setActiveBranch } from '@/store/slices/shopBranchSlice';
 import { selectActiveBranchId } from '@/store/selectors/shopBranch';
-import { selectShopContext } from '@/store/selectors/shopContext';
 import { useAuth } from '@/hooks/useAuth';
 import { queryKeys } from '@/lib/queryKeys';
 import { useBuyAgain } from './useBuyAgain';
-import { useAddGroupCartItem } from '@/features/customer-groups/hooks/useAddGroupCartItem';
-import type { IShopProduct, ShopStockStatus } from '@/types';
+import { useCatalogAddToCart } from './useCatalogAddToCart';
+import {
+    ALL_STOCK,
+    computeHasActiveFilters,
+    computePriceCeiling,
+    computeStockCounts,
+    filterVisibleProducts,
+    sortProducts,
+    type CatalogSort,
+} from './useCatalogPage.lib';
+import type { ShopStockStatus } from '@/types';
 
-export type CatalogSort = 'name' | 'price_asc' | 'price_desc';
-
-const ALL_STOCK: ShopStockStatus[] = ['in', 'low', 'out'];
-
-function sortProducts(
-    products: IShopProduct[],
-    sort: CatalogSort,
-): IShopProduct[] {
-    const copy = products.slice();
-    switch (sort) {
-        case 'price_asc':
-            return copy.sort((a, b) => a.sellingPrice - b.sellingPrice);
-        case 'price_desc':
-            return copy.sort((a, b) => b.sellingPrice - a.sellingPrice);
-        default:
-            return copy.sort((a, b) => a.name.localeCompare(b.name));
-    }
-}
+export type { CatalogSort };
 
 export function useCatalogPage() {
     const dispatch = useAppDispatch();
     const { user } = useAuth();
     const activeBranchId = useAppSelector(selectActiveBranchId);
-    const shopContext = useAppSelector(selectShopContext);
-    const addGroupItem = useAddGroupCartItem();
 
     const [searchParams, setSearchParams] = useSearchParams();
     const search = searchParams.get('q') ?? '';
@@ -114,25 +101,15 @@ export function useCatalogPage() {
 
     // Availability counts span the full server result; the slider ceiling is the
     // dearest product, rounded up to a tidy step.
-    const stockCounts = useMemo(() => {
-        const counts: Record<ShopStockStatus, number> = { in: 0, low: 0, out: 0 };
-        for (const item of products) counts[item.stockStatus] += 1;
-        return counts;
-    }, [products]);
+    const stockCounts = useMemo(() => computeStockCounts(products), [products]);
 
-    const priceCeiling = useMemo(() => {
-        if (products.length === 0) return 0;
-        const max = Math.max(...products.map((item) => item.sellingPrice));
-        return Math.ceil(max / 50) * 50;
-    }, [products]);
+    const priceCeiling = useMemo(
+        () => computePriceCeiling(products),
+        [products],
+    );
 
     const visibleProducts = useMemo(
-        () =>
-            products.filter(
-                (item) =>
-                    stock.includes(item.stockStatus) &&
-                    (maxPrice == null || item.sellingPrice <= maxPrice),
-            ),
+        () => filterVisibleProducts(products, stock, maxPrice),
         [products, stock, maxPrice],
     );
 
@@ -171,11 +148,12 @@ export function useCatalogPage() {
         setSearch('');
     };
 
-    const hasActiveFilters =
-        Boolean(search) ||
-        Boolean(category) ||
-        stock.length !== ALL_STOCK.length ||
-        maxPrice != null;
+    const hasActiveFilters = computeHasActiveFilters({
+        search,
+        category,
+        stock,
+        maxPrice,
+    });
 
     // Free branch switching — keeps the cart so items can span branches.
     const handleBranchChange = (newId: string) => {
@@ -184,51 +162,10 @@ export function useCatalogPage() {
         setCategory('');
     };
 
-    const handleAdd = (product: IShopProduct, unitId: string | null = null) => {
-        if (product.stockStatus === 'out' || !branchId) return;
-        const unit =
-            (unitId
-                ? product.sellableUnits.find((u) => u.id === unitId)
-                : product.sellableUnits.find((u) => u.isBase)) ?? null;
-        // In group mode, adds feed the group's shared cart (server-persisted,
-        // live-synced) instead of the personal Redux cart.
-        if (shopContext.mode === 'group' && shopContext.groupId) {
-            addGroupItem.mutate(
-                {
-                    id: shopContext.groupId,
-                    payload: {
-                        productId: product.id,
-                        branchId,
-                        unitId: unit?.id ?? undefined,
-                        quantity: 1,
-                    },
-                },
-                {
-                    onSuccess: () =>
-                        toast.success(
-                            `Added to ${shopContext.groupName ?? 'group'}`,
-                        ),
-                    onError: () =>
-                        toast.error('Could not add to the group cart'),
-                },
-            );
-            return;
-        }
-        dispatch(
-            addToCart({
-                productId: product.id,
-                branchId,
-                branchName: currentBranch?.name ?? '',
-                name: product.name,
-                sellingPrice: unit ? unit.sellingPrice : product.sellingPrice,
-                imageUrl: product.imageUrl,
-                unitId: unit ? unit.id : null,
-                unitLabel: unit ? unit.name : product.baseUnit,
-                baseUnit: product.baseUnit,
-            }),
-        );
-        toast.success(`${product.name} added`);
-    };
+    const handleAdd = useCatalogAddToCart({
+        branchId,
+        branchName: currentBranch?.name ?? '',
+    });
 
     return {
         branchId,

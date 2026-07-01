@@ -50,10 +50,15 @@
   "shell": {
     "skipToMain": "முதன்மை உள்ளடக்கத்திற்குச் செல்",
     "toggleSidebar": "பக்கப்பட்டியை மாற்று",
+    "collapseSidebar": "பக்கப்பட்டியைச் சுருக்கு",
+    "expandSidebar": "பக்கப்பட்டியை விரிவாக்கு",
     "openUserMenu": "பயனர் பட்டியலைத் திற",
     "profile": "சுயவிவரம்",
     "logout": "வெளியேறு",
     "primaryNav": "முதன்மை வழிசெலுத்தல்",
+    "secondaryNav": "இரண்டாம் நிலை வழிசெலுத்தல்",
+    "expandSection": "துணைப் பக்கங்களை விரிவாக்கு",
+    "collapseSection": "துணைப் பக்கங்களைச் சுருக்கு",
     "commandPalette": "கட்டளை பலகம்",
     "searchPlaceholder": "தேடு அல்லது செல்…",
     "noResults": "பொருத்தம் இல்லை"

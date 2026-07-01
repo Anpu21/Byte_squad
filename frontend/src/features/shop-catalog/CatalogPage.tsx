@@ -43,14 +43,9 @@ export function CatalogPage() {
                     stock={p.stock}
                     stockCounts={p.stockCounts}
                     onToggleStock={p.toggleStock}
-                    maxPrice={p.maxPrice}
-                    priceCeiling={p.priceCeiling}
-                    onMaxPrice={p.setMaxPrice}
                     branches={p.branches}
                     activeBranchId={p.activeBranchId}
                     onBranch={p.handleBranchChange}
-                    sort={p.sort}
-                    onSort={p.setSort}
                     onClear={p.clearFilters}
                     hasActiveFilters={p.hasActiveFilters}
                 />

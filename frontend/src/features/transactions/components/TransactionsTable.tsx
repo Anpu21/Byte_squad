@@ -97,6 +97,7 @@ export function TransactionsTable({
                     zebra
                     stickyHeader
                     maxHeight="600px"
+                    clientPaginate={{ unit: 'transactions' }}
                     empty={<EmptyState title="No transactions yet" />}
                 />
             </CardContent>

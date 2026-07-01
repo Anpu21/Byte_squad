@@ -16,11 +16,13 @@ import { PosModule } from '@pos/pos.module';
 import { AccountingModule } from '@accounting/accounting.module';
 import { AccountsRepository } from '@accounting/accounts.repository';
 import { NotificationsModule } from '@notifications/notifications.module';
+import { RealtimeModule } from '@common/realtime/realtime.module';
 import { AdminPortalModule } from '@admin-portal/admin-portal.module';
 import { BranchAnalyticsModule } from '@/modules/branch-analytics/branch-analytics.module';
 import { StockTransfersModule } from '@stock-transfers/stock-transfers.module';
 import { CustomerOrdersModule } from '@/modules/customer-orders/customer-orders.module';
 import { CustomerGroupsModule } from '@/modules/customer-groups/customer-groups.module';
+import { ChatModule } from '@/modules/chat/chat.module';
 import { ShopModule } from '@/modules/shop/shop.module';
 import { ReviewsModule } from '@/modules/reviews/reviews.module';
 import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
@@ -149,11 +151,13 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     PosModule,
     AccountingModule,
     NotificationsModule,
+    RealtimeModule,
     AdminPortalModule,
     BranchAnalyticsModule,
     StockTransfersModule,
     CustomerOrdersModule,
     CustomerGroupsModule,
+    ChatModule,
     ShopModule,
     ReviewsModule,
     LoyaltyModule,

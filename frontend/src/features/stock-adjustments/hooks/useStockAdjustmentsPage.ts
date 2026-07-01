@@ -8,8 +8,9 @@ import type {
   IStockAdjustmentStatus,
   IStockAdjustmentsParams,
 } from '@/types'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 
-const PAGE_LIMIT = 20
+const PAGE_LIMIT = DEFAULT_PAGE_SIZE
 
 type StatusFilter = IStockAdjustmentStatus | 'all'
 

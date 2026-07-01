@@ -14,7 +14,7 @@ import { BranchesService } from '@branches/branches.service';
 import { InventoryService } from '@inventory/inventory.service';
 import { UsersService } from '@users/users.service';
 import { NotificationsService } from '@notifications/notifications.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import { StockTransferRequest } from './entities/stock-transfer-request.entity';
 import { Branch } from '@branches/entities/branch.entity';
 import { Inventory } from '@inventory/entities/inventory.entity';
@@ -37,7 +37,7 @@ describe('StockTransfersService', () => {
   let users: jest.Mocked<UsersService>;
   let dataSource: { transaction: jest.Mock };
   let notifications: { create: jest.Mock };
-  let gateway: { sendToUser: jest.Mock };
+  let realtime: { toUser: jest.Mock };
 
   beforeEach(async () => {
     const transfersMock: Partial<jest.Mocked<StockTransfersRepository>> = {
@@ -67,7 +67,7 @@ describe('StockTransfersService', () => {
     const notificationsMock = {
       create: jest.fn().mockResolvedValue(undefined),
     };
-    const gatewayMock = { sendToUser: jest.fn() };
+    const realtimeMock = { toUser: jest.fn() };
     const dataSourceMock = { transaction: jest.fn() };
 
     const module = await Test.createTestingModule({
@@ -79,7 +79,7 @@ describe('StockTransfersService', () => {
         { provide: InventoryService, useValue: inventoryMock },
         { provide: UsersService, useValue: usersMock },
         { provide: NotificationsService, useValue: notificationsMock },
-        { provide: NotificationsGateway, useValue: gatewayMock },
+        { provide: RealtimePublisher, useValue: realtimeMock },
         { provide: DataSource, useValue: dataSourceMock },
       ],
     }).compile();
@@ -92,7 +92,7 @@ describe('StockTransfersService', () => {
     users = module.get(UsersService);
     dataSource = module.get(DataSource);
     notifications = module.get(NotificationsService);
-    gateway = module.get(NotificationsGateway);
+    realtime = module.get(RealtimePublisher);
   });
 
   describe('approve', () => {
@@ -634,7 +634,7 @@ describe('StockTransfersService', () => {
 
       // Assert — 1 batch × 2 recipients = 2 fan-outs (was 4 per-line)
       expect(notifications.create).toHaveBeenCalledTimes(2);
-      expect(gateway.sendToUser).toHaveBeenCalledTimes(2);
+      expect(realtime.toUser).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -832,7 +832,7 @@ describe('StockTransfersService', () => {
 
       // Assert — 1 batch × 2 admins = 2 fan-outs (was 4 per-line)
       expect(notifications.create).toHaveBeenCalledTimes(2);
-      expect(gateway.sendToUser).toHaveBeenCalledTimes(2);
+      expect(realtime.toUser).toHaveBeenCalledTimes(2);
     });
 
     it('rejects when requestReason is empty after trim', async () => {

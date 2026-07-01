@@ -131,6 +131,7 @@ export function SchemesTable({
             getRowKey={(s) => s.id}
             isLoading={isLoading}
             zebra
+            clientPaginate={{ unit: 'schemes' }}
             empty={
                 <EmptyState
                     title="No discount schemes yet"

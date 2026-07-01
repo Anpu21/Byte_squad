@@ -2,7 +2,10 @@ import { Navigate, Route } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { UserRole } from '@/constants/enums';
 import { RequireRole } from '../guards';
-import { LegacyOrderConfirmationRedirect } from '../redirects';
+import {
+    GroupAnalyticsRedirect,
+    LegacyOrderConfirmationRedirect,
+} from '../redirects';
 import CustomerLayout from '@/layouts/CustomerLayout';
 import { CatalogPage } from '@/features/shop-catalog';
 import { ProductDetailPage } from '@/features/product-detail';
@@ -16,11 +19,7 @@ import { PayhereGatewayPage } from '@/features/payhere-gateway';
 import { MyOrdersPage } from '@/features/my-orders';
 import { CustomerProfilePage } from '@/features/customer-profile';
 import { RewardsPage } from '@/features/loyalty';
-import {
-    GroupsPage,
-    GroupDetailPage,
-    GroupAnalyticsPage,
-} from '@/features/customer-groups';
+import { GroupsPage, GroupDetailPage } from '@/features/customer-groups';
 
 /**
  * Storefront — login required, CUSTOMER only. Nested under `ProtectedRoute` in
@@ -81,8 +80,7 @@ export const customerProtectedRoutes = (
             />
             <Route
                 path={FRONTEND_ROUTES.SHOP_GROUP_ANALYTICS}
-                element={<GroupAnalyticsPage />}
-                handle={{ crumbs: ['Shop', 'Group', 'Analytics'] }}
+                element={<GroupAnalyticsRedirect />}
             />
         </Route>
         <Route element={<CustomerLayout publicMode />}>

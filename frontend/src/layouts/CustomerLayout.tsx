@@ -1,12 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import {
-    Link,
-    Navigate,
-    Outlet,
-    useLocation,
-    useNavigate,
-    useSearchParams,
-} from 'react-router-dom';
+import { Link, Navigate, Outlet } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { LuSearch as Search, LuShoppingCart as ShoppingCart, LuUser as User, LuX as X } from 'react-icons/lu';
@@ -24,6 +16,7 @@ import { StorefrontNav } from '@/layouts/components/StorefrontNav';
 import { StorefrontUserMenu } from '@/layouts/components/StorefrontUserMenu';
 import { ShopContextBanner } from '@/features/customer-groups/components/ShopContextBanner';
 import { cn } from '@/lib/utils';
+import { useStorefrontSearch } from './useStorefrontSearch';
 
 interface CustomerLayoutProps {
     /**
@@ -36,59 +29,11 @@ interface CustomerLayoutProps {
 export default function CustomerLayout({
     publicMode = false,
 }: CustomerLayoutProps) {
-    const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { user, isAuthenticated } = useAuth();
     const cartCount = useAppSelector(selectShopCartItemCount);
-
-    const location = useLocation();
-    const [searchParams, setSearchParams] = useSearchParams();
-    const isOnShop = location.pathname === FRONTEND_ROUTES.SHOP;
-    const urlQ = isOnShop ? (searchParams.get('q') ?? '') : '';
-    const [searchDraft, setSearchDraft] = useState(urlQ);
-
-    useEffect(() => {
-        setSearchDraft(urlQ);
-    }, [urlQ]);
-
-    useEffect(() => {
-        if (!isOnShop) return;
-        if (searchDraft === urlQ) return;
-        const timer = setTimeout(() => {
-            setSearchParams(
-                (prev) => {
-                    if (searchDraft) prev.set('q', searchDraft);
-                    else prev.delete('q');
-                    return prev;
-                },
-                { replace: true },
-            );
-        }, 200);
-        return () => clearTimeout(timer);
-    }, [searchDraft, urlQ, isOnShop, setSearchParams]);
-
-    const handleSearchSubmit = (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const q = searchDraft.trim();
-        if (isOnShop) return;
-        const target = q
-            ? `${FRONTEND_ROUTES.SHOP}?q=${encodeURIComponent(q)}`
-            : FRONTEND_ROUTES.SHOP;
-        navigate(target);
-    };
-
-    const handleSearchClear = () => {
-        setSearchDraft('');
-        if (isOnShop) {
-            setSearchParams(
-                (prev) => {
-                    prev.delete('q');
-                    return prev;
-                },
-                { replace: true },
-            );
-        }
-    };
+    const { searchDraft, setSearchDraft, handleSearchSubmit, handleSearchClear } =
+        useStorefrontSearch();
 
     const { data: profile } = useQuery({
         queryKey: queryKeys.profile.self(),
@@ -118,26 +63,28 @@ export default function CustomerLayout({
 
             <header className="sticky top-0 z-sticky bg-surface/90 backdrop-blur-md border-b border-border">
                 <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-16 flex items-center gap-3 sm:gap-4">
-                    <Link
-                        to={FRONTEND_ROUTES.SHOP}
-                        className="flex items-center gap-2.5 flex-shrink-0"
-                        aria-label="Ledger Pro — shop home"
-                    >
-                        <Logo size={38} label={false} />
-                        <span className="hidden sm:flex flex-col leading-tight">
-                            <span className="text-[15px] font-bold tracking-[-0.01em] text-text-1">
-                                Ledger Pro
+                    <div className="flex flex-1 items-center min-w-0">
+                        <Link
+                            to={FRONTEND_ROUTES.SHOP}
+                            className="flex items-center gap-2.5 flex-shrink-0"
+                            aria-label="Ledger Pro — shop home"
+                        >
+                            <Logo size={38} label={false} />
+                            <span className="hidden sm:flex flex-col leading-tight">
+                                <span className="text-[15px] font-bold tracking-[-0.01em] text-text-1">
+                                    Ledger Pro
+                                </span>
+                                <span className="text-[11px] font-medium text-text-3">
+                                    Pickup &amp; rewards
+                                </span>
                             </span>
-                            <span className="text-[11px] font-medium text-text-3">
-                                Pickup &amp; rewards
-                            </span>
-                        </span>
-                    </Link>
+                        </Link>
+                    </div>
 
                     <form
                         role="search"
                         onSubmit={handleSearchSubmit}
-                        className="hidden lg:flex items-center flex-1 max-w-[420px] h-[38px] px-3 bg-surface-2 border border-border rounded-lg gap-2 focus-within:border-focus focus-within:ring-[3px] focus-within:ring-focus/20 transition-colors"
+                        className="hidden lg:flex items-center flex-none w-[420px] max-w-full h-[38px] px-3 bg-surface-2 border border-border-strong rounded-[var(--radius-field)] gap-2 focus-within:border-focus focus-within:ring-[3px] focus-within:ring-focus/25 transition-[border-color,box-shadow] duration-150 ease-out"
                     >
                         <Search size={15} className="text-text-3 flex-shrink-0" />
                         <input
@@ -160,7 +107,7 @@ export default function CustomerLayout({
                         )}
                     </form>
 
-                    <div className="flex items-center gap-1.5 ml-auto">
+                    <div className="flex flex-1 items-center justify-end gap-1.5 min-w-0">
                         {!publicMode && (
                             <StorefrontNav
                                 variant="pills"

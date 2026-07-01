@@ -7,9 +7,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * "1000 Rs of bananas") instead of quantity × unit price. Nullable — normal
  * by-weight / by-count lines leave it null.
  */
-export class AddCustomerOrderItemFixedPrice1779732200000
-  implements MigrationInterface
-{
+export class AddCustomerOrderItemFixedPrice1779732200000 implements MigrationInterface {
   name = 'AddCustomerOrderItemFixedPrice1779732200000';
   private readonly logger = new Logger(
     AddCustomerOrderItemFixedPrice1779732200000.name,

@@ -41,7 +41,7 @@ import { NotificationType } from '@common/enums/notification.enum';
 import { PaymentMethod } from '@common/enums/payment-method';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { NotificationsService } from '@notifications/notifications.service';
-import { NotificationsGateway } from '@notifications/notifications.gateway';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 
 const ORDER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -87,7 +87,7 @@ export class CustomerOrdersService {
     private readonly loyalty: LoyaltyService,
     private readonly loyaltyWallet: LoyaltyWalletService,
     private readonly notifications: NotificationsService,
-    private readonly notificationsGateway: NotificationsGateway,
+    private readonly realtime: RealtimePublisher,
     private readonly cloudinary: CloudinaryService,
     private readonly payhere: PayhereService,
   ) {}
@@ -233,7 +233,7 @@ export class CustomerOrdersService {
       this.logger.error(`Cashier notification fan-out failed: ${message}`);
     });
 
-    this.notificationsGateway.broadcast('customer-order:created', {
+    this.realtime.broadcast('customer-order:created', {
       branchId: saved.branchId,
       orderId: saved.id,
       orderCode: saved.orderCode,
@@ -374,7 +374,7 @@ export class CustomerOrdersService {
         const message = err instanceof Error ? err.message : String(err);
         this.logger.error(`Cashier notification fan-out failed: ${message}`);
       });
-      this.notificationsGateway.broadcast('customer-order:created', {
+      this.realtime.broadcast('customer-order:created', {
         branchId: c.order.branchId,
         orderId: c.order.id,
         orderCode: c.order.orderCode,

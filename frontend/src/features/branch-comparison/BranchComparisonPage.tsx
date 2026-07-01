@@ -80,8 +80,6 @@ export function BranchComparisonPage({
     <div>
       {!embedded && (
         <PageHeader
-          eyebrow="Branches"
-          title="Compare branches"
           subtitle={`${formatDateRange(p.startDate, p.endDate)} · ${p.selectedIds.length} ${
             p.selectedIds.length === 1 ? "branch" : "branches"
           }`}

@@ -86,7 +86,7 @@ export function EmployeeBasicsCard({ form }: EmployeeBasicsCardProps) {
                         type="date"
                         value={form.dateOfBirth}
                         onChange={(e) => form.setDateOfBirth(e.target.value)}
-                        className={inputClasses(false)}
+                        className={`${inputClasses(false)}${(form.dateOfBirth) ? '' : ' date-empty'}`}
                     />
                 </EmployeeFormField>
 
@@ -97,7 +97,7 @@ export function EmployeeBasicsCard({ form }: EmployeeBasicsCardProps) {
                         onChange={(e) =>
                             form.setGender(e.target.value as GenderField)
                         }
-                        className={inputClasses(false)}
+                        className={`${inputClasses(false)} field-select`}
                     >
                         <option value="">Prefer not to say</option>
                         <option value="Male">Male</option>
@@ -119,7 +119,7 @@ export function EmployeeBasicsCard({ form }: EmployeeBasicsCardProps) {
                                 e.target.value as MaritalField,
                             )
                         }
-                        className={inputClasses(false)}
+                        className={`${inputClasses(false)} field-select`}
                     >
                         <option value="">Not specified</option>
                         <option value="Single">Single</option>

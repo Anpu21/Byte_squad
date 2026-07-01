@@ -28,6 +28,12 @@ interface WorkspacePageProps<T extends string> {
      * so two sticky bars never stack and the title isn't duplicated.
      */
     embedded?: boolean;
+    /**
+     * Drop the in-page sticky tab band entirely (page header + content only) —
+     * the sub-tabs now live in the sidebar panel. Unlike `embedded`, the page
+     * header is kept. Ignored when `embedded` is set.
+     */
+    chromeless?: boolean;
     className?: string;
 }
 
@@ -54,9 +60,34 @@ export function WorkspacePage<T extends string>({
     tabsAriaLabel,
     children,
     embedded = false,
+    chromeless = false,
     className,
 }: WorkspacePageProps<T>) {
     const baseId = useId();
+
+    // Chromeless: the sub-tabs live in the sidebar panel now, so render just the
+    // page header + content (no in-page tab band). Honored only when not embedded.
+    if (chromeless && !embedded) {
+        return (
+            <div className={className}>
+                {title != null && (
+                    <PageHeader
+                        eyebrow={eyebrow}
+                        title={title}
+                        subtitle={subtitle}
+                        actions={actions}
+                    />
+                )}
+                <div
+                    key={active}
+                    className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+                >
+                    {children}
+                </div>
+            </div>
+        );
+    }
+
     const tabBar = (
         <Tabs
             tabs={tabs}

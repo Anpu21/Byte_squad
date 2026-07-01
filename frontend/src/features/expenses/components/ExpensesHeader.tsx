@@ -19,13 +19,7 @@ export function ExpensesHeader({
     return (
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
             <div>
-                <p className="text-[11px] uppercase tracking-widest text-text-3 font-semibold mb-1.5">
-                    Accounting
-                </p>
-                <h1 className="text-3xl font-bold text-text-1 tracking-tight leading-none">
-                    Expenses
-                </h1>
-                <p className="text-sm text-text-2 mt-1.5">
+                <p className="text-sm text-text-2">
                     {monthLabel(now)}
                     {isAdmin && (
                         <>

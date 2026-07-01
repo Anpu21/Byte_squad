@@ -1,4 +1,5 @@
 import Modal from '@/components/ui/Modal';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
 interface RejectTransferModalProps {
     isOpen: boolean;
@@ -33,7 +34,7 @@ export function RejectTransferModal({
                     rows={3}
                     maxLength={500}
                     placeholder="Reason for rejection…"
-                    className="w-full px-4 py-3 bg-canvas border border-border rounded-xl text-sm text-text-1 outline-none focus:border-focus focus:ring-[3px] focus:ring-primary/30 transition-all placeholder:text-text-3 resize-none"
+                    className={`${FIELD_SHELL} ${FIELD_BORDER} w-full px-4 py-3 resize-none`}
                 />
                 <div className="flex items-center justify-end gap-3 mt-4">
                     <button

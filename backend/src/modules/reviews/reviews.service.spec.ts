@@ -115,7 +115,7 @@ describe('ReviewsService', () => {
       expect(result.myReview).toBeNull();
     });
 
-    it('blocks posting when the customer has not purchased', async () => {
+    it('lets a non-buyer with no review post one', async () => {
       repo.findActiveProduct.mockResolvedValue({ id: PRODUCT_ID } as Product);
       repo.listForProduct.mockResolvedValue({ rows: [], total: 0 });
       repo.summaryForProduct.mockResolvedValue([]);
@@ -123,7 +123,8 @@ describe('ReviewsService', () => {
       repo.hasPurchased.mockResolvedValue(false);
 
       const result = await service.getProductReviews(PRODUCT_ID, {}, USER_ID);
-      expect(result.eligibility.canReview).toBe(false);
+      expect(result.eligibility.canReview).toBe(true);
+      expect(result.eligibility.hasPurchased).toBe(false);
     });
 
     it('returns the caller review as myReview and masks others', async () => {
@@ -164,14 +165,19 @@ describe('ReviewsService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
     });
 
-    it('403s when a non-buyer tries to review', async () => {
+    it('lets a non-buyer post a review (stored as unverified)', async () => {
       repo.findActiveProduct.mockResolvedValue({ id: PRODUCT_ID } as Product);
       repo.findByProductAndUser.mockResolvedValue(null);
       repo.hasPurchased.mockResolvedValue(false);
-      await expect(
-        service.create(PRODUCT_ID, { rating: 5 }, USER_ID),
-      ).rejects.toBeInstanceOf(ForbiddenException);
-      expect(repo.insertAndRecompute).not.toHaveBeenCalled();
+      repo.insertAndRecompute.mockResolvedValue(
+        makeReview({ isVerifiedPurchase: false }),
+      );
+
+      await service.create(PRODUCT_ID, { rating: 4 }, USER_ID);
+
+      expect(repo.insertAndRecompute).toHaveBeenCalledWith(
+        expect.objectContaining({ isVerifiedPurchase: false }),
+      );
     });
 
     it('stores the verified flag and persists for a buyer', async () => {

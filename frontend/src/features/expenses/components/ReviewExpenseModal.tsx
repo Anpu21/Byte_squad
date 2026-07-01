@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
+import { cn } from '@/lib/utils';
 import type { IExpense } from '@/types';
 
 interface ReviewExpenseModalProps {
@@ -60,7 +62,7 @@ export function ReviewExpenseModal({
                             : 'Optional note'
                     }
                     rows={3}
-                    className="w-full px-3 py-2 bg-canvas border border-border rounded-md text-[13px] text-text-1 outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/25 placeholder:text-text-3 transition-colors resize-none"
+                    className={cn(FIELD_SHELL, FIELD_BORDER, 'w-full px-3 py-2 resize-none')}
                 />
 
                 <div className="flex items-center justify-end gap-2 mt-5">

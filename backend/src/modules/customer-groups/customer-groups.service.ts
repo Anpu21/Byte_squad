@@ -14,6 +14,7 @@ import { JoinCustomerGroupDto } from '@/modules/customer-groups/dto/join-custome
 import { UpdateCustomerGroupDto } from '@/modules/customer-groups/dto/update-customer-group.dto';
 import { CustomerGroupStatus } from '@common/enums/customer-group-status.enum';
 import { CustomerGroupMemberRole } from '@common/enums/customer-group-member-role.enum';
+import { RealtimePublisher } from '@common/realtime/realtime-publisher.service';
 import type { AuthUser } from '@common/types/auth-user.type';
 import type {
   CustomerGroupDetail,
@@ -26,7 +27,10 @@ const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
 @Injectable()
 export class CustomerGroupsService {
-  constructor(private readonly groups: CustomerGroupsRepository) {}
+  constructor(
+    private readonly groups: CustomerGroupsRepository,
+    private readonly realtime: RealtimePublisher,
+  ) {}
 
   async create(
     dto: CreateCustomerGroupDto,
@@ -107,6 +111,10 @@ export class CustomerGroupsService {
       group.status = dto.status;
     }
     await this.groups.saveGroup(group);
+    // Archiving locks everyone out — revoke the whole group's chat participants.
+    if (dto.status === CustomerGroupStatus.ARCHIVED) {
+      this.realtime.revokeGroupChat(id, { kind: 'all' });
+    }
     return this.getById(id, actor.id);
   }
 
@@ -128,6 +136,8 @@ export class CustomerGroupsService {
       );
     }
     await this.groups.deleteMember(id, actor.id);
+    // Kick them out of the group's live chat + cart room immediately.
+    this.realtime.revokeGroupChat(id, { kind: 'user', userId: actor.id });
   }
 
   async removeMember(
@@ -146,6 +156,7 @@ export class CustomerGroupsService {
       throw new NotFoundException('That user is not a member of this group');
     }
     await this.groups.deleteMember(id, memberUserId);
+    this.realtime.revokeGroupChat(id, { kind: 'user', userId: memberUserId });
     return this.getById(id, actor.id);
   }
 

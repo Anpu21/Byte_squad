@@ -27,6 +27,7 @@ export function BranchHubPage() {
             active={tab}
             onTabChange={setTab}
             tabsAriaLabel="Branch hub views"
+            chromeless
         >
             {tab === 'overview' &&
                 (isAdmin ? (

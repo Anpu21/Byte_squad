@@ -87,3 +87,10 @@ export function LegacyOrderConfirmationRedirect() {
     );
     return <Navigate to={target} replace />;
 }
+
+/** `/shop/groups/:id/analytics` → the group detail page's Analytics tab. */
+export function GroupAnalyticsRedirect() {
+    const { id } = useParams<{ id: string }>();
+    const target = FRONTEND_ROUTES.SHOP_GROUP_DETAIL.replace(':id', id ?? '');
+    return <Navigate to={`${target}?tab=analytics`} replace />;
+}
