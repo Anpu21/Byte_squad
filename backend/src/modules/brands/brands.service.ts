@@ -6,7 +6,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Brand } from '@/modules/brands/entities/brand.entity';
-import { BrandRepository } from '@/modules/brands/brands.repository';
+import {
+  BrandRepository,
+  type BrandWithCount,
+} from '@/modules/brands/brands.repository';
 import { CreateBrandDto } from '@/modules/brands/dto/create-brand.dto';
 import { UpdateBrandDto } from '@/modules/brands/dto/update-brand.dto';
 import { BrandAnalyticsQueryDto } from '@/modules/brands/dto/brand-analytics-query.dto';
@@ -56,8 +59,18 @@ function zeroFillTrend(
 export class BrandsService {
   constructor(private readonly brands: BrandRepository) {}
 
-  list(includeInactive = false): Promise<Brand[]> {
+  list(includeInactive = false): Promise<BrandWithCount[]> {
     return this.brands.list(includeInactive);
+  }
+
+  /** One brand with its product count (manage UI + delete-guard preview). */
+  async getById(id: string): Promise<BrandWithCount> {
+    const brand = await this.brands.findById(id);
+    if (!brand) {
+      throw new NotFoundException(`Brand "${id}" not found`);
+    }
+    const productCount = await this.brands.countProductsForBrand(id);
+    return { ...brand, productCount };
   }
 
   async create(dto: CreateBrandDto, actor: AuthUser): Promise<Brand> {
@@ -131,6 +144,24 @@ export class BrandsService {
     }
     brand.isActive = false;
     return this.brands.save(brand);
+  }
+
+  /**
+   * Hard-delete a brand. Guarded: a brand still referenced by products cannot be
+   * removed (the product→brand FK is ON DELETE RESTRICT) — archive it instead.
+   */
+  async remove(id: string): Promise<void> {
+    const brand = await this.brands.findById(id);
+    if (!brand) {
+      throw new NotFoundException(`Brand "${id}" not found`);
+    }
+    const productCount = await this.brands.countProductsForBrand(id);
+    if (productCount > 0) {
+      throw new ConflictException(
+        `Brand "${brand.name}" is used by ${productCount} product(s); archive it instead`,
+      );
+    }
+    await this.brands.delete(id);
   }
 
   // ── Analytics ──────────────────────────────────────────

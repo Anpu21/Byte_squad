@@ -23,6 +23,11 @@ export interface BrandSummary {
   transactions: number;
 }
 
+/** A brand plus how many products reference it (drives the manage UI + delete guard). */
+export interface BrandWithCount extends Brand {
+  productCount: number;
+}
+
 interface BrandSalesAggRaw {
   brandId: string;
   brandName: string;
@@ -96,7 +101,7 @@ export class BrandRepository {
     return this.repository.findOne({ where: { name } });
   }
 
-  async list(includeInactive: boolean): Promise<Brand[]> {
+  async list(includeInactive: boolean): Promise<BrandWithCount[]> {
     const qb = this.repository
       .createQueryBuilder('b')
       .orderBy('b.sortOrder', 'ASC')
@@ -104,7 +109,30 @@ export class BrandRepository {
     if (!includeInactive) {
       qb.where('b.is_active = true');
     }
-    return qb.getMany();
+    const brands = await qb.getMany();
+    if (brands.length === 0) return [];
+
+    const counts = await this.dataSource
+      .getRepository(Product)
+      .createQueryBuilder('p')
+      .select('p.brand_id', 'brandId')
+      .addSelect('COUNT(*)', 'count')
+      .where('p.brand_id IN (:...ids)', { ids: brands.map((b) => b.id) })
+      .groupBy('p.brand_id')
+      .getRawMany<{ brandId: string; count: string }>();
+    const countMap = new Map(counts.map((c) => [c.brandId, Number(c.count)]));
+
+    return brands.map((b) => ({ ...b, productCount: countMap.get(b.id) ?? 0 }));
+  }
+
+  /** Number of products referencing a brand (delete guard). */
+  async countProductsForBrand(brandId: string): Promise<number> {
+    return this.dataSource.getRepository(Product).count({ where: { brandId } });
+  }
+
+  /** Hard-delete a brand row. Callers must ensure no product references it. */
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
   }
 
   /** Keep the denormalized `products.brand` string in sync after a rename. */
@@ -131,6 +159,7 @@ export class BrandRepository {
       .innerJoin('item.product', 'product')
       .where('sale.type = :type', { type: TransactionType.SALE })
       .andWhere('sale.status != :voided', { voided: 'Voided' })
+      .andWhere('item.status != :voided')
       .andWhere('sale.created_at BETWEEN :startDate AND :endDate', {
         startDate: params.startDate,
         endDate: params.endDate,

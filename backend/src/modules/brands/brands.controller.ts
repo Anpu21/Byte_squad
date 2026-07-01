@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -9,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { BrandsService } from '@/modules/brands/brands.service';
+import { type BrandWithCount } from '@/modules/brands/brands.repository';
 import { CreateBrandDto } from '@/modules/brands/dto/create-brand.dto';
 import { UpdateBrandDto } from '@/modules/brands/dto/update-brand.dto';
 import { BrandAnalyticsQueryDto } from '@/modules/brands/dto/brand-analytics-query.dto';
@@ -32,7 +34,9 @@ export class BrandsController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
-  list(@Query('includeInactive') includeInactive?: string): Promise<Brand[]> {
+  list(
+    @Query('includeInactive') includeInactive?: string,
+  ): Promise<BrandWithCount[]> {
     return this.service.list(includeInactive === 'true');
   }
 
@@ -57,6 +61,14 @@ export class BrandsController {
     return this.service.getBrandAnalytics(actor, brandId, query);
   }
 
+  // Read one brand (+ product count). After the analytics routes so a two-segment
+  // `analytics/...` path is never captured by this single-segment `:id`.
+  @Get(APP_ROUTES.BRANDS.BY_ID)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  getOne(@Param('id') id: string): Promise<BrandWithCount> {
+    return this.service.getById(id);
+  }
+
   @Post()
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   create(
@@ -76,5 +88,13 @@ export class BrandsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   update(@Param('id') id: string, @Body() dto: UpdateBrandDto): Promise<Brand> {
     return this.service.update(id, dto);
+  }
+
+  // Guarded hard delete — 409 when products still reference the brand (archive
+  // instead). Admin only, matching archive.
+  @Delete(APP_ROUTES.BRANDS.BY_ID)
+  @Roles(UserRole.ADMIN)
+  remove(@Param('id') id: string): Promise<void> {
+    return this.service.remove(id);
   }
 }

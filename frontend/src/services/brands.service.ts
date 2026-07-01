@@ -5,6 +5,8 @@ import type {
   IBrandAnalyticsParams,
   IBrandOverviewResponse,
   IBrandDrilldownResponse,
+  ICreateBrandPayload,
+  IUpdateBrandPayload,
 } from '@/types'
 
 export const brandsService = {
@@ -13,6 +15,35 @@ export const brandsService = {
       params: includeInactive ? { includeInactive: true } : undefined,
     })
     return response.data.data
+  },
+
+  get: async (id: string): Promise<IBrand> => {
+    const response = await api.get<IApiResponse<IBrand>>(`/brands/${id}`)
+    return response.data.data
+  },
+
+  create: async (payload: ICreateBrandPayload): Promise<IBrand> => {
+    const response = await api.post<IApiResponse<IBrand>>('/brands', payload)
+    return response.data.data
+  },
+
+  update: async (id: string, payload: IUpdateBrandPayload): Promise<IBrand> => {
+    const response = await api.patch<IApiResponse<IBrand>>(
+      `/brands/${id}`,
+      payload,
+    )
+    return response.data.data
+  },
+
+  archive: async (id: string): Promise<IBrand> => {
+    const response = await api.patch<IApiResponse<IBrand>>(
+      `/brands/${id}/archive`,
+    )
+    return response.data.data
+  },
+
+  remove: async (id: string): Promise<void> => {
+    await api.delete(`/brands/${id}`)
   },
 
   getOverview: async (

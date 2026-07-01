@@ -1,4 +1,5 @@
 export * from './brand.type'
+export * from './brand-payload.type'
 export * from './brand-sales-row.type'
 export * from './brand-product-row.type'
 export * from './brand-trend-point.type'

@@ -78,6 +78,8 @@ describe('BrandsService', () => {
     count: jest.Mock;
     findById: jest.Mock;
     findByName: jest.Mock;
+    countProductsForBrand: jest.Mock;
+    delete: jest.Mock;
     syncProductBrandName: jest.Mock;
     leaderboard: jest.Mock;
     brandSummary: jest.Mock;
@@ -97,6 +99,8 @@ describe('BrandsService', () => {
       count: jest.fn().mockResolvedValue(0),
       findById: jest.fn(),
       findByName: jest.fn(),
+      countProductsForBrand: jest.fn().mockResolvedValue(0),
+      delete: jest.fn(),
       syncProductBrandName: jest.fn(),
       leaderboard: jest.fn(),
       brandSummary: jest.fn(),
@@ -185,6 +189,42 @@ describe('BrandsService', () => {
     it('throws when the brand is missing', async () => {
       repo.findById.mockResolvedValue(null);
       await expect(service.archive('nope')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getById', () => {
+    it('returns the brand with its product count', async () => {
+      repo.findById.mockResolvedValue(makeBrand());
+      repo.countProductsForBrand.mockResolvedValue(4);
+      const res = await service.getById('b1');
+      expect(res.name).toBe('Prima');
+      expect(res.productCount).toBe(4);
+    });
+
+    it('throws when the brand is missing', async () => {
+      repo.findById.mockResolvedValue(null);
+      await expect(service.getById('nope')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('remove', () => {
+    it('hard-deletes a brand no product references', async () => {
+      repo.findById.mockResolvedValue(makeBrand());
+      repo.countProductsForBrand.mockResolvedValue(0);
+      await service.remove('b1');
+      expect(repo.delete).toHaveBeenCalledWith('b1');
+    });
+
+    it('rejects deleting a brand still used by products', async () => {
+      repo.findById.mockResolvedValue(makeBrand());
+      repo.countProductsForBrand.mockResolvedValue(2);
+      await expect(service.remove('b1')).rejects.toThrow(ConflictException);
+      expect(repo.delete).not.toHaveBeenCalled();
+    });
+
+    it('throws when the brand is missing', async () => {
+      repo.findById.mockResolvedValue(null);
+      await expect(service.remove('nope')).rejects.toThrow(NotFoundException);
     });
   });
 
