@@ -429,6 +429,15 @@ export class LoyaltyService {
     };
   }
 
+  /**
+   * Public entry point for the customer-hub merge: fold a walk-in wallet + its
+   * sales/ledger history into a registered user (delegates to the transactional
+   * repository merge, which also writes a MERGE_TRANSFER audit entry).
+   */
+  async mergeWalkIn(userId: string, loyaltyCustomerId: string): Promise<void> {
+    await this.loyalty.mergeWalkInIntoUser({ userId, loyaltyCustomerId });
+  }
+
   async syncVerifiedUserByPhone(userId: string): Promise<LoyaltyAccount> {
     const user = await this.users.findEntityById(userId);
     if (!user?.phone) {

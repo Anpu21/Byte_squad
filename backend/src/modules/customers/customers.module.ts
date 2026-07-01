@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { LoyaltyModule } from '@/modules/loyalty/loyalty.module';
 import { CustomerProfile } from '@/modules/customers/entities/customer-profile.entity';
 import { CustomerProfilesRepository } from '@/modules/customers/customer-profiles.repository';
 import { CustomersRepository } from '@/modules/customers/customers.repository';
@@ -14,7 +15,7 @@ import { CustomersController } from '@/modules/customers/customers.controller';
  * side-table has its own CustomerProfilesRepository.
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([CustomerProfile])],
+  imports: [TypeOrmModule.forFeature([CustomerProfile]), LoyaltyModule],
   controllers: [CustomersController],
   providers: [
     CustomerProfilesRepository,

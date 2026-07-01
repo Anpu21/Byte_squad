@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { LuArrowLeft as ArrowLeft, LuPencil as Pencil } from "react-icons/lu";
+import {
+  LuArrowLeft as ArrowLeft,
+  LuGitMerge as GitMerge,
+  LuPencil as Pencil,
+} from "react-icons/lu";
 import { FRONTEND_ROUTES } from "@/constants/routes";
+import { UserRole } from "@/constants/enums";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import type { CustomerType } from "@/types";
 import { useCustomerDetail } from "./hooks/useCustomerDetail";
@@ -11,6 +17,7 @@ import { CustomerKpiStrip } from "./components/CustomerKpiStrip";
 import { CustomerIdentityCard } from "./components/CustomerIdentityCard";
 import { CustomerManageCard } from "./components/CustomerManageCard";
 import { CustomerEditWalkInModal } from "./components/CustomerEditWalkInModal";
+import { CustomerMergeModal } from "./components/CustomerMergeModal";
 import { CustomerRecentActivity } from "./components/CustomerRecentActivity";
 
 const TYPE_LABEL: Record<CustomerType, string> = {
@@ -22,7 +29,10 @@ const TYPE_LABEL: Record<CustomerType, string> = {
 export function CustomerDetailPage() {
   const { key = "" } = useParams();
   const { data, isLoading, isError } = useCustomerDetail(key);
+  const { user } = useAuth();
+  const isAdmin = user?.role === UserRole.ADMIN;
   const [editOpen, setEditOpen] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
 
   // A pure single walk-in (loyalty only, no registered account) can have its
   // name/phone edited via the loyalty module.
@@ -33,6 +43,13 @@ export function CustomerDetailPage() {
     data.ids.loyaltyIds.length === 1
       ? data.ids.loyaltyIds[0]
       : null;
+
+  // A non-registered customer (walk-in/khata) can be merged into a user.
+  const canMerge = Boolean(
+    data &&
+      data.ids.userIds.length === 0 &&
+      data.ids.loyaltyIds.length + data.ids.creditIds.length > 0,
+  );
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -79,15 +96,27 @@ export function CustomerDetailPage() {
             >
               {data.status === "blocked" ? "Blocked" : "Active"}
             </span>
-            {walkInId && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setEditOpen(true)}
-                className="ml-auto"
-              >
-                <Pencil size={13} /> Edit details
-              </Button>
+            {(walkInId || (isAdmin && canMerge)) && (
+              <div className="ml-auto flex gap-2">
+                {walkInId && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setEditOpen(true)}
+                  >
+                    <Pencil size={13} /> Edit details
+                  </Button>
+                )}
+                {isAdmin && canMerge && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setMergeOpen(true)}
+                  >
+                    <GitMerge size={13} /> Merge
+                  </Button>
+                )}
+              </div>
             )}
           </header>
 
@@ -97,6 +126,13 @@ export function CustomerDetailPage() {
               onClose={() => setEditOpen(false)}
               profile={data}
               loyaltyId={walkInId}
+            />
+          )}
+          {isAdmin && canMerge && (
+            <CustomerMergeModal
+              isOpen={mergeOpen}
+              onClose={() => setMergeOpen(false)}
+              source={data}
             />
           )}
 

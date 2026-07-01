@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -14,6 +15,7 @@ import { ListCustomersQueryDto } from '@/modules/customers/dto/list-customers-qu
 import { UpdateCustomerProfileDto } from '@/modules/customers/dto/update-customer-profile.dto';
 import { computeCustomerAnalytics } from '@/modules/customers/lib/customer-analytics.util';
 import { CustomerProfilesRepository } from '@/modules/customers/customer-profiles.repository';
+import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import {
   CustomersRepository,
   type CustomerRosterRow,
@@ -31,6 +33,7 @@ export class CustomersService {
   constructor(
     private readonly repo: CustomersRepository,
     private readonly profiles: CustomerProfilesRepository,
+    private readonly loyalty: LoyaltyService,
   ) {}
 
   async list(
@@ -157,6 +160,54 @@ export class CustomersService {
     const scope = this.resolveBranchScope(actor, branchId);
     const rows = await this.repo.analyticsRows(scope);
     return computeCustomerAnalytics(rows, new Date());
+  }
+
+  /**
+   * Full-reassign merge: fold a walk-in / khata stitched customer (path key)
+   * into an existing registered user. Walk-in wallets + their sales/ledger move
+   * via the transactional, audited loyalty merge; khata accounts are re-pointed
+   * onto the user. Admin-only and irreversible.
+   */
+  async merge(
+    sourceKey: string,
+    targetKey: string,
+    actor: AuthUser,
+  ): Promise<CustomerProfileDetail> {
+    if (actor.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Only admins can merge customers');
+    }
+    if (sourceKey === targetKey) {
+      throw new BadRequestException('Cannot merge a customer into itself');
+    }
+    const source = await this.repo.findIdentityByKey(sourceKey, null);
+    if (!source) {
+      throw new NotFoundException('Customer not found');
+    }
+    if (source.userIds.length > 0) {
+      throw new BadRequestException(
+        'This customer is already a registered account and cannot be merged',
+      );
+    }
+    if (source.loyaltyIds.length + source.creditIds.length === 0) {
+      throw new BadRequestException('This customer has nothing to merge');
+    }
+    const target = await this.repo.findIdentityByKey(targetKey, null);
+    if (!target || target.userIds.length === 0) {
+      throw new BadRequestException(
+        'Merge target must be a registered customer',
+      );
+    }
+    const targetUserId = target.userIds[0];
+
+    for (const loyaltyId of source.loyaltyIds) {
+      await this.loyalty.mergeWalkIn(targetUserId, loyaltyId);
+    }
+    await this.repo.reassignCreditAccountsToUser(
+      source.creditIds,
+      targetUserId,
+    );
+
+    return this.getProfile(targetKey, actor);
   }
 
   private toSummary(

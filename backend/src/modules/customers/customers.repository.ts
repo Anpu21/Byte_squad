@@ -164,11 +164,18 @@ export class CustomersRepository {
         LEFT JOIN loyalty_accounts la ON la.loyalty_customer_id = lc.id
         UNION ALL
         SELECT
-          COALESCE(${this.phoneKey('ca.phone')}, 'ca:' || ca.id::text),
+          COALESCE(
+            CASE WHEN ca.user_id IS NOT NULL
+              THEN COALESCE(${this.phoneKey('cu.phone')}, 'u:' || ca.user_id::text)
+            END,
+            ${this.phoneKey('ca.phone')},
+            'ca:' || ca.id::text
+          ),
           'khata', ca.id::text,
           ca.holder_name, NULL, ca.phone, ca.branch_id, ca.current_balance, 0,
           ca.created_at
         FROM credit_accounts ca
+        LEFT JOIN users cu ON cu.id = ca.user_id
       ),
       grouped AS (
         SELECT
@@ -448,5 +455,18 @@ export class CustomersRepository {
       lastSeenAt: r.lastSeenAt ? new Date(r.lastSeenAt).toISOString() : null,
       createdAt: new Date(r.createdAt).toISOString(),
     }));
+  }
+
+  /** Re-point khata (credit) accounts onto a registered user during a merge. */
+  async reassignCreditAccountsToUser(
+    creditIds: string[],
+    userId: string,
+  ): Promise<void> {
+    if (creditIds.length === 0) return;
+    await this.dataSource.query(
+      `UPDATE credit_accounts SET user_id = $2, loyalty_customer_id = NULL
+       WHERE id = ANY($1::uuid[])`,
+      [creditIds, userId],
+    );
   }
 }

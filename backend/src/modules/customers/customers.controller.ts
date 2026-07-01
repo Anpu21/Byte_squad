@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { CustomersService } from '@/modules/customers/customers.service';
 import { ListCustomersQueryDto } from '@/modules/customers/dto/list-customers-query.dto';
 import { UpdateCustomerProfileDto } from '@/modules/customers/dto/update-customer-profile.dto';
 import { CustomerAnalyticsQueryDto } from '@/modules/customers/dto/customer-analytics-query.dto';
+import { MergeCustomerDto } from '@/modules/customers/dto/merge-customer.dto';
 import type {
   CustomerAnalytics,
   CustomerProfileDetail,
@@ -69,5 +71,15 @@ export class CustomersController {
     @CurrentUser() actor: AuthUser,
   ): Promise<CustomerProfileDetail> {
     return this.service.updateProfile(key, dto, actor);
+  }
+
+  // Full-reassign merge of a walk-in/khata customer into a registered user.
+  @Post(APP_ROUTES.CUSTOMERS.MERGE)
+  merge(
+    @Param('key') key: string,
+    @Body() dto: MergeCustomerDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<CustomerProfileDetail> {
+    return this.service.merge(key, dto.targetKey, actor);
   }
 }

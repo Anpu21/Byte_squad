@@ -53,4 +53,16 @@ export const customerService = {
   ): Promise<void> => {
     await api.patch(`/loyalty/customers/${loyaltyId}`, payload)
   },
+
+  // Full-reassign merge: fold a walk-in/khata customer into a registered one.
+  merge: async (
+    sourceKey: string,
+    targetKey: string,
+  ): Promise<ICustomerProfileDetail> => {
+    const response = await api.post<IApiResponse<ICustomerProfileDetail>>(
+      `/customers/${encodeURIComponent(sourceKey)}/merge`,
+      { targetKey },
+    )
+    return response.data.data
+  },
 }

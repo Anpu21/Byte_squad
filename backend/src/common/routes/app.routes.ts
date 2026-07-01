@@ -105,6 +105,7 @@ export const APP_ROUTES = {
     BASE: `${API_PREFIX}/customers`,
     ANALYTICS: 'analytics',
     BY_KEY: ':key',
+    MERGE: ':key/merge',
     TAGS: ':key/tags',
     NOTES: ':key/notes',
     SEGMENT: ':key/segment',
