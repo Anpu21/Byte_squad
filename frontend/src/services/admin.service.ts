@@ -13,6 +13,8 @@ import type {
   IBranchAnalyticsComparisonRequest,
   IBranchAnalyticsComparisonResponse,
   IBranchAnalyticsBranchOption,
+  IBranchAnalyticsProductsRequest,
+  IBranchAnalyticsProductsResponse,
   IInventoryMatrixResponse,
   IInventoryMatrixParams,
 } from '@/types'
@@ -71,6 +73,15 @@ export const adminService = {
     const response = await api.get<
       IApiResponse<IBranchAnalyticsBranchOption[]>
     >('/branch-analytics/branches')
+    return response.data.data
+  },
+
+  compareBranchAnalyticsProducts: async (
+    payload: IBranchAnalyticsProductsRequest,
+  ): Promise<IBranchAnalyticsProductsResponse> => {
+    const response = await api.post<
+      IApiResponse<IBranchAnalyticsProductsResponse>
+    >('/branch-analytics/products', payload)
     return response.data.data
   },
 
