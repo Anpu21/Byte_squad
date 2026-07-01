@@ -72,6 +72,9 @@ export function PosLoyaltyHitBody({
                     </span>
                 </div>
             </div>
+            <p className="text-[10px] text-text-3">
+                Member attached — points earn automatically at checkout.
+            </p>
         </div>
     );
 }

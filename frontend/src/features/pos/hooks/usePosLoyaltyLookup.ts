@@ -2,27 +2,16 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { loyaltyService } from '@/services/loyalty.service';
 import { queryKeys } from '@/lib/queryKeys';
+import { isValidSriLankaPhone } from '@/lib/phone';
 import type { ILoyaltyLookupResult } from '@/types';
 
 /**
- * True once the typed phone is a complete Sri Lankan number the backend can
- * normalize (`0XXXXXXXXX` or `94XXXXXXXXX`). Gating the lookup on completeness
- * stops us firing doomed requests — and flashing the enrol form — while the
- * cashier is still mid-type.
- */
-function isLookupReady(phone: string): boolean {
-    const digits = phone.replace(/\D/g, '');
-    return (
-        (digits.length === 10 && digits.startsWith('0')) ||
-        (digits.length === 11 && digits.startsWith('94'))
-    );
-}
-
-/**
- * POS-side phone lookup for the loyalty card. Returns `null` data when no
- * loyalty owner matches (HTTP 404) — and also when the number is rejected as
- * unnormalizable (HTTP 400) — so the card switches cleanly to the inline enrol
- * form instead of getting stuck on a blocking error. Any other failure stays an
+ * POS-side phone lookup for the loyalty card. Runs only once the typed phone is
+ * a complete, valid Sri Lankan number (via `isValidSriLankaPhone`) — so we
+ * never fire a doomed request or flash the enrol form mid-type. Returns `null`
+ * data on a 404 (no member with that phone) and on a 400 (rejected as
+ * unnormalizable), so the card switches cleanly to the inline enrol form
+ * instead of getting stuck on a blocking error. Any other failure stays an
  * `isError` result for the caller to handle.
  *
  * `staleTime` is short so a mid-checkout enrol (see `usePosLoyaltyEnroll`)
@@ -45,7 +34,7 @@ export function usePosLoyaltyLookup(phone: string) {
                 throw err;
             }
         },
-        enabled: isLookupReady(phone),
+        enabled: isValidSriLankaPhone(phone),
         staleTime: 10_000,
         retry: false,
     });

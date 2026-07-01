@@ -4,6 +4,8 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
 export interface IPosLoyaltyEnrollFormProps {
+    /** The normalised phone being enrolled, shown read-only for confirmation. */
+    phone: string;
     onSubmit: (firstName: string, lastName: string | undefined) => void;
     isSubmitting: boolean;
     /** Backend error surfaced from the enrol mutation, if any. */
@@ -16,11 +18,12 @@ export interface IPosLoyaltyEnrollFormProps {
  * (optional) so the cashier doesn't have to leave the POS to attach
  * a walk-in to the in-progress sale.
  *
- * The form is local-stateful only — the parent supplies the phone via
- * the mutation hook (`usePosLoyaltyEnroll` is keyed on it), so we
- * never duplicate the phone here.
+ * The form is local-stateful for the names only — the parent owns the
+ * phone (`usePosLoyaltyEnroll` is keyed on it); we show it read-only
+ * here purely as confirmation of who is being enrolled.
  */
 export function PosLoyaltyEnrollForm({
+    phone,
     onSubmit,
     isSubmitting,
     error,
@@ -48,8 +51,9 @@ export function PosLoyaltyEnrollForm({
             aria-label="Enrol walk-in customer"
         >
             <p className="text-[11px] text-text-2">
-                No loyalty member with that phone — enrol them now to
-                start earning points on this sale.
+                No loyalty member with{' '}
+                <span className="font-medium text-text-1">{phone}</span> — enrol
+                them now to start earning points on this sale.
             </p>
             <div className="grid grid-cols-2 gap-2">
                 <Input

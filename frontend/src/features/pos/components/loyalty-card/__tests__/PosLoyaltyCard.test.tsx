@@ -220,4 +220,17 @@ describe('PosLoyaltyCard', () => {
         await userEvent.click(submit);
         await screen.findByText('Phone already registered');
     });
+
+    it('shows a muted SL-phone hint for an invalid number and skips lookup', async () => {
+        renderHost();
+        const phoneInput = screen.getByLabelText(/Loyalty member phone/i);
+        await userEvent.type(phoneInput, '12');
+
+        await screen.findByText(/Sri Lanka phone number/i);
+        expect(lookupMock).not.toHaveBeenCalled();
+        // No enrol form for an incomplete number.
+        expect(
+            screen.queryByRole('form', { name: /enrol walk-in customer/i }),
+        ).not.toBeInTheDocument();
+    });
 });
