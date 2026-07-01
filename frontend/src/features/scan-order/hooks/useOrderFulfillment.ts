@@ -11,28 +11,17 @@ interface UseOrderFulfillmentOptions {
     order: ICustomerOrder | null;
     /** Called after a successful pickup confirmation. */
     onFulfilled?: () => void;
-    /** Called after the order is marked not-collected. */
-    onNotCollected?: () => void;
-}
-
-function errorMessage(err: unknown, fallback: string): string {
-    if (axios.isAxiosError(err)) {
-        const data = err.response?.data as { message?: string } | undefined;
-        return data?.message ?? fallback;
-    }
-    return fallback;
 }
 
 /**
- * Pickup-order fulfillment: derives the collectable/payment flags for the
- * selected order and runs the fulfill / not-collected calls. Host-agnostic —
- * the standalone Scan-Pickup view and the POS Pickup queue both drive it with
- * whichever order is currently in focus (scanned, looked up, or row-selected).
+ * Pickup-order collection: derives the collectable/payment flags for the
+ * selected order and runs the fulfill call. Host-agnostic — the standalone
+ * Scan-Pickup view and the POS Pickup queue both drive it with whichever order
+ * is in focus (scanned, looked up, or row-selected).
  */
 export function useOrderFulfillment({
     order,
     onFulfilled,
-    onNotCollected,
 }: UseOrderFulfillmentOptions) {
     const [paymentMethod, setPaymentMethod] = useState<Payment>('cash');
     const [submitting, setSubmitting] = useState(false);
@@ -66,25 +55,16 @@ export function useOrderFulfillment({
             );
             onFulfilled?.();
         } catch (err: unknown) {
-            toast.error(errorMessage(err, 'Could not complete pickup'));
+            const fallback = 'Could not complete pickup';
+            const message = axios.isAxiosError(err)
+                ? ((err.response?.data as { message?: string } | undefined)
+                      ?.message ?? fallback)
+                : fallback;
+            toast.error(message);
         } finally {
             setSubmitting(false);
         }
     }, [order, requiresPayment, paymentMethod, onFulfilled]);
-
-    const handleNotCollected = useCallback(async () => {
-        if (!order) return;
-        setSubmitting(true);
-        try {
-            await customerOrdersService.markNotCollected(order.id);
-            toast.success('Marked not collected');
-            onNotCollected?.();
-        } catch (err: unknown) {
-            toast.error(errorMessage(err, 'Could not update the order'));
-        } finally {
-            setSubmitting(false);
-        }
-    }, [order, onNotCollected]);
 
     return {
         paymentMethod,
@@ -94,6 +74,5 @@ export function useOrderFulfillment({
         requiresPayment,
         isOnlineBlocked,
         handleConfirm,
-        handleNotCollected,
     };
 }

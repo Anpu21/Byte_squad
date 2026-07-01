@@ -11,12 +11,10 @@ vi.mock('react-hot-toast', () => ({
 vi.mock('@/services/customer-orders.service', () => ({
     customerOrdersService: {
         fulfill: vi.fn(),
-        markNotCollected: vi.fn(),
     },
 }));
 
 const fulfillMock = vi.mocked(customerOrdersService.fulfill);
-const markNotCollectedMock = vi.mocked(customerOrdersService.markNotCollected);
 
 function makeOrder(overrides: Partial<ICustomerOrder> = {}): ICustomerOrder {
     return {
@@ -48,9 +46,6 @@ describe('useOrderFulfillment', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         fulfillMock.mockResolvedValue({ order: makeOrder(), transaction: null });
-        markNotCollectedMock.mockResolvedValue(
-            makeOrder({ status: 'not_collected' }),
-        );
     });
 
     it('flags a manual unpaid order as fulfillable and payable', () => {
@@ -110,18 +105,6 @@ describe('useOrderFulfillment', () => {
             }),
         );
         expect(result.current.isFulfillable).toBe(false);
-    });
-
-    it('marks an order not-collected', async () => {
-        const onNotCollected = vi.fn();
-        const { result } = renderHook(() =>
-            useOrderFulfillment({ order: makeOrder(), onNotCollected }),
-        );
-        await act(async () => {
-            await result.current.handleNotCollected();
-        });
-        expect(markNotCollectedMock).toHaveBeenCalledWith('o-1');
-        expect(onNotCollected).toHaveBeenCalledOnce();
     });
 
     it('does nothing when no order is selected', async () => {

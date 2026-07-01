@@ -1,3 +1,2 @@
+/** Tender type for a pickup-order collection. Backend accepts cash only today. */
 export type Payment = 'cash' | 'card' | 'mobile';
-
-export const PAYMENT_METHODS: Payment[] = ['cash'];
