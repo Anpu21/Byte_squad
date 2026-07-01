@@ -11,7 +11,6 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
 import { UsersService } from '@users/users.service';
 import { LoginDto } from '@auth/dto/login.dto';
 import { SignupDto } from '@auth/dto/signup.dto';
@@ -21,37 +20,21 @@ import { ChangePasswordDto } from '@auth/dto/change-password.dto';
 import { ForgotPasswordDto } from '@auth/dto/forgot-password.dto';
 import { ResetPasswordDto } from '@auth/dto/reset-password.dto';
 import { UserRole } from '@common/enums/user-roles.enums';
-import { User } from '@users/entities/user.entity';
 import { EmailService } from '@/modules/email/email.service';
 import {
   RefreshTokenService,
   RefreshTokenMeta,
 } from '@auth/refresh-token.service';
+import {
+  OTP_EXPIRES_IN_MINUTES,
+  buildAuthResult,
+  buildJwtPayload,
+  generateOtp,
+  otpExpiresAt,
+  type AuthResult,
+} from '@auth/lib/auth-tokens.lib';
 
-const OTP_EXPIRES_IN_MINUTES = 10;
-
-interface JwtPayload {
-  sub: string;
-  email: string;
-  role: UserRole;
-  branchId: string | null;
-}
-
-export interface AuthResult {
-  accessToken: string;
-  refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: UserRole;
-    branchId: string | null;
-    isFirstLogin: boolean;
-    isVerified: boolean;
-    language: string;
-  };
-}
+export type { AuthResult } from '@auth/lib/auth-tokens.lib';
 
 @Injectable()
 export class AuthService {
@@ -81,10 +64,8 @@ export class AuthService {
     }
 
     const passwordHash = await this.hashPassword(dto.password);
-    const otpCode = this.generateOtp();
-    const otpExpiresAt = new Date(
-      Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
-    );
+    const otpCode = generateOtp();
+    const otpExpiry = otpExpiresAt();
 
     const saved = await this.usersService.createCustomerAccount({
       email: dto.email.toLowerCase(),
@@ -93,7 +74,7 @@ export class AuthService {
       lastName: dto.lastName,
       phone: dto.phone ?? null,
       otpCode,
-      otpExpiresAt,
+      otpExpiresAt: otpExpiry,
     });
     this.logger.log(`Customer signup: ${saved.email}`);
 
@@ -175,11 +156,9 @@ export class AuthService {
       throw new BadRequestException('Account already verified');
     }
 
-    const otpCode = this.generateOtp();
-    const otpExpiresAt = new Date(
-      Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
-    );
-    await this.usersService.setOtp(user.id, otpCode, otpExpiresAt);
+    const otpCode = generateOtp();
+    const otpExpiry = otpExpiresAt();
+    await this.usersService.setOtp(user.id, otpCode, otpExpiry);
 
     if (!this.isProduction()) {
       this.logger.warn(
@@ -217,10 +196,6 @@ export class AuthService {
     }
 
     return { message: 'Verification code sent' };
-  }
-
-  private generateOtp(): string {
-    return crypto.randomInt(100000, 1000000).toString();
   }
 
   async login(
@@ -278,7 +253,7 @@ export class AuthService {
 
       await this.usersService.touchLastLogin(user.id);
 
-      return this.buildAuthResult(accessToken, refreshToken, user);
+      return buildAuthResult(accessToken, refreshToken, user);
     } catch (error: unknown) {
       if (
         error instanceof UnauthorizedException ||
@@ -315,7 +290,7 @@ export class AuthService {
 
     const accessToken = await this.signAccessToken(user);
 
-    return this.buildAuthResult(accessToken, refreshToken, user);
+    return buildAuthResult(accessToken, refreshToken, user);
   }
 
   /** Revoke the presented refresh token's family (logout). */
@@ -330,35 +305,7 @@ export class AuthService {
     role: UserRole;
     branchId: string | null;
   }): Promise<string> {
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      branchId: user.branchId,
-    };
-    return this.jwtService.signAsync(payload);
-  }
-
-  private buildAuthResult(
-    accessToken: string,
-    refreshToken: string,
-    user: User,
-  ): AuthResult {
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-        branchId: user.branchId,
-        isFirstLogin: user.isFirstLogin,
-        isVerified: user.isVerified,
-        language: user.language,
-      },
-    };
+    return this.jwtService.signAsync(buildJwtPayload(user));
   }
 
   async requestPasswordReset(
@@ -378,11 +325,9 @@ export class AuthService {
       return genericResponse;
     }
 
-    const otpCode = this.generateOtp();
-    const otpExpiresAt = new Date(
-      Date.now() + OTP_EXPIRES_IN_MINUTES * 60 * 1000,
-    );
-    await this.usersService.setOtp(user.id, otpCode, otpExpiresAt);
+    const otpCode = generateOtp();
+    const otpExpiry = otpExpiresAt();
+    await this.usersService.setOtp(user.id, otpCode, otpExpiry);
 
     const isProd = this.isProduction();
     if (!isProd) {
