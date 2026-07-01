@@ -1,6 +1,7 @@
 import api from './api'
 import type {
   IApiResponse,
+  ICustomerAnalytics,
   ICustomerProfileDetail,
   ICustomerProfileUpdate,
   ICustomersListRequest,
@@ -32,6 +33,14 @@ export const customerService = {
     const response = await api.patch<IApiResponse<ICustomerProfileDetail>>(
       `/customers/${encodeURIComponent(key)}`,
       payload,
+    )
+    return response.data.data
+  },
+
+  analytics: async (branchId?: string): Promise<ICustomerAnalytics> => {
+    const response = await api.get<IApiResponse<ICustomerAnalytics>>(
+      '/customers/analytics',
+      { params: branchId ? { branchId } : undefined },
     )
     return response.data.data
   },

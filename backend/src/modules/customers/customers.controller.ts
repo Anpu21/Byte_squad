@@ -10,7 +10,9 @@ import {
 import { CustomersService } from '@/modules/customers/customers.service';
 import { ListCustomersQueryDto } from '@/modules/customers/dto/list-customers-query.dto';
 import { UpdateCustomerProfileDto } from '@/modules/customers/dto/update-customer-profile.dto';
+import { CustomerAnalyticsQueryDto } from '@/modules/customers/dto/customer-analytics-query.dto';
 import type {
+  CustomerAnalytics,
   CustomerProfileDetail,
   CustomerSummary,
 } from '@/modules/customers/types';
@@ -37,6 +39,16 @@ export class CustomersController {
     @CurrentUser() actor: AuthUser,
   ): Promise<IPaginated<CustomerSummary>> {
     return this.service.list(query, actor);
+  }
+
+  // Cross-customer analytics (RFM / churn / LTV). MUST be declared before the
+  // `:key` route so 'analytics' isn't swallowed as a customer key.
+  @Get(APP_ROUTES.CUSTOMERS.ANALYTICS)
+  analytics(
+    @Query() query: CustomerAnalyticsQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<CustomerAnalytics> {
+    return this.service.getAnalytics(actor, query.branchId);
   }
 
   // Composed 360 profile for one stitched customer (`key` = normalized phone or

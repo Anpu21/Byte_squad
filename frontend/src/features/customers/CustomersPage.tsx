@@ -1,4 +1,5 @@
 import { useCustomersPage } from "./hooks/useCustomersPage";
+import { CustomersViewTabs } from "./components/CustomersViewTabs";
 import { CustomersFilters } from "./components/CustomersFilters";
 import { CustomersTable } from "./components/CustomersTable";
 
@@ -21,6 +22,8 @@ export function CustomersPage() {
           place — {p.total.toLocaleString()} total.
         </p>
       </header>
+
+      <CustomersViewTabs />
 
       <CustomersFilters
         isAdmin={p.isAdmin}

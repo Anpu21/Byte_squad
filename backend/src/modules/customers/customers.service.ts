@@ -12,6 +12,7 @@ import { UserRole } from '@common/enums/user-roles.enums';
 import type { AuthUser } from '@common/types/auth-user.type';
 import { ListCustomersQueryDto } from '@/modules/customers/dto/list-customers-query.dto';
 import { UpdateCustomerProfileDto } from '@/modules/customers/dto/update-customer-profile.dto';
+import { computeCustomerAnalytics } from '@/modules/customers/lib/customer-analytics.util';
 import { CustomerProfilesRepository } from '@/modules/customers/customer-profiles.repository';
 import {
   CustomersRepository,
@@ -20,6 +21,7 @@ import {
   type SalesRollupMaps,
 } from '@/modules/customers/customers.repository';
 import type {
+  CustomerAnalytics,
   CustomerProfileDetail,
   CustomerSummary,
 } from '@/modules/customers/types';
@@ -145,6 +147,16 @@ export class CustomersService {
     if (dto.status !== undefined) profile.status = dto.status;
     await this.profiles.save(profile);
     return this.getProfile(key, actor);
+  }
+
+  /** Cross-customer analytics: RFM segments, churn buckets, LTV leaderboard. */
+  async getAnalytics(
+    actor: AuthUser,
+    branchId?: string,
+  ): Promise<CustomerAnalytics> {
+    const scope = this.resolveBranchScope(actor, branchId);
+    const rows = await this.repo.analyticsRows(scope);
+    return computeCustomerAnalytics(rows, new Date());
   }
 
   private toSummary(

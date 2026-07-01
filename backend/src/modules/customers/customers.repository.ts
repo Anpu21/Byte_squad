@@ -4,6 +4,7 @@ import { TransactionType } from '@common/enums/transaction.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { CustomerType } from '@/modules/customers/types/customer-type.type';
 import type {
+  CustomerAnalyticsRow,
   CustomerCreditAccountSummary,
   CustomerRecentOrder,
   CustomerRecentSale,
@@ -101,6 +102,15 @@ interface RawRollupRow {
   count: number;
   spend: string | number | null;
   last: Date | string | null;
+}
+
+interface RawAnalyticsRow {
+  customerKey: string;
+  displayName: string;
+  createdAt: Date | string;
+  orders: string | number | null;
+  ltv: string | number | null;
+  lastSeenAt: Date | string | null;
 }
 
 /**
@@ -388,5 +398,55 @@ export class CustomersRepository {
       run('credit_account_id', ids.creditIds),
     ]);
     return { byUser, byLoyalty, byCredit };
+  }
+
+  /**
+   * Per-customer purchase aggregates for the whole in-scope roster (no
+   * pagination — analytics needs the full population). Joins sales to each
+   * stitched identity's source-id arrays; a customer with no sales rows still
+   * appears (LEFT JOIN) so churn/prospect buckets are complete.
+   */
+  async analyticsRows(
+    branchId: string | null,
+  ): Promise<CustomerAnalyticsRow[]> {
+    const rows = await this.dataSource.query<RawAnalyticsRow[]>(
+      `${this.baseCte()},
+       spc AS (
+         SELECT f."customerKey",
+                count(s.id)::int AS orders,
+                COALESCE(sum(s.total), 0) AS ltv,
+                max(s.created_at) AS last_seen
+         FROM final f
+         LEFT JOIN sales s ON s.type = $8 AND s.status <> 'Voided'
+           AND (s.customer_user_id = ANY(f."userIds"::uuid[])
+                OR s.loyalty_customer_id = ANY(f."loyaltyIds"::uuid[])
+                OR s.credit_account_id = ANY(f."creditIds"::uuid[]))
+         GROUP BY f."customerKey"
+       )
+       SELECT f."customerKey", f."displayName", f.created_at AS "createdAt",
+              COALESCE(spc.orders, 0) AS orders,
+              COALESCE(spc.ltv, 0) AS ltv,
+              spc.last_seen AS "lastSeenAt"
+       FROM final f
+       LEFT JOIN spc ON spc."customerKey" = f."customerKey"`,
+      [
+        UserRole.CUSTOMER,
+        branchId,
+        null,
+        'all',
+        null,
+        null,
+        null,
+        TransactionType.SALE,
+      ],
+    );
+    return rows.map((r) => ({
+      customerKey: r.customerKey,
+      displayName: r.displayName,
+      lifetimeSpend: Number(r.ltv ?? 0),
+      ordersCount: Number(r.orders ?? 0),
+      lastSeenAt: r.lastSeenAt ? new Date(r.lastSeenAt).toISOString() : null,
+      createdAt: new Date(r.createdAt).toISOString(),
+    }));
   }
 }
