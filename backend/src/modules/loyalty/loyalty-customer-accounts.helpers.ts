@@ -29,17 +29,23 @@ export function applyLedgerActivityExists(
   const ledgerWhere = conditions.length
     ? ` AND ${conditions.join(' AND ')}`
     : '';
-  qb.andWhere(
-    `EXISTS (
+  const existsClause = `EXISTS (
       SELECT 1 FROM loyalty_ledger_entries le3
       WHERE (
         (le3.user_id IS NOT NULL AND le3.user_id = acc.user_id)
         OR (le3.loyalty_customer_id IS NOT NULL
             AND le3.loyalty_customer_id = acc.loyalty_customer_id)
       )${ledgerWhere}
-    )`,
-    params,
-  );
+    )`;
+
+  // A walk-in whose HOME branch is the filtered branch should appear even with
+  // no ledger activity yet (freshly enrolled) — but only when we are not also
+  // constraining to an "active since" window, which requires real activity.
+  if (opts.branchId && !opts.activeSince) {
+    qb.andWhere(`(lc.branch_id = :branchId OR ${existsClause})`, params);
+  } else {
+    qb.andWhere(existsClause, params);
+  }
 }
 
 /**

@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { LoyaltyService } from './loyalty.service';
 import { LoyaltyRepository } from './loyalty.repository';
 import type { LoyaltyCustomerRow } from './types';
@@ -9,12 +13,23 @@ import { LoyaltySettingsService } from './loyalty-settings.service';
 import { UsersService } from '@users/users.service';
 import { LoyaltyAccount } from './entities/loyalty-account.entity';
 import { LoyaltyCustomer } from './entities/loyalty-customer.entity';
+import { LoyaltyLedgerEntry } from './entities/loyalty-ledger-entry.entity';
 import { LoyaltySettings } from './entities/loyalty-settings.entity';
 import { User } from '@users/entities/user.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
+import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
+import type { AuthUser } from '@common/types/auth-user.type';
 
 const USER_ID = 'user-1';
 const WALK_IN_ID = 'walkin-1';
+const BRANCH_ID = '11111111-1111-1111-1111-111111111111';
+const OTHER_BRANCH_ID = '22222222-2222-2222-2222-222222222222';
+const ACTOR: AuthUser = {
+  id: 'cashier-1',
+  email: 'cashier@ledgerpro.com',
+  role: UserRole.CASHIER,
+  branchId: BRANCH_ID,
+};
 
 function makeUserAccount(
   overrides: Partial<LoyaltyAccount> = {},
@@ -116,6 +131,8 @@ describe('LoyaltyService', () => {
       createAccountForUser: jest.fn(),
       createAccountForLoyaltyCustomer: jest.fn(),
       listCustomerAccounts: jest.fn(),
+      listEntriesByOwner: jest.fn(),
+      hasLedgerAtBranch: jest.fn(),
       mergeWalkInIntoUser: jest.fn(),
     };
     const customersRepoMock: Partial<jest.Mocked<LoyaltyCustomersRepository>> =
@@ -287,16 +304,20 @@ describe('LoyaltyService', () => {
         makeWalkInAccount(),
       );
 
-      const result = await service.enrollWalkInCustomer({
-        phone: '+94771234567',
-        firstName: 'Jane',
-        lastName: 'Doe',
-      });
+      const result = await service.enrollWalkInCustomer(
+        {
+          phone: '+94771234567',
+          firstName: 'Jane',
+          lastName: 'Doe',
+        },
+        ACTOR,
+      );
 
       expect(customersRepo.create).toHaveBeenCalledWith({
         phone: '+94771234567',
         firstName: 'Jane',
         lastName: 'Doe',
+        branchId: BRANCH_ID,
       });
       expect(loyaltyRepo.createAccountForLoyaltyCustomer).toHaveBeenCalledWith(
         WALK_IN_ID,
@@ -318,16 +339,20 @@ describe('LoyaltyService', () => {
         makeWalkInAccount(),
       );
 
-      await service.enrollWalkInCustomer({
-        phone: '+94771234567',
-        firstName: 'Jane',
-        lastName: '   ',
-      });
+      await service.enrollWalkInCustomer(
+        {
+          phone: '+94771234567',
+          firstName: 'Jane',
+          lastName: '   ',
+        },
+        ACTOR,
+      );
 
       expect(customersRepo.create).toHaveBeenCalledWith({
         phone: '+94771234567',
         firstName: 'Jane',
         lastName: null,
+        branchId: BRANCH_ID,
       });
     });
 
@@ -335,10 +360,14 @@ describe('LoyaltyService', () => {
       usersRepo.findByPhone.mockResolvedValue(makeUser());
 
       await expect(
-        service.enrollWalkInCustomer({
-          phone: '+94771234567',
-          firstName: 'Jane',
-        }),
+        service.enrollWalkInCustomer(
+          {
+            phone: '+94771234567',
+            firstName: 'Jane',
+            lastName: 'Doe',
+          },
+          ACTOR,
+        ),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(customersRepo.create).not.toHaveBeenCalled();
     });
@@ -348,22 +377,108 @@ describe('LoyaltyService', () => {
       customersRepo.findByPhone.mockResolvedValue(makeWalkInCustomer());
 
       await expect(
-        service.enrollWalkInCustomer({
-          phone: '+94771234567',
-          firstName: 'Jane',
-        }),
+        service.enrollWalkInCustomer(
+          {
+            phone: '+94771234567',
+            firstName: 'Jane',
+            lastName: 'Doe',
+          },
+          ACTOR,
+        ),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(customersRepo.create).not.toHaveBeenCalled();
     });
 
     it('rejects when the phone does not normalize', async () => {
       await expect(
-        service.enrollWalkInCustomer({
-          phone: 'not-a-phone',
-          firstName: 'Jane',
-        }),
+        service.enrollWalkInCustomer(
+          {
+            phone: 'not-a-phone',
+            firstName: 'Jane',
+            lastName: 'Doe',
+          },
+          ACTOR,
+        ),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(usersRepo.findByPhone).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('listBranchCustomers', () => {
+    it('scopes a cashier to their own branch', async () => {
+      loyaltyRepo.listCustomerAccounts.mockResolvedValue({
+        rows: [],
+        total: 0,
+      });
+
+      await service.listBranchCustomers({}, ACTOR);
+
+      expect(loyaltyRepo.listCustomerAccounts).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: BRANCH_ID }),
+      );
+    });
+
+    it('rejects a cashier who requests another branch', async () => {
+      await expect(
+        service.listBranchCustomers({ branchId: OTHER_BRANCH_ID }, ACTOR),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(loyaltyRepo.listCustomerAccounts).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getMemberHistory', () => {
+    const ledgerRow = {
+      id: 'le-1',
+      type: LoyaltyLedgerEntryType.EARNED,
+      points: 10,
+      description: 'Earned points for order INV-1',
+      metadata: { orderCode: 'INV-1' },
+      createdAt: new Date(),
+    } as unknown as LoyaltyLedgerEntry;
+
+    it('returns the ledger for a walk-in homed at the cashier branch', async () => {
+      loyaltyRepo.findAccountByUser.mockResolvedValue(null);
+      loyaltyRepo.findAccountByLoyaltyCustomer.mockResolvedValue(
+        makeWalkInAccount(),
+      );
+      customersRepo.findById.mockResolvedValue(
+        makeWalkInCustomer({ branchId: BRANCH_ID }),
+      );
+      loyaltyRepo.listEntriesByOwner.mockResolvedValue({
+        rows: [ledgerRow],
+        total: 1,
+      });
+
+      const result = await service.getMemberHistory(WALK_IN_ID, ACTOR, {});
+
+      expect(result.total).toBe(1);
+      expect(result.entries[0]).toEqual(
+        expect.objectContaining({ points: 10, orderCode: 'INV-1' }),
+      );
+    });
+
+    it('rejects when the member is not in the cashier branch', async () => {
+      loyaltyRepo.findAccountByUser.mockResolvedValue(null);
+      loyaltyRepo.findAccountByLoyaltyCustomer.mockResolvedValue(
+        makeWalkInAccount(),
+      );
+      customersRepo.findById.mockResolvedValue(
+        makeWalkInCustomer({ branchId: OTHER_BRANCH_ID }),
+      );
+      loyaltyRepo.hasLedgerAtBranch.mockResolvedValue(false);
+
+      await expect(
+        service.getMemberHistory(WALK_IN_ID, ACTOR, {}),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('404s when the account does not exist', async () => {
+      loyaltyRepo.findAccountByUser.mockResolvedValue(null);
+      loyaltyRepo.findAccountByLoyaltyCustomer.mockResolvedValue(null);
+
+      await expect(
+        service.getMemberHistory('missing', ACTOR, {}),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
@@ -419,8 +534,6 @@ describe('LoyaltyService', () => {
   });
 
   describe('listCustomers', () => {
-    const BRANCH_ID = '11111111-1111-1111-1111-111111111111';
-    const OTHER_BRANCH_ID = '22222222-2222-2222-2222-222222222222';
 
     function makeUserRow(
       overrides: Partial<LoyaltyCustomerRow> = {},

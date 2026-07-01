@@ -65,6 +65,7 @@ export const SIDEBAR: NavEntry[] = [
         ],
     },
     { id: 'cashier-store-credit', label: 'nav.storeCredit', path: R.STORE_CREDIT, Icon: NotebookTabs, roles: [CASHIER], group: 'Sales' },
+    { id: 'cashier-loyalty', label: 'nav.customerLoyalty', path: R.CASHIER_LOYALTY, Icon: Sparkles, roles: [CASHIER], group: 'Sales' },
 
     // ── Fulfillment ──
     { id: 'my-deliveries', label: 'nav.myDeliveries', path: R.SHIPMENTS, Icon: Truck, roles: [WORKER], group: 'Fulfillment' },

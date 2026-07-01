@@ -12,6 +12,11 @@ import {
     extractEnrollError,
     sanitisePhone,
 } from './pos-loyalty-card.helpers';
+import {
+    isValidSriLankaPhone,
+    normalizeSriLankaPhone,
+    SRI_LANKA_PHONE_ERROR,
+} from '@/lib/phone';
 
 const DEBOUNCE_MS = 350;
 
@@ -75,6 +80,14 @@ export function PosLoyaltyCard({
         debouncedPhone.length > 0 &&
         lookup.data === null &&
         !lookup.isFetching;
+    // Typed something that isn't a valid SL number yet — nudge, don't error.
+    const showInvalid =
+        !loyaltyOwner &&
+        debouncedPhone.length > 0 &&
+        !isValidSriLankaPhone(debouncedPhone) &&
+        !isSearching;
+    const enrolPhone =
+        normalizeSriLankaPhone(debouncedPhone) ?? debouncedPhone;
 
     return (
         <section
@@ -120,6 +133,12 @@ export function PosLoyaltyCard({
                 />
             )}
 
+            {showInvalid ? (
+                <p className="text-[11px] text-text-3">
+                    {SRI_LANKA_PHONE_ERROR}
+                </p>
+            ) : null}
+
             {!loyaltyOwner && lookup.isError ? (
                 <p role="alert" className="text-[11px] text-danger">
                     Could not check loyalty membership. Try again.
@@ -128,6 +147,7 @@ export function PosLoyaltyCard({
 
             {showMiss ? (
                 <PosLoyaltyEnrollForm
+                    phone={enrolPhone}
                     onSubmit={handleEnrol}
                     isSubmitting={enroll.isPending}
                     error={extractEnrollError(enroll.error)}

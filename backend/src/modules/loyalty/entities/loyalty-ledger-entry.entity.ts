@@ -3,11 +3,8 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  JoinColumn,
-  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { CustomerOrder } from '@/modules/customer-orders/entities/customer-order.entity';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 
 /**
@@ -41,12 +38,12 @@ export class LoyaltyLedgerEntry {
   @Column({ type: 'uuid', name: 'branch_id', nullable: true })
   branchId!: string | null;
 
+  // Polymorphic reference: a POS `sales` id OR an online `customer_orders`
+  // id. Intentionally NOT a foreign key (the source table varies by sale
+  // channel) — the human-readable order/invoice code is denormalized into
+  // `metadata.orderCode` for history display.
   @Column({ type: 'uuid', name: 'order_id', nullable: true })
   orderId!: string | null;
-
-  @ManyToOne(() => CustomerOrder, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'order_id' })
-  order!: CustomerOrder | null;
 
   @Column({
     type: 'enum',

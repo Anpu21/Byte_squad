@@ -16,7 +16,7 @@ services:
       - .env
     environment:
       - VITE_API_URL=${VITE_API_URL}
-      - VITE_SOCKET_URL=${VITE_SOCKET_URL:-http://localhost:3001}
+      - VITE_SOCKET_URL=${VITE_SOCKET_URL:-http://localhost:4001}
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
       - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
     depends_on:
@@ -46,8 +46,15 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_SYNC=${DB_SYNC}
       - DB_LOGGING=${DB_LOGGING}
-      - JWT_SECRET=${JWT_SECRET}
+      # RS256 access-token signing (JWKS). Production REQUIRES JWT_PRIVATE_KEY
+      # (raw PEM or base64) + JWT_KEY_ID; JWT_PUBLIC_KEY is derived if unset.
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
+      - JWT_KEY_ID=${JWT_KEY_ID}
+      - JWT_ISSUER=${JWT_ISSUER}
+      - JWT_AUDIENCE=${JWT_AUDIENCE}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
       - CORS_ORIGIN=${CORS_ORIGIN}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - MAIL_HOST=${MAIL_HOST}
@@ -118,7 +125,9 @@ services:
       target: development
     container_name: ledgerpro-realtime
     ports:
-      - "${REALTIME_PORT:-3001}:3001"
+      # Host default 4001 to match the frontend's VITE_SOCKET_URL default (and the
+      # WSL REALTIME_PORT=4001 override); the container always listens on 3001.
+      - "${REALTIME_PORT:-4001}:3001"
     volumes:
       - ../ledgerpro-realtime/src:/app/src
       - ../ledgerpro-realtime/tsconfig-paths-bootstrap.js:/app/tsconfig-paths-bootstrap.js
@@ -129,10 +138,10 @@ services:
       - CORS_ORIGIN=${CORS_ORIGIN:-*}
       - REDIS_URL=redis://redis:6379
       - REALTIME_REDIS_CHANNEL=ledgerpro:realtime
-      - JWKS_URI=http://backend:3000/.well-known/jwks.json
+      - JWKS_URI=http://backend:4000/.well-known/jwks.json
       - JWT_ISSUER=ledgerpro-backend
       - JWT_AUDIENCE=ledgerpro-api
-      - BACKEND_BASE_URL=http://backend:3000
+      - BACKEND_BASE_URL=http://backend:4000
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USERNAME=${DB_USERNAME}

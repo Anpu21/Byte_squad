@@ -4,7 +4,12 @@ import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { usePosCreditEnroll } from '@/features/pos/hooks/usePosCreditEnroll';
-import { extractCreditError, sanitisePhone } from './pos-credit-card.helpers';
+import { extractCreditError } from './pos-credit-card.helpers';
+import {
+  isValidSriLankaPhone,
+  normalizeSriLankaPhone,
+  SRI_LANKA_PHONE_ERROR,
+} from '@/lib/phone';
 
 export interface IPosCreditEnrollFormProps {
   defaultHolderName: string;
@@ -30,19 +35,19 @@ export function PosCreditEnrollForm({
   const [nic, setNic] = useState('');
   const [requestedLimit, setRequestedLimit] = useState('');
 
-  const cleanPhone = sanitisePhone(phone);
+  const phoneValid = isValidSriLankaPhone(phone);
+  const showPhoneError = phone.trim().length > 0 && !phoneValid;
   const canSubmit =
-    holderName.trim().length >= 2 &&
-    cleanPhone.length >= 7 &&
-    !enroll.isPending;
+    holderName.trim().length >= 2 && phoneValid && !enroll.isPending;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!canSubmit) return;
+    const normalizedPhone = normalizeSriLankaPhone(phone);
+    if (!canSubmit || !normalizedPhone) return;
     try {
       await enroll.mutateAsync({
         holderName: holderName.trim(),
-        phone: cleanPhone,
+        phone: normalizedPhone,
         nic: nic.trim() || undefined,
         requestedCreditLimit: requestedLimit
           ? Number(requestedLimit)
@@ -90,6 +95,9 @@ export function PosCreditEnrollForm({
           placeholder="Optional"
         />
       </div>
+      {showPhoneError ? (
+        <p className="text-[11px] text-text-3">{SRI_LANKA_PHONE_ERROR}</p>
+      ) : null}
       <Input
         type="number"
         min="0"

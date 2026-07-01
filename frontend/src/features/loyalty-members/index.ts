@@ -1,0 +1,1 @@
+export { CashierLoyaltyPage } from './CashierLoyaltyPage';

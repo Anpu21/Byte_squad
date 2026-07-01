@@ -61,6 +61,9 @@ export const FRONTEND_ROUTES = {
     // of the admin/manager CREDIT_ACCOUNTS hub)
     STORE_CREDIT: '/store-credit',
 
+    // Cashier-facing loyalty — branch member list + points history + enrol
+    CASHIER_LOYALTY: '/loyalty-members',
+
     // Users
     USER_MANAGEMENT: '/users',
     PROFILE: '/profile',
