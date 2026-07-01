@@ -5,8 +5,12 @@ import { Branch } from '@branches/entities/branch.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
 import { BranchAnalyticsRepository } from './branch-analytics.repository';
+import { BranchAnalyticsProductsRepository } from './branch-analytics-products.repository';
 import { BranchAnalyticsService } from './branch-analytics.service';
-import type { BranchAnalyticsComparisonResponse } from './types';
+import type {
+  BranchAnalyticsComparisonResponse,
+  BranchAnalyticsProductsResponse,
+} from './types';
 
 const ADMIN = {
   id: 'admin-1',
@@ -82,9 +86,24 @@ function makeResponse(): BranchAnalyticsComparisonResponse {
   };
 }
 
+function makeProductsResponse(): BranchAnalyticsProductsResponse {
+  return {
+    items: [],
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+    branches: [],
+    startDate: '2026-06-01T00:00:00.000Z',
+    endDate: '2026-06-03T23:59:59.999Z',
+    sort: 'revenue',
+  };
+}
+
 describe('BranchAnalyticsService', () => {
   let service: BranchAnalyticsService;
   let repo: jest.Mocked<BranchAnalyticsRepository>;
+  let products: jest.Mocked<BranchAnalyticsProductsRepository>;
   let loyaltySettings: jest.Mocked<LoyaltySettingsService>;
 
   beforeEach(async () => {
@@ -92,6 +111,11 @@ describe('BranchAnalyticsService', () => {
       findBranchesByIds: jest.fn(),
       getComparison: jest.fn().mockResolvedValue(makeResponse()),
       listBranches: jest.fn(),
+    };
+    const productsRepoMock: Partial<
+      jest.Mocked<BranchAnalyticsProductsRepository>
+    > = {
+      getProductComparison: jest.fn().mockResolvedValue(makeProductsResponse()),
     };
     const loyaltySettingsMock: Partial<jest.Mocked<LoyaltySettingsService>> = {
       get: jest.fn().mockResolvedValue({
@@ -106,6 +130,10 @@ describe('BranchAnalyticsService', () => {
         BranchAnalyticsService,
         { provide: BranchAnalyticsRepository, useValue: repoMock },
         {
+          provide: BranchAnalyticsProductsRepository,
+          useValue: productsRepoMock,
+        },
+        {
           provide: LoyaltySettingsService,
           useValue: loyaltySettingsMock,
         },
@@ -114,6 +142,7 @@ describe('BranchAnalyticsService', () => {
 
     service = module.get(BranchAnalyticsService);
     repo = module.get(BranchAnalyticsRepository);
+    products = module.get(BranchAnalyticsProductsRepository);
     loyaltySettings = module.get(LoyaltySettingsService);
   });
 
@@ -256,5 +285,85 @@ describe('BranchAnalyticsService', () => {
       { id: 'branch-own', name: 'Main', isActive: true },
       { id: 'branch-peer', name: 'Downtown', isActive: false },
     ]);
+  });
+
+  describe('compareProducts', () => {
+    const RANGE = {
+      startDate: '2026-06-01T00:00:00.000Z',
+      endDate: '2026-06-03T23:59:59.999Z',
+    };
+
+    it('requires admins to provide at least one branch', async () => {
+      await expect(
+        service.compareProducts(ADMIN, { ...RANGE }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(products.getProductComparison).not.toHaveBeenCalled();
+    });
+
+    it('forces the manager own-branch first and passes search/sort/page through', async () => {
+      repo.findBranchesByIds.mockResolvedValue([
+        makeBranch('branch-own', 'Main'),
+        makeBranch('branch-peer', 'Downtown'),
+      ]);
+
+      await service.compareProducts(MANAGER, {
+        ...RANGE,
+        branchIds: ['branch-peer'],
+        search: 'banana',
+        sort: 'quantity',
+        page: 2,
+        limit: 25,
+      });
+
+      expect(repo.findBranchesByIds).toHaveBeenCalledWith([
+        'branch-own',
+        'branch-peer',
+      ]);
+      expect(products.getProductComparison).toHaveBeenCalledWith(
+        expect.objectContaining({
+          branches: [
+            { branchId: 'branch-own', branchName: 'Main' },
+            { branchId: 'branch-peer', branchName: 'Downtown' },
+          ],
+          search: 'banana',
+          sort: 'quantity',
+          page: 2,
+          limit: 25,
+        }),
+      );
+    });
+
+    it('defaults sort to revenue when omitted', async () => {
+      repo.findBranchesByIds.mockResolvedValue([makeBranch('branch-1')]);
+
+      await service.compareProducts(ADMIN, {
+        ...RANGE,
+        branchIds: ['branch-1'],
+      });
+
+      expect(products.getProductComparison).toHaveBeenCalledWith(
+        expect.objectContaining({ sort: 'revenue' }),
+      );
+    });
+
+    it('rejects reversed date ranges', async () => {
+      await expect(
+        service.compareProducts(ADMIN, {
+          branchIds: ['branch-1'],
+          startDate: '2026-06-04T00:00:00.000Z',
+          endDate: '2026-06-03T23:59:59.999Z',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects unknown branch ids', async () => {
+      repo.findBranchesByIds.mockResolvedValue([makeBranch('branch-1')]);
+      await expect(
+        service.compareProducts(ADMIN, {
+          ...RANGE,
+          branchIds: ['branch-1', 'missing'],
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
   });
 });

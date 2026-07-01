@@ -13,6 +13,7 @@ import { SaleItem } from '@pos/entities/sale-item.entity';
 import { User } from '@users/entities/user.entity';
 import { BranchAnalyticsController } from './branch-analytics.controller';
 import { BranchAnalyticsRepository } from './branch-analytics.repository';
+import { BranchAnalyticsProductsRepository } from './branch-analytics-products.repository';
 import { BranchAnalyticsService } from './branch-analytics.service';
 
 @Module({
@@ -32,6 +33,10 @@ import { BranchAnalyticsService } from './branch-analytics.service';
     LoyaltyModule,
   ],
   controllers: [BranchAnalyticsController],
-  providers: [BranchAnalyticsRepository, BranchAnalyticsService],
+  providers: [
+    BranchAnalyticsRepository,
+    BranchAnalyticsProductsRepository,
+    BranchAnalyticsService,
+  ],
 })
 export class BranchAnalyticsModule {}

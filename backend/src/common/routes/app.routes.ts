@@ -231,6 +231,7 @@ export const APP_ROUTES = {
   BRANCH_ANALYTICS: {
     BASE: `${API_PREFIX}/branch-analytics`,
     COMPARISON: 'comparison',
+    PRODUCTS: 'products',
     BRANCHES: 'branches',
   },
 
