@@ -9,6 +9,9 @@ import type {
   BrandProductRow,
   BrandCategoryRow,
   BrandTrendPoint,
+  CategoryBrandRow,
+  CategoryProductRow,
+  CategoryProductSort,
 } from '@/modules/brands/types';
 
 interface BrandAnalyticsParams {
@@ -55,6 +58,39 @@ interface BrandCategoryAggRaw {
   revenue: string | null;
   profit: string | null;
   transactions: string | null;
+}
+
+interface CategoryBrandAggRaw {
+  brandId: string | null;
+  brandName: string | null;
+  color: string | null;
+  units: string | null;
+  revenue: string | null;
+  profit: string | null;
+  transactions: string | null;
+}
+
+interface CategoryProductAggRaw {
+  productId: string;
+  productName: string;
+  brandId: string | null;
+  brandName: string | null;
+  color: string | null;
+  units: string | null;
+  revenue: string | null;
+  profit: string | null;
+}
+
+interface CountRaw {
+  count: string | null;
+}
+
+export interface CategoryProductsPageOptions {
+  brandId?: string;
+  search?: string;
+  sort: CategoryProductSort;
+  limit: number;
+  skip: number;
 }
 
 interface BrandSummaryRaw {
@@ -323,6 +359,155 @@ export class BrandRepository {
       date: r.day,
       revenue: Number(r.revenue ?? 0),
       units: Number(r.units ?? 0),
+    }));
+  }
+
+  // ── Category → brands ("same category, different brands") ───────
+
+  /** Single-row totals for one category across all brands (share denominator). */
+  async categorySummary(
+    params: BrandAnalyticsParams,
+    categoryId: string,
+  ): Promise<BrandSummary> {
+    const raw = await this.salesItemsBase(params)
+      .andWhere('product.category_id = :categoryId', { categoryId })
+      .select(UNITS_EXPR, 'units')
+      .addSelect(REVENUE_EXPR, 'revenue')
+      .addSelect(PROFIT_EXPR, 'profit')
+      .addSelect('COUNT(DISTINCT sale.id)', 'transactions')
+      .getRawOne<BrandSummaryRaw>();
+    return {
+      units: Number(raw?.units ?? 0),
+      revenue: Number(raw?.revenue ?? 0),
+      profit: Number(raw?.profit ?? 0),
+      transactions: Number(raw?.transactions ?? 0),
+    };
+  }
+
+  /**
+   * Every brand selling in one category, ranked by revenue. LEFT JOIN so
+   * products with no brand collapse into a single Unbranded bucket
+   * (brandId=null) — the row set matches `categorySummary`, so they reconcile.
+   */
+  async brandsForCategory(
+    params: BrandAnalyticsParams,
+    categoryId: string,
+  ): Promise<CategoryBrandRow[]> {
+    const rows = await this.salesItemsBase(params)
+      .leftJoin('product.brandRef', 'brand')
+      .andWhere('product.category_id = :categoryId', { categoryId })
+      .select('brand.id', 'brandId')
+      .addSelect('brand.name', 'brandName')
+      .addSelect('brand.color', 'color')
+      .addSelect(UNITS_EXPR, 'units')
+      .addSelect(REVENUE_EXPR, 'revenue')
+      .addSelect(PROFIT_EXPR, 'profit')
+      .addSelect('COUNT(DISTINCT sale.id)', 'transactions')
+      .groupBy('brand.id')
+      .addGroupBy('brand.name')
+      .addGroupBy('brand.color')
+      .orderBy(REVENUE_EXPR, 'DESC')
+      .getRawMany<CategoryBrandAggRaw>();
+    return rows.map((r) => ({
+      brandId: r.brandId ?? null,
+      brandName: r.brandName ?? 'Unbranded',
+      color: r.color,
+      units: Number(r.units ?? 0),
+      revenue: Number(r.revenue ?? 0),
+      profit: Number(r.profit ?? 0),
+      transactions: Number(r.transactions ?? 0),
+      marginPct: 0,
+      sharePct: 0,
+    }));
+  }
+
+  /** Shared roster filter: category, optional brand, optional name search. */
+  private categoryRosterBase(
+    params: BrandAnalyticsParams,
+    categoryId: string,
+    brandId?: string,
+    search?: string,
+  ): SelectQueryBuilder<SaleItem> {
+    const qb = this.salesItemsBase(params).andWhere(
+      'product.category_id = :categoryId',
+      { categoryId },
+    );
+    if (brandId) {
+      qb.andWhere('product.brand_id = :brandId', { brandId });
+    }
+    const term = search?.trim();
+    if (term) {
+      qb.andWhere('product.name ILIKE :search', { search: `%${term}%` });
+    }
+    return qb;
+  }
+
+  /** Count of distinct products in a category (respecting brand/search). */
+  async countCategoryProducts(
+    params: BrandAnalyticsParams,
+    categoryId: string,
+    brandId?: string,
+    search?: string,
+  ): Promise<number> {
+    const raw = await this.categoryRosterBase(
+      params,
+      categoryId,
+      brandId,
+      search,
+    )
+      .select('COUNT(DISTINCT product.id)', 'count')
+      .getRawOne<CountRaw>();
+    return Number(raw?.count ?? 0);
+  }
+
+  /** One page of a category's product roster, brand-tagged, ranked by `sort`. */
+  async categoryProductsPage(
+    params: BrandAnalyticsParams,
+    categoryId: string,
+    opts: CategoryProductsPageOptions,
+  ): Promise<CategoryProductRow[]> {
+    const sortExpr =
+      opts.sort === 'units'
+        ? UNITS_EXPR
+        : opts.sort === 'profit'
+          ? PROFIT_EXPR
+          : REVENUE_EXPR;
+    const rows = await this.categoryRosterBase(
+      params,
+      categoryId,
+      opts.brandId,
+      opts.search,
+    )
+      .leftJoin('product.brandRef', 'brand')
+      .select('product.id', 'productId')
+      .addSelect('product.name', 'productName')
+      .addSelect('brand.id', 'brandId')
+      .addSelect('brand.name', 'brandName')
+      .addSelect('brand.color', 'color')
+      .addSelect(UNITS_EXPR, 'units')
+      .addSelect(REVENUE_EXPR, 'revenue')
+      .addSelect(PROFIT_EXPR, 'profit')
+      .groupBy('product.id')
+      .addGroupBy('product.name')
+      .addGroupBy('brand.id')
+      .addGroupBy('brand.name')
+      .addGroupBy('brand.color')
+      .orderBy(sortExpr, 'DESC')
+      .addOrderBy('product.name', 'ASC')
+      .limit(opts.limit)
+      .offset(opts.skip)
+      .getRawMany<CategoryProductAggRaw>();
+    return rows.map((r) => ({
+      productId: r.productId,
+      productName: r.productName,
+      brandId: r.brandId ?? null,
+      brandName: r.brandName ?? null,
+      color: r.color,
+      units: Number(r.units ?? 0),
+      revenue: Number(r.revenue ?? 0),
+      profit: Number(r.profit ?? 0),
+      marginPct: 0,
+      sharePct: 0,
     }));
   }
 }

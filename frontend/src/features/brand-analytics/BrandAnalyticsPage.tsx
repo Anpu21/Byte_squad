@@ -10,12 +10,14 @@ import { BrandFilters } from './components/BrandFilters'
 import { BrandOverview } from './components/BrandOverview'
 import { BrandDrilldown } from './components/BrandDrilldown'
 import { BrandManageTab } from './components/BrandManageTab'
+import { CategoryBrandComparison } from './components/CategoryBrandComparison'
 import { daysAgoIso, todayIso } from './lib/date-range'
 
-type BrandTab = 'analyze' | 'manage'
+type BrandTab = 'analyze' | 'by-category' | 'manage'
 
 const TABS: { id: BrandTab; label: string }[] = [
   { id: 'analyze', label: 'Brands' },
+  { id: 'by-category', label: 'By category' },
   { id: 'manage', label: 'Manage' },
 ]
 
@@ -57,9 +59,9 @@ export function BrandAnalyticsPage() {
         eyebrow="Inventory"
         title="Brand analysis"
         subtitle={
-          tab === 'analyze'
-            ? `${scopeLabel} · ${startDate} → ${endDate}`
-            : 'Create, edit, archive, and delete brands'
+          tab === 'manage'
+            ? 'Create, edit, archive, and delete brands'
+            : `${scopeLabel} · ${startDate} → ${endDate}`
         }
       />
 
@@ -83,7 +85,9 @@ export function BrandAnalyticsPage() {
         ))}
       </nav>
 
-      {tab === 'analyze' ? (
+      {tab === 'manage' ? (
+        <BrandManageTab isAdmin={Boolean(isAdmin)} />
+      ) : (
         <div className="space-y-4">
           <BrandFilters
             startDate={startDate}
@@ -95,18 +99,23 @@ export function BrandAnalyticsPage() {
             onEndDate={setEndDate}
             onBranchId={setBranchId}
           />
-          {selectedBrandId ? (
-            <BrandDrilldown
-              brandId={selectedBrandId}
-              params={params}
-              onBack={() => setSelectedBrandId(null)}
-            />
+          {tab === 'analyze' ? (
+            selectedBrandId ? (
+              <BrandDrilldown
+                brandId={selectedBrandId}
+                params={params}
+                onBack={() => setSelectedBrandId(null)}
+              />
+            ) : (
+              <BrandOverview
+                params={params}
+                onSelectBrand={setSelectedBrandId}
+              />
+            )
           ) : (
-            <BrandOverview params={params} onSelectBrand={setSelectedBrandId} />
+            <CategoryBrandComparison params={params} />
           )}
         </div>
-      ) : (
-        <BrandManageTab isAdmin={Boolean(isAdmin)} />
       )}
     </div>
   )

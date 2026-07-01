@@ -13,6 +13,12 @@ import {
 import { CreateBrandDto } from '@/modules/brands/dto/create-brand.dto';
 import { UpdateBrandDto } from '@/modules/brands/dto/update-brand.dto';
 import { BrandAnalyticsQueryDto } from '@/modules/brands/dto/brand-analytics-query.dto';
+import { CategoryProductsQueryDto } from '@/modules/brands/dto/category-products-query.dto';
+import { CategoryRepository } from '@/modules/categories/category.repository';
+import {
+  resolvePagination,
+  toPaginated,
+} from '@common/pagination/paginate.util';
 import { pickBrandColor } from '@/modules/brands/lib/brand-palette';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { AuthUser } from '@common/types/auth-user.type';
@@ -20,6 +26,9 @@ import type {
   BrandOverviewResponse,
   BrandDrilldownResponse,
   BrandTrendPoint,
+  CategoryBrandComparisonResponse,
+  CategoryProductsResponse,
+  CategoryProductSort,
 } from '@/modules/brands/types';
 
 /** One-decimal percentage of part/whole (0 when whole is 0). */
@@ -57,7 +66,10 @@ function zeroFillTrend(
 
 @Injectable()
 export class BrandsService {
-  constructor(private readonly brands: BrandRepository) {}
+  constructor(
+    private readonly brands: BrandRepository,
+    private readonly categories: CategoryRepository,
+  ) {}
 
   list(includeInactive = false): Promise<BrandWithCount[]> {
     return this.brands.list(includeInactive);
@@ -246,7 +258,101 @@ export class BrandsService {
     };
   }
 
-  private parseRange(query: BrandAnalyticsQueryDto): {
+  /**
+   * "Same category, different brands": every brand's sales within one category,
+   * with share of the category total. Includes an Unbranded bucket.
+   */
+  async getCategoryComparison(
+    actor: AuthUser,
+    categoryId: string,
+    query: BrandAnalyticsQueryDto,
+  ): Promise<CategoryBrandComparisonResponse> {
+    const { startDate, endDate } = this.parseRange(query);
+    const branchId = this.resolveAnalyticsBranch(actor, query.branchId);
+    const category = await this.categories.findById(categoryId);
+    if (!category) {
+      throw new NotFoundException(`Category "${categoryId}" not found`);
+    }
+
+    const params = { branchId, startDate, endDate };
+    const [summary, brands] = await Promise.all([
+      this.brands.categorySummary(params, categoryId),
+      this.brands.brandsForCategory(params, categoryId),
+    ]);
+
+    return {
+      categoryId,
+      categoryName: category.name,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      branchId,
+      totalRevenue: summary.revenue,
+      totalUnits: summary.units,
+      totalProfit: summary.profit,
+      totalTransactions: summary.transactions,
+      marginPct: percent(summary.profit, summary.revenue),
+      brands: brands.map((b) => ({
+        ...b,
+        marginPct: percent(b.profit, b.revenue),
+        sharePct: percent(b.revenue, summary.revenue),
+      })),
+    };
+  }
+
+  /** Paginated, brand-tagged product roster within one category. */
+  async getCategoryProducts(
+    actor: AuthUser,
+    categoryId: string,
+    dto: CategoryProductsQueryDto,
+  ): Promise<CategoryProductsResponse> {
+    const { startDate, endDate } = this.parseRange(dto);
+    const branchId = this.resolveAnalyticsBranch(actor, dto.branchId);
+    const category = await this.categories.findById(categoryId);
+    if (!category) {
+      throw new NotFoundException(`Category "${categoryId}" not found`);
+    }
+
+    const { page, limit, skip } = resolvePagination({
+      page: dto.page,
+      limit: dto.limit,
+    });
+    const sort: CategoryProductSort = dto.sort ?? 'revenue';
+    const params = { branchId, startDate, endDate };
+    const [summary, total, rows] = await Promise.all([
+      this.brands.categorySummary(params, categoryId),
+      this.brands.countCategoryProducts(
+        params,
+        categoryId,
+        dto.brandId,
+        dto.search,
+      ),
+      this.brands.categoryProductsPage(params, categoryId, {
+        brandId: dto.brandId,
+        search: dto.search,
+        sort,
+        limit,
+        skip,
+      }),
+    ]);
+
+    const items = rows.map((r) => ({
+      ...r,
+      marginPct: percent(r.profit, r.revenue),
+      sharePct: percent(r.revenue, summary.revenue),
+    }));
+
+    return {
+      ...toPaginated(items, total, page, limit),
+      categoryId,
+      categoryName: category.name,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      branchId,
+      sort,
+    };
+  }
+
+  private parseRange(query: { startDate: string; endDate: string }): {
     startDate: Date;
     endDate: Date;
   } {

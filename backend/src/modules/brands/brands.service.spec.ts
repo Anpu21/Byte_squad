@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { BrandsService } from '@/modules/brands/brands.service';
 import { BrandRepository } from '@/modules/brands/brands.repository';
+import { CategoryRepository } from '@/modules/categories/category.repository';
 import { Brand } from '@/modules/brands/entities/brand.entity';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { AuthUser } from '@common/types/auth-user.type';
@@ -86,7 +87,12 @@ describe('BrandsService', () => {
     categoriesForBrand: jest.Mock;
     productsForBrand: jest.Mock;
     brandTrend: jest.Mock;
+    categorySummary: jest.Mock;
+    brandsForCategory: jest.Mock;
+    countCategoryProducts: jest.Mock;
+    categoryProductsPage: jest.Mock;
   };
+  let categoryRepo: { findById: jest.Mock };
 
   const range = { startDate: '2026-06-01', endDate: '2026-06-30' };
 
@@ -108,9 +114,23 @@ describe('BrandsService', () => {
       categoriesForBrand: jest.fn().mockResolvedValue([]),
       productsForBrand: jest.fn().mockResolvedValue([]),
       brandTrend: jest.fn().mockResolvedValue([]),
+      categorySummary: jest.fn().mockResolvedValue({
+        units: 0,
+        revenue: 0,
+        profit: 0,
+        transactions: 0,
+      }),
+      brandsForCategory: jest.fn().mockResolvedValue([]),
+      countCategoryProducts: jest.fn().mockResolvedValue(0),
+      categoryProductsPage: jest.fn().mockResolvedValue([]),
     };
+    categoryRepo = { findById: jest.fn() };
     const moduleRef = await Test.createTestingModule({
-      providers: [BrandsService, { provide: BrandRepository, useValue: repo }],
+      providers: [
+        BrandsService,
+        { provide: BrandRepository, useValue: repo },
+        { provide: CategoryRepository, useValue: categoryRepo },
+      ],
     }).compile();
     service = moduleRef.get(BrandsService);
   });
@@ -380,6 +400,132 @@ describe('BrandsService', () => {
         expect.any(Object),
         'b1',
         'cat-1',
+      );
+    });
+  });
+
+  describe('getCategoryComparison', () => {
+    it('throws when the category does not exist', async () => {
+      categoryRepo.findById.mockResolvedValue(null);
+      await expect(
+        service.getCategoryComparison(admin, 'nope', range),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('computes each brand share + margin against the category total', async () => {
+      categoryRepo.findById.mockResolvedValue({
+        id: 'cat1',
+        name: 'Beverages',
+      });
+      repo.categorySummary.mockResolvedValue({
+        units: 30,
+        revenue: 1500,
+        profit: 600,
+        transactions: 9,
+      });
+      repo.brandsForCategory.mockResolvedValue([
+        {
+          brandId: 'b1',
+          brandName: 'Coca-Cola',
+          color: null,
+          units: 20,
+          revenue: 1000,
+          profit: 400,
+          transactions: 6,
+          marginPct: 0,
+          sharePct: 0,
+        },
+        {
+          brandId: null,
+          brandName: 'Unbranded',
+          color: null,
+          units: 10,
+          revenue: 500,
+          profit: 200,
+          transactions: 3,
+          marginPct: 0,
+          sharePct: 0,
+        },
+      ]);
+      const res = await service.getCategoryComparison(admin, 'cat1', range);
+      expect(res.categoryName).toBe('Beverages');
+      expect(res.totalRevenue).toBe(1500);
+      expect(res.brands[0].sharePct).toBeCloseTo(66.7, 1);
+      expect(res.brands[0].marginPct).toBe(40);
+      // Unbranded bucket preserved with a null brandId.
+      expect(res.brands[1].brandId).toBeNull();
+      expect(res.brands[1].sharePct).toBeCloseTo(33.3, 1);
+    });
+
+    it('rejects a manager requesting another branch', async () => {
+      categoryRepo.findById.mockResolvedValue({ id: 'cat1', name: 'X' });
+      await expect(
+        service.getCategoryComparison(manager, 'cat1', {
+          ...range,
+          branchId: 'branch-2',
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('getCategoryProducts', () => {
+    it('throws when the category does not exist', async () => {
+      categoryRepo.findById.mockResolvedValue(null);
+      await expect(
+        service.getCategoryProducts(admin, 'nope', range),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('paginates and computes product share of the category total', async () => {
+      categoryRepo.findById.mockResolvedValue({
+        id: 'cat1',
+        name: 'Beverages',
+      });
+      repo.categorySummary.mockResolvedValue({
+        units: 30,
+        revenue: 1000,
+        profit: 400,
+        transactions: 9,
+      });
+      repo.countCategoryProducts.mockResolvedValue(1);
+      repo.categoryProductsPage.mockResolvedValue([
+        {
+          productId: 'p1',
+          productName: 'Coke 1L',
+          brandId: 'b1',
+          brandName: 'Coca-Cola',
+          color: null,
+          units: 10,
+          revenue: 500,
+          profit: 200,
+          marginPct: 0,
+          sharePct: 0,
+        },
+      ]);
+      const res = await service.getCategoryProducts(admin, 'cat1', range);
+      expect(res.total).toBe(1);
+      expect(res.page).toBe(1);
+      expect(res.sort).toBe('revenue');
+      expect(res.items[0].sharePct).toBe(50);
+      expect(res.items[0].marginPct).toBe(40);
+    });
+
+    it('passes brand/search/sort filters to the roster query', async () => {
+      categoryRepo.findById.mockResolvedValue({ id: 'cat1', name: 'X' });
+      await service.getCategoryProducts(admin, 'cat1', {
+        ...range,
+        brandId: 'b1',
+        search: 'coke',
+        sort: 'units',
+      });
+      expect(repo.categoryProductsPage).toHaveBeenCalledWith(
+        expect.any(Object),
+        'cat1',
+        expect.objectContaining({
+          brandId: 'b1',
+          search: 'coke',
+          sort: 'units',
+        }),
       );
     });
   });

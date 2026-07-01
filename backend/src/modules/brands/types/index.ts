@@ -3,3 +3,7 @@ export * from './brand-product-row.type';
 export * from './brand-category-row.type';
 export * from './brand-trend-point.type';
 export * from './brand-analytics-response.type';
+export * from './category-brand-row.type';
+export * from './category-brand-comparison-response.type';
+export * from './category-product-row.type';
+export * from './category-products-response.type';

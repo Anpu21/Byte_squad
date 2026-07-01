@@ -14,10 +14,13 @@ import { type BrandWithCount } from '@/modules/brands/brands.repository';
 import { CreateBrandDto } from '@/modules/brands/dto/create-brand.dto';
 import { UpdateBrandDto } from '@/modules/brands/dto/update-brand.dto';
 import { BrandAnalyticsQueryDto } from '@/modules/brands/dto/brand-analytics-query.dto';
+import { CategoryProductsQueryDto } from '@/modules/brands/dto/category-products-query.dto';
 import { Brand } from '@/modules/brands/entities/brand.entity';
 import type {
   BrandOverviewResponse,
   BrandDrilldownResponse,
+  CategoryBrandComparisonResponse,
+  CategoryProductsResponse,
 } from '@/modules/brands/types';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -59,6 +62,28 @@ export class BrandsController {
     @CurrentUser() actor: AuthUser,
   ): Promise<BrandDrilldownResponse> {
     return this.service.getBrandAnalytics(actor, brandId, query);
+  }
+
+  // Category → brands comparison ("same category, different brands"). Static
+  // `by-category` segment keeps these clear of the `:brandId` route above.
+  @Get(APP_ROUTES.BRANDS.BY_CATEGORY)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  categoryComparison(
+    @Param('categoryId') categoryId: string,
+    @Query() query: BrandAnalyticsQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<CategoryBrandComparisonResponse> {
+    return this.service.getCategoryComparison(actor, categoryId, query);
+  }
+
+  @Get(APP_ROUTES.BRANDS.BY_CATEGORY_PRODUCTS)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  categoryProducts(
+    @Param('categoryId') categoryId: string,
+    @Query() query: CategoryProductsQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<CategoryProductsResponse> {
+    return this.service.getCategoryProducts(actor, categoryId, query);
   }
 
   // Read one brand (+ product count). After the analytics routes so a two-segment

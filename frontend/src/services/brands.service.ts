@@ -7,6 +7,9 @@ import type {
   IBrandDrilldownResponse,
   ICreateBrandPayload,
   IUpdateBrandPayload,
+  ICategoryBrandComparisonResponse,
+  ICategoryProductsResponse,
+  ICategoryProductsParams,
 } from '@/types'
 
 export const brandsService = {
@@ -62,6 +65,27 @@ export const brandsService = {
   ): Promise<IBrandDrilldownResponse> => {
     const response = await api.get<IApiResponse<IBrandDrilldownResponse>>(
       `/brands/analytics/${brandId}`,
+      { params },
+    )
+    return response.data.data
+  },
+
+  getCategoryComparison: async (
+    categoryId: string,
+    params: IBrandAnalyticsParams,
+  ): Promise<ICategoryBrandComparisonResponse> => {
+    const response = await api.get<
+      IApiResponse<ICategoryBrandComparisonResponse>
+    >(`/brands/analytics/by-category/${categoryId}`, { params })
+    return response.data.data
+  },
+
+  getCategoryProducts: async (
+    categoryId: string,
+    params: ICategoryProductsParams,
+  ): Promise<ICategoryProductsResponse> => {
+    const response = await api.get<IApiResponse<ICategoryProductsResponse>>(
+      `/brands/analytics/by-category/${categoryId}/products`,
       { params },
     )
     return response.data.data

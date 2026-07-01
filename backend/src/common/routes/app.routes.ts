@@ -78,6 +78,10 @@ export const APP_ROUTES = {
     BASE: `${API_PREFIX}/brands`,
     ANALYTICS_OVERVIEW: 'analytics/overview',
     ANALYTICS_BRAND: 'analytics/:brandId',
+    // Static `by-category` segment can't be captured by `:brandId` (different
+    // segment count), so these safely sit alongside the per-brand route.
+    BY_CATEGORY: 'analytics/by-category/:categoryId',
+    BY_CATEGORY_PRODUCTS: 'analytics/by-category/:categoryId/products',
     BY_ID: ':id',
     ARCHIVE: ':id/archive',
   },
