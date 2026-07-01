@@ -5,30 +5,28 @@ import { queryKeys } from '@/lib/queryKeys';
 import type { ILoyaltyLookupResult } from '@/types';
 
 /**
- * Minimum digit count that triggers a lookup. The backend regex accepts
- * 7-20 digits — we match the lower bound so the cashier can still tab
- * through a partially-typed number without firing a request.
+ * True once the typed phone is a complete Sri Lankan number the backend can
+ * normalize (`0XXXXXXXXX` or `94XXXXXXXXX`). Gating the lookup on completeness
+ * stops us firing doomed requests — and flashing the enrol form — while the
+ * cashier is still mid-type.
  */
-const MIN_LOOKUP_DIGITS = 7;
-
-/**
- * True when `phone` has enough numeric content for the backend to
- * accept it. We ignore formatting characters (spaces, parens, dashes,
- * leading `+`) because the cashier may paste raw card-printed numbers.
- */
-function hasEnoughDigits(phone: string): boolean {
-    return phone.replace(/\D/g, '').length >= MIN_LOOKUP_DIGITS;
+function isLookupReady(phone: string): boolean {
+    const digits = phone.replace(/\D/g, '');
+    return (
+        (digits.length === 10 && digits.startsWith('0')) ||
+        (digits.length === 11 && digits.startsWith('94'))
+    );
 }
 
 /**
- * POS-side phone lookup for the loyalty card. Returns `null` data on
- * 404 (no loyalty owner with that phone) so the card can switch to the
- * inline enrol form instead of surfacing an error toast. Every other
- * failure surfaces as an `isError` result for the caller to handle.
+ * POS-side phone lookup for the loyalty card. Returns `null` data when no
+ * loyalty owner matches (HTTP 404) — and also when the number is rejected as
+ * unnormalizable (HTTP 400) — so the card switches cleanly to the inline enrol
+ * form instead of getting stuck on a blocking error. Any other failure stays an
+ * `isError` result for the caller to handle.
  *
- * `staleTime` is set short — the cashier may enrol mid-checkout and we
- * want the post-enrol invalidation (in `usePosLoyaltyEnroll`) to take
- * effect immediately without refetching every keystroke.
+ * `staleTime` is short so a mid-checkout enrol (see `usePosLoyaltyEnroll`)
+ * flips the card miss->hit immediately without refetching every keystroke.
  */
 export function usePosLoyaltyLookup(phone: string) {
     return useQuery<ILoyaltyLookupResult | null>({
@@ -39,14 +37,15 @@ export function usePosLoyaltyLookup(phone: string) {
             } catch (err: unknown) {
                 if (
                     axios.isAxiosError(err) &&
-                    err.response?.status === 404
+                    (err.response?.status === 404 ||
+                        err.response?.status === 400)
                 ) {
                     return null;
                 }
                 throw err;
             }
         },
-        enabled: hasEnoughDigits(phone),
+        enabled: isLookupReady(phone),
         staleTime: 10_000,
         retry: false,
     });

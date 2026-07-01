@@ -31,12 +31,15 @@ export function PosLoyaltyEnrollForm({
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const trimmedFirst = firstName.trim();
-        if (!trimmedFirst) return;
         const trimmedLast = lastName.trim();
-        onSubmit(trimmedFirst, trimmedLast.length > 0 ? trimmedLast : undefined);
+        if (!trimmedFirst || !trimmedLast) return;
+        onSubmit(trimmedFirst, trimmedLast);
     };
 
-    const canSubmit = firstName.trim().length > 0 && !isSubmitting;
+    const canSubmit =
+        firstName.trim().length > 0 &&
+        lastName.trim().length > 0 &&
+        !isSubmitting;
 
     return (
         <form
@@ -61,7 +64,8 @@ export function PosLoyaltyEnrollForm({
                     label="Last name"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Optional"
+                    placeholder="Required"
+                    aria-required
                 />
             </div>
             {error ? (

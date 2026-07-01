@@ -338,6 +338,7 @@ describe('LoyaltyService', () => {
         service.enrollWalkInCustomer({
           phone: '+94771234567',
           firstName: 'Jane',
+          lastName: 'Doe',
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(customersRepo.create).not.toHaveBeenCalled();
@@ -351,6 +352,7 @@ describe('LoyaltyService', () => {
         service.enrollWalkInCustomer({
           phone: '+94771234567',
           firstName: 'Jane',
+          lastName: 'Doe',
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(customersRepo.create).not.toHaveBeenCalled();
@@ -361,6 +363,7 @@ describe('LoyaltyService', () => {
         service.enrollWalkInCustomer({
           phone: 'not-a-phone',
           firstName: 'Jane',
+          lastName: 'Doe',
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(usersRepo.findByPhone).not.toHaveBeenCalled();
