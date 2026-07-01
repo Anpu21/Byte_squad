@@ -66,6 +66,7 @@ export const FRONTEND_ROUTES = {
 
     // Users
     USER_MANAGEMENT: '/users',
+    CUSTOMERS: '/customers',
     PROFILE: '/profile',
 
     // Branches

@@ -8,6 +8,7 @@ import { NotificationsPage } from '@/features/notifications';
 import { NotificationDetailPage } from '@/features/notification-detail';
 import { ProfilePage } from '@/features/admin-user-profile';
 import { UserManagementPage } from '@/features/user-management';
+import { CustomersPage } from '@/features/customers';
 import { AdminLoyaltyPage, ManagerLoyaltyPage } from '@/features/admin-loyalty';
 import { BranchHubPage } from '@/features/branch-hub';
 import { AdminHrPage } from '@/features/admin-hr';
@@ -59,6 +60,11 @@ export const peopleRoutes = (
         </Route>
 
         <Route element={<RequireRole roles={[UserRole.ADMIN, UserRole.MANAGER]} />}>
+            <Route
+                path={FRONTEND_ROUTES.CUSTOMERS}
+                element={<CustomersPage />}
+                handle={{ crumbs: ['People', 'Customers'] }}
+            />
             <Route
                 path={FRONTEND_ROUTES.ADMIN_REVIEWS}
                 element={<ReviewModerationPage />}
