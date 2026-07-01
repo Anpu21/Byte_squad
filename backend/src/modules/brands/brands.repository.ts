@@ -7,6 +7,7 @@ import { TransactionType } from '@common/enums/transaction.enum';
 import type {
   BrandSalesRow,
   BrandProductRow,
+  BrandCategoryRow,
   BrandTrendPoint,
 } from '@/modules/brands/types';
 
@@ -44,6 +45,16 @@ interface BrandProductAggRaw {
   units: string | null;
   revenue: string | null;
   profit: string | null;
+}
+
+interface BrandCategoryAggRaw {
+  categoryId: string;
+  categoryName: string;
+  color: string | null;
+  units: string | null;
+  revenue: string | null;
+  profit: string | null;
+  transactions: string | null;
 }
 
 interface BrandSummaryRaw {
@@ -219,13 +230,24 @@ export class BrandRepository {
     };
   }
 
-  /** Per-product breakdown within one brand, ranked by revenue. */
+  /**
+   * Per-product breakdown within one brand, ranked by revenue. When
+   * `categoryId` is given the list is narrowed to that category ("one category,
+   * many products of this brand").
+   */
   async productsForBrand(
     params: BrandAnalyticsParams,
     brandId: string,
+    categoryId?: string,
   ): Promise<BrandProductRow[]> {
-    const rows = await this.salesItemsBase(params)
-      .andWhere('product.brand_id = :brandId', { brandId })
+    const qb = this.salesItemsBase(params).andWhere(
+      'product.brand_id = :brandId',
+      { brandId },
+    );
+    if (categoryId) {
+      qb.andWhere('product.category_id = :categoryId', { categoryId });
+    }
+    const rows = await qb
       .select('product.id', 'productId')
       .addSelect('product.name', 'productName')
       .addSelect(UNITS_EXPR, 'units')
@@ -241,6 +263,43 @@ export class BrandRepository {
       units: Number(r.units ?? 0),
       revenue: Number(r.revenue ?? 0),
       profit: Number(r.profit ?? 0),
+      marginPct: 0,
+      sharePct: 0,
+    }));
+  }
+
+  /**
+   * Per-category breakdown within one brand, ranked by revenue. Categories are
+   * derived through the brand's products (inner join to the product's category);
+   * products always carry a category, so this reconciles with the brand total.
+   */
+  async categoriesForBrand(
+    params: BrandAnalyticsParams,
+    brandId: string,
+  ): Promise<BrandCategoryRow[]> {
+    const rows = await this.salesItemsBase(params)
+      .innerJoin('product.categoryRef', 'category')
+      .andWhere('product.brand_id = :brandId', { brandId })
+      .select('category.id', 'categoryId')
+      .addSelect('category.name', 'categoryName')
+      .addSelect('category.color', 'color')
+      .addSelect(UNITS_EXPR, 'units')
+      .addSelect(REVENUE_EXPR, 'revenue')
+      .addSelect(PROFIT_EXPR, 'profit')
+      .addSelect('COUNT(DISTINCT sale.id)', 'transactions')
+      .groupBy('category.id')
+      .addGroupBy('category.name')
+      .addGroupBy('category.color')
+      .orderBy(REVENUE_EXPR, 'DESC')
+      .getRawMany<BrandCategoryAggRaw>();
+    return rows.map((r) => ({
+      categoryId: r.categoryId,
+      categoryName: r.categoryName,
+      color: r.color,
+      units: Number(r.units ?? 0),
+      revenue: Number(r.revenue ?? 0),
+      profit: Number(r.profit ?? 0),
+      transactions: Number(r.transactions ?? 0),
       marginPct: 0,
       sharePct: 0,
     }));

@@ -83,6 +83,7 @@ describe('BrandsService', () => {
     syncProductBrandName: jest.Mock;
     leaderboard: jest.Mock;
     brandSummary: jest.Mock;
+    categoriesForBrand: jest.Mock;
     productsForBrand: jest.Mock;
     brandTrend: jest.Mock;
   };
@@ -104,8 +105,9 @@ describe('BrandsService', () => {
       syncProductBrandName: jest.fn(),
       leaderboard: jest.fn(),
       brandSummary: jest.fn(),
-      productsForBrand: jest.fn(),
-      brandTrend: jest.fn(),
+      categoriesForBrand: jest.fn().mockResolvedValue([]),
+      productsForBrand: jest.fn().mockResolvedValue([]),
+      brandTrend: jest.fn().mockResolvedValue([]),
     };
     const moduleRef = await Test.createTestingModule({
       providers: [BrandsService, { provide: BrandRepository, useValue: repo }],
@@ -320,6 +322,19 @@ describe('BrandsService', () => {
       repo.brandTrend.mockResolvedValue([
         { date: '2026-06-02', revenue: 300, units: 4 },
       ]);
+      repo.categoriesForBrand.mockResolvedValue([
+        {
+          categoryId: 'c1',
+          categoryName: 'Beverages',
+          color: '#1',
+          units: 15,
+          revenue: 1500,
+          profit: 600,
+          transactions: 7,
+          marginPct: 0,
+          sharePct: 0,
+        },
+      ]);
 
       const res = await service.getBrandAnalytics(admin, 'b1', {
         startDate: '2026-06-01',
@@ -330,6 +345,10 @@ describe('BrandsService', () => {
       expect(res.marginPct).toBe(40);
       expect(res.products[0].marginPct).toBe(40);
       expect(res.products[0].sharePct).toBeCloseTo(66.7, 1);
+      // Category breakdown gets margin + share of the brand total.
+      expect(res.categories).toHaveLength(1);
+      expect(res.categories[0].marginPct).toBe(40);
+      expect(res.categories[0].sharePct).toBe(100);
       // 3-day inclusive window, only the middle day has data.
       expect(res.trend).toHaveLength(3);
       expect(res.trend[0]).toEqual({
@@ -342,6 +361,26 @@ describe('BrandsService', () => {
         revenue: 300,
         units: 4,
       });
+    });
+
+    it('threads the categoryId filter into the product breakdown', async () => {
+      repo.findById.mockResolvedValue(makeBrand());
+      repo.brandSummary.mockResolvedValue({
+        units: 0,
+        revenue: 0,
+        profit: 0,
+        transactions: 0,
+      });
+      await service.getBrandAnalytics(admin, 'b1', {
+        startDate: '2026-06-01',
+        endDate: '2026-06-03',
+        categoryId: 'cat-1',
+      });
+      expect(repo.productsForBrand).toHaveBeenCalledWith(
+        expect.any(Object),
+        'b1',
+        'cat-1',
+      );
     });
   });
 });

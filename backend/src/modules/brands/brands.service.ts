@@ -215,9 +215,10 @@ export class BrandsService {
     }
 
     const params = { branchId, startDate, endDate };
-    const [summary, products, trendRows] = await Promise.all([
+    const [summary, categories, products, trendRows] = await Promise.all([
       this.brands.brandSummary(params, brandId),
-      this.brands.productsForBrand(params, brandId),
+      this.brands.categoriesForBrand(params, brandId),
+      this.brands.productsForBrand(params, brandId, query.categoryId),
       this.brands.brandTrend(params, brandId),
     ]);
 
@@ -231,6 +232,11 @@ export class BrandsService {
       totalProfit: summary.profit,
       totalTransactions: summary.transactions,
       marginPct: percent(summary.profit, summary.revenue),
+      categories: categories.map((c) => ({
+        ...c,
+        marginPct: percent(c.profit, c.revenue),
+        sharePct: percent(c.revenue, summary.revenue),
+      })),
       products: products.map((p) => ({
         ...p,
         marginPct: percent(p.profit, p.revenue),
