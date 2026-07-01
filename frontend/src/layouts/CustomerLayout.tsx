@@ -1,12 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import {
-    Link,
-    Navigate,
-    Outlet,
-    useLocation,
-    useNavigate,
-    useSearchParams,
-} from 'react-router-dom';
+import { Link, Navigate, Outlet } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { LuSearch as Search, LuShoppingCart as ShoppingCart, LuUser as User, LuX as X } from 'react-icons/lu';
@@ -24,6 +16,7 @@ import { StorefrontNav } from '@/layouts/components/StorefrontNav';
 import { StorefrontUserMenu } from '@/layouts/components/StorefrontUserMenu';
 import { ShopContextBanner } from '@/features/customer-groups/components/ShopContextBanner';
 import { cn } from '@/lib/utils';
+import { useStorefrontSearch } from './useStorefrontSearch';
 
 interface CustomerLayoutProps {
     /**
@@ -36,59 +29,11 @@ interface CustomerLayoutProps {
 export default function CustomerLayout({
     publicMode = false,
 }: CustomerLayoutProps) {
-    const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { user, isAuthenticated } = useAuth();
     const cartCount = useAppSelector(selectShopCartItemCount);
-
-    const location = useLocation();
-    const [searchParams, setSearchParams] = useSearchParams();
-    const isOnShop = location.pathname === FRONTEND_ROUTES.SHOP;
-    const urlQ = isOnShop ? (searchParams.get('q') ?? '') : '';
-    const [searchDraft, setSearchDraft] = useState(urlQ);
-
-    useEffect(() => {
-        setSearchDraft(urlQ);
-    }, [urlQ]);
-
-    useEffect(() => {
-        if (!isOnShop) return;
-        if (searchDraft === urlQ) return;
-        const timer = setTimeout(() => {
-            setSearchParams(
-                (prev) => {
-                    if (searchDraft) prev.set('q', searchDraft);
-                    else prev.delete('q');
-                    return prev;
-                },
-                { replace: true },
-            );
-        }, 200);
-        return () => clearTimeout(timer);
-    }, [searchDraft, urlQ, isOnShop, setSearchParams]);
-
-    const handleSearchSubmit = (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const q = searchDraft.trim();
-        if (isOnShop) return;
-        const target = q
-            ? `${FRONTEND_ROUTES.SHOP}?q=${encodeURIComponent(q)}`
-            : FRONTEND_ROUTES.SHOP;
-        navigate(target);
-    };
-
-    const handleSearchClear = () => {
-        setSearchDraft('');
-        if (isOnShop) {
-            setSearchParams(
-                (prev) => {
-                    prev.delete('q');
-                    return prev;
-                },
-                { replace: true },
-            );
-        }
-    };
+    const { searchDraft, setSearchDraft, handleSearchSubmit, handleSearchClear } =
+        useStorefrontSearch();
 
     const { data: profile } = useQuery({
         queryKey: queryKeys.profile.self(),
