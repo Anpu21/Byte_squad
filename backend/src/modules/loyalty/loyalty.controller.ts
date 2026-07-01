@@ -1,15 +1,32 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Roles } from '@common/decorators/roles.decorator';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { APP_ROUTES } from '@common/routes/app.routes';
-import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
+import type { AuthUser } from '@common/types/auth-user.type';
+import {
+  LoyaltyService,
+  type LoyaltyCustomersResponse,
+} from '@/modules/loyalty/loyalty.service';
+import { ListLoyaltyCustomersQueryDto } from '@/modules/loyalty/dto/list-loyalty-customers-query.dto';
 import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
 import { LookupLoyaltyByPhoneQueryDto } from '@/modules/loyalty/dto/lookup-loyalty-by-phone-query.dto';
 import { EnrollWalkInCustomerDto } from '@/modules/loyalty/dto/enroll-walk-in-customer.dto';
-import type { LoyaltyLookupResult } from '@/modules/loyalty/types';
+import type {
+  LoyaltyHistoryResponse,
+  LoyaltyLookupResult,
+} from '@/modules/loyalty/types';
 
 @Controller(APP_ROUTES.LOYALTY.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -58,7 +75,38 @@ export class LoyaltyController {
    */
   @Post(APP_ROUTES.LOYALTY.ENROLL)
   @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
-  enroll(@Body() body: EnrollWalkInCustomerDto): Promise<LoyaltyLookupResult> {
-    return this.loyalty.enrollWalkInCustomer(body);
+  enroll(
+    @Body() body: EnrollWalkInCustomerDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<LoyaltyLookupResult> {
+    return this.loyalty.enrollWalkInCustomer(body, actor);
+  }
+
+  /**
+   * Branch-scoped loyalty member list for the cashier store-credit-style
+   * browse page. `listBranchCustomers` pins non-admins to their own branch.
+   */
+  @Get(APP_ROUTES.LOYALTY.CUSTOMERS)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  listBranchCustomers(
+    @Query() query: ListLoyaltyCustomersQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<LoyaltyCustomersResponse> {
+    return this.loyalty.listBranchCustomers(query, actor);
+  }
+
+  /**
+   * Points ledger for one member (by loyalty account id — walk-ins have no
+   * userId). Branch access is enforced in the service so a cashier only
+   * reads their own branch's members.
+   */
+  @Get(APP_ROUTES.LOYALTY.CUSTOMER_HISTORY)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
+  memberHistory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: ListLoyaltyHistoryQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<LoyaltyHistoryResponse> {
+    return this.loyalty.getMemberHistory(id, actor, query);
   }
 }

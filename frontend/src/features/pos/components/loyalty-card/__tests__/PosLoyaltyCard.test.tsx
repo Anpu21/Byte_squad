@@ -150,6 +150,8 @@ describe('PosLoyaltyCard', () => {
         await screen.findByRole('form', { name: /enrol walk-in customer/i });
         const firstName = screen.getByLabelText('First name');
         await userEvent.type(firstName, 'Sunil');
+        const lastName = screen.getByLabelText('Last name');
+        await userEvent.type(lastName, 'Fernando');
 
         const submit = screen.getByRole('button', { name: /^Enrol/ });
         await userEvent.click(submit);
@@ -158,7 +160,7 @@ describe('PosLoyaltyCard', () => {
             expect(enrollMock).toHaveBeenCalledWith({
                 phone: '+94770000002',
                 firstName: 'Sunil',
-                lastName: undefined,
+                lastName: 'Fernando',
             });
         });
         await screen.findByText('Sunil');
@@ -212,8 +214,23 @@ describe('PosLoyaltyCard', () => {
         await screen.findByRole('form', { name: /enrol walk-in customer/i });
         const firstName = screen.getByLabelText('First name');
         await userEvent.type(firstName, 'Test');
+        const lastName = screen.getByLabelText('Last name');
+        await userEvent.type(lastName, 'User');
         const submit = screen.getByRole('button', { name: /^Enrol/ });
         await userEvent.click(submit);
         await screen.findByText('Phone already registered');
+    });
+
+    it('shows a muted SL-phone hint for an invalid number and skips lookup', async () => {
+        renderHost();
+        const phoneInput = screen.getByLabelText(/Loyalty member phone/i);
+        await userEvent.type(phoneInput, '12');
+
+        await screen.findByText(/Sri Lanka phone number/i);
+        expect(lookupMock).not.toHaveBeenCalled();
+        // No enrol form for an incomplete number.
+        expect(
+            screen.queryByRole('form', { name: /enrol walk-in customer/i }),
+        ).not.toBeInTheDocument();
     });
 });

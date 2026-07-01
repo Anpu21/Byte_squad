@@ -10,4 +10,13 @@ export const loyalty = {
      */
     posLookup: (phone: string) =>
         ['loyalty', 'pos-lookup', phone] as const,
+    /** Cashier/manager branch-scoped loyalty member list. */
+    branchMembers: (params: {
+        search?: string;
+        limit?: number;
+        offset?: number;
+    }) => ['loyalty', 'branch-members', params] as const,
+    /** One branch member's points ledger, keyed on the list row id. */
+    memberHistory: (id: string, params: { limit?: number; offset?: number }) =>
+        ['loyalty', 'member-history', id, params] as const,
 } as const;

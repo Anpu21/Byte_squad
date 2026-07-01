@@ -17,7 +17,7 @@ import { usePosCheckout } from '@/features/pos/hooks/usePosCheckout';
 import { usePosHeldBillActions } from '@/features/pos/hooks/usePosHeldBillActions';
 import { PosBillingGrid } from '@/features/pos/components/billing-grid';
 import { PosInvoiceTotal } from '@/features/pos/components/invoice-total/PosInvoiceTotal';
-import { ScanOrderView } from '@/features/scan-order/components/ScanOrderView';
+import { PosPickupWorkspace } from '@/features/pos-pickup/PosPickupWorkspace';
 import { PosHeaderBar } from '@/features/pos/components/header-bar/PosHeaderBar';
 import { PosCheckoutSidebar } from '@/features/pos/components/checkout-sidebar/PosCheckoutSidebar';
 import { PosCheckoutModals } from '@/features/pos/components/checkout-modals/PosCheckoutModals';
@@ -98,8 +98,8 @@ export function PosPage(): React.ReactElement {
                 onShowHeld={() => setShowHeldBills(true)}
                 onShowReturn={() => setShowReturn(true)}
             />
-            {mode === 'scan' ? (
-                <ScanOrderView onDone={() => setMode('billing')} />
+            {mode === 'pickup' ? (
+                <PosPickupWorkspace />
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-[4fr_1fr] gap-4 flex-1">
                     <div className="flex flex-col gap-3">

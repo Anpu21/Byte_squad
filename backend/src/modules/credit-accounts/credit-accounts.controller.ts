@@ -67,8 +67,11 @@ export class CreditAccountsController {
     return this.service.search(query, actor);
   }
 
+  // Cashiers browse their branch's credit accounts at the counter (store-credit
+  // page). `resolveBranchScope` in the service pins non-admins to actor.branchId
+  // and rejects any other branchId, so a cashier only ever sees their branch.
   @Get()
-  @Roles(UserRole.MANAGER, UserRole.ADMIN)
+  @Roles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN)
   list(
     @Query() query: ListCreditAccountsQueryDto,
     @CurrentUser() actor: AuthUser,

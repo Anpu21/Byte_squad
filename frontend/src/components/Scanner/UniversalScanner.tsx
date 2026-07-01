@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
-import toast from 'react-hot-toast';
 
 interface UniversalScannerProps {
     onScanSuccess?: (text: string) => void;
@@ -18,6 +17,9 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
     const videoRef = useRef<HTMLVideoElement>(null);
     const [lastResult, setLastResult] = useState<string | null>(null);
     const [isScanning, setIsScanning] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    // Bumped by the retry button to force the decode effect to re-run.
+    const [attempt, setAttempt] = useState(0);
 
     useEffect(() => {
         if (!videoRef.current || !isScanning) return;
@@ -25,7 +27,6 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
         const codeReader = new BrowserMultiFormatReader();
         let isMounted = true;
 
-        // FIXED: Passing `undefined` instead of `null` to satisfy TypeScript
         codeReader.decodeFromVideoDevice(undefined, videoRef.current, (result: IScanResult | null | undefined, err: IScanError | null | undefined) => {
             if (!isMounted) return;
 
@@ -43,7 +44,11 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
                 // = no code in view); fatal camera errors surface below.
             }
         }).catch(() => {
-            toast.error('Could not access the camera');
+            if (!isMounted) return;
+            // Camera unavailable / permission denied — surface an in-card
+            // recoverable state instead of a fire-and-forget toast.
+            setError('Could not access the camera');
+            setIsScanning(false);
         });
 
         const videoEl = videoRef.current;
@@ -54,11 +59,19 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
                 stream.getTracks().forEach(track => track.stop());
             }
         };
-    }, [isScanning, onScanSuccess]);
+    }, [isScanning, onScanSuccess, attempt]);
+
+    const retry = () => {
+        setError(null);
+        setIsScanning(true);
+        setAttempt((a) => a + 1);
+    };
+
+    const statusLabel = error ? 'Error' : isScanning ? 'Active' : 'Paused';
 
     return (
         <div className="bg-surface border border-border rounded-md shadow-2xl overflow-hidden flex flex-col animate-in fade-in duration-700">
-            
+
             <style>{`
                 @keyframes scan-sweep {
                     0% { transform: translateY(-100%); }
@@ -81,47 +94,66 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="relative flex h-2 w-2">
-                        {isScanning ? (
+                        {isScanning && !error ? (
                             <>
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                             </>
                         ) : (
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-text-3"></span>
+                            <span className={`relative inline-flex rounded-full h-2 w-2 ${error ? 'bg-danger' : 'bg-text-3'}`}></span>
                         )}
                     </span>
                     <span className="text-[11px] text-text-2 font-medium uppercase tracking-wider">
-                        {isScanning ? 'Active' : 'Paused'}
+                        {statusLabel}
                     </span>
                 </div>
             </div>
 
             {/* Video Container */}
             <div className="relative w-full aspect-video bg-canvas overflow-hidden flex items-center justify-center">
-                
-                <video 
-                    ref={videoRef} 
+
+                <video
+                    ref={videoRef}
                     className="absolute inset-0 w-full h-full object-cover opacity-80"
-                    muted 
-                    playsInline 
+                    muted
+                    playsInline
                 />
 
                 <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
 
-                <div className="relative w-2/3 max-w-[280px] aspect-[4/3] z-10">
-                    <div className="absolute inset-0 shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] rounded-xl"></div>
-                    
-                    <svg className="absolute inset-0 w-full h-full text-text-1 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" viewBox="0 0 100 100" preserveAspectRatio="none">
-                        <path d="M 0,20 L 0,0 L 20,0" fill="none" stroke="currentColor" strokeWidth="3" />
-                        <path d="M 80,0 L 100,0 L 100,20" fill="none" stroke="currentColor" strokeWidth="3" />
-                        <path d="M 0,80 L 0,100 L 20,100" fill="none" stroke="currentColor" strokeWidth="3" />
-                        <path d="M 100,80 L 100,100 L 80,100" fill="none" stroke="currentColor" strokeWidth="3" />
-                    </svg>
+                {error ? (
+                    <div className="relative z-10 flex flex-col items-center gap-3 text-center px-6">
+                        <p className="text-sm font-semibold text-text-inv">
+                            {error}
+                        </p>
+                        <p className="text-[12px] text-text-inv/70 max-w-xs">
+                            Allow camera access in your browser, or enter the
+                            code manually.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={retry}
+                            className="px-4 py-2 rounded-md bg-surface text-text-1 text-sm font-semibold border border-border hover:bg-surface-hover transition-colors"
+                        >
+                            Retry camera
+                        </button>
+                    </div>
+                ) : (
+                    <div className="relative w-2/3 max-w-[280px] aspect-[4/3] z-10">
+                        <div className="absolute inset-0 shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] rounded-xl"></div>
 
-                    {isScanning && (
-                        <div className="absolute left-0 right-0 top-1/2 h-[2px] bg-primary shadow-[0_0_12px_2px_rgba(255,255,255,0.6)] animate-scan-sweep"></div>
-                    )}
-                </div>
+                        <svg className="absolute inset-0 w-full h-full text-text-1 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <path d="M 0,20 L 0,0 L 20,0" fill="none" stroke="currentColor" strokeWidth="3" />
+                            <path d="M 80,0 L 100,0 L 100,20" fill="none" stroke="currentColor" strokeWidth="3" />
+                            <path d="M 0,80 L 0,100 L 20,100" fill="none" stroke="currentColor" strokeWidth="3" />
+                            <path d="M 100,80 L 100,100 L 80,100" fill="none" stroke="currentColor" strokeWidth="3" />
+                        </svg>
+
+                        {isScanning && (
+                            <div className="absolute left-0 right-0 top-1/2 h-[2px] bg-primary shadow-[0_0_12px_2px_rgba(255,255,255,0.6)] animate-scan-sweep"></div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Footer */}
@@ -140,9 +172,9 @@ export default function UniversalScanner({ onScanSuccess }: UniversalScannerProp
                         </span>
                     )}
                 </div>
-                
+
                 {lastResult && (
-                    <button 
+                    <button
                         onClick={() => setLastResult(null)}
                         className="p-1.5 text-text-2 hover:text-text-1 rounded-md hover:bg-primary-soft transition-colors"
                         title="Clear Result"

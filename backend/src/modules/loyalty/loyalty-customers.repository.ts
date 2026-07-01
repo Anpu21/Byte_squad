@@ -28,6 +28,7 @@ export class LoyaltyCustomersRepository {
     phone: string;
     firstName: string;
     lastName: string | null;
+    branchId?: string | null;
   }): Promise<LoyaltyCustomer> {
     return this.repo.save(this.repo.create(input));
   }

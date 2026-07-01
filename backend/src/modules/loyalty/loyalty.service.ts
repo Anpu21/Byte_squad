@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
@@ -8,11 +9,14 @@ import {
 import type { EntityManager } from 'typeorm';
 import { LoyaltyRepository } from '@/modules/loyalty/loyalty.repository';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { LoyaltySettings } from '@/modules/loyalty/entities/loyalty-settings.entity';
 import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
 import { LoyaltyCustomersRepository } from '@/modules/loyalty/loyalty-customers.repository';
 import { UsersService } from '@users/users.service';
 import { normalizeSriLankaPhone } from '@common/utils/phone.util';
+import { UserRole } from '@common/enums/user-roles.enums';
+import type { AuthUser } from '@common/types/auth-user.type';
 import type {
   LoyaltyCustomerRow,
   LoyaltyHistoryEntry,
@@ -122,16 +126,7 @@ export class LoyaltyService {
       offset,
     );
 
-    const entries: LoyaltyHistoryEntry[] = rows.map((row) => ({
-      id: row.id,
-      type: row.type,
-      points: row.points,
-      description: row.description,
-      orderCode: row.order?.orderCode ?? null,
-      createdAt: row.createdAt,
-    }));
-
-    return { entries, total, limit, offset };
+    return { entries: this.toHistoryEntries(rows), total, limit, offset };
   }
 
   async listCustomers(
@@ -170,6 +165,69 @@ export class LoyaltyService {
       limit,
       offset,
     };
+  }
+
+  /**
+   * Branch-scoped customer list for the cashier/manager POS surface.
+   * Non-admins are pinned to their own branch (admins may span all or
+   * filter to one), then it reuses `listCustomers`. Branch scoping now
+   * includes walk-ins whose home branch matches, so a freshly enrolled
+   * member appears before their first sale.
+   */
+  async listBranchCustomers(
+    query: ListLoyaltyCustomersQueryDto,
+    actor: AuthUser,
+  ): Promise<LoyaltyCustomersResponse> {
+    const branchId = this.resolveBranchScope(actor, query.branchId);
+    return this.listCustomers({ ...query, branchId: branchId ?? undefined });
+  }
+
+  /**
+   * Points ledger for a single loyalty account (walk-in OR registered
+   * user — walk-ins have no `userId`, so this keys on the account id).
+   * Non-admins may only read a member tied to their own branch (home
+   * branch or ledger activity); admins may read any.
+   */
+  async getMemberHistory(
+    ownerId: string,
+    actor: AuthUser,
+    query: ListLoyaltyHistoryQueryDto,
+  ): Promise<LoyaltyHistoryResponse> {
+    // `ownerId` is the list row's id — a userId (registered customer) OR a
+    // loyaltyCustomerId (walk-in). Resolve whichever account owns it.
+    const account =
+      (await this.loyalty.findAccountByUser(ownerId)) ??
+      (await this.loyalty.findAccountByLoyaltyCustomer(ownerId));
+    if (!account) {
+      throw new NotFoundException('Loyalty account not found');
+    }
+
+    if (actor.role !== UserRole.ADMIN) {
+      if (!actor.branchId) {
+        throw new ForbiddenException('You are not assigned to a branch');
+      }
+      const accessible = await this.accountBelongsToBranch(
+        account,
+        actor.branchId,
+      );
+      if (!accessible) {
+        throw new ForbiddenException(
+          'You do not have access to this loyalty member',
+        );
+      }
+    }
+
+    const limit = Math.min(
+      Math.max(query.limit ?? DEFAULT_LIMIT, 1),
+      MAX_LIMIT,
+    );
+    const offset = Math.max(query.offset ?? 0, 0);
+    const { rows, total } = await this.loyalty.listEntriesByOwner(
+      { userId: account.userId, loyaltyCustomerId: account.loyaltyCustomerId },
+      limit,
+      offset,
+    );
+    return { entries: this.toHistoryEntries(rows), total, limit, offset };
   }
 
   async getPointValue(): Promise<number> {
@@ -241,6 +299,7 @@ export class LoyaltyService {
    */
   async enrollWalkInCustomer(
     dto: EnrollWalkInCustomerDto,
+    actor: AuthUser,
   ): Promise<LoyaltyLookupResult> {
     const normalized = normalizeSriLankaPhone(dto.phone);
     if (!normalized) {
@@ -268,6 +327,7 @@ export class LoyaltyService {
       phone: normalized,
       firstName,
       lastName,
+      branchId: actor.branchId ?? null,
     });
 
     const account = await this.getOrCreateAccount({
@@ -339,6 +399,50 @@ export class LoyaltyService {
       description: dto.reason,
       metadata: { adjustedByAdmin: true },
     });
+  }
+
+  /** Map ledger rows to the wire history shape (shared by both history paths). */
+  private toHistoryEntries(rows: LoyaltyLedgerEntry[]): LoyaltyHistoryEntry[] {
+    return rows.map((row) => {
+      const code = row.metadata?.orderCode;
+      return {
+        id: row.id,
+        type: row.type,
+        points: row.points,
+        description: row.description,
+        orderCode: typeof code === 'string' ? code : null,
+        createdAt: row.createdAt,
+      };
+    });
+  }
+
+  /** Admin may span all branches (null) or filter to one; others pinned. */
+  private resolveBranchScope(actor: AuthUser, requested?: string): string | null {
+    if (actor.role === UserRole.ADMIN) return requested ?? null;
+    if (!actor.branchId) {
+      throw new ForbiddenException('You are not assigned to a branch');
+    }
+    if (requested && requested !== actor.branchId) {
+      throw new ForbiddenException('Cannot access another branch');
+    }
+    return actor.branchId;
+  }
+
+  /** A member is "in" a branch if homed there (walk-in) or active there. */
+  private async accountBelongsToBranch(
+    account: LoyaltyAccount,
+    branchId: string,
+  ): Promise<boolean> {
+    if (account.loyaltyCustomerId) {
+      const walkIn = await this.loyaltyCustomers.findById(
+        account.loyaltyCustomerId,
+      );
+      if (walkIn?.branchId === branchId) return true;
+    }
+    return this.loyalty.hasLedgerAtBranch(
+      { userId: account.userId, loyaltyCustomerId: account.loyaltyCustomerId },
+      branchId,
+    );
   }
 
   private resolveTier(

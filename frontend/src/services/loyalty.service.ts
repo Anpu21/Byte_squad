@@ -1,6 +1,7 @@
 import api from './api';
 import type {
     IApiResponse,
+    ILoyaltyCustomersResponse,
     ILoyaltyHistoryResponse,
     ILoyaltyLookupResult,
     ILoyaltySettings,
@@ -64,6 +65,35 @@ export const loyaltyService = {
         const response = await api.post<IApiResponse<ILoyaltyLookupResult>>(
             '/loyalty/enroll',
             payload,
+        );
+        return response.data.data;
+    },
+    /**
+     * Cashier/manager branch-scoped member list (mirrors the store-credit
+     * accounts list). The backend pins non-admins to their own branch and
+     * returns members homed there OR with branch ledger activity.
+     */
+    listBranchCustomers: async (
+        params: { search?: string; limit?: number; offset?: number } = {},
+    ): Promise<ILoyaltyCustomersResponse> => {
+        const response = await api.get<IApiResponse<ILoyaltyCustomersResponse>>(
+            '/loyalty/customers',
+            { params },
+        );
+        return response.data.data;
+    },
+    /**
+     * Points ledger for one branch member. `id` is the list row's id (a
+     * user id or a walk-in id); the backend resolves the owning account
+     * and enforces branch access for non-admins.
+     */
+    memberHistory: async (
+        id: string,
+        query: ListHistoryQuery = {},
+    ): Promise<ILoyaltyHistoryResponse> => {
+        const response = await api.get<IApiResponse<ILoyaltyHistoryResponse>>(
+            `/loyalty/customers/${id}/history`,
+            { params: query },
         );
         return response.data.data;
     },
