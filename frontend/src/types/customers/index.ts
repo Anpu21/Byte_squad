@@ -1,5 +1,6 @@
 export * from './customer-type.type'
 export * from './customer-status.type'
 export * from './customer-summary-row.type'
+export * from './customer-detail.type'
 export * from './customers-list-request.type'
 export * from './customers-list-response.type'

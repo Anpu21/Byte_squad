@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import Card from "@/components/ui/Card";
 import DataTable, { type DataTableColumn } from "@/components/ui/DataTable";
 import EmptyState from "@/components/ui/EmptyState";
 import Pagination from "@/components/ui/Pagination";
+import { FRONTEND_ROUTES } from "@/constants/routes";
 import { cn, formatCurrency } from "@/lib/utils";
 import { formatTimeAgo } from "@/lib/format-time-ago";
 import type { CustomerType, ICustomerSummaryRow } from "@/types";
@@ -34,6 +36,15 @@ export function CustomersTable({
   total,
   onPageChange,
 }: CustomersTableProps) {
+  const navigate = useNavigate();
+  const openCustomer = (row: ICustomerSummaryRow) =>
+    navigate(
+      FRONTEND_ROUTES.CUSTOMER_DETAIL.replace(
+        ":key",
+        encodeURIComponent(row.customerKey),
+      ),
+    );
+
   const columns: DataTableColumn<ICustomerSummaryRow>[] = [
     {
       key: "name",
@@ -136,6 +147,8 @@ export function CustomersTable({
         columns={columns}
         rows={rows}
         getRowKey={(row) => row.customerKey}
+        onRowClick={openCustomer}
+        getRowLabel={(row) => `Open ${row.displayName}`}
         isLoading={isLoading}
         stickyHeader
         zebra

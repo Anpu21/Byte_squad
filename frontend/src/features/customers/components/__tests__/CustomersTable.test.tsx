@@ -1,7 +1,13 @@
+import type { ReactElement } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import type { ICustomerSummaryRow } from "@/types";
 import { CustomersTable } from "../CustomersTable";
+
+function renderInRouter(ui: ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+}
 
 const rows: ICustomerSummaryRow[] = [
   {
@@ -24,7 +30,7 @@ const rows: ICustomerSummaryRow[] = [
 
 describe("CustomersTable", () => {
   it("renders a stitched customer with its type badges and home branch", () => {
-    render(
+    renderInRouter(
       <CustomersTable
         rows={rows}
         isLoading={false}
@@ -42,7 +48,7 @@ describe("CustomersTable", () => {
   });
 
   it("shows an empty state when there are no customers", () => {
-    render(
+    renderInRouter(
       <CustomersTable
         rows={[]}
         isLoading={false}

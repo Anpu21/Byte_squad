@@ -3,6 +3,11 @@ import { DataSource } from 'typeorm';
 import { TransactionType } from '@common/enums/transaction.enum';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { CustomerType } from '@/modules/customers/types/customer-type.type';
+import type {
+  CustomerCreditAccountSummary,
+  CustomerRecentOrder,
+  CustomerRecentSale,
+} from '@/modules/customers/types';
 
 export interface CustomerRosterParams {
   branchId: string | null;
@@ -31,6 +36,8 @@ export interface CustomerRosterRow {
   creditBalance: number;
   status: string;
   tags: string[];
+  notes: string | null;
+  segment: string | null;
 }
 
 export interface SalesRollup {
@@ -60,6 +67,33 @@ interface RawRosterRow {
   creditBalance: string | number | null;
   status: string;
   tags: unknown;
+  notes: string | null;
+  segment: string | null;
+}
+
+interface RawRecentSale {
+  id: string;
+  invoiceNumber: string;
+  total: string | number | null;
+  createdAt: Date | string;
+  branchName: string | null;
+}
+
+interface RawRecentOrder {
+  id: string;
+  orderCode: string;
+  status: string;
+  finalTotal: string | number | null;
+  createdAt: Date | string;
+}
+
+interface RawCreditAccountSummary {
+  id: string;
+  accountNo: string;
+  status: string;
+  currentBalance: string | number | null;
+  creditLimit: string | number | null;
+  branchName: string | null;
 }
 
 interface RawRollupRow {
@@ -161,6 +195,8 @@ export class CustomersRepository {
           g.credit_balance AS "creditBalance",
           COALESCE(cp.status, 'active') AS status,
           COALESCE(cp.tags, '[]'::jsonb) AS tags,
+          cp.notes AS notes,
+          cp.segment AS segment,
           g.created_at AS created_at
         FROM grouped g
         LEFT JOIN customer_profiles cp ON cp.customer_key = g.customer_key
@@ -219,7 +255,100 @@ export class CustomersRepository {
       creditBalance: Number(row.creditBalance ?? 0),
       status: row.status,
       tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
+      notes: row.notes ?? null,
+      segment: row.segment ?? null,
     };
+  }
+
+  /** The single stitched identity for a key (or null). Reuses the roster CTE. */
+  async findIdentityByKey(
+    key: string,
+    branchId: string | null,
+  ): Promise<CustomerRosterRow | null> {
+    const rows = await this.dataSource.query<RawRosterRow[]>(
+      `${this.baseCte()} SELECT * FROM final WHERE "customerKey" = $8 LIMIT 1`,
+      [UserRole.CUSTOMER, branchId, null, 'all', null, null, null, key],
+    );
+    return rows[0] ? this.mapRow(rows[0]) : null;
+  }
+
+  async recentSales(
+    ids: { userIds: string[]; loyaltyIds: string[]; creditIds: string[] },
+    limit: number,
+  ): Promise<CustomerRecentSale[]> {
+    if (
+      ids.userIds.length + ids.loyaltyIds.length + ids.creditIds.length ===
+      0
+    ) {
+      return [];
+    }
+    const rows = await this.dataSource.query<RawRecentSale[]>(
+      `SELECT s.id, s.invoice_number AS "invoiceNumber", s.total,
+              s.created_at AS "createdAt", b.name AS "branchName"
+       FROM sales s
+       LEFT JOIN branches b ON b.id = s.branch_id
+       WHERE s.type = $1 AND s.status <> 'Voided'
+         AND (s.customer_user_id = ANY($2::uuid[])
+              OR s.loyalty_customer_id = ANY($3::uuid[])
+              OR s.credit_account_id = ANY($4::uuid[]))
+       ORDER BY s.created_at DESC
+       LIMIT $5`,
+      [TransactionType.SALE, ids.userIds, ids.loyaltyIds, ids.creditIds, limit],
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      invoiceNumber: r.invoiceNumber,
+      total: Number(r.total ?? 0),
+      createdAt: new Date(r.createdAt).toISOString(),
+      branchName: r.branchName,
+    }));
+  }
+
+  async recentOrders(
+    userIds: string[],
+    limit: number,
+  ): Promise<CustomerRecentOrder[]> {
+    if (userIds.length === 0) return [];
+    const rows = await this.dataSource.query<RawRecentOrder[]>(
+      `SELECT id, order_code AS "orderCode", status,
+              final_total AS "finalTotal", created_at AS "createdAt"
+       FROM customer_orders
+       WHERE user_id = ANY($1::uuid[])
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [userIds, limit],
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      orderCode: r.orderCode,
+      status: r.status,
+      finalTotal: Number(r.finalTotal ?? 0),
+      createdAt: new Date(r.createdAt).toISOString(),
+    }));
+  }
+
+  async creditAccounts(
+    creditIds: string[],
+  ): Promise<CustomerCreditAccountSummary[]> {
+    if (creditIds.length === 0) return [];
+    const rows = await this.dataSource.query<RawCreditAccountSummary[]>(
+      `SELECT ca.id, ca.account_no AS "accountNo", ca.status,
+              ca.current_balance AS "currentBalance",
+              ca.credit_limit AS "creditLimit", b.name AS "branchName"
+       FROM credit_accounts ca
+       LEFT JOIN branches b ON b.id = ca.branch_id
+       WHERE ca.id = ANY($1::uuid[])
+       ORDER BY ca.created_at DESC`,
+      [creditIds],
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      accountNo: r.accountNo,
+      status: r.status,
+      currentBalance: Number(r.currentBalance ?? 0),
+      creditLimit: r.creditLimit == null ? null : Number(r.creditLimit),
+      branchName: r.branchName,
+    }));
   }
 
   /** Per-id sales rollups for the page, keyed by each identity column. */
