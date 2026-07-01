@@ -359,7 +359,6 @@ export class LoyaltyRepository {
   ): Promise<{ rows: LoyaltyLedgerEntry[]; total: number }> {
     const [rows, total] = await this.ledgerRepo.findAndCount({
       where: { userId },
-      relations: ['order'],
       order: { createdAt: 'DESC' },
       take: limit,
       skip: offset,

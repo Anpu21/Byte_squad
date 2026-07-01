@@ -122,14 +122,17 @@ export class LoyaltyService {
       offset,
     );
 
-    const entries: LoyaltyHistoryEntry[] = rows.map((row) => ({
-      id: row.id,
-      type: row.type,
-      points: row.points,
-      description: row.description,
-      orderCode: row.order?.orderCode ?? null,
-      createdAt: row.createdAt,
-    }));
+    const entries: LoyaltyHistoryEntry[] = rows.map((row) => {
+      const code = row.metadata?.orderCode;
+      return {
+        id: row.id,
+        type: row.type,
+        points: row.points,
+        description: row.description,
+        orderCode: typeof code === 'string' ? code : null,
+        createdAt: row.createdAt,
+      };
+    });
 
     return { entries, total, limit, offset };
   }
