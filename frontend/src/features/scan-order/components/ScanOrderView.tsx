@@ -20,10 +20,7 @@ export function ScanOrderView({ onDone }: ScanOrderViewProps) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
-                <ScanViewfinder
-                    hasRequest={!!p.request}
-                    onScan={(text) => void p.lookup(text)}
-                />
+                <ScanViewfinder onScan={(text) => void p.lookup(text)} />
             </div>
 
             <div className="space-y-4">
