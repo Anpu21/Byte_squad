@@ -1,23 +1,17 @@
 import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
-import BarChart from '@/components/charts/BarChart'
 import ExportMenu from '@/components/common/ExportMenu'
 import { Select } from '@/components/ui/Select'
 import Input from '@/components/ui/Input'
-import {
-  DataTable,
-  EmptyState,
-  type DataTableColumn,
-} from '@/components/ui'
 import { adminService } from '@/services/admin.service'
 import { queryKeys } from '@/lib/queryKeys'
-import { formatCurrency } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { useCategoryAnalyticsQuery } from '../hooks/useCategoryAnalyticsQuery'
 import { exportCategoryAnalytics } from '../lib/export-category-analytics'
 import type { ExportFormat } from '@/lib/exportUtils'
-import type { ICategorySalesRow } from '@/types'
+import { CATEGORY_COLUMNS } from './category-analytics-columns'
+import { CategoryAnalyticsResults } from './CategoryAnalyticsResults'
 
 function daysAgoIso(days: number): string {
   const d = new Date()
@@ -57,52 +51,6 @@ export function CategoryAnalyticsTab({ isAdmin }: CategoryAnalyticsTabProps) {
 
   const { data, isLoading } = useCategoryAnalyticsQuery(params)
   const rows = data?.rows ?? []
-  const chartData = rows.map((r) => ({ name: r.categoryName, value: r.revenue }))
-
-  const columns: DataTableColumn<ICategorySalesRow>[] = [
-    {
-      key: 'category',
-      header: 'Category',
-      className: 'font-medium text-text-1',
-      render: (r) => (
-        <span className="inline-flex items-center gap-2">
-          <span
-            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-            style={{ background: r.color ?? 'var(--primary)' }}
-          />
-          {r.categoryName}
-        </span>
-      ),
-    },
-    {
-      key: 'units',
-      header: 'Units',
-      align: 'right',
-      numeric: true,
-      render: (r) => Math.round(r.units),
-    },
-    {
-      key: 'revenue',
-      header: 'Revenue',
-      align: 'right',
-      numeric: true,
-      render: (r) => formatCurrency(r.revenue),
-    },
-    {
-      key: 'share',
-      header: 'Share',
-      align: 'right',
-      numeric: true,
-      render: (r) => `${r.sharePct}%`,
-    },
-    {
-      key: 'txns',
-      header: 'Txns',
-      align: 'right',
-      numeric: true,
-      render: (r) => r.transactions,
-    },
-  ]
 
   const scopeLabel = isAdmin
     ? branchId
@@ -193,61 +141,12 @@ export function CategoryAnalyticsTab({ isAdmin }: CategoryAnalyticsTabProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Kpi label="Revenue" value={formatCurrency(data?.totalRevenue ?? 0)} />
-        <Kpi label="Units" value={String(Math.round(data?.totalUnits ?? 0))} />
-        <Kpi
-          label="Transactions"
-          value={String(data?.totalTransactions ?? 0)}
-        />
-        <Kpi label="Categories" value={String(rows.length)} />
-      </div>
-
-      <div className="border border-border rounded-xl p-4 bg-surface">
-        <h3 className="text-sm font-semibold text-text-1 mb-3">
-          Revenue by category
-        </h3>
-        {isLoading ? (
-          <p className="text-sm text-text-3 py-8 text-center">Loading…</p>
-        ) : chartData.length === 0 ? (
-          <p className="text-sm text-text-3 py-8 text-center">
-            No sales in this range.
-          </p>
-        ) : (
-          <BarChart
-            data={chartData}
-            height={260}
-            formatValue={(v) => formatCurrency(v)}
-          />
-        )}
-      </div>
-
-      {rows.length > 0 && (
-        <DataTable<ICategorySalesRow>
-          columns={columns}
-          rows={rows}
-          getRowKey={(r) => r.categoryId}
-          isLoading={isLoading}
-          zebra
-          empty={
-            <EmptyState
-              title="No sales in this range"
-              description="Adjust the date range or branch filter to see category sales."
-            />
-          }
-        />
-      )}
-    </div>
-  )
-}
-
-function Kpi({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border border-border rounded-xl p-3 bg-surface">
-      <p className="text-[11px] uppercase tracking-wide text-text-3 font-semibold">
-        {label}
-      </p>
-      <p className="text-lg font-bold text-text-1 mt-0.5">{value}</p>
+      <CategoryAnalyticsResults
+        data={data}
+        rows={rows}
+        isLoading={isLoading}
+        columns={CATEGORY_COLUMNS}
+      />
     </div>
   )
 }
