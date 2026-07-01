@@ -18,6 +18,7 @@ import {
  */
 @Entity('loyalty_customers')
 @Index(['phone'], { unique: true })
+@Index(['branchId'])
 export class LoyaltyCustomer {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -30,6 +31,15 @@ export class LoyaltyCustomer {
 
   @Column({ type: 'varchar', length: 60, name: 'last_name', nullable: true })
   lastName!: string | null;
+
+  /**
+   * Branch where this walk-in was enrolled ("home branch"). Lets a
+   * freshly enrolled member appear in that branch's loyalty list
+   * before their first sale writes a branch-carrying ledger row.
+   * Null for pre-existing walk-ins and admin-initiated enrols.
+   */
+  @Column({ type: 'uuid', name: 'branch_id', nullable: true })
+  branchId!: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

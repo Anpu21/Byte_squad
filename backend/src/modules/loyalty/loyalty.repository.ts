@@ -367,6 +367,51 @@ export class LoyaltyRepository {
   }
 
   /**
+   * History for either owner side (walk-ins have no `userId`, so the
+   * customer /me path's `listEntries(userId)` can't serve them).
+   * Returns empty when neither owner id is set.
+   */
+  async listEntriesByOwner(
+    owner: { userId: string | null; loyaltyCustomerId: string | null },
+    limit: number,
+    offset: number,
+  ): Promise<{ rows: LoyaltyLedgerEntry[]; total: number }> {
+    const where = owner.userId
+      ? { userId: owner.userId }
+      : owner.loyaltyCustomerId
+        ? { loyaltyCustomerId: owner.loyaltyCustomerId }
+        : null;
+    if (!where) return { rows: [], total: 0 };
+    const [rows, total] = await this.ledgerRepo.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+    return { rows, total };
+  }
+
+  /** True when the owner has ≥1 ledger movement at the given branch. */
+  async hasLedgerAtBranch(
+    owner: { userId: string | null; loyaltyCustomerId: string | null },
+    branchId: string,
+  ): Promise<boolean> {
+    const qb = this.ledgerRepo
+      .createQueryBuilder('le')
+      .where('le.branch_id = :branchId', { branchId });
+    if (owner.userId) {
+      qb.andWhere('le.user_id = :userId', { userId: owner.userId });
+    } else if (owner.loyaltyCustomerId) {
+      qb.andWhere('le.loyalty_customer_id = :cid', {
+        cid: owner.loyaltyCustomerId,
+      });
+    } else {
+      return false;
+    }
+    return (await qb.getCount()) > 0;
+  }
+
+  /**
    * Admin customer list, spanning BOTH user-side and walk-in-side
    * loyalty accounts. The query LEFT JOINs both identity tables and
    * COALESCEs the display fields so a row is always presentable

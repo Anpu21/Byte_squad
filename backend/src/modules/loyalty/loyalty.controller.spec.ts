@@ -3,6 +3,15 @@ import { Test } from '@nestjs/testing';
 import { LoyaltyController } from './loyalty.controller';
 import { LoyaltyService } from './loyalty.service';
 import type { LoyaltyLookupResult } from './types';
+import { UserRole } from '@common/enums/user-roles.enums';
+import type { AuthUser } from '@common/types/auth-user.type';
+
+const ACTOR: AuthUser = {
+  id: 'cashier-1',
+  email: 'cashier@ledgerpro.com',
+  role: UserRole.CASHIER,
+  branchId: 'branch-1',
+};
 
 const SAMPLE_RESULT: LoyaltyLookupResult = {
   ownerType: 'user',
@@ -41,6 +50,8 @@ describe('LoyaltyController', () => {
       getSettings: jest.fn(),
       getSummary: jest.fn(),
       listHistory: jest.fn(),
+      listBranchCustomers: jest.fn(),
+      getMemberHistory: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
@@ -72,10 +83,37 @@ describe('LoyaltyController', () => {
         firstName: 'Walk',
         lastName: 'In',
       };
-      const result = await controller.enroll(body);
+      const result = await controller.enroll(body, ACTOR);
 
-      expect(service.enrollWalkInCustomer).toHaveBeenCalledWith(body);
+      expect(service.enrollWalkInCustomer).toHaveBeenCalledWith(body, ACTOR);
       expect(result).toBe(WALK_IN_RESULT);
+    });
+  });
+
+  describe('listBranchCustomers', () => {
+    it('forwards the query + actor to the service', async () => {
+      const response = { rows: [], total: 0, limit: 20, offset: 0 };
+      service.listBranchCustomers.mockResolvedValue(response);
+
+      const result = await controller.listBranchCustomers({ search: 'j' }, ACTOR);
+
+      expect(service.listBranchCustomers).toHaveBeenCalledWith(
+        { search: 'j' },
+        ACTOR,
+      );
+      expect(result).toBe(response);
+    });
+  });
+
+  describe('memberHistory', () => {
+    it('forwards the account id, actor, and query to the service', async () => {
+      const response = { entries: [], total: 0, limit: 20, offset: 0 };
+      service.getMemberHistory.mockResolvedValue(response);
+
+      const result = await controller.memberHistory('acc-1', {}, ACTOR);
+
+      expect(service.getMemberHistory).toHaveBeenCalledWith('acc-1', ACTOR, {});
+      expect(result).toBe(response);
     });
   });
 });
