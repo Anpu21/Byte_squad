@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { Sparkle, StoreScene, type AuthScenePalette } from './auth-scene-parts';
 
 /** Star field — small ivory dots that twinkle on staggered delays. */
 const STARS: ReadonlyArray<{ x: number; y: number; r: number; d: string }> = [
@@ -13,6 +14,26 @@ const STARS: ReadonlyArray<{ x: number; y: number; r: number; d: string }> = [
   { x: 322, y: 56, r: 1.2, d: '.7s' },
   { x: 336, y: 104, r: 1, d: '1.2s' },
 ];
+
+const NIGHT_PALETTE: AuthScenePalette = {
+  signBar: '#4A4236',
+  signBoard: '#221C2E',
+  signText: '#F0C765',
+  facade: '#D7CEBA',
+  facadeStroke: '#BCB29A',
+  awningBar: '#56633A',
+  awningA: '#6B7A47',
+  awningB: '#CFC8B4',
+  windowGradId: 'lpNWin',
+  windowPulse: '3s',
+  door: '#A67E4E',
+  doorStroke: '#7E5C34',
+  doorKnob: '#5A421F',
+  plantA: '#536535',
+  plantB: '#5E7140',
+  plantC: '#6B7D4A',
+  pot: '#9A6238',
+};
 
 /** Nighttime storefront brand scene (dark theme). Moon, stars, glowing window. */
 export default function AuthBrandSceneNight({ className }: { className?: string }) {
@@ -109,108 +130,19 @@ export default function AuthBrandSceneNight({ className }: { className?: string 
           {/* warm light pool spilling from the window */}
           <ellipse cx="145" cy="206" rx="46" ry="11" fill="url(#lpPool)" />
 
-          {/* hanging OPEN sign */}
-          <g transform="translate(96 120)">
-            <rect x="-30" y="0" width="30" height="4" rx="2" fill="#4A4236" />
-            <g
-              style={{
-                transformBox: 'fill-box',
-                transformOrigin: 'top',
-                animation: 'lp-swing 3.6s ease-in-out infinite',
-              }}
-            >
-              <line x1="-15" y1="2" x2="-15" y2="16" stroke="#4A4236" strokeWidth="2" />
-              <g style={{ transformBox: 'fill-box', transformOrigin: 'center' }}>
-                <rect x="-37" y="16" width="44" height="22" rx="5" fill="#221C2E" />
-                <text
-                  x="-15"
-                  y="31"
-                  textAnchor="middle"
-                  fontFamily="'Hanken Grotesk',sans-serif"
-                  fontSize="10"
-                  fontWeight="700"
-                  letterSpacing="0.6"
-                  fill="#F0C765"
-                >
-                  OPEN
-                </text>
-              </g>
-            </g>
-          </g>
-
-          {/* storefront */}
-          <rect x="104" y="110" width="152" height="86" rx="4" fill="#D7CEBA" stroke="#BCB29A" strokeWidth="2" />
-
-          {/* awning */}
-          <g>
-            <rect x="98" y="120" width="164" height="9" rx="3" fill="#56633A" />
-            <path d="M98 129 q11 0 11 11 h-22 q0 -11 11 -11 Z" transform="translate(2 0)" fill="#6B7A47" />
-            <path d="M98 129 q11 0 11 11 h-22 q0 -11 11 -11 Z" transform="translate(24 0)" fill="#CFC8B4" />
-            <path d="M98 129 q11 0 11 11 h-22 q0 -11 11 -11 Z" transform="translate(46 0)" fill="#6B7A47" />
-            <path d="M98 129 q11 0 11 11 h-22 q0 -11 11 -11 Z" transform="translate(68 0)" fill="#CFC8B4" />
-            <path d="M98 129 q11 0 11 11 h-22 q0 -11 11 -11 Z" transform="translate(90 0)" fill="#6B7A47" />
-            <path d="M98 129 q11 0 11 11 h-22 q0 -11 11 -11 Z" transform="translate(112 0)" fill="#CFC8B4" />
-            <path d="M98 129 q11 0 11 11 h-22 q0 -11 11 -11 Z" transform="translate(134 0)" fill="#6B7A47" />
-            <path d="M98 129 q11 0 11 11 h-22 q0 -11 11 -11 Z" transform="translate(156 0)" fill="#CFC8B4" />
-          </g>
-
-          {/* window — bright warm glow (the night light) */}
-          <rect
-            x="119"
-            y="150"
-            width="52"
-            height="40"
-            rx="6"
-            fill="url(#lpNWin)"
-            style={{
-              transformBox: 'fill-box',
-              transformOrigin: 'center',
-              animation: 'lp-pulse 3s ease-in-out infinite',
-            }}
-          />
-          <rect x="119" y="150" width="52" height="40" rx="6" fill="none" stroke="#C9A86F" strokeWidth="2.5" />
-          <line x1="145" y1="150" x2="145" y2="190" stroke="#C9A86F" strokeWidth="2" />
-          <line x1="119" y1="170" x2="171" y2="170" stroke="#C9A86F" strokeWidth="2" />
-
-          {/* door */}
-          <rect x="190" y="150" width="46" height="46" rx="5" fill="#A67E4E" />
-          <rect x="190" y="150" width="46" height="46" rx="5" fill="none" stroke="#7E5C34" strokeWidth="2" />
-          <circle cx="229" cy="174" r="2.4" fill="#5A421F" />
-
-          {/* potted plant */}
-          <g transform="translate(248 196)">
-            <g
-              style={{
-                transformBox: 'fill-box',
-                transformOrigin: 'bottom',
-                animation: 'lp-leaf 4.2s ease-in-out infinite',
-              }}
-            >
-              <path d="M0 -8 C-12 -14 -13 -28 -3 -34 C0 -24 1 -16 0 -8 Z" fill="#536535" />
-              <path d="M0 -8 C12 -16 14 -30 3 -36 C-1 -25 -1 -16 0 -8 Z" fill="#5E7140" />
-              <path d="M0 -6 C-3 -18 1 -30 0 -34 C-1 -30 -5 -18 0 -6 Z" fill="#6B7D4A" />
-            </g>
-            <path d="M-9 -8 H9 L6 6 H-6 Z" fill="#9A6238" />
-          </g>
+          <StoreScene p={NIGHT_PALETTE} />
 
           {/* foreground twinkles */}
-          <path
+          <Sparkle
             d="M306 60 Q307 56 311 55 Q307 54 306 50 Q305 54 301 55 Q305 56 306 60 Z"
             fill="#FBE3A0"
-            style={{
-              transformBox: 'fill-box',
-              transformOrigin: 'center',
-              animation: 'lp-twinkle 2.6s ease-in-out infinite',
-            }}
+            dur="2.6s"
           />
-          <path
+          <Sparkle
             d="M84 150 Q85 147 88 146 Q85 145 84 142 Q83 145 80 146 Q83 147 84 150 Z"
             fill="#F0CE84"
-            style={{
-              transformBox: 'fill-box',
-              transformOrigin: 'center',
-              animation: 'lp-twinkle 3.2s ease-in-out infinite 1.6s',
-            }}
+            dur="3.2s"
+            delay="1.6s"
           />
         </g>
       </svg>
