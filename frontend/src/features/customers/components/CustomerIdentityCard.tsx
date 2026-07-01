@@ -24,25 +24,7 @@ export function CustomerIdentityCard({
           <Row label="Phone" value={profile.phone ?? "—"} />
           <Row label="Email" value={profile.email ?? "—"} />
           <Row label="Home branch" value={profile.homeBranchName ?? "—"} />
-          <Row label="Segment" value={profile.segment ?? "—"} />
         </dl>
-        {profile.tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {profile.tags.map((t) => (
-              <span
-                key={t}
-                className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-text-2"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-        )}
-        {profile.notes && (
-          <p className="mt-3 rounded-md bg-surface-2/60 p-3 text-[12.5px] text-text-2">
-            {profile.notes}
-          </p>
-        )}
       </Card>
 
       {profile.creditAccounts.length > 0 && (

@@ -7,6 +7,7 @@ import type { CustomerType } from "@/types";
 import { useCustomerDetail } from "./hooks/useCustomerDetail";
 import { CustomerKpiStrip } from "./components/CustomerKpiStrip";
 import { CustomerIdentityCard } from "./components/CustomerIdentityCard";
+import { CustomerManageCard } from "./components/CustomerManageCard";
 import { CustomerRecentActivity } from "./components/CustomerRecentActivity";
 
 const TYPE_LABEL: Record<CustomerType, string> = {
@@ -71,8 +72,9 @@ export function CustomerDetailPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <div className="xl:col-span-1">
+            <div className="space-y-4 xl:col-span-1">
               <CustomerIdentityCard profile={data} />
+              <CustomerManageCard key={data.customerKey} profile={data} />
             </div>
             <div className="xl:col-span-2">
               <CustomerRecentActivity

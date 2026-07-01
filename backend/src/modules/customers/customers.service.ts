@@ -11,6 +11,8 @@ import type { IPaginated } from '@common/pagination/paginated.type';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { AuthUser } from '@common/types/auth-user.type';
 import { ListCustomersQueryDto } from '@/modules/customers/dto/list-customers-query.dto';
+import { UpdateCustomerProfileDto } from '@/modules/customers/dto/update-customer-profile.dto';
+import { CustomerProfilesRepository } from '@/modules/customers/customer-profiles.repository';
 import {
   CustomersRepository,
   type CustomerRosterRow,
@@ -24,7 +26,10 @@ import type {
 
 @Injectable()
 export class CustomersService {
-  constructor(private readonly repo: CustomersRepository) {}
+  constructor(
+    private readonly repo: CustomersRepository,
+    private readonly profiles: CustomerProfilesRepository,
+  ) {}
 
   async list(
     dto: ListCustomersQueryDto,
@@ -116,6 +121,30 @@ export class CustomersService {
       recentOrders,
       ids,
     };
+  }
+
+  /** Update a customer's management metadata (tags / notes / segment / status). */
+  async updateProfile(
+    key: string,
+    dto: UpdateCustomerProfileDto,
+    actor: AuthUser,
+  ): Promise<CustomerProfileDetail> {
+    const branchId = this.resolveBranchScope(actor, undefined);
+    const identity = await this.repo.findIdentityByKey(key, branchId);
+    if (!identity) {
+      throw new NotFoundException('Customer not found');
+    }
+    const profile = await this.profiles.ensure(key, actor.id);
+    if (dto.tags !== undefined) {
+      profile.tags = [
+        ...new Set(dto.tags.map((t) => t.trim()).filter(Boolean)),
+      ];
+    }
+    if (dto.notes !== undefined) profile.notes = dto.notes.trim() || null;
+    if (dto.segment !== undefined) profile.segment = dto.segment.trim() || null;
+    if (dto.status !== undefined) profile.status = dto.status;
+    await this.profiles.save(profile);
+    return this.getProfile(key, actor);
   }
 
   private toSummary(

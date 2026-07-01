@@ -35,6 +35,13 @@ export interface ICustomerRecentOrder {
   createdAt: string
 }
 
+export interface ICustomerProfileUpdate {
+  tags?: string[]
+  notes?: string
+  segment?: string
+  status?: CustomerStatus
+}
+
 export interface ICustomerProfileDetail {
   customerKey: string
   displayName: string

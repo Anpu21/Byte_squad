@@ -1,6 +1,15 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { CustomersService } from '@/modules/customers/customers.service';
 import { ListCustomersQueryDto } from '@/modules/customers/dto/list-customers-query.dto';
+import { UpdateCustomerProfileDto } from '@/modules/customers/dto/update-customer-profile.dto';
 import type {
   CustomerProfileDetail,
   CustomerSummary,
@@ -38,5 +47,15 @@ export class CustomersController {
     @CurrentUser() actor: AuthUser,
   ): Promise<CustomerProfileDetail> {
     return this.service.getProfile(key, actor);
+  }
+
+  // Update management metadata (tags / notes / segment / status = deactivate).
+  @Patch(APP_ROUTES.CUSTOMERS.BY_KEY)
+  update(
+    @Param('key') key: string,
+    @Body() dto: UpdateCustomerProfileDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<CustomerProfileDetail> {
+    return this.service.updateProfile(key, dto, actor);
   }
 }
