@@ -27,13 +27,8 @@ export const COMPARISON_VIEWS: ComparisonView[] = [
     'staff',
 ];
 
-export function formatCurrencyWhole(n: number): string {
-    return new Intl.NumberFormat('en-LK', {
-        style: 'currency',
-        currency: 'LKR',
-        maximumFractionDigits: 0,
-    }).format(n);
-}
+// Promoted to @/lib/utils; re-exported so feature callers keep working.
+export { formatCurrencyWhole } from '@/lib/utils';
 
 export function formatNumber(n: number, maximumFractionDigits = 0): string {
     return new Intl.NumberFormat('en-LK', {
@@ -45,24 +40,12 @@ export function formatPercent(n: number): string {
     return `${(n * 100).toFixed(1)}%`;
 }
 
-export function compactNumber(value: number): string {
-  if (Math.abs(value) >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M`;
-  }
-  if (Math.abs(value) >= 1_000) {
-    return `${(value / 1_000).toFixed(0)}k`;
-  }
-  return value.toLocaleString();
-}
-
-export function compactCurrency(value: number): string {
-  return `Rs ${compactNumber(value)}`;
-}
-
-export function chartValue(value: number | string | undefined): string {
-  if (typeof value === "number") return compactNumber(value);
-  return value ? String(value) : "0";
-}
+// Promoted to the shared chart kit; re-exported so feature callers keep working.
+export {
+    chartValue,
+    compactCurrency,
+    compactNumber,
+} from '@/components/charts/chart-format';
 
 export function toInputDate(d: Date): string {
     const pad = (x: number) => String(x).padStart(2, '0');

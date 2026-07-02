@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { compactCurrency, compactNumber } from "../../lib/format";
+import { compactCurrency, compactNumber } from "./chart-format";
 import { ChartCard } from "./ChartCard";
 import { ChartTooltip, type ChartRow } from "./ChartTooltip";
 

@@ -27,6 +27,7 @@ import {
     customerProtectedRoutes,
     customerPublicRoutes,
 } from './config/customer.routes';
+import { legalPublicRoutes } from './config/legal.routes';
 
 /**
  * The full route tree. Guards (`PublicRoute` / `ProtectedRoute` / `RequireRole`)
@@ -104,6 +105,9 @@ export const routes = createRoutesFromElements(
 
         {/* Public order confirmation — no guard (the code is the credential) */}
         {customerPublicRoutes}
+
+        {/* Public legal / policy pages — no guard (bank reviewer + customers) */}
+        {legalPublicRoutes}
 
         {/* Catch-all */}
         <Route path="*" element={<NotFoundPage />} />

@@ -13,8 +13,8 @@ import {
 import type { IBranchAnalyticsComparisonEntry } from "@/types";
 import { compactCurrency } from "../../lib/format";
 import { CHART_COLORS } from "../../lib/chart-config";
-import { ChartCard } from "./ChartCard";
-import { ChartTooltip } from "./ChartTooltip";
+import { ChartCard } from "@/components/charts/ChartCard";
+import { ChartTooltip } from "@/components/charts/ChartTooltip";
 
 export function ProfitabilityScatter({
   branches,

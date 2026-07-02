@@ -23,6 +23,7 @@ import {
     LuReceipt as Receipt,
     LuScale as Scale,
     LuScrollText as ScrollText,
+    LuSettings2 as Settings2,
     LuShoppingBag as ShoppingBag,
     LuShoppingCart as ShoppingCart,
     LuSparkles as Sparkles,
@@ -42,7 +43,7 @@ import { type NavEntry } from './types';
 const { ADMIN, MANAGER, CASHIER, WORKER } = UserRole;
 
 /**
- * The sidebar — every section, in render order, grouped and role-gated. The 6
+ * The sidebar — every section, in render order, grouped and role-gated. The
  * tabbed hubs inline their `tabs`; tabs for non-sidebar workspaces live in
  * `workspace-tabs.ts`. This is the single source of truth for the left nav.
  */
@@ -98,7 +99,16 @@ export const SIDEBAR: NavEntry[] = [
             { key: 'suppliers', label: 'Suppliers', Icon: Building2 },
         ],
     },
-    { id: 'brand-analytics', label: 'nav.brandAnalysis', path: R.BRAND_ANALYTICS, Icon: Trophy, roles: [ADMIN, MANAGER], group: 'Inventory' },
+    {
+        id: 'brand-analytics', label: 'nav.brandAnalysis', path: R.BRAND_ANALYTICS, Icon: Trophy,
+        roles: [ADMIN, MANAGER], group: 'Inventory',
+        tabs: [
+            { key: 'brands', label: 'Brands', Icon: Trophy },
+            { key: 'by-category', label: 'By category', Icon: Tags },
+            { key: 'by-branch', label: 'By branch', Icon: GitCompareArrows },
+            { key: 'manage', label: 'Manage', Icon: Settings2 },
+        ],
+    },
 
     // ── Finance ──
     {
