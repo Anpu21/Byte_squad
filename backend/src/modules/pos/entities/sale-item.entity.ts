@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { DiscountType } from '@/common/enums/discount.enum';
 import { Sale } from '@pos/entities/sale.entity';
@@ -12,6 +13,8 @@ import { ProductSellableUnit } from '@products/entities/product-sellable-unit.en
 import type { PriceLevel } from '@pos/types';
 
 @Entity('sale_items')
+@Index('idx_sale_items_sale_id', ['saleId'])
+@Index('idx_sale_items_product_id', ['productId'])
 export class SaleItem {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

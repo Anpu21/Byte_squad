@@ -7,7 +7,11 @@ import { TransactionType } from '@common/enums/transaction.enum';
 import type {
   BrandSalesRow,
   BrandProductRow,
+  BrandCategoryRow,
   BrandTrendPoint,
+  CategoryBrandRow,
+  CategoryProductRow,
+  CategoryProductSort,
 } from '@/modules/brands/types';
 
 interface BrandAnalyticsParams {
@@ -21,6 +25,11 @@ export interface BrandSummary {
   revenue: number;
   profit: number;
   transactions: number;
+}
+
+/** A brand plus how many products reference it (drives the manage UI + delete guard). */
+export interface BrandWithCount extends Brand {
+  productCount: number;
 }
 
 interface BrandSalesAggRaw {
@@ -39,6 +48,49 @@ interface BrandProductAggRaw {
   units: string | null;
   revenue: string | null;
   profit: string | null;
+}
+
+interface BrandCategoryAggRaw {
+  categoryId: string;
+  categoryName: string;
+  color: string | null;
+  units: string | null;
+  revenue: string | null;
+  profit: string | null;
+  transactions: string | null;
+}
+
+interface CategoryBrandAggRaw {
+  brandId: string | null;
+  brandName: string | null;
+  color: string | null;
+  units: string | null;
+  revenue: string | null;
+  profit: string | null;
+  transactions: string | null;
+}
+
+interface CategoryProductAggRaw {
+  productId: string;
+  productName: string;
+  brandId: string | null;
+  brandName: string | null;
+  color: string | null;
+  units: string | null;
+  revenue: string | null;
+  profit: string | null;
+}
+
+interface CountRaw {
+  count: string | null;
+}
+
+export interface CategoryProductsPageOptions {
+  brandId?: string;
+  search?: string;
+  sort: CategoryProductSort;
+  limit: number;
+  skip: number;
 }
 
 interface BrandSummaryRaw {
@@ -96,7 +148,7 @@ export class BrandRepository {
     return this.repository.findOne({ where: { name } });
   }
 
-  async list(includeInactive: boolean): Promise<Brand[]> {
+  async list(includeInactive: boolean): Promise<BrandWithCount[]> {
     const qb = this.repository
       .createQueryBuilder('b')
       .orderBy('b.sortOrder', 'ASC')
@@ -104,7 +156,30 @@ export class BrandRepository {
     if (!includeInactive) {
       qb.where('b.is_active = true');
     }
-    return qb.getMany();
+    const brands = await qb.getMany();
+    if (brands.length === 0) return [];
+
+    const counts = await this.dataSource
+      .getRepository(Product)
+      .createQueryBuilder('p')
+      .select('p.brand_id', 'brandId')
+      .addSelect('COUNT(*)', 'count')
+      .where('p.brand_id IN (:...ids)', { ids: brands.map((b) => b.id) })
+      .groupBy('p.brand_id')
+      .getRawMany<{ brandId: string; count: string }>();
+    const countMap = new Map(counts.map((c) => [c.brandId, Number(c.count)]));
+
+    return brands.map((b) => ({ ...b, productCount: countMap.get(b.id) ?? 0 }));
+  }
+
+  /** Number of products referencing a brand (delete guard). */
+  async countProductsForBrand(brandId: string): Promise<number> {
+    return this.dataSource.getRepository(Product).count({ where: { brandId } });
+  }
+
+  /** Hard-delete a brand row. Callers must ensure no product references it. */
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
   }
 
   /** Keep the denormalized `products.brand` string in sync after a rename. */
@@ -131,6 +206,7 @@ export class BrandRepository {
       .innerJoin('item.product', 'product')
       .where('sale.type = :type', { type: TransactionType.SALE })
       .andWhere('sale.status != :voided', { voided: 'Voided' })
+      .andWhere('item.status != :voided')
       .andWhere('sale.created_at BETWEEN :startDate AND :endDate', {
         startDate: params.startDate,
         endDate: params.endDate,
@@ -190,13 +266,24 @@ export class BrandRepository {
     };
   }
 
-  /** Per-product breakdown within one brand, ranked by revenue. */
+  /**
+   * Per-product breakdown within one brand, ranked by revenue. When
+   * `categoryId` is given the list is narrowed to that category ("one category,
+   * many products of this brand").
+   */
   async productsForBrand(
     params: BrandAnalyticsParams,
     brandId: string,
+    categoryId?: string,
   ): Promise<BrandProductRow[]> {
-    const rows = await this.salesItemsBase(params)
-      .andWhere('product.brand_id = :brandId', { brandId })
+    const qb = this.salesItemsBase(params).andWhere(
+      'product.brand_id = :brandId',
+      { brandId },
+    );
+    if (categoryId) {
+      qb.andWhere('product.category_id = :categoryId', { categoryId });
+    }
+    const rows = await qb
       .select('product.id', 'productId')
       .addSelect('product.name', 'productName')
       .addSelect(UNITS_EXPR, 'units')
@@ -212,6 +299,43 @@ export class BrandRepository {
       units: Number(r.units ?? 0),
       revenue: Number(r.revenue ?? 0),
       profit: Number(r.profit ?? 0),
+      marginPct: 0,
+      sharePct: 0,
+    }));
+  }
+
+  /**
+   * Per-category breakdown within one brand, ranked by revenue. Categories are
+   * derived through the brand's products (inner join to the product's category);
+   * products always carry a category, so this reconciles with the brand total.
+   */
+  async categoriesForBrand(
+    params: BrandAnalyticsParams,
+    brandId: string,
+  ): Promise<BrandCategoryRow[]> {
+    const rows = await this.salesItemsBase(params)
+      .innerJoin('product.categoryRef', 'category')
+      .andWhere('product.brand_id = :brandId', { brandId })
+      .select('category.id', 'categoryId')
+      .addSelect('category.name', 'categoryName')
+      .addSelect('category.color', 'color')
+      .addSelect(UNITS_EXPR, 'units')
+      .addSelect(REVENUE_EXPR, 'revenue')
+      .addSelect(PROFIT_EXPR, 'profit')
+      .addSelect('COUNT(DISTINCT sale.id)', 'transactions')
+      .groupBy('category.id')
+      .addGroupBy('category.name')
+      .addGroupBy('category.color')
+      .orderBy(REVENUE_EXPR, 'DESC')
+      .getRawMany<BrandCategoryAggRaw>();
+    return rows.map((r) => ({
+      categoryId: r.categoryId,
+      categoryName: r.categoryName,
+      color: r.color,
+      units: Number(r.units ?? 0),
+      revenue: Number(r.revenue ?? 0),
+      profit: Number(r.profit ?? 0),
+      transactions: Number(r.transactions ?? 0),
       marginPct: 0,
       sharePct: 0,
     }));
@@ -235,6 +359,155 @@ export class BrandRepository {
       date: r.day,
       revenue: Number(r.revenue ?? 0),
       units: Number(r.units ?? 0),
+    }));
+  }
+
+  // ── Category → brands ("same category, different brands") ───────
+
+  /** Single-row totals for one category across all brands (share denominator). */
+  async categorySummary(
+    params: BrandAnalyticsParams,
+    categoryId: string,
+  ): Promise<BrandSummary> {
+    const raw = await this.salesItemsBase(params)
+      .andWhere('product.category_id = :categoryId', { categoryId })
+      .select(UNITS_EXPR, 'units')
+      .addSelect(REVENUE_EXPR, 'revenue')
+      .addSelect(PROFIT_EXPR, 'profit')
+      .addSelect('COUNT(DISTINCT sale.id)', 'transactions')
+      .getRawOne<BrandSummaryRaw>();
+    return {
+      units: Number(raw?.units ?? 0),
+      revenue: Number(raw?.revenue ?? 0),
+      profit: Number(raw?.profit ?? 0),
+      transactions: Number(raw?.transactions ?? 0),
+    };
+  }
+
+  /**
+   * Every brand selling in one category, ranked by revenue. LEFT JOIN so
+   * products with no brand collapse into a single Unbranded bucket
+   * (brandId=null) — the row set matches `categorySummary`, so they reconcile.
+   */
+  async brandsForCategory(
+    params: BrandAnalyticsParams,
+    categoryId: string,
+  ): Promise<CategoryBrandRow[]> {
+    const rows = await this.salesItemsBase(params)
+      .leftJoin('product.brandRef', 'brand')
+      .andWhere('product.category_id = :categoryId', { categoryId })
+      .select('brand.id', 'brandId')
+      .addSelect('brand.name', 'brandName')
+      .addSelect('brand.color', 'color')
+      .addSelect(UNITS_EXPR, 'units')
+      .addSelect(REVENUE_EXPR, 'revenue')
+      .addSelect(PROFIT_EXPR, 'profit')
+      .addSelect('COUNT(DISTINCT sale.id)', 'transactions')
+      .groupBy('brand.id')
+      .addGroupBy('brand.name')
+      .addGroupBy('brand.color')
+      .orderBy(REVENUE_EXPR, 'DESC')
+      .getRawMany<CategoryBrandAggRaw>();
+    return rows.map((r) => ({
+      brandId: r.brandId ?? null,
+      brandName: r.brandName ?? 'Unbranded',
+      color: r.color,
+      units: Number(r.units ?? 0),
+      revenue: Number(r.revenue ?? 0),
+      profit: Number(r.profit ?? 0),
+      transactions: Number(r.transactions ?? 0),
+      marginPct: 0,
+      sharePct: 0,
+    }));
+  }
+
+  /** Shared roster filter: category, optional brand, optional name search. */
+  private categoryRosterBase(
+    params: BrandAnalyticsParams,
+    categoryId: string,
+    brandId?: string,
+    search?: string,
+  ): SelectQueryBuilder<SaleItem> {
+    const qb = this.salesItemsBase(params).andWhere(
+      'product.category_id = :categoryId',
+      { categoryId },
+    );
+    if (brandId) {
+      qb.andWhere('product.brand_id = :brandId', { brandId });
+    }
+    const term = search?.trim();
+    if (term) {
+      qb.andWhere('product.name ILIKE :search', { search: `%${term}%` });
+    }
+    return qb;
+  }
+
+  /** Count of distinct products in a category (respecting brand/search). */
+  async countCategoryProducts(
+    params: BrandAnalyticsParams,
+    categoryId: string,
+    brandId?: string,
+    search?: string,
+  ): Promise<number> {
+    const raw = await this.categoryRosterBase(
+      params,
+      categoryId,
+      brandId,
+      search,
+    )
+      .select('COUNT(DISTINCT product.id)', 'count')
+      .getRawOne<CountRaw>();
+    return Number(raw?.count ?? 0);
+  }
+
+  /** One page of a category's product roster, brand-tagged, ranked by `sort`. */
+  async categoryProductsPage(
+    params: BrandAnalyticsParams,
+    categoryId: string,
+    opts: CategoryProductsPageOptions,
+  ): Promise<CategoryProductRow[]> {
+    const sortExpr =
+      opts.sort === 'units'
+        ? UNITS_EXPR
+        : opts.sort === 'profit'
+          ? PROFIT_EXPR
+          : REVENUE_EXPR;
+    const rows = await this.categoryRosterBase(
+      params,
+      categoryId,
+      opts.brandId,
+      opts.search,
+    )
+      .leftJoin('product.brandRef', 'brand')
+      .select('product.id', 'productId')
+      .addSelect('product.name', 'productName')
+      .addSelect('brand.id', 'brandId')
+      .addSelect('brand.name', 'brandName')
+      .addSelect('brand.color', 'color')
+      .addSelect(UNITS_EXPR, 'units')
+      .addSelect(REVENUE_EXPR, 'revenue')
+      .addSelect(PROFIT_EXPR, 'profit')
+      .groupBy('product.id')
+      .addGroupBy('product.name')
+      .addGroupBy('brand.id')
+      .addGroupBy('brand.name')
+      .addGroupBy('brand.color')
+      .orderBy(sortExpr, 'DESC')
+      .addOrderBy('product.name', 'ASC')
+      .limit(opts.limit)
+      .offset(opts.skip)
+      .getRawMany<CategoryProductAggRaw>();
+    return rows.map((r) => ({
+      productId: r.productId,
+      productName: r.productName,
+      brandId: r.brandId ?? null,
+      brandName: r.brandName ?? null,
+      color: r.color,
+      units: Number(r.units ?? 0),
+      revenue: Number(r.revenue ?? 0),
+      profit: Number(r.profit ?? 0),
+      marginPct: 0,
+      sharePct: 0,
     }));
   }
 }

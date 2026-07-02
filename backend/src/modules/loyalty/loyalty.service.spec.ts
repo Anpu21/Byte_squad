@@ -534,7 +534,6 @@ describe('LoyaltyService', () => {
   });
 
   describe('listCustomers', () => {
-
     function makeUserRow(
       overrides: Partial<LoyaltyCustomerRow> = {},
     ): LoyaltyCustomerRow {

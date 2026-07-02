@@ -95,7 +95,10 @@ describe('LoyaltyController', () => {
       const response = { rows: [], total: 0, limit: 20, offset: 0 };
       service.listBranchCustomers.mockResolvedValue(response);
 
-      const result = await controller.listBranchCustomers({ search: 'j' }, ACTOR);
+      const result = await controller.listBranchCustomers(
+        { search: 'j' },
+        ACTOR,
+      );
 
       expect(service.listBranchCustomers).toHaveBeenCalledWith(
         { search: 'j' },

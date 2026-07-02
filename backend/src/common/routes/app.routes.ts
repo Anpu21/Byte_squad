@@ -78,6 +78,10 @@ export const APP_ROUTES = {
     BASE: `${API_PREFIX}/brands`,
     ANALYTICS_OVERVIEW: 'analytics/overview',
     ANALYTICS_BRAND: 'analytics/:brandId',
+    // Static `by-category` segment can't be captured by `:brandId` (different
+    // segment count), so these safely sit alongside the per-brand route.
+    BY_CATEGORY: 'analytics/by-category/:categoryId',
+    BY_CATEGORY_PRODUCTS: 'analytics/by-category/:categoryId/products',
     BY_ID: ':id',
     ARCHIVE: ':id/archive',
   },
@@ -97,6 +101,20 @@ export const APP_ROUTES = {
     CLOSE: ':id/close',
     STATEMENT: ':id/statement',
     PAYMENTS: ':id/payments',
+  },
+
+  // Customer hub — unified directory / 360 profile / analytics over the
+  // phone-stitched customer identity (registered user + walk-in + khata).
+  CUSTOMERS: {
+    BASE: `${API_PREFIX}/customers`,
+    ANALYTICS: 'analytics',
+    BY_KEY: ':key',
+    MERGE: ':key/merge',
+    TAGS: ':key/tags',
+    NOTES: ':key/notes',
+    SEGMENT: ':key/segment',
+    STATUS: ':key/status',
+    LINK: ':key/link',
   },
 
   // Inventory
@@ -231,6 +249,7 @@ export const APP_ROUTES = {
   BRANCH_ANALYTICS: {
     BASE: `${API_PREFIX}/branch-analytics`,
     COMPARISON: 'comparison',
+    PRODUCTS: 'products',
     BRANCHES: 'branches',
   },
 
@@ -296,6 +315,7 @@ export const APP_ROUTES = {
     LOOKUP: 'lookup',
     ENROLL: 'enroll',
     CUSTOMERS: 'customers',
+    CUSTOMER_BY_ID: 'customers/:id',
     CUSTOMER_HISTORY: 'customers/:id/history',
     ADMIN_BASE: `${API_PREFIX}/admin/loyalty`,
     ADMIN_SETTINGS: 'settings',

@@ -10,6 +10,7 @@ import { BranchKpiStrip } from "./BranchKpiStrip";
 import { ViewTabs } from "./ViewTabs";
 import { SummaryView } from "./views/SummaryView";
 import { SalesView } from "./views/SalesView";
+import { ProductsView } from "./views/ProductsView";
 import { InventoryView } from "./views/InventoryView";
 import { LoyaltyView } from "./views/LoyaltyView";
 import { CustomersView } from "./views/CustomersView";
@@ -101,6 +102,9 @@ export function BranchComparisonResults({
         />
       )}
       {view === "sales" && <SalesView branches={comparison.branches} />}
+      {view === "products" && (
+        <ProductsView comparison={comparison} branchColors={branchColors} />
+      )}
       {view === "inventory" && <InventoryView branches={comparison.branches} />}
       {view === "loyalty" && <LoyaltyView branches={comparison.branches} />}
       {view === "customers" && <CustomersView branches={comparison.branches} />}

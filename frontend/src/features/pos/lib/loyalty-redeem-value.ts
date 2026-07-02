@@ -10,12 +10,19 @@ export interface ILoyaltyRedeemSizing {
     redeemValue: number;
     /** Upper bound the cashier may redeem on this bill (for input clamping). */
     maxRedeemable: number;
+    /**
+     * When `maxRedeemable` is 0, a plain-language reason the cashier can't
+     * redeem yet (below the minimum balance, empty cart, or bill too small).
+     * Null when redemption is available, or when settings haven't loaded.
+     */
+    disabledReason: string | null;
 }
 
 const EMPTY: ILoyaltyRedeemSizing = {
     cappedPoints: 0,
     redeemValue: 0,
     maxRedeemable: 0,
+    disabledReason: null,
 };
 
 /**
@@ -34,6 +41,8 @@ const EMPTY: ILoyaltyRedeemSizing = {
  * Returns zeros when no owner is attached. When settings haven't loaded
  * yet it falls back to a balance-only cap at point value 1 (the backend
  * re-caps authoritatively on submit, so a brief pre-load estimate is safe).
+ * When the cap lands on 0 it also explains why (`disabledReason`) so the
+ * card never shows a bare "Redeem up to 0" the cashier can't act on.
  */
 export function sizeLoyaltyRedeem(params: {
     owner: IPosLoyaltyOwner | null;
@@ -69,5 +78,34 @@ export function sizeLoyaltyRedeem(params: {
         cappedPoints,
         redeemValue: round2(cappedPoints * pointValue),
         maxRedeemable,
+        disabledReason: reasonForZeroCap({
+            maxRedeemable,
+            balance: owner.pointsBalance,
+            itemsSubtotal,
+            settings,
+        }),
     };
+}
+
+/**
+ * Explains a zero redeem cap in cashier terms. Priority: below-minimum
+ * balance (a permanent block for this member) → empty cart → bill too small
+ * for the redeem-cap percentage. Null when redemption is possible or when
+ * settings are still loading (so we never show a misleading reason).
+ */
+function reasonForZeroCap(params: {
+    maxRedeemable: number;
+    balance: number;
+    itemsSubtotal: number;
+    settings: ILoyaltySettings | null;
+}): string | null {
+    const { maxRedeemable, balance, itemsSubtotal, settings } = params;
+    if (maxRedeemable > 0 || !settings) return null;
+    if (balance < settings.minRedeemablePoints) {
+        return `Needs ${settings.minRedeemablePoints.toLocaleString()}+ points to redeem (has ${balance.toLocaleString()}).`;
+    }
+    if (itemsSubtotal <= 0) {
+        return 'Add items to the bill to redeem points.';
+    }
+    return `Bill too small to redeem yet — up to ${settings.redeemCapPercent}% can be paid with points.`;
 }

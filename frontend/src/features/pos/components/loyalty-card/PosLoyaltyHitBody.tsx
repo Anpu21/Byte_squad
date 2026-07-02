@@ -13,6 +13,12 @@ export interface IPosLoyaltyHitBodyProps {
      * caller hasn't sized it yet (e.g. before settings load).
      */
     maxRedeemable?: number;
+    /**
+     * Plain-language reason redemption is unavailable when the cap is 0
+     * (below the minimum balance, empty cart, or bill too small). Shown so
+     * the cashier never sees a bare "Redeem up to 0" with no explanation.
+     */
+    redeemDisabledReason?: string | null;
 }
 
 /**
@@ -26,6 +32,7 @@ export function PosLoyaltyHitBody({
     redeemPoints,
     onRedeemChange,
     maxRedeemable,
+    redeemDisabledReason,
 }: IPosLoyaltyHitBodyProps) {
     const redeemCap = maxRedeemable ?? Math.max(0, owner.pointsBalance);
     const tierLabel =
@@ -72,6 +79,9 @@ export function PosLoyaltyHitBody({
                     </span>
                 </div>
             </div>
+            {redeemCap === 0 && redeemDisabledReason ? (
+                <p className="text-[11px] text-text-2">{redeemDisabledReason}</p>
+            ) : null}
             <p className="text-[10px] text-text-3">
                 Member attached — points earn automatically at checkout.
             </p>

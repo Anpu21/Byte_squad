@@ -12,4 +12,10 @@ export class BrandAnalyticsQueryDto {
   @IsOptional()
   @IsUUID('4')
   branchId?: string;
+
+  // Drill-down only: narrow the per-product breakdown to one category.
+  // Does not affect the by-category breakdown itself.
+  @IsOptional()
+  @IsUUID('4')
+  categoryId?: string;
 }

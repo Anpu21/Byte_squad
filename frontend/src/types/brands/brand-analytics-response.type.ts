@@ -1,5 +1,6 @@
 import type { IBrandSalesRow } from './brand-sales-row.type'
 import type { IBrandProductRow } from './brand-product-row.type'
+import type { IBrandCategoryRow } from './brand-category-row.type'
 import type { IBrandTrendPoint } from './brand-trend-point.type'
 
 /** Brand leaderboard — every brand ranked by revenue for the window. */
@@ -33,6 +34,8 @@ export interface IBrandDrilldownResponse {
   totalProfit: number
   totalTransactions: number
   marginPct: number
+  /** Sales broken down by the categories this brand's products belong to. */
+  categories: IBrandCategoryRow[]
   products: IBrandProductRow[]
   trend: IBrandTrendPoint[]
 }
