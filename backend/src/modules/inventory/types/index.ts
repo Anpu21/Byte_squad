@@ -8,3 +8,4 @@ export * from './paginated-stock-adjustments.type';
 export * from './sale-return-lookup.type';
 export * from './paginated-sales-returns.type';
 export * from './returns-analytics.type';
+export * from './exchange-result.type';

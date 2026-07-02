@@ -1,11 +1,22 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ReturnsService } from '@inventory/returns.service';
+import { ExchangeService } from '@inventory/exchange.service';
 import { LookupSaleQueryDto } from '@inventory/dto/lookup-sale-query.dto';
 import { CreateSalesReturnDto } from '@inventory/dto/create-sales-return.dto';
+import { CreateExchangeDto } from '@inventory/dto/create-exchange.dto';
 import { ListReturnsQueryDto } from '@inventory/dto/list-returns-query.dto';
 import { ReturnsAnalyticsQueryDto } from '@inventory/dto/returns-analytics-query.dto';
 import { SalesReturn } from '@inventory/entities/sales-return.entity';
 import {
+  ExchangeResult,
   PaginatedSalesReturns,
   ReturnsAnalytics,
   SaleReturnLookup,
@@ -21,7 +32,10 @@ import { APP_ROUTES } from '@common/routes/app.routes';
 @Controller(APP_ROUTES.RETURNS.BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReturnsController {
-  constructor(private readonly service: ReturnsService) {}
+  constructor(
+    private readonly service: ReturnsService,
+    private readonly exchange: ExchangeService,
+  ) {}
 
   // Cashiers process till refunds too — branch scoping is enforced in the
   // service (assertBranchAccess), so the till can only touch its own sales.
@@ -41,6 +55,19 @@ export class ReturnsController {
     @CurrentUser() actor: AuthUser,
   ): Promise<SalesReturn> {
     return this.service.createReturn(actor, dto);
+  }
+
+  // Exchange = return + replacement sale in one transaction. Branch scoping is
+  // enforced in computeReturn (assertBranchAccess). X-Idempotency-Key guards
+  // POS double-submit (a replay would otherwise double-refund + double-sell).
+  @Post(APP_ROUTES.RETURNS.EXCHANGE)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  createExchange(
+    @Body() dto: CreateExchangeDto,
+    @CurrentUser() actor: AuthUser,
+    @Headers('x-idempotency-key') idempotencyKey?: string,
+  ): Promise<ExchangeResult> {
+    return this.exchange.createExchange(actor, dto, idempotencyKey);
   }
 
   @Get(APP_ROUTES.RETURNS.ANALYTICS)

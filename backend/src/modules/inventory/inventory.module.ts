@@ -17,6 +17,7 @@ import { ExpiryController } from '@inventory/expiry.controller';
 import { StockAdjustmentsService } from '@inventory/stock-adjustments.service';
 import { StockAdjustmentsController } from '@inventory/stock-adjustments.controller';
 import { ReturnsService } from '@inventory/returns.service';
+import { ExchangeService } from '@inventory/exchange.service';
 import { ReturnsController } from '@inventory/returns.controller';
 import { ProductsModule } from '@products/products.module';
 import { UsersModule } from '@users/users.module';
@@ -55,6 +56,7 @@ import { PosModule } from '@pos/pos.module';
     ExpiryService,
     StockAdjustmentsService,
     ReturnsService,
+    ExchangeService,
   ],
   exports: [InventoryService, ExpiryService],
 })
