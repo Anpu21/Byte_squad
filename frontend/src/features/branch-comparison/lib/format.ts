@@ -27,13 +27,8 @@ export const COMPARISON_VIEWS: ComparisonView[] = [
     'staff',
 ];
 
-export function formatCurrencyWhole(n: number): string {
-    return new Intl.NumberFormat('en-LK', {
-        style: 'currency',
-        currency: 'LKR',
-        maximumFractionDigits: 0,
-    }).format(n);
-}
+// Promoted to @/lib/utils; re-exported so feature callers keep working.
+export { formatCurrencyWhole } from '@/lib/utils';
 
 export function formatNumber(n: number, maximumFractionDigits = 0): string {
     return new Intl.NumberFormat('en-LK', {

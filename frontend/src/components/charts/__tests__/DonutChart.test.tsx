@@ -46,4 +46,13 @@ describe('DonutChart', () => {
         expect(screen.getByText('60.0%')).toBeInTheDocument();
         expect(screen.getByText('40.0%')).toBeInTheDocument();
     });
+
+    it('stacks the legend full-width below the ring in column layout', () => {
+        render(<DonutChart data={slices} layout="column" />);
+        const legend = screen.getByRole('list');
+        // Full-width rows (not the side-by-side flex-1 legend) — the narrow-card
+        // mode that keeps name + value + percent inside the card bounds.
+        expect(legend.className).toContain('w-full');
+        expect(legend.className).not.toContain('flex-1');
+    });
 });

@@ -21,6 +21,12 @@ interface DonutChartProps {
     centerLabel?: ReactNode;
     formatValue?: (value: number) => string;
     showLegend?: boolean;
+    /**
+     * Legend beside the ring (`row`, default) or stacked full-width below it
+     * (`column`) — use column in narrow cards where name + value + percent
+     * would otherwise overflow past the card edge.
+     */
+    layout?: 'row' | 'column';
     emptyLabel?: string;
     className?: string;
 }
@@ -70,6 +76,7 @@ export default function DonutChart({
     centerLabel,
     formatValue = (v) => v.toLocaleString(),
     showLegend = true,
+    layout = 'row',
     emptyLabel = 'No data for this period',
     className,
 }: DonutChartProps) {
@@ -85,7 +92,13 @@ export default function DonutChart({
     const innerRadius = Math.max(outerRadius - thickness, 0);
 
     return (
-        <div className={cn('flex items-center gap-5', className)}>
+        <div
+            className={cn(
+                'flex items-center gap-5',
+                layout === 'column' && 'flex-col',
+                className,
+            )}
+        >
             <div
                 className="relative flex-none"
                 style={{ width: size, height: size }}
@@ -139,7 +152,12 @@ export default function DonutChart({
             </div>
 
             {showLegend && (
-                <ul className="flex-1 min-w-0 flex flex-col gap-2.5">
+                <ul
+                    className={cn(
+                        'flex flex-col gap-2.5',
+                        layout === 'row' ? 'flex-1 min-w-0' : 'w-full',
+                    )}
+                >
                     {data.map((slice) => {
                         const pct = total > 0 ? (slice.value / total) * 100 : 0;
                         return (

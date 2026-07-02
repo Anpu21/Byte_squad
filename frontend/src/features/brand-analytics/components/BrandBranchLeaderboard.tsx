@@ -2,11 +2,10 @@ import { useMemo } from 'react'
 import { MultiBranchBarChart } from '@/components/charts/MultiBranchBarChart'
 import { ChartCard } from '@/components/charts/ChartCard'
 import DonutChart from '@/components/charts/DonutChart'
-import { CHART_COLORS } from '@/components/charts/chart-palette'
 import ExportMenu from '@/components/common/ExportMenu'
 import { EmptyState, KpiCard, Segmented } from '@/components/ui'
 import Card from '@/components/ui/Card'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatCurrencyWhole } from '@/lib/utils'
 import type { ExportFormat } from '@/lib/exportUtils'
 import {
   LuCoins as Coins,
@@ -23,6 +22,7 @@ import {
   buildGroupedBrandBars,
 } from '../lib/brand-branch-charts'
 import {
+  BRAND_FALLBACK_COLORS,
   buildBrandColors,
   buildBrandMatrixRows,
 } from '../lib/brand-branch-data'
@@ -58,9 +58,15 @@ export function BrandBranchLeaderboard({
   const branches = useMemo(() => data?.branches ?? [], [data])
 
   const brandColors = useMemo(() => buildBrandColors(rows), [rows])
-  const brandColorFor = (key: string) => brandColors[key] ?? CHART_COLORS[0]
+  const brandColorFor = (key: string) =>
+    brandColors[key] ?? BRAND_FALLBACK_COLORS[0]
   const format = (value: number) =>
     metric === 'units' ? Math.round(value).toLocaleString() : formatCurrency(value)
+  // Legend money drops the cents — the exact figures live in the matrix below.
+  const donutFormat = (value: number) =>
+    metric === 'units'
+      ? Math.round(value).toLocaleString()
+      : formatCurrencyWhole(value)
 
   const matrixRows = useMemo(
     () => buildBrandMatrixRows(rows, branches, metric),
@@ -148,15 +154,16 @@ export function BrandBranchLeaderboard({
               title="Brand share"
               description="Selection-wide split across the leading brands."
             >
-              <div className="flex h-72 items-center justify-center">
-                <DonutChart
-                  data={donutData}
-                  size={220}
-                  thickness={28}
-                  formatValue={format}
-                  emptyLabel="No sales"
-                />
-              </div>
+              {/* Column layout: ring above a full-width legend — the side-by-side
+                  legend can't fit name + amount + percent in this third-width card. */}
+              <DonutChart
+                data={donutData}
+                layout="column"
+                size={180}
+                thickness={24}
+                formatValue={donutFormat}
+                emptyLabel="No sales"
+              />
             </ChartCard>
           </div>
 

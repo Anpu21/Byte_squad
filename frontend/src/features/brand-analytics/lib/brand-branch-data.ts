@@ -1,4 +1,3 @@
-import { CHART_COLORS } from '@/components/charts/chart-palette'
 import type {
   BrandBranchMetric,
   IBrandBranchCell,
@@ -37,17 +36,55 @@ export function totalOf(
 export const brandKeyOf = (brandId: string | null): string =>
   brandId ?? 'unbranded'
 
-// Brand → colour: the brand's own colour when set, else a stable palette pick
-// by leaderboard position. The SAME brand keeps one colour across the share
-// ring, every branch's mix donut, and the matrix dots.
+// Fallback hues for rows without a colour of their own (the Unbranded bucket,
+// legacy brands). Mirrors the backend's `lib/brand-palette.ts` BRAND_PALETTE —
+// the same pool auto-created brands draw from — so colours stay comparable by
+// plain hex equality and fallbacks read like real brand colours. Deliberately
+// NOT the CSS-var CHART_COLORS: `var(--accent)` resolves to the same green as
+// a stored `#10b981`, which string checks can't see.
+export const BRAND_FALLBACK_COLORS: readonly string[] = [
+  '#6366f1', // indigo
+  '#06b6d4', // cyan
+  '#10b981', // emerald
+  '#f59e0b', // amber
+  '#ef4444', // red
+  '#8b5cf6', // violet
+  '#ec4899', // pink
+  '#14b8a6', // teal
+  '#f97316', // orange
+  '#3b82f6', // blue
+]
+
+// Brand → colour with a uniqueness guarantee across the displayed set: two
+// slices must never share a hue or the share ring reads as one arc. Brands
+// keep their own colour first-come; duplicate holders and colourless rows get
+// the first unclaimed fallback. The SAME brand keeps one colour across the
+// share ring, every branch's mix donut, and the legends.
 export function buildBrandColors(
   rows: IBrandBranchRow[],
 ): Record<string, string> {
   const map: Record<string, string> = {}
-  rows.forEach((row, idx) => {
-    map[brandKeyOf(row.brandId)] =
-      row.color ?? CHART_COLORS[idx % CHART_COLORS.length]
-  })
+  const used = new Set<string>()
+
+  for (const row of rows) {
+    const own = row.color?.toLowerCase()
+    if (own && !used.has(own)) {
+      map[brandKeyOf(row.brandId)] = own
+      used.add(own)
+    }
+  }
+
+  let cursor = 0
+  for (const row of rows) {
+    const key = brandKeyOf(row.brandId)
+    if (map[key]) continue
+    const free = BRAND_FALLBACK_COLORS.find((c) => !used.has(c))
+    // Pool exhausted (11+ colourless rows in one view) — wrap deterministically.
+    const color =
+      free ?? BRAND_FALLBACK_COLORS[cursor++ % BRAND_FALLBACK_COLORS.length]
+    map[key] = color
+    used.add(color)
+  }
   return map
 }
 

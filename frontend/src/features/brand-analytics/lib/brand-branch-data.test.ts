@@ -54,6 +54,27 @@ describe('buildBrandColors', () => {
     expect(colors['unbranded']).toBeTruthy()
     expect(brandKeyOf(null)).toBe('unbranded')
   })
+
+  it('never assigns the same hue twice — duplicate holders get a free fallback', () => {
+    const colors = buildBrandColors([
+      row(),
+      // Same stored colour, different case — must not repeat in the ring.
+      row({ brandId: 'b2', brandName: 'Clone', color: '#E11D48' }),
+      row({ brandId: null, brandName: 'Unbranded', color: null }),
+    ])
+    expect(colors['b1']).toBe('#e11d48')
+    expect(colors['b2']).not.toBe('#e11d48')
+    const all = Object.values(colors)
+    expect(new Set(all).size).toBe(all.length)
+  })
+
+  it('fallbacks skip pool colours already claimed by real brands', () => {
+    const colors = buildBrandColors([
+      row({ color: '#6366f1' }), // owns the pool's first hue
+      row({ brandId: null, brandName: 'Unbranded', color: null }),
+    ])
+    expect(colors['unbranded']).toBe('#06b6d4') // next free pool entry
+  })
 })
 
 describe('buildBrandMatrixRows', () => {
