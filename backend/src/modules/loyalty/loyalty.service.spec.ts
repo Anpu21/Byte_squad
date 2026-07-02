@@ -30,6 +30,18 @@ const ACTOR: AuthUser = {
   role: UserRole.CASHIER,
   branchId: BRANCH_ID,
 };
+const ADMIN_ACTOR: AuthUser = {
+  id: 'admin-1',
+  email: 'admin@ledgerpro.com',
+  role: UserRole.ADMIN,
+  branchId: null,
+};
+const MANAGER_ACTOR: AuthUser = {
+  id: 'manager-1',
+  email: 'manager@ledgerpro.com',
+  role: UserRole.MANAGER,
+  branchId: BRANCH_ID,
+};
 
 function makeUserAccount(
   overrides: Partial<LoyaltyAccount> = {},
@@ -134,6 +146,8 @@ describe('LoyaltyService', () => {
       listEntriesByOwner: jest.fn(),
       hasLedgerAtBranch: jest.fn(),
       mergeWalkInIntoUser: jest.fn(),
+      applyManualAdjustment: jest.fn(),
+      createLedgerEntry: jest.fn(),
     };
     const customersRepoMock: Partial<jest.Mocked<LoyaltyCustomersRepository>> =
       {
@@ -233,6 +247,111 @@ describe('LoyaltyService', () => {
       await expect(
         service.getOrCreateAccount({} as unknown as { userId: string }),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  describe('adjustPoints', () => {
+    const DTO = { points: 50, reason: 'Goodwill gesture' };
+
+    it('adjusts a walk-in wallet via its own owner column (no phantom account)', async () => {
+      loyaltyRepo.findAccountByUser.mockResolvedValue(null);
+      loyaltyRepo.findAccountByLoyaltyCustomer.mockResolvedValue(
+        makeWalkInAccount({ pointsBalance: 10 }),
+      );
+
+      await service.adjustPoints(WALK_IN_ID, DTO, ADMIN_ACTOR);
+
+      expect(loyaltyRepo.createAccountForUser).not.toHaveBeenCalled();
+      expect(loyaltyRepo.applyManualAdjustment).toHaveBeenCalledWith(
+        { loyaltyCustomerId: WALK_IN_ID },
+        50,
+      );
+      expect(loyaltyRepo.createLedgerEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: null,
+          loyaltyCustomerId: WALK_IN_ID,
+          type: LoyaltyLedgerEntryType.ADJUSTED,
+          points: 50,
+          branchId: null,
+        }),
+      );
+    });
+
+    it('adjusts a registered-user wallet by userId', async () => {
+      loyaltyRepo.findAccountByUser.mockResolvedValue(makeUserAccount());
+
+      await service.adjustPoints(USER_ID, DTO, ADMIN_ACTOR);
+
+      expect(loyaltyRepo.applyManualAdjustment).toHaveBeenCalledWith(
+        { userId: USER_ID },
+        50,
+      );
+    });
+
+    it('404s when the id owns no wallet on either side (never creates one)', async () => {
+      loyaltyRepo.findAccountByUser.mockResolvedValue(null);
+      loyaltyRepo.findAccountByLoyaltyCustomer.mockResolvedValue(null);
+
+      await expect(
+        service.adjustPoints('missing-id', DTO, ADMIN_ACTOR),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(loyaltyRepo.createAccountForUser).not.toHaveBeenCalled();
+      expect(loyaltyRepo.applyManualAdjustment).not.toHaveBeenCalled();
+    });
+
+    it('rejects a deduction below the current balance', async () => {
+      loyaltyRepo.findAccountByUser.mockResolvedValue(
+        makeUserAccount({ pointsBalance: 20 }),
+      );
+
+      await expect(
+        service.adjustPoints(
+          USER_ID,
+          { points: -50, reason: 'Correction' },
+          ADMIN_ACTOR,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(loyaltyRepo.applyManualAdjustment).not.toHaveBeenCalled();
+    });
+
+    it('forbids a manager from adjusting a member outside their branch', async () => {
+      loyaltyRepo.findAccountByUser.mockResolvedValue(null);
+      loyaltyRepo.findAccountByLoyaltyCustomer.mockResolvedValue(
+        makeWalkInAccount(),
+      );
+      customersRepo.findById.mockResolvedValue(
+        makeWalkInCustomer({ branchId: OTHER_BRANCH_ID }),
+      );
+      loyaltyRepo.hasLedgerAtBranch.mockResolvedValue(false);
+
+      await expect(
+        service.adjustPoints(WALK_IN_ID, DTO, MANAGER_ACTOR),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(loyaltyRepo.applyManualAdjustment).not.toHaveBeenCalled();
+    });
+
+    it('lets a manager adjust an own-branch member and stamps their branch', async () => {
+      loyaltyRepo.findAccountByUser.mockResolvedValue(null);
+      loyaltyRepo.findAccountByLoyaltyCustomer.mockResolvedValue(
+        makeWalkInAccount({ pointsBalance: 100 }),
+      );
+      customersRepo.findById.mockResolvedValue(
+        makeWalkInCustomer({ branchId: BRANCH_ID }),
+      );
+
+      await service.adjustPoints(
+        WALK_IN_ID,
+        { points: -30, reason: 'Correction' },
+        MANAGER_ACTOR,
+      );
+
+      expect(loyaltyRepo.applyManualAdjustment).toHaveBeenCalledWith(
+        { loyaltyCustomerId: WALK_IN_ID },
+        -30,
+      );
+      expect(loyaltyRepo.createLedgerEntry).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: BRANCH_ID, points: -30 }),
+      );
     });
   });
 

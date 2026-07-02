@@ -8,22 +8,19 @@ import { LoyaltyTierProgress } from './LoyaltyTierProgress';
 import Button from '@/components/ui/Button';
 
 interface LoyaltyCustomerHistorySidebarProps {
-    role: 'admin' | 'manager';
     customer: ILoyaltyCustomerRow | null;
     onClose: () => void;
     onAdjustPoints?: () => void;
 }
 
 export function LoyaltyCustomerHistorySidebar({
-    role,
     customer,
     onClose,
     onAdjustPoints,
 }: LoyaltyCustomerHistorySidebarProps) {
     const isOpen = customer !== null;
     const { data, isLoading, isError } = useLoyaltyCustomerHistory({
-        role,
-        userId: customer?.id ?? null,
+        memberId: customer?.id ?? null,
         limit: 50,
     });
 

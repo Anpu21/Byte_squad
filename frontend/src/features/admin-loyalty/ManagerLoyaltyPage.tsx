@@ -20,21 +20,10 @@ export function ManagerLoyaltyPage() {
 
             <div className="space-y-6">
                 <LoyaltyDashboardKpis role="manager" />
-                {/* 
-                  LoyaltyCustomersTable internally fetches with useLoyaltyCustomers,
-                  which will automatically scope to the manager's branch on the backend 
-                  via the /admin/loyalty/customers endpoint or a /manager counterpart.
-                  Wait, does it use /admin or /manager? 
-                  The backend plan exposed manager routes at /manager/loyalty/customers.
-                  If LoyaltyCustomersTable uses useLoyaltyCustomers which uses loyaltyAdminService which hardcodes /admin/loyalty, 
-                  the manager's request to /admin/loyalty will be forbidden!
-                  I need to check how useLoyaltyCustomers fetches data. 
-                */}
                 <LoyaltyCustomersTable role="manager" onSelectCustomer={setSelectedCustomer} />
             </div>
 
             <LoyaltyCustomerHistorySidebar
-                role="manager"
                 customer={selectedCustomer}
                 onClose={() => setSelectedCustomer(null)}
                 onAdjustPoints={() => {
@@ -47,7 +36,8 @@ export function ManagerLoyaltyPage() {
 
             {adjustingCustomer && (
                 <LoyaltyAdjustPointsDialog
-                    userId={adjustingCustomer.id}
+                    role="manager"
+                    memberId={adjustingCustomer.id}
                     customerName={[adjustingCustomer.firstName, adjustingCustomer.lastName].filter(Boolean).join(' ')}
                     isOpen={true}
                     onClose={() => setAdjustingCustomer(null)}

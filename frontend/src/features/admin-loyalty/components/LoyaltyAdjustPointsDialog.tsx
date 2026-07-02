@@ -7,14 +7,17 @@ import Input from '@/components/ui/Input';
 import { FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
 
 interface LoyaltyAdjustPointsDialogProps {
-    userId: string;
+    role: 'admin' | 'manager';
+    /** Directory row id — a userId (registered) or loyaltyCustomerId (walk-in). */
+    memberId: string;
     customerName: string;
     isOpen: boolean;
     onClose: () => void;
 }
 
 export function LoyaltyAdjustPointsDialog({
-    userId,
+    role,
+    memberId,
     customerName,
     isOpen,
     onClose,
@@ -45,7 +48,7 @@ export function LoyaltyAdjustPointsDialog({
         const finalPoints = isDeduct ? -numPoints : numPoints;
         
         adjustPoints(
-            { userId, points: finalPoints, reason },
+            { role, memberId, points: finalPoints, reason },
             {
                 onSuccess: () => {
                     setPoints('');

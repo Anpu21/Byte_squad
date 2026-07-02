@@ -45,7 +45,6 @@ export function AdminLoyaltyPage() {
             )}
 
             <LoyaltyCustomerHistorySidebar
-                role="admin"
                 customer={selectedCustomer}
                 onClose={() => setSelectedCustomer(null)}
                 onAdjustPoints={() => {
@@ -58,7 +57,8 @@ export function AdminLoyaltyPage() {
 
             {adjustingCustomer && (
                 <LoyaltyAdjustPointsDialog
-                    userId={adjustingCustomer.id}
+                    role="admin"
+                    memberId={adjustingCustomer.id}
                     customerName={[adjustingCustomer.firstName, adjustingCustomer.lastName].filter(Boolean).join(' ')}
                     isOpen={true}
                     onClose={() => setAdjustingCustomer(null)}

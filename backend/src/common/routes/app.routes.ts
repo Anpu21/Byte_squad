@@ -325,13 +325,12 @@ export const APP_ROUTES = {
     ADMIN_BASE: `${API_PREFIX}/admin/loyalty`,
     ADMIN_SETTINGS: 'settings',
     ADMIN_CUSTOMERS: 'customers',
-    ADMIN_CUSTOMER_HISTORY: 'customers/:userId/history',
     ADMIN_DASHBOARD: 'dashboard',
-    ADMIN_ADJUST: 'customers/:userId/adjust',
+    ADMIN_ADJUST: 'customers/:id/adjust',
     MANAGER_BASE: `${API_PREFIX}/manager/loyalty`,
     MANAGER_CUSTOMERS: 'customers',
-    MANAGER_CUSTOMER_HISTORY: 'customers/:userId/history',
     MANAGER_DASHBOARD: 'dashboard',
+    MANAGER_ADJUST: 'customers/:id/adjust',
   },
 
   // HR — employees, attendance, payroll

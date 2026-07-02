@@ -9,7 +9,7 @@ export const adminLoyalty = {
         offset?: number;
     }) => ['admin-loyalty', 'customers', params] as const,
     customerHistory: (
-        userId: string,
+        memberId: string,
         params: { limit?: number; offset?: number },
-    ) => ['admin-loyalty', 'customer-history', userId, params] as const,
+    ) => ['admin-loyalty', 'customer-history', memberId, params] as const,
 } as const;
