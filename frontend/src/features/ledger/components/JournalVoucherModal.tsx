@@ -27,7 +27,9 @@ export function JournalVoucherModal({
     return (
         <Modal
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={() => {
+                if (!j.busy) onClose();
+            }}
             title="New journal voucher"
             maxWidth="lg"
             closeOnBackdrop={false}
@@ -64,6 +66,7 @@ export function JournalVoucherModal({
                             className={`${INPUT_CLASS} w-full${j.entryDate ? '' : ' date-empty'}`}
                             type="date"
                             value={j.entryDate}
+                            max={j.maxDate}
                             onChange={(e) => j.setEntryDate(e.target.value)}
                         />
                     </label>
@@ -112,22 +115,34 @@ export function JournalVoucherModal({
                     </span>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-1">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={onClose}
-                        disabled={j.busy}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        type="submit"
-                        variant="primary"
-                        disabled={!j.canSubmit}
-                    >
-                        {j.busy ? 'Posting…' : 'Post journal'}
-                    </Button>
+                {j.duplicateAccount && (
+                    <p className="text-[11px] text-warning">
+                        The same account is on more than one line — double-check
+                        this is intentional.
+                    </p>
+                )}
+
+                <div className="flex items-center justify-between gap-3 pt-1">
+                    <span className="text-[11px] text-text-3" aria-live="polite">
+                        {j.disabledReason}
+                    </span>
+                    <div className="flex gap-2">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={onClose}
+                            disabled={j.busy}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="primary"
+                            disabled={!j.canSubmit}
+                        >
+                            {j.busy ? 'Posting…' : 'Post journal'}
+                        </Button>
+                    </div>
                 </div>
             </form>
         </Modal>

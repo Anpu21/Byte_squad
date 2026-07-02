@@ -33,6 +33,8 @@ export interface JournalTotals {
     debits: number;
     credits: number;
     balanced: boolean;
+    /** True when one account is used on 2+ complete lines (likely a mistake). */
+    duplicateAccount: boolean;
 }
 
 /** Parse line amounts and roll up Σ debits / Σ credits with a balance check. */
@@ -49,5 +51,20 @@ export function deriveJournalTotals(lines: IJournalLineDraft[]): JournalTotals {
         .reduce((s, l) => s + l.amountNum, 0);
     const balanced =
         Math.round(debits * 100) === Math.round(credits * 100) && debits > 0;
-    return { parsed, complete, debits, credits, balanced };
+
+    const seen = new Set<string>();
+    let duplicateAccount = false;
+    for (const l of complete) {
+        if (seen.has(l.accountId)) duplicateAccount = true;
+        seen.add(l.accountId);
+    }
+
+    return { parsed, complete, debits, credits, balanced, duplicateAccount };
+}
+
+/** Local (not UTC) `YYYY-MM-DD` for today — the default + max journal date. */
+export function todayIsoDate(): string {
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+    return local.toISOString().slice(0, 10);
 }
