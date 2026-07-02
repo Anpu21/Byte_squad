@@ -12,6 +12,8 @@ interface BrandFiltersProps {
   branchId: string
   isAdmin: boolean
   branches: BranchOption[]
+  /** Hidden on the By-branch tab, which owns its own branch multi-select. */
+  showBranchFilter?: boolean
   onStartDate: (value: string) => void
   onEndDate: (value: string) => void
   onBranchId: (value: string) => void
@@ -23,6 +25,7 @@ export function BrandFilters({
   branchId,
   isAdmin,
   branches,
+  showBranchFilter = true,
   onStartDate,
   onEndDate,
   onBranchId,
@@ -51,7 +54,7 @@ export function BrandFilters({
           className="w-auto"
         />
       </div>
-      {isAdmin && (
+      {isAdmin && showBranchFilter && (
         <div>
           <label className="block text-xs font-medium text-text-2 mb-1.5">
             Branch

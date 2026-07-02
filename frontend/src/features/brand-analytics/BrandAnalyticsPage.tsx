@@ -11,13 +11,15 @@ import { BrandOverview } from './components/BrandOverview'
 import { BrandDrilldown } from './components/BrandDrilldown'
 import { BrandManageTab } from './components/BrandManageTab'
 import { CategoryBrandComparison } from './components/CategoryBrandComparison'
+import { BrandBranchComparison } from './components/BrandBranchComparison'
 import { daysAgoIso, todayIso } from './lib/date-range'
 
-type BrandTab = 'analyze' | 'by-category' | 'manage'
+type BrandTab = 'analyze' | 'by-category' | 'by-branch' | 'manage'
 
 const TABS: { id: BrandTab; label: string }[] = [
   { id: 'analyze', label: 'Brands' },
   { id: 'by-category', label: 'By category' },
+  { id: 'by-branch', label: 'By branch' },
   { id: 'manage', label: 'Manage' },
 ]
 
@@ -61,7 +63,9 @@ export function BrandAnalyticsPage() {
         subtitle={
           tab === 'manage'
             ? 'Create, edit, archive, and delete brands'
-            : `${scopeLabel} · ${startDate} → ${endDate}`
+            : tab === 'by-branch'
+              ? `Across branches · ${startDate} → ${endDate}`
+              : `${scopeLabel} · ${startDate} → ${endDate}`
         }
       />
 
@@ -95,6 +99,7 @@ export function BrandAnalyticsPage() {
             branchId={branchId}
             isAdmin={Boolean(isAdmin)}
             branches={branchesQuery.data ?? []}
+            showBranchFilter={tab !== 'by-branch'}
             onStartDate={setStartDate}
             onEndDate={setEndDate}
             onBranchId={setBranchId}
@@ -112,8 +117,13 @@ export function BrandAnalyticsPage() {
                 onSelectBrand={setSelectedBrandId}
               />
             )
-          ) : (
+          ) : tab === 'by-category' ? (
             <CategoryBrandComparison params={params} />
+          ) : (
+            <BrandBranchComparison
+              startDate={params.startDate}
+              endDate={params.endDate}
+            />
           )}
         </div>
       )}
