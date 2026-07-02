@@ -1,32 +1,31 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import PageHeader from '@/components/ui/PageHeader'
+import { WorkspacePage } from '@/components/ui'
 import { adminService } from '@/services/admin.service'
 import { queryKeys } from '@/lib/queryKeys'
 import { useAuth } from '@/hooks/useAuth'
 import { UserRole } from '@/constants/enums'
-import { cn } from '@/lib/utils'
+import { useNavTabs } from '@/config/navigation'
 import { BrandFilters } from './components/BrandFilters'
 import { BrandOverview } from './components/BrandOverview'
 import { BrandDrilldown } from './components/BrandDrilldown'
 import { BrandManageTab } from './components/BrandManageTab'
 import { CategoryBrandComparison } from './components/CategoryBrandComparison'
 import { BrandBranchComparison } from './components/BrandBranchComparison'
+import {
+  useBrandAnalyticsTab,
+  type BrandAnalyticsTab,
+} from './hooks/useBrandAnalyticsTab'
 import { daysAgoIso, todayIso } from './lib/date-range'
-
-type BrandTab = 'analyze' | 'by-category' | 'by-branch' | 'manage'
-
-const TABS: { id: BrandTab; label: string }[] = [
-  { id: 'analyze', label: 'Brands' },
-  { id: 'by-category', label: 'By category' },
-  { id: 'by-branch', label: 'By branch' },
-  { id: 'manage', label: 'Manage' },
-]
 
 export function BrandAnalyticsPage() {
   const { user } = useAuth()
   const isAdmin = user?.role === UserRole.ADMIN
-  const [tab, setTab] = useState<BrandTab>('analyze')
+  // Tabs live in the sidebar panel (nav spine), synced via ?tab= like the
+  // other hubs — WorkspacePage runs chromeless (no in-page band).
+  const tabs = useNavTabs<BrandAnalyticsTab>('brand-analytics')
+  const allowedKeys = useMemo(() => tabs.map((t) => t.key), [tabs])
+  const { tab, setTab } = useBrandAnalyticsTab(allowedKeys)
   const [startDate, setStartDate] = useState(() => daysAgoIso(30))
   const [endDate, setEndDate] = useState(() => todayIso())
   const [branchId, setBranchId] = useState('')
@@ -55,40 +54,24 @@ export function BrandAnalyticsPage() {
       : 'All branches'
     : 'My branch'
 
+  const subtitle =
+    tab === 'manage'
+      ? 'Create, edit, archive, and delete brands'
+      : tab === 'by-branch'
+        ? `Across branches · ${startDate} → ${endDate}`
+        : `${scopeLabel} · ${startDate} → ${endDate}`
+
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <PageHeader
-        eyebrow="Inventory"
-        title="Brand analysis"
-        subtitle={
-          tab === 'manage'
-            ? 'Create, edit, archive, and delete brands'
-            : tab === 'by-branch'
-              ? `Across branches · ${startDate} → ${endDate}`
-              : `${scopeLabel} · ${startDate} → ${endDate}`
-        }
-      />
-
-      <nav className="mb-4 flex gap-1 border-b border-border" role="tablist">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
-            className={cn(
-              '-mb-px border-b-2 px-3 py-2 text-[13px] font-semibold transition-colors',
-              tab === t.id
-                ? 'border-primary text-text-1'
-                : 'border-transparent text-text-3 hover:text-text-1',
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-
+    <WorkspacePage
+      eyebrow="Inventory"
+      title="Brand analysis"
+      subtitle={subtitle}
+      tabs={tabs}
+      active={tab}
+      onTabChange={setTab}
+      tabsAriaLabel="Brand analysis views"
+      chromeless
+    >
       {tab === 'manage' ? (
         <BrandManageTab isAdmin={Boolean(isAdmin)} />
       ) : (
@@ -104,7 +87,7 @@ export function BrandAnalyticsPage() {
             onEndDate={setEndDate}
             onBranchId={setBranchId}
           />
-          {tab === 'analyze' ? (
+          {tab === 'brands' ? (
             selectedBrandId ? (
               <BrandDrilldown
                 brandId={selectedBrandId}
@@ -127,6 +110,6 @@ export function BrandAnalyticsPage() {
           )}
         </div>
       )}
-    </div>
+    </WorkspacePage>
   )
 }
