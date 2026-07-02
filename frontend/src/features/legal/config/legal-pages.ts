@@ -34,8 +34,8 @@ export const LEGAL_PAGES: LegalPageMeta[] = [
     {
         key: 'refund',
         route: FRONTEND_ROUTES.LEGAL_REFUND,
-        label: 'Refund & Cancellation',
-        title: 'Refund & Cancellation Policy',
+        label: 'Refund & Returns',
+        title: 'Refund, Return & Cancellation Policy',
     },
     {
         key: 'delivery',
