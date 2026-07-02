@@ -29,7 +29,6 @@ export const FRONTEND_ROUTES = {
     STOCK_ADJUSTMENTS: '/inventory/adjustments',
     STOCK_ADJUSTMENT_NEW: '/inventory/adjustments/new',
     RETURNS: '/returns',
-    RETURN_NEW: '/returns/new',
 
     // Brand sales analytics (admin + manager) — leaderboard + per-brand drill-down
     BRAND_ANALYTICS: '/analytics/brands',

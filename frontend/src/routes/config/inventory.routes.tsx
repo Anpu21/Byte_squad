@@ -6,7 +6,7 @@ import { InventoryRedirect } from '../redirects';
 import { InventoryWorkspacePage } from '@/features/admin-inventory';
 import { PurchasesWorkspacePage } from '@/features/purchases';
 import { StockAdjustmentNewPage } from '@/features/stock-adjustments';
-import { ReturnNewPage, ReturnsHubPage } from '@/features/returns';
+import { ReturnsHubPage } from '@/features/returns';
 import { ProductFormPage } from '@/features/product-form';
 import { BrandAnalyticsPage } from '@/features/brand-analytics';
 
@@ -43,11 +43,6 @@ export const inventoryRoutes = (
                 path={FRONTEND_ROUTES.STOCK_ADJUSTMENTS}
                 element={<InventoryRedirect tab="adjustments" />}
                 handle={{ crumbs: ['Inventory', 'Adjustments'] }}
-            />
-            <Route
-                path={FRONTEND_ROUTES.RETURN_NEW}
-                element={<ReturnNewPage />}
-                handle={{ crumbs: ['Returns', 'New'] }}
             />
         </Route>
         {/* Returns hub — a dedicated, role-scoped section (cashiers see their
