@@ -7,6 +7,7 @@ import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { ReturnsService } from './returns.service';
 import { SalesReturnRepository } from './sales-return.repository';
 import { ReturnsAnalyticsRepository } from './returns-analytics.repository';
+import { ProductBatchRepository } from '@inventory/product-batch.repository';
 import { PosService } from '@pos/pos.service';
 import { AccountingService } from '@accounting/accounting.service';
 import { Inventory } from '@inventory/entities/inventory.entity';
@@ -79,6 +80,7 @@ describe('ReturnsService', () => {
   let service: ReturnsService;
   let returnsRepo: jest.Mocked<SalesReturnRepository>;
   let analyticsRepo: jest.Mocked<ReturnsAnalyticsRepository>;
+  let batchesRepo: { create: jest.Mock };
   let sales: jest.Mocked<PosService>;
   let accounting: jest.Mocked<AccountingService>;
   let invRepo: {
@@ -142,6 +144,10 @@ describe('ReturnsService', () => {
           },
         },
         {
+          provide: ProductBatchRepository,
+          useValue: { create: jest.fn((x: unknown) => Promise.resolve(x)) },
+        },
+        {
           provide: PosService,
           useValue: { findOneById: jest.fn(), findByInvoiceNumber: jest.fn() },
         },
@@ -156,6 +162,7 @@ describe('ReturnsService', () => {
     service = moduleRef.get(ReturnsService);
     returnsRepo = moduleRef.get(SalesReturnRepository);
     analyticsRepo = moduleRef.get(ReturnsAnalyticsRepository);
+    batchesRepo = moduleRef.get(ProductBatchRepository);
     sales = moduleRef.get(PosService);
     accounting = moduleRef.get(AccountingService);
   });
@@ -185,6 +192,19 @@ describe('ReturnsService', () => {
         balanceAfter: 11,
         refType: 'SalesReturn',
       }),
+    );
+    // Restocked good units re-enter batch/expiry tracking (additive insert —
+    // does not touch Inventory). No expiry supplied → null. Bad units never do.
+    expect(batchesRepo.create).toHaveBeenCalledTimes(1);
+    expect(batchesRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productId: PRODUCT_ID,
+        branchId: BRANCH_A,
+        quantity: 1,
+        expiryDate: null,
+        batchNo: null,
+      }),
+      expect.anything(),
     );
   });
 

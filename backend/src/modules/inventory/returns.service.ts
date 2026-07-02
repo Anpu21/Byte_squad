@@ -4,13 +4,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { Inventory } from '@inventory/entities/inventory.entity';
 import { StockMovement } from '@pos/entities/stock-movement.entity';
+import { Sale } from '@pos/entities/sale.entity';
 import { SalesReturn } from '@inventory/entities/sales-return.entity';
 import { SalesReturnItem } from '@inventory/entities/sales-return-item.entity';
 import { SalesReturnRepository } from '@inventory/sales-return.repository';
 import { ReturnsAnalyticsRepository } from '@inventory/returns-analytics.repository';
+import { ProductBatchRepository } from '@inventory/product-batch.repository';
 import { PosService } from '@pos/pos.service';
 import { AccountingService } from '@accounting/accounting.service';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
@@ -35,12 +37,36 @@ function round3(n: number): number {
   return Math.round(n * 1000) / 1000;
 }
 
+interface ReturnRestockOp {
+  productId: string;
+  baseQtyGood: number;
+  /** Expiry for the recreated ProductBatch (null = unknown). */
+  expiryDate: string | null;
+}
+interface ReturnDamageOp {
+  productId: string;
+  baseQtyBad: number;
+}
+
+/** Pre-transaction result of validating + pricing a return (see computeReturn). */
+export interface ComputedReturn {
+  sale: Sale;
+  reason: string | null;
+  returnItems: SalesReturnItem[];
+  restockOps: ReturnRestockOp[];
+  damageOps: ReturnDamageOp[];
+  /** Full returned value (sum of item refunds). */
+  totalRefund: number;
+  restockedValue: number;
+}
+
 @Injectable()
 export class ReturnsService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly returns: SalesReturnRepository,
     private readonly analytics: ReturnsAnalyticsRepository,
+    private readonly batches: ProductBatchRepository,
     private readonly sales: PosService,
     private readonly accounting: AccountingService,
   ) {}
@@ -90,11 +116,26 @@ export class ReturnsService {
     };
   }
 
-  /** Process a return: restock good units, scrap bad, refund the customer. */
+  /** Process a standalone return: restock good units, scrap bad, refund. */
   async createReturn(
     actor: AuthUser,
     dto: CreateSalesReturnDto,
   ): Promise<SalesReturn> {
+    const computed = await this.computeReturn(actor, dto);
+    return this.dataSource.transaction((manager) =>
+      this.persistReturnWithinTxn(manager, actor, computed),
+    );
+  }
+
+  /**
+   * Pure, pre-transaction half of a return: validate the sale + lines and
+   * compute the refund/restock/damage operations. Shared with the exchange
+   * flow, which runs {@link persistReturnWithinTxn} inside its own transaction.
+   */
+  async computeReturn(
+    actor: AuthUser,
+    dto: CreateSalesReturnDto,
+  ): Promise<ComputedReturn> {
     const sale = await this.sales.findOneById(dto.saleId);
     if (!sale) {
       throw new NotFoundException('Sale not found');
@@ -108,8 +149,8 @@ export class ReturnsService {
     const itemById = new Map((sale.items ?? []).map((i) => [i.id, i]));
 
     const returnItems: SalesReturnItem[] = [];
-    const restockOps: { productId: string; baseQtyGood: number }[] = [];
-    const damageOps: { productId: string; baseQtyBad: number }[] = [];
+    const restockOps: ReturnRestockOp[] = [];
+    const damageOps: ReturnDamageOp[] = [];
     let totalRefund = 0;
     let restockedValue = 0;
 
@@ -143,7 +184,11 @@ export class ReturnsService {
         restockedValue = round2(
           restockedValue + round2(line.goodQuantity * perUnitRefund),
         );
-        restockOps.push({ productId: item.productId, baseQtyGood });
+        restockOps.push({
+          productId: item.productId,
+          baseQtyGood,
+          expiryDate: line.expiryDate ?? null,
+        });
       }
 
       // Bad units are refunded but never re-enter sellable stock; log them so
@@ -170,110 +215,164 @@ export class ReturnsService {
       throw new BadRequestException('No quantities to return');
     }
 
-    return this.dataSource.transaction(async (manager) => {
-      const ret = this.returns.create({
-        saleId: sale.id,
-        invoiceNumber: sale.invoiceNumber,
-        branchId: sale.branchId,
-        customerUserId: sale.customerUserId,
-        totalRefundAmount: totalRefund,
-        restockedValue,
-        reason: dto.reason ?? null,
-        status: 'Completed',
-        createdByUserId: actor.id,
-        items: returnItems,
-      });
-      const savedReturn = await this.returns.save(ret, manager);
+    return {
+      sale,
+      reason: dto.reason ?? null,
+      returnItems,
+      restockOps,
+      damageOps,
+      totalRefund,
+      restockedValue,
+    };
+  }
 
-      const invRepo = manager.getRepository(Inventory);
-      const movementRepo = manager.getRepository(StockMovement);
-      for (const op of restockOps) {
-        const inv = await invRepo
-          .createQueryBuilder('i')
-          .setLock('pessimistic_write')
-          .where('i.product_id = :p AND i.branch_id = :b', {
-            p: op.productId,
-            b: sale.branchId,
-          })
-          .getOne();
+  /**
+   * Transactional half of a return: persist the SalesReturn, restock good units
+   * (bump Inventory.quantity + a `Return` movement + a `ProductBatch` so
+   * returned stock re-enters expiry tracking), log damaged units, and post the
+   * refund DEBIT. Runs inside the caller's transaction so an exchange can pair
+   * it with a replacement sale atomically.
+   *
+   * `opts.type`/`replacementSaleId` mark an exchange. `opts.refundOverride` is
+   * the cash actually refunded (drives `totalRefundAmount` + the DEBIT) — for an
+   * exchange this is the NET `max(0, returned − replacement)`, not the full
+   * returned value (which stays on the per-item `refundAmount`s for audit).
+   */
+  async persistReturnWithinTxn(
+    manager: EntityManager,
+    actor: AuthUser,
+    computed: ComputedReturn,
+    opts: {
+      type?: string;
+      replacementSaleId?: string | null;
+      refundOverride?: number;
+    } = {},
+  ): Promise<SalesReturn> {
+    const { sale, returnItems, restockOps, damageOps, restockedValue } =
+      computed;
+    const refund = opts.refundOverride ?? computed.totalRefund;
 
-        let balanceAfter: number;
-        if (inv) {
-          inv.quantity = round3(Number(inv.quantity) + op.baseQtyGood);
-          await invRepo.save(inv);
-          balanceAfter = Number(inv.quantity);
-        } else {
-          const created = await invRepo.save(
-            invRepo.create({
-              productId: op.productId,
-              branchId: sale.branchId,
-              quantity: op.baseQtyGood,
-              lowStockThreshold: 10,
-            }),
-          );
-          balanceAfter = Number(created.quantity);
-        }
-
-        await movementRepo.save(
-          movementRepo.create({
-            productId: op.productId,
-            branchId: sale.branchId,
-            location: sale.location,
-            movementType: 'Return',
-            qtyIn: op.baseQtyGood,
-            qtyOut: 0,
-            balanceAfter,
-            refType: 'SalesReturn',
-            refId: savedReturn.id,
-            notes: `Return ${sale.invoiceNumber}`,
-            createdByUserId: actor.id,
-          }),
-        );
-      }
-
-      // Audit-only log for damaged returns: records the damaged quantity in
-      // `qtyIn` without changing sellable stock (balanceAfter is the current,
-      // unchanged sellable balance — after any restock write for the product).
-      for (const op of damageOps) {
-        const inv = await invRepo
-          .createQueryBuilder('i')
-          .where('i.product_id = :p AND i.branch_id = :b', {
-            p: op.productId,
-            b: sale.branchId,
-          })
-          .getOne();
-        const balanceAfter = inv ? Number(inv.quantity) : 0;
-
-        await movementRepo.save(
-          movementRepo.create({
-            productId: op.productId,
-            branchId: sale.branchId,
-            location: sale.location,
-            movementType: 'Damage',
-            qtyIn: op.baseQtyBad,
-            qtyOut: 0,
-            balanceAfter,
-            refType: 'SalesReturn',
-            refId: savedReturn.id,
-            notes: `Damaged return ${sale.invoiceNumber}`,
-            createdByUserId: actor.id,
-          }),
-        );
-      }
-
-      if (totalRefund > 0) {
-        await this.accounting.createLedgerEntryWithManager(manager, {
-          branchId: sale.branchId,
-          entryType: LedgerEntryType.DEBIT,
-          amount: totalRefund,
-          description: `Sales Return — ${sale.invoiceNumber}`,
-          referenceNumber: `RET-${savedReturn.id.slice(0, 8).toUpperCase()}`,
-          saleId: sale.id,
-        });
-      }
-
-      return savedReturn;
+    const ret = this.returns.create({
+      saleId: sale.id,
+      invoiceNumber: sale.invoiceNumber,
+      branchId: sale.branchId,
+      customerUserId: sale.customerUserId,
+      totalRefundAmount: refund,
+      restockedValue,
+      reason: computed.reason,
+      status: 'Completed',
+      type: opts.type ?? 'Refund',
+      replacementSaleId: opts.replacementSaleId ?? null,
+      createdByUserId: actor.id,
+      items: returnItems,
     });
+    const savedReturn = await this.returns.save(ret, manager);
+
+    const invRepo = manager.getRepository(Inventory);
+    const movementRepo = manager.getRepository(StockMovement);
+    for (const op of restockOps) {
+      const inv = await invRepo
+        .createQueryBuilder('i')
+        .setLock('pessimistic_write')
+        .where('i.product_id = :p AND i.branch_id = :b', {
+          p: op.productId,
+          b: sale.branchId,
+        })
+        .getOne();
+
+      let balanceAfter: number;
+      if (inv) {
+        inv.quantity = round3(Number(inv.quantity) + op.baseQtyGood);
+        await invRepo.save(inv);
+        balanceAfter = Number(inv.quantity);
+      } else {
+        const created = await invRepo.save(
+          invRepo.create({
+            productId: op.productId,
+            branchId: sale.branchId,
+            quantity: op.baseQtyGood,
+            lowStockThreshold: 10,
+          }),
+        );
+        balanceAfter = Number(created.quantity);
+      }
+
+      await movementRepo.save(
+        movementRepo.create({
+          productId: op.productId,
+          branchId: sale.branchId,
+          location: sale.location,
+          movementType: 'Return',
+          qtyIn: op.baseQtyGood,
+          qtyOut: 0,
+          balanceAfter,
+          refType: 'SalesReturn',
+          refId: savedReturn.id,
+          notes: `Return ${sale.invoiceNumber}`,
+          createdByUserId: actor.id,
+        }),
+      );
+
+      // Re-enter batch/expiry tracking for the restocked units. This is a pure
+      // additive insert — it does NOT touch Inventory.quantity (already bumped
+      // above), so there is no double-count. Null expiry is safe (simply
+      // excluded from expiry alerts).
+      await this.batches.create(
+        {
+          productId: op.productId,
+          branchId: sale.branchId,
+          quantity: op.baseQtyGood,
+          expiryDate: op.expiryDate,
+          batchNo: null,
+          notes: `Restocked — ${sale.invoiceNumber}`,
+          createdByUserId: actor.id,
+        },
+        manager,
+      );
+    }
+
+    // Audit-only log for damaged returns: records the damaged quantity in
+    // `qtyIn` without changing sellable stock (balanceAfter is the current,
+    // unchanged sellable balance — after any restock write for the product).
+    for (const op of damageOps) {
+      const inv = await invRepo
+        .createQueryBuilder('i')
+        .where('i.product_id = :p AND i.branch_id = :b', {
+          p: op.productId,
+          b: sale.branchId,
+        })
+        .getOne();
+      const balanceAfter = inv ? Number(inv.quantity) : 0;
+
+      await movementRepo.save(
+        movementRepo.create({
+          productId: op.productId,
+          branchId: sale.branchId,
+          location: sale.location,
+          movementType: 'Damage',
+          qtyIn: op.baseQtyBad,
+          qtyOut: 0,
+          balanceAfter,
+          refType: 'SalesReturn',
+          refId: savedReturn.id,
+          notes: `Damaged return ${sale.invoiceNumber}`,
+          createdByUserId: actor.id,
+        }),
+      );
+    }
+
+    if (refund > 0) {
+      await this.accounting.createLedgerEntryWithManager(manager, {
+        branchId: sale.branchId,
+        entryType: LedgerEntryType.DEBIT,
+        amount: refund,
+        description: `Sales Return — ${sale.invoiceNumber}`,
+        referenceNumber: `RET-${savedReturn.id.slice(0, 8).toUpperCase()}`,
+        saleId: sale.id,
+      });
+    }
+
+    return savedReturn;
   }
 
   async listReturns(
