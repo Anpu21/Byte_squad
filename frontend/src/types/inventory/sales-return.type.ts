@@ -1,4 +1,5 @@
 // Phase C3 — sales returns (invoice lookup, good/bad split, restock) types.
+import type { ISale } from '@/types/pos/sale.type'
 
 export interface IReturnableLine {
   saleItemId: string
@@ -28,12 +29,49 @@ export interface ICreateSalesReturnLine {
   goodQuantity: number
   badQuantity: number
   restockGood: boolean
+  /** Optional expiry (YYYY-MM-DD) for restocked good units → recreates a batch. */
+  expiryDate?: string
 }
 
 export interface ICreateSalesReturnPayload {
   saleId: string
   reason?: string
   lines: ICreateSalesReturnLine[]
+}
+
+// ── Exchange (return goods ↔ replacement goods, net-cash settlement) ──────────
+
+/** One replacement basket line (same server-authoritative pricing as a sale). */
+export interface IReplacementItemInput {
+  productId: string
+  quantity: number
+  /** Server re-validates this against the product/unit price. */
+  unitPrice: number
+  unitId?: string | null
+  taxRate?: number
+  discountPercentage?: number
+}
+
+/** Upcharge payment for a dearer swap (customer pays P − R). Cash or Card only. */
+export interface IExchangePaymentInput {
+  paymentMethod: 'Cash' | 'Card'
+  paymentAmount: number
+  cashAmount?: number
+  cashTendered?: number
+}
+
+export interface ICreateExchangePayload {
+  saleId: string
+  reason?: string
+  returnedLines: ICreateSalesReturnLine[]
+  replacementItems: IReplacementItemInput[]
+  /** Required only when the replacement costs more than the returned goods. */
+  payment?: IExchangePaymentInput
+}
+
+export interface IExchangeResult {
+  salesReturn: ISalesReturn
+  replacementSale: ISale
 }
 
 export interface ISalesReturnItem {
@@ -57,6 +95,10 @@ export interface ISalesReturn {
   restockedValue: number
   reason: string | null
   status: string
+  /** 'Refund' (default) | 'Exchange'. Exchanges are settled by a replacement sale. */
+  type?: string
+  /** The replacement Sale for an exchange (null for a plain refund). */
+  replacementSaleId?: string | null
   createdByUserId: string
   createdAt: string
   items?: ISalesReturnItem[]

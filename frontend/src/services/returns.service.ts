@@ -1,7 +1,9 @@
 import api from './api'
 import type {
   IApiResponse,
+  ICreateExchangePayload,
   ICreateSalesReturnPayload,
+  IExchangeResult,
   IPaginatedSalesReturns,
   IReturnsAnalytics,
   IReturnsAnalyticsParams,
@@ -25,6 +27,23 @@ export const returnsService = {
     const response = await api.post<IApiResponse<ISalesReturn>>(
       '/returns',
       payload,
+    )
+    return response.data.data
+  },
+
+  // Exchange = return + replacement sale in one atomic request. Pass an
+  // idempotency key (POS double-submit guard) exactly like pos.service.createSale.
+  exchange: async (
+    payload: ICreateExchangePayload,
+    idempotencyKey?: string,
+  ): Promise<IExchangeResult> => {
+    const config = idempotencyKey
+      ? { headers: { 'X-Idempotency-Key': idempotencyKey } }
+      : undefined
+    const response = await api.post<IApiResponse<IExchangeResult>>(
+      '/returns/exchange',
+      payload,
+      config,
     )
     return response.data.data
   },
