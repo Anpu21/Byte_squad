@@ -62,6 +62,7 @@ export function PosReturnModal({ isOpen, onClose }: IPosReturnModalProps) {
                             <PosReturnLinesTable
                                 parsed={r.parsed}
                                 onPatchDraft={r.patchDraft}
+                                onPatchQty={r.patchQty}
                             />
                         )}
 

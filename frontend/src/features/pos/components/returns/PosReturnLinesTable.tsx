@@ -7,12 +7,14 @@ const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
 interface PosReturnLinesTableProps {
     parsed: ParsedReturnLine[];
     onPatchDraft: (saleItemId: string, patch: Partial<ILineDraft>) => void;
+    onPatchQty: (saleItemId: string, field: 'good' | 'bad', raw: string) => void;
 }
 
 /** Per-line good/bad quantity split with restock toggle and per-line refund. */
 export function PosReturnLinesTable({
     parsed,
     onPatchDraft,
+    onPatchQty,
 }: PosReturnLinesTableProps) {
     return (
         <div className="overflow-x-auto border border-border rounded-md">
@@ -30,7 +32,16 @@ export function PosReturnLinesTable({
                     </tr>
                 </thead>
                 <tbody>
-                    {parsed.map(({ line, draft, refund, over }) => (
+                    {parsed.map(({ line, draft, refund, over }) => {
+                        const maxGood = Math.max(
+                            0,
+                            line.remaining - (Number(draft.bad) || 0),
+                        );
+                        const maxBad = Math.max(
+                            0,
+                            line.remaining - (Number(draft.good) || 0),
+                        );
+                        return (
                         <tr
                             key={line.saleItemId}
                             className="border-b border-border last:border-b-0"
@@ -50,12 +61,15 @@ export function PosReturnLinesTable({
                                     className={`${INPUT_CLASS} w-full h-8 text-right ${over ? 'border-danger' : ''}`}
                                     type="number"
                                     min="0"
+                                    max={maxGood}
                                     step="0.001"
                                     value={draft.good}
                                     onChange={(e) =>
-                                        onPatchDraft(line.saleItemId, {
-                                            good: e.target.value,
-                                        })
+                                        onPatchQty(
+                                            line.saleItemId,
+                                            'good',
+                                            e.target.value,
+                                        )
                                     }
                                     aria-label={`Good quantity for ${line.productName}`}
                                 />
@@ -65,12 +79,15 @@ export function PosReturnLinesTable({
                                     className={`${INPUT_CLASS} w-full h-8 text-right ${over ? 'border-danger' : ''}`}
                                     type="number"
                                     min="0"
+                                    max={maxBad}
                                     step="0.001"
                                     value={draft.bad}
                                     onChange={(e) =>
-                                        onPatchDraft(line.saleItemId, {
-                                            bad: e.target.value,
-                                        })
+                                        onPatchQty(
+                                            line.saleItemId,
+                                            'bad',
+                                            e.target.value,
+                                        )
                                     }
                                     aria-label={`Bad quantity for ${line.productName}`}
                                 />
@@ -91,7 +108,8 @@ export function PosReturnLinesTable({
                                 {refund > 0 ? formatCurrency(refund) : '—'}
                             </td>
                         </tr>
-                    ))}
+                        );
+                    })}
                 </tbody>
             </table>
         </div>

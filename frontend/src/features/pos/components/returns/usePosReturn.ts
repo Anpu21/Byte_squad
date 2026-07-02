@@ -6,6 +6,13 @@ import { formatCurrency } from '@/lib/utils';
 import { returnsService } from '@/services/returns.service';
 import type { ICreateSalesReturnLine, ISaleReturnLookup } from '@/types';
 
+function round2(n: number): number {
+    return Math.round(n * 100) / 100;
+}
+function round3(n: number): number {
+    return Math.round(n * 1000) / 1000;
+}
+
 export interface ILineDraft {
     good: string;
     bad: string;
@@ -80,14 +87,22 @@ export function usePosReturn(onClose: () => void) {
         };
         const good = Number(draft.good) || 0;
         const bad = Number(draft.bad) || 0;
+        const total = round3(good + bad);
+        // Discount-aware per-unit price, matching the backend refund basis
+        // (returns.service.ts uses lineTotal / quantitySold, not unitPrice).
+        const perUnit =
+            line.quantitySold > 0
+                ? Number(line.lineTotal) / line.quantitySold
+                : Number(line.unitPrice);
         return {
             line,
             draft,
             good,
             bad,
-            total: good + bad,
-            over: good + bad > line.remaining,
-            refund: (good + bad) * Number(line.unitPrice),
+            total,
+            over: total > line.remaining + 1e-9,
+            // Clamp defensively so an over-cap line can never inflate the refund.
+            refund: round2(Math.min(total, line.remaining) * perUnit),
         };
     });
     const picked = parsed.filter((p) => p.total > 0);
@@ -104,6 +119,35 @@ export function usePosReturn(onClose: () => void) {
             };
             return { ...prev, [saleItemId]: { ...current, ...patch } };
         });
+    }
+
+    /**
+     * Clamp a good/bad quantity so `good + bad` can never exceed the line's
+     * returnable remainder — the root-cause guard for the over-refund bug.
+     * An empty string passes through so the field can be cleared.
+     */
+    function patchQty(saleItemId: string, field: 'good' | 'bad', raw: string) {
+        const applyValue = (value: string) =>
+            patchDraft(
+                saleItemId,
+                field === 'good' ? { good: value } : { bad: value },
+            );
+        if (raw === '') {
+            applyValue('');
+            return;
+        }
+        const n = Number(raw);
+        if (!Number.isFinite(n) || n < 0) return;
+        const line = returnableLines.find((l) => l.saleItemId === saleItemId);
+        if (!line) {
+            applyValue(raw);
+            return;
+        }
+        const current = drafts[saleItemId];
+        const sibling =
+            Number(field === 'good' ? current?.bad : current?.good) || 0;
+        const maxThis = Math.max(0, round3(line.remaining - sibling));
+        applyValue(String(Math.min(round3(n), maxThis)));
     }
 
     async function handleSubmit() {
@@ -157,6 +201,7 @@ export function usePosReturn(onClose: () => void) {
         refundTotal,
         canSubmit,
         patchDraft,
+        patchQty,
         handleSubmit,
     };
 }
