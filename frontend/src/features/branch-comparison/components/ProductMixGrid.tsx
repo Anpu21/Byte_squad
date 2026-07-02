@@ -1,6 +1,6 @@
 import DonutChart from "@/components/charts/DonutChart";
 import type { BranchAnalyticsProductMetric, IBranchAnalyticsProductRow } from "@/types";
-import { ChartCard } from "./charts/ChartCard";
+import { ChartCard } from "@/components/charts/ChartCard";
 import {
   buildProductMixByBranch,
   type ProductBranchInfo,

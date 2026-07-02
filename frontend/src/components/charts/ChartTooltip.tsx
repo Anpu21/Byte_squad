@@ -1,4 +1,4 @@
-import { chartValue } from "../../lib/format";
+import { chartValue } from "./chart-format";
 
 export interface ChartRow {
   name: string;
