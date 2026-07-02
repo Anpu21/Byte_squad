@@ -67,8 +67,12 @@ export class CreateSaleItemDto {
  * (the calculator service enforces this; the DTO only carries the inputs).
  */
 export class CreateSalePaymentDto {
-  @IsIn(['Cash', 'Card', 'Mobile', 'Cheque', 'Bank', 'Credit'])
-  paymentMethod!: 'Cash' | 'Card' | 'Mobile' | 'Cheque' | 'Bank' | 'Credit';
+  // The shop accepts Cash + Card (card settles via PayHere) only, plus the
+  // Credit (khata) buy-now-pay-later tender. Mobile / cheque / bank transfer
+  // were removed as tender options; the optional cheque/bank fields below are
+  // retained for backward compatibility with historical rows but are unused.
+  @IsIn(['Cash', 'Card', 'Credit'])
+  paymentMethod!: 'Cash' | 'Card' | 'Credit';
 
   @IsNumber()
   @Min(0)

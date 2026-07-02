@@ -1,7 +1,5 @@
 import type { TPaymentMethod } from '@/types';
 import { PosCashTenderForm } from './PosCashTenderForm';
-import { PosChequeForm } from './PosChequeForm';
-import { PosBankTransferForm } from './PosBankTransferForm';
 import type { ITenderBag } from './pos-payment-forms.helpers';
 
 interface IPosPaymentFormSwitchProps {
@@ -12,12 +10,10 @@ interface IPosPaymentFormSwitchProps {
 }
 
 /**
- * Pure router — picks the right tender form for the active method. Card
- * and Mobile share a "no form" placeholder because both record the full
- * invoice total against the chosen method with no extra fields. The
- * Credit tender is no longer exposed in the cashier UI (single-shop
- * retail has no walk-in customer accounts), so the Credit branch falls
- * through to the same external-tender placeholder.
+ * Pure router — picks the right tender form for the active method. Cash
+ * shows the tender/change form; Card (settled via PayHere) and Credit
+ * (khata) are external tenders that record the full invoice total with no
+ * extra fields, so they share the placeholder note below.
  */
 export function PosPaymentFormSwitch({
     paymentMethod,
@@ -36,30 +32,7 @@ export function PosPaymentFormSwitch({
             />
         );
     }
-    if (paymentMethod === 'Cheque') {
-        return (
-            <PosChequeForm
-                chequeAmount={bag.chequeAmount}
-                chequeNo={bag.chequeNo}
-                chequeDate={bag.chequeDate}
-                chequeBank={bag.chequeBank}
-                chequeBranch={bag.chequeBranch}
-                chequeRef={bag.chequeRef}
-                chequeDeliveredBy={bag.chequeDeliveredBy}
-                onChange={onPatchBag}
-            />
-        );
-    }
-    if (paymentMethod === 'Bank') {
-        return (
-            <PosBankTransferForm
-                bankTransferAmount={bag.bankTransferAmount}
-                bankRef={bag.bankRef}
-                onChange={onPatchBag}
-            />
-        );
-    }
-    // Card / Mobile / Credit: external tender; cashier verifies receipt elsewhere.
+    // Card / Credit: external tender; cashier verifies receipt elsewhere.
     return (
         <div
             role="note"

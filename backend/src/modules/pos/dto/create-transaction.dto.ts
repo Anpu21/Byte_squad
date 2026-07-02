@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsEnum,
+  IsIn,
   IsInt,
   IsNumber,
   IsOptional,
@@ -49,7 +50,10 @@ export class CreateTransactionDto {
   @IsOptional()
   discountType?: DiscountType;
 
-  @IsEnum(PaymentMethod)
+  // Shop accepts Cash + Card (PayHere) only. The DB enum keeps its legacy
+  // mobile/online values for historical rows, but new transactions are
+  // restricted to cash/card.
+  @IsIn([PaymentMethod.CASH, PaymentMethod.CARD])
   paymentMethod!: PaymentMethod;
 
   @IsString()

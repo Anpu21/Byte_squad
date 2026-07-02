@@ -464,29 +464,67 @@ export class LoyaltyService {
     return this.loyalty.getDashboardStats(branchId);
   }
 
+  /**
+   * Manual adjustment for any member (registered user OR walk-in).
+   * `memberId` is the directory row id — a userId or a
+   * loyaltyCustomerId; the wallet is resolved from whichever side
+   * owns it and is never auto-created here (adjusting a non-member
+   * is a 404, not an enrol). Non-admin actors may only adjust
+   * members tied to their own branch; the ledger entry records the
+   * acting role and branch.
+   */
   async adjustPoints(
-    userId: string,
+    memberId: string,
     dto: AdjustLoyaltyPointsDto,
+    actor: AuthUser,
   ): Promise<void> {
-    const account = await this.getOrCreateAccount({ userId });
+    const account =
+      (await this.loyalty.findAccountByUser(memberId)) ??
+      (await this.loyalty.findAccountByLoyaltyCustomer(memberId));
+    if (!account) {
+      throw new NotFoundException('Loyalty account not found');
+    }
 
-    // Prevent negative balance
+    if (actor.role !== UserRole.ADMIN) {
+      if (!actor.branchId) {
+        throw new ForbiddenException('You are not assigned to a branch');
+      }
+      const accessible = await this.accountBelongsToBranch(
+        account,
+        actor.branchId,
+      );
+      if (!accessible) {
+        throw new ForbiddenException(
+          'You do not have access to this loyalty member',
+        );
+      }
+    }
+
     if (dto.points < 0 && account.pointsBalance + dto.points < 0) {
       throw new BadRequestException(
         'Cannot deduct more points than the current balance',
       );
     }
 
-    await this.loyalty.applyManualAdjustment({ userId }, dto.points);
+    const owner: LoyaltyOwner | null = account.userId
+      ? { userId: account.userId }
+      : account.loyaltyCustomerId
+        ? { loyaltyCustomerId: account.loyaltyCustomerId }
+        : null;
+    if (!owner) {
+      throw new BadRequestException('Loyalty account has no owner');
+    }
+
+    await this.loyalty.applyManualAdjustment(owner, dto.points);
     await this.loyalty.createLedgerEntry({
-      userId,
-      loyaltyCustomerId: null,
-      branchId: null,
+      userId: account.userId,
+      loyaltyCustomerId: account.loyaltyCustomerId,
+      branchId: actor.branchId ?? null,
       orderId: null,
       type: LoyaltyLedgerEntryType.ADJUSTED,
       points: dto.points,
       description: dto.reason,
-      metadata: { adjustedByAdmin: true },
+      metadata: { adjustedByRole: actor.role, adjustedById: actor.id },
     });
   }
 

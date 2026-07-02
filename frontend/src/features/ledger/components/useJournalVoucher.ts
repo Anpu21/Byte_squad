@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -9,6 +9,7 @@ import {
     type IJournalLineDraft,
     deriveJournalTotals,
     emptyLine,
+    todayIsoDate,
 } from './journal-voucher.lib';
 
 /**
@@ -17,8 +18,9 @@ import {
  */
 export function useJournalVoucher(isOpen: boolean, onClose: () => void) {
     const queryClient = useQueryClient();
+    const maxDate = todayIsoDate();
     const [memo, setMemo] = useState('');
-    const [entryDate, setEntryDate] = useState('');
+    const [entryDate, setEntryDate] = useState(maxDate);
     const [branchId, setBranchId] = useState('');
     const [lines, setLines] = useState<IJournalLineDraft[]>([
         emptyLine('debit'),
@@ -53,22 +55,43 @@ export function useJournalVoucher(isOpen: boolean, onClose: () => void) {
         );
     }
 
-    const { parsed, complete, debits, credits, balanced } =
+    const { parsed, complete, debits, credits, balanced, duplicateAccount } =
         deriveJournalTotals(lines);
+    const futureDate = entryDate.length > 0 && entryDate > maxDate;
     const canSubmit =
         memo.trim().length >= 3 &&
         branchId.length > 0 &&
         complete.length === parsed.length &&
         complete.length >= 2 &&
         balanced &&
+        !futureDate &&
         !busy;
 
-    function reset() {
+    // Short, human hint for why Post is disabled (shown next to the button).
+    const disabledReason = ((): string | null => {
+        if (busy || canSubmit) return null;
+        if (branchId.length === 0) return 'Choose a branch';
+        if (memo.trim().length < 3) return 'Add a memo (3+ characters)';
+        if (complete.length < 2) return 'Add at least two complete lines';
+        if (complete.length !== parsed.length)
+            return 'Every line needs an account and amount';
+        if (futureDate) return "Entry date can't be in the future";
+        if (!balanced) return 'Debits and credits must balance';
+        return null;
+    })();
+
+    const reset = useCallback(() => {
         setMemo('');
-        setEntryDate('');
+        setEntryDate(todayIsoDate());
         setBranchId('');
         setLines([emptyLine('debit'), emptyLine('credit')]);
-    }
+    }, []);
+
+    // Clear any stale draft each time the modal opens — a cancelled voucher
+    // shouldn't reappear half-filled.
+    useEffect(() => {
+        if (isOpen) reset();
+    }, [isOpen, reset]);
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
@@ -118,7 +141,10 @@ export function useJournalVoucher(isOpen: boolean, onClose: () => void) {
         debits,
         credits,
         balanced,
+        duplicateAccount,
         canSubmit,
+        disabledReason,
+        maxDate,
         patchLine,
         addLine,
         removeLine,

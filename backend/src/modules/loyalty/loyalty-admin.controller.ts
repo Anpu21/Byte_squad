@@ -19,8 +19,8 @@ import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
 import { UpdateLoyaltySettingsDto } from '@/modules/loyalty/dto/update-loyalty-settings.dto';
 import { ListLoyaltyCustomersQueryDto } from '@/modules/loyalty/dto/list-loyalty-customers-query.dto';
-import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
 import { AdjustLoyaltyPointsDto } from '@/modules/loyalty/dto/adjust-loyalty-points.dto';
+import type { AuthUser } from '@common/types/auth-user.type';
 
 @Controller(APP_ROUTES.LOYALTY.ADMIN_BASE)
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -49,14 +49,6 @@ export class LoyaltyAdminController {
     return this.loyalty.listCustomers(query);
   }
 
-  @Get(APP_ROUTES.LOYALTY.ADMIN_CUSTOMER_HISTORY)
-  customerHistory(
-    @Param('userId', ParseUUIDPipe) userId: string,
-    @Query() query: ListLoyaltyHistoryQueryDto,
-  ) {
-    return this.loyalty.listHistory(userId, query);
-  }
-
   @Get(APP_ROUTES.LOYALTY.ADMIN_DASHBOARD)
   dashboard() {
     return this.loyalty.getDashboardStats();
@@ -64,9 +56,10 @@ export class LoyaltyAdminController {
 
   @Post(APP_ROUTES.LOYALTY.ADMIN_ADJUST)
   adjustPoints(
-    @Param('userId', ParseUUIDPipe) userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AdjustLoyaltyPointsDto,
+    @CurrentUser() actor: AuthUser,
   ) {
-    return this.loyalty.adjustPoints(userId, dto);
+    return this.loyalty.adjustPoints(id, dto, actor);
   }
 }

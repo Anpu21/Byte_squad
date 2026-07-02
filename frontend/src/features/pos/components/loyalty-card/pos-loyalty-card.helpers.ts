@@ -1,4 +1,6 @@
 import axios from 'axios';
+import type { IPosLoyaltyOwner } from '@/features/pos/hooks/useLoyaltyAttach';
+import type { ILoyaltyLookupResult } from '@/types';
 
 /**
  * Strip display formatting from a cashier-typed phone string so the
@@ -8,6 +10,22 @@ import axios from 'axios';
  */
 export function sanitisePhone(raw: string): string {
     return raw.replace(/[^\d+]/g, '');
+}
+
+/**
+ * Map the wire-shape `ILoyaltyLookupResult` onto the trimmed
+ * `IPosLoyaltyOwner` slot the page persists. Centralised so the lookup and
+ * enrol paths produce identical owner objects.
+ */
+export function toOwner(result: ILoyaltyLookupResult): IPosLoyaltyOwner {
+    return {
+        ownerType: result.ownerType,
+        userId: result.userId,
+        loyaltyCustomerId: result.loyaltyCustomerId,
+        tier: result.tier,
+        firstName: result.firstName,
+        pointsBalance: result.pointsBalance,
+    };
 }
 
 /**

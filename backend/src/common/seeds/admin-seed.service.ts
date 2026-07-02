@@ -1091,11 +1091,7 @@ export class AdminSeedService implements OnModuleInit {
     });
     if (existingCount > 0) return;
 
-    const paymentMethods = [
-      PaymentMethod.CASH,
-      PaymentMethod.CARD,
-      PaymentMethod.MOBILE,
-    ];
+    const paymentMethods = [PaymentMethod.CASH, PaymentMethod.CARD];
     const now = new Date();
 
     for (let daysAgo = 6; daysAgo >= 0; daysAgo--) {
@@ -1206,7 +1202,7 @@ export class AdminSeedService implements OnModuleInit {
         code: 'MAIN',
         dailyBaseCount: 10,
         basketScale: 1.22,
-        paymentMethods: ['Cash', 'Card', 'Card', 'Mobile', 'Bank'],
+        paymentMethods: ['Cash', 'Card', 'Card', 'Cash', 'Card'],
         expenseBase: 13200,
         orderCounts: { completed: 14, cancelled: 2, rejected: 1 },
         loyaltyScale: 1.3,
@@ -1217,7 +1213,7 @@ export class AdminSeedService implements OnModuleInit {
         code: 'DOWN',
         dailyBaseCount: 7,
         basketScale: 0.96,
-        paymentMethods: ['Cash', 'Cash', 'Card', 'Mobile', 'Cheque'],
+        paymentMethods: ['Cash', 'Cash', 'Card', 'Card', 'Cash'],
         expenseBase: 9800,
         orderCounts: { completed: 10, cancelled: 3, rejected: 2 },
         loyaltyScale: 0.95,
@@ -1228,7 +1224,7 @@ export class AdminSeedService implements OnModuleInit {
         code: 'SUB',
         dailyBaseCount: 5,
         basketScale: 0.74,
-        paymentMethods: ['Cash', 'Mobile', 'Credit', 'Card'],
+        paymentMethods: ['Cash', 'Card', 'Credit', 'Card'],
         expenseBase: 7600,
         orderCounts: { completed: 7, cancelled: 4, rejected: 3 },
         loyaltyScale: 0.72,
@@ -1716,10 +1712,6 @@ export class AdminSeedService implements OnModuleInit {
         return PaymentMethod.CASH;
       case 'Card':
         return PaymentMethod.CARD;
-      case 'Mobile':
-        return PaymentMethod.MOBILE;
-      case 'Cheque':
-      case 'Bank':
       case 'Credit':
         return PaymentMethod.ONLINE;
       default: {
@@ -1743,23 +1735,9 @@ export class AdminSeedService implements OnModuleInit {
           cashChange: Math.round((cashTendered - roundedTotal) * 100) / 100,
         };
       }
-      case 'Cheque':
-        return {
-          chequeAmount: roundedTotal,
-          chequeNo: `CHQ-${Math.round(roundedTotal * 10)}`,
-          chequeDate: this.branchComparisonDate(0, 12),
-          chequeBank: 'Demo Bank',
-          chequeBranch: 'Colombo',
-        };
-      case 'Bank':
-        return {
-          bankTransferAmount: roundedTotal,
-          bankRef: `BANK-${Math.round(roundedTotal * 10)}`,
-        };
       case 'Credit':
         return { creditAmount: roundedTotal };
       case 'Card':
-      case 'Mobile':
         return {};
       default: {
         const exhaustive: never = method;

@@ -30,7 +30,7 @@ export interface IUpdateCreditAccountPayload {
   creditTermDays?: number;
 }
 
-export type CreditAccountPaymentMethod = 'Cash' | 'Card' | 'Bank';
+export type CreditAccountPaymentMethod = 'Cash' | 'Card';
 
 /** Body for `POST /credit-accounts/:id/payments`. */
 export interface IReceiveCreditAccountPaymentPayload {

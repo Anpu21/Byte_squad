@@ -1,12 +1,7 @@
 import { BUSINESS_INFO } from '@/config/business-info'
 import { LEGAL_EFFECTIVE_DATE } from '../config/legal-pages'
 import { LegalPage } from '../components/LegalPage'
-import {
-    LegalList,
-    LegalP,
-    LegalSection,
-    LegalTerm,
-} from '../components/legal-prose'
+import { LegalP, LegalSection, LegalTerm } from '../components/legal-prose'
 
 const B = BUSINESS_INFO
 
@@ -26,24 +21,32 @@ export function TermsPage() {
             </LegalSection>
 
             <LegalSection heading="2. Your account">
-                <LegalList
-                    items={[
-                        'You must provide accurate registration details and keep your login credentials secure.',
-                        'You are responsible for activity on your account. Tell us immediately if you suspect unauthorised use.',
-                        'You must be able to form a legally binding contract to place an order.',
-                    ]}
-                />
+                <LegalP>
+                    When you register, you agree to provide accurate details and
+                    to keep your login credentials secure. You are responsible for
+                    all activity that takes place under your account, so please
+                    tell us immediately if you believe it has been used without
+                    your permission. To place an order you must be able to form a
+                    legally binding contract with us.
+                </LegalP>
             </LegalSection>
 
             <LegalSection heading="3. Orders & pricing">
-                <LegalList
-                    items={[
-                        `All prices are shown in ${B.currency} and include applicable taxes unless stated otherwise.`,
-                        'An order is an offer to buy. It is accepted only when we confirm it and, for prepaid orders, when payment is received.',
-                        'We may decline or cancel an order — for example if an item is out of stock, mispriced, or the order appears fraudulent — and will refund any amount already paid.',
-                        'Product images and descriptions are for reference; packaging and availability may vary by branch.',
-                    ]}
-                />
+                <LegalP>
+                    All prices are shown in {B.currency} and include any applicable
+                    taxes unless we state otherwise. When you place an order you
+                    are making an offer to buy; that offer is accepted only once we
+                    confirm the order and, for prepaid orders, once your payment
+                    has been received.
+                </LegalP>
+                <LegalP>
+                    We may decline or cancel an order — for example where an item
+                    is out of stock, has been mispriced, or the order appears
+                    fraudulent — and in that case we will refund any amount you
+                    have already paid. Product images and descriptions are provided
+                    for reference only, and packaging and availability may vary
+                    from one branch to another.
+                </LegalP>
             </LegalSection>
 
             <LegalSection heading="4. Payment">
@@ -73,12 +76,13 @@ export function TermsPage() {
             </LegalSection>
 
             <LegalSection heading="7. Loyalty points & store credit">
-                <LegalList
-                    items={[
-                        'Loyalty points have no cash value, are non-transferable, and may expire or be adjusted under the loyalty programme rules.',
-                        'Store-credit ("khata") accounts are offered at our discretion and are subject to separate credit terms and repayment obligations.',
-                    ]}
-                />
+                <LegalP>
+                    Loyalty points have no cash value, are non-transferable, and
+                    may expire or be adjusted under the loyalty programme rules.
+                    Store-credit (&quot;khata&quot;) accounts are offered at our
+                    discretion and are subject to separate credit terms and
+                    repayment obligations.
+                </LegalP>
             </LegalSection>
 
             <LegalSection heading="8. Acceptable use">

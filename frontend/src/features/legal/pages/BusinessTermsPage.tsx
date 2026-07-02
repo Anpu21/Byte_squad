@@ -1,7 +1,7 @@
 import { BUSINESS_INFO } from '@/config/business-info'
 import { LEGAL_EFFECTIVE_DATE } from '../config/legal-pages'
 import { LegalPage } from '../components/LegalPage'
-import { LegalList, LegalP, LegalSection, LegalTerm } from '../components/legal-prose'
+import { LegalP, LegalSection, LegalTerm } from '../components/legal-prose'
 
 const B = BUSINESS_INFO
 
@@ -21,15 +21,14 @@ export function BusinessTermsPage() {
             </LegalSection>
 
             <LegalSection heading="2. Acceptable use">
-                <LegalP>You agree not to:</LegalP>
-                <LegalList
-                    items={[
-                        'Use the site for any unlawful, fraudulent, or harmful purpose;',
-                        'Attempt to gain unauthorised access to accounts, systems, or data;',
-                        'Interfere with, disrupt, or overload the site or its security features;',
-                        'Copy, scrape, or resell site content or data without our written permission.',
-                    ]}
-                />
+                <LegalP>
+                    You agree not to use the site for any unlawful, fraudulent, or
+                    harmful purpose, and not to attempt to gain unauthorised access
+                    to accounts, systems, or data. You must not interfere with,
+                    disrupt, or overload the site or its security features, and you
+                    may not copy, scrape, or resell site content or data without
+                    our written permission.
+                </LegalP>
             </LegalSection>
 
             <LegalSection heading="3. Intellectual property">

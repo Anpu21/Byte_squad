@@ -49,7 +49,7 @@ export function PosShiftSummary({
                 value={money(summary.totalCash, live?.cash)}
             />
             <SummaryRow
-                label="Card / Mobile"
+                label="Card"
                 value={money(summary.totalElectronic, live?.electronic)}
             />
             <SummaryRow

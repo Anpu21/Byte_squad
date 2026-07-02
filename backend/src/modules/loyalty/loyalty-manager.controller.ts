@@ -1,9 +1,11 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Param,
   ParseUUIDPipe,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -15,7 +17,7 @@ import { RolesGuard } from '@common/guards/roles.guard';
 import { APP_ROUTES } from '@common/routes/app.routes';
 import { LoyaltyService } from '@/modules/loyalty/loyalty.service';
 import { ListLoyaltyCustomersQueryDto } from '@/modules/loyalty/dto/list-loyalty-customers-query.dto';
-import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
+import { AdjustLoyaltyPointsDto } from '@/modules/loyalty/dto/adjust-loyalty-points.dto';
 import type { AuthUser } from '@common/types/auth-user.type';
 
 @Controller(APP_ROUTES.LOYALTY.MANAGER_BASE)
@@ -38,12 +40,14 @@ export class LoyaltyManagerController {
     });
   }
 
-  @Get(APP_ROUTES.LOYALTY.MANAGER_CUSTOMER_HISTORY)
-  customerHistory(
-    @Param('userId', ParseUUIDPipe) userId: string,
-    @Query() query: ListLoyaltyHistoryQueryDto,
+  /** Branch-guarded manual adjustment (membership enforced in the service). */
+  @Post(APP_ROUTES.LOYALTY.MANAGER_ADJUST)
+  adjustPoints(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AdjustLoyaltyPointsDto,
+    @CurrentUser() actor: AuthUser,
   ) {
-    return this.loyalty.listHistory(userId, query);
+    return this.loyalty.adjustPoints(id, dto, actor);
   }
 
   @Get(APP_ROUTES.LOYALTY.MANAGER_DASHBOARD)

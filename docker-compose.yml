@@ -66,6 +66,13 @@ services:
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      # ── PayHere card gateway ─────────────────────────────────────────
+      # Card payments are processed by PayHere; everything below is env-driven.
+      # GO LIVE (after the partner bank approves the gateway):
+      #   1. Set live PAYHERE_MERCHANT_ID + PAYHERE_MERCHANT_SECRET.
+      #   2. Set PAYHERE_CHECKOUT_URL=https://www.payhere.lk/pay/checkout
+      #      (default below is the sandbox — safe for dev/testing).
+      #   3. Point NOTIFY/RETURN/CANCEL URLs at the public HTTPS live domain.
       - PAYHERE_MERCHANT_ID=${PAYHERE_MERCHANT_ID}
       - PAYHERE_MERCHANT_SECRET=${PAYHERE_MERCHANT_SECRET}
       - BACKEND_PUBLIC_URL=${BACKEND_PUBLIC_URL:-http://localhost:3000}

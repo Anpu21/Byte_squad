@@ -162,4 +162,27 @@ describe('JournalVouchersService', () => {
       service.create({ ...balancedDto, branchId: 'other-branch' }, MANAGER),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
+
+  it('rejects a future-dated journal', async () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const tomorrow = d.toISOString().slice(0, 10);
+    await expect(
+      service.create({ ...balancedDto, entryDate: tomorrow }, ADMIN),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(accounting.createLedgerEntryWithManager).not.toHaveBeenCalled();
+  });
+
+  it('numbers the voucher by the entry-date year, not the post year', async () => {
+    await service.create({ ...balancedDto, entryDate: '2023-05-01' }, ADMIN);
+    expect(counterQb.where).toHaveBeenCalledWith('c.year = :year', {
+      year: 2023,
+    });
+    expect(voucherRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        voucherNumber: 'JV-2023-000001',
+        entryDate: '2023-05-01',
+      }),
+    );
+  });
 });
