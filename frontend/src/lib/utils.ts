@@ -23,6 +23,22 @@ export function formatCurrency(
 }
 
 /**
+ * Format a number as whole currency (no decimals) — for dense chart legends
+ * and summary tiles where cents are noise.
+ */
+export function formatCurrencyWhole(
+    amount: number,
+    currency = 'LKR',
+    locale = 'en-LK',
+): string {
+    return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 0,
+    }).format(amount);
+}
+
+/**
  * Generate a short unique ID (for client-side cart items, etc.)
  */
 export function generateId(): string {

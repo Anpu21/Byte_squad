@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useCheckout } from '@/features/checkout/hooks/useCheckout';
 import { LoyaltyPointsInput } from '@/features/checkout/components/LoyaltyPointsInput';
 import { Button, FIELD_SHELL, FIELD_BORDER } from '@/components/ui';
@@ -157,6 +157,31 @@ export function CheckoutPage() {
                     <p className="text-[11px] text-text-3 text-center">
                         Manual orders are charged at pickup. Online orders are
                         confirmed after PayHere notifies LedgerPro.
+                    </p>
+
+                    <p className="text-[11px] text-text-3 text-center">
+                        By placing this order you agree to our{' '}
+                        <Link
+                            to={FRONTEND_ROUTES.LEGAL_TERMS}
+                            className="text-text-2 underline hover:text-text-1"
+                        >
+                            Terms
+                        </Link>
+                        ,{' '}
+                        <Link
+                            to={FRONTEND_ROUTES.LEGAL_REFUND}
+                            className="text-text-2 underline hover:text-text-1"
+                        >
+                            Refund
+                        </Link>{' '}
+                        &amp;{' '}
+                        <Link
+                            to={FRONTEND_ROUTES.LEGAL_PRIVACY}
+                            className="text-text-2 underline hover:text-text-1"
+                        >
+                            Privacy
+                        </Link>{' '}
+                        policies.
                     </p>
                 </div>
             </form>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import DonutChart from "@/components/charts/DonutChart";
 import { Select } from "@/components/ui/Select";
 import type { BranchAnalyticsProductMetric, IBranchAnalyticsProductRow } from "@/types";
-import { ChartCard } from "./charts/ChartCard";
+import { ChartCard } from "@/components/charts/ChartCard";
 import {
   buildSingleProductSlices,
   type ProductBranchInfo,

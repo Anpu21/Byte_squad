@@ -13,9 +13,9 @@ import type { IBranchAnalyticsComparisonEntry } from "@/types";
 import { compactCurrency } from "../../lib/format";
 import { count, money } from "../../lib/format-cells";
 import { CHART_COLORS } from "../../lib/chart-config";
-import { ChartCard } from "../charts/ChartCard";
-import { ChartTooltip } from "../charts/ChartTooltip";
-import { MultiBranchBarChart } from "../charts/MultiBranchBarChart";
+import { ChartCard } from "@/components/charts/ChartCard";
+import { ChartTooltip } from "@/components/charts/ChartTooltip";
+import { MultiBranchBarChart } from "@/components/charts/MultiBranchBarChart";
 import { BranchMetricTable } from "../BranchMetricTable";
 
 export function StaffView({

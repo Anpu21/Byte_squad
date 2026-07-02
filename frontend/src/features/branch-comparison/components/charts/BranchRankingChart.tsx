@@ -10,8 +10,8 @@ import {
 } from "recharts";
 import type { LeaderboardRow } from "../../hooks/useBranchComparisonPage";
 import { compactNumber } from "../../lib/format";
-import { ChartCard } from "./ChartCard";
-import { ChartTooltip } from "./ChartTooltip";
+import { ChartCard } from "@/components/charts/ChartCard";
+import { ChartTooltip } from "@/components/charts/ChartTooltip";
 
 export function BranchRankingChart({
   rows,

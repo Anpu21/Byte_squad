@@ -5,6 +5,12 @@ import type {
   IBrandAnalyticsParams,
   IBrandOverviewResponse,
   IBrandDrilldownResponse,
+  IBrandBranchComparisonRequest,
+  IBrandBranchComparisonResponse,
+  IBrandBranchProductsRequest,
+  IBrandBranchProductsResponse,
+  IBrandBranchTrendRequest,
+  IBrandBranchTrendResponse,
   ICreateBrandPayload,
   IUpdateBrandPayload,
   ICategoryBrandComparisonResponse,
@@ -87,6 +93,35 @@ export const brandsService = {
     const response = await api.get<IApiResponse<ICategoryProductsResponse>>(
       `/brands/analytics/by-category/${categoryId}/products`,
       { params },
+    )
+    return response.data.data
+  },
+
+  getBranchComparison: async (
+    request: IBrandBranchComparisonRequest,
+  ): Promise<IBrandBranchComparisonResponse> => {
+    const response = await api.post<
+      IApiResponse<IBrandBranchComparisonResponse>
+    >('/brands/analytics/by-branch', request)
+    return response.data.data
+  },
+
+  getBranchProducts: async (
+    request: IBrandBranchProductsRequest,
+  ): Promise<IBrandBranchProductsResponse> => {
+    const response = await api.post<IApiResponse<IBrandBranchProductsResponse>>(
+      '/brands/analytics/by-branch/products',
+      request,
+    )
+    return response.data.data
+  },
+
+  getBranchTrend: async (
+    request: IBrandBranchTrendRequest,
+  ): Promise<IBrandBranchTrendResponse> => {
+    const response = await api.post<IApiResponse<IBrandBranchTrendResponse>>(
+      '/brands/analytics/by-branch/trend',
+      request,
     )
     return response.data.data
   },

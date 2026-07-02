@@ -82,6 +82,11 @@ export const APP_ROUTES = {
     // segment count), so these safely sit alongside the per-brand route.
     BY_CATEGORY: 'analytics/by-category/:categoryId',
     BY_CATEGORY_PRODUCTS: 'analytics/by-category/:categoryId/products',
+    // Brand×branch comparison family — POSTs whose bodies carry branchIds
+    // arrays (branch-analytics precedent).
+    BY_BRANCH: 'analytics/by-branch',
+    BY_BRANCH_PRODUCTS: 'analytics/by-branch/products',
+    BY_BRANCH_TREND: 'analytics/by-branch/trend',
     BY_ID: ':id',
     ARCHIVE: ':id/archive',
   },

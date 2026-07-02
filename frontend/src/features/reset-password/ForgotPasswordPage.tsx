@@ -9,6 +9,7 @@ import { FRONTEND_ROUTES } from '@/constants/routes';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Logo from '@/components/ui/Logo';
+import { LegalFooter } from '@/features/legal';
 
 export function ForgotPasswordPage() {
     const navigate = useNavigate();
@@ -95,6 +96,8 @@ export function ForgotPasswordPage() {
                     </Link>
                 </p>
             </form>
+
+            <LegalFooter variant="compact" className="mt-8" />
         </>
     );
 }

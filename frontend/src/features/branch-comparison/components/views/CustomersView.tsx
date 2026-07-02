@@ -1,6 +1,6 @@
 import type { IBranchAnalyticsComparisonEntry } from "@/types";
 import { count } from "../../lib/format-cells";
-import { MultiBranchBarChart } from "../charts/MultiBranchBarChart";
+import { MultiBranchBarChart } from "@/components/charts/MultiBranchBarChart";
 import { BranchMetricTable } from "../BranchMetricTable";
 
 export function CustomersView({

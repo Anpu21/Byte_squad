@@ -10,7 +10,7 @@ import type { IBranchAnalyticsComparisonResponse } from "@/types";
 import { useProductComparison } from "../../hooks/useProductComparison";
 import { formatCurrencyWhole, formatNumber } from "../../lib/format";
 import { PRODUCT_METRIC_OPTIONS } from "../../lib/products-metric-options";
-import { MultiBranchBarChart } from "../charts/MultiBranchBarChart";
+import { MultiBranchBarChart } from "@/components/charts/MultiBranchBarChart";
 import {
   buildGroupedBarChart,
   buildProductColors,

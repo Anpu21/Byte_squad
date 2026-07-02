@@ -5,7 +5,7 @@ import type {
   IBranchAnalyticsProductPerBranch,
   IBranchAnalyticsProductRow,
 } from "@/types";
-import type { ChartRow } from "./charts/ChartTooltip";
+import type { ChartRow } from "@/components/charts/ChartTooltip";
 
 export interface ProductBranchInfo {
   branchId: string;

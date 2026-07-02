@@ -7,6 +7,7 @@ import { FRONTEND_ROUTES } from '@/constants/routes';
 import { useSignupForm } from '@/features/signup/hooks/useSignupForm';
 import { SignupNameFields } from '@/features/signup/components/SignupNameFields';
 import { SignupPasswordFields } from '@/features/signup/components/SignupPasswordFields';
+import { LegalFooter } from '@/features/legal';
 
 export function SignupPage() {
     const p = useSignupForm();
@@ -96,6 +97,8 @@ export function SignupPage() {
                     </Link>
                 </p>
             </form>
+
+            <LegalFooter variant="compact" className="mt-8" />
         </>
     );
 }
