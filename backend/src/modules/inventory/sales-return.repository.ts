@@ -5,6 +5,11 @@ import { SalesReturnItem } from '@inventory/entities/sales-return-item.entity';
 
 export interface ListReturnsOptions {
   branchId?: string | null;
+  cashierId?: string | null;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+  status?: string;
   page: number;
   limit: number;
 }
@@ -46,12 +51,41 @@ export class SalesReturnRepository {
     });
   }
 
-  async listForBranch(opts: ListReturnsOptions): Promise<PagedReturns> {
+  async listReturns(opts: ListReturnsOptions): Promise<PagedReturns> {
     const qb = this.repository
       .createQueryBuilder('r')
-      .leftJoinAndSelect('r.branch', 'branch');
+      .leftJoinAndSelect('r.branch', 'branch')
+      // Join the processor but select ONLY safe columns — never the whole
+      // User row (it carries the password hash).
+      .leftJoin('r.createdBy', 'createdBy')
+      .addSelect([
+        'createdBy.id',
+        'createdBy.firstName',
+        'createdBy.lastName',
+      ]);
     if (opts.branchId) {
       qb.andWhere('r.branch_id = :branchId', { branchId: opts.branchId });
+    }
+    if (opts.cashierId) {
+      qb.andWhere('r.created_by_user_id = :cashierId', {
+        cashierId: opts.cashierId,
+      });
+    }
+    if (opts.startDate) {
+      qb.andWhere('DATE(r.created_at) >= :startDate', {
+        startDate: opts.startDate,
+      });
+    }
+    if (opts.endDate) {
+      qb.andWhere('DATE(r.created_at) <= :endDate', { endDate: opts.endDate });
+    }
+    if (opts.search?.trim()) {
+      qb.andWhere('r.invoice_number ILIKE :search', {
+        search: `%${opts.search.trim()}%`,
+      });
+    }
+    if (opts.status) {
+      qb.andWhere('r.status = :status', { status: opts.status });
     }
     const [items, total] = await qb
       .orderBy('r.createdAt', 'DESC')

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
@@ -14,6 +14,7 @@ import type { SalesReturn } from '@inventory/entities/sales-return.entity';
 import type { AuthUser } from '@common/types/auth-user.type';
 
 const BRANCH_A = '11111111-1111-1111-1111-111111111111';
+const BRANCH_B = '22222222-2222-2222-2222-222222222222';
 const PRODUCT_ID = '44444444-4444-4444-4444-444444444444';
 const SALE_ID = '66666666-6666-6666-6666-666666666666';
 const RETURN_ID = '77777777-7777-7777-7777-777777777777';
@@ -22,6 +23,18 @@ const MANAGER: AuthUser = {
   email: 'm@x.com',
   role: UserRole.MANAGER,
   branchId: BRANCH_A,
+};
+const CASHIER: AuthUser = {
+  id: 'cashier-1',
+  email: 'c@x.com',
+  role: UserRole.CASHIER,
+  branchId: BRANCH_A,
+};
+const ADMIN: AuthUser = {
+  id: 'admin-1',
+  email: 'a@x.com',
+  role: UserRole.ADMIN,
+  branchId: null,
 };
 
 // Sold 3 @ unitPrice 1000 but lineTotal 2700 (10% discount) → perUnitRefund 900,
@@ -113,7 +126,7 @@ describe('ReturnsService', () => {
               Promise.resolve({ id: RETURN_ID, ...entity } as SalesReturn),
             ),
             returnedQtyBySale: jest.fn().mockResolvedValue(new Map()),
-            listForBranch: jest.fn(),
+            listReturns: jest.fn(),
           },
         },
         {
@@ -188,5 +201,51 @@ describe('ReturnsService', () => {
       BadRequestException,
     );
     expect(movementRepo.save).not.toHaveBeenCalled();
+  });
+
+  describe('listReturns scoping', () => {
+    beforeEach(() => {
+      returnsRepo.listReturns.mockResolvedValue({ items: [], total: 0 });
+    });
+
+    it('pins a cashier to their own returns, ignoring a requested cashierId', async () => {
+      await service.listReturns(CASHIER, { cashierId: 'someone-else' });
+
+      expect(returnsRepo.listReturns).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: BRANCH_A, cashierId: CASHIER.id }),
+      );
+    });
+
+    it('rejects a cashier/manager reaching another branch', async () => {
+      await expect(
+        service.listReturns(CASHIER, { branchId: BRANCH_B }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(
+        service.listReturns(MANAGER, { branchId: BRANCH_B }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('scopes a manager to their branch with an optional cashier filter', async () => {
+      await service.listReturns(MANAGER, { cashierId: CASHIER.id });
+
+      expect(returnsRepo.listReturns).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: BRANCH_A, cashierId: CASHIER.id }),
+      );
+    });
+
+    it('lets an admin see all branches, honoring optional filters', async () => {
+      await service.listReturns(ADMIN, {});
+      expect(returnsRepo.listReturns).toHaveBeenLastCalledWith(
+        expect.objectContaining({ branchId: null, cashierId: null }),
+      );
+
+      await service.listReturns(ADMIN, {
+        branchId: BRANCH_B,
+        cashierId: 'c-9',
+      });
+      expect(returnsRepo.listReturns).toHaveBeenLastCalledWith(
+        expect.objectContaining({ branchId: BRANCH_B, cashierId: 'c-9' }),
+      );
+    });
   });
 });

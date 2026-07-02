@@ -39,7 +39,7 @@ export class ReturnsController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
   list(
     @Query() query: ListReturnsQueryDto,
     @CurrentUser() actor: AuthUser,

@@ -274,11 +274,20 @@ export class ReturnsService {
     actor: AuthUser,
     query: ListReturnsQueryDto,
   ): Promise<PaginatedSalesReturns> {
-    const branchId = this.resolveReadBranch(actor, query.branchId);
+    const { branchId, cashierId } = this.resolveReadScope(
+      actor,
+      query.branchId,
+      query.cashierId,
+    );
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-    const { items, total } = await this.returns.listForBranch({
+    const { items, total } = await this.returns.listReturns({
       branchId,
+      cashierId,
+      startDate: query.startDate,
+      endDate: query.endDate,
+      search: query.search,
+      status: query.status,
       page,
       limit,
     });
@@ -298,14 +307,36 @@ export class ReturnsService {
     }
   }
 
-  private resolveReadBranch(
+  /**
+   * Read scope for the returns dashboard:
+   * - ADMIN     → all branches (optional branch/cashier filter)
+   * - MANAGER   → own branch (optional cashier filter within it)
+   * - CASHIER   → own branch AND only their own returns (any requested
+   *               cashierId is ignored; a foreign branch is rejected)
+   */
+  private resolveReadScope(
     actor: AuthUser,
-    requested?: string,
-  ): string | null {
-    if (actor.role === UserRole.ADMIN) return requested ?? null;
+    requestedBranchId?: string,
+    requestedCashierId?: string,
+  ): { branchId: string | null; cashierId: string | null } {
+    if (actor.role === UserRole.ADMIN) {
+      return {
+        branchId: requestedBranchId ?? null,
+        cashierId: requestedCashierId ?? null,
+      };
+    }
     if (!actor.branchId) {
       throw new ForbiddenException('You are not assigned to a branch');
     }
-    return actor.branchId;
+    if (requestedBranchId && requestedBranchId !== actor.branchId) {
+      throw new ForbiddenException('Cannot access another branch');
+    }
+    if (actor.role === UserRole.CASHIER) {
+      return { branchId: actor.branchId, cashierId: actor.id };
+    }
+    return {
+      branchId: actor.branchId,
+      cashierId: requestedCashierId ?? null,
+    };
   }
 }
