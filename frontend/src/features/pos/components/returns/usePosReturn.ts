@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/lib/utils';
+import { isCompleteNumber, isPartialDecimal } from '@/lib/numeric-input';
 import { returnsService } from '@/services/returns.service';
 import type { ICreateSalesReturnLine, ISaleReturnLookup } from '@/types';
 
@@ -122,32 +123,43 @@ export function usePosReturn(onClose: () => void) {
     }
 
     /**
-     * Clamp a good/bad quantity so `good + bad` can never exceed the line's
-     * returnable remainder — the root-cause guard for the over-refund bug.
-     * An empty string passes through so the field can be cleared.
+     * Update a good/bad quantity from a free-text field. Partial decimals are
+     * kept while typing (e.g. "0." for weighed goods) and only a completed
+     * number is clamped to the returnable remainder — so the field never fights
+     * the cashier mid-keystroke. Entering GOOD auto-fills BAD with whatever is
+     * left of the line, so the whole returned quantity is always accounted for;
+     * BAD stays editable for a partial return.
      */
     function patchQty(saleItemId: string, field: 'good' | 'bad', raw: string) {
-        const applyValue = (value: string) =>
-            patchDraft(
-                saleItemId,
-                field === 'good' ? { good: value } : { bad: value },
-            );
-        if (raw === '') {
-            applyValue('');
-            return;
-        }
-        const n = Number(raw);
-        if (!Number.isFinite(n) || n < 0) return;
+        if (!isPartialDecimal(raw)) return; // drop letters, separators, etc.
         const line = returnableLines.find((l) => l.saleItemId === saleItemId);
-        if (!line) {
-            applyValue(raw);
+
+        if (field === 'good') {
+            let good = raw;
+            if (line && isCompleteNumber(raw) && Number(raw) > line.remaining) {
+                good = String(round3(line.remaining));
+            }
+            const bad =
+                line && raw !== ''
+                    ? String(
+                          Math.max(
+                              0,
+                              round3(line.remaining - (Number(good) || 0)),
+                          ),
+                      )
+                    : '';
+            patchDraft(saleItemId, { good, bad });
             return;
         }
-        const current = drafts[saleItemId];
-        const sibling =
-            Number(field === 'good' ? current?.bad : current?.good) || 0;
-        const maxThis = Math.max(0, round3(line.remaining - sibling));
-        applyValue(String(Math.min(round3(n), maxThis)));
+
+        // Bad edited directly — clamp to whatever the good quantity leaves.
+        let bad = raw;
+        if (line && isCompleteNumber(raw)) {
+            const goodNum = Number(drafts[saleItemId]?.good) || 0;
+            const maxBad = Math.max(0, round3(line.remaining - goodNum));
+            if (Number(raw) > maxBad) bad = String(maxBad);
+        }
+        patchDraft(saleItemId, { bad });
     }
 
     async function handleSubmit() {

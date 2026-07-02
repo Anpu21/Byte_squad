@@ -23,8 +23,8 @@ export function PosReturnLinesTable({
                     <tr className="text-[11px] uppercase tracking-wide text-text-3">
                         <th className="px-2 py-2 font-medium">Item</th>
                         <th className="px-2 py-2 font-medium text-right">Left</th>
-                        <th className="px-2 py-2 font-medium w-20">Good</th>
-                        <th className="px-2 py-2 font-medium w-20">Bad</th>
+                        <th className="px-2 py-2 font-medium w-24">Good</th>
+                        <th className="px-2 py-2 font-medium w-24">Bad</th>
                         <th className="px-2 py-2 font-medium">Restock</th>
                         <th className="px-2 py-2 font-medium text-right">
                             Refund
@@ -32,16 +32,7 @@ export function PosReturnLinesTable({
                     </tr>
                 </thead>
                 <tbody>
-                    {parsed.map(({ line, draft, refund, over }) => {
-                        const maxGood = Math.max(
-                            0,
-                            line.remaining - (Number(draft.bad) || 0),
-                        );
-                        const maxBad = Math.max(
-                            0,
-                            line.remaining - (Number(draft.good) || 0),
-                        );
-                        return (
+                    {parsed.map(({ line, draft, refund, over }) => (
                         <tr
                             key={line.saleItemId}
                             className="border-b border-border last:border-b-0"
@@ -58,11 +49,10 @@ export function PosReturnLinesTable({
                             </td>
                             <td className="px-2 py-1.5">
                                 <input
-                                    className={`${INPUT_CLASS} w-full h-8 text-right ${over ? 'border-danger' : ''}`}
-                                    type="number"
-                                    min="0"
-                                    max={maxGood}
-                                    step="0.001"
+                                    className={`${INPUT_CLASS} w-full h-9 text-right ${over ? 'border-danger' : ''}`}
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="0"
                                     value={draft.good}
                                     onChange={(e) =>
                                         onPatchQty(
@@ -76,11 +66,10 @@ export function PosReturnLinesTable({
                             </td>
                             <td className="px-2 py-1.5">
                                 <input
-                                    className={`${INPUT_CLASS} w-full h-8 text-right ${over ? 'border-danger' : ''}`}
-                                    type="number"
-                                    min="0"
-                                    max={maxBad}
-                                    step="0.001"
+                                    className={`${INPUT_CLASS} w-full h-9 text-right ${over ? 'border-danger' : ''}`}
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="0"
                                     value={draft.bad}
                                     onChange={(e) =>
                                         onPatchQty(
@@ -108,8 +97,7 @@ export function PosReturnLinesTable({
                                 {refund > 0 ? formatCurrency(refund) : '—'}
                             </td>
                         </tr>
-                        );
-                    })}
+                    ))}
                 </tbody>
             </table>
         </div>

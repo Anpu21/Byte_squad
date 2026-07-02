@@ -27,7 +27,7 @@ export function PosReturnModal({ isOpen, onClose }: IPosReturnModalProps) {
             isOpen={isOpen}
             onClose={r.close}
             title="Sales return"
-            maxWidth="lg"
+            maxWidth="xl"
             closeOnBackdrop={false}
         >
             <div className="space-y-4">

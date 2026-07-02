@@ -116,4 +116,30 @@ describe('usePosReturn', () => {
         act(() => result.current.patchQty('si-1', 'good', '1'));
         expect(result.current.canSubmit).toBe(true);
     });
+
+    it('auto-fills bad with the remaining quantity when good is entered', async () => {
+        const { result } = await renderLoaded();
+
+        act(() => result.current.patchQty('si-1', 'good', '0.6'));
+
+        const line = result.current.parsed[0]!;
+        expect(line.draft.good).toBe('0.6');
+        expect(line.draft.bad).toBe('1.4'); // remaining 2 − good 0.6
+    });
+
+    it('keeps a partial decimal while typing (weighed goods)', async () => {
+        const { result } = await renderLoaded();
+
+        act(() => result.current.patchQty('si-1', 'good', '0.'));
+
+        expect(result.current.parsed[0]!.draft.good).toBe('0.');
+    });
+
+    it('rejects non-numeric input', async () => {
+        const { result } = await renderLoaded();
+
+        act(() => result.current.patchQty('si-1', 'good', 'abc'));
+
+        expect(result.current.parsed[0]!.draft.good).toBe('');
+    });
 });
