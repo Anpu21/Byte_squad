@@ -63,6 +63,9 @@ export class SalesReturnRepository {
         'createdBy.firstName',
         'createdBy.lastName',
       ]);
+    // Exclude exchange return legs — the returns hub lists refunds only.
+    // Exchanges are settled by a replacement sale and shown in sales reports.
+    qb.andWhere(`r.type <> 'Exchange'`);
     if (opts.branchId) {
       qb.andWhere('r.branch_id = :branchId', { branchId: opts.branchId });
     }

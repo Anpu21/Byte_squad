@@ -38,10 +38,17 @@ export class ReturnsAnalyticsRepository {
     qb: SelectQueryBuilder<SalesReturn>,
     opts: ReturnsAnalyticsOptions,
   ): SelectQueryBuilder<SalesReturn> {
-    qb.where('DATE(r.created_at) BETWEEN :startDate AND :endDate', {
-      startDate: opts.startDate,
-      endDate: opts.endDate,
-    });
+    // The returns dashboard is about REFUNDS. Exchange return legs carry a net
+    // refund (0 for even/dearer, R−P for cheaper) and are settled by a
+    // replacement sale — counting them here would conflate exchanges with cash
+    // refunds. They stay recorded (linked sale) and surface in sales reports.
+    qb.where(`r.type <> 'Exchange'`).andWhere(
+      'DATE(r.created_at) BETWEEN :startDate AND :endDate',
+      {
+        startDate: opts.startDate,
+        endDate: opts.endDate,
+      },
+    );
     if (opts.branchId) {
       qb.andWhere('r.branch_id = :branchId', { branchId: opts.branchId });
     }
@@ -79,6 +86,11 @@ export class ReturnsAnalyticsRepository {
       .select('COALESCE(SUM(m.qty_in), 0)', 'damagedQty')
       .where(`m.movement_type = 'Damage'`)
       .andWhere(`m.ref_type = 'SalesReturn'`)
+      // Same refunds-only scope as the money KPIs: drop damage logged against
+      // an exchange return leg.
+      .andWhere(
+        `NOT EXISTS (SELECT 1 FROM sales_returns sr WHERE sr.id = m.ref_id AND sr.type = 'Exchange')`,
+      )
       .andWhere('DATE(m.created_at) BETWEEN :startDate AND :endDate', {
         startDate: opts.startDate,
         endDate: opts.endDate,
