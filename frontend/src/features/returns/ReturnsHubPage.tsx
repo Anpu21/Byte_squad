@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/constants/enums';
 import { useNavTabs } from '@/config/navigation';
 import { ReturnsListTab } from './components/ReturnsListTab';
+import { ReturnsAnalyticsTab } from './components/ReturnsAnalyticsTab';
 import { useReturnsTab, type ReturnsTab } from './hooks/useReturnsTab';
 
 /**
@@ -37,7 +38,7 @@ export function ReturnsHubPage() {
             tabsAriaLabel="Returns views"
             chromeless
         >
-            {tab === 'list' && <ReturnsListTab />}
+            {tab === 'analytics' ? <ReturnsAnalyticsTab /> : <ReturnsListTab />}
         </WorkspacePage>
     );
 }
