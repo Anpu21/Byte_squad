@@ -1,7 +1,7 @@
 import { BUSINESS_INFO } from '@/config/business-info'
 import { LEGAL_EFFECTIVE_DATE } from '../config/legal-pages'
 import { LegalPage } from '../components/LegalPage'
-import { LegalList, LegalP, LegalSection, LegalTerm } from '../components/legal-prose'
+import { LegalP, LegalSection, LegalTerm } from '../components/legal-prose'
 
 const B = BUSINESS_INFO
 
@@ -15,52 +15,59 @@ export function PrivacyPage() {
             <LegalSection heading="1. Who controls your data">
                 <LegalP>
                     <LegalTerm>{B.legalName}</LegalTerm> ({B.address}) is
-                    responsible for the personal data described here. Contact us
-                    at {B.email} or {B.phone} for any privacy request.
+                    responsible for the personal data described here. You can
+                    contact us at {B.email} or {B.phone} for any privacy request.
                 </LegalP>
             </LegalSection>
 
             <LegalSection heading="2. What we collect">
-                <LegalList
-                    items={[
-                        'Account details — name, email, phone, and password.',
-                        'Order details — items, pickup branch or delivery address, and order history.',
-                        'Payment metadata — confirmation, amount, and status from PayHere. We do NOT collect or store your full card number.',
-                        'Loyalty & store-credit activity where you use those programmes.',
-                        'Technical data — device, browser, and usage information collected via cookies and similar tools to keep the site working and secure.',
-                    ]}
-                />
+                <LegalP>
+                    We collect the account details you give us — your name, email,
+                    phone number, and password — together with the details of the
+                    orders you place, including the items, your chosen pickup
+                    branch or delivery address, and your order history.
+                </LegalP>
+                <LegalP>
+                    When you pay online we receive payment metadata from PayHere,
+                    such as the confirmation, amount, and status. We do{' '}
+                    <LegalTerm>not</LegalTerm> collect or store your full card
+                    number. Where you use them, we also hold your loyalty and
+                    store-credit activity, and we collect limited technical data —
+                    device, browser, and usage information — through cookies and
+                    similar tools to keep the site working and secure.
+                </LegalP>
             </LegalSection>
 
             <LegalSection heading="3. How we use it">
-                <LegalList
-                    items={[
-                        'To process and fulfil your orders (pickup or delivery) and take payment.',
-                        'To manage your account, loyalty points, and any store-credit facility.',
-                        'To provide support and send service messages about your orders.',
-                        'To prevent fraud, secure the service, and meet legal obligations.',
-                        'To improve our products and store experience.',
-                    ]}
-                />
+                <LegalP>
+                    We use your data to process and fulfil your orders, whether for
+                    pickup or delivery, and to take payment for them. It also lets
+                    us manage your account, loyalty points, and any store-credit
+                    facility, provide support, and send you service messages about
+                    your orders.
+                </LegalP>
+                <LegalP>
+                    Beyond that, we use data to prevent fraud, keep the service
+                    secure, meet our legal obligations, and improve our products
+                    and the overall store experience.
+                </LegalP>
             </LegalSection>
 
             <LegalSection heading="4. Who we share it with">
                 <LegalP>
-                    We share data only as needed to run the store:
+                    We share data only as far as we need to in order to run the
+                    store. Payments are handled by <LegalTerm>PayHere</LegalTerm>,
+                    which processes your card data securely under its own privacy
+                    terms and PCI-DSS compliance. When your order is delivered, we
+                    pass our delivery or courier partners the name, address, and
+                    phone number needed to complete the delivery.
                 </LegalP>
-                <LegalList
-                    items={[
-                        <>
-                            <LegalTerm>PayHere</LegalTerm> — to process payments
-                            securely. PayHere handles your card data under its own
-                            privacy terms and PCI-DSS compliance.
-                        </>,
-                        'Delivery / courier partners — the name, address, and phone needed to deliver your order.',
-                        'Service providers (e.g. hosting, email) acting on our instructions.',
-                        'Authorities where required by law.',
-                    ]}
-                />
-                <LegalP>We do not sell your personal data.</LegalP>
+                <LegalP>
+                    We also rely on service providers — such as hosting and email
+                    providers — who act on our instructions, and we may disclose
+                    data to authorities where the law requires it. We do not sell
+                    your personal data.
+                </LegalP>
             </LegalSection>
 
             <LegalSection heading="5. Cookies">

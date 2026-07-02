@@ -4,28 +4,25 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
 export interface IPosLoyaltyEnrollFormProps {
-    /** The normalised phone being enrolled, shown read-only for confirmation. */
-    phone: string;
     onSubmit: (firstName: string, lastName: string | undefined) => void;
     isSubmitting: boolean;
+    /** Whether the card-level phone is a valid SL number; gates submit. */
+    phoneValid: boolean;
     /** Backend error surfaced from the enrol mutation, if any. */
     error: string | null;
 }
 
 /**
- * Inline enrol form mounted inside the loyalty card when a phone
- * lookup returns 404. Captures first name (required) + last name
- * (optional) so the cashier doesn't have to leave the POS to attach
- * a walk-in to the in-progress sale.
- *
- * The form is local-stateful for the names only — the parent owns the
- * phone (`usePosLoyaltyEnroll` is keyed on it); we show it read-only
- * here purely as confirmation of who is being enrolled.
+ * Name-capture half of the loyalty Register view. The card owns the phone
+ * (shown in the editable phone field above; `usePosLoyaltyEnroll` is keyed on
+ * it), so this form captures first name + last name and submits the enrolment
+ * that attaches the walk-in to the in-progress sale. Submit is gated on a valid
+ * phone so a proactive Register can't fire without one.
  */
 export function PosLoyaltyEnrollForm({
-    phone,
     onSubmit,
     isSubmitting,
+    phoneValid,
     error,
 }: IPosLoyaltyEnrollFormProps) {
     const [firstName, setFirstName] = useState('');
@@ -35,13 +32,14 @@ export function PosLoyaltyEnrollForm({
         event.preventDefault();
         const trimmedFirst = firstName.trim();
         const trimmedLast = lastName.trim();
-        if (!trimmedFirst || !trimmedLast) return;
+        if (!trimmedFirst || !trimmedLast || !phoneValid) return;
         onSubmit(trimmedFirst, trimmedLast);
     };
 
     const canSubmit =
         firstName.trim().length > 0 &&
         lastName.trim().length > 0 &&
+        phoneValid &&
         !isSubmitting;
 
     return (
@@ -50,11 +48,6 @@ export function PosLoyaltyEnrollForm({
             onSubmit={handleSubmit}
             aria-label="Enrol walk-in customer"
         >
-            <p className="text-[11px] text-text-2">
-                No loyalty member with{' '}
-                <span className="font-medium text-text-1">{phone}</span> — enrol
-                them now to start earning points on this sale.
-            </p>
             <div className="grid grid-cols-2 gap-2">
                 <Input
                     label="First name"

@@ -8,11 +8,12 @@ interface PaymentMethodsCardProps {
     data: IPaymentMethodBreakdown[];
 }
 
-/** Stable order/labels/colours so slice colours stay put when a method has 0 sales. */
+// Stable order/labels/colours so slice colours stay put when a method has 0
+// sales. The shop accepts Cash + Card in-store and Online (card via PayHere)
+// on the storefront; Mobile was retired as a tender.
 const ORDER: { method: PaymentMethod; label: string; color: string }[] = [
     { method: PaymentMethod.CASH, label: 'Cash', color: 'var(--primary)' },
     { method: PaymentMethod.CARD, label: 'Card', color: 'var(--accent)' },
-    { method: PaymentMethod.MOBILE, label: 'Mobile', color: 'var(--warning)' },
     { method: PaymentMethod.ONLINE, label: 'Online', color: 'var(--info)' },
 ];
 

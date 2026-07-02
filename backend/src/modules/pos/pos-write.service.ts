@@ -65,11 +65,12 @@ function round3(n: number): number {
 }
 
 /**
- * Map the Shanel payment-method union to the legacy `PaymentMethod` enum
- * stored on the Sale row. The enum only has CASH/CARD/MOBILE/ONLINE; the
- * full multi-tender breakdown is captured on the Payment row. This bridge
- * keeps the legacy `payment_method` column populated until the Phase-6
- * cleanup drops it.
+ * Map the POS payment-method union to the legacy `PaymentMethod` enum
+ * stored on the Sale row. The shop accepts Cash + Card (PayHere) only, plus
+ * the Credit (khata) tender. The `PaymentMethod` DB enum keeps its legacy
+ * MOBILE/ONLINE values for historical rows, but new sales only ever map to
+ * CASH, CARD, or ONLINE (for Credit). The full breakdown lives on the
+ * Payment row.
  */
 function mapToLegacyPaymentMethod(method: PosPaymentMethod): PaymentMethod {
   switch (method) {
@@ -77,13 +78,9 @@ function mapToLegacyPaymentMethod(method: PosPaymentMethod): PaymentMethod {
       return PaymentMethod.CASH;
     case 'Card':
       return PaymentMethod.CARD;
-    case 'Mobile':
-      return PaymentMethod.MOBILE;
-    case 'Cheque':
-    case 'Bank':
     case 'Credit':
-      // The Sale.payment_method column doesn't have these; bucket them all
-      // into ONLINE so the legacy code paths (which only look for CASH vs
+      // The Sale.payment_method column has no Credit value; bucket it into
+      // ONLINE so the legacy code paths (which only look for CASH vs
       // not-CASH) keep working. The Payment row carries the full detail.
       return PaymentMethod.ONLINE;
     default: {

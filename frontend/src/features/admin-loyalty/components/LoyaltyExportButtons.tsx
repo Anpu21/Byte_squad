@@ -10,15 +10,24 @@ interface LoyaltyExportButtonsProps {
 
 export function LoyaltyExportButtons({ data, disabled }: LoyaltyExportButtonsProps) {
     const handleExport = (format: 'pdf' | 'excel') => {
-        const columns: ExportColumn<ILoyaltyCustomerRow>[] = [
-            { header: 'Name', key: 'firstName' }, // simplified for brevity
+        const rows = data.map((row) => ({
+            name: [row.firstName, row.lastName].filter(Boolean).join(' '),
+            phone: row.phone ?? '—',
+            tier: row.tier,
+            pointsBalance: row.pointsBalance,
+            lifetimePointsEarned: row.lifetimePointsEarned,
+            lifetimePointsRedeemed: row.lifetimePointsRedeemed,
+        }));
+        const columns: ExportColumn<(typeof rows)[number]>[] = [
+            { header: 'Name', key: 'name' },
+            { header: 'Phone', key: 'phone' },
             { header: 'Tier', key: 'tier' },
             { header: 'Balance', key: 'pointsBalance', align: 'right', format: 'text' },
             { header: 'Lifetime Earned', key: 'lifetimePointsEarned', align: 'right', format: 'text' },
             { header: 'Lifetime Redeemed', key: 'lifetimePointsRedeemed', align: 'right', format: 'text' },
         ];
 
-        exportData(format, data, columns, {
+        exportData(format, rows, columns, {
             title: 'Loyalty Customers Report',
             filenameBase: 'Loyalty_Customers',
         });

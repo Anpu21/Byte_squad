@@ -8,7 +8,9 @@ import {
   Min,
 } from 'class-validator';
 
-export const CREDIT_PAYMENT_METHODS = ['Cash', 'Card', 'Bank'] as const;
+// The shop accepts Cash + Card only (card via PayHere); bank transfer was
+// removed as a khata-repayment option.
+export const CREDIT_PAYMENT_METHODS = ['Cash', 'Card'] as const;
 
 export type CreditPaymentMethod = (typeof CREDIT_PAYMENT_METHODS)[number];
 

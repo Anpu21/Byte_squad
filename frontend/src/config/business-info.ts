@@ -10,9 +10,9 @@
  */
 export const BUSINESS_INFO = {
     /** Registered legal entity name (refine if incorporated, e.g. "… (Pvt) Ltd"). */
-    legalName: 'Danista Store',
+    legalName: 'Ramanathan store',
     /** Public-facing brand / trade name. */
-    tradeName: 'Danista Store',
+    tradeName: 'Ramanathan store',
     /** Business Registration / company number. */
     regNo: 'DS/MSW/AD/ABR/82',
     /** Full registered address. */

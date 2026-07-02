@@ -34,7 +34,7 @@ export function JournalLineTable({
                         <th className="px-2 py-2 font-medium min-w-[200px]">
                             Account
                         </th>
-                        <th className="px-2 py-2 font-medium w-24">Side</th>
+                        <th className="px-2 py-2 font-medium w-32">Side</th>
                         <th className="px-2 py-2 font-medium w-28">Amount</th>
                         <th className="px-2 py-2 font-medium">Description</th>
                         <th className="px-2 py-2 w-10" />
@@ -90,6 +90,7 @@ export function JournalLineTable({
                                 <input
                                     className={`${INPUT_CLASS} w-full h-8 text-right`}
                                     type="number"
+                                    inputMode="decimal"
                                     min="0.01"
                                     step="0.01"
                                     value={line.amount}

@@ -54,27 +54,37 @@ export const loyaltyAdminService = {
         return response.data.data;
     },
     listCustomerHistory: async (
-        role: 'admin' | 'manager',
-        userId: string,
+        memberId: string,
         query: { limit?: number; offset?: number } = {},
     ): Promise<ILoyaltyHistoryResponse> => {
-        const url = role === 'admin' ? `/admin/loyalty/customers/${userId}/history` : `/manager/loyalty/customers/${userId}/history`;
+        // /loyalty (not /admin) — the only history route that also
+        // resolves walk-in wallets, which have no userId.
         const response = await api.get<IApiResponse<ILoyaltyHistoryResponse>>(
-            url,
+            `/loyalty/customers/${memberId}/history`,
             { params: query },
         );
         return response.data.data;
     },
     adjustPoints: async (
-        userId: string,
-        payload: { points: number; reason: string }
+        role: 'admin' | 'manager',
+        memberId: string,
+        payload: { points: number; reason: string },
     ): Promise<void> => {
-        await api.post(`/admin/loyalty/customers/${userId}/adjust`, payload);
+        const url =
+            role === 'admin'
+                ? `/admin/loyalty/customers/${memberId}/adjust`
+                : `/manager/loyalty/customers/${memberId}/adjust`;
+        await api.post(url, payload);
     },
-    getDashboardStats: async (): Promise<ILoyaltyDashboardStats> => {
-        const response = await api.get<IApiResponse<ILoyaltyDashboardStats>>(
-            '/admin/loyalty/dashboard',
-        );
+    getDashboardStats: async (
+        role: 'admin' | 'manager',
+    ): Promise<ILoyaltyDashboardStats> => {
+        const url =
+            role === 'admin'
+                ? '/admin/loyalty/dashboard'
+                : '/manager/loyalty/dashboard';
+        const response =
+            await api.get<IApiResponse<ILoyaltyDashboardStats>>(url);
         return response.data.data;
     },
 };

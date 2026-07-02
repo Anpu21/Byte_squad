@@ -10,6 +10,7 @@ import { DEFAULT_PAGE_SIZE } from '@/constants/pagination';
 import type { ILoyaltyCustomerRow } from '@/types';
 import { useLoyaltyCustomers } from '../hooks/useLoyaltyCustomers';
 import { LoyaltyCustomersFilters } from './LoyaltyCustomersFilters';
+import { LoyaltyExportButtons } from './LoyaltyExportButtons';
 import { LoyaltyTierBadge } from './LoyaltyTierBadge';
 
 interface LoyaltyCustomersTableProps {
@@ -162,6 +163,9 @@ export function LoyaltyCustomersTable({
                 minPoints={minPoints}
                 maxPoints={maxPoints}
                 onPointsRangeChange={handlePointsRangeChange}
+                trailing={
+                    <LoyaltyExportButtons data={rows} disabled={isLoading} />
+                }
             />
             <DataTable
                 columns={columns}

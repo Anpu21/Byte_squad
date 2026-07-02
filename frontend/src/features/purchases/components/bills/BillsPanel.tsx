@@ -79,7 +79,7 @@ export function BillsPanel() {
                                 }
                             >
                                 <option value="Cash">Cash</option>
-                                <option value="Bank">Bank transfer</option>
+                                <option value="Card">Card</option>
                             </select>
                         </label>
                         <label className="block space-y-1.5">

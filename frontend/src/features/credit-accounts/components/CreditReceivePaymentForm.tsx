@@ -58,7 +58,6 @@ export function CreditReceivePaymentForm({
       >
         <option value="Cash">Cash</option>
         <option value="Card">Card</option>
-        <option value="Bank">Bank transfer</option>
       </select>
       <input
         className={`${INPUT_CLASS} flex-1 min-w-[8rem]`}
