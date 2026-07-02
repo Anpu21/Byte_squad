@@ -20,49 +20,18 @@ import {
   toPaginated,
 } from '@common/pagination/paginate.util';
 import { pickBrandColor } from '@/modules/brands/lib/brand-palette';
+import { percent } from '@/modules/brands/lib/percent.util';
+import { parseDateRange } from '@/modules/brands/lib/parse-range.util';
+import { zeroFillTrend } from '@/modules/brands/lib/zero-fill-trend.util';
 import { UserRole } from '@common/enums/user-roles.enums';
 import type { AuthUser } from '@common/types/auth-user.type';
 import type {
   BrandOverviewResponse,
   BrandDrilldownResponse,
-  BrandTrendPoint,
   CategoryBrandComparisonResponse,
   CategoryProductsResponse,
   CategoryProductSort,
 } from '@/modules/brands/types';
-
-/** One-decimal percentage of part/whole (0 when whole is 0). */
-function percent(part: number, whole: number): number {
-  return whole > 0 ? Math.round((part / whole) * 1000) / 10 : 0;
-}
-
-/**
- * Fill missing days in [start, end] with zero points so the trend line is
- * continuous. Days are keyed by UTC YYYY-MM-DD to match the repository's
- * TO_CHAR(created_at) buckets (timestamps are stored in UTC).
- */
-function zeroFillTrend(
-  rows: BrandTrendPoint[],
-  start: Date,
-  end: Date,
-): BrandTrendPoint[] {
-  const byDate = new Map(rows.map((r) => [r.date, r]));
-  const out: BrandTrendPoint[] = [];
-  const cursor = new Date(
-    Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()),
-  );
-  const last = Date.UTC(
-    end.getUTCFullYear(),
-    end.getUTCMonth(),
-    end.getUTCDate(),
-  );
-  while (cursor.getTime() <= last) {
-    const key = cursor.toISOString().slice(0, 10);
-    out.push(byDate.get(key) ?? { date: key, revenue: 0, units: 0 });
-    cursor.setUTCDate(cursor.getUTCDate() + 1);
-  }
-  return out;
-}
 
 @Injectable()
 export class BrandsService {
@@ -183,7 +152,7 @@ export class BrandsService {
     actor: AuthUser,
     query: BrandAnalyticsQueryDto,
   ): Promise<BrandOverviewResponse> {
-    const { startDate, endDate } = this.parseRange(query);
+    const { startDate, endDate } = parseDateRange(query);
     const branchId = this.resolveAnalyticsBranch(actor, query.branchId);
     const rows = await this.brands.leaderboard({
       branchId,
@@ -219,7 +188,7 @@ export class BrandsService {
     brandId: string,
     query: BrandAnalyticsQueryDto,
   ): Promise<BrandDrilldownResponse> {
-    const { startDate, endDate } = this.parseRange(query);
+    const { startDate, endDate } = parseDateRange(query);
     const branchId = this.resolveAnalyticsBranch(actor, query.branchId);
     const brand = await this.brands.findById(brandId);
     if (!brand) {
@@ -267,7 +236,7 @@ export class BrandsService {
     categoryId: string,
     query: BrandAnalyticsQueryDto,
   ): Promise<CategoryBrandComparisonResponse> {
-    const { startDate, endDate } = this.parseRange(query);
+    const { startDate, endDate } = parseDateRange(query);
     const branchId = this.resolveAnalyticsBranch(actor, query.branchId);
     const category = await this.categories.findById(categoryId);
     if (!category) {
@@ -305,7 +274,7 @@ export class BrandsService {
     categoryId: string,
     dto: CategoryProductsQueryDto,
   ): Promise<CategoryProductsResponse> {
-    const { startDate, endDate } = this.parseRange(dto);
+    const { startDate, endDate } = parseDateRange(dto);
     const branchId = this.resolveAnalyticsBranch(actor, dto.branchId);
     const category = await this.categories.findById(categoryId);
     if (!category) {
@@ -350,21 +319,6 @@ export class BrandsService {
       branchId,
       sort,
     };
-  }
-
-  private parseRange(query: { startDate: string; endDate: string }): {
-    startDate: Date;
-    endDate: Date;
-  } {
-    const startDate = new Date(query.startDate);
-    const endDate = new Date(query.endDate);
-    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
-      throw new BadRequestException('Invalid date range');
-    }
-    if (startDate > endDate) {
-      throw new BadRequestException('startDate must be before endDate');
-    }
-    return { startDate, endDate };
   }
 
   /**

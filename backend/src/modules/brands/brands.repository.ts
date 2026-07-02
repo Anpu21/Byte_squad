@@ -4,6 +4,11 @@ import { Brand } from '@/modules/brands/entities/brand.entity';
 import { Product } from '@products/entities/product.entity';
 import { SaleItem } from '@pos/entities/sale-item.entity';
 import { TransactionType } from '@common/enums/transaction.enum';
+import {
+  PROFIT_EXPR,
+  REVENUE_EXPR,
+  UNITS_EXPR,
+} from '@/modules/brands/lib/sales-aggregates';
 import type {
   BrandSalesRow,
   BrandProductRow,
@@ -105,13 +110,6 @@ interface BrandTrendRaw {
   revenue: string | null;
   units: string | null;
 }
-
-// Profit = revenue − COGS, where COGS uses the product's CURRENT cost price
-// (cost-at-sale isn't stored on sale_items). Revenue/units are exact.
-const PROFIT_EXPR =
-  'COALESCE(SUM(item.line_total) - SUM(product.cost_price * item.base_unit_qty), 0)';
-const REVENUE_EXPR = 'COALESCE(SUM(item.line_total), 0)';
-const UNITS_EXPR = 'COALESCE(SUM(item.base_unit_qty), 0)';
 
 /**
  * Brand repository (DataSource-injected per Rules.md §7). Owns brand CRUD reads,
