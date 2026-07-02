@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { heldSalesService } from '@/services/held-sales.service';
 import { queryKeys } from '@/lib/queryKeys';
 import type { IHeldSale, IHeldSalePayload } from '@/types';
@@ -10,13 +11,14 @@ import type {
 
 export interface UsePosHeldBillsReturn {
     heldBills: IHeldBill[];
-    /** Park a bill on the branch shelf. */
-    holdBill: (bill: Omit<IHeldBill, 'id' | 'heldAt'>) => void;
+    /** Park a bill on the branch shelf. Resolves once the server confirms. */
+    holdBill: (bill: Omit<IHeldBill, 'id' | 'heldAt'>) => Promise<void>;
     /**
-     * Take a bill off the shelf — returns it from the loaded list (snapshot
-     * included) and removes it server-side so it can't be resumed twice.
+     * Take a bill off the shelf — removes it server-side FIRST, then returns
+     * the snapshot only if the delete succeeded. Returns null (and toasts) on
+     * failure so a bill still resumable elsewhere is never loaded into a cart.
      */
-    takeBill: (id: string) => IHeldBill | null;
+    takeBill: (id: string) => Promise<IHeldBill | null>;
     discardBill: (id: string) => void;
 }
 
@@ -31,6 +33,8 @@ function toHeldBill(sale: IHeldSale): IHeldBill {
         cartDiscountPercentage: snap.cartDiscountPercentage,
         loyaltyOwner: snap.loyaltyOwner,
         loyaltyRedeemPoints: snap.loyaltyRedeemPoints,
+        creditAccount: snap.creditAccount ?? null,
+        creditOverride: snap.creditOverride ?? null,
     };
 }
 
@@ -44,6 +48,8 @@ function toPayload(bill: Omit<IHeldBill, 'id' | 'heldAt'>) {
             cartDiscountPercentage: bill.cartDiscountPercentage,
             loyaltyOwner: bill.loyaltyOwner,
             loyaltyRedeemPoints: bill.loyaltyRedeemPoints,
+            creditAccount: bill.creditAccount,
+            creditOverride: bill.creditOverride,
         },
     };
 }
@@ -69,33 +75,48 @@ export function usePosHeldBills(): UsePosHeldBillsReturn {
             queryKey: queryKeys.heldSales.all(),
         });
 
-    const { mutate: holdMutate } = useMutation({
+    const { mutateAsync: holdMutateAsync } = useMutation({
         mutationFn: (payload: IHeldSalePayload) =>
             heldSalesService.hold(payload),
         onSuccess: invalidate,
     });
-    const { mutate: discardMutate } = useMutation({
+    const { mutateAsync: discardMutateAsync } = useMutation({
         mutationFn: (id: string) => heldSalesService.discard(id),
         onSuccess: invalidate,
     });
 
     const holdBill = useCallback<UsePosHeldBillsReturn['holdBill']>(
-        (bill) => holdMutate(toPayload(bill)),
-        [holdMutate],
+        async (bill) => {
+            await holdMutateAsync(toPayload(bill));
+        },
+        [holdMutateAsync],
     );
 
-    const takeBill = useCallback(
-        (id: string): IHeldBill | null => {
+    const takeBill = useCallback<UsePosHeldBillsReturn['takeBill']>(
+        async (id) => {
             const bill = heldBills.find((b) => b.id === id) ?? null;
-            if (bill) discardMutate(id);
-            return bill;
+            if (!bill) return null;
+            try {
+                // Remove server-side BEFORE handing the snapshot back, so a
+                // failed delete can't leave the bill both in a cart and on the
+                // shelf (double-sell across terminals).
+                await discardMutateAsync(id);
+                return bill;
+            } catch {
+                toast.error('Could not resume — the bill is still on the shelf');
+                return null;
+            }
         },
-        [heldBills, discardMutate],
+        [heldBills, discardMutateAsync],
     );
 
     const discardBill = useCallback(
-        (id: string) => discardMutate(id),
-        [discardMutate],
+        (id: string) => {
+            void discardMutateAsync(id).catch(() =>
+                toast.error('Could not discard the bill'),
+            );
+        },
+        [discardMutateAsync],
     );
 
     return { heldBills, holdBill, takeBill, discardBill };
