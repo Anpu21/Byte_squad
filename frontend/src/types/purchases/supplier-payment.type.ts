@@ -2,7 +2,7 @@ import type { IBranch } from '../branch/branch.type';
 import type { IGrn } from './grn.type';
 import type { ISupplier } from './supplier.type';
 
-export type SupplierPaymentMethod = 'Cash' | 'Bank';
+export type SupplierPaymentMethod = 'Cash' | 'Card';
 
 /** One slice of a payment applied to a bill (null grn = opening balance). */
 export interface ISupplierPaymentAllocation {

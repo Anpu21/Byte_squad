@@ -136,7 +136,7 @@ describe('SupplierPaymentsService', () => {
     await service.create(
       {
         supplierId: SUPPLIER_ID,
-        method: 'Bank',
+        method: 'Card',
         amount: 1200,
         allocations: [{ grnId: GRN_ID, amount: 1200 }],
       },

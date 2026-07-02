@@ -312,16 +312,16 @@ export class PurchasesSeedService {
       actor,
     );
 
-    // ── Settlements: Bank/Cash, full/partial, plus opening-balance slices ──
+    // ── Settlements: Card/Cash, full/partial, plus opening-balance slices ──
     await this.payGrn(actor, gPartDairy, {
-      method: 'Bank',
+      method: 'Card',
       fraction: 0.5,
       openingSlice: 3000, // mixed bill + opening-balance payment
     });
-    await this.payGrn(actor, gPaidSpice, { method: 'Bank', fraction: 1 }); // → Paid
+    await this.payGrn(actor, gPaidSpice, { method: 'Card', fraction: 1 }); // → Paid
     await this.payGrn(actor, gPaidBakery, { method: 'Cash', fraction: 1 }); // → Paid
-    await this.payGrn(actor, gPartHome, { method: 'Bank', fraction: 0.4 });
-    await this.payGrn(actor, gSubSpice, { method: 'Bank', fraction: 0.5 });
+    await this.payGrn(actor, gPartHome, { method: 'Card', fraction: 0.4 });
+    await this.payGrn(actor, gSubSpice, { method: 'Card', fraction: 0.5 });
     await this.paymentsService.create(
       {
         supplierId: spice.id,
