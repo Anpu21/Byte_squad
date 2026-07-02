@@ -48,8 +48,11 @@ export class ReturnsController {
     return this.service.lookupSale(actor, query.invoiceNumber);
   }
 
+  // Returns/exchanges are processed at the till by the cashier (POS modal).
+  // Admins/managers review via the GET routes but cannot create — the hub is
+  // view-only for them.
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @Roles(UserRole.CASHIER)
   create(
     @Body() dto: CreateSalesReturnDto,
     @CurrentUser() actor: AuthUser,
@@ -61,7 +64,7 @@ export class ReturnsController {
   // enforced in computeReturn (assertBranchAccess). X-Idempotency-Key guards
   // POS double-submit (a replay would otherwise double-refund + double-sell).
   @Post(APP_ROUTES.RETURNS.EXCHANGE)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  @Roles(UserRole.CASHIER)
   createExchange(
     @Body() dto: CreateExchangeDto,
     @CurrentUser() actor: AuthUser,
