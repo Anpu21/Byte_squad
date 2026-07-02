@@ -1,4 +1,6 @@
 export const adminLoyalty = {
+    dashboard: (role: 'admin' | 'manager') =>
+        ['admin-loyalty', 'dashboard', role] as const,
     customers: (params: {
         search?: string;
         branchId?: string;

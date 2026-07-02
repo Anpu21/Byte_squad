@@ -76,10 +76,15 @@ export const loyaltyAdminService = {
                 : `/manager/loyalty/customers/${memberId}/adjust`;
         await api.post(url, payload);
     },
-    getDashboardStats: async (): Promise<ILoyaltyDashboardStats> => {
-        const response = await api.get<IApiResponse<ILoyaltyDashboardStats>>(
-            '/admin/loyalty/dashboard',
-        );
+    getDashboardStats: async (
+        role: 'admin' | 'manager',
+    ): Promise<ILoyaltyDashboardStats> => {
+        const url =
+            role === 'admin'
+                ? '/admin/loyalty/dashboard'
+                : '/manager/loyalty/dashboard';
+        const response =
+            await api.get<IApiResponse<ILoyaltyDashboardStats>>(url);
         return response.data.data;
     },
 };

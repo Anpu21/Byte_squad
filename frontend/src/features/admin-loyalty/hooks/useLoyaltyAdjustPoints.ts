@@ -29,7 +29,7 @@ export function useLoyaltyAdjustPoints() {
         onSuccess: (_, { memberId }) => {
             queryClient.invalidateQueries({ queryKey: ['admin-loyalty', 'customers'] });
             queryClient.invalidateQueries({ queryKey: ['admin-loyalty', 'customer-history', memberId] });
-            queryClient.invalidateQueries({ queryKey: ['loyalty', 'dashboard'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-loyalty', 'dashboard'] });
             toast.success('Points adjusted successfully');
         },
         onError: (error: unknown) => {
