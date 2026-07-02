@@ -15,6 +15,9 @@ vi.mock('@/services/held-sales.service', () => ({
         discard: vi.fn(),
     },
 }));
+vi.mock('react-hot-toast', () => ({
+    default: { success: vi.fn(), error: vi.fn() },
+}));
 
 const mockedService = vi.mocked(heldSalesService);
 
@@ -51,9 +54,21 @@ const SALE: IHeldSale = {
         cartDiscountPercentage: 5,
         loyaltyOwner: null,
         loyaltyRedeemPoints: 0,
+        creditAccount: null,
+        creditOverride: null,
     },
     heldByName: 'Nadia Perera',
     createdAt: '2026-06-20T10:00:00.000Z',
+};
+
+const HOLD_INPUT: Omit<IHeldBill, 'id' | 'heldAt'> = {
+    label: 'Anchor Milk 1L',
+    items: [ITEM],
+    cartDiscountPercentage: 5,
+    loyaltyOwner: null,
+    loyaltyRedeemPoints: 0,
+    creditAccount: null,
+    creditOverride: null,
 };
 
 function createWrapper() {
@@ -79,9 +94,7 @@ describe('usePosHeldBills', () => {
             wrapper: createWrapper(),
         });
 
-        await waitFor(() =>
-            expect(result.current.heldBills).toHaveLength(1),
-        );
+        await waitFor(() => expect(result.current.heldBills).toHaveLength(1));
         const bill = result.current.heldBills[0]!;
         expect(bill.label).toBe('Anchor Milk 1L');
         expect(bill.heldByName).toBe('Nadia Perera');
@@ -95,48 +108,49 @@ describe('usePosHeldBills', () => {
         });
         await waitFor(() => expect(mockedService.list).toHaveBeenCalled());
 
-        act(() =>
-            result.current.holdBill({
-                label: 'Anchor Milk 1L',
-                items: [ITEM],
-                cartDiscountPercentage: 5,
-                loyaltyOwner: null,
-                loyaltyRedeemPoints: 0,
-            }),
-        );
+        await act(async () => {
+            await result.current.holdBill(HOLD_INPUT);
+        });
 
-        await waitFor(() =>
-            expect(mockedService.hold).toHaveBeenCalledTimes(1),
-        );
+        expect(mockedService.hold).toHaveBeenCalledTimes(1);
         expect(mockedService.hold).toHaveBeenCalledWith(
             expect.objectContaining({
                 label: 'Anchor Milk 1L',
                 itemCount: 1,
                 total: 1150,
-                snapshot: expect.objectContaining({
-                    cartDiscountPercentage: 5,
-                }),
+                snapshot: expect.objectContaining({ cartDiscountPercentage: 5 }),
             }),
         );
     });
 
-    it('takeBill returns the bill and removes it server-side', async () => {
+    it('takeBill removes the bill server-side before returning it', async () => {
         mockedService.list.mockResolvedValue([SALE]);
         const { result } = renderHook(() => usePosHeldBills(), {
             wrapper: createWrapper(),
         });
-        await waitFor(() =>
-            expect(result.current.heldBills).toHaveLength(1),
-        );
+        await waitFor(() => expect(result.current.heldBills).toHaveLength(1));
 
         let taken: IHeldBill | null = null;
-        act(() => {
-            taken = result.current.takeBill('held-1');
+        await act(async () => {
+            taken = await result.current.takeBill('held-1');
         });
         expect(taken!.items[0]?.productName).toBe('Anchor Milk 1L');
-        await waitFor(() =>
-            expect(mockedService.discard).toHaveBeenCalledWith('held-1'),
-        );
+        expect(mockedService.discard).toHaveBeenCalledWith('held-1');
+    });
+
+    it('takeBill returns null (keeps the bill) when the delete fails', async () => {
+        mockedService.list.mockResolvedValue([SALE]);
+        mockedService.discard.mockRejectedValue(new Error('network'));
+        const { result } = renderHook(() => usePosHeldBills(), {
+            wrapper: createWrapper(),
+        });
+        await waitFor(() => expect(result.current.heldBills).toHaveLength(1));
+
+        let taken: IHeldBill | null = { id: 'x' } as IHeldBill;
+        await act(async () => {
+            taken = await result.current.takeBill('held-1');
+        });
+        expect(taken).toBeNull();
     });
 
     it('takeBill returns null for an unknown id', async () => {
@@ -144,13 +158,11 @@ describe('usePosHeldBills', () => {
         const { result } = renderHook(() => usePosHeldBills(), {
             wrapper: createWrapper(),
         });
-        await waitFor(() =>
-            expect(result.current.heldBills).toHaveLength(1),
-        );
+        await waitFor(() => expect(result.current.heldBills).toHaveLength(1));
 
         let taken: IHeldBill | null = null;
-        act(() => {
-            taken = result.current.takeBill('missing');
+        await act(async () => {
+            taken = await result.current.takeBill('missing');
         });
         expect(taken).toBeNull();
         expect(mockedService.discard).not.toHaveBeenCalled();
@@ -161,9 +173,7 @@ describe('usePosHeldBills', () => {
         const { result } = renderHook(() => usePosHeldBills(), {
             wrapper: createWrapper(),
         });
-        await waitFor(() =>
-            expect(result.current.heldBills).toHaveLength(1),
-        );
+        await waitFor(() => expect(result.current.heldBills).toHaveLength(1));
 
         act(() => result.current.discardBill('held-1'));
         await waitFor(() =>

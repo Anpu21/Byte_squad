@@ -2,6 +2,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsBoolean,
+  IsDateString,
   IsNumber,
   IsOptional,
   IsString,
@@ -26,6 +27,15 @@ export class CreateSalesReturnLineDto {
 
   @IsBoolean()
   restockGood!: boolean;
+
+  /**
+   * Optional expiry date (YYYY-MM-DD) for restocked good units. When set, the
+   * restock recreates a ProductBatch so returned stock re-enters expiry
+   * tracking; null/omitted still restocks but with unknown expiry.
+   */
+  @IsOptional()
+  @IsDateString()
+  expiryDate?: string;
 }
 
 export class CreateSalesReturnDto {

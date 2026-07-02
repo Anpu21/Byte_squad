@@ -104,6 +104,6 @@ import { CreditAccountsModule } from '@/modules/credit-accounts/credit-accounts.
   // per-entity repositories stay private to the module.
   // ReceivablesService is exported for the demo seed, which records a
   // real FIFO repayment so the statement/ledger land like production.
-  exports: [PosService, ReceivablesService],
+  exports: [PosService, ReceivablesService, PosWriteService, PosRepository],
 })
 export class PosModule {}

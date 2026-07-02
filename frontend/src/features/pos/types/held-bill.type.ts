@@ -1,5 +1,7 @@
+import type { ICreditAccountSearchResult } from '@/types';
 import type { ICartItem } from './cart-item.type';
 import type { IPosLoyaltyOwner } from '../hooks/useLoyaltyAttach';
+import type { IPosCreditOverride } from '../hooks/useCreditAttach';
 
 /**
  * The restorable contents of a parked sale — everything needed to rebuild
@@ -11,6 +13,10 @@ export interface IHeldSaleSnapshot {
     cartDiscountPercentage: number;
     loyaltyOwner: IPosLoyaltyOwner | null;
     loyaltyRedeemPoints: number;
+    /** Buy-on-credit (khata) account, so a credit bill survives park/resume. */
+    creditAccount: ICreditAccountSearchResult | null;
+    /** Manager override attached to a credit sale, restored alongside it. */
+    creditOverride: IPosCreditOverride | null;
 }
 
 /**

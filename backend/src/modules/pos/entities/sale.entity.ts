@@ -184,6 +184,12 @@ export class Sale {
   @Column({ type: 'uuid', name: 'credit_account_id', nullable: true })
   creditAccountId!: string | null;
 
+  // Set when this Sale is the replacement leg of an exchange — links back to the
+  // SalesReturn it settles. NULL for ordinary sales. Lets reports segment
+  // exchange replacements (which are settled by returned goods, not new cash).
+  @Column({ type: 'uuid', name: 'exchange_return_id', nullable: true })
+  exchangeReturnId!: string | null;
+
   // Repayment due date for a credit-account sale: saleDate + account term days.
   // Drives the receivables ageing/overdue buckets. NULL for non-credit sales.
   @Column({ type: 'date', name: 'due_date', nullable: true })

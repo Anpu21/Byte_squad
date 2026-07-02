@@ -9,7 +9,6 @@ import { UserRole } from '@/constants/enums';
 import { InventoryByRole } from '@/routes/routeEntries';
 import { ExpiryReportPage } from '@/features/inventory-expiry';
 import { StockAdjustmentsPage } from '@/features/stock-adjustments';
-import { ReturnsPage } from '@/features/returns';
 import { AdminTransfersPage } from '@/features/admin-transfer-board';
 import { TransferRequestsPage } from '@/features/transfer-requests';
 import { CategoriesPanel } from '@/features/categories/components/CategoriesPanel';
@@ -39,7 +38,6 @@ export function InventoryWorkspacePage() {
             {tab === 'list' && <InventoryByRole />}
             {tab === 'expiry' && <ExpiryReportPage />}
             {tab === 'adjustments' && <StockAdjustmentsPage />}
-            {tab === 'returns' && <ReturnsPage />}
             {tab === 'transfers' &&
                 (isAdmin ? (
                     <AdminTransfersPage embedded />

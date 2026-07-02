@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/lib/utils';
+import { isCompleteNumber, isPartialDecimal } from '@/lib/numeric-input';
 import { returnsService } from '@/services/returns.service';
 import type { ICreateSalesReturnLine, ISaleReturnLookup } from '@/types';
+
+function round2(n: number): number {
+    return Math.round(n * 100) / 100;
+}
+function round3(n: number): number {
+    return Math.round(n * 1000) / 1000;
+}
 
 export interface ILineDraft {
     good: string;
@@ -35,17 +43,18 @@ export function usePosReturn(onClose: () => void) {
     const [reason, setReason] = useState('');
     const [busy, setBusy] = useState(false);
 
-    function reset() {
+    const reset = useCallback(() => {
         setInvoice('');
         setLookup(null);
         setDrafts({});
         setReason('');
-    }
+    }, []);
 
-    function close() {
+    // Stable identity so <Modal onClose> doesn't change every render.
+    const close = useCallback(() => {
         reset();
         onClose();
-    }
+    }, [reset, onClose]);
 
     async function handleLookup(e: React.FormEvent) {
         e.preventDefault();
@@ -80,20 +89,42 @@ export function usePosReturn(onClose: () => void) {
         };
         const good = Number(draft.good) || 0;
         const bad = Number(draft.bad) || 0;
+        const total = round3(good + bad);
+        // Discount-aware per-unit price, matching the backend refund basis
+        // (returns.service.ts uses lineTotal / quantitySold, not unitPrice).
+        const perUnit =
+            line.quantitySold > 0
+                ? Number(line.lineTotal) / line.quantitySold
+                : Number(line.unitPrice);
         return {
             line,
             draft,
             good,
             bad,
-            total: good + bad,
-            over: good + bad > line.remaining,
-            refund: (good + bad) * Number(line.unitPrice),
+            total,
+            over: total > line.remaining + 1e-9,
+            // Clamp defensively so an over-cap line can never inflate the refund.
+            refund: round2(Math.min(total, line.remaining) * perUnit),
         };
     });
     const picked = parsed.filter((p) => p.total > 0);
     const overCap = parsed.some((p) => p.over);
     const refundTotal = picked.reduce((sum, p) => sum + p.refund, 0);
-    const canSubmit = picked.length > 0 && !overCap && !busy;
+    // Returned-lines validity WITHOUT this hook's busy flag, so the exchange
+    // flow (which has its own busy) can reuse it as its "goods in" gate.
+    const hasReturnLines = picked.length > 0 && !overCap;
+    const canSubmit = hasReturnLines && !busy;
+
+    // The picked lines as a create payload — shared by the refund submit and
+    // the exchange flow (returnedLines).
+    function buildReturnLines(): ICreateSalesReturnLine[] {
+        return picked.map((p) => ({
+            saleItemId: p.line.saleItemId,
+            goodQuantity: p.good,
+            badQuantity: p.bad,
+            restockGood: p.draft.restockGood,
+        }));
+    }
 
     function patchDraft(saleItemId: string, patch: Partial<ILineDraft>) {
         setDrafts((prev) => {
@@ -106,15 +137,50 @@ export function usePosReturn(onClose: () => void) {
         });
     }
 
+    /**
+     * Update a good/bad quantity from a free-text field. Partial decimals are
+     * kept while typing (e.g. "0." for weighed goods) and only a completed
+     * number is clamped to the returnable remainder — so the field never fights
+     * the cashier mid-keystroke. Entering GOOD auto-fills BAD with whatever is
+     * left of the line, so the whole returned quantity is always accounted for;
+     * BAD stays editable for a partial return.
+     */
+    function patchQty(saleItemId: string, field: 'good' | 'bad', raw: string) {
+        if (!isPartialDecimal(raw)) return; // drop letters, separators, etc.
+        const line = returnableLines.find((l) => l.saleItemId === saleItemId);
+
+        if (field === 'good') {
+            let good = raw;
+            if (line && isCompleteNumber(raw) && Number(raw) > line.remaining) {
+                good = String(round3(line.remaining));
+            }
+            const bad =
+                line && raw !== ''
+                    ? String(
+                          Math.max(
+                              0,
+                              round3(line.remaining - (Number(good) || 0)),
+                          ),
+                      )
+                    : '';
+            patchDraft(saleItemId, { good, bad });
+            return;
+        }
+
+        // Bad edited directly — clamp to whatever the good quantity leaves.
+        let bad = raw;
+        if (line && isCompleteNumber(raw)) {
+            const goodNum = Number(drafts[saleItemId]?.good) || 0;
+            const maxBad = Math.max(0, round3(line.remaining - goodNum));
+            if (Number(raw) > maxBad) bad = String(maxBad);
+        }
+        patchDraft(saleItemId, { bad });
+    }
+
     async function handleSubmit() {
         if (!lookup || !canSubmit) return;
         setBusy(true);
-        const lines: ICreateSalesReturnLine[] = picked.map((p) => ({
-            saleItemId: p.line.saleItemId,
-            goodQuantity: p.good,
-            badQuantity: p.bad,
-            restockGood: p.draft.restockGood,
-        }));
+        const lines = buildReturnLines();
         try {
             const ret = await returnsService.create({
                 saleId: lookup.saleId,
@@ -156,7 +222,10 @@ export function usePosReturn(onClose: () => void) {
         overCap,
         refundTotal,
         canSubmit,
+        hasReturnLines,
+        buildReturnLines,
         patchDraft,
+        patchQty,
         handleSubmit,
     };
 }

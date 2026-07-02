@@ -15,7 +15,11 @@ export type StockMovementType =
   | 'Transfer_In'
   | 'Transfer_Out'
   | 'Adjustment'
-  | 'Return';
+  | 'Return'
+  // Units returned in damaged condition. Recorded for audit only — they do
+  // NOT re-enter sellable stock, so `qty_in` here is the damaged quantity and
+  // `balance_after` is the unchanged sellable balance.
+  | 'Damage';
 
 @Entity('stock_movements')
 export class StockMovement {

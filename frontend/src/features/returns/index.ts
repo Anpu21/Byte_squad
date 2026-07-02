@@ -1,3 +1,3 @@
-// Returns feature — the returns list tab and the new-return screen (route entry).
-export { ReturnsPage } from './ReturnsPage';
-export { ReturnNewPage } from './ReturnNewPage';
+// Returns feature — the role-scoped returns hub (view-only for admin/manager;
+// cashiers create returns/exchanges through the POS modal, not a back-office form).
+export { ReturnsHubPage } from './ReturnsHubPage';

@@ -48,6 +48,16 @@ export default function Modal({
     const panelRef = useRef<HTMLDivElement>(null);
     const previousActiveRef = useRef<HTMLElement | null>(null);
 
+    // Keep the latest onClose in a ref so the focus-trap effect can stay keyed
+    // on [isOpen] alone. If onClose were an effect dependency, an unstable
+    // parent callback (recreated each render) would re-run the effect on every
+    // keystroke and its requestAnimationFrame would steal focus back to the
+    // first field — making later inputs impossible to type in.
+    const onCloseRef = useRef(onClose);
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    });
+
     // Defer unmount so the close animation can play before the node disappears.
     // Mirrors the 200ms duration on the panel/backdrop animation classes.
     const [shouldRender, setShouldRender] = useState(isOpen);
@@ -86,7 +96,7 @@ export default function Modal({
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 e.stopPropagation();
-                onClose();
+                onCloseRef.current();
                 return;
             }
             if (e.key !== 'Tab' || !panelRef.current) return;
@@ -121,7 +131,7 @@ export default function Modal({
                 previous.focus();
             }
         };
-    }, [isOpen, onClose]);
+    }, [isOpen]);
 
     if (!shouldRender) return null;
 

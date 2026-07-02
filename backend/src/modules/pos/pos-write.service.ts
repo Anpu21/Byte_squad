@@ -83,6 +83,10 @@ function mapToLegacyPaymentMethod(method: PosPaymentMethod): PaymentMethod {
       // ONLINE so the legacy code paths (which only look for CASH vs
       // not-CASH) keep working. The Payment row carries the full detail.
       return PaymentMethod.ONLINE;
+    case 'Exchange':
+      // Replacement leg of an exchange (settled by returned goods). No enum
+      // value; bucket into ONLINE (not-CASH). Payment row carries the detail.
+      return PaymentMethod.ONLINE;
     default: {
       // Exhaustiveness guard: when a new tender is added to the
       // PosPaymentMethod union, TypeScript will flag this branch and
@@ -102,7 +106,7 @@ function randomSuffix(): string {
  * computed-once values around so the stock-decrement pass and the
  * SaleItem write don't need to recompute them.
  */
-interface ItemCompute {
+export interface ItemCompute {
   productId: string;
   unitId: string | null;
   quantity: number;
@@ -118,6 +122,28 @@ interface ItemCompute {
   lineTotal: number;
   priceLevelUsed: 'Retail' | 'Wholesale';
   locationTakenFrom: string;
+}
+
+/** Pre-transaction pricing of an exchange replacement (see computeReplacement). */
+export interface ReplacementCompute {
+  itemRows: ItemCompute[];
+  itemsSubtotal: number;
+  taxTotal: number;
+  total: number;
+}
+
+/**
+ * Resolved settlement for the replacement leg's Payment row. `paymentAmount` is
+ * the NET upcharge (0 for an even/cheaper swap; the difference for a dearer
+ * one). Cash upcharge → `cashAmount = paymentAmount` (lands in the drawer's cash
+ * bucket); card upcharge → `cashAmount = 0` so `paymentAmount` surfaces as the
+ * card residual in the Z-report.
+ */
+export interface ReplacementPayment {
+  paymentAmount: number;
+  cashAmount: number;
+  cashTendered: number;
+  cashChange: number;
 }
 
 /**
@@ -236,8 +262,8 @@ export class PosWriteService {
     // ---------------------------------------------------------------
     // 2. Resolve sellable units
     // ---------------------------------------------------------------
-    const unitsById = await this.resolveSellableUnits(dto);
-    const productsById = await this.resolveProducts(dto);
+    const unitsById = await this.resolveSellableUnits(dto.items);
+    const productsById = await this.resolveProducts(dto.items);
 
     // The cashier UI no longer offers a Retail/Wholesale toggle; every new
     // sale rings at retail. The columns stay on the Sale row for historical
@@ -517,6 +543,159 @@ export class PosWriteService {
   }
 
   /**
+   * Pure, pre-transaction pricing of a replacement basket (the "goods out" leg
+   * of an exchange). Reuses the same unit resolution + server-authoritative
+   * `computeItem` math as a normal sale, so pricing/tax/base-unit conversion are
+   * identical. No cart discount or loyalty — a replacement rings at retail.
+   * Runs OUTSIDE any transaction; {@link persistReplacementWithinTxn} writes.
+   */
+  async computeReplacement(
+    items: CreateSaleDto['items'],
+    location: string,
+  ): Promise<ReplacementCompute> {
+    const unitsById = await this.resolveSellableUnits(items);
+    const productsById = await this.resolveProducts(items);
+    const itemRows = items.map((item) =>
+      computeItem(item, unitsById, productsById, 'Retail', location),
+    );
+    const itemsSubtotal = round2(
+      itemRows.reduce((s, i) => s + i.lineSubtotal, 0),
+    );
+    const taxTotal = round2(itemRows.reduce((s, i) => s + i.lineTaxAmount, 0));
+    const total = round2(Math.max(0, itemsSubtotal + taxTotal));
+    return { itemRows, itemsSubtotal, taxTotal, total };
+  }
+
+  /**
+   * Transactional half of the replacement leg: pessimistic stock decrement,
+   * year-sequential invoice, Sale + SaleItems + an `'Exchange'` Payment row, a
+   * `'Sale'` stock movement per line, and a ledger CREDIT of the NET upcharge
+   * only. Runs inside the exchange's transaction so it commits atomically with
+   * the return leg. No multi-tender, loyalty, khata, or idempotency here — the
+   * ExchangeService owns those concerns.
+   *
+   * The Sale is marked fully paid (`total`, settled by the returned goods plus
+   * any upcharge) and carries `exchangeReturnId`. The ledger CREDIT is only the
+   * net cash in (`payment.paymentAmount`): the returned value was already booked
+   * on the original sale, so crediting the full replacement total would
+   * double-count revenue.
+   */
+  async persistReplacementWithinTxn(
+    manager: EntityManager,
+    actor: ActorPayload,
+    params: {
+      branchId: string;
+      location: string;
+      customerUserId: string | null;
+      exchangeReturnId: string;
+      replacement: ReplacementCompute;
+      payment: ReplacementPayment;
+    },
+  ): Promise<Sale> {
+    const { branchId, location, replacement, payment } = params;
+
+    const postDeductQty = await this.decrementInventoryWithLock(
+      manager,
+      branchId,
+      replacement.itemRows,
+    );
+
+    const invoiceNumber = await this.invoiceNumbers.next(
+      new Date().getFullYear(),
+      manager,
+    );
+
+    const sale = await this.sales.create(
+      {
+        branchId,
+        cashierId: actor.id,
+        customerUserId: params.customerUserId,
+        loyaltyCustomerId: null,
+        creditAccountId: null,
+        dueDate: null,
+        creditOverrideByUserId: null,
+        exchangeReturnId: params.exchangeReturnId,
+        invoiceNumber,
+        transactionNumber: `TXN-${Date.now()}-${randomSuffix()}`,
+        type: TransactionType.SALE,
+        saleType: 'Retail',
+        priceLevel: 'Retail',
+        location,
+        subtotal: replacement.itemsSubtotal,
+        discountAmount: 0,
+        discountType: DiscountType.FIXED,
+        taxAmount: replacement.taxTotal,
+        total: replacement.total,
+        // Fully settled by the returned goods (+ any upcharge collected below).
+        paidAmount: replacement.total,
+        balanceDue: 0,
+        paymentStatus: 'Paid',
+        status: 'Active',
+        paymentMethod: mapToLegacyPaymentMethod('Exchange'),
+      },
+      manager,
+    );
+
+    await this.saleItems.createMany(
+      replacement.itemRows.map((r) => ({ ...r, saleId: sale.id })),
+      manager,
+    );
+
+    await this.payments.create(
+      {
+        saleId: sale.id,
+        receiptNo: `RCPT-${sale.id.slice(0, 8)}`,
+        paymentMethod: 'Exchange',
+        paymentAmount: payment.paymentAmount,
+        invoiceTotal: replacement.total,
+        cashTendered: payment.cashTendered,
+        cashAmount: payment.cashAmount,
+        cashChange: payment.cashChange,
+        chequeAmount: 0,
+        bankTransferAmount: 0,
+        creditAmount: 0,
+        loyaltyAmount: 0,
+        keepBalance: false,
+        chequeNo: null,
+        chequeDate: null,
+        chequeBank: null,
+        chequeBranch: null,
+        chequeDeliveredBy: null,
+        chequeRef: null,
+        bankRef: null,
+        status: 'Active',
+      },
+      manager,
+    );
+
+    await this.recordStockMovements(
+      manager,
+      sale,
+      actor.id,
+      branchId,
+      replacement.itemRows,
+      postDeductQty,
+    );
+
+    // Ledger CREDIT = the NET upcharge only (the difference the customer paid).
+    // For an even/cheaper swap this is 0 (no entry) — the return leg posts the
+    // DEBIT for a cheaper swap. Crediting the full replacement total would
+    // double-count revenue already booked on the original sale.
+    if (payment.paymentAmount > 0) {
+      await this.accounting.createLedgerEntryWithManager(manager, {
+        branchId,
+        entryType: LedgerEntryType.CREDIT,
+        amount: payment.paymentAmount,
+        description: `Exchange replacement — ${sale.invoiceNumber}`,
+        referenceNumber: sale.invoiceNumber,
+        saleId: sale.id,
+      });
+    }
+
+    return sale;
+  }
+
+  /**
    * Wallet-side bookkeeping for the just-persisted sale. Returns the
    * loyalty summary that the controller appends to the response, or
    * null when the cashier did not attach any loyalty owner.
@@ -593,11 +772,11 @@ export class PosWriteService {
    * reject if any unit belongs to a different product than the line declared.
    */
   private async resolveSellableUnits(
-    dto: CreateSaleDto,
+    items: CreateSaleDto['items'],
   ): Promise<Map<string, ProductSellableUnit>> {
     const unitIds = Array.from(
       new Set(
-        dto.items
+        items
           .map((i) => i.unitId)
           .filter((id): id is string => typeof id === 'string'),
       ),
@@ -611,7 +790,7 @@ export class PosWriteService {
     const byId = new Map(rows.map((u) => [u.id, u]));
     // Validate ownership: every item that supplied a unitId must reference
     // a unit that belongs to its productId.
-    for (const item of dto.items) {
+    for (const item of items) {
       if (!item.unitId) continue;
       const unit = byId.get(item.unitId);
       if (!unit) {
@@ -627,10 +806,10 @@ export class PosWriteService {
   }
 
   private async resolveProducts(
-    dto: CreateSaleDto,
+    items: CreateSaleDto['items'],
   ): Promise<Map<string, Product>> {
     const productIds = Array.from(
-      new Set(dto.items.map((item) => item.productId)),
+      new Set(items.map((item) => item.productId)),
     );
     const rows = await this.products.findActiveByIds(productIds);
     const byId = new Map(rows.map((product) => [product.id, product]));
