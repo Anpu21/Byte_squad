@@ -206,7 +206,7 @@ describe('ReceivablesService', () => {
 
     await service.receivePayment(
       USER_ID,
-      { amount: 1500, method: 'Bank' },
+      { amount: 1500, method: 'Card' },
       MANAGER,
     );
 
