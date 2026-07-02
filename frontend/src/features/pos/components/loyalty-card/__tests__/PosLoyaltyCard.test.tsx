@@ -117,12 +117,23 @@ describe('PosLoyaltyCard', () => {
         enrollMock.mockReset();
     });
 
-    it('shows the phone field in the idle state', () => {
+    it('shows the phone field + Search/Register toggle in the idle state', () => {
         renderHost();
         expect(
             screen.getByLabelText(/Loyalty member phone/i),
         ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Search' })).toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: 'Register' }),
+        ).toBeInTheDocument();
         expect(screen.queryByText('Nimal')).not.toBeInTheDocument();
+    });
+
+    it('switching to Register via the toggle shows the name fields', async () => {
+        renderHost();
+        await userEvent.click(screen.getByRole('button', { name: 'Register' }));
+        expect(screen.getByLabelText('First name')).toBeInTheDocument();
+        expect(screen.getByLabelText('Last name')).toBeInTheDocument();
     });
 
     it('renders the hit state with name + balance after a successful lookup', async () => {
@@ -146,9 +157,11 @@ describe('PosLoyaltyCard', () => {
         const phoneInput = screen.getByLabelText(/Loyalty member phone/i);
         await userEvent.type(phoneInput, '+94770000002');
 
-        // Miss state surfaces the enrol form.
-        await screen.findByRole('form', { name: /enrol walk-in customer/i });
-        const firstName = screen.getByLabelText('First name');
+        // Miss state surfaces the CTA; click it to open the enrol form.
+        await userEvent.click(
+            await screen.findByRole('button', { name: /enrol this customer/i }),
+        );
+        const firstName = await screen.findByLabelText('First name');
         await userEvent.type(firstName, 'Sunil');
         const lastName = screen.getByLabelText('Last name');
         await userEvent.type(lastName, 'Fernando');
@@ -211,8 +224,10 @@ describe('PosLoyaltyCard', () => {
         renderHost();
         const phoneInput = screen.getByLabelText(/Loyalty member phone/i);
         await userEvent.type(phoneInput, '+94770000010');
-        await screen.findByRole('form', { name: /enrol walk-in customer/i });
-        const firstName = screen.getByLabelText('First name');
+        await userEvent.click(
+            await screen.findByRole('button', { name: /enrol this customer/i }),
+        );
+        const firstName = await screen.findByLabelText('First name');
         await userEvent.type(firstName, 'Test');
         const lastName = screen.getByLabelText('Last name');
         await userEvent.type(lastName, 'User');
