@@ -113,5 +113,9 @@ export function useReturnWorkflow() {
     canSubmit: payloadLines.length > 0,
     submit,
     isSubmitting: createMutation.isPending,
+    // Reused by the exchange mode (same returned-lines editor + refund basis).
+    saleId: lookup?.saleId ?? null,
+    buildReturnLines: buildLines,
+    hasReturnLines: payloadLines.length > 0,
   }
 }

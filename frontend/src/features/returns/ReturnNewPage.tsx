@@ -57,6 +57,9 @@ export function ReturnNewPage() {
           canSubmit={p.canSubmit}
           submit={p.submit}
           isSubmitting={p.isSubmitting}
+          saleId={p.saleId}
+          buildReturnLines={p.buildReturnLines}
+          hasReturnLines={p.hasReturnLines}
         />
       )}
     </div>
