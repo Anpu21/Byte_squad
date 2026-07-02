@@ -8,6 +8,16 @@ export function cn(...inputs: ClassValue[]): string {
     return clsx(inputs);
 }
 
+// Fall back to the default when a caller passes a non-ISO currency. Guards the
+// common footgun of wiring formatCurrency straight into a charting lib, which
+// invokes formatters as (value, index|name, …) — the extra positional arg would
+// otherwise reach `currency` and throw a RangeError that white-screens the route.
+function safeCurrency(currency: unknown): string {
+    return typeof currency === 'string' && currency.length === 3
+        ? currency
+        : 'LKR';
+}
+
 /**
  * Format a number as currency.
  */
@@ -18,7 +28,7 @@ export function formatCurrency(
 ): string {
     return new Intl.NumberFormat(locale, {
         style: 'currency',
-        currency,
+        currency: safeCurrency(currency),
     }).format(amount);
 }
 
@@ -33,7 +43,7 @@ export function formatCurrencyWhole(
 ): string {
     return new Intl.NumberFormat(locale, {
         style: 'currency',
-        currency,
+        currency: safeCurrency(currency),
         maximumFractionDigits: 0,
     }).format(amount);
 }

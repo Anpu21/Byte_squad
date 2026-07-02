@@ -55,7 +55,7 @@ export function MultiBranchBarChart({
               tickLine={false}
             />
             <YAxis
-              tickFormatter={formatter}
+              tickFormatter={(value) => formatter(value)}
               tick={{ fill: "var(--text-3)", fontSize: 11 }}
               axisLine={false}
               tickLine={false}

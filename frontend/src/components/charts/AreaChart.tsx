@@ -87,7 +87,7 @@ export default function AreaChart({
                                 axisLine={false}
                                 tickLine={false}
                                 tick={{ fill: 'var(--text-3)', fontSize: 11, fontWeight: 500 }}
-                                tickFormatter={formatValue}
+                                tickFormatter={(value) => formatValue(value)}
                                 dx={-6}
                             />
                         </>
