@@ -28,8 +28,8 @@ export const FRONTEND_ROUTES = {
     INVENTORY_EXPIRY: '/inventory/expiry',
     STOCK_ADJUSTMENTS: '/inventory/adjustments',
     STOCK_ADJUSTMENT_NEW: '/inventory/adjustments/new',
-    RETURNS: '/inventory/returns',
-    RETURN_NEW: '/inventory/returns/new',
+    RETURNS: '/returns',
+    RETURN_NEW: '/returns/new',
 
     // Brand sales analytics (admin + manager) — leaderboard + per-brand drill-down
     BRAND_ANALYTICS: '/analytics/brands',

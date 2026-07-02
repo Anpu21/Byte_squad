@@ -3,6 +3,8 @@ import type {
   IApiResponse,
   ICreateSalesReturnPayload,
   IPaginatedSalesReturns,
+  IReturnsAnalytics,
+  IReturnsAnalyticsParams,
   IReturnsParams,
   ISaleReturnLookup,
   ISalesReturn,
@@ -32,6 +34,16 @@ export const returnsService = {
   ): Promise<IPaginatedSalesReturns> => {
     const response = await api.get<IApiResponse<IPaginatedSalesReturns>>(
       '/returns',
+      { params },
+    )
+    return response.data.data
+  },
+
+  getAnalytics: async (
+    params?: IReturnsAnalyticsParams,
+  ): Promise<IReturnsAnalytics> => {
+    const response = await api.get<IApiResponse<IReturnsAnalytics>>(
+      '/returns/analytics',
       { params },
     )
     return response.data.data

@@ -65,6 +65,7 @@ export const SIDEBAR: NavEntry[] = [
             { key: 'salesman', label: 'Salesman report', Icon: BarChart3, roles: [ADMIN, MANAGER] },
         ],
     },
+    { id: 'returns', label: 'nav.returns', path: R.RETURNS, Icon: Undo2, roles: [ADMIN, MANAGER, CASHIER], group: 'Sales' },
     { id: 'cashier-store-credit', label: 'nav.storeCredit', path: R.STORE_CREDIT, Icon: NotebookTabs, roles: [CASHIER], group: 'Sales' },
     { id: 'cashier-loyalty', label: 'nav.customerLoyalty', path: R.CASHIER_LOYALTY, Icon: Sparkles, roles: [CASHIER], group: 'Sales' },
 
@@ -80,7 +81,6 @@ export const SIDEBAR: NavEntry[] = [
             { key: 'list', label: 'Inventory', Icon: Boxes },
             { key: 'expiry', label: 'Expiry', Icon: CalendarClock },
             { key: 'adjustments', label: 'Adjustments', Icon: ClipboardList },
-            { key: 'returns', label: 'Returns', Icon: Undo2 },
             { key: 'transfers', label: 'Transfers', Icon: Truck },
             { key: 'categories', label: 'Categories', Icon: Tags },
             { key: 'labels', label: 'Labels', Icon: Barcode },

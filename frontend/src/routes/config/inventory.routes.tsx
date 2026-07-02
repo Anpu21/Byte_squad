@@ -1,4 +1,4 @@
-import { Route } from 'react-router-dom';
+import { Navigate, Route } from 'react-router-dom';
 import { FRONTEND_ROUTES } from '@/constants/routes';
 import { UserRole } from '@/constants/enums';
 import { RequireRole } from '../guards';
@@ -6,7 +6,7 @@ import { InventoryRedirect } from '../redirects';
 import { InventoryWorkspacePage } from '@/features/admin-inventory';
 import { PurchasesWorkspacePage } from '@/features/purchases';
 import { StockAdjustmentNewPage } from '@/features/stock-adjustments';
-import { ReturnNewPage } from '@/features/returns';
+import { ReturnNewPage, ReturnsHubPage } from '@/features/returns';
 import { ProductFormPage } from '@/features/product-form';
 import { BrandAnalyticsPage } from '@/features/brand-analytics';
 
@@ -47,12 +47,31 @@ export const inventoryRoutes = (
             <Route
                 path={FRONTEND_ROUTES.RETURN_NEW}
                 element={<ReturnNewPage />}
-                handle={{ crumbs: ['Inventory', 'Returns', 'New'] }}
+                handle={{ crumbs: ['Returns', 'New'] }}
             />
+        </Route>
+        {/* Returns hub — a dedicated, role-scoped section (cashiers see their
+            own, managers their branch, admins all). */}
+        <Route
+            element={
+                <RequireRole
+                    roles={[
+                        UserRole.ADMIN,
+                        UserRole.MANAGER,
+                        UserRole.CASHIER,
+                    ]}
+                />
+            }
+        >
             <Route
                 path={FRONTEND_ROUTES.RETURNS}
-                element={<InventoryRedirect tab="returns" />}
-                handle={{ crumbs: ['Inventory', 'Returns'] }}
+                element={<ReturnsHubPage />}
+                handle={{ crumbs: ['Returns'] }}
+            />
+            {/* Legacy path — the returns list used to live under Inventory. */}
+            <Route
+                path="/inventory/returns"
+                element={<Navigate to={FRONTEND_ROUTES.RETURNS} replace />}
             />
         </Route>
         <Route element={<RequireRole roles={[UserRole.MANAGER]} />}>

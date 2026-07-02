@@ -1,3 +1,3 @@
-// Returns feature — the returns list tab and the new-return screen (route entry).
-export { ReturnsPage } from './ReturnsPage';
+// Returns feature — the role-scoped returns hub and the new-return screen.
+export { ReturnsHubPage } from './ReturnsHubPage';
 export { ReturnNewPage } from './ReturnNewPage';

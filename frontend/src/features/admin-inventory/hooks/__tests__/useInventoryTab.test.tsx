@@ -43,7 +43,7 @@ describe('useInventoryTab', () => {
         expect(result.current.tab).toBe('list');
     });
 
-    it.each(['expiry', 'adjustments', 'returns', 'transfers'] as const)(
+    it.each(['expiry', 'adjustments', 'transfers'] as const)(
         'reads "%s" from the ?tab search param',
         (which) => {
             const Wrapper = makeRouteWrapper([`/inventory?tab=${which}`]);
@@ -75,7 +75,7 @@ describe('useInventoryTab', () => {
 
     it('switching back to list drops the tab param', () => {
         const holder: LocationHolder = { search: '' };
-        const Wrapper = makeRouteWrapper(['/inventory?tab=returns'], holder);
+        const Wrapper = makeRouteWrapper(['/inventory?tab=adjustments'], holder);
         const { result } = renderHook(() => useInventoryTab(), {
             wrapper: Wrapper,
         });

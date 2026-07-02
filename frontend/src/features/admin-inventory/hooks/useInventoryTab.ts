@@ -4,7 +4,6 @@ export type InventoryTab =
     | 'list'
     | 'expiry'
     | 'adjustments'
-    | 'returns'
     | 'transfers'
     | 'categories'
     | 'labels';
@@ -13,7 +12,6 @@ const VALID_TABS: InventoryTab[] = [
     'list',
     'expiry',
     'adjustments',
-    'returns',
     'transfers',
     'categories',
     'labels',
