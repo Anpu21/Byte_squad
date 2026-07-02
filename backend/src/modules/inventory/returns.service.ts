@@ -103,6 +103,7 @@ export class ReturnsService {
 
     const returnItems: SalesReturnItem[] = [];
     const restockOps: { productId: string; baseQtyGood: number }[] = [];
+    const damageOps: { productId: string; baseQtyBad: number }[] = [];
     let totalRefund = 0;
     let restockedValue = 0;
 
@@ -137,6 +138,15 @@ export class ReturnsService {
           restockedValue + round2(line.goodQuantity * perUnitRefund),
         );
         restockOps.push({ productId: item.productId, baseQtyGood });
+      }
+
+      // Bad units are refunded but never re-enter sellable stock; log them so
+      // damaged returns are auditable (see the Damage movement below).
+      if (line.badQuantity > 0) {
+        const baseQtyBad = round3(line.badQuantity * perUnitBase);
+        if (baseQtyBad > 0) {
+          damageOps.push({ productId: item.productId, baseQtyBad });
+        }
       }
 
       const ri = new SalesReturnItem();
@@ -210,6 +220,36 @@ export class ReturnsService {
             refType: 'SalesReturn',
             refId: savedReturn.id,
             notes: `Return ${sale.invoiceNumber}`,
+            createdByUserId: actor.id,
+          }),
+        );
+      }
+
+      // Audit-only log for damaged returns: records the damaged quantity in
+      // `qtyIn` without changing sellable stock (balanceAfter is the current,
+      // unchanged sellable balance — after any restock write for the product).
+      for (const op of damageOps) {
+        const inv = await invRepo
+          .createQueryBuilder('i')
+          .where('i.product_id = :p AND i.branch_id = :b', {
+            p: op.productId,
+            b: sale.branchId,
+          })
+          .getOne();
+        const balanceAfter = inv ? Number(inv.quantity) : 0;
+
+        await movementRepo.save(
+          movementRepo.create({
+            productId: op.productId,
+            branchId: sale.branchId,
+            location: sale.location,
+            movementType: 'Damage',
+            qtyIn: op.baseQtyBad,
+            qtyOut: 0,
+            balanceAfter,
+            refType: 'SalesReturn',
+            refId: savedReturn.id,
+            notes: `Damaged return ${sale.invoiceNumber}`,
             createdByUserId: actor.id,
           }),
         );
