@@ -64,11 +64,11 @@ export function TermsPage() {
                 </LegalP>
             </LegalSection>
 
-            <LegalSection heading="6. Cancellations & refunds">
+            <LegalSection heading="6. Returns, cancellations & refunds">
                 <LegalP>
                     Cancellations, returns, and refunds are governed by our
-                    Refund &amp; Cancellation Policy. Perishable goods carry
-                    specific conditions described there.
+                    Refund, Return &amp; Cancellation Policy. Perishable goods
+                    carry specific conditions described there.
                 </LegalP>
             </LegalSection>
 

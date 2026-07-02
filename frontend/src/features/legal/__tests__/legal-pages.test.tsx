@@ -15,7 +15,7 @@ import { BusinessTermsPage } from '../pages/BusinessTermsPage'
 const PAGES = [
     { title: 'Terms & Conditions', Comp: TermsPage },
     { title: 'Privacy Policy', Comp: PrivacyPage },
-    { title: 'Refund & Cancellation Policy', Comp: RefundPage },
+    { title: 'Refund, Return & Cancellation Policy', Comp: RefundPage },
     { title: 'Delivery & Pickup Policy', Comp: DeliveryPage },
     { title: 'Contact Us', Comp: ContactPage },
     { title: 'Business & Legal Terms (Terms of Use)', Comp: BusinessTermsPage },

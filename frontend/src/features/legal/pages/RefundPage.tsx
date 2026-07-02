@@ -8,9 +8,9 @@ const B = BUSINESS_INFO
 export function RefundPage() {
     return (
         <LegalPage
-            title="Refund & Cancellation Policy"
+            title="Refund, Return & Cancellation Policy"
             effectiveDate={LEGAL_EFFECTIVE_DATE}
-            intro={`We want you to be happy with every order from ${B.tradeName}. This policy explains when you can cancel an order and how refunds work.`}
+            intro={`We want you to be happy with every order from ${B.tradeName}. This policy explains when you can cancel an order, return items, and how refunds work.`}
         >
             <LegalSection heading="1. Cancelling an order">
                 <LegalList
@@ -22,8 +22,10 @@ export function RefundPage() {
                 />
             </LegalSection>
 
-            <LegalSection heading="2. When you're entitled to a refund">
-                <LegalP>You can request a refund or replacement if:</LegalP>
+            <LegalSection heading="2. Returns & refund eligibility">
+                <LegalP>
+                    You can return an item and request a refund or replacement if:
+                </LegalP>
                 <LegalList
                     items={[
                         'An item is damaged, spoiled, expired, or defective on arrival;',
