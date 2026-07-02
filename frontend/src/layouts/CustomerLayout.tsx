@@ -15,6 +15,7 @@ import ThemeToggle from '@/components/ui/ThemeToggle';
 import { StorefrontNav } from '@/layouts/components/StorefrontNav';
 import { StorefrontUserMenu } from '@/layouts/components/StorefrontUserMenu';
 import { ShopContextBanner } from '@/features/customer-groups/components/ShopContextBanner';
+import { LegalFooter } from '@/features/legal';
 import { cn } from '@/lib/utils';
 import { useStorefrontSearch } from './useStorefrontSearch';
 
@@ -159,8 +160,8 @@ export default function CustomerLayout({
             </main>
 
             <footer className="border-t border-border">
-                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 text-xs text-text-3">
-                    LedgerPro Shop — pickup at your nearest branch.
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
+                    <LegalFooter />
                 </div>
             </footer>
 

@@ -152,6 +152,15 @@ export const FRONTEND_ROUTES = {
     SCAN_ORDER: '/pos/scan-order',
     SCAN_ORDER_LEGACY: '/pos/scan-request',
     CUSTOMER_ORDERS: '/customer-orders',
+
+    // Public legal / policy pages (no login — reachable by anyone, incl. the
+    // PayHere partner-bank reviewer). Mounted outside the auth guard.
+    LEGAL_TERMS: '/legal/terms',
+    LEGAL_PRIVACY: '/legal/privacy',
+    LEGAL_REFUND: '/legal/refund',
+    LEGAL_DELIVERY: '/legal/delivery',
+    LEGAL_CONTACT: '/legal/contact',
+    LEGAL_BUSINESS_TERMS: '/legal/business-terms',
 } as const;
 
 export type FrontendRoute = (typeof FRONTEND_ROUTES)[keyof typeof FRONTEND_ROUTES];

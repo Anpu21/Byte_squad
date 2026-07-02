@@ -7,6 +7,7 @@ import Logo from '@/components/ui/Logo';
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton';
 import { useLoginForm } from '@/features/login/hooks/useLoginForm';
 import { LoginPasswordField } from '@/features/login/components/LoginPasswordField';
+import { LegalFooter } from '@/features/legal';
 
 /** Brand-coloured Google "G" (decorative). */
 function GoogleIcon() {
@@ -142,6 +143,8 @@ export function LoginPage() {
                     </Link>
                 </p>
             </form>
+
+            <LegalFooter variant="compact" className="mt-8" />
         </>
     );
 }
