@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LuSearch as Search, LuX as X } from 'react-icons/lu';
 import { adminService } from '@/services/admin.service';
@@ -15,6 +16,8 @@ interface ILoyaltyCustomersFiltersProps {
     minPoints: string;
     maxPoints: string;
     onPointsRangeChange: (min: string, max: string) => void;
+    /** Right-aligned slot in the filter row (e.g. export actions). */
+    trailing?: ReactNode;
 }
 
 const INPUT_CLASS = `${FIELD_SHELL} ${FIELD_BORDER} h-9 px-3`;
@@ -35,6 +38,7 @@ export function LoyaltyCustomersFilters({
     minPoints,
     maxPoints,
     onPointsRangeChange,
+    trailing,
 }: ILoyaltyCustomersFiltersProps) {
     const branchesQuery = useQuery({
         queryKey: queryKeys.admin.branches(),
@@ -154,6 +158,8 @@ export function LoyaltyCustomersFilters({
                     </button>
                 )}
             </label>
+
+            {trailing ? <div className="ml-auto">{trailing}</div> : null}
         </div>
     );
 }
