@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -43,17 +43,18 @@ export function usePosReturn(onClose: () => void) {
     const [reason, setReason] = useState('');
     const [busy, setBusy] = useState(false);
 
-    function reset() {
+    const reset = useCallback(() => {
         setInvoice('');
         setLookup(null);
         setDrafts({});
         setReason('');
-    }
+    }, []);
 
-    function close() {
+    // Stable identity so <Modal onClose> doesn't change every render.
+    const close = useCallback(() => {
         reset();
         onClose();
-    }
+    }, [reset, onClose]);
 
     async function handleLookup(e: React.FormEvent) {
         e.preventDefault();
