@@ -1,12 +1,8 @@
+import { useMemo, useState } from 'react'
 import BarChart from '@/components/charts/BarChart'
 import AreaChart from '@/components/charts/AreaChart'
-import {
-  Button,
-  DataTable,
-  EmptyState,
-  KpiCard,
-  type DataTableColumn,
-} from '@/components/ui'
+import { Button, DataTable, EmptyState, KpiCard } from '@/components/ui'
+import { Select } from '@/components/ui/Select'
 import { formatCurrency } from '@/lib/utils'
 import {
   LuArrowLeft as ArrowLeft,
@@ -16,6 +12,8 @@ import {
   LuTrendingUp as TrendingUp,
 } from 'react-icons/lu'
 import { useBrandDrilldown } from '../hooks/useBrandDrilldown'
+import { BrandCategoryBreakdown } from './BrandCategoryBreakdown'
+import { brandProductColumns } from './brand-product-columns'
 import type { IBrandAnalyticsParams, IBrandProductRow } from '@/types'
 
 interface BrandDrilldownProps {
@@ -25,8 +23,16 @@ interface BrandDrilldownProps {
 }
 
 export function BrandDrilldown({ brandId, params, onBack }: BrandDrilldownProps) {
-  const { data, isLoading } = useBrandDrilldown(brandId, params)
+  // Local category filter narrows the product breakdown only; the by-category
+  // section always shows the full split (the API ignores categoryId there).
+  const [categoryId, setCategoryId] = useState('')
+  const drilldownParams = useMemo<IBrandAnalyticsParams>(
+    () => ({ ...params, categoryId: categoryId || undefined }),
+    [params, categoryId],
+  )
+  const { data, isLoading } = useBrandDrilldown(brandId, drilldownParams)
   const products = data?.products ?? []
+  const categories = data?.categories ?? []
   const barData = products
     .slice(0, 12)
     .map((p) => ({ name: p.productName, value: p.revenue }))
@@ -34,49 +40,9 @@ export function BrandDrilldown({ brandId, params, onBack }: BrandDrilldownProps)
     name: t.date.slice(5),
     value: t.revenue,
   }))
-
-  const columns: DataTableColumn<IBrandProductRow>[] = [
-    {
-      key: 'product',
-      header: 'Product',
-      className: 'font-medium text-text-1',
-      render: (r) => r.productName,
-    },
-    {
-      key: 'units',
-      header: 'Units',
-      align: 'right',
-      numeric: true,
-      render: (r) => Math.round(r.units),
-    },
-    {
-      key: 'revenue',
-      header: 'Revenue',
-      align: 'right',
-      numeric: true,
-      render: (r) => formatCurrency(r.revenue),
-    },
-    {
-      key: 'profit',
-      header: 'Profit',
-      align: 'right',
-      numeric: true,
-      render: (r) => formatCurrency(r.profit),
-    },
-    {
-      key: 'margin',
-      header: 'Margin',
-      align: 'right',
-      numeric: true,
-      render: (r) => `${r.marginPct}%`,
-    },
-    {
-      key: 'share',
-      header: 'Share',
-      align: 'right',
-      numeric: true,
-      render: (r) => `${r.sharePct}%`,
-    },
+  const categoryOptions = [
+    { label: 'All categories', value: '' },
+    ...categories.map((c) => ({ label: c.categoryName, value: c.categoryId })),
   ]
 
   return (
@@ -126,6 +92,8 @@ export function BrandDrilldown({ brandId, params, onBack }: BrandDrilldownProps)
         />
       </div>
 
+      {!isLoading && <BrandCategoryBreakdown categories={categories} />}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="border border-border rounded-xl p-4 bg-surface">
           <h3 className="text-sm font-semibold text-text-1 mb-3">
@@ -165,16 +133,35 @@ export function BrandDrilldown({ brandId, params, onBack }: BrandDrilldownProps)
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-text-1">Product breakdown</h3>
+        {categoryOptions.length > 1 && (
+          <Select
+            value={categoryId}
+            onChange={setCategoryId}
+            aria-label="Filter products by category"
+            options={categoryOptions}
+          />
+        )}
+      </div>
       <DataTable<IBrandProductRow>
-        columns={columns}
+        columns={brandProductColumns}
         rows={products}
         getRowKey={(r) => r.productId}
         isLoading={isLoading}
         zebra
         empty={
           <EmptyState
-            title="No product sales in this range"
-            description="This brand had no sales in the selected window."
+            title={
+              categoryId
+                ? 'No product sales for this category'
+                : 'No product sales in this range'
+            }
+            description={
+              categoryId
+                ? 'Try a different category, or clear the filter.'
+                : 'This brand had no sales in the selected window.'
+            }
           />
         }
       />

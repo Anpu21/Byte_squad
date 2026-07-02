@@ -9,6 +9,7 @@ export type MetricKey =
 export type ComparisonView =
     | 'summary'
     | 'sales'
+    | 'products'
     | 'inventory'
     | 'loyalty'
     | 'customers'
@@ -18,6 +19,7 @@ export type ComparisonView =
 export const COMPARISON_VIEWS: ComparisonView[] = [
     'summary',
     'sales',
+    'products',
     'inventory',
     'loyalty',
     'customers',

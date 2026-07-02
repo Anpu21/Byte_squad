@@ -9,4 +9,6 @@ export interface IBrand {
   createdByUserId: string | null
   createdAt: string
   updatedAt: string
+  /** Products referencing this brand (present in list/detail; gates delete). */
+  productCount?: number
 }

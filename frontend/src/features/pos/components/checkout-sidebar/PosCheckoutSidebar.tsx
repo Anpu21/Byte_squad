@@ -36,6 +36,7 @@ export function PosCheckoutSidebar({
                 redeemPoints={state.loyaltyRedeemPoints}
                 onRedeemChange={state.setLoyaltyRedeemPoints}
                 maxRedeemable={checkout.loyaltyRedeem.maxRedeemable}
+                redeemDisabledReason={checkout.loyaltyRedeem.disabledReason}
             />
             <PosCreditAccountCard
                 creditAccount={state.creditAccount}

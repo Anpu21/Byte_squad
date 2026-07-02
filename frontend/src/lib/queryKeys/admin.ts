@@ -15,6 +15,8 @@ export const admin = {
         ['admin', 'comparison', submitted] as const,
     branchAnalyticsComparison: (submitted: unknown) =>
         ['admin', 'branch-analytics-comparison', submitted] as const,
+    branchAnalyticsProducts: (submitted: unknown) =>
+        ['admin', 'branch-analytics-products', submitted] as const,
     branchAnalyticsBranches: () =>
         ['admin', 'branch-analytics-branches'] as const,
     dashboard: () => ['admin', 'dashboard'] as const,

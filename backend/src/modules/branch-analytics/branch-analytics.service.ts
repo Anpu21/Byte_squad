@@ -2,11 +2,14 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserRole } from '@common/enums/user-roles.enums';
 import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
 import { BranchAnalyticsRepository } from './branch-analytics.repository';
+import { BranchAnalyticsProductsRepository } from './branch-analytics-products.repository';
 import type { BranchAnalyticsComparisonDto } from './dto/branch-analytics-comparison.dto';
+import type { BranchAnalyticsProductsDto } from './dto/branch-analytics-products.dto';
 import {
   BRANCH_ANALYTICS_SECTIONS,
   type BranchAnalyticsBranchOption,
   type BranchAnalyticsComparisonResponse,
+  type BranchAnalyticsProductsResponse,
 } from './types';
 
 interface BranchAnalyticsActor {
@@ -19,6 +22,7 @@ interface BranchAnalyticsActor {
 export class BranchAnalyticsService {
   constructor(
     private readonly analytics: BranchAnalyticsRepository,
+    private readonly products: BranchAnalyticsProductsRepository,
     private readonly loyaltySettings: LoyaltySettingsService,
   ) {}
 
@@ -26,20 +30,8 @@ export class BranchAnalyticsService {
     actor: BranchAnalyticsActor,
     dto: BranchAnalyticsComparisonDto,
   ): Promise<BranchAnalyticsComparisonResponse> {
-    const startDate = new Date(dto.startDate);
-    const endDate = new Date(dto.endDate);
-    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
-      throw new BadRequestException('Invalid date range');
-    }
-    if (startDate > endDate) {
-      throw new BadRequestException('startDate must be before endDate');
-    }
-
-    const requestedIds = dto.branchIds ?? [];
-    const branchIds =
-      actor.role === UserRole.MANAGER
-        ? this.resolveManagerBranchIds(actor.branchId, requestedIds)
-        : this.resolveAdminBranchIds(requestedIds);
+    const { startDate, endDate } = this.parseDateRange(dto);
+    const branchIds = this.resolveBranchIds(actor, dto.branchIds ?? []);
 
     const branches = await this.analytics.findBranchesByIds(branchIds);
     if (branches.length !== branchIds.length) {
@@ -64,6 +56,38 @@ export class BranchAnalyticsService {
   }
 
   /**
+   * Accurate per-product cross-branch comparison (Products tab). Same RBAC +
+   * branch resolution + date parsing as `compareBranches`, delegating to the
+   * dedicated products repository which returns a paginated, searchable
+   * product×branch matrix (every selected branch present, zero-filled).
+   */
+  async compareProducts(
+    actor: BranchAnalyticsActor,
+    dto: BranchAnalyticsProductsDto,
+  ): Promise<BranchAnalyticsProductsResponse> {
+    const { startDate, endDate } = this.parseDateRange(dto);
+    const branchIds = this.resolveBranchIds(actor, dto.branchIds ?? []);
+
+    const branches = await this.analytics.findBranchesByIds(branchIds);
+    if (branches.length !== branchIds.length) {
+      throw new BadRequestException('One or more branches were not found');
+    }
+
+    return this.products.getProductComparison({
+      branches: branches.map((branch) => ({
+        branchId: branch.id,
+        branchName: branch.name,
+      })),
+      startDate,
+      endDate,
+      search: dto.search,
+      sort: dto.sort ?? 'revenue',
+      page: dto.page,
+      limit: dto.limit,
+    });
+  }
+
+  /**
    * Branch roster for the comparison picker. Returns every branch (id + name +
    * active flag) for admins AND managers, so a manager can pick which other
    * branches to compare their own against. Intentionally NOT branch-scoped —
@@ -76,6 +100,30 @@ export class BranchAnalyticsService {
       name: branch.name,
       isActive: branch.isActive,
     }));
+  }
+
+  private parseDateRange(dto: { startDate: string; endDate: string }): {
+    startDate: Date;
+    endDate: Date;
+  } {
+    const startDate = new Date(dto.startDate);
+    const endDate = new Date(dto.endDate);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      throw new BadRequestException('Invalid date range');
+    }
+    if (startDate > endDate) {
+      throw new BadRequestException('startDate must be before endDate');
+    }
+    return { startDate, endDate };
+  }
+
+  private resolveBranchIds(
+    actor: BranchAnalyticsActor,
+    requestedIds: readonly string[],
+  ): string[] {
+    return actor.role === UserRole.MANAGER
+      ? this.resolveManagerBranchIds(actor.branchId, requestedIds)
+      : this.resolveAdminBranchIds(requestedIds);
   }
 
   private resolveAdminBranchIds(branchIds: readonly string[]): string[] {

@@ -5,6 +5,11 @@ import type {
   IBrandAnalyticsParams,
   IBrandOverviewResponse,
   IBrandDrilldownResponse,
+  ICreateBrandPayload,
+  IUpdateBrandPayload,
+  ICategoryBrandComparisonResponse,
+  ICategoryProductsResponse,
+  ICategoryProductsParams,
 } from '@/types'
 
 export const brandsService = {
@@ -13,6 +18,35 @@ export const brandsService = {
       params: includeInactive ? { includeInactive: true } : undefined,
     })
     return response.data.data
+  },
+
+  get: async (id: string): Promise<IBrand> => {
+    const response = await api.get<IApiResponse<IBrand>>(`/brands/${id}`)
+    return response.data.data
+  },
+
+  create: async (payload: ICreateBrandPayload): Promise<IBrand> => {
+    const response = await api.post<IApiResponse<IBrand>>('/brands', payload)
+    return response.data.data
+  },
+
+  update: async (id: string, payload: IUpdateBrandPayload): Promise<IBrand> => {
+    const response = await api.patch<IApiResponse<IBrand>>(
+      `/brands/${id}`,
+      payload,
+    )
+    return response.data.data
+  },
+
+  archive: async (id: string): Promise<IBrand> => {
+    const response = await api.patch<IApiResponse<IBrand>>(
+      `/brands/${id}/archive`,
+    )
+    return response.data.data
+  },
+
+  remove: async (id: string): Promise<void> => {
+    await api.delete(`/brands/${id}`)
   },
 
   getOverview: async (
@@ -31,6 +65,27 @@ export const brandsService = {
   ): Promise<IBrandDrilldownResponse> => {
     const response = await api.get<IApiResponse<IBrandDrilldownResponse>>(
       `/brands/analytics/${brandId}`,
+      { params },
+    )
+    return response.data.data
+  },
+
+  getCategoryComparison: async (
+    categoryId: string,
+    params: IBrandAnalyticsParams,
+  ): Promise<ICategoryBrandComparisonResponse> => {
+    const response = await api.get<
+      IApiResponse<ICategoryBrandComparisonResponse>
+    >(`/brands/analytics/by-category/${categoryId}`, { params })
+    return response.data.data
+  },
+
+  getCategoryProducts: async (
+    categoryId: string,
+    params: ICategoryProductsParams,
+  ): Promise<ICategoryProductsResponse> => {
+    const response = await api.get<IApiResponse<ICategoryProductsResponse>>(
+      `/brands/analytics/by-category/${categoryId}/products`,
       { params },
     )
     return response.data.data

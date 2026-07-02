@@ -9,6 +9,7 @@ import {
 import type { EntityManager } from 'typeorm';
 import { LoyaltyRepository } from '@/modules/loyalty/loyalty.repository';
 import { LoyaltyAccount } from '@/modules/loyalty/entities/loyalty-account.entity';
+import { LoyaltyCustomer } from '@/modules/loyalty/entities/loyalty-customer.entity';
 import { LoyaltyLedgerEntry } from '@/modules/loyalty/entities/loyalty-ledger-entry.entity';
 import { LoyaltySettings } from '@/modules/loyalty/entities/loyalty-settings.entity';
 import { LoyaltySettingsService } from '@/modules/loyalty/loyalty-settings.service';
@@ -27,6 +28,7 @@ import type {
 import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
 import { ListLoyaltyCustomersQueryDto } from '@/modules/loyalty/dto/list-loyalty-customers-query.dto';
 import { EnrollWalkInCustomerDto } from '@/modules/loyalty/dto/enroll-walk-in-customer.dto';
+import { UpdateWalkInCustomerDto } from '@/modules/loyalty/dto/update-walk-in-customer.dto';
 import { AdjustLoyaltyPointsDto } from '@/modules/loyalty/dto/adjust-loyalty-points.dto';
 import { LoyaltyLedgerEntryType } from '@common/enums/loyalty-ledger-entry-type.enum';
 
@@ -349,6 +351,93 @@ export class LoyaltyService {
     };
   }
 
+  /**
+   * Edits a walk-in member's name/phone. A changed phone is normalized and
+   * rejected if it collides with a registered user or another walk-in.
+   * Non-admins may only edit a walk-in homed in their own branch.
+   */
+  async updateWalkInCustomer(
+    id: string,
+    dto: UpdateWalkInCustomerDto,
+    actor: AuthUser,
+  ): Promise<LoyaltyLookupResult> {
+    const walkIn = await this.loyaltyCustomers.findById(id);
+    if (!walkIn) {
+      throw new NotFoundException('Walk-in customer not found');
+    }
+
+    if (actor.role !== UserRole.ADMIN) {
+      if (!actor.branchId) {
+        throw new ForbiddenException('You are not assigned to a branch');
+      }
+      if (walkIn.branchId !== actor.branchId) {
+        throw new ForbiddenException('You do not have access to this walk-in');
+      }
+    }
+
+    const patch: Partial<
+      Pick<LoyaltyCustomer, 'phone' | 'firstName' | 'lastName'>
+    > = {};
+
+    if (dto.phone !== undefined) {
+      const normalized = normalizeSriLankaPhone(dto.phone);
+      if (!normalized) {
+        throw new BadRequestException('Invalid phone number');
+      }
+      if (normalized !== walkIn.phone) {
+        const existingUser = await this.users.findByPhone(normalized);
+        if (existingUser) {
+          throw new BadRequestException(
+            'Phone already linked to a registered account',
+          );
+        }
+        const otherWalkIn = await this.loyaltyCustomers.findByPhone(normalized);
+        if (otherWalkIn && otherWalkIn.id !== id) {
+          throw new BadRequestException(
+            'Another walk-in already uses this phone',
+          );
+        }
+        patch.phone = normalized;
+      }
+    }
+    if (dto.firstName !== undefined) patch.firstName = dto.firstName.trim();
+    if (dto.lastName !== undefined) {
+      const trimmed = dto.lastName.trim();
+      patch.lastName = trimmed.length > 0 ? trimmed : null;
+    }
+
+    const current =
+      Object.keys(patch).length > 0
+        ? ((await this.loyaltyCustomers.update(id, patch)) ?? walkIn)
+        : walkIn;
+
+    // Build the wallet result directly (not via lookupByPhone) so a legacy
+    // walk-in with a malformed stored phone can still be renamed.
+    const account = await this.getOrCreateAccount({ loyaltyCustomerId: id });
+    const settings = await this.settings.get();
+    return {
+      ownerType: 'walkIn',
+      userId: null,
+      loyaltyCustomerId: current.id,
+      tier: this.resolveTier(account.lifetimePointsEarned, settings),
+      firstName: current.firstName,
+      lastName: current.lastName,
+      phone: current.phone,
+      pointsBalance: account.pointsBalance,
+      lifetimePointsEarned: account.lifetimePointsEarned,
+      lifetimePointsRedeemed: account.lifetimePointsRedeemed,
+    };
+  }
+
+  /**
+   * Public entry point for the customer-hub merge: fold a walk-in wallet + its
+   * sales/ledger history into a registered user (delegates to the transactional
+   * repository merge, which also writes a MERGE_TRANSFER audit entry).
+   */
+  async mergeWalkIn(userId: string, loyaltyCustomerId: string): Promise<void> {
+    await this.loyalty.mergeWalkInIntoUser({ userId, loyaltyCustomerId });
+  }
+
   async syncVerifiedUserByPhone(userId: string): Promise<LoyaltyAccount> {
     const user = await this.users.findEntityById(userId);
     if (!user?.phone) {
@@ -417,7 +506,10 @@ export class LoyaltyService {
   }
 
   /** Admin may span all branches (null) or filter to one; others pinned. */
-  private resolveBranchScope(actor: AuthUser, requested?: string): string | null {
+  private resolveBranchScope(
+    actor: AuthUser,
+    requested?: string,
+  ): string | null {
     if (actor.role === UserRole.ADMIN) return requested ?? null;
     if (!actor.branchId) {
       throw new ForbiddenException('You are not assigned to a branch');

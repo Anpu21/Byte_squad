@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -23,6 +24,7 @@ import { ListLoyaltyCustomersQueryDto } from '@/modules/loyalty/dto/list-loyalty
 import { ListLoyaltyHistoryQueryDto } from '@/modules/loyalty/dto/list-loyalty-history-query.dto';
 import { LookupLoyaltyByPhoneQueryDto } from '@/modules/loyalty/dto/lookup-loyalty-by-phone-query.dto';
 import { EnrollWalkInCustomerDto } from '@/modules/loyalty/dto/enroll-walk-in-customer.dto';
+import { UpdateWalkInCustomerDto } from '@/modules/loyalty/dto/update-walk-in-customer.dto';
 import type {
   LoyaltyHistoryResponse,
   LoyaltyLookupResult,
@@ -80,6 +82,20 @@ export class LoyaltyController {
     @CurrentUser() actor: AuthUser,
   ): Promise<LoyaltyLookupResult> {
     return this.loyalty.enrollWalkInCustomer(body, actor);
+  }
+
+  /**
+   * Edit a walk-in member's name/phone (customer-hub management action).
+   * Manager/admin only; the service branch-scopes non-admins.
+   */
+  @Patch(APP_ROUTES.LOYALTY.CUSTOMER_BY_ID)
+  @Roles(UserRole.MANAGER, UserRole.ADMIN)
+  updateWalkIn(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: UpdateWalkInCustomerDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<LoyaltyLookupResult> {
+    return this.loyalty.updateWalkInCustomer(id, body, actor);
   }
 
   /**

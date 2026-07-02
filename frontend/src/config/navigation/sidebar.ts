@@ -123,6 +123,7 @@ export const SIDEBAR: NavEntry[] = [
     { id: 'reports', label: 'nav.reports', path: R.REPORTS, Icon: BarChart3, roles: [ADMIN, MANAGER], group: 'Finance' },
 
     // ── People ──
+    { id: 'customers', label: 'nav.customers', path: R.CUSTOMERS, Icon: Users, roles: [ADMIN, MANAGER], group: 'People' },
     { id: 'loyalty-admin', label: 'nav.customerLoyalty', path: R.ADMIN_LOYALTY, Icon: Sparkles, roles: [ADMIN], group: 'People' },
     { id: 'loyalty-manager', label: 'nav.customerLoyalty', path: R.MANAGER_LOYALTY, Icon: Sparkles, roles: [MANAGER], group: 'People' },
     { id: 'users', label: 'nav.users', path: R.USER_MANAGEMENT, Icon: Users, roles: [ADMIN], group: 'People' },

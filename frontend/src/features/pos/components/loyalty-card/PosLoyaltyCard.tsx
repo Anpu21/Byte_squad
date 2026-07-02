@@ -28,6 +28,8 @@ export interface IPosLoyaltyCardProps {
     onRedeemChange: (next: number) => void;
     /** Server-mirrored redeem cap for this bill; clamps the redeem input. */
     maxRedeemable?: number;
+    /** Why redemption is unavailable when the cap is 0 (shown on the card). */
+    redeemDisabledReason?: string | null;
 }
 
 /**
@@ -46,6 +48,7 @@ export function PosLoyaltyCard({
     redeemPoints,
     onRedeemChange,
     maxRedeemable,
+    redeemDisabledReason,
 }: IPosLoyaltyCardProps) {
     const [phoneRaw, setPhoneRaw] = useState('');
     const debouncedPhone = useDebouncedSanitisedPhone(phoneRaw);
@@ -124,6 +127,7 @@ export function PosLoyaltyCard({
                     redeemPoints={redeemPoints}
                     onRedeemChange={onRedeemChange}
                     maxRedeemable={maxRedeemable}
+                    redeemDisabledReason={redeemDisabledReason}
                 />
             ) : (
                 <PosLoyaltyPhoneField
