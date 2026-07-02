@@ -110,7 +110,21 @@ export function usePosReturn(onClose: () => void) {
     const picked = parsed.filter((p) => p.total > 0);
     const overCap = parsed.some((p) => p.over);
     const refundTotal = picked.reduce((sum, p) => sum + p.refund, 0);
-    const canSubmit = picked.length > 0 && !overCap && !busy;
+    // Returned-lines validity WITHOUT this hook's busy flag, so the exchange
+    // flow (which has its own busy) can reuse it as its "goods in" gate.
+    const hasReturnLines = picked.length > 0 && !overCap;
+    const canSubmit = hasReturnLines && !busy;
+
+    // The picked lines as a create payload — shared by the refund submit and
+    // the exchange flow (returnedLines).
+    function buildReturnLines(): ICreateSalesReturnLine[] {
+        return picked.map((p) => ({
+            saleItemId: p.line.saleItemId,
+            goodQuantity: p.good,
+            badQuantity: p.bad,
+            restockGood: p.draft.restockGood,
+        }));
+    }
 
     function patchDraft(saleItemId: string, patch: Partial<ILineDraft>) {
         setDrafts((prev) => {
@@ -166,12 +180,7 @@ export function usePosReturn(onClose: () => void) {
     async function handleSubmit() {
         if (!lookup || !canSubmit) return;
         setBusy(true);
-        const lines: ICreateSalesReturnLine[] = picked.map((p) => ({
-            saleItemId: p.line.saleItemId,
-            goodQuantity: p.good,
-            badQuantity: p.bad,
-            restockGood: p.draft.restockGood,
-        }));
+        const lines = buildReturnLines();
         try {
             const ret = await returnsService.create({
                 saleId: lookup.saleId,
@@ -213,6 +222,8 @@ export function usePosReturn(onClose: () => void) {
         overCap,
         refundTotal,
         canSubmit,
+        hasReturnLines,
+        buildReturnLines,
         patchDraft,
         patchQty,
         handleSubmit,
