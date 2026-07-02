@@ -147,6 +147,7 @@ export const APP_ROUTES = {
   RETURNS: {
     BASE: `${API_PREFIX}/returns`,
     LOOKUP: 'lookup',
+    ANALYTICS: 'analytics',
     BY_ID: ':id',
   },
 

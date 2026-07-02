@@ -10,6 +10,7 @@ import { StockMovement } from '@pos/entities/stock-movement.entity';
 import { SalesReturn } from '@inventory/entities/sales-return.entity';
 import { SalesReturnItem } from '@inventory/entities/sales-return-item.entity';
 import { SalesReturnRepository } from '@inventory/sales-return.repository';
+import { ReturnsAnalyticsRepository } from '@inventory/returns-analytics.repository';
 import { PosService } from '@pos/pos.service';
 import { AccountingService } from '@accounting/accounting.service';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
@@ -17,11 +18,15 @@ import { UserRole } from '@common/enums/user-roles.enums';
 import { AuthUser } from '@common/types/auth-user.type';
 import { CreateSalesReturnDto } from '@inventory/dto/create-sales-return.dto';
 import { ListReturnsQueryDto } from '@inventory/dto/list-returns-query.dto';
+import { ReturnsAnalyticsQueryDto } from '@inventory/dto/returns-analytics-query.dto';
 import {
   PaginatedSalesReturns,
   ReturnableLine,
+  ReturnsAnalytics,
   SaleReturnLookup,
 } from '@inventory/types';
+
+const ANALYTICS_DEFAULT_DAYS = 30;
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -35,6 +40,7 @@ export class ReturnsService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly returns: SalesReturnRepository,
+    private readonly analytics: ReturnsAnalyticsRepository,
     private readonly sales: PosService,
     private readonly accounting: AccountingService,
   ) {}
@@ -298,6 +304,57 @@ export class ReturnsService {
       limit,
       totalPages: Math.max(1, Math.ceil(total / limit)),
     };
+  }
+
+  /** KPI totals + by-branch/by-cashier/trend breakdowns, role-scoped. */
+  async getAnalytics(
+    actor: AuthUser,
+    query: ReturnsAnalyticsQueryDto,
+  ): Promise<ReturnsAnalytics> {
+    const { branchId, cashierId } = this.resolveReadScope(
+      actor,
+      query.branchId,
+      query.cashierId,
+    );
+    const { startDate, endDate } = this.resolveWindow(
+      query.startDate,
+      query.endDate,
+    );
+    const opts = { branchId, cashierId, startDate, endDate };
+    const [totals, damagedQty, byBranch, byCashier, trend] = await Promise.all([
+      this.analytics.totals(opts),
+      this.analytics.damagedQty(opts),
+      this.analytics.byBranch(opts),
+      this.analytics.byCashier(opts),
+      this.analytics.trend(opts),
+    ]);
+    return {
+      range: { startDate, endDate },
+      totals: { ...totals, damagedQty },
+      byBranch,
+      byCashier,
+      trend,
+    };
+  }
+
+  /** Default the report window to the last 30 days when unspecified. */
+  private resolveWindow(
+    startDate?: string,
+    endDate?: string,
+  ): { startDate: string; endDate: string } {
+    const end = endDate ?? new Date().toISOString().slice(0, 10);
+    const start =
+      startDate ??
+      new Date(
+        new Date(`${end}T00:00:00Z`).getTime() -
+          (ANALYTICS_DEFAULT_DAYS - 1) * 24 * 60 * 60 * 1000,
+      )
+        .toISOString()
+        .slice(0, 10);
+    if (start > end) {
+      throw new BadRequestException('startDate must be on or before endDate');
+    }
+    return { startDate: start, endDate: end };
   }
 
   private assertBranchAccess(actor: AuthUser, branchId: string): void {

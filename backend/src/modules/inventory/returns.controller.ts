@@ -3,8 +3,13 @@ import { ReturnsService } from '@inventory/returns.service';
 import { LookupSaleQueryDto } from '@inventory/dto/lookup-sale-query.dto';
 import { CreateSalesReturnDto } from '@inventory/dto/create-sales-return.dto';
 import { ListReturnsQueryDto } from '@inventory/dto/list-returns-query.dto';
+import { ReturnsAnalyticsQueryDto } from '@inventory/dto/returns-analytics-query.dto';
 import { SalesReturn } from '@inventory/entities/sales-return.entity';
-import { PaginatedSalesReturns, SaleReturnLookup } from '@inventory/types';
+import {
+  PaginatedSalesReturns,
+  ReturnsAnalytics,
+  SaleReturnLookup,
+} from '@inventory/types';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -36,6 +41,15 @@ export class ReturnsController {
     @CurrentUser() actor: AuthUser,
   ): Promise<SalesReturn> {
     return this.service.createReturn(actor, dto);
+  }
+
+  @Get(APP_ROUTES.RETURNS.ANALYTICS)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER)
+  analytics(
+    @Query() query: ReturnsAnalyticsQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<ReturnsAnalytics> {
+    return this.service.getAnalytics(actor, query);
   }
 
   @Get()

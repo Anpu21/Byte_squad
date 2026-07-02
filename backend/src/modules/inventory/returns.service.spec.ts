@@ -6,6 +6,7 @@ import { UserRole } from '@common/enums/user-roles.enums';
 import { LedgerEntryType } from '@common/enums/ledger-entry.enum';
 import { ReturnsService } from './returns.service';
 import { SalesReturnRepository } from './sales-return.repository';
+import { ReturnsAnalyticsRepository } from './returns-analytics.repository';
 import { PosService } from '@pos/pos.service';
 import { AccountingService } from '@accounting/accounting.service';
 import { Inventory } from '@inventory/entities/inventory.entity';
@@ -77,6 +78,7 @@ const baseDto = {
 describe('ReturnsService', () => {
   let service: ReturnsService;
   let returnsRepo: jest.Mocked<SalesReturnRepository>;
+  let analyticsRepo: jest.Mocked<ReturnsAnalyticsRepository>;
   let sales: jest.Mocked<PosService>;
   let accounting: jest.Mocked<AccountingService>;
   let invRepo: {
@@ -130,6 +132,16 @@ describe('ReturnsService', () => {
           },
         },
         {
+          provide: ReturnsAnalyticsRepository,
+          useValue: {
+            totals: jest.fn(),
+            damagedQty: jest.fn(),
+            byBranch: jest.fn(),
+            byCashier: jest.fn(),
+            trend: jest.fn(),
+          },
+        },
+        {
           provide: PosService,
           useValue: { findOneById: jest.fn(), findByInvoiceNumber: jest.fn() },
         },
@@ -143,6 +155,7 @@ describe('ReturnsService', () => {
 
     service = moduleRef.get(ReturnsService);
     returnsRepo = moduleRef.get(SalesReturnRepository);
+    analyticsRepo = moduleRef.get(ReturnsAnalyticsRepository);
     sales = moduleRef.get(PosService);
     accounting = moduleRef.get(AccountingService);
   });
@@ -245,6 +258,49 @@ describe('ReturnsService', () => {
       });
       expect(returnsRepo.listReturns).toHaveBeenLastCalledWith(
         expect.objectContaining({ branchId: BRANCH_B, cashierId: 'c-9' }),
+      );
+    });
+  });
+
+  describe('getAnalytics', () => {
+    beforeEach(() => {
+      analyticsRepo.totals.mockResolvedValue({
+        returnsCount: 2,
+        totalRefunded: 500,
+        restockedValue: 300,
+      });
+      analyticsRepo.damagedQty.mockResolvedValue(4);
+      analyticsRepo.byBranch.mockResolvedValue([]);
+      analyticsRepo.byCashier.mockResolvedValue([]);
+      analyticsRepo.trend.mockResolvedValue([]);
+    });
+
+    it('assembles totals with damaged qty from stock movements', async () => {
+      const result = await service.getAnalytics(ADMIN, {
+        startDate: '2026-06-01',
+        endDate: '2026-06-30',
+      });
+
+      expect(result.totals).toEqual({
+        returnsCount: 2,
+        totalRefunded: 500,
+        restockedValue: 300,
+        damagedQty: 4,
+      });
+      expect(result.range).toEqual({
+        startDate: '2026-06-01',
+        endDate: '2026-06-30',
+      });
+    });
+
+    it('scopes analytics to the cashier for a cashier actor', async () => {
+      await service.getAnalytics(CASHIER, {});
+
+      expect(analyticsRepo.totals).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: BRANCH_A, cashierId: CASHIER.id }),
+      );
+      expect(analyticsRepo.damagedQty).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: BRANCH_A, cashierId: CASHIER.id }),
       );
     });
   });
