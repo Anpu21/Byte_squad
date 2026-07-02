@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { LuBanknote as Banknote, LuCreditCard as CreditCard, LuSmartphone as Smartphone, LuFileText as FileText, LuBuilding2 as Building2 } from 'react-icons/lu';
+import { LuBanknote as Banknote, LuCreditCard as CreditCard } from 'react-icons/lu';
 import { type IconType as LucideIcon } from 'react-icons';
 import type { TPaymentMethod } from '@/types';
 
@@ -11,29 +11,28 @@ interface IPosPaymentMethodProps {
 interface IMethodOption {
     key: TPaymentMethod;
     label: string;
-    /** Number-row shortcut (1-5). Skipped when modifier keys are held. */
-    shortcut: '1' | '2' | '3' | '4' | '5';
+    /** Number-row shortcut. Skipped when modifier keys are held. */
+    shortcut: '1' | '2';
     Icon: LucideIcon;
 }
 
+// The shop accepts Cash + Card only (card settles via PayHere). The Credit
+// (khata) tender is driven separately by the credit-account panel.
 const METHODS: readonly IMethodOption[] = [
     { key: 'Cash', label: 'Cash', shortcut: '1', Icon: Banknote },
     { key: 'Card', label: 'Card', shortcut: '2', Icon: CreditCard },
-    { key: 'Mobile', label: 'Mobile', shortcut: '3', Icon: Smartphone },
-    { key: 'Cheque', label: 'Cheque', shortcut: '4', Icon: FileText },
-    { key: 'Bank', label: 'Bank', shortcut: '5', Icon: Building2 },
 ];
 
 /**
- * Five-pill row to switch the active payment tender. The active pill uses
+ * Pill row to switch the active payment tender. The active pill uses
  * the primary token; inactive pills use the muted surface tone so the
  * cashier can scan the row at a glance.
  *
- * Number-row shortcuts (1-5) fire `onChange` when the matching key is
- * pressed at the document level. Modifier-key combinations (Ctrl/Meta/Alt)
- * are ignored so we don't hijack browser shortcuts, and we bail when the
- * focused element is an input/textarea/contenteditable to avoid swallowing
- * a numeric entry in the tender forms.
+ * Number-row shortcuts fire `onChange` when the matching key is pressed at
+ * the document level. Modifier-key combinations (Ctrl/Meta/Alt) are ignored
+ * so we don't hijack browser shortcuts, and we bail when the focused element
+ * is an input/textarea/contenteditable to avoid swallowing a numeric entry
+ * in the tender forms.
  */
 export function PosPaymentMethod({
     value,
@@ -64,7 +63,7 @@ export function PosPaymentMethod({
         <div
             role="radiogroup"
             aria-label="Payment method"
-            className="grid grid-cols-3 sm:grid-cols-5 gap-2"
+            className="grid grid-cols-2 gap-2"
         >
             {METHODS.map(({ key, label, shortcut, Icon }) => {
                 const isActive = key === value;

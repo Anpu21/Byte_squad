@@ -1,11 +1,5 @@
-// Shanel POS payment-method literal-union. Wider than the legacy
-// `@common/enums/payment-method` enum (which is used for customer-order
-// online checkout): the POS supports split-tender across cash, card,
-// mobile wallet, cheque, bank transfer, and store credit.
-export type PaymentMethod =
-  | 'Cash'
-  | 'Card'
-  | 'Mobile'
-  | 'Cheque'
-  | 'Bank'
-  | 'Credit';
+// POS payment-method literal-union. The shop accepts only Cash and Card
+// (card settles via PayHere), plus Credit — the buy-now-pay-later (khata)
+// tender that rides a customer's store-credit account. Mobile wallet /
+// cheque / bank transfer were removed as tender options.
+export type PaymentMethod = 'Cash' | 'Card' | 'Credit';

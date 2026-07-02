@@ -4,11 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { PosPaymentMethod } from '../PosPaymentMethod';
 
 describe('PosPaymentMethod', () => {
-    it('renders all five payment-method pills and marks the active one', () => {
+    it('renders the Cash + Card pills, marks the active one, and omits removed tenders', () => {
         render(<PosPaymentMethod value="Cash" onChange={() => {}} />);
-        const labels = ['Cash', 'Card', 'Mobile', 'Cheque', 'Bank'];
-        for (const label of labels) {
+        for (const label of ['Cash', 'Card']) {
             expect(screen.getByRole('radio', { name: new RegExp(label, 'i') })).toBeInTheDocument();
+        }
+        for (const gone of ['Mobile', 'Cheque', 'Bank']) {
+            expect(screen.queryByRole('radio', { name: new RegExp(gone, 'i') })).toBeNull();
         }
         const cash = screen.getByRole('radio', { name: /Cash/i });
         expect(cash).toHaveAttribute('aria-checked', 'true');
@@ -19,15 +21,15 @@ describe('PosPaymentMethod', () => {
     it('fires onChange when a non-active pill is clicked', async () => {
         const onChange = vi.fn();
         render(<PosPaymentMethod value="Cash" onChange={onChange} />);
-        await userEvent.click(screen.getByRole('radio', { name: /Cheque/i }));
-        expect(onChange).toHaveBeenCalledExactlyOnceWith('Cheque');
+        await userEvent.click(screen.getByRole('radio', { name: /Card/i }));
+        expect(onChange).toHaveBeenCalledExactlyOnceWith('Card');
     });
 
-    it('switches to Mobile when the "3" key is pressed at document level', async () => {
+    it('switches to Card when the "2" key is pressed at document level', async () => {
         const onChange = vi.fn();
         render(<PosPaymentMethod value="Cash" onChange={onChange} />);
-        await userEvent.keyboard('3');
-        expect(onChange).toHaveBeenCalledExactlyOnceWith('Mobile');
+        await userEvent.keyboard('2');
+        expect(onChange).toHaveBeenCalledExactlyOnceWith('Card');
     });
 
     it('does not fire onChange when the same shortcut as the active method is pressed', async () => {
@@ -40,7 +42,7 @@ describe('PosPaymentMethod', () => {
     it('ignores shortcuts when a modifier key is held', async () => {
         const onChange = vi.fn();
         render(<PosPaymentMethod value="Cash" onChange={onChange} />);
-        await userEvent.keyboard('{Control>}3{/Control}');
+        await userEvent.keyboard('{Control>}2{/Control}');
         expect(onChange).not.toHaveBeenCalled();
     });
 
@@ -54,7 +56,7 @@ describe('PosPaymentMethod', () => {
         );
         const input = screen.getByLabelText('distraction');
         await userEvent.click(input);
-        await userEvent.keyboard('3');
+        await userEvent.keyboard('2');
         expect(onChange).not.toHaveBeenCalled();
     });
 });

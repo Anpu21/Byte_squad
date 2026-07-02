@@ -72,7 +72,7 @@ export function PosShiftZPrint({ shift, onDone }: IPosShiftZPrintProps) {
                 {row('Paid out', money(shift.totalPayOut))}
                 <hr />
                 {row('Cash', money(shift.totalCash))}
-                {row('Card / Mobile', money(shift.totalElectronic))}
+                {row('Card', money(shift.totalElectronic))}
                 {row('Cheque', money(shift.totalCheque))}
                 {row('Bank', money(shift.totalBank))}
                 {row('Customer credit', money(shift.totalCredit))}

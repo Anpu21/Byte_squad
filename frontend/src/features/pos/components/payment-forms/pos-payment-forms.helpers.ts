@@ -18,15 +18,6 @@ import type {
 export interface ITenderBag {
     cashTendered: number;
     creditAmount: number;
-    chequeAmount: number;
-    chequeNo: string;
-    chequeDate: string;
-    chequeBank: string;
-    chequeBranch: string;
-    chequeRef: string;
-    chequeDeliveredBy: string;
-    bankTransferAmount: number;
-    bankRef: string;
 }
 
 /**
@@ -34,9 +25,9 @@ export interface ITenderBag {
  * draws on its own subset of bag fields so a stale value from a previous
  * method doesn't leak into the totals.
  *
- * Card / Mobile behave as full-invoice external payments: we record them
- * via `cashAmount = invoiceTotal` so the calc treats the sale as Paid
- * without the cashier needing to type anything.
+ * Card behaves as a full-invoice external payment: we record it via
+ * `cashAmount = invoiceTotal` so the calc treats the sale as Paid without
+ * the cashier needing to type anything (card settles through PayHere).
  */
 export function resolveTenderInputs(
     method: TPaymentMethod,
@@ -64,37 +55,22 @@ export function resolveTenderInputs(
         // backend posts a Credit_Taken row and advances the account balance.
         return { ...baseline, creditAmount: bag.creditAmount };
     }
-    if (method === 'Card' || method === 'Mobile') {
-        return {
-            ...baseline,
-            cashAmount: invoiceTotal,
-            cashTendered: invoiceTotal,
-        };
-    }
-    if (method === 'Cheque') {
-        return { ...baseline, chequeAmount: bag.chequeAmount };
-    }
-    return { ...baseline, bankTransferAmount: bag.bankTransferAmount };
+    // Card: full-invoice external tender settled via PayHere.
+    return {
+        ...baseline,
+        cashAmount: invoiceTotal,
+        cashTendered: invoiceTotal,
+    };
 }
 
 /**
  * Seed the bag with `cashTendered = invoiceTotal` so the common
- * "exact-cash" case requires zero keystrokes. Other tenders default to 0
- * and the cashier opts in by switching methods.
+ * "exact-cash" case requires zero keystrokes.
  */
 export function createInitialTenderBag(invoiceTotal: number): ITenderBag {
     return {
         cashTendered: invoiceTotal,
         creditAmount: 0,
-        chequeAmount: 0,
-        chequeNo: '',
-        chequeDate: '',
-        chequeBank: '',
-        chequeBranch: '',
-        chequeRef: '',
-        chequeDeliveredBy: '',
-        bankTransferAmount: 0,
-        bankRef: '',
     };
 }
 
@@ -118,10 +94,9 @@ interface IBuildPayloadArgs {
 
 /**
  * Map cart rows and the tender bag onto the create-sale payload the
- * backend expects. Card / Mobile / Credit tenders ride the
- * `paymentMethod` field alone — no per-method amount; the backend treats
- * them as Cash-equivalent with `cashAmount = invoice total` so
- * `paidAmount` lands correctly.
+ * backend expects. Card / Credit tenders ride the `paymentMethod` field
+ * alone — no per-method amount; the backend treats them as Cash-equivalent
+ * with `cashAmount = invoice total` so `paidAmount` lands correctly.
  *
  * Loyalty intent is layered on top of the tender bag: when the cashier
  * attached an owner via the loyalty card we send either `customerUserId`
@@ -211,29 +186,14 @@ function buildPaymentTender(
         // Credit_Taken ledger row and advances the khata balance.
         return bag.creditAmount > 0 ? { creditAmount: bag.creditAmount } : {};
     }
-    if (method === 'Card' || method === 'Mobile') {
-        // External tender: send no cash/cheque/bank fields. The backend
-        // stores the method label and treats `paymentAmount` as the
-        // settled total. The cashier verifies receipt externally.
+    if (method === 'Card') {
+        // External tender (PayHere): send no cash fields. The backend stores
+        // the method label and treats `paymentAmount` as the settled total.
         return {};
     }
+    // Cash tender.
     const tender: Partial<ICreateSalePaymentPayload> = {};
-    if (method === 'Cash') {
-        if (cashAmount > 0) tender.cashAmount = cashAmount;
-        if (bag.cashTendered > 0) tender.cashTendered = bag.cashTendered;
-    } else if (method === 'Cheque') {
-        if (bag.chequeAmount > 0) tender.chequeAmount = bag.chequeAmount;
-        if (bag.chequeNo) tender.chequeNo = bag.chequeNo;
-        if (bag.chequeDate) tender.chequeDate = bag.chequeDate;
-        if (bag.chequeBank) tender.chequeBank = bag.chequeBank;
-        if (bag.chequeBranch) tender.chequeBranch = bag.chequeBranch;
-        if (bag.chequeRef) tender.chequeRef = bag.chequeRef;
-        if (bag.chequeDeliveredBy)
-            tender.chequeDeliveredBy = bag.chequeDeliveredBy;
-    } else if (method === 'Bank') {
-        if (bag.bankTransferAmount > 0)
-            tender.bankTransferAmount = bag.bankTransferAmount;
-        if (bag.bankRef) tender.bankRef = bag.bankRef;
-    }
+    if (cashAmount > 0) tender.cashAmount = cashAmount;
+    if (bag.cashTendered > 0) tender.cashTendered = bag.cashTendered;
     return tender;
 }
