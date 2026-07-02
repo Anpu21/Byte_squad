@@ -28,13 +28,6 @@ export function PaymentsView({
         bars={[
           { key: "cash", label: "Cash", color: "var(--primary)" },
           { key: "card", label: "Card", color: "var(--accent)" },
-          { key: "mobile", label: "Mobile", color: "var(--info)" },
-          { key: "cheque", label: "Cheque", color: "var(--warning)" },
-          {
-            key: "bank",
-            label: "Bank",
-            color: "var(--brand-400)",
-          },
           { key: "credit", label: "Credit", color: "var(--danger)" },
         ]}
       />
@@ -54,24 +47,6 @@ export function PaymentsView({
             header: "Card",
             align: "right",
             render: (branch) => money(branch.payments.cardAmount),
-          },
-          {
-            key: "mobile",
-            header: "Mobile",
-            align: "right",
-            render: (branch) => money(branch.payments.mobileAmount),
-          },
-          {
-            key: "cheque",
-            header: "Cheque",
-            align: "right",
-            render: (branch) => money(branch.payments.chequeAmount),
-          },
-          {
-            key: "bank",
-            header: "Bank",
-            align: "right",
-            render: (branch) => money(branch.payments.bankAmount),
           },
           {
             key: "credit",
