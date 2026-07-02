@@ -67,8 +67,8 @@ export function PosCreditEnrollForm({
       aria-label="Enroll customer for store credit"
     >
       <p className="text-[11px] text-text-2">
-        No active credit account found — send a request to the manager to set
-        this customer up.
+        Sends a request to the manager, who approves the credit limit and term
+        before this customer can buy on credit.
       </p>
       <Input
         label="Customer name"
