@@ -83,6 +83,10 @@ function mapToLegacyPaymentMethod(method: PosPaymentMethod): PaymentMethod {
       // ONLINE so the legacy code paths (which only look for CASH vs
       // not-CASH) keep working. The Payment row carries the full detail.
       return PaymentMethod.ONLINE;
+    case 'Exchange':
+      // Replacement leg of an exchange (settled by returned goods). No enum
+      // value; bucket into ONLINE (not-CASH). Payment row carries the detail.
+      return PaymentMethod.ONLINE;
     default: {
       // Exhaustiveness guard: when a new tender is added to the
       // PosPaymentMethod union, TypeScript will flag this branch and

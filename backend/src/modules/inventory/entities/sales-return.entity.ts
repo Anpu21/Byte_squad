@@ -72,6 +72,15 @@ export class SalesReturn {
   @Column({ type: 'varchar', length: 32, default: 'Completed' })
   status!: string;
 
+  // 'Refund' — a cash/ledger refund (default). 'Exchange' — settled by a
+  // replacement sale; excluded from cash-refund KPIs.
+  @Column({ type: 'varchar', length: 16, default: 'Refund' })
+  type!: string;
+
+  // The replacement Sale issued for an exchange (NULL for a plain refund).
+  @Column({ type: 'uuid', name: 'replacement_sale_id', nullable: true })
+  replacementSaleId!: string | null;
+
   @Column({ type: 'uuid', name: 'created_by_user_id' })
   createdByUserId!: string;
 

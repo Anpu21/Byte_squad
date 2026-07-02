@@ -1713,6 +1713,7 @@ export class AdminSeedService implements OnModuleInit {
       case 'Card':
         return PaymentMethod.CARD;
       case 'Credit':
+      case 'Exchange':
         return PaymentMethod.ONLINE;
       default: {
         const exhaustive: never = method;
@@ -1738,6 +1739,7 @@ export class AdminSeedService implements OnModuleInit {
       case 'Credit':
         return { creditAmount: roundedTotal };
       case 'Card':
+      case 'Exchange':
         return {};
       default: {
         const exhaustive: never = method;
