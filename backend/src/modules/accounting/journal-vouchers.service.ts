@@ -42,6 +42,15 @@ export class JournalVouchersService {
   ): Promise<JournalVoucher> {
     const branchId = this.resolveBranch(dto.branchId, actor);
 
+    // Normalise to a date-only string and reject future postings — a
+    // journal records something that already happened.
+    const entryDate = (dto.entryDate ?? toIsoDate(new Date())).slice(0, 10);
+    if (entryDate > toIsoDate(new Date())) {
+      throw new BadRequestException(
+        'Journal entry date cannot be in the future',
+      );
+    }
+
     const debits = round2(
       dto.lines
         .filter((l) => l.entryType === LedgerEntryType.DEBIT)
@@ -73,13 +82,16 @@ export class JournalVouchersService {
     }
 
     const voucherId = await this.dataSource.transaction(async (manager) => {
-      const voucherNumber = await this.nextNumber(manager);
+      const voucherNumber = await this.nextNumber(
+        manager,
+        Number(entryDate.slice(0, 4)),
+      );
       const voucherRepo = manager.getRepository(JournalVoucher);
       const voucher = await voucherRepo.save(
         voucherRepo.create({
           voucherNumber,
           branchId,
-          entryDate: dto.entryDate ?? toIsoDate(new Date()),
+          entryDate,
           memo: dto.memo.trim(),
           total: debits,
           createdByUserId: actor.id,
@@ -111,9 +123,15 @@ export class JournalVouchersService {
     return saved;
   }
 
-  /** Mirrors InvoiceNumberService: counter row locked inside the txn. */
-  private async nextNumber(manager: EntityManager): Promise<string> {
-    const year = new Date().getFullYear();
+  /**
+   * Mirrors InvoiceNumberService: counter row locked inside the txn. Keyed on
+   * the voucher's entry-date year (not the post year) so a backdated voucher
+   * numbers into the fiscal year it belongs to.
+   */
+  private async nextNumber(
+    manager: EntityManager,
+    year: number,
+  ): Promise<string> {
     const repo = manager.getRepository(JournalCounter);
     const existing = await repo
       .createQueryBuilder('c')
