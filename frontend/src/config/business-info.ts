@@ -24,7 +24,7 @@ export const BUSINESS_INFO = {
     /** Customer support hours. */
     hours: 'Monday–Saturday, 8:00am–8:00pm',
     /** Public website URL. */
-    websiteUrl: '⟨https://yourdomain.lk⟩',
+    websiteUrl: 'https://www.ledgerpro.shop',
     /** Governing-law jurisdiction. */
     jurisdiction: 'Sri Lanka',
     /** Payment currency (matches the PayHere backend — LKR). */
